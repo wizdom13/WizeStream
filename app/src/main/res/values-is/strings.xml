@@ -120,6 +120,13 @@
     <string name="settings_category_updates_title">Uppfærslur</string>
     <string name="downloads">Sótt gögn</string>
     <string name="settings_category_video_audio_title">Mynd og hljóð</string>
+    <string name="settings_category_video_audio_summary">Spilun, upplausn, snið og hljóðhegðun</string>
+    <string name="settings_category_downloads_summary">Hlaða niður möppum, skráarnöfnum og niðurhalsvalkostum</string>
+    <string name="settings_category_appearance_summary">Þema, litir, flipar og útlit</string>
+    <string name="settings_category_history_summary">Áhorfsferill, leitarferill og gögn í skyndiminni</string>
+    <string name="settings_category_content_summary">Þjónusta, tungumál, svæði og efnissíur</string>
+    <string name="settings_category_notification_summary">Tilkynningaraðgerðir, viðvaranir og uppfærsluskilaboð</string>
+    <string name="settings_category_backup_restore_summary">Flytja út, flytja inn og endurheimta forritsgögn</string>
     <string name="app_language_title">Tungumál forrits</string>
     <string name="play_audio">Hljóð</string>
     <string name="autoplay_title">Sjálfvirk spilun</string>

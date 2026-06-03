@@ -227,6 +227,13 @@
     <string name="peertube_instance_add_exists">Naidagdag na ang instansyang iyan</string>
     <string name="settings_category_player_behavior_title">Ugali</string>
     <string name="settings_category_video_audio_title">Bidyo at tunog</string>
+    <string name="settings_category_video_audio_summary">Pag-playback, resolution, mga format, at gawi ng audio</string>
+    <string name="settings_category_downloads_summary">Mag-download ng mga folder, pangalan ng file, at mga opsyon sa pag-download</string>
+    <string name="settings_category_appearance_summary">Tema, kulay, tab, at layout</string>
+    <string name="settings_category_history_summary">History ng panonood, history ng paghahanap, at naka-cache na data</string>
+    <string name="settings_category_content_summary">Mga serbisyo, wika, rehiyon, at mga filter ng nilalaman</string>
+    <string name="settings_category_notification_summary">Mga aksyon sa notification, alerto, at update ng mga mensahe</string>
+    <string name="settings_category_backup_restore_summary">I-export, i-import, at i-restore ang data ng app</string>
     <string name="settings_category_history_title">Kasaysayan at cache</string>
     <string name="settings_category_updates_title">Mga update</string>
     <string name="show_age_restricted_content_title">Ipakita ang nilalamang hindi pambata</string>

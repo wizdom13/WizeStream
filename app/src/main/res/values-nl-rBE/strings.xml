@@ -79,6 +79,13 @@
     <string name="settings_category_player_title">Speler</string>
     <string name="settings_category_player_behavior_title">Gedrag</string>
     <string name="settings_category_video_audio_title">Video en audio</string>
+    <string name="settings_category_video_audio_summary">Afspelen, resolutie, formaten en audiogedrag</string>
+    <string name="settings_category_downloads_summary">Downloadmappen, bestandsnamen en downloadopties</string>
+    <string name="settings_category_appearance_summary">Thema, kleuren, tabbladen en lay-out</string>
+    <string name="settings_category_history_summary">Kijkgeschiedenis, zoekgeschiedenis en gegevens in de cache</string>
+    <string name="settings_category_content_summary">Services, talen, regio\'s en inhoudfilters</string>
+    <string name="settings_category_notification_summary">Meldingsacties, waarschuwingen en updateberichten</string>
+    <string name="settings_category_backup_restore_summary">App-gegevens exporteren, importeren en herstellen</string>
     <string name="settings_category_history_title">Geschiedenis en cache</string>
     <string name="settings_category_appearance_title">Uiterlijk</string>
     <string name="settings_category_debug_title">Foutopsporing</string>

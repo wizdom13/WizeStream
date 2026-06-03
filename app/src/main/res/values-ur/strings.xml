@@ -78,6 +78,13 @@
     <string name="settings_category_player_title">پلیئر</string>
     <string name="settings_category_player_behavior_title">برتاؤ</string>
     <string name="settings_category_video_audio_title">ویڈیو اور آڈیو</string>
+    <string name="settings_category_video_audio_summary">پلے بیک، ریزولوشن، فارمیٹس، اور آڈیو برتاؤ</string>
+    <string name="settings_category_downloads_summary">فولڈرز، فائل کے نام، اور ڈاؤن لوڈ کے اختیارات ڈاؤن لوڈ کریں۔</string>
+    <string name="settings_category_appearance_summary">تھیم، رنگ، ٹیبز، اور لے آؤٹ</string>
+    <string name="settings_category_history_summary">دیکھنے کی سرگزشت، تلاش کی سرگزشت، اور کیش کردہ ڈیٹا</string>
+    <string name="settings_category_content_summary">خدمات، زبانیں، علاقے، اور مواد کے فلٹرز</string>
+    <string name="settings_category_notification_summary">اطلاعاتی کارروائیاں، انتباہات، اور پیغامات کو اپ ڈیٹ کریں۔</string>
+    <string name="settings_category_backup_restore_summary">ایپ ڈیٹا کو برآمد، درآمد اور بحال کریں۔</string>
     <string name="settings_category_history_title">سرگزشت اور کیشے</string>
     <string name="settings_category_appearance_title">اظہار</string>
     <string name="settings_category_debug_title">ڈِیبَگ</string>

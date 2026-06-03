@@ -145,6 +145,13 @@
     <string name="peertube_instance_url_summary">ଆପଣଙ୍କର ପ୍ରିୟ PeerTube ଉଦାହରଣଗୁଡିକ ବାଛନ୍ତୁ</string>
     <string name="settings_category_player_behavior_title">ବ୍ୟବହାର</string>
     <string name="settings_category_video_audio_title">ଵିଡ଼ିଓ ଓ ଅଡ଼ିଓ</string>
+    <string name="settings_category_video_audio_summary">ପ୍ଲେକ୍, ରେଜୋଲୁସନ, ଫର୍ମାଟ୍, ଏବଂ ଅଡିଓ ଆଚରଣ |</string>
+    <string name="settings_category_downloads_summary">ଫୋଲ୍ଡର, ଫାଇଲ୍ ନାମ ଏବଂ ଡାଉନଲୋଡ୍ ଅପ୍ସନ୍ ଡାଉନଲୋଡ୍ କରନ୍ତୁ |</string>
+    <string name="settings_category_appearance_summary">ଥିମ୍, ରଙ୍ଗ, ଟ୍ୟାବ୍, ଏବଂ ଲେଆଉଟ୍ |</string>
+    <string name="settings_category_history_summary">ଇତିହାସ, ସନ୍ଧାନ ଇତିହାସ, ଏବଂ କ୍ୟାଚ୍ ହୋଇଥିବା ତଥ୍ୟ ଦେଖନ୍ତୁ |</string>
+    <string name="settings_category_content_summary">ସେବା, ଭାଷା, ଅଞ୍ଚଳ, ଏବଂ ବିଷୟବସ୍ତୁ ଫିଲ୍ଟର୍ |</string>
+    <string name="settings_category_notification_summary">ବିଜ୍ଞପ୍ତି କାର୍ଯ୍ୟ, ଆଲର୍ଟ, ଏବଂ ସନ୍ଦେଶଗୁଡ଼ିକୁ ଅଦ୍ୟତନ କରନ୍ତୁ |</string>
+    <string name="settings_category_backup_restore_summary">ଆପ୍ ତଥ୍ୟ ରପ୍ତାନି, ଆମଦାନୀ ଏବଂ ପୁନ restore ସ୍ଥାପନ କରନ୍ତୁ |</string>
     <string name="start_main_player_fullscreen_summary">ମିନି ପ୍ଲେୟାରରେ ଭିଡିଓ ଆରମ୍ଭ କରନ୍ତୁ ନାହିଁ, କିନ୍ତୁ ଅଟୋ ଘୂର୍ଣ୍ଣନ ବନ୍ଦ ହୋଇଗଲେ ସିଧାସଳଖ ଫୁଲ୍ ସ୍କ୍ରିନ୍ ମୋଡ୍ କୁ ଯାଆନ୍ତୁ। ଫୁଲ୍ ସ୍କ୍ରିନ୍ ଛାଡି ଆପଣ ଏପର୍ଯ୍ୟନ୍ତ ମିନି ପ୍ଲେୟାରକୁ ପ୍ରବେଶ କରିପାରିବେ</string>
     <string name="notification_actions_summary">ଏହା ଉପରେ ଟ୍ୟାପ କରି ନିମ୍ନରେ ଦିଆଯାଇଥିବା ପ୍ରତ୍ୟେକ ବିଜ୍ଞପ୍ତି କାର୍ଯ୍ୟକୁ ସମ୍ପାଦନ କରନ୍ତୁ । ଡାହାଣ ପଟେ ଥିବା ଚେକବକ୍ସଗୁଡ଼ିକୁ ବ୍ୟବହାର କରି କମ୍ପାକ୍ଟ ବିଜ୍ଞପ୍ତିରେ ଦର୍ଶାଇବା ପାଇଁ ସେଗୁଡ଼ିକ ମଧ୍ୟରୁ ତିନିଟି ଚୟନ କରନ୍ତୁ ।</string>
     <string name="show_meta_info_summary">ଷ୍ଟ୍ରିମ୍ ସୃଷ୍ଟିକର୍ତ୍ତା, ଷ୍ଟ୍ରିମ୍ ବିଷୟବସ୍ତୁ କିମ୍ବା ଏକ ସନ୍ଧାନ ଅନୁରୋଧ ବିଷୟରେ ଅତିରିକ୍ତ ସୂଚନା ସହିତ ମେଟା ସୂଚନା ବାକ୍ସଗୁଡ଼ିକୁ ଲୁଚାଇବାକୁ ବନ୍ଦ କରନ୍ତୁ</string>

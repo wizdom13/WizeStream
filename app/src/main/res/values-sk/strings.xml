@@ -34,6 +34,13 @@
     <string name="unsupported_url">URL nie je podporovaná</string>
     <string name="content_language_title">Preferovaný jazyk obsahu</string>
     <string name="settings_category_video_audio_title">Video a zvuk</string>
+    <string name="settings_category_video_audio_summary">Prehrávanie, rozlíšenie, formáty a správanie zvuku</string>
+    <string name="settings_category_downloads_summary">Stiahnite si priečinky, názvy súborov a možnosti sťahovania</string>
+    <string name="settings_category_appearance_summary">Motív, farby, karty a rozloženie</string>
+    <string name="settings_category_history_summary">História pozerania, história vyhľadávania a údaje vo vyrovnávacej pamäti</string>
+    <string name="settings_category_content_summary">Služby, jazyky, regióny a filtre obsahu</string>
+    <string name="settings_category_notification_summary">Akcie upozornení, upozornenia a aktualizačné správy</string>
+    <string name="settings_category_backup_restore_summary">Exportujte, importujte a obnovujte údaje aplikácie</string>
     <string name="settings_category_appearance_title">Vzhľad</string>
     <string name="background_player_playing_toast">Prehrávanie na pozadí</string>
     <string name="general_error">Chyba</string>

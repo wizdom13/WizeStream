@@ -27,6 +27,13 @@
     <string name="unsupported_url">Nepodprt URL</string>
     <string name="content_language_title">Privzeti jezik vsebine</string>
     <string name="settings_category_video_audio_title">Video in zvok</string>
+    <string name="settings_category_video_audio_summary">Predvajanje, ločljivost, formati in zvok</string>
+    <string name="settings_category_downloads_summary">Prenesite mape, imena datotek in možnosti prenosa</string>
+    <string name="settings_category_appearance_summary">Tema, barve, zavihki in postavitev</string>
+    <string name="settings_category_history_summary">Zgodovina ogledov, zgodovina iskanja in predpomnjeni podatki</string>
+    <string name="settings_category_content_summary">Storitve, jeziki, regije in filtri vsebine</string>
+    <string name="settings_category_notification_summary">Dejanja obveščanja, opozorila in sporočila o posodobitvah</string>
+    <string name="settings_category_backup_restore_summary">Izvoz, uvoz in obnovitev podatkov aplikacije</string>
     <string name="detail_thumbnail_view_description">Predvajaj video, dolžina:</string>
     <string name="detail_uploader_thumbnail_view_description">Sličica objavitelja</string>
     <string name="show_play_with_kodi_summary">Pokaži možnost predvajanja videa preko predstavnega središča Kodi</string>

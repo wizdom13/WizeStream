@@ -131,6 +131,13 @@
     <string name="settings_category_player_title">დამკვრელი</string>
     <string name="settings_category_player_behavior_title">Მოქმედება</string>
     <string name="settings_category_video_audio_title">ვიდეო და აუდიო</string>
+    <string name="settings_category_video_audio_summary">დაკვრა, გარჩევადობა, ფორმატები და აუდიო ქცევა</string>
+    <string name="settings_category_downloads_summary">ჩამოტვირთეთ საქაღალდეები, ფაილების სახელები და ჩამოტვირთვის ვარიანტები</string>
+    <string name="settings_category_appearance_summary">თემა, ფერები, ჩანართები და განლაგება</string>
+    <string name="settings_category_history_summary">ნახვის ისტორია, ძიების ისტორია და ქეშირებული მონაცემები</string>
+    <string name="settings_category_content_summary">სერვისები, ენები, რეგიონები და კონტენტის ფილტრები</string>
+    <string name="settings_category_notification_summary">შეტყობინებების მოქმედებები, გაფრთხილებები და შეტყობინებების განახლება</string>
+    <string name="settings_category_backup_restore_summary">აპის მონაცემების ექსპორტი, იმპორტი და აღდგენა</string>
     <string name="settings_category_history_title">ისტორია და ქეში</string>
     <string name="settings_category_appearance_title">გარეგნობა</string>
     <string name="settings_category_debug_title">გამართვა</string>

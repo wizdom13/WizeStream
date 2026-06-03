@@ -92,6 +92,13 @@
     <string name="file_deleted">Ittwakkes ufaylu</string>
     <string name="content">Akettur</string>
     <string name="settings_category_video_audio_title">Avidyu d imesli</string>
+    <string name="settings_category_video_audio_summary">ⴰⵥⴰⵡⴰⵏ, ⵜⵉⴼⵔⴰⵜ, ⵜⵉⵡⵙⵉⵡⵉⵏ, ⴷ ⵜⵉⴽⵍⵉ ⵏ ⵚⵚⵓⵜ</string>
+    <string name="settings_category_downloads_summary">ⵙⵙⴻⴽⵛⴻⵎ ⵜⵉⴼⴻⵍⵡⵉⵢⵉⵏ, ⵉⵙⵎⴰⵡⴻⵏ ⵏ ⵢⵉⴼⴰⵢⵍⵓⵜⴻⵏ, ⴷ ⵉⴹⴰⵖⴰⵔⴻⵏ ⵏ ⵓⵙⴻⴽⴽⴻⴷ</string>
+    <string name="settings_category_appearance_summary">ⴰⵙⴻⵏⵜⴻⵍ, ⵉⵏⵉⵜⴻⵏ, ⵜⵉⴼⴻⵍⵡⵉⵢⵉⵏ, ⴷ ⵓⵙⵏⵓⵍⴼⵓ</string>
+    <string name="settings_category_history_summary">ⵡⴰⵍⵉ ⴰⵎⴻⵣⵔⵓⵢ, ⴰⵎⴻⵣⵔⵓⵢ ⵏ ⵓⵏⴰⴷⵉ, ⴷ ⵉⵙⴻⴼⴽⴰ ⵢⴻⵜⵜⵡⴰⵃⴻⵔⵣⴻⵏ</string>
+    <string name="settings_category_content_summary">ⵉⵎⴻⵥⵍⴰ, ⵜⵓⵜⵍⴰⵢⵉⵏ, ⵜⵉⵎⵏⴰⴹⵉⵏ, ⴷ ⵢⵉⴼⵉⵍⵟⵔⴻⵏ ⵏ ⵓⴳⴱⵓⵔ</string>
+    <string name="settings_category_notification_summary">ⵜⵉⴳⴰⵡⵉⵏ ⵏ ⵓⴱⴻⴳⴳⴻⵏ, ⵜⵉⵖⵔⵉⵡⵉⵏ, ⴷ ⵉⵣⴻⵏ ⵏ ⵓⵙⴻⵖⵏⴻⵡ</string>
+    <string name="settings_category_backup_restore_summary">ⴰⵙⵓⴼⴻⵖ, ⴰⵙⴻⴽⵛⴻⵎ, ⵔⴻⵙⴷ ⵉⵙⴻⴼⴽⴰ ⵏ ⵓⵙⵏⴰⵙ</string>
     <string name="settings_category_clear_data_title">Sfeḍ isefka</string>
     <string name="show_higher_resolutions_summary">Zmern ad ɣren kra n wallalen ividyuten 2K/4K</string>
     <string name="feed_create_new_group_button_title">Amaynu</string>

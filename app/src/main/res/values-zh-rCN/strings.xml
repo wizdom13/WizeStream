@@ -127,6 +127,13 @@
     <string name="default_audio_format_title">默认音频格式</string>
     <string name="show_next_and_similar_title">显示“接下来”和“相似视频”</string>
     <string name="settings_category_video_audio_title">视频和音频</string>
+    <string name="settings_category_video_audio_summary">播放、分辨率、格式和音频行为</string>
+    <string name="settings_category_downloads_summary">下载文件夹、文件名和下载选项</string>
+    <string name="settings_category_appearance_summary">主题、颜色、选项卡和布局</string>
+    <string name="settings_category_history_summary">观看历史记录、搜索历史记录和缓存数据</string>
+    <string name="settings_category_content_summary">服务、语言、区域和内容过滤器</string>
+    <string name="settings_category_notification_summary">通知操作、警报和更新消息</string>
+    <string name="settings_category_backup_restore_summary">导出、导入和恢复应用程序数据</string>
     <string name="background_player_playing_toast">后台播放</string>
     <string name="content">内容</string>
     <string name="show_age_restricted_content_title">显示年龄限制的内容</string>

@@ -64,6 +64,13 @@
     <string name="settings_category_player_title">Плейър</string>
     <string name="settings_category_player_behavior_title">Поведение</string>
     <string name="settings_category_video_audio_title">Видео и аудио</string>
+    <string name="settings_category_video_audio_summary">Възпроизвеждане, разделителна способност, формати и аудио поведение</string>
+    <string name="settings_category_downloads_summary">Папки за изтегляне, имена на файлове и опции за изтегляне</string>
+    <string name="settings_category_appearance_summary">Тема, цветове, раздели и оформление</string>
+    <string name="settings_category_history_summary">История на гледане, история на търсене и кеширани данни</string>
+    <string name="settings_category_content_summary">Услуги, езици, региони и филтри за съдържание</string>
+    <string name="settings_category_notification_summary">Действия за уведомяване, сигнали и съобщения за актуализиране</string>
+    <string name="settings_category_backup_restore_summary">Експортиране, импортиране и възстановяване на данни от приложения</string>
     <string name="settings_category_history_title">История и кеш</string>
     <string name="settings_category_appearance_title">Външност</string>
     <string name="background_player_playing_toast">Възпроизвеждане във фонов режим</string>

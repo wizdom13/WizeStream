@@ -15,4 +15,11 @@
     <string name="no_player_found">Hana jiteumeung stream player. Pasang VLC\?</string>
     <string name="upload_date_text">Peuleumah bak %1$s</string>
     <string name="main_bg_subtitle">Theun \"Seutot\" keu peuphon</string>
+    <string name="settings_category_video_audio_summary">Pemutaran, resolusi, format, dan perilaku audio</string>
+    <string name="settings_category_downloads_summary">Folder unduhan, nama file, dan opsi unduhan</string>
+    <string name="settings_category_appearance_summary">Tema, warna, tab, dan tata letak</string>
+    <string name="settings_category_history_summary">Riwayat tontonan, riwayat pencarian, dan data cache</string>
+    <string name="settings_category_content_summary">Layanan, bahasa, wilayah, dan filter konten</string>
+    <string name="settings_category_notification_summary">Tindakan pemberitahuan, peringatan, dan perbarui pesan</string>
+    <string name="settings_category_backup_restore_summary">Ekspor, impor, dan pulihkan data aplikasi</string>
 </resources>

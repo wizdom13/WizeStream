@@ -257,6 +257,13 @@
     <string name="settings_category_appearance_title">Izskats</string>
     <string name="settings_category_history_title">Vēsture un kešatmiņa</string>
     <string name="settings_category_video_audio_title">Video un audio</string>
+    <string name="settings_category_video_audio_summary">Atskaņošana, izšķirtspēja, formāti un audio darbība</string>
+    <string name="settings_category_downloads_summary">Lejupielādējiet mapes, failu nosaukumus un lejupielādes opcijas</string>
+    <string name="settings_category_appearance_summary">Motīvs, krāsas, cilnes un izkārtojums</string>
+    <string name="settings_category_history_summary">Skatīšanās vēsture, meklēšanas vēsture un kešatmiņā saglabātie dati</string>
+    <string name="settings_category_content_summary">Pakalpojumi, valodas, reģioni un satura filtri</string>
+    <string name="settings_category_notification_summary">Paziņojumu darbības, brīdinājumi un atjaunināšanas ziņojumi</string>
+    <string name="settings_category_backup_restore_summary">Eksportējiet, importējiet un atjaunojiet lietotņu datus</string>
     <string name="settings_category_player_behavior_title">Uzvedība</string>
     <string name="settings_category_player_title">Atskaņotājs</string>
     <string name="peertube_instance_add_exists">Šāds serveris (instance) jau eksistē</string>

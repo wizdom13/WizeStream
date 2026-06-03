@@ -42,4 +42,11 @@
     <string name="unsubscribe">ಅನ್‌ಸಬ್‌ಸ್ಕ್ರೈಬ್ ಮಾಡಿ</string>
     <string name="yes">ಹೌದು</string>
     <string name="no">ಇಲ್ಲ</string>
+    <string name="settings_category_video_audio_summary">ಪ್ಲೇಬ್ಯಾಕ್, ರೆಸಲ್ಯೂಶನ್, ಸ್ವರೂಪಗಳು ಮತ್ತು ಆಡಿಯೊ ನಡವಳಿಕೆ</string>
+    <string name="settings_category_downloads_summary">ಫೋಲ್ಡರ್‌ಗಳು, ಫೈಲ್ ಹೆಸರುಗಳು ಮತ್ತು ಡೌನ್‌ಲೋಡ್ ಆಯ್ಕೆಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ</string>
+    <string name="settings_category_appearance_summary">ಥೀಮ್, ಬಣ್ಣಗಳು, ಟ್ಯಾಬ್‌ಗಳು ಮತ್ತು ಲೇಔಟ್</string>
+    <string name="settings_category_history_summary">ವೀಕ್ಷಣೆ ಇತಿಹಾಸ, ಹುಡುಕಾಟ ಇತಿಹಾಸ ಮತ್ತು ಕ್ಯಾಶ್ ಮಾಡಿದ ಡೇಟಾ</string>
+    <string name="settings_category_content_summary">ಸೇವೆಗಳು, ಭಾಷೆಗಳು, ಪ್ರದೇಶಗಳು ಮತ್ತು ವಿಷಯ ಫಿಲ್ಟರ್‌ಗಳು</string>
+    <string name="settings_category_notification_summary">ಅಧಿಸೂಚನೆ ಕ್ರಿಯೆಗಳು, ಎಚ್ಚರಿಕೆಗಳು ಮತ್ತು ನವೀಕರಣ ಸಂದೇಶಗಳು</string>
+    <string name="settings_category_backup_restore_summary">ಅಪ್ಲಿಕೇಶನ್ ಡೇಟಾವನ್ನು ರಫ್ತು ಮಾಡಿ, ಆಮದು ಮಾಡಿ ಮತ್ತು ಮರುಸ್ಥಾಪಿಸಿ</string>
 </resources>

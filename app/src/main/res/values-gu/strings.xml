@@ -83,4 +83,11 @@
     <string name="fragment_feed_title">નવું શું છે</string>
     <string name="downloads">ડાઉનલોડ્સ</string>
     <string name="downloads_title">ડાઉનલોડ્સ</string>
+    <string name="settings_category_video_audio_summary">પ્લેબેક, રિઝોલ્યુશન, ફોર્મેટ્સ અને ઑડિઓ વર્તન</string>
+    <string name="settings_category_downloads_summary">ફોલ્ડર્સ, ફાઇલ નામો અને ડાઉનલોડ વિકલ્પો ડાઉનલોડ કરો</string>
+    <string name="settings_category_appearance_summary">થીમ, રંગો, ટૅબ્સ અને લેઆઉટ</string>
+    <string name="settings_category_history_summary">જોવાનો ઇતિહાસ, શોધ ઇતિહાસ અને કેશ્ડ ડેટા</string>
+    <string name="settings_category_content_summary">સેવાઓ, ભાષાઓ, પ્રદેશો અને સામગ્રી ફિલ્ટર્સ</string>
+    <string name="settings_category_notification_summary">સૂચના ક્રિયાઓ, ચેતવણીઓ અને અપડેટ સંદેશાઓ</string>
+    <string name="settings_category_backup_restore_summary">એપ્લિકેશન ડેટા નિકાસ, આયાત અને પુનઃસ્થાપિત કરો</string>
 </resources>

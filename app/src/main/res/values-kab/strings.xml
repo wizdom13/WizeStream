@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_category_video_audio_title">Avidyu akked d imesli</string>
+    <string name="settings_category_video_audio_summary">Taɣuri, tabadut, imasalen d tiddin n umeslaw</string>
+    <string name="settings_category_downloads_summary">Ikaramen n usider, ismawen n ifuyla d iɣewwaren n usider</string>
+    <string name="settings_category_appearance_summary">Asentel, initen, iccaren d tneɣruft</string>
+    <string name="settings_category_history_summary">Amazray n tmuɣli, amazray n unadi d isefka n tuffirt</string>
+    <string name="settings_category_content_summary">Imeẓla, tutlayin, timnaḍin d imsizdigen n ugbur</string>
+    <string name="settings_category_notification_summary">Tigawin n yilɣa, ilɣa d iznan n uleqqem</string>
+    <string name="settings_category_backup_restore_summary">Sifeḍ, kter d err-d isefka n usnas</string>
     <string name="tab_about">Ɣef &amp; ISTEQSIYEN</string>
     <string name="feed_create_new_group_button_title">Amaynut</string>
     <string name="all">Akk</string>

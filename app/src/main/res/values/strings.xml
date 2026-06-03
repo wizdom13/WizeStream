@@ -168,6 +168,13 @@
     <string name="settings_category_player_title">Player</string>
     <string name="settings_category_player_behavior_title">Behavior</string>
     <string name="settings_category_video_audio_title">Video and audio</string>
+    <string name="settings_category_video_audio_summary">Playback, resolution, formats, and audio behavior</string>
+    <string name="settings_category_downloads_summary">Download folders, file names, and download options</string>
+    <string name="settings_category_appearance_summary">Theme, colors, tabs, and layout</string>
+    <string name="settings_category_history_summary">Watch history, search history, and cached data</string>
+    <string name="settings_category_content_summary">Services, languages, regions, and content filters</string>
+    <string name="settings_category_notification_summary">Notification actions, alerts, and update messages</string>
+    <string name="settings_category_backup_restore_summary">Export, import, and restore app data</string>
     <string name="settings_category_history_title">History and cache</string>
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_debug_title">Debug</string>

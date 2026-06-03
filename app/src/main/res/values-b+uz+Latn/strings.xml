@@ -135,6 +135,13 @@
     <string name="settings_category_appearance_title">Tashqi ko\'rinish</string>
     <string name="settings_category_history_title">Tarix va kesh</string>
     <string name="settings_category_video_audio_title">Video va audio</string>
+    <string name="settings_category_video_audio_summary">Ijro etish, ruxsat, formatlar va audio harakati</string>
+    <string name="settings_category_downloads_summary">Papkalarni, fayl nomlarini va yuklab olish opsiyalarini yuklab oling</string>
+    <string name="settings_category_appearance_summary">Mavzu, ranglar, yorliqlar va tartib</string>
+    <string name="settings_category_history_summary">Tomosha tarixi, qidiruv tarixi va keshlangan maʼlumotlar</string>
+    <string name="settings_category_content_summary">Xizmatlar, tillar, hududlar va kontent filtrlari</string>
+    <string name="settings_category_notification_summary">Bildirishnomalar, ogohlantirishlar va xabarlarni yangilash</string>
+    <string name="settings_category_backup_restore_summary">Ilova ma\'lumotlarini eksport qilish, import qilish va tiklash</string>
     <string name="settings_category_player_behavior_title">Xatti-harakat</string>
     <string name="settings_category_player_title">Ijro etish</string>
     <string name="peertube_instance_add_exists">Namuna allaqachon mavjud</string>

@@ -34,6 +34,13 @@
     <string name="unsupported_url">Δεν υποστηρίζεται η διεύθυνση URL</string>
     <string name="content_language_title">Προεπιλεγμένη γλώσσα περιεχομένου</string>
     <string name="settings_category_video_audio_title">Βίντεο και ήχος</string>
+    <string name="settings_category_video_audio_summary">Αναπαραγωγή, ανάλυση, μορφές και συμπεριφορά ήχου</string>
+    <string name="settings_category_downloads_summary">Λήψη φακέλων, ονομάτων αρχείων και επιλογών λήψης</string>
+    <string name="settings_category_appearance_summary">Θέμα, χρώματα, καρτέλες και διάταξη</string>
+    <string name="settings_category_history_summary">Ιστορικό παρακολούθησης, ιστορικό αναζήτησης και δεδομένα προσωρινής αποθήκευσης</string>
+    <string name="settings_category_content_summary">Υπηρεσίες, γλώσσες, περιοχές και φίλτρα περιεχομένου</string>
+    <string name="settings_category_notification_summary">Ενέργειες ειδοποιήσεων, ειδοποιήσεις και μηνύματα ενημέρωσης</string>
+    <string name="settings_category_backup_restore_summary">Εξαγωγή, εισαγωγή και επαναφορά δεδομένων εφαρμογών</string>
     <string name="settings_category_appearance_title">Εμφάνιση</string>
     <string name="background_player_playing_toast">Αναπαραγωγή στο παρασκήνιο</string>
     <string name="network_error">Σφάλμα δικτύου</string>

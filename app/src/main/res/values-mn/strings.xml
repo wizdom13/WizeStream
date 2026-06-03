@@ -40,4 +40,11 @@
     <string name="play_with_kodi_title">Kodi-р тоглуулах</string>
     <string name="kore_not_found">Байхгүй Kore апп-ийг суулгах уу?</string>
     <string name="show_play_with_kodi_title">\"Kodi-р тоглуулах\" цэсийг харуулах</string>
+    <string name="settings_category_video_audio_summary">Тоглуулах, нягтрал, формат, дууны үйлдэл</string>
+    <string name="settings_category_downloads_summary">Фолдер, файлын нэр, татаж авах сонголтуудыг татаж авах</string>
+    <string name="settings_category_appearance_summary">Сэдэв, өнгө, таб, зохион байгуулалт</string>
+    <string name="settings_category_history_summary">Үзсэн түүх, хайлтын түүх болон хадгалагдсан өгөгдөл</string>
+    <string name="settings_category_content_summary">Үйлчилгээ, хэл, бүс нутаг, агуулгын шүүлтүүр</string>
+    <string name="settings_category_notification_summary">Мэдэгдлийн үйлдэл, сэрэмжлүүлэг, мессежийг шинэчлэх</string>
+    <string name="settings_category_backup_restore_summary">Програмын өгөгдлийг экспортлох, импортлох, сэргээх</string>
 </resources>

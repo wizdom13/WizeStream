@@ -26,6 +26,13 @@
     <string name="show_next_and_similar_title">Показать похожие видео</string>
     <string name="content_language_title">Язык контента по умолчанию</string>
     <string name="settings_category_video_audio_title">Видео и аудио</string>
+    <string name="settings_category_video_audio_summary">Воспроизведение, разрешение, форматы и поведение звука</string>
+    <string name="settings_category_downloads_summary">Папки загрузки, имена файлов и параметры загрузки</string>
+    <string name="settings_category_appearance_summary">Тема, цвета, вкладки и макет</string>
+    <string name="settings_category_history_summary">История просмотров, история поиска и кэшированные данные</string>
+    <string name="settings_category_content_summary">Сервисы, языки, регионы и фильтры контента</string>
+    <string name="settings_category_notification_summary">Действия уведомлений, оповещения и сообщения обновлений</string>
+    <string name="settings_category_backup_restore_summary">Экспорт, импорт и восстановление данных приложения</string>
     <string name="settings_category_appearance_title">Внешний вид</string>
     <string name="detail_thumbnail_view_description">Воспроизвести видео, длительность:</string>
     <string name="detail_uploader_thumbnail_view_description">Миниатюра аватара пользователя</string>

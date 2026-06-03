@@ -68,4 +68,11 @@
     <string name="no_player_found">Pamuter ora ditemokke. Pasang VLC\?</string>
     <string name="upload_date_text">Diterbitake ing %1$s</string>
     <string name="main_bg_subtitle">Pencet lup kanggo nglekasi</string>
+    <string name="settings_category_video_audio_summary">Puter maneh, resolusi, format, lan prilaku audio</string>
+    <string name="settings_category_downloads_summary">Download folder, jeneng file, lan opsi download</string>
+    <string name="settings_category_appearance_summary">Tema, warna, tab, lan tata letak</string>
+    <string name="settings_category_history_summary">Riwayat nonton, riwayat telusuran, lan data sing di-cache</string>
+    <string name="settings_category_content_summary">Layanan, basa, wilayah, lan saringan konten</string>
+    <string name="settings_category_notification_summary">Tumindak kabar, tandha, lan nganyari pesen</string>
+    <string name="settings_category_backup_restore_summary">Ekspor, ngimpor, lan mulihake data app</string>
 </resources>

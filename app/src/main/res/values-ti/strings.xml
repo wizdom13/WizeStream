@@ -185,4 +185,11 @@
     <string name="metadata_privacy_internal">ውሽጣዊ</string>
     <string name="metadata_subscribers">ተኸታተልቲ</string>
     <string name="open_website_license">መርበብ-ቦታ ክፈት</string>
+    <string name="settings_category_video_audio_summary">ምጽዋት፡ ርዝነት፡ ቅርጽታትን ባህሪ ድምጽን</string>
+    <string name="settings_category_downloads_summary">ኣቃፊራታት፡ ኣስማት ፋይላትን ናይ ምውራድ ኣማራጺታትን ኣውርድ</string>
+    <string name="settings_category_appearance_summary">ቴማ፡ ሕብርታት፡ ትቦታትን ኣቀማምጣን።</string>
+    <string name="settings_category_history_summary">ታሪኽ፡ ታሪኽ ምድላይን ዝተዓቀበ ዳታን ምዕዛብ</string>
+    <string name="settings_category_content_summary">ኣገልግሎታት፡ ቋንቋታት፡ ዞባታትን ትሕዝቶ መጽረዪታትን</string>
+    <string name="settings_category_notification_summary">ናይ መፍለጢ ተግባራት፣ መጠንቀቕታታትን ናይ ምዕባለ መልእኽትታትን</string>
+    <string name="settings_category_backup_restore_summary">ናይ ኣፕ ዳታ ሰደድ፣ ምእታውን ምምላስን።</string>
 </resources>

@@ -24,6 +24,13 @@
     <string name="unsupported_url">Ez da URLa onartzen</string>
     <string name="content_language_title">Edukiaren hizkuntza lehenetsia</string>
     <string name="settings_category_video_audio_title">Bideoa eta audioa</string>
+    <string name="settings_category_video_audio_summary">Erreprodukzioa, bereizmena, formatuak eta audioaren portaera</string>
+    <string name="settings_category_downloads_summary">Deskargatu karpetak, fitxategi-izenak eta deskargatzeko aukerak</string>
+    <string name="settings_category_appearance_summary">Gaia, koloreak, fitxak eta diseinua</string>
+    <string name="settings_category_history_summary">Ikusleen historia, bilaketa-historia eta cachean gordetako datuak</string>
+    <string name="settings_category_content_summary">Zerbitzuak, hizkuntzak, eskualdeak eta eduki-iragazkiak</string>
+    <string name="settings_category_notification_summary">Jakinarazpen-ekintzak, alertak eta eguneratze-mezuak</string>
+    <string name="settings_category_backup_restore_summary">Esportatu, inportatu eta leheneratu aplikazioaren datuak</string>
     <string name="detail_thumbnail_view_description">Erreproduzitu bideoa, iraupena:</string>
     <string name="detail_uploader_thumbnail_view_description">Igotzailearen abatarraren miniatura</string>
     <string name="detail_dislikes_img_view_description">Desatseginak</string>

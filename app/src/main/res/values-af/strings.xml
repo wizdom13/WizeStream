@@ -2,4 +2,11 @@
 <resources>
     <string name="no_player_found">Geen stream-speler gevind nie. Installeer VLC\?</string>
     <string name="main_bg_subtitle">Tik op \"Soek\" om aan die gang te kom</string>
+    <string name="settings_category_video_audio_summary">Afspeel, resolusie, formate en klankgedrag</string>
+    <string name="settings_category_downloads_summary">Laai dopgehou, lêername en aflaaiopsies af</string>
+    <string name="settings_category_appearance_summary">Tema, kleure, oortjies en uitleg</string>
+    <string name="settings_category_history_summary">Kykgeskiedenis, soekgeskiedenis en gekasdata</string>
+    <string name="settings_category_content_summary">Dienste, tale, streke en inhoudfilters</string>
+    <string name="settings_category_notification_summary">Kennisgewingaksies, waarskuwings en opdateringsboodskappe</string>
+    <string name="settings_category_backup_restore_summary">Voer uit, voer in en herstel appdata</string>
 </resources>

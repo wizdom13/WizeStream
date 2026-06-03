@@ -105,6 +105,13 @@
     <string name="settings_category_appearance_title">Görünüş</string>
     <string name="settings_category_history_title">Tarixçə və qalıq</string>
     <string name="settings_category_video_audio_title">Video və səs</string>
+    <string name="settings_category_video_audio_summary">Oynatma, qətnamə, formatlar və audio davranış</string>
+    <string name="settings_category_downloads_summary">Qovluqları, fayl adlarını və yükləmə seçimlərini endirin</string>
+    <string name="settings_category_appearance_summary">Mövzu, rənglər, nişanlar və tərtibat</string>
+    <string name="settings_category_history_summary">Baxış tarixçəsi, axtarış tarixçəsi və keşlənmiş data</string>
+    <string name="settings_category_content_summary">Xidmətlər, dillər, bölgələr və məzmun filtrləri</string>
+    <string name="settings_category_notification_summary">Bildiriş hərəkətləri, xəbərdarlıqlar və yeniləmə mesajları</string>
+    <string name="settings_category_backup_restore_summary">Proqram məlumatlarını ixrac edin, idxal edin və bərpa edin</string>
     <string name="settings_category_player_behavior_title">Davranış</string>
     <string name="settings_category_player_title">Oynadıcı</string>
     <string name="content_language_title">Cari məzmun dili</string>

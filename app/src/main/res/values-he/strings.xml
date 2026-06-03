@@ -48,6 +48,13 @@
     <string name="unsupported_url">כתובת לא נתמכת</string>
     <string name="content_language_title">שפת התוכן המועדפת</string>
     <string name="settings_category_video_audio_title">סרטונים ושמע</string>
+    <string name="settings_category_video_audio_summary">השמעה, רזולוציה, פורמטים והתנהגות אודיו</string>
+    <string name="settings_category_downloads_summary">הורדת תיקיות, שמות קבצים ואפשרויות הורדה</string>
+    <string name="settings_category_appearance_summary">ערכת נושא, צבעים, כרטיסיות ופריסה</string>
+    <string name="settings_category_history_summary">היסטוריית צפייה, היסטוריית חיפושים ונתונים במטמון</string>
+    <string name="settings_category_content_summary">שירותים, שפות, אזורים ומסנני תוכן</string>
+    <string name="settings_category_notification_summary">פעולות התראה, התראות והודעות עדכון</string>
+    <string name="settings_category_backup_restore_summary">ייצוא, ייבא ושחזור נתוני אפליקציה</string>
     <string name="settings_category_appearance_title">תצוגה</string>
     <string name="background_player_playing_toast">מתנגן ברקע</string>
     <string name="popup_playing_toast">מתנגן בחלון צף</string>

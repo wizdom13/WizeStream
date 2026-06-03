@@ -152,6 +152,13 @@
     <string name="settings_category_player_title">Pokretač</string>
     <string name="settings_category_player_behavior_title">Ponašanje</string>
     <string name="settings_category_video_audio_title">Video i audio</string>
+    <string name="settings_category_video_audio_summary">Reprodukcija, rezolucija, formati i audio ponašanje</string>
+    <string name="settings_category_downloads_summary">Preuzmi foldere, nazive datoteka i opcije preuzimanja</string>
+    <string name="settings_category_appearance_summary">Tema, boje, kartice i izgled</string>
+    <string name="settings_category_history_summary">Historija gledanja, historija pretraživanja i keširani podaci</string>
+    <string name="settings_category_content_summary">Usluge, jezici, regije i filteri sadržaja</string>
+    <string name="settings_category_notification_summary">Radnje obavještenja, upozorenja i ažurirane poruke</string>
+    <string name="settings_category_backup_restore_summary">Izvoz, uvoz i vraćanje podataka aplikacije</string>
     <string name="settings_category_history_title">Historija i keš memorija</string>
     <string name="settings_category_appearance_title">Izgled</string>
     <string name="settings_category_debug_title">Debug</string>

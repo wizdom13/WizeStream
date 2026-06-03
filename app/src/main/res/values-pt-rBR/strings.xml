@@ -44,6 +44,13 @@
     <string name="settings">Configurações</string>
     <string name="settings_category_appearance_title">Aparência</string>
     <string name="settings_category_video_audio_title">Vídeo e áudio</string>
+    <string name="settings_category_video_audio_summary">Reprodução, resolução, formatos e comportamento de áudio</string>
+    <string name="settings_category_downloads_summary">Baixe pastas, nomes de arquivos e opções de download</string>
+    <string name="settings_category_appearance_summary">Tema, cores, guias e layout</string>
+    <string name="settings_category_history_summary">Histórico de exibição, histórico de pesquisa e dados armazenados em cache</string>
+    <string name="settings_category_content_summary">Serviços, idiomas, regiões e filtros de conteúdo</string>
+    <string name="settings_category_notification_summary">Ações de notificação, alertas e mensagens de atualização</string>
+    <string name="settings_category_backup_restore_summary">Exportar, importar e restaurar dados de aplicativos</string>
     <string name="share">Compartilhar</string>
     <string name="share_dialog_title">Compartilhar com</string>
     <string name="show_age_restricted_content_title">Mostrar conteúdo com restrição de idade</string>

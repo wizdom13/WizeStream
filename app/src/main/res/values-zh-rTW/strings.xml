@@ -31,6 +31,13 @@
     <string name="unsupported_url">不支援此網址</string>
     <string name="content_language_title">預設內容語言</string>
     <string name="settings_category_video_audio_title">影片與音訊</string>
+    <string name="settings_category_video_audio_summary">播放、解析度、格式和音訊行為</string>
+    <string name="settings_category_downloads_summary">下載資料夾、檔案名稱和下載選項</string>
+    <string name="settings_category_appearance_summary">主題、顏色、選項卡和佈局</string>
+    <string name="settings_category_history_summary">觀看歷史記錄、搜尋記錄和快取數據</string>
+    <string name="settings_category_content_summary">服務、語言、區域和內容過濾器</string>
+    <string name="settings_category_notification_summary">通知操作、警報和更新訊息</string>
+    <string name="settings_category_backup_restore_summary">匯出、匯入和還原應用程式數據</string>
     <string name="settings_category_appearance_title">外觀</string>
     <string name="background_player_playing_toast">正在背景播放</string>
     <string name="network_error">網路錯誤</string>

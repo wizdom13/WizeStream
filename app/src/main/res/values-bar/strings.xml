@@ -28,4 +28,11 @@
     <string name="main_bg_subtitle">Drug auf\'d Lubn zum ofanga.</string>
     <string name="ok">Bassd scho</string>
     <string name="no">naa</string>
+    <string name="settings_category_video_audio_summary">Wiedergabe, Auflösung, Formate und Audioverhalten</string>
+    <string name="settings_category_downloads_summary">Download-Ordner, Dateinamen und Download-Optionen</string>
+    <string name="settings_category_appearance_summary">Thema, Farben, Registerkarten und Layout</string>
+    <string name="settings_category_history_summary">Beobachtungsverlauf, Suchverlauf und zwischengespeicherte Daten</string>
+    <string name="settings_category_content_summary">Dienste, Sprachen, Regionen und Inhaltsfilter</string>
+    <string name="settings_category_notification_summary">Benachrichtigungsaktionen, Warnungen und Aktualisierungsmeldungen</string>
+    <string name="settings_category_backup_restore_summary">App-Daten exportieren, importieren und wiederherstellen</string>
 </resources>

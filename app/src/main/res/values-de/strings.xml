@@ -25,6 +25,13 @@
     <string name="show_next_and_similar_title">„Nächste“ und „Ähnliche“ Videos anzeigen</string>
     <string name="unsupported_url">Nicht unterstützte URL</string>
     <string name="settings_category_video_audio_title">Video und Audio</string>
+    <string name="settings_category_video_audio_summary">Wiedergabe, Auflösung, Formate und Audioverhalten</string>
+    <string name="settings_category_downloads_summary">Download-Ordner, Dateinamen und Download-Optionen</string>
+    <string name="settings_category_appearance_summary">Thema, Farben, Registerkarten und Layout</string>
+    <string name="settings_category_history_summary">Beobachtungsverlauf, Suchverlauf und zwischengespeicherte Daten</string>
+    <string name="settings_category_content_summary">Dienste, Sprachen, Regionen und Inhaltsfilter</string>
+    <string name="settings_category_notification_summary">Benachrichtigungsaktionen, Warnungen und Aktualisierungsmeldungen</string>
+    <string name="settings_category_backup_restore_summary">App-Daten exportieren, importieren und wiederherstellen</string>
     <string name="content_language_title">Bevorzugte Sprache des Inhalts</string>
     <string name="detail_thumbnail_view_description">Video abspielen, Dauer:</string>
     <string name="detail_uploader_thumbnail_view_description">Profilbild des Benutzers</string>

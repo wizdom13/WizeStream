@@ -48,6 +48,13 @@
     <string name="unsupported_url">URL nepalaikoma</string>
     <string name="content_language_title">Numatytoji turinio kalba</string>
     <string name="settings_category_video_audio_title">Vaizdas ir garsas</string>
+    <string name="settings_category_video_audio_summary">Atkūrimas, skiriamoji geba, formatai ir garso elgsena</string>
+    <string name="settings_category_downloads_summary">Atsisiųskite aplankus, failų pavadinimus ir atsisiuntimo parinktis</string>
+    <string name="settings_category_appearance_summary">Tema, spalvos, skirtukai ir išdėstymas</string>
+    <string name="settings_category_history_summary">Žiūrėjimo istorija, paieškos istorija ir talpykloje saugomi duomenys</string>
+    <string name="settings_category_content_summary">Paslaugos, kalbos, regionai ir turinio filtrai</string>
+    <string name="settings_category_notification_summary">Pranešimų veiksmai, įspėjimai ir naujinimo pranešimai</string>
+    <string name="settings_category_backup_restore_summary">Eksportuokite, importuokite ir atkurkite programos duomenis</string>
     <string name="settings_category_appearance_title">Išvaizda</string>
     <string name="background_player_playing_toast">Groja fone</string>
     <string name="popup_playing_toast">Grojama iššokančiojo lango rėžime</string>

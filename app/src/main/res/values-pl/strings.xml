@@ -35,6 +35,13 @@
     <string name="unsupported_url">Nieobsługiwany adres URL</string>
     <string name="content_language_title">Domyślny język treści</string>
     <string name="settings_category_video_audio_title">Wideo i audio</string>
+    <string name="settings_category_video_audio_summary">Odtwarzanie, rozdzielczość, formaty i zachowanie dźwięku</string>
+    <string name="settings_category_downloads_summary">Pobierz foldery, nazwy plików i opcje pobierania</string>
+    <string name="settings_category_appearance_summary">Motyw, kolory, karty i układ</string>
+    <string name="settings_category_history_summary">Oglądaj historię, historię wyszukiwania i dane w pamięci podręcznej</string>
+    <string name="settings_category_content_summary">Usługi, języki, regiony i filtry treści</string>
+    <string name="settings_category_notification_summary">Akcje powiadomień, alerty i komunikaty o aktualizacjach</string>
+    <string name="settings_category_backup_restore_summary">Eksportuj, importuj i przywracaj dane aplikacji</string>
     <string name="settings_category_appearance_title">Wygląd</string>
     <string name="background_player_playing_toast">Odtwarzanie w tle</string>
     <string name="content">Zawartość</string>

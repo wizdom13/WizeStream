@@ -61,6 +61,13 @@
     <string name="unsupported_url">URL nije podržan</string>
     <string name="content_language_title">Zadani jezik sadržaja</string>
     <string name="settings_category_video_audio_title">Video i audio</string>
+    <string name="settings_category_video_audio_summary">Reprodukcija, razlučivost, formati i ponašanje zvuka</string>
+    <string name="settings_category_downloads_summary">Preuzmite mape, nazive datoteka i opcije preuzimanja</string>
+    <string name="settings_category_appearance_summary">Tema, boje, kartice i izgled</string>
+    <string name="settings_category_history_summary">Povijest gledanja, povijest pretraživanja i predmemorirani podaci</string>
+    <string name="settings_category_content_summary">Usluge, jezici, regije i filteri sadržaja</string>
+    <string name="settings_category_notification_summary">Radnje obavijesti, upozorenja i poruke ažuriranja</string>
+    <string name="settings_category_backup_restore_summary">Izvoz, uvoz i vraćanje podataka aplikacije</string>
     <string name="settings_category_appearance_title">Izgled</string>
     <string name="background_player_playing_toast">Reprodukcija u pozadini</string>
     <string name="popup_playing_toast">Reprodukcija u skočnom prozoru</string>

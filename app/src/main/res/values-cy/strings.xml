@@ -1,2 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="settings_category_video_audio_summary">Chwarae, cydraniad, fformatau, ac ymddygiad sain</string>
+    <string name="settings_category_downloads_summary">Lawrlwythwch ffolderi, enwau ffeiliau, ac opsiynau lawrlwytho</string>
+    <string name="settings_category_appearance_summary">Thema, lliwiau, tabiau a chynllun</string>
+    <string name="settings_category_history_summary">Gwylio hanes, hanes chwilio, a data wedi\'i storio</string>
+    <string name="settings_category_content_summary">Gwasanaethau, ieithoedd, rhanbarthau, a hidlwyr cynnwys</string>
+    <string name="settings_category_notification_summary">Camau gweithredu hysbysu, rhybuddion, a negeseuon diweddaru</string>
+    <string name="settings_category_backup_restore_summary">Allforio, mewnforio, ac adfer data app</string>
+</resources>

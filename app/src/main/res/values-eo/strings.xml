@@ -25,6 +25,13 @@
     <string name="unsupported_url">Ligilo ne subtenita</string>
     <string name="content_language_title">Preferata enhavlingvo</string>
     <string name="settings_category_video_audio_title">Filmo kaj sono</string>
+    <string name="settings_category_video_audio_summary">Reproduktado, rezolucio, formatoj kaj sonkonduto</string>
+    <string name="settings_category_downloads_summary">Elŝutu dosierujojn, dosiernomojn kaj elŝutajn opciojn</string>
+    <string name="settings_category_appearance_summary">Temo, koloroj, langetoj kaj aranĝo</string>
+    <string name="settings_category_history_summary">Vidhistorio, serĉhistorio kaj kaŝmemoritaj datumoj</string>
+    <string name="settings_category_content_summary">Servoj, lingvoj, regionoj kaj enhavfiltriloj</string>
+    <string name="settings_category_notification_summary">Sciigaj agoj, atentigoj kaj ĝisdatigaj mesaĝoj</string>
+    <string name="settings_category_backup_restore_summary">Eksportu, importu kaj restarigi aplikajn datumojn</string>
     <string name="settings_category_appearance_title">Apero</string>
     <string name="background_player_playing_toast">Ludanta fone</string>
     <string name="general_error">Eraro</string>

@@ -35,6 +35,13 @@
     <string name="download_path_audio_dialog_title">Elija la carpeta de descarga para los archivos de audio</string>
     <string name="download_path_audio_title">Carpeta de descarga de audio</string>
     <string name="settings_category_video_audio_title">Vídeo y audio</string>
+    <string name="settings_category_video_audio_summary">Reproducción, resolución, formatos y comportamiento del audio.</string>
+    <string name="settings_category_downloads_summary">Descargar carpetas, nombres de archivos y opciones de descarga</string>
+    <string name="settings_category_appearance_summary">Tema, colores, pestañas y diseño.</string>
+    <string name="settings_category_history_summary">Historial de visualización, historial de búsqueda y datos almacenados en caché</string>
+    <string name="settings_category_content_summary">Servicios, idiomas, regiones y filtros de contenido.</string>
+    <string name="settings_category_notification_summary">Acciones de notificación, alertas y mensajes de actualización.</string>
+    <string name="settings_category_backup_restore_summary">Exportar, importar y restaurar datos de aplicaciones</string>
     <string name="general_error">Error</string>
     <string name="network_error">Error de conexión</string>
     <string name="could_not_load_thumbnails">No se pudo cargar las miniaturas</string>

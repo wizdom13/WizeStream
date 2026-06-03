@@ -35,6 +35,13 @@
     <string name="unsupported_url">نشانی پشتیبانی نشده</string>
     <string name="content_language_title">زبان محتوای ترجیحی</string>
     <string name="settings_category_video_audio_title">ویدیو و صدا</string>
+    <string name="settings_category_video_audio_summary">پخش، وضوح، فرمت ها و رفتار صدا</string>
+    <string name="settings_category_downloads_summary">پوشه ها، نام فایل ها و گزینه های دانلود را دانلود کنید</string>
+    <string name="settings_category_appearance_summary">تم، رنگ‌ها، برگه‌ها و طرح‌بندی</string>
+    <string name="settings_category_history_summary">سابقه تماشا، سابقه جستجو، و داده های ذخیره شده در حافظه پنهان</string>
+    <string name="settings_category_content_summary">خدمات، زبان‌ها، مناطق و فیلترهای محتوا</string>
+    <string name="settings_category_notification_summary">اقدامات اعلان، هشدارها، و پیام های به روز رسانی</string>
+    <string name="settings_category_backup_restore_summary">داده های برنامه را صادر، وارد و بازیابی کنید</string>
     <string name="settings_category_appearance_title">ظاهر</string>
     <string name="background_player_playing_toast">در حال پخش در پس‌زمینه</string>
     <string name="content">محتوا</string>

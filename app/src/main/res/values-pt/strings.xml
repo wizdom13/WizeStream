@@ -28,6 +28,13 @@
     <string name="unsupported_url">URL não suportada</string>
     <string name="content_language_title">Idioma padrão para conteúdo</string>
     <string name="settings_category_video_audio_title">Vídeo e áudio</string>
+    <string name="settings_category_video_audio_summary">Reprodução, resolução, formatos e comportamento de áudio</string>
+    <string name="settings_category_downloads_summary">Baixe pastas, nomes de arquivos e opções de download</string>
+    <string name="settings_category_appearance_summary">Tema, cores, guias e layout</string>
+    <string name="settings_category_history_summary">Histórico de exibição, histórico de pesquisa e dados armazenados em cache</string>
+    <string name="settings_category_content_summary">Serviços, idiomas, regiões e filtros de conteúdo</string>
+    <string name="settings_category_notification_summary">Ações de notificação, alertas e mensagens de atualização</string>
+    <string name="settings_category_backup_restore_summary">Exportar, importar e restaurar dados de aplicativos</string>
     <string name="detail_thumbnail_view_description">Reproduzir vídeo, duração:</string>
     <string name="detail_uploader_thumbnail_view_description">Miniatura do avatar do canal</string>
     <string name="detail_dislikes_img_view_description">Não gosto</string>

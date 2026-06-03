@@ -4,4 +4,11 @@
     <string name="upload_date_text">%1$s жарияланды</string>
     <string name="no_player_found_toast">Ағындық ойнатқыш табылмады (оны ойнату үшін VLC орнатуға болады).</string>
     <string name="no_player_found">Ағындық ойнатқыш табылмады. VLC орнату керек пе\?</string>
+    <string name="settings_category_video_audio_summary">Ойнату, ажыратымдылық, пішімдер және дыбыс әрекеті</string>
+    <string name="settings_category_downloads_summary">Қалталарды, файл атауларын және жүктеп алу опцияларын жүктеп алыңыз</string>
+    <string name="settings_category_appearance_summary">Тақырып, түстер, қойындылар және орналасу</string>
+    <string name="settings_category_history_summary">Көру журналы, іздеу журналы және кэштелген деректер</string>
+    <string name="settings_category_content_summary">Қызметтер, тілдер, аймақтар және мазмұн сүзгілері</string>
+    <string name="settings_category_notification_summary">Хабарландыру әрекеттері, ескертулер және жаңарту хабарлары</string>
+    <string name="settings_category_backup_restore_summary">Қолданба деректерін экспорттау, импорттау және қалпына келтіру</string>
 </resources>

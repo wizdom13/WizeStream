@@ -29,6 +29,13 @@
     <string name="network_error">Hálózati hiba</string>
     <string name="background_player_playing_toast">Lejátszás a háttérben</string>
     <string name="settings_category_video_audio_title">Videó és hang</string>
+    <string name="settings_category_video_audio_summary">Lejátszás, felbontás, formátumok és hangviselkedés</string>
+    <string name="settings_category_downloads_summary">Letöltési mappák, fájlnevek és letöltési lehetőségek</string>
+    <string name="settings_category_appearance_summary">Téma, színek, lapok és elrendezés</string>
+    <string name="settings_category_history_summary">Megtekintési előzmények, keresési előzmények és gyorsítótárazott adatok</string>
+    <string name="settings_category_content_summary">Szolgáltatások, nyelvek, régiók és tartalomszűrők</string>
+    <string name="settings_category_notification_summary">Értesítési műveletek, figyelmeztetések és frissítési üzenetek</string>
+    <string name="settings_category_backup_restore_summary">Alkalmazásadatok exportálása, importálása és visszaállítása</string>
     <string name="settings_category_appearance_title">Megjelenés</string>
     <string name="content_language_title">Tartalom alapértelmezett nyelve</string>
     <string name="show_next_and_similar_title">„Következő” és „Hasonló” videók megjelenítése</string>

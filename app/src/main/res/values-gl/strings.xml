@@ -78,6 +78,13 @@
     <string name="settings_category_player_title">Reprodutor</string>
     <string name="settings_category_player_behavior_title">Comportamento</string>
     <string name="settings_category_video_audio_title">Vídeo e audio</string>
+    <string name="settings_category_video_audio_summary">Reprodución, resolución, formatos e comportamento de audio</string>
+    <string name="settings_category_downloads_summary">Descargar cartafoles, nomes de ficheiros e opcións de descarga</string>
+    <string name="settings_category_appearance_summary">Tema, cores, pestanas e deseño</string>
+    <string name="settings_category_history_summary">Historial de visualización, historial de busca e datos almacenados na caché</string>
+    <string name="settings_category_content_summary">Servizos, idiomas, rexións e filtros de contido</string>
+    <string name="settings_category_notification_summary">Accións de notificación, alertas e mensaxes de actualización</string>
+    <string name="settings_category_backup_restore_summary">Exporta, importa e restaura os datos da aplicación</string>
     <string name="settings_category_history_title">Historial e caché</string>
     <string name="settings_category_appearance_title">Aparencia</string>
     <string name="settings_category_debug_title">Depuración</string>

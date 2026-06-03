@@ -423,6 +423,13 @@
     <string name="main_bg_subtitle">کرته‌ بكه‌ بۆ ده‌ستپێكردن.</string>
     <string name="enable_search_history_summary">مێژووی گه‌ڕانه‌كان له‌ بیرگه‌دا كۆگا ده‌كرێن</string>
     <string name="settings_category_video_audio_title">ڤیدیۆ و دەنگ</string>
+    <string name="settings_category_video_audio_summary">پەخشکردن، ڕوونی، فۆرماتەکان و هەڵسوکەوتی دەنگی</string>
+    <string name="settings_category_downloads_summary">فۆڵدەرەکان و ناوی فایلەکان و هەڵبژاردەکانی دابەزاندن</string>
+    <string name="settings_category_appearance_summary">تەوەر و ڕەنگ و تاب و نەخشە</string>
+    <string name="settings_category_history_summary">سەیری مێژوو بکە، مێژووی گەڕان و داتاکانی کاشکراو</string>
+    <string name="settings_category_content_summary">خزمەتگوزارییەکان، زمانەکان، ناوچەکان و فلتەرەکانی ناوەڕۆک</string>
+    <string name="settings_category_notification_summary">کردارەکانی ئاگادارکردنەوە، ئاگادارکردنەوە و پەیامەکانی نوێکردنەوە</string>
+    <string name="settings_category_backup_restore_summary">هەناردەکردن و هاوردەکردن و گەڕاندنەوەی داتاکانی ئەپەکە</string>
     <string name="share">هاوبه‌شپێكردن</string>
     <string name="audio_streams_empty">پەخشی هیچ دەنگێک نەدۆزرایەوە</string>
     <string name="artists">هونەرمەندەکان</string>

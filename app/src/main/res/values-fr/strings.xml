@@ -25,6 +25,13 @@
     <string name="show_next_and_similar_title">Afficher les vidéos « Suivantes » et « Similaires »</string>
     <string name="unsupported_url">URL non pris en charge</string>
     <string name="settings_category_video_audio_title">Vidéo et audio</string>
+    <string name="settings_category_video_audio_summary">Lecture, résolution, formats et comportement audio</string>
+    <string name="settings_category_downloads_summary">Télécharger des dossiers, des noms de fichiers et des options de téléchargement</string>
+    <string name="settings_category_appearance_summary">Thème, couleurs, onglets et mise en page</string>
+    <string name="settings_category_history_summary">Historique de surveillance, historique de recherche et données mises en cache</string>
+    <string name="settings_category_content_summary">Services, langues, régions et filtres de contenu</string>
+    <string name="settings_category_notification_summary">Actions de notification, alertes et messages de mise à jour</string>
+    <string name="settings_category_backup_restore_summary">Exporter, importer et restaurer les données de l\'application</string>
     <string name="detail_thumbnail_view_description">Lecture vidéo, durée :</string>
     <string name="detail_dislikes_img_view_description">Je n’aime pas</string>
     <string name="detail_likes_img_view_description">J’aime</string>

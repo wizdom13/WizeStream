@@ -301,6 +301,13 @@
     <string name="peertube_instance_add_help">Digite o URL da instância</string>
     <string name="preferred_open_action_settings_title">Ação de \'Abrir\' preferida</string>
     <string name="settings_category_video_audio_title">Vídeo e áudio</string>
+    <string name="settings_category_video_audio_summary">Reprodução, resolução, formatos e comportamento do áudio</string>
+    <string name="settings_category_downloads_summary">Descarregue pastas, nomes de ficheiros e opções de download</string>
+    <string name="settings_category_appearance_summary">Tema, cores, separadores e layout</string>
+    <string name="settings_category_history_summary">Histórico de visualização, histórico de pesquisa e dados armazenados em cache</string>
+    <string name="settings_category_content_summary">Serviços, idiomas, regiões e filtros de conteúdos</string>
+    <string name="settings_category_notification_summary">Ações de notificação, alertas e mensagens de atualização</string>
+    <string name="settings_category_backup_restore_summary">Exportar, importar e restaurar dados de aplicações</string>
     <string name="charset_letters_and_digits">Letras e dígitos</string>
     <string name="enable_leak_canary_summary">A monitorização de memória pode tornar a aplicação instável</string>
     <string name="copy_for_github">Copiar relatório formatado</string>

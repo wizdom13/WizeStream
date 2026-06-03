@@ -8,36 +8,42 @@
         android:fragment="org.schabi.newpipe.settings.VideoAudioSettingsFragment"
         android:icon="@drawable/ic_headset"
         android:title="@string/settings_category_video_audio_title"
+        android:summary="@string/settings_category_video_audio_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.DownloadSettingsFragment"
         android:icon="@drawable/ic_file_download"
         android:title="@string/settings_category_downloads_title"
+        android:summary="@string/settings_category_downloads_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.AppearanceSettingsFragment"
         android:icon="@drawable/ic_palette"
         android:title="@string/settings_category_appearance_title"
+        android:summary="@string/settings_category_appearance_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.HistorySettingsFragment"
         android:icon="@drawable/ic_history"
         android:title="@string/settings_category_history_title"
+        android:summary="@string/settings_category_history_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.ContentSettingsFragment"
         android:icon="@drawable/ic_language"
         android:title="@string/content"
+        android:summary="@string/settings_category_content_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.NotificationsSettingsFragment"
         android:icon="@drawable/ic_notifications"
         android:title="@string/notifications"
+        android:summary="@string/settings_category_notification_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
@@ -51,6 +57,7 @@
         android:fragment="org.schabi.newpipe.settings.BackupRestoreSettingsFragment"
         android:icon="@drawable/ic_settings_backup_restore"
         android:title="@string/settings_category_backup_restore_title"
+        android:summary="@string/settings_category_backup_restore_summary"
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen

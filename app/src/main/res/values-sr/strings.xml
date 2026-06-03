@@ -26,6 +26,13 @@
     <string name="show_next_and_similar_title">Прикажи „следеће“ и „сличне“ видео снимке</string>
     <string name="content_language_title">Подразумевани језик садржаја</string>
     <string name="settings_category_video_audio_title">Видео и аудио снимци</string>
+    <string name="settings_category_video_audio_summary">Репродукција, резолуција, формати и аудио понашање</string>
+    <string name="settings_category_downloads_summary">Преузмите фасцикле, називе датотека и опције преузимања</string>
+    <string name="settings_category_appearance_summary">Тема, боје, картице и изглед</string>
+    <string name="settings_category_history_summary">Историја гледања, историја претраге и кеширани подаци</string>
+    <string name="settings_category_content_summary">Услуге, језици, региони и филтери садржаја</string>
+    <string name="settings_category_notification_summary">Радње обавештења, упозорења и ажуриране поруке</string>
+    <string name="settings_category_backup_restore_summary">Извезите, увезите и вратите податке апликације</string>
     <string name="detail_thumbnail_view_description">Пусти видео снимак, трајање:</string>
     <string name="detail_uploader_thumbnail_view_description">Аватар пошиљаоца</string>
     <string name="detail_dislikes_img_view_description">Несвиђања</string>

@@ -69,6 +69,13 @@
     <string name="peertube_instance_add_title">Ouzhpennañ un eriol</string>
     <string name="settings_category_player_title">Lenner</string>
     <string name="settings_category_video_audio_title">Video hag aodio</string>
+    <string name="settings_category_video_audio_summary">Lennadur, diarunusted, furmadoù ha emzalc\'h kleweled</string>
+    <string name="settings_category_downloads_summary">Pellgargañ teuliadoù, anvioù restroù, ha dibaboù pellgargañ</string>
+    <string name="settings_category_appearance_summary">Tem, livioù, ivinelloù ha tres</string>
+    <string name="settings_category_history_summary">Istor ar sellet, istor ar c\'hlask, ha roadennoù enrollet</string>
+    <string name="settings_category_content_summary">Servijoù, yezhoù, rannvroioù ha siloù endalc\'hadoù</string>
+    <string name="settings_category_notification_summary">Oberoù kemenn, kemennadennoù ha kemennadennoù hizivaat</string>
+    <string name="settings_category_backup_restore_summary">Ezporzhiañ, enporzhiañ hag adderaouekaat roadennoù an arload</string>
     <string name="settings_category_history_title">Roll istor ha krubuilh</string>
     <string name="settings_category_appearance_title">Neuz</string>
     <string name="settings_category_debug_title">Diveugañ</string>

@@ -34,6 +34,13 @@
     <string name="unsupported_url">URL не підтримується</string>
     <string name="content_language_title">Переважна мова вмісту</string>
     <string name="settings_category_video_audio_title">Відео та звук</string>
+    <string name="settings_category_video_audio_summary">Відтворення, роздільна здатність, формати та поведінка звуку</string>
+    <string name="settings_category_downloads_summary">Папки для завантаження, імена файлів і параметри завантаження</string>
+    <string name="settings_category_appearance_summary">Тема, кольори, вкладки та макет</string>
+    <string name="settings_category_history_summary">Історія переглядів, історія пошуку та кешовані дані</string>
+    <string name="settings_category_content_summary">Сервіси, мови, регіони та фільтри вмісту</string>
+    <string name="settings_category_notification_summary">Дії сповіщень, сповіщення та повідомлення про оновлення</string>
+    <string name="settings_category_backup_restore_summary">Експорт, імпорт і відновлення даних програми</string>
     <string name="settings_category_appearance_title">Зовнішній вигляд</string>
     <string name="background_player_playing_toast">Відтворення у фоновому режимі</string>
     <string name="content">Вміст</string>
