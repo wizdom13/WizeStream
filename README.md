@@ -223,6 +223,20 @@ Contributions are welcome, especially focused Material 3 polish, bug fixes, QA f
 
 Please keep changes focused and testable. For UI work, include before/after screenshots where possible and verify Light, Dark, Black, Follow system, and at least one manual Theme color preset.
 
+### NewPipeExtractor source checkout
+
+NewPipe Material builds against the `wizdom13/NewPipeExtractor` fork from source through Gradle composite-build dependency substitution. Before running Gradle locally, clone the extractor source into the preferred in-repo path:
+
+```bash
+git clone https://github.com/wizdom13/NewPipeExtractor external/NewPipeExtractor
+```
+
+Alternatively, clone it next to this repository so it is available as `../NewPipeExtractor`:
+
+```bash
+git clone https://github.com/wizdom13/NewPipeExtractor ../NewPipeExtractor
+```
+
 Useful checks before opening a pull request:
 
 ```bash

@@ -40,6 +40,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: Checkout NewPipeExtractor source
+        run: |
+          set -euo pipefail
+          mkdir -p external
+          if [ ! -d external/NewPipeExtractor/.git ]; then
+            rm -rf external/NewPipeExtractor
+            git clone --depth 1 https://github.com/wizdom13/NewPipeExtractor external/NewPipeExtractor
+          fi
+
+      - name: Verify NewPipeExtractor source
+        run: |
+          git -C external/NewPipeExtractor remote -v
+          git -C external/NewPipeExtractor rev-parse HEAD
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/NewPipeExtractor"
+          test -d external/NewPipeExtractor/extractor
       - uses: gradle/actions/wrapper-validation@v6
 
       - name: create and checkout branch
@@ -92,6 +108,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: Checkout NewPipeExtractor source
+        run: |
+          set -euo pipefail
+          mkdir -p external
+          if [ ! -d external/NewPipeExtractor/.git ]; then
+            rm -rf external/NewPipeExtractor
+            git clone --depth 1 https://github.com/wizdom13/NewPipeExtractor external/NewPipeExtractor
+          fi
+
+      - name: Verify NewPipeExtractor source
+        run: |
+          git -C external/NewPipeExtractor remote -v
+          git -C external/NewPipeExtractor rev-parse HEAD
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/NewPipeExtractor"
+          test -d external/NewPipeExtractor/extractor
 
       - name: Enable KVM
         run: |
