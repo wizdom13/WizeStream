@@ -24,13 +24,23 @@ include(":app") // androidApp
 include(":desktopApp")
 include("shared")
 
-// Use a local copy of NewPipe Extractor by uncommenting the lines below.
-// We assume, that NewPipe and NewPipe Extractor have the same parent directory.
-// If this is not the case, please change the path in includeBuild().
+val externalNewPipeExtractor = file("external/NewPipeExtractor")
+val adjacentNewPipeExtractor = file("../NewPipeExtractor")
 
-//    includeBuild("../NewPipeExtractor") {
-//        dependencySubstitution {
-//            substitute(module("com.github.TeamNewPipe:NewPipeExtractor"))
-//                .using(project(":extractor"))
-//        }
-//    }
+val newPipeExtractorDir = when {
+    externalNewPipeExtractor.isDirectory -> externalNewPipeExtractor
+    adjacentNewPipeExtractor.isDirectory -> adjacentNewPipeExtractor
+    else -> throw GradleException(
+        "NewPipeExtractor source checkout not found. " +
+            "Clone https://github.com/wizdom13/NewPipeExtractor into external/NewPipeExtractor " +
+            "or run git clone https://github.com/wizdom13/NewPipeExtractor ..\\NewPipeExtractor " +
+            "for a Windows-style adjacent checkout."
+    )
+}
+
+includeBuild(newPipeExtractorDir) {
+    dependencySubstitution {
+        substitute(module("com.github.TeamNewPipe:NewPipeExtractor"))
+            .using(project(":extractor"))
+    }
+}
