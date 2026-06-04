@@ -9,7 +9,7 @@
   <a href="https://github.com/wizdom13/NewPipe_Material/actions"><img src="https://github.com/wizdom13/NewPipe_Material/actions/workflows/ci.yml/badge.svg?branch=material" alt="Build status"></a>
 </p>
 
-<p align="center"><b>Read this in:</b> <a href="README.md">English</a> &bull; <a href="doc/README.de.md">Deutsch</a> &bull; <a href="doc/README.es.md">Español</a> &bull; <a href="doc/README.fr.md">Français</a> &bull; <a href="doc/README.hi.md">हिन्दी</a> &bull; <a href="doc/README.it.md">Italiano</a> &bull; <a href="doc/README.ko.md">한국어</a> &bull; <a href="doc/README.pt_BR.md">Português Brasil</a> &bull; <a href="doc/README.pl.md">Polski</a> &bull; <a href="doc/README.pa.md">ਪੰਜਾਬੀ</a> &bull; <a href="doc/README.ja.md">日本語</a> &bull; <a href="doc/README.ro.md">Română</a> &bull; <a href="doc/README.ru.md">Русский</a> &bull; <a href="doc/README.so.md">Soomaali</a> &bull; <a href="doc/README.tr.md">Türkçe</a> &bull; <a href="doc/README.zh_TW.md">正體中文</a> &bull; <a href="doc/README.ryu.md">沖縄口</a> &bull; <a href="doc/README.asm.md">অসমীয়া</a> &bull; <a href="doc/README.sr.md">Српски</a> &bull; <a href="doc/README.ar.md">العربية</a></p>
+<p align="center">Translations are welcome, but only native-speaker reviewed translations will be added.</p>
 
 ---
 
