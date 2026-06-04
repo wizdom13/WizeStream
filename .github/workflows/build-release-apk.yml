@@ -14,7 +14,7 @@ on:
           - all
   push:
     tags:
-      - "m*"
+    - "v*-m*"    
 
 permissions:
   contents: write
@@ -75,10 +75,10 @@ jobs:
         run: |
           VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
           VERSION_CODE="$(jq -r ".elements[0].versionCode" "app/build/outputs/apk/release/output-metadata.json")"
-          MATERIAL_TAG="${VERSION_NAME##*-}"
+          RELEASE_TAG="v${VERSION_NAME}"
 
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$MATERIAL_TAG" ]; then
-            echo "Tag mismatch: pushed tag is '$GITHUB_REF_NAME' but Gradle versionName is '$VERSION_NAME' and expects tag '$MATERIAL_TAG'"
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$RELEASE_TAG" ]; then
+            echo "Tag mismatch: pushed tag is '$GITHUB_REF_NAME' but Gradle versionName is '$VERSION_NAME' and expects tag '$RELEASE_TAG'"
             exit 1
           fi
 
@@ -90,14 +90,14 @@ jobs:
 
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
-          echo "material_tag=$MATERIAL_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
           echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
           echo "changelog_path=$CHANGELOG_PATH" >> "$GITHUB_OUTPUT"
 
           echo "Version name: $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
           echo "Version code: $VERSION_CODE" >> "$GITHUB_STEP_SUMMARY"
-          echo "Material tag: $MATERIAL_TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release tag: $RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
           echo "Changelog: $CHANGELOG_PATH" >> "$GITHUB_STEP_SUMMARY"
 
       - name: "Upload APK"
@@ -116,7 +116,7 @@ jobs:
         if: ${{ github.event_name == 'push' || inputs.release_target == 'release' || inputs.release_target == 'all' }}
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event_name == 'push' && github.ref_name || steps.release_info.outputs.material_tag }}
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || steps.release_info.outputs.release_tag }}
           target_commitish: material
           name: NewPipe Material ${{ steps.release_info.outputs.version_name }}
           body_path: ${{ steps.release_info.outputs.changelog_path }}
