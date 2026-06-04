@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="install">Урнаштыру</string>
     <string name="cancel">Баш тарту</string>
@@ -36,13 +36,6 @@
     <string name="enable_search_history_title">Эзләү тарихы</string>
     <string name="settings_category_player_behavior_title">Тәртип</string>
     <string name="settings_category_video_audio_title">Видео һәм аудио</string>
-    <string name="settings_category_video_audio_summary">Уйнау, резолюция, форматлар, аудио тәртип</string>
-    <string name="settings_category_downloads_summary">Папкаларны, файл исемнәрен йөкләү һәм йөкләү параметрлары</string>
-    <string name="settings_category_appearance_summary">Тема, төсләр, таблицалар, макетлар</string>
-    <string name="settings_category_history_summary">Тарихны, эзләү тарихын, кэш мәгълүматларын карагыз</string>
-    <string name="settings_category_content_summary">Хезмәтләр, телләр, регионнар, эчтәлек фильтрлары</string>
-    <string name="settings_category_notification_summary">Хәбәрләр, хәбәрләр, хәбәрләрне яңарту</string>
-    <string name="settings_category_backup_restore_summary">Кушымта мәгълүматларын экспортлау, импортлау һәм торгызу</string>
     <string name="settings_category_history_title">Тарих һәм кэш</string>
     <string name="users">Кулланучылар</string>
     <string name="events">Вакыйгалар</string>

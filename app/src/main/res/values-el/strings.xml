@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Δημοσιεύθηκε στις %1$s</string>
     <string name="no_player_found">Δε βρέθηκε αναπαραγωγός ροής δεδομένων. Εγκατάσταση του VLC;</string>
@@ -34,13 +34,6 @@
     <string name="unsupported_url">Δεν υποστηρίζεται η διεύθυνση URL</string>
     <string name="content_language_title">Προεπιλεγμένη γλώσσα περιεχομένου</string>
     <string name="settings_category_video_audio_title">Βίντεο και ήχος</string>
-    <string name="settings_category_video_audio_summary">Αναπαραγωγή, ανάλυση, μορφές και συμπεριφορά ήχου</string>
-    <string name="settings_category_downloads_summary">Λήψη φακέλων, ονομάτων αρχείων και επιλογών λήψης</string>
-    <string name="settings_category_appearance_summary">Θέμα, χρώματα, καρτέλες και διάταξη</string>
-    <string name="settings_category_history_summary">Ιστορικό παρακολούθησης, ιστορικό αναζήτησης και δεδομένα προσωρινής αποθήκευσης</string>
-    <string name="settings_category_content_summary">Υπηρεσίες, γλώσσες, περιοχές και φίλτρα περιεχομένου</string>
-    <string name="settings_category_notification_summary">Ενέργειες ειδοποιήσεων, ειδοποιήσεις και μηνύματα ενημέρωσης</string>
-    <string name="settings_category_backup_restore_summary">Εξαγωγή, εισαγωγή και επαναφορά δεδομένων εφαρμογών</string>
     <string name="settings_category_appearance_title">Εμφάνιση</string>
     <string name="background_player_playing_toast">Αναπαραγωγή στο παρασκήνιο</string>
     <string name="network_error">Σφάλμα δικτύου</string>
@@ -878,3 +871,4 @@
     <string name="api23_requirement_dialog_message">Δυστυχώς, το NewPipe βασίζεται σε ορισμένες βιβλιοθήκες που έχουν σταματήσει να υποστηρίζουν τα Android 5.0 και 5.1. Ως εκ τούτου, η επόμενη έκδοση του NewPipe θα λειτουργεί μόνο σε συσκευές με Android 6 ή νεότερη έκδοση, δυστυχώς. Διαβάστε περισσότερα στην ανάρτηση του ιστολογίου.</string>
     <string name="api23_requirement_dialog_blogpost">Δημοσίευση στο ιστολόγιο</string>
 </resources>
+

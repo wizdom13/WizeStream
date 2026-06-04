@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Докоснете лупата, за да започнете.</string>
     <string name="upload_date_text">Публикувано на %1$s</string>
@@ -64,13 +64,6 @@
     <string name="settings_category_player_title">Плейър</string>
     <string name="settings_category_player_behavior_title">Поведение</string>
     <string name="settings_category_video_audio_title">Видео и аудио</string>
-    <string name="settings_category_video_audio_summary">Възпроизвеждане, разделителна способност, формати и аудио поведение</string>
-    <string name="settings_category_downloads_summary">Папки за изтегляне, имена на файлове и опции за изтегляне</string>
-    <string name="settings_category_appearance_summary">Тема, цветове, раздели и оформление</string>
-    <string name="settings_category_history_summary">История на гледане, история на търсене и кеширани данни</string>
-    <string name="settings_category_content_summary">Услуги, езици, региони и филтри за съдържание</string>
-    <string name="settings_category_notification_summary">Действия за уведомяване, сигнали и съобщения за актуализиране</string>
-    <string name="settings_category_backup_restore_summary">Експортиране, импортиране и възстановяване на данни от приложения</string>
     <string name="settings_category_history_title">История и кеш</string>
     <string name="settings_category_appearance_title">Външност</string>
     <string name="background_player_playing_toast">Възпроизвеждане във фонов режим</string>
@@ -863,3 +856,4 @@
     <string name="api23_requirement_dialog_message">За съжаление NewPipe зависи от няколко библиотеки, които спряха поддръжката за Android 5.0 и 5.1. Следователно, за съжаление, следващата версия на NewPipe ще работи само на устройства с Android 6 или по-нова версия. Прочетете повече в публикацията в блога.</string>
     <string name="api23_requirement_dialog_blogpost">Публикация в блога</string>
 </resources>
+

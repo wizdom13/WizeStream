@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="install">安裝</string>
     <string name="cancel">取消</string>
@@ -28,13 +28,6 @@
     <string name="unsupported_url">唔支援呢個網址</string>
     <string name="content_language_title">預設內容語言</string>
     <string name="settings_category_video_audio_title">影音</string>
-    <string name="settings_category_video_audio_summary">播放、解析度、格式和音訊行為</string>
-    <string name="settings_category_downloads_summary">下載資料夾、檔案名稱和下載選項</string>
-    <string name="settings_category_appearance_summary">主題、顏色、選項卡和佈局</string>
-    <string name="settings_category_history_summary">觀看歷史記錄、搜尋記錄和快取數據</string>
-    <string name="settings_category_content_summary">服務、語言、區域和內容過濾器</string>
-    <string name="settings_category_notification_summary">通知操作、警報和更新訊息</string>
-    <string name="settings_category_backup_restore_summary">匯出、匯入和還原應用程式數據</string>
     <string name="settings_category_appearance_title">版面</string>
     <string name="background_player_playing_toast">幕後播緊</string>
     <string name="network_error">網絡問題</string>
@@ -809,3 +802,4 @@
     <string name="no">唔使喇</string>
     <string name="reset_settings_summary">顛覆所有設定，光復成預設值重新開始</string>
 </resources>
+

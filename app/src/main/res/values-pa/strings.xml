@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਵੱਡਦਰਸ਼ੀ ਸ਼ੀਸ਼ੇ \'ਤੇ ਟੈਪ ਕਰੋ।</string>
     <string name="upload_date_text">%1$s ਨੂੰ ਪ੍ਰਕਾਸ਼ਿਤ ਹੋਇਆ</string>
@@ -78,13 +78,6 @@
     <string name="settings_category_player_title">ਪਲੇਅਰ</string>
     <string name="settings_category_player_behavior_title">ਵਿਵਹਾਰ</string>
     <string name="settings_category_video_audio_title">ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ</string>
-    <string name="settings_category_video_audio_summary">ਪਲੇਬੈਕ, ਰੈਜ਼ੋਲਿਊਸ਼ਨ, ਫਾਰਮੈਟ ਅਤੇ ਆਡੀਓ ਵਿਵਹਾਰ</string>
-    <string name="settings_category_downloads_summary">ਫੋਲਡਰਾਂ, ਫਾਈਲਾਂ ਦੇ ਨਾਮ ਅਤੇ ਡਾਊਨਲੋਡ ਵਿਕਲਪਾਂ ਨੂੰ ਡਾਊਨਲੋਡ ਕਰੋ</string>
-    <string name="settings_category_appearance_summary">ਥੀਮ, ਰੰਗ, ਟੈਬਸ, ਅਤੇ ਖਾਕਾ</string>
-    <string name="settings_category_history_summary">ਦੇਖਣ ਦਾ ਇਤਿਹਾਸ, ਖੋਜ ਇਤਿਹਾਸ, ਅਤੇ ਕੈਸ਼ ਕੀਤਾ ਡਾਟਾ</string>
-    <string name="settings_category_content_summary">ਸੇਵਾਵਾਂ, ਭਾਸ਼ਾਵਾਂ, ਖੇਤਰ ਅਤੇ ਸਮੱਗਰੀ ਫਿਲਟਰ</string>
-    <string name="settings_category_notification_summary">ਸੂਚਨਾ ਕਾਰਵਾਈਆਂ, ਚੇਤਾਵਨੀਆਂ, ਅਤੇ ਸੁਨੇਹੇ ਅੱਪਡੇਟ ਕਰੋ</string>
-    <string name="settings_category_backup_restore_summary">ਐਪ ਡੇਟਾ ਨੂੰ ਨਿਰਯਾਤ, ਆਯਾਤ ਅਤੇ ਰੀਸਟੋਰ ਕਰੋ</string>
     <string name="settings_category_history_title">ਇਤਿਹਾਸ ਅਤੇ ਕੈਸ਼-ਭੰਡਾਰ</string>
     <string name="settings_category_appearance_title">ਦਿੱਖ</string>
     <string name="settings_category_debug_title">ਡੀ-ਬੱਗ</string>
@@ -856,3 +849,4 @@
     <string name="export_subscriptions_summary">ਆਪਣੀਆਂ ਸਬਸਕ੍ਰਿਪਸ਼ਨਾਂ ਨੂੰ .json ਫਾਈਲ ਵਿੱਚ ਐਕਸਪੋਰਟ ਕਰੋ</string>
     <string name="import_from_previous_export">ਪਹਿਲਾਂ ਕੀਤੇ ਐਕਸਪੋਰਟ ਤੋਂ ਇੰਪੋਰਟ ਕਰੋ</string>
 </resources>
+

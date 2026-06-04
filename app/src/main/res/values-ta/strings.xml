@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">ஆரம்பிக்க பூதக்கண்ணாடியைத் தட்டு.</string>
     <string name="upload_date_text">%1$s அன்று வெளியிடப்பட்டது</string>
@@ -62,13 +62,6 @@
     <string name="settings_category_player_title">இயக்கி</string>
     <string name="settings_category_player_behavior_title">பண்பு</string>
     <string name="settings_category_video_audio_title">காணொளியும் ஒலியும்</string>
-    <string name="settings_category_video_audio_summary">பின்னணி, தெளிவுத்திறன், வடிவங்கள் மற்றும் ஆடியோ நடத்தை</string>
-    <string name="settings_category_downloads_summary">கோப்புறைகள், கோப்பு பெயர்கள் மற்றும் பதிவிறக்க விருப்பங்களைப் பதிவிறக்கவும்</string>
-    <string name="settings_category_appearance_summary">தீம், வண்ணங்கள், தாவல்கள் மற்றும் தளவமைப்பு</string>
-    <string name="settings_category_history_summary">பார்வை வரலாறு, தேடல் வரலாறு மற்றும் தற்காலிக சேமிப்பு தரவு</string>
-    <string name="settings_category_content_summary">சேவைகள், மொழிகள், பகுதிகள் மற்றும் உள்ளடக்க வடிப்பான்கள்</string>
-    <string name="settings_category_notification_summary">அறிவிப்பு செயல்கள், விழிப்பூட்டல்கள் மற்றும் புதுப்பிப்பு செய்திகள்</string>
-    <string name="settings_category_backup_restore_summary">பயன்பாட்டுத் தரவை ஏற்றுமதி, இறக்குமதி மற்றும் மீட்டமைக்கவும்</string>
     <string name="settings_category_history_title">வரலாறும் பதுக்ககமும்</string>
     <string name="settings_category_appearance_title">தோற்றம்</string>
     <string name="background_player_playing_toast">பிண்ணணியில் ஓடுகிறது</string>
@@ -789,3 +782,4 @@
     <string name="no_feed_group_created_yet">இதுவரை எந்த ஊட்டக் குழுவும் உருவாக்கப்படவில்லை</string>
     <string name="feed_group_page_summary">சேனல் குழு பக்கம்</string>
 </resources>
+

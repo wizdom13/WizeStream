@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="use_external_video_player_title">استخدم مشغل فيديو خارجي</string>
     <string name="share_dialog_title">مشاركة مع</string>
@@ -457,13 +457,6 @@
     <string name="prefer_original_audio_summary">حدد المسار الصوتي الأصلي بغض النظر عن اللغة</string>
     <string name="notifications">الإشعارات</string>
     <string name="settings_category_video_audio_title">الفيديو والصوت</string>
-    <string name="settings_category_video_audio_summary">التشغيل والدقة والتنسيقات والسلوك الصوتي</string>
-    <string name="settings_category_downloads_summary">تنزيل المجلدات وأسماء الملفات وخيارات التنزيل</string>
-    <string name="settings_category_appearance_summary">السمة والألوان وعلامات التبويب والتخطيط</string>
-    <string name="settings_category_history_summary">سجل المشاهدة وسجل البحث والبيانات المخزنة مؤقتًا</string>
-    <string name="settings_category_content_summary">الخدمات واللغات والمناطق ومرشحات المحتوى</string>
-    <string name="settings_category_notification_summary">إجراءات الإخطار والتنبيهات ورسائل التحديث</string>
-    <string name="settings_category_backup_restore_summary">تصدير واستيراد واستعادة بيانات التطبيق</string>
     <string name="feed_create_new_group_button_title">جديد</string>
     <string name="remove_watched_popup_title">إزالة مقاطع الفيديو التي تمت مشاهدتها؟</string>
     <string name="albums">الالبومات</string>
@@ -857,3 +850,4 @@
     <string name="share_playlist">شارِك قائمة التشغيل</string>
     <string name="video_details_list_item">- %1$s: %2$s</string>
 </resources>
+

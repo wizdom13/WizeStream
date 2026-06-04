@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Tryck på förstoringsglaset för att komma igång.</string>
     <string name="upload_date_text">Publicerad den %1$s</string>
@@ -48,13 +48,6 @@
     <string name="unsupported_url">Webbadressen stöds inte</string>
     <string name="content_language_title">Standard innehållsspråk</string>
     <string name="settings_category_video_audio_title">Video och ljud</string>
-    <string name="settings_category_video_audio_summary">Uppspelning, upplösning, format och ljudbeteende</string>
-    <string name="settings_category_downloads_summary">Ladda ner mappar, filnamn och nedladdningsalternativ</string>
-    <string name="settings_category_appearance_summary">Tema, färger, flikar och layout</string>
-    <string name="settings_category_history_summary">Visningshistorik, sökhistorik och cachad data</string>
-    <string name="settings_category_content_summary">Tjänster, språk, regioner och innehållsfilter</string>
-    <string name="settings_category_notification_summary">Aviseringsåtgärder, varningar och uppdateringsmeddelanden</string>
-    <string name="settings_category_backup_restore_summary">Exportera, importera och återställ appdata</string>
     <string name="settings_category_appearance_title">Utseende</string>
     <string name="background_player_playing_toast">Spelar upp i bakgrunden</string>
     <string name="popup_playing_toast">Spelar upp i popup-läge</string>
@@ -875,3 +868,4 @@
         <item quantity="other">Läser in %d prenumerationer…</item>
     </plurals>
 </resources>
+

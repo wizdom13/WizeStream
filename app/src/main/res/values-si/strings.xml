@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="show_info">තොරතුරු පෙන්වන්න</string>
     <string name="did_you_mean">ඔබ අදහස් කළේ \"%1$s\" ද\?</string>
@@ -30,11 +30,4 @@
     <string name="no_player_found_toast">ප්‍රවාහ වාදකයක් හමු නොවීය (ඔබට එය වාදනය කිරීමට VLC ස්ථාපනය කළ හැක).</string>
     <string name="controls_download_desc">ප්‍රවාහ ගොනුව බාගන්න</string>
     <string name="no_player_found">ප්‍රවාහ වාදකයක් හමු නොවීය. VLC ස්ථාපනය කරන්නද?</string>
-    <string name="settings_category_video_audio_summary">නැවත ධාවනය, විභේදනය, ආකෘති සහ ශ්‍රව්‍ය හැසිරීම</string>
-    <string name="settings_category_downloads_summary">ෆෝල්ඩර, ගොනු නම් සහ බාගැනීම් විකල්ප බාගන්න</string>
-    <string name="settings_category_appearance_summary">තේමාව, වර්ණ, ටැබ්, සහ පිරිසැලසුම</string>
-    <string name="settings_category_history_summary">නැරඹුම් ඉතිහාසය, සෙවුම් ඉතිහාසය සහ හැඹිලිගත දත්ත</string>
-    <string name="settings_category_content_summary">සේවා, භාෂා, කලාප සහ අන්තර්ගත පෙරහන්</string>
-    <string name="settings_category_notification_summary">දැනුම්දීම් ක්‍රියා, ඇඟවීම් සහ යාවත්කාලීන පණිවිඩ</string>
-    <string name="settings_category_backup_restore_summary">යෙදුම් දත්ත අපනයනය, ආනයනය සහ ප්‍රතිසාධනය කරන්න</string>
 </resources>

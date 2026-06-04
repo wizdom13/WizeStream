@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">শুরু করতে আতস কাঁচটিতে টিপ দাও।</string>
     <string name="upload_date_text">%1$s তারিখে প্রকাশিত</string>
@@ -45,13 +45,6 @@
     <string name="unsupported_url">URL সমর্থিত নয়</string>
     <string name="content_language_title">কন্টেন্ট এর জন্য পছন্দসই ভাষা</string>
     <string name="settings_category_video_audio_title">ভিডিও এবং অডিও</string>
-    <string name="settings_category_video_audio_summary">প্লেব্যাক, রেজোলিউশন, ফরম্যাট এবং অডিও আচরণ</string>
-    <string name="settings_category_downloads_summary">ফোল্ডার, ফাইলের নাম এবং ডাউনলোড অপশন ডাউনলোড করুন</string>
-    <string name="settings_category_appearance_summary">থিম, রঙ, ট্যাব এবং লেআউট</string>
-    <string name="settings_category_history_summary">দেখার ইতিহাস, অনুসন্ধানের ইতিহাস এবং ক্যাশে করা ডেটা</string>
-    <string name="settings_category_content_summary">পরিষেবা, ভাষা, অঞ্চল এবং বিষয়বস্তু ফিল্টার</string>
-    <string name="settings_category_notification_summary">বিজ্ঞপ্তি কর্ম, সতর্কতা, এবং আপডেট বার্তা</string>
-    <string name="settings_category_backup_restore_summary">অ্যাপ ডেটা রপ্তানি, আমদানি এবং পুনরুদ্ধার করুন</string>
     <string name="settings_category_appearance_title">অ্যাপিয়ারেন্স</string>
     <string name="background_player_playing_toast">ব্যাকগ্রাউন্ডে চলছে</string>
     <string name="popup_playing_toast">পপআপ মোডে চলছে</string>
@@ -455,3 +448,4 @@
     <string name="notification_colorize_summary">অ্যান্ড্রয়েডকে থাম্বনেইলের প্রধান রং অনুযায়ী রঙিন করুন (উল্লেখ্য যে, এটি সব ডিভাইসে উপলব্ধ নয়)</string>
     <string name="unknown_format">অজানা ধরন</string>
 </resources>
+

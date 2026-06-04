@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="no_player_found_toast">কোনো ষ্ট্ৰিম প্লেয়াৰ পোৱা নগ\'ল (আপুনি ইয়াক বজাবলৈ VLC ইনষ্টল কৰিব পাৰে)।</string>
     <string name="install">ইনষ্টল</string>
@@ -96,11 +96,4 @@
     <string name="show_comments_summary">মন্তব্য লুকুৱাবলৈ বন্ধ কৰক</string>
     <string name="show_next_and_similar_title">\'পৰৱৰ্তী\' আৰু \'সাদৃশ্য থকা\' ভিডিঅ\' দেখুৱাওক</string>
     <string name="show_meta_info_summary">ষ্ট্ৰিমৰ সৃষ্টিকৰ্তা, ষ্ট্ৰিমৰ বিষয়বস্তু বা এটা সন্ধান অনুৰোধৰ বিষয়ে অতিৰিক্ত তথ্যৰ সৈতে মেটা তথ্যৰ বাকচসমূহ লুকুৱাবলৈ বন্ধ কৰক</string>
-    <string name="settings_category_video_audio_summary">প্লেবেক, ৰিজ\'লিউচন, ফৰ্মেট, আৰু অডিঅ\' আচৰণ</string>
-    <string name="settings_category_downloads_summary">ফোল্ডাৰসমূহ, ফাইলৰ নাম, আৰু ডাউনলোড বিকল্পসমূহ ডাউনলোড কৰক</string>
-    <string name="settings_category_appearance_summary">থিম, ৰং, টেব, আৰু বিন্যাস</string>
-    <string name="settings_category_history_summary">ইতিহাস, সন্ধান ইতিহাস, আৰু কেচ কৰা তথ্য চাওক</string>
-    <string name="settings_category_content_summary">সেৱাসমূহ, ভাষাসমূহ, অঞ্চলসমূহ, আৰু বিষয়বস্তু ফিল্টাৰসমূহ</string>
-    <string name="settings_category_notification_summary">অধিসূচনা কাৰ্য্যসমূহ, সতৰ্কবাণীসমূহ, আৰু আপডেইট বাৰ্তাসমূহ</string>
-    <string name="settings_category_backup_restore_summary">এপ ডাটা ৰপ্তানি, আমদানি, আৰু পুনৰুদ্ধাৰ কৰক</string>
 </resources>

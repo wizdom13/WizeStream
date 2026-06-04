@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="no_player_found_toast">တိုက်ရိုက်ကြည့်ရန် ပလေယာမရှိပါ(သင်VLCကိုသွင်းနိုင်ပါသည်။)</string>
     <string name="install">ထည့်သွင်းမည်</string>
@@ -21,11 +21,4 @@
     <string name="main_bg_subtitle">စတင်ရန် ဖောက်ထွင်းမှန်ကိုထိပါ။</string>
     <string name="share_dialog_title">ဖြင့် မျှဝေမည်</string>
     <string name="use_external_video_player_title">အခြားဗီဒီယိုပလေယာ အားသုံးမည်</string>
-    <string name="settings_category_video_audio_summary">ပြန်ဖွင့်ခြင်း၊ ကြည်လင်ပြတ်သားမှု၊ ဖော်မတ်များနှင့် အသံအပြုအမူများ</string>
-    <string name="settings_category_downloads_summary">ဒေါင်းလုဒ်ဖိုင်တွဲများ၊ ဖိုင်အမည်များနှင့် ဒေါင်းလုဒ်ရွေးချယ်မှုများ</string>
-    <string name="settings_category_appearance_summary">အပြင်အဆင်၊ အရောင်များ၊ တဘ်များနှင့် အပြင်အဆင်</string>
-    <string name="settings_category_history_summary">ကြည့်ရှုမှုမှတ်တမ်း၊ ရှာဖွေမှုမှတ်တမ်းနှင့် ကက်ရှ်ဒေတာ</string>
-    <string name="settings_category_content_summary">ဝန်ဆောင်မှုများ၊ ဘာသာစကားများ၊ ဒေသများနှင့် အကြောင်းအရာ စစ်ထုတ်မှုများ</string>
-    <string name="settings_category_notification_summary">အကြောင်းကြားချက်လုပ်ဆောင်ချက်များ၊ သတိပေးချက်များနှင့် မက်ဆေ့ဂျ်များကို အပ်ဒိတ်လုပ်ပါ။</string>
-    <string name="settings_category_backup_restore_summary">အက်ပ်ဒေတာကို ထုတ်ယူခြင်း၊ တင်သွင်းခြင်းနှင့် ပြန်လည်ရယူပါ။</string>
 </resources>

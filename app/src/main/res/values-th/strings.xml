@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">แตะที่สัญลักษณ์แว่นขยายเพื่อเริ่มต้น</string>
     <string name="upload_date_text">เผยแพร่เมื่อ %1$s</string>
@@ -80,13 +80,6 @@
     <string name="settings_category_player_title">เครื่องเล่น</string>
     <string name="settings_category_player_behavior_title">พฤติกรรม</string>
     <string name="settings_category_video_audio_title">วิดีโอและเสียง</string>
-    <string name="settings_category_video_audio_summary">การเล่น ความละเอียด รูปแบบ และลักษณะการทำงานของเสียง</string>
-    <string name="settings_category_downloads_summary">ดาวน์โหลดโฟลเดอร์ ชื่อไฟล์ และตัวเลือกการดาวน์โหลด</string>
-    <string name="settings_category_appearance_summary">ธีม สี แท็บ และเค้าโครง</string>
-    <string name="settings_category_history_summary">ประวัติการดู ประวัติการค้นหา และข้อมูลแคช</string>
-    <string name="settings_category_content_summary">บริการ ภาษา ภูมิภาค และตัวกรองเนื้อหา</string>
-    <string name="settings_category_notification_summary">การดำเนินการแจ้งเตือน การแจ้งเตือน และข้อความอัปเดต</string>
-    <string name="settings_category_backup_restore_summary">ส่งออก นำเข้า และกู้คืนข้อมูลแอป</string>
     <string name="settings_category_history_title">ประวัติและแคช</string>
     <string name="settings_category_appearance_title">ลักษณะ</string>
     <string name="settings_category_debug_title">แก้ข้อบกพร่อง</string>
@@ -437,3 +430,4 @@
     <string name="feed_show_upcoming">กำลังจะมา</string>
     <string name="search_with_service_name">ค้นหา %1$s</string>
 </resources>
+

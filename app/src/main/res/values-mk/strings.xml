@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Притиснете на лупата за да започнете.</string>
     <string name="upload_date_text">Објавено на %1$s</string>
@@ -79,13 +79,6 @@
     <string name="settings_category_player_title">Плеер</string>
     <string name="settings_category_player_behavior_title">Однесување</string>
     <string name="settings_category_video_audio_title">Видео и аудио</string>
-    <string name="settings_category_video_audio_summary">Репродукција, резолуција, формати и аудио однесување</string>
-    <string name="settings_category_downloads_summary">Преземете папки, имиња на датотеки и опции за преземање</string>
-    <string name="settings_category_appearance_summary">Тема, бои, јазичиња и распоред</string>
-    <string name="settings_category_history_summary">Историја на гледање, историја на пребарување и кеширани податоци</string>
-    <string name="settings_category_content_summary">Услуги, јазици, региони и филтри за содржина</string>
-    <string name="settings_category_notification_summary">Дејства за известување, предупредувања и пораки за ажурирање</string>
-    <string name="settings_category_backup_restore_summary">Извезете, увезете и вратете ги податоците од апликацијата</string>
     <string name="settings_category_history_title">Историја и кеш</string>
     <string name="settings_category_appearance_title">Изглед</string>
     <string name="settings_category_debug_title">Дебагирање</string>
@@ -725,3 +718,4 @@
     <string name="start_main_player_fullscreen_summary">Видеата нема да започнат со емитување во миниплеерот, туку директно ќе се вклучат на цел екран, доколку автоматското ротирање е заклучено. Сѐ уште можете да добиете пристап до миниплеерот, кога ќе излезете од целиот екран</string>
     <string name="unsupported_url_dialog_message">URL адресата не може да биде распознаена. Да се отвори со друга апликација?</string>
 </resources>
+

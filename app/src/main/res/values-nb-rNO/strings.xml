@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Publisert den %1$s</string>
     <string name="no_player_found">Fant ingen videostrøm. Installer VLC?</string>
@@ -34,13 +34,6 @@
     <string name="unsupported_url">Nettadressen støttes ikke</string>
     <string name="content_language_title">Forvalgt innholdsspråk</string>
     <string name="settings_category_video_audio_title">Video og lyd</string>
-    <string name="settings_category_video_audio_summary">Avspilling, oppløsning, formater og lydadferd</string>
-    <string name="settings_category_downloads_summary">Last ned mapper, filnavn og nedlastingsalternativer</string>
-    <string name="settings_category_appearance_summary">Tema, farger, faner og layout</string>
-    <string name="settings_category_history_summary">Seerlogg, søkehistorikk og bufrede data</string>
-    <string name="settings_category_content_summary">Tjenester, språk, regioner og innholdsfiltre</string>
-    <string name="settings_category_notification_summary">Varslingshandlinger, varsler og oppdateringsmeldinger</string>
-    <string name="settings_category_backup_restore_summary">Eksporter, importer og gjenopprett appdata</string>
     <string name="settings_category_appearance_title">Utseende</string>
     <string name="background_player_playing_toast">Spiller i bakgrunnen</string>
     <string name="network_error">Nettverksfeil</string>
@@ -798,3 +791,4 @@
     <string name="settings_category_exoplayer_summary">Håndter noen ExoPlayer-innstillinger. Disse endringeren krever omstart av avspilleren.</string>
     <string name="show_channel_tabs_summary">Hvilke faner som vises på kanalsidene</string>
 </resources>
+

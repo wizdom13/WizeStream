@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">شروع کرن لئی وڈدرشی کچ نوں دباؤ۔</string>
     <string name="install">اینسٹال کرو</string>
@@ -121,13 +121,6 @@
     <string name="enable_search_history_title">کھوج دا اتیت</string>
     <string name="settings_category_clear_data_title">ڈیٹا پٹاؤ</string>
     <string name="settings_category_video_audio_title">ویڈیو تے آڈیو</string>
-    <string name="settings_category_video_audio_summary">پلے بیک، ریزولوشن، فارمیٹس، اور آڈیو برتاؤ</string>
-    <string name="settings_category_downloads_summary">فولڈرز، فائل کے نام، اور ڈاؤن لوڈ کے اختیارات ڈاؤن لوڈ کریں۔</string>
-    <string name="settings_category_appearance_summary">تھیم، رنگ، ٹیبز، اور لے آؤٹ</string>
-    <string name="settings_category_history_summary">دیکھنے کی سرگزشت، تلاش کی سرگزشت، اور کیش کردہ ڈیٹا</string>
-    <string name="settings_category_content_summary">خدمات، زبانیں، علاقے، اور مواد کے فلٹرز</string>
-    <string name="settings_category_notification_summary">اطلاعاتی کارروائیاں، انتباہات، اور پیغامات کو اپ ڈیٹ کریں۔</string>
-    <string name="settings_category_backup_restore_summary">ایپ ڈیٹا کو برآمد، درآمد اور بحال کریں۔</string>
     <string name="artists">کلاکار</string>
     <string name="best_resolution">ودھیا ریزولوشن</string>
     <string name="file_deleted">فائل مٹا دتی گئی اے</string>

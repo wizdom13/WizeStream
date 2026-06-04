@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title_activity_recaptcha">reCAPTCHA dijwarî</string>
     <string name="one_item_deleted">1 babet hate jêbirin.</string>
@@ -192,13 +192,6 @@
     <string name="settings_category_appearance_title">Xuyabûnî</string>
     <string name="settings_category_history_title">Dîrok û kaş</string>
     <string name="settings_category_video_audio_title">Video û deng</string>
-    <string name="settings_category_video_audio_summary">Playback, çareserî, format, û tevgera deng</string>
-    <string name="settings_category_downloads_summary">Peldankan, navên pelan, û vebijarkên dakêşanê dakêşin</string>
-    <string name="settings_category_appearance_summary">Mijar, reng, tablo, û layout</string>
-    <string name="settings_category_history_summary">Dîroka temaşe, dîroka lêgerînê, û daneyên cache</string>
-    <string name="settings_category_content_summary">Karûbar, ziman, herêm, û parzûnên naverokê</string>
-    <string name="settings_category_notification_summary">Çalakiyên ragihandinê, hişyarî, û peyamên nûvekirinê</string>
-    <string name="settings_category_backup_restore_summary">Daneyên sepanê derxînin, derxin, û sererast bikin</string>
     <string name="settings_category_player_behavior_title">Xwenîşandinî</string>
     <string name="settings_category_player_title">Lîstikvan</string>
     <string name="peertube_instance_add_exists">Mînak jixwe heye</string>
@@ -581,3 +574,4 @@
     <string name="title_licenses">Lîsansên partiya sêyemîn</string>
     <string name="crash_the_app">Serlêdanê kilît bikin</string>
 </resources>
+

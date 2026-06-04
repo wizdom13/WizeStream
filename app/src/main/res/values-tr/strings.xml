@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Başlamak için büyütece dokunun.</string>
     <string name="upload_date_text">%1$s tarihinde yayınlandı</string>
@@ -35,13 +35,6 @@
     <string name="content_language_title">Öntanımlı içerik dili</string>
     <string name="play_audio">Ses</string>
     <string name="settings_category_video_audio_title">Video ve ses</string>
-    <string name="settings_category_video_audio_summary">Oynatma, çözünürlük, formatlar ve ses davranışı</string>
-    <string name="settings_category_downloads_summary">Klasörleri, dosya adlarını ve indirme seçeneklerini indirin</string>
-    <string name="settings_category_appearance_summary">Tema, renkler, sekmeler ve düzen</string>
-    <string name="settings_category_history_summary">İzleme geçmişi, arama geçmişi ve önbelleğe alınmış veriler</string>
-    <string name="settings_category_content_summary">Hizmetler, diller, bölgeler ve içerik filtreleri</string>
-    <string name="settings_category_notification_summary">Bildirim eylemleri, uyarılar ve güncelleme mesajları</string>
-    <string name="settings_category_backup_restore_summary">Uygulama verilerini dışa aktarın, içe aktarın ve geri yükleyin</string>
     <string name="settings_category_appearance_title">Görünüm</string>
     <string name="background_player_playing_toast">Arka planda oynatılıyor</string>
     <string name="content">İçerik</string>
@@ -878,3 +871,4 @@
     <string name="api23_requirement_dialog_message">NewPipe ne yazık ki Android 5.0 ve 5.1 desteğini bırakan birkaç kitaplığa bağlıdır. Üzücü ki sıradaki NewPipe sürümü yalnızca Android 6 ve üstü aygıtlarda çalışacaktır. Daha çoğunu blog gönderisinde okuyun.</string>
     <string name="api23_requirement_dialog_blogpost">Blog gönderisi</string>
 </resources>
+

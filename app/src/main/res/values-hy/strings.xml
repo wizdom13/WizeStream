@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Սեղմեք խոշորացույցը որ սկսեք</string>
     <string name="search">Որոնել</string>
@@ -278,11 +278,5 @@
     <string name="error_snackbar_action">Ազդարարել</string>
     <string name="invalid_directory">Այդպիսի պանակ չկա</string>
     <string name="tab_bookmarks_short">Նվագացանկեր</string>
-    <string name="settings_category_video_audio_summary">Նվագարկում, լուծում, ձևաչափեր և աուդիո վարքագիծ</string>
-    <string name="settings_category_downloads_summary">Ներբեռնեք թղթապանակներ, ֆայլերի անուններ և ներբեռնման ընտրանքներ</string>
-    <string name="settings_category_appearance_summary">Թեմա, գույներ, ներդիրներ և դասավորություն</string>
-    <string name="settings_category_history_summary">Դիտումների պատմություն, որոնման պատմություն և պահված տվյալներ</string>
-    <string name="settings_category_content_summary">Ծառայություններ, լեզուներ, տարածաշրջաններ և բովանդակության զտիչներ</string>
-    <string name="settings_category_notification_summary">Ծանուցման գործողություններ, ծանուցումներ և թարմացման հաղորդագրություններ</string>
-    <string name="settings_category_backup_restore_summary">Արտահանել, ներմուծել և վերականգնել հավելվածի տվյալները</string>
 </resources>
+

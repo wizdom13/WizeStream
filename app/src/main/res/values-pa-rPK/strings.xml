@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="search">کھوجو</string>
     <string name="download_path_title">ویڈیو ڈاؤن‌لوڈ دا فولڈر</string>
@@ -102,13 +102,6 @@
     <string name="clear_queue_confirmation_summary">پلیئر بدلݨ نال تہاڈی بدل سکدی اے</string>
     <string name="enable_search_history_title">کھوج دا اتیت</string>
     <string name="settings_category_video_audio_title">ویڈیو تے آڈیو</string>
-    <string name="settings_category_video_audio_summary">ਪਲੇਬੈਕ, ਰੈਜ਼ੋਲਿਊਸ਼ਨ, ਫਾਰਮੈਟ ਅਤੇ ਆਡੀਓ ਵਿਵਹਾਰ</string>
-    <string name="settings_category_downloads_summary">ਫੋਲਡਰਾਂ, ਫਾਈਲਾਂ ਦੇ ਨਾਮ ਅਤੇ ਡਾਊਨਲੋਡ ਵਿਕਲਪਾਂ ਨੂੰ ਡਾਊਨਲੋਡ ਕਰੋ</string>
-    <string name="settings_category_appearance_summary">ਥੀਮ, ਰੰਗ, ਟੈਬਸ, ਅਤੇ ਖਾਕਾ</string>
-    <string name="settings_category_history_summary">ਦੇਖਣ ਦਾ ਇਤਿਹਾਸ, ਖੋਜ ਇਤਿਹਾਸ, ਅਤੇ ਕੈਸ਼ ਕੀਤਾ ਡਾਟਾ</string>
-    <string name="settings_category_content_summary">ਸੇਵਾਵਾਂ, ਭਾਸ਼ਾਵਾਂ, ਖੇਤਰ ਅਤੇ ਸਮੱਗਰੀ ਫਿਲਟਰ</string>
-    <string name="settings_category_notification_summary">ਸੂਚਨਾ ਕਾਰਵਾਈਆਂ, ਚੇਤਾਵਨੀਆਂ, ਅਤੇ ਸੁਨੇਹੇ ਅੱਪਡੇਟ ਕਰੋ</string>
-    <string name="settings_category_backup_restore_summary">ਐਪ ਡੇਟਾ ਨੂੰ ਨਿਰਯਾਤ, ਆਯਾਤ ਅਤੇ ਰੀਸਟੋਰ ਕਰੋ</string>
     <string name="settings_category_clear_data_title">ڈیٹا پٹاؤ</string>
     <string name="settings_category_player_behavior_title">ووہار</string>
     <string name="share_dialog_title">ایس نال سانجھا کرو</string>

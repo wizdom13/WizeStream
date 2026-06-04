@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="tab_subscriptions">Pratnje</string>
     <string name="main_bg_subtitle">Dodirnite lupu da bi ste započeli.</string>
@@ -152,13 +152,6 @@
     <string name="settings_category_player_title">Pokretač</string>
     <string name="settings_category_player_behavior_title">Ponašanje</string>
     <string name="settings_category_video_audio_title">Video i audio</string>
-    <string name="settings_category_video_audio_summary">Reprodukcija, rezolucija, formati i audio ponašanje</string>
-    <string name="settings_category_downloads_summary">Preuzmi foldere, nazive datoteka i opcije preuzimanja</string>
-    <string name="settings_category_appearance_summary">Tema, boje, kartice i izgled</string>
-    <string name="settings_category_history_summary">Historija gledanja, historija pretraživanja i keširani podaci</string>
-    <string name="settings_category_content_summary">Usluge, jezici, regije i filteri sadržaja</string>
-    <string name="settings_category_notification_summary">Radnje obavještenja, upozorenja i ažurirane poruke</string>
-    <string name="settings_category_backup_restore_summary">Izvoz, uvoz i vraćanje podataka aplikacije</string>
     <string name="settings_category_history_title">Historija i keš memorija</string>
     <string name="settings_category_appearance_title">Izgled</string>
     <string name="settings_category_debug_title">Debug</string>
@@ -825,3 +818,4 @@
     <string name="migration_info_7_8_message">YouTube je ukinuo kombinovanu stranicu s trendovima od 21. jula 2025. NewPipe je zamijenio zadanu stranicu s trendovima s trendovima uživo prijenosa.\n\nTakođer možete odabrati različite stranice s trendovima u \"Postavke &gt; Sadržaj &gt; Sadržaj glavne stranice\".</string>
     <string name="unsupported_content_in_country">Ovaj sadržaj nije dostupan za trenutno odabranu zemlju sadržaja.\n\nPromijenite svoj odabir u \"Postavke &gt; Sadržaj &gt; Zadana zemlja sadržaja\".</string>
 </resources>
+

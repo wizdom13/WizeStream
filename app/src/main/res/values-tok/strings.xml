@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">ni li kama lon lon tenpo %1$s</string>
     <string name="no_player_found">sina jo ala e ilo pi lukin e sitelen tawa. sina wile kama jo e ilo VLC anu seme\?</string>
@@ -48,11 +48,4 @@
     <string name="default_audio_format_title">nasin lipu kalama mute</string>
     <string name="default_video_format_title">nasin lipu pi sitelen tawa mute</string>
     <string name="light_theme_title">walo</string>
-    <string name="settings_category_video_audio_summary">musi, suli sitelen, nasin sitelen, en nasin kalama</string>
-    <string name="settings_category_downloads_summary">poki kama jo, nimi lipu, en nasin kama jo</string>
-    <string name="settings_category_appearance_summary">kule, selo, lipu lili, en nasin awen</string>
-    <string name="settings_category_history_summary">ijo pini pi lukin, alasa, en sona awen</string>
-    <string name="settings_category_content_summary">nasin pali, toki, ma, en poki pi ijo lukin</string>
-    <string name="settings_category_notification_summary">nasin pi toki sin, kalama sona, en toki pi sin pali</string>
-    <string name="settings_category_backup_restore_summary">o pana, o kama jo, o awen sin e sona ilo</string>
 </resources>

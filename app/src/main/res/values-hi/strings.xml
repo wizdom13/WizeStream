@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">%1$s पे प्रकाशित हुआ</string>
     <string name="no_player_found">स्ट्रीमिंग के लिए प्लेयर नहीं मिला। क्या आप VLC इंस्टॉल करना चाहेंगे?</string>
@@ -21,13 +21,6 @@
     <string name="enable_watch_history_title">देखे हुए वीडियोज़ का इतिहास</string>
     <string name="download_dialog_title">डाउनलोड करें</string>
     <string name="settings_category_video_audio_title">वीडियो और ऑडियो</string>
-    <string name="settings_category_video_audio_summary">प्लेबैक, रिज़ॉल्यूशन, प्रारूप और ऑडियो व्यवहार</string>
-    <string name="settings_category_downloads_summary">डाउनलोड फ़ोल्डर, फ़ाइल नाम और डाउनलोड विकल्प</string>
-    <string name="settings_category_appearance_summary">थीम, रंग, टैब और लेआउट</string>
-    <string name="settings_category_history_summary">देखने का इतिहास, खोज इतिहास और कैश्ड डेटा</string>
-    <string name="settings_category_content_summary">सेवाएँ, भाषाएँ, क्षेत्र और सामग्री फ़िल्टर</string>
-    <string name="settings_category_notification_summary">अधिसूचना क्रियाएँ, अलर्ट और अद्यतन संदेश</string>
-    <string name="settings_category_backup_restore_summary">ऐप डेटा निर्यात, आयात और पुनर्स्थापित करें</string>
     <string name="settings_category_history_title">इतिहास और कैश</string>
     <string name="background_player_playing_toast">बैकग्राउंड में चल रहा है</string>
     <string name="no_views">कोई विऊ नहीं</string>
@@ -875,3 +868,4 @@
     <string name="export_subscriptions_summary">अपनी सब्सक्रिप्शन को एक .json फ़ाइल में एक्सपोर्ट करें।</string>
     <string name="import_from_previous_export">पिछले एक्सपोर्ट से इंपोर्ट करें</string>
 </resources>
+

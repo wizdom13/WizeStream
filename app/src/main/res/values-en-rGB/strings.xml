@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="use_inexact_seek_summary">Inexact seek allows the player to seek to positions faster with reduced precision. Seeking for 5, 15 or 25 seconds doesn’t work with this.</string>
     <string name="show_play_with_kodi_summary">Display an option to play a video via Kodi media centre</string>
@@ -49,13 +49,6 @@
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_history_title">History and cache</string>
     <string name="settings_category_video_audio_title">Video and audio</string>
-    <string name="settings_category_video_audio_summary">Playback, resolution, formats, and audio behavior</string>
-    <string name="settings_category_downloads_summary">Download folders, file names, and download options</string>
-    <string name="settings_category_appearance_summary">Theme, colors, tabs, and layout</string>
-    <string name="settings_category_history_summary">Watch history, search history, and cached data</string>
-    <string name="settings_category_content_summary">Services, languages, regions, and content filters</string>
-    <string name="settings_category_notification_summary">Notification actions, alerts, and update messages</string>
-    <string name="settings_category_backup_restore_summary">Export, import, and restore app data</string>
     <string name="settings_category_player_title">Player</string>
     <string name="cancel">Cancel</string>
     <string name="content_not_supported">This content is not yet supported by NewPipe.
@@ -858,3 +851,4 @@
     <string name="kao_dialog_more_info">Details</string>
     <string name="kao_solution">Solution</string>
 </resources>
+

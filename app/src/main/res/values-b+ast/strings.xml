@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Espublizóse\'l %1$s</string>
     <string name="cancel">Encaboxar</string>
@@ -19,13 +19,6 @@
     <string name="light_theme_title">Claridá</string>
     <string name="content_language_title">Llingua predeterminada del conteníu</string>
     <string name="settings_category_video_audio_title">Videu y audiu</string>
-    <string name="settings_category_video_audio_summary">Reproducción, resolución, formatos y comportamientu del audiu</string>
-    <string name="settings_category_downloads_summary">Carpetes de descarga, nomes de ficheros y opciones de descarga</string>
-    <string name="settings_category_appearance_summary">Tema, colores, llingüetes y disposición</string>
-    <string name="settings_category_history_summary">Historial de visualización, historial de busca y datos en caché</string>
-    <string name="settings_category_content_summary">Servicios, llingües, rexones y filtros de conteníu</string>
-    <string name="settings_category_notification_summary">Aiciones de notificación, alertes y mensaxes d\'anovamientu</string>
-    <string name="settings_category_backup_restore_summary">Esportar, importar y restaurar datos de l\'aplicación</string>
     <string name="settings_category_appearance_title">Aspeutu</string>
     <string name="content">Conteníu</string>
     <string name="show_age_restricted_content_title">Amosar el conteníu torgáu pola edá</string>
@@ -566,3 +559,4 @@
     <string name="no_player_found">Nun s\'atopó nengún reproductor de fluxos. ¿Instalar VLC\?</string>
     <string name="main_bg_subtitle">Toca «Buscar» pa entamar</string>
 </resources>
+

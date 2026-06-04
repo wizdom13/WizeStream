@@ -1,0 +1,9 @@
+NewPipe Material 0.28.7-m5
+
+Highlights:
+- Added helpful summaries to the main settings categories.
+- Switched to the modified NewPipeExtractor source checkout with HLS fallback support to improve livestream playback reliability.
+- Added README instructions for setting up the NewPipeExtractor source checkout.
+- Fixed bottom navigation staying visible when only one main page tab is enabled.
+
+Based on NewPipe 0.28.7.

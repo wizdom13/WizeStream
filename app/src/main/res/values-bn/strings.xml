@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feed_create_new_group_button_title">নতুন</string>
     <string name="feed_notification_loading">ফিড লোড হচ্ছে…</string>
@@ -193,13 +193,6 @@
     <string name="settings_category_appearance_title">অ্যাপিয়ারেন্স</string>
     <string name="settings_category_history_title">ইতিহাস</string>
     <string name="settings_category_video_audio_title">ভিডিও এবং অডিও</string>
-    <string name="settings_category_video_audio_summary">প্লেব্যাক, রেজোলিউশন, ফরম্যাট এবং অডিও আচরণ</string>
-    <string name="settings_category_downloads_summary">ফোল্ডার, ফাইলের নাম এবং ডাউনলোড অপশন ডাউনলোড করুন</string>
-    <string name="settings_category_appearance_summary">থিম, রঙ, ট্যাব এবং লেআউট</string>
-    <string name="settings_category_history_summary">দেখার ইতিহাস, অনুসন্ধানের ইতিহাস এবং ক্যাশে করা ডেটা</string>
-    <string name="settings_category_content_summary">পরিষেবা, ভাষা, অঞ্চল এবং বিষয়বস্তু ফিল্টার</string>
-    <string name="settings_category_notification_summary">বিজ্ঞপ্তি কর্ম, সতর্কতা, এবং আপডেট বার্তা</string>
-    <string name="settings_category_backup_restore_summary">অ্যাপ ডেটা রপ্তানি, আমদানি এবং পুনরুদ্ধার করুন</string>
     <string name="settings_category_player_behavior_title">ব্যাবহার</string>
     <string name="settings_category_player_title">প্লেয়ার</string>
     <string name="peertube_instance_add_https_only">শুধুমাত্র HTTPS URL গুলি সাপোর্ট করে</string>
@@ -639,3 +632,4 @@
     <string name="tab_bookmarks_short">প্লেলিস্ট</string>
     <string name="ignore_hardware_media_buttons_summary">উদাহরণস্বরূপ, যদি আপনি ভাঙা ফিজিক্যাল বোতাম সহ একটি হেডসেট ব্যবহার করেন তবে এটি কার্যকর</string>
 </resources>
+

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">کرتە له‌ ”گه‌ڕان” بكه‌ بۆ ده‌ستپێكردن</string>
     <string name="upload_date_text">بڵاوكراوه‌ته‌وه‌ له‌ %1$s</string>
@@ -71,13 +71,6 @@
     <string name="default_content_country_title">ناوەڕۆکی وڵاتی بنەڕەتی</string>
     <string name="settings_category_player_title">کارپێکەر</string>
     <string name="settings_category_video_audio_title">ڤیدیۆ و دەنگ</string>
-    <string name="settings_category_video_audio_summary">Playback, çareserî, format, û tevgera deng</string>
-    <string name="settings_category_downloads_summary">Peldankan, navên pelan, û vebijarkên dakêşanê dakêşin</string>
-    <string name="settings_category_appearance_summary">Mijar, reng, tablo, û layout</string>
-    <string name="settings_category_history_summary">Dîroka temaşe, dîroka lêgerînê, û daneyên cache</string>
-    <string name="settings_category_content_summary">Karûbar, ziman, herêm, û parzûnên naverokê</string>
-    <string name="settings_category_notification_summary">Çalakiyên ragihandinê, hişyarî, û peyamên nûvekirinê</string>
-    <string name="settings_category_backup_restore_summary">Daneyên sepanê derxînin, derxin, û sererast bikin</string>
     <string name="settings_category_history_title">مێژوو و پاشماوە</string>
     <string name="settings_category_appearance_title">دیمەن</string>
     <string name="settings_category_debug_title">ڕاستکردنەوە</string>
@@ -560,3 +553,4 @@
     <string name="show_description_title">پیشاندانی وەسف</string>
     <string name="open_with">کردنەوە بە</string>
 </resources>
+

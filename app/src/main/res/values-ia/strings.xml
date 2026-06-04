@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="install">Installar</string>
     <string name="open_in_browser">Aperir in le navigator</string>
@@ -69,13 +69,6 @@
     <string name="settings_category_player_title">Reproductor</string>
     <string name="settings_category_player_behavior_title">Comportamento</string>
     <string name="settings_category_video_audio_title">Video e audio</string>
-    <string name="settings_category_video_audio_summary">Reproduction, resolution, formatos e comportamento audio</string>
-    <string name="settings_category_downloads_summary">Dossieres de discargamento, nomines de files e optiones de discargamento</string>
-    <string name="settings_category_appearance_summary">Thema, colores, schedas e disposition</string>
-    <string name="settings_category_history_summary">Historia de visualisation, historia de recerca e datos in cache</string>
-    <string name="settings_category_content_summary">Servicios, linguas, regiones e filtros de contento</string>
-    <string name="settings_category_notification_summary">Actiones de notification, alertas e messages de actualisation</string>
-    <string name="settings_category_backup_restore_summary">Exportar, importar e restaurar datos del application</string>
     <string name="settings_category_history_title">Chronologia e cache</string>
     <string name="settings_category_appearance_title">Apparentia</string>
     <string name="settings_category_debug_title">Depuration</string>
@@ -259,3 +252,4 @@
     <string name="settings_category_player_notification_title">Notification de reproductor</string>
     <string name="settings_category_backup_restore_title">Facer un copia de securitate e restaurar</string>
 </resources>
+

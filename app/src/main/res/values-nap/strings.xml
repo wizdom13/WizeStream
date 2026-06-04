@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="search">Truova</string>
     <string name="open_in_popup_mode">Arape comme fenesta popup</string>
@@ -34,11 +34,4 @@
     <string name="no_player_found_toast">Nisciuno lettore truvato (può installà VLC p\' \'o reprodurre).</string>
     <string name="no_player_found">Nisciuno lettore truvato. Vuo\' installà VLC\?</string>
     <string name="main_bg_subtitle">Priemme \"Truova\" p\'accummencià</string>
-    <string name="settings_category_video_audio_summary">Riproduzione, risoluzione, formati e comportamento audio</string>
-    <string name="settings_category_downloads_summary">Scarica cartelle, nomi di file e opzioni di download</string>
-    <string name="settings_category_appearance_summary">Tema, colori, schede e layout</string>
-    <string name="settings_category_history_summary">Guarda la cronologia, la cronologia delle ricerche e i dati memorizzati nella cache</string>
-    <string name="settings_category_content_summary">Servizi, lingue, regioni e filtri dei contenuti</string>
-    <string name="settings_category_notification_summary">Azioni di notifica, avvisi e messaggi di aggiornamento</string>
-    <string name="settings_category_backup_restore_summary">Esporta, importa e ripristina i dati dell\'app</string>
 </resources>

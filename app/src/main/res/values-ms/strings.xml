@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Tekan kanta kaca \"Cari\" untuk bermula</string>
     <string name="upload_date_text">Diterbitkan pada %1$s</string>
@@ -81,13 +81,6 @@
     <string name="settings_category_player_title">Pemain</string>
     <string name="settings_category_player_behavior_title">Tingkah laku</string>
     <string name="settings_category_video_audio_title">Video dan audio</string>
-    <string name="settings_category_video_audio_summary">Main balik, peleraian, format dan gelagat audio</string>
-    <string name="settings_category_downloads_summary">Muat turun folder, nama fail dan pilihan muat turun</string>
-    <string name="settings_category_appearance_summary">Tema, warna, tab dan reka letak</string>
-    <string name="settings_category_history_summary">Sejarah tontonan, sejarah carian dan data cache</string>
-    <string name="settings_category_content_summary">Perkhidmatan, bahasa, wilayah dan penapis kandungan</string>
-    <string name="settings_category_notification_summary">Tindakan pemberitahuan, makluman dan kemas kini mesej</string>
-    <string name="settings_category_backup_restore_summary">Eksport, import dan pulihkan data apl</string>
     <string name="settings_category_history_title">Sejarah dan cache</string>
     <string name="settings_category_appearance_title">Penampilan</string>
     <string name="settings_category_debug_title">Nyahpepijat</string>
@@ -537,3 +530,4 @@
     <string name="prefer_descriptive_audio_title">Pilih audio deskriptif</string>
     <string name="prefer_descriptive_audio_summary">Pilih audio dengan deskripsi untuk golongan kurang upaya penglihatan jika ada</string>
 </resources>
+

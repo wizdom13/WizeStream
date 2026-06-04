@@ -1,11 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">ߥߊߘߏ ߛߐ߲߬ߞߌ߲߫ ߞߵߊ߬ ߘߊߡߌ߬ߣߊ߬.</string>
-    <string name="settings_category_video_audio_summary">Fɔli, ɲɛfɔli, cogoya ani lamɛnt kɛcogo</string>
-    <string name="settings_category_downloads_summary">Foli, dosiye tɔgɔw ani telesarsecogo suganditaw telesarse</string>
-    <string name="settings_category_appearance_summary">Barokun, kulɛriw, tabw ani layidu talenw</string>
-    <string name="settings_category_history_summary">Tariku, ɲinini tariku ani kunnafoniw maralenw lajɛ</string>
-    <string name="settings_category_content_summary">Baarakɛminɛnw, kanw, maraw ani kɔnɔkow filɛriw</string>
-    <string name="settings_category_notification_summary">Ladɔnniyali walew, lasɔminiw ani kunnafoni kura cikanw</string>
-    <string name="settings_category_backup_restore_summary">App dataw bila ka taa jamana wɛrɛw la, ka don u kɔnɔ ani ka u lasegin</string>
 </resources>

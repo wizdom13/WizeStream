@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feed_create_new_group_button_title">ⴰⵎⴰⵢⵏⵓ</string>
     <string name="name">ⵉⵙⵎ</string>
@@ -58,13 +58,6 @@
     <string name="downloads">ⵓⴳⴳⴰⵎⵏ</string>
     <string name="duration_live">ⵓⵙⵔⵉⴷ</string>
     <string name="settings_category_video_audio_title">ⴰⴼⵉⴷⵢⵓ ⴷ ⵉⵎⵙⵍⵉ</string>
-    <string name="settings_category_video_audio_summary">ⴰⵥⴰⵡⴰⵏ, ⵜⵉⴼⵔⴰⵜ, ⵜⵉⵡⵙⵉⵡⵉⵏ, ⴷ ⵜⵉⴽⵍⵉ ⵏ ⵚⵚⵓⵜ</string>
-    <string name="settings_category_downloads_summary">ⵙⵙⴻⴽⵛⴻⵎ ⵜⵉⴼⴻⵍⵡⵉⵢⵉⵏ, ⵉⵙⵎⴰⵡⴻⵏ ⵏ ⵢⵉⴼⴰⵢⵍⵓⵜⴻⵏ, ⴷ ⵉⴹⴰⵖⴰⵔⴻⵏ ⵏ ⵓⵙⴻⴽⴽⴻⴷ</string>
-    <string name="settings_category_appearance_summary">ⴰⵙⴻⵏⵜⴻⵍ, ⵉⵏⵉⵜⴻⵏ, ⵜⵉⴼⴻⵍⵡⵉⵢⵉⵏ, ⴷ ⵓⵙⵏⵓⵍⴼⵓ</string>
-    <string name="settings_category_history_summary">ⵡⴰⵍⵉ ⴰⵎⴻⵣⵔⵓⵢ, ⴰⵎⴻⵣⵔⵓⵢ ⵏ ⵓⵏⴰⴷⵉ, ⴷ ⵉⵙⴻⴼⴽⴰ ⵢⴻⵜⵜⵡⴰⵃⴻⵔⵣⴻⵏ</string>
-    <string name="settings_category_content_summary">ⵉⵎⴻⵥⵍⴰ, ⵜⵓⵜⵍⴰⵢⵉⵏ, ⵜⵉⵎⵏⴰⴹⵉⵏ, ⴷ ⵢⵉⴼⵉⵍⵟⵔⴻⵏ ⵏ ⵓⴳⴱⵓⵔ</string>
-    <string name="settings_category_notification_summary">ⵜⵉⴳⴰⵡⵉⵏ ⵏ ⵓⴱⴻⴳⴳⴻⵏ, ⵜⵉⵖⵔⵉⵡⵉⵏ, ⴷ ⵉⵣⴻⵏ ⵏ ⵓⵙⴻⵖⵏⴻⵡ</string>
-    <string name="settings_category_backup_restore_summary">ⴰⵙⵓⴼⴻⵖ, ⴰⵙⴻⴽⵛⴻⵎ, ⵔⴻⵙⴷ ⵉⵙⴻⴼⴽⴰ ⵏ ⵓⵙⵏⴰⵙ</string>
     <string name="download_dialog_title">ⴰⴳⵎ</string>
     <string name="enable_watch_history_title">ⵥⵕ ⴰⵎⵣⵔⵓⵢ</string>
     <string name="enable_search_history_title">ⴰⵎⵣⵔⵓⵢ ⵏ ⵓⵔⵣⵣⵓ</string>

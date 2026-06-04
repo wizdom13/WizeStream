@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="playback_reset">റീസെറ്റ്</string>
     <string name="playback_step">സ്റ്റെപ്</string>
@@ -289,13 +289,6 @@
     <string name="settings_category_appearance_title">രൂപഭംഗി</string>
     <string name="settings_category_history_title">ചരിത്രവും കാഷെയും</string>
     <string name="settings_category_video_audio_title">വീഡിയോയും ഓഡിയോയും</string>
-    <string name="settings_category_video_audio_summary">പ്ലേബാക്ക്, റെസല്യൂഷൻ, ഫോർമാറ്റുകൾ, ഓഡിയോ പെരുമാറ്റം</string>
-    <string name="settings_category_downloads_summary">ഫോൾഡറുകൾ, ഫയൽ നാമങ്ങൾ, ഡൗൺലോഡ് ഓപ്ഷനുകൾ എന്നിവ ഡൗൺലോഡ് ചെയ്യുക</string>
-    <string name="settings_category_appearance_summary">തീം, നിറങ്ങൾ, ടാബുകൾ, ലേഔട്ട്</string>
-    <string name="settings_category_history_summary">കാണൽ ചരിത്രം, തിരയൽ ചരിത്രം, കാഷെ ചെയ്ത ഡാറ്റ</string>
-    <string name="settings_category_content_summary">സേവനങ്ങൾ, ഭാഷകൾ, പ്രദേശങ്ങൾ, ഉള്ളടക്ക ഫിൽട്ടറുകൾ</string>
-    <string name="settings_category_notification_summary">അറിയിപ്പ് പ്രവർത്തനങ്ങൾ, അലേർട്ടുകൾ, സന്ദേശങ്ങൾ അപ്ഡേറ്റ് ചെയ്യുക</string>
-    <string name="settings_category_backup_restore_summary">ആപ്പ് ഡാറ്റ കയറ്റുമതി ചെയ്യുക, ഇറക്കുമതി ചെയ്യുക, പുനഃസ്ഥാപിക്കുക</string>
     <string name="settings_category_player_behavior_title">സ്വഭാവം</string>
     <string name="settings_category_player_title">പ്ലെയർ</string>
     <string name="peertube_instance_add_exists">സന്ദർഭം നേരത്തെ നിലവിലുണ്ട്</string>
@@ -647,3 +640,4 @@
     <string name="prefer_original_audio_title">യഥാർത്ഥ ശബ്ദത്തിന് പരിഗണന കൊടുക്കുക</string>
     <string name="prefer_original_audio_summary">ഭാഷ ഏതായാലും യഥാർത്ഥ ശബ്ദം തിരഞ്ഞെടുക്കുക</string>
 </resources>
+

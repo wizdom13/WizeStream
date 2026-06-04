@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="use_inexact_seek_title">Isticmaal Dhaafinta dagdaga ah</string>
     <string name="popup_remember_size_pos_summary">Xusuusnow meeshii iyo cabirkii udambeeyay ee daaqada</string>
@@ -357,13 +357,6 @@
     <string name="settings_category_appearance_title">Nashqada</string>
     <string name="settings_category_history_title">Wixii Hore &amp; kaydka K/G ah</string>
     <string name="settings_category_video_audio_title">Muuqaalada &amp; Dhagaysiga</string>
-    <string name="settings_category_video_audio_summary">Soo celinta, xallinta, qaababka, iyo dhaqanka maqalka</string>
-    <string name="settings_category_downloads_summary">Soo deji galka, magacyada faylka, iyo soo dejinta ikhtiyaarrada</string>
-    <string name="settings_category_appearance_summary">Mawduuca, midabada, tabsyada, iyo qaabka</string>
-    <string name="settings_category_history_summary">Daawo taariikhda, raadinta taariikhda, iyo xogta la kaydiyay</string>
-    <string name="settings_category_content_summary">Adeegyada, luqadaha, gobollada, iyo filtarrada nuxurka</string>
-    <string name="settings_category_notification_summary">Ficilada ogeysiinta, ogeysiisyada, iyo cusboonaysiinta fariimaha</string>
-    <string name="settings_category_backup_restore_summary">Dhoofinta, soo dejinta, oo soo celi xogta abka</string>
     <string name="settings_category_player_title">Daareha</string>
     <string name="settings_category_player_behavior_title">Dabeecada</string>
     <string name="peertube_instance_add_exists">Qaybtan horay ayay ujirtay</string>
@@ -643,3 +636,4 @@
     <string name="search_with_service_name">Raadi %1$s</string>
     <string name="search_with_service_name_and_filter">Raadi %1$s (%2$s)</string>
 </resources>
+

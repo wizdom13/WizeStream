@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="unmute">Immuta</string>
     <string name="mute">Muta</string>
@@ -121,11 +121,5 @@
     <string name="resize_zoom">Retrahe</string>
     <string name="resize_fill">Satiatus</string>
     <string name="resize_fit">Aptus</string>
-    <string name="settings_category_video_audio_summary">Playback, resolutio, formas et mores audio</string>
-    <string name="settings_category_downloads_summary">Folders download, nomina fasciculi, ac optiones download</string>
-    <string name="settings_category_appearance_summary">Theme, colores, tabs, layout</string>
-    <string name="settings_category_history_summary">Vide historiam, quaerere historiam, et notitia conditiva</string>
-    <string name="settings_category_content_summary">Officia, linguarum, regionum et contentorum odio</string>
-    <string name="settings_category_notification_summary">Actiones notificationes, summis, nuntiis ac renovatio</string>
-    <string name="settings_category_backup_restore_summary">Exportare, importare, et app data restitue</string>
 </resources>
+

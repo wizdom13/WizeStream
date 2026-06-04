@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Publikováno %1$s</string>
     <string name="no_player_found">Nenalezen žádný přehrávač. Nainstalovat VLC?</string>
@@ -34,13 +34,6 @@
     <string name="unsupported_url">URL není podporováno</string>
     <string name="content_language_title">Preferovaný jazyk obsahu</string>
     <string name="settings_category_video_audio_title">Video a zvuk</string>
-    <string name="settings_category_video_audio_summary">Přehrávání, rozlišení, formáty a chování zvuku</string>
-    <string name="settings_category_downloads_summary">Stáhnout složky, názvy souborů a možnosti stahování</string>
-    <string name="settings_category_appearance_summary">Motiv, barvy, karty a rozvržení</string>
-    <string name="settings_category_history_summary">Historie sledování, historie vyhledávání a data uložená v mezipaměti</string>
-    <string name="settings_category_content_summary">Služby, jazyky, oblasti a filtry obsahu</string>
-    <string name="settings_category_notification_summary">Akce oznámení, výstrahy a aktualizační zprávy</string>
-    <string name="settings_category_backup_restore_summary">Exportujte, importujte a obnovujte data aplikace</string>
     <string name="settings_category_appearance_title">Vzhled</string>
     <string name="background_player_playing_toast">Přehrávání na pozadí</string>
     <string name="general_error">Chyba</string>
@@ -898,3 +891,4 @@
     <string name="api23_requirement_dialog_message">NewPipe bohužel využívá několik knihoven, které již nepodporují Android 5.0 a 5.1. Příští verze NewPipe proto bude bohužel fungovat pouze na zařízeních s Androidem 6 nebo novějším. Více se dozvíte v tomto blogovém příspěvku.</string>
     <string name="api23_requirement_dialog_blogpost">Blogový příspěvek</string>
 </resources>
+

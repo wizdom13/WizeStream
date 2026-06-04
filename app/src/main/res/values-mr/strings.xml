@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="download_path_audio_dialog_title">ऑडिओ फाईल साठी डाउनलोड फोल्डर निवडा</string>
     <string name="download_path_audio_summary">डाउनलोड केलेल्या ऑडियो फाईल येथे साठवल्या जातात</string>
@@ -236,11 +236,5 @@
     <string name="play_queue_stream_detail">माहिती</string>
     <string name="enqueued">रांगेत आहे</string>
     <string name="close">बंद करा</string>
-    <string name="settings_category_video_audio_summary">प्लेबॅक, रिझोल्यूशन, फॉरमॅट आणि ऑडिओ वर्तन</string>
-    <string name="settings_category_downloads_summary">फोल्डर, फाइल नावे आणि डाउनलोड पर्याय डाउनलोड करा</string>
-    <string name="settings_category_appearance_summary">थीम, रंग, टॅब आणि लेआउट</string>
-    <string name="settings_category_history_summary">पाहण्याचा इतिहास, शोध इतिहास आणि कॅशे केलेला डेटा</string>
-    <string name="settings_category_content_summary">सेवा, भाषा, प्रदेश आणि सामग्री फिल्टर</string>
-    <string name="settings_category_notification_summary">सूचना क्रिया, सूचना आणि संदेश अपडेट करा</string>
-    <string name="settings_category_backup_restore_summary">ॲप डेटा निर्यात, आयात आणि पुनर्संचयित करा</string>
 </resources>
+

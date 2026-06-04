@@ -1,1 +1,0 @@
-Um garfo NewPipe independente focado em Material 3.

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">%1$s에 업로드됨</string>
     <string name="no_player_found">스트림 플레이어가 발견되지 않았습니다. VLC를 설치할까요\?</string>
@@ -26,13 +26,6 @@
     <string name="unsupported_url">지원하지 않는 URL입니다</string>
     <string name="content_language_title">기본 콘텐츠 언어</string>
     <string name="settings_category_video_audio_title">비디오 및 오디오</string>
-    <string name="settings_category_video_audio_summary">재생, 해상도, 형식 및 오디오 동작</string>
-    <string name="settings_category_downloads_summary">폴더, 파일 이름 및 다운로드 옵션 다운로드</string>
-    <string name="settings_category_appearance_summary">테마, 색상, 탭 및 레이아웃</string>
-    <string name="settings_category_history_summary">시청 기록, 검색 기록, 캐시된 데이터</string>
-    <string name="settings_category_content_summary">서비스, 언어, 지역 및 콘텐츠 필터</string>
-    <string name="settings_category_notification_summary">알림 작업, 경고 및 업데이트 메시지</string>
-    <string name="settings_category_backup_restore_summary">앱 데이터 내보내기, 가져오기 및 복원</string>
     <string name="detail_thumbnail_view_description">비디오 재생, 구간:</string>
     <string name="detail_uploader_thumbnail_view_description">업로더 썸네일</string>
     <string name="detail_dislikes_img_view_description">싫어요</string>
@@ -861,3 +854,4 @@
     <string name="api23_requirement_dialog_message">NewPipe는 Android 5.0 및 5.1 지원을 중단한 몇 라이브러리에 의존합니다. 따라서 유감스럽게도 다음NewPipe 버전은 Android 6 이상 기기에서만 작동할 예정입니다. 자세한 내용은 블로그 게시글을 참조하세요.</string>
     <string name="api23_requirement_dialog_blogpost">블로그 게시글</string>
 </resources>
+

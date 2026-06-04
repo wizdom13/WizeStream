@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">יש לגעת בזכוכית המגדלת כדי להתחיל.</string>
     <string name="upload_date_text">פורסם ב־%1$s</string>
@@ -48,13 +48,6 @@
     <string name="unsupported_url">כתובת לא נתמכת</string>
     <string name="content_language_title">שפת התוכן המועדפת</string>
     <string name="settings_category_video_audio_title">סרטונים ושמע</string>
-    <string name="settings_category_video_audio_summary">השמעה, רזולוציה, פורמטים והתנהגות אודיו</string>
-    <string name="settings_category_downloads_summary">הורדת תיקיות, שמות קבצים ואפשרויות הורדה</string>
-    <string name="settings_category_appearance_summary">ערכת נושא, צבעים, כרטיסיות ופריסה</string>
-    <string name="settings_category_history_summary">היסטוריית צפייה, היסטוריית חיפושים ונתונים במטמון</string>
-    <string name="settings_category_content_summary">שירותים, שפות, אזורים ומסנני תוכן</string>
-    <string name="settings_category_notification_summary">פעולות התראה, התראות והודעות עדכון</string>
-    <string name="settings_category_backup_restore_summary">ייצוא, ייבא ושחזור נתוני אפליקציה</string>
     <string name="settings_category_appearance_title">תצוגה</string>
     <string name="background_player_playing_toast">מתנגן ברקע</string>
     <string name="popup_playing_toast">מתנגן בחלון צף</string>
@@ -882,3 +875,4 @@
     <string name="sign_in_confirm_not_bot_error">%1$s סירב לספק נתונים, וביקש התחברות כדי לאשר שהמבקש אינו בוט.\n\nכנראה שה־IP שלך נחסם זמנית על ידי %1$s, ניתן להמתין זמן מה או לעבור ל־IP אחר (לדוגמה על ידי הפעלה/כיבוי של VPN, או על ידי מעבר מרשת אלחוטית לתקשורת נתונים סלולרית).</string>
     <string name="unsupported_content_in_country">תוכן זה אינו זמין עבור מדינת התוכן שנבחרה כעת.\n\nניתן לשנות את בחירתך דרך „הגדרות &gt; תוכן &gt; מדינת תוכן ברירת מחדל”.</string>
 </resources>
+

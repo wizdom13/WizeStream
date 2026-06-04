@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="show_play_with_kodi_summary">ߞߊ߬ ߢߣߊߕߊߟߌ ߘߏ߫ ߦߌ߬ߘߊ߬ ߞߊ߬ ߦߋߡߍ߲ߕߊ ߕߏߟߏ߲߫ Kodi ߞߟߋߞߟߋ߫ ߕߊ߲ߓߊ߲ ߘߐ߫</string>
     <string name="kore_not_found">Kore ߟߥߊߟߌߟߊ߲ ߡߊ߫ ߛߐ߬ߘߐ߲߬߸ ߞߵߊ߬ ߡߊߗߍ߫؟</string>
@@ -112,13 +112,6 @@
     <string name="peertube_instance_add_https_only">HTTPS ߛߘߌߜߋ߲ ߠߎ߬ ߟߋ߬ ߘߐߙߐ߲߫ ߦߋ߫ ߕߊ߬ ߟߊ߫</string>
     <string name="settings_category_player_behavior_title">ߞߏߟߊߕߊ߯ߡߢߊ</string>
     <string name="settings_category_video_audio_title">ߦߋߡߍ߲ߕߊ ߣߌ߫ ߡߍ߲ߕߊ</string>
-    <string name="settings_category_video_audio_summary">ߕߏ߬ߟߏ߲߬ߠߌ߲߬، ߖߌ߬ߦߊ߬ߓߐ߬ߟߌ، ߢߊ ߟߎ߬ ߣߌ߫ ߡߍ߲ߕߊ ߞߍߢߊ</string>
-    <string name="settings_category_downloads_summary">ߟߊ߬ߖߌ߰ߟߌ ߞߐߕߐ߮ ߟߎ߬، ߞߐߕߐ߮ ߕߐ߮ ߟߎ߬ ߣߌ߫ ߟߊ߬ߖߌ߰ߟߌ ߢߊ ߟߎ߬</string>
-    <string name="settings_category_appearance_summary">ߝߊ߬ߘߊ، ߞߐ߬ߟߐ ߟߎ߬، ߛߊ߲߬ߓߊ ߟߎ߬ ߣߌ߫ ߟߊߓߍ߲ߢߊ</string>
-    <string name="settings_category_history_summary">ߦߋߟߌ ߘߝߐ߬ߦߊ، ߢߌߣߌ߲ ߘߝߐ߬ߦߊ ߣߌ߫ ߞߣߐߘߐ ߡߊ߬ߞߍ߬ߟߌ</string>
-    <string name="settings_category_content_summary">ߓߊ߯ߙߊ ߟߎ߬، ߞߊ߲ ߠߎ߬، ߖߡߊ߬ߣߊ ߟߎ߬ ߣߌ߫ ߞߣߐߘߐ ߛߊ߲߬ߛߊ߬ߟߌ ߟߎ߬</string>
-    <string name="settings_category_notification_summary">ߓߌ߬ߟߊ߬ߟߌ ߞߊ߬ߝߏ ߟߎ߬، ߖߊ߲߬ߕߏ߬ߟߌ ߟߎ߬ ߣߌ߫ ߟߏ߲ߘߐߦߊߟߌ ߗߋߓߊ ߟߎ߬</string>
-    <string name="settings_category_backup_restore_summary">ߟߊ߬ߓߐ߬ߟߌ، ߟߊ߬ߘߏ߲߬ߠߌ߲ ߣߌ߫ ߓߟߏߦߊߟߌ ߟߊ߬ߛߊ߬ߦߌ߬ߟߌ</string>
     <string name="settings_category_history_title">ߘߝߐ߬ߦߊ ߣߌ߫ ߦߟߌߡߊߛߌ߮</string>
     <string name="settings_category_appearance_title">ߦߋߢߊ</string>
     <string name="settings_category_debug_title">ߞߊߘߊ߲ߓߐ</string>
@@ -732,3 +725,4 @@
     <string name="prefer_descriptive_audio_title">ߡߍ߲ߕߊ߫ ߞߊ߲߬ߛߓߍ߬ߡߊ ߟߊߝߌ߬ߛߊ߬ߦߊ߫</string>
     <string name="unknown_audio_track">ߡߊߟߐ߲ߓߊߟߌ</string>
 </resources>
+

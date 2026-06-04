@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="install">Instal·la</string>
     <string name="cancel">Cancel·la</string>
@@ -28,13 +28,6 @@
     <string name="settings_category_player_title">Reproductor</string>
     <string name="settings_category_player_behavior_title">Comportament</string>
     <string name="settings_category_video_audio_title">Vídeo i àudio</string>
-    <string name="settings_category_video_audio_summary">Reproducció, resolució, formats i comportament d\'àudio</string>
-    <string name="settings_category_downloads_summary">Baixeu carpetes, noms de fitxers i opcions de baixada</string>
-    <string name="settings_category_appearance_summary">Tema, colors, pestanyes i disseny</string>
-    <string name="settings_category_history_summary">Historial de visualitzacions, historial de cerques i dades a la memòria cau</string>
-    <string name="settings_category_content_summary">Serveis, idiomes, regions i filtres de contingut</string>
-    <string name="settings_category_notification_summary">Accions de notificació, alertes i missatges d\'actualització</string>
-    <string name="settings_category_backup_restore_summary">Exporta, importa i restaura les dades d\'aplicacions</string>
     <string name="settings_category_history_title">Historial i memòria cau</string>
     <string name="settings_category_appearance_title">Aparença</string>
     <string name="settings_category_debug_title">Depuració</string>
@@ -828,3 +821,4 @@
     <string name="select_a_feed_group">Tria un grup de continguts</string>
     <string name="feed_group_page_summary">Pàgina del grup de canals</string>
 </resources>
+

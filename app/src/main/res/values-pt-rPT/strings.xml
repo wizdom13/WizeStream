@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="decline">Recusar</string>
     <string name="start_here_on_background">Iniciar reprodução em segundo plano</string>
@@ -301,13 +301,6 @@
     <string name="peertube_instance_add_help">Digite o URL da instância</string>
     <string name="preferred_open_action_settings_title">Ação de \'Abrir\' preferida</string>
     <string name="settings_category_video_audio_title">Vídeo e áudio</string>
-    <string name="settings_category_video_audio_summary">Reprodução, resolução, formatos e comportamento do áudio</string>
-    <string name="settings_category_downloads_summary">Descarregue pastas, nomes de ficheiros e opções de download</string>
-    <string name="settings_category_appearance_summary">Tema, cores, separadores e layout</string>
-    <string name="settings_category_history_summary">Histórico de visualização, histórico de pesquisa e dados armazenados em cache</string>
-    <string name="settings_category_content_summary">Serviços, idiomas, regiões e filtros de conteúdos</string>
-    <string name="settings_category_notification_summary">Ações de notificação, alertas e mensagens de atualização</string>
-    <string name="settings_category_backup_restore_summary">Exportar, importar e restaurar dados de aplicações</string>
     <string name="charset_letters_and_digits">Letras e dígitos</string>
     <string name="enable_leak_canary_summary">A monitorização de memória pode tornar a aplicação instável</string>
     <string name="copy_for_github">Copiar relatório formatado</string>
@@ -895,3 +888,4 @@
     <string name="api23_requirement_dialog_message">Infelizmente, o NewPipe depende de algumas bibliotecas que terminaram apoio para o Android 5.0 e 5.1. Por isso, a próxima versão do NewPipe só funcionará em dispositivos com Android 6 ou superior, infelizmente. Saiba mais na publicação do blog.</string>
     <string name="api23_requirement_dialog_blogpost">Postagem no blog</string>
 </resources>
+

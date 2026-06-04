@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Publicat pe %1$s</string>
     <string name="no_player_found">Niciun player pentru streaming găsit. Instalați VLC\?</string>
@@ -34,13 +34,6 @@
     <string name="unsupported_url">URL nesuportat</string>
     <string name="content_language_title">Limba dorită a conținutului</string>
     <string name="settings_category_video_audio_title">Video și Audio</string>
-    <string name="settings_category_video_audio_summary">Redare, rezoluție, formate și comportament audio</string>
-    <string name="settings_category_downloads_summary">Descărcați foldere, nume de fișiere și opțiuni de descărcare</string>
-    <string name="settings_category_appearance_summary">Temă, culori, file și aspect</string>
-    <string name="settings_category_history_summary">Istoricul vizionărilor, istoricul căutărilor și datele stocate în cache</string>
-    <string name="settings_category_content_summary">Servicii, limbi, regiuni și filtre de conținut</string>
-    <string name="settings_category_notification_summary">Acțiuni de notificare, alerte și mesaje de actualizare</string>
-    <string name="settings_category_backup_restore_summary">Exportați, importați și restaurați datele aplicației</string>
     <string name="settings_category_appearance_title">Aspect</string>
     <string name="background_player_playing_toast">Redare în fundal</string>
     <string name="content">Conținut</string>
@@ -877,3 +870,4 @@
     <string name="api23_requirement_dialog_blogpost">Postare blog</string>
     <string name="api23_requirement_dialog_message">Din păcate, NewPipe depinde de câteva biblioteci care nu mai sunt compatibile cu Android 5.0 și 5.1. Prin urmare, următoarea versiune a NewPipe va funcționa doar pe dispozitive cu Android 6 sau o versiune ulterioară. Aflați mai multe în articolul de pe blog.</string>
 </resources>
+

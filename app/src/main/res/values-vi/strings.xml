@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Nhấn vào kính lúp để bắt đầu.</string>
     <string name="upload_date_text">Đăng vào %1$s</string>
@@ -112,13 +112,6 @@
     <string name="contribution_title">Đóng góp</string>
     <string name="content_language_title">Ngôn ngữ nội dung ưu tiên</string>
     <string name="settings_category_video_audio_title">Video và âm thanh</string>
-    <string name="settings_category_video_audio_summary">Phát lại, độ phân giải, định dạng và hành vi âm thanh</string>
-    <string name="settings_category_downloads_summary">Tải xuống thư mục, tên tệp và tùy chọn tải xuống</string>
-    <string name="settings_category_appearance_summary">Chủ đề, màu sắc, tab và bố cục</string>
-    <string name="settings_category_history_summary">Lịch sử xem, lịch sử tìm kiếm và dữ liệu được lưu trong bộ nhớ đệm</string>
-    <string name="settings_category_content_summary">Bộ lọc dịch vụ, ngôn ngữ, khu vực và nội dung</string>
-    <string name="settings_category_notification_summary">Hành động thông báo, cảnh báo và tin nhắn cập nhật</string>
-    <string name="settings_category_backup_restore_summary">Xuất, nhập và khôi phục dữ liệu ứng dụng</string>
     <string name="enable_watch_history_title">Lịch sử xem</string>
     <string name="settings_category_history_title">Lịch sử và bộ nhớ đệm</string>
     <string name="search_no_results">Không tìm thấy</string>
@@ -842,3 +835,4 @@
     <string name="kao_dialog_more_info">Chi tiết</string>
     <string name="kao_solution">Giải pháp</string>
 </resources>
+

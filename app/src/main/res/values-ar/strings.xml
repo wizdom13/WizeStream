@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="background_player_playing_toast">يتم التشغيل في الخلفية</string>
     <string name="cancel">إلغاء</string>
@@ -31,13 +31,6 @@
     <string name="settings">الإعدادات</string>
     <string name="settings_category_appearance_title">المظهر</string>
     <string name="settings_category_video_audio_title">الفيديو والصوت</string>
-    <string name="settings_category_video_audio_summary">التشغيل والدقة والتنسيقات والسلوك الصوتي</string>
-    <string name="settings_category_downloads_summary">تنزيل المجلدات وأسماء الملفات وخيارات التنزيل</string>
-    <string name="settings_category_appearance_summary">السمة والألوان وعلامات التبويب والتخطيط</string>
-    <string name="settings_category_history_summary">سجل المشاهدة وسجل البحث والبيانات المخزنة مؤقتًا</string>
-    <string name="settings_category_content_summary">الخدمات واللغات والمناطق ومرشحات المحتوى</string>
-    <string name="settings_category_notification_summary">إجراءات الإخطار والتنبيهات ورسائل التحديث</string>
-    <string name="settings_category_backup_restore_summary">تصدير واستيراد واستعادة بيانات التطبيق</string>
     <string name="share">مشاركة</string>
     <string name="share_dialog_title">مشاركة بواسطة</string>
     <string name="show_next_and_similar_title">عرض مقاطع الفيديو \"التالية\" و \"المشابهة\"</string>
@@ -914,3 +907,4 @@
     <string name="kao_dialog_more_info">تفاصيل</string>
     <string name="kao_solution">حل</string>
 </resources>
+

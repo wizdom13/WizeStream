@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Publicat lo %1$s</string>
     <string name="no_player_found">Cap de legidor de flus trobat. Volètz installar VLC\?</string>
@@ -61,11 +61,4 @@
     <string name="show_comments_title">Afichar los comentaris</string>
     <string name="show_comments_summary">Desactivar per afichar pas mai los comentaris</string>
     <string name="auto_queue_title">Apondre la vidèo seguenta dins la coa de lectura</string>
-    <string name="settings_category_video_audio_summary">Reproduccion, resolucion, formats e comportament àudio</string>
-    <string name="settings_category_downloads_summary">Telecargar de dorsièrs, de noms de fichièrs e d\'opcions de telecargament</string>
-    <string name="settings_category_appearance_summary">Tèma, colors, onglets e presentacion</string>
-    <string name="settings_category_history_summary">L\'istoric de susvelhança, l\'istoric de la recèrca e las donadas en cache</string>
-    <string name="settings_category_content_summary">Servicis, lengas, regions e filtres de contengut</string>
-    <string name="settings_category_notification_summary">Accions de notificacion, alèrtas e messatges de mesa a jorn</string>
-    <string name="settings_category_backup_restore_summary">Exportar, importar e restablir las donadas de l\'aplicacion</string>
 </resources>

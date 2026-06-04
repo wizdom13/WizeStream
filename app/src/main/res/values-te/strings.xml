@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">మొదలుపెట్టుటకు బూతద్దము గురుతుని తట్టండి.</string>
     <string name="upload_date_text">%1$sన ప్రచురించబడింది</string>
@@ -43,13 +43,6 @@
     <string name="settings_category_player_title">ప్లేయర్</string>
     <string name="settings_category_player_behavior_title">ప్రవర్తన</string>
     <string name="settings_category_video_audio_title">వీడియో &amp; ఆడియో</string>
-    <string name="settings_category_video_audio_summary">ప్లేబ్యాక్, రిజల్యూషన్, ఫార్మాట్‌లు మరియు ఆడియో ప్రవర్తన</string>
-    <string name="settings_category_downloads_summary">ఫోల్డర్‌లు, ఫైల్ పేర్లు మరియు డౌన్‌లోడ్ ఎంపికలను డౌన్‌లోడ్ చేయండి</string>
-    <string name="settings_category_appearance_summary">థీమ్, రంగులు, ట్యాబ్‌లు మరియు లేఅవుట్</string>
-    <string name="settings_category_history_summary">వీక్షణ చరిత్ర, శోధన చరిత్ర మరియు కాష్ చేసిన డేటా</string>
-    <string name="settings_category_content_summary">సేవలు, భాషలు, ప్రాంతాలు మరియు కంటెంట్ ఫిల్టర్‌లు</string>
-    <string name="settings_category_notification_summary">నోటిఫికేషన్ చర్యలు, హెచ్చరికలు మరియు నవీకరణ సందేశాలు</string>
-    <string name="settings_category_backup_restore_summary">యాప్ డేటాను ఎగుమతి చేయండి, దిగుమతి చేయండి మరియు పునరుద్ధరించండి</string>
     <string name="settings_category_history_title">చరిత్ర మరియు కాష్</string>
     <string name="settings_category_appearance_title">స్వరూపం</string>
     <string name="background_player_playing_toast">వెనకవైపులో ఆడుతున్నారు</string>
@@ -473,3 +466,4 @@
     <string name="limit_mobile_data_usage_title">మొబైల్ డేటా వాడుతున్నప్పుడు స్పష్టతకు హద్దుపెట్టు</string>
     <string name="import_subscriptions_hint">3-చుక్కల మెనూలో సభ్యత్వాలను ఎగుమతి లేదా దిగుమతి చేయండి</string>
 </resources>
+

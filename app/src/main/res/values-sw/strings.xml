@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Gusa kioo la kukuza ili kuanza.</string>
     <string name="show_higher_resolutions_summary">Ni baadhi ya vifaa vingine pekee vinavyoweza kucheza video za 2K/4K</string>
@@ -42,11 +42,4 @@
     <string name="notification_action_buffering">Buffering</string>
     <string name="notification_action_nothing">Hakuna</string>
     <string name="use_inexact_seek_title">Use fast inexact seek</string>
-    <string name="settings_category_video_audio_summary">Uchezaji, azimio, fomati na tabia ya sauti</string>
-    <string name="settings_category_downloads_summary">Pakua folda, majina ya faili na chaguzi za kupakua</string>
-    <string name="settings_category_appearance_summary">Mandhari, rangi, vichupo na mpangilio</string>
-    <string name="settings_category_history_summary">Historia ya ulichotazama, historia ya utafutaji, na data iliyohifadhiwa</string>
-    <string name="settings_category_content_summary">Huduma, lugha, maeneo na vichujio vya maudhui</string>
-    <string name="settings_category_notification_summary">Vitendo vya arifa, arifa na sasisho za ujumbe</string>
-    <string name="settings_category_backup_restore_summary">Hamisha, leta na urejeshe data ya programu</string>
 </resources>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="main_bg_subtitle">Tryk på forstørrelsesglasset for at komme i gang.</string>
     <string name="upload_date_text">Udgivet d. %1$s</string>
@@ -81,13 +81,6 @@
     <string name="settings_category_player_title">Afspiller</string>
     <string name="settings_category_player_behavior_title">Adfærd</string>
     <string name="settings_category_video_audio_title">Video og lyd</string>
-    <string name="settings_category_video_audio_summary">Afspilning, opløsning, formater og lydadfærd</string>
-    <string name="settings_category_downloads_summary">Download mapper, filnavne og downloadmuligheder</string>
-    <string name="settings_category_appearance_summary">Tema, farver, faner og layout</string>
-    <string name="settings_category_history_summary">Afspilningshistorik, søgehistorik og cachelagrede data</string>
-    <string name="settings_category_content_summary">Tjenester, sprog, regioner og indholdsfiltre</string>
-    <string name="settings_category_notification_summary">Underretningshandlinger, advarsler og opdateringsmeddelelser</string>
-    <string name="settings_category_backup_restore_summary">Eksporter, importer og gendan appdata</string>
     <string name="settings_category_history_title">Historik og cache</string>
     <string name="settings_category_appearance_title">Udseende</string>
     <string name="settings_category_debug_title">Fejlretning</string>
@@ -846,3 +839,4 @@
     <string name="trending_gaming">Gaming-trends</string>
     <string name="trending_podcasts">Trending podcasts</string>
 </resources>
+

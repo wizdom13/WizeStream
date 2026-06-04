@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="upload_date_text">Publicado em %1$s</string>
     <string name="no_player_found">Reprodutor de vídeo não encontrado. Instalar VLC\?</string>
@@ -28,13 +28,6 @@
     <string name="unsupported_url">URL não suportada</string>
     <string name="content_language_title">Idioma padrão para conteúdo</string>
     <string name="settings_category_video_audio_title">Vídeo e áudio</string>
-    <string name="settings_category_video_audio_summary">Reprodução, resolução, formatos e comportamento de áudio</string>
-    <string name="settings_category_downloads_summary">Baixe pastas, nomes de arquivos e opções de download</string>
-    <string name="settings_category_appearance_summary">Tema, cores, guias e layout</string>
-    <string name="settings_category_history_summary">Histórico de exibição, histórico de pesquisa e dados armazenados em cache</string>
-    <string name="settings_category_content_summary">Serviços, idiomas, regiões e filtros de conteúdo</string>
-    <string name="settings_category_notification_summary">Ações de notificação, alertas e mensagens de atualização</string>
-    <string name="settings_category_backup_restore_summary">Exportar, importar e restaurar dados de aplicativos</string>
     <string name="detail_thumbnail_view_description">Reproduzir vídeo, duração:</string>
     <string name="detail_uploader_thumbnail_view_description">Miniatura do avatar do canal</string>
     <string name="detail_dislikes_img_view_description">Não gosto</string>
@@ -894,3 +887,4 @@
     <string name="api23_requirement_dialog_message">Infelizmente, o NewPipe depende de algumas bibliotecas que terminaram apoio para o Android 5.0 e 5.1. Por isso, a próxima versão do NewPipe só funcionará em dispositivos com Android 6 ou superior, infelizmente. Saiba mais na publicação do blog.</string>
     <string name="api23_requirement_dialog_blogpost">Postagem no blog</string>
 </resources>
+
