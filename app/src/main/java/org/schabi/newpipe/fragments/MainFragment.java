@@ -299,9 +299,11 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         final ScrollableTabLayout tabLayout = binding.mainTabLayout;
         final ViewPager viewPager = binding.pager;
         final boolean bottom = mainTabsPositionBottom;
+        final boolean hasMultipleTabs = tabsList.size() > 1;
         final boolean showBottomNavigation = bottom
+                && hasMultipleTabs
                 && tabsList.size() <= BOTTOM_NAVIGATION_MAX_ITEM_COUNT;
-        final boolean showTabLayout = !showBottomNavigation;
+        final boolean showTabLayout = hasMultipleTabs && !showBottomNavigation;
 
         final var tabParams = (RelativeLayout.LayoutParams) tabLayout.getLayoutParams();
         final var pagerParams = (RelativeLayout.LayoutParams) viewPager.getLayoutParams();
@@ -314,14 +316,13 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         pagerParams.removeRule(ABOVE);
         if (showBottomNavigation) {
             pagerParams.addRule(ABOVE, R.id.main_bottom_navigation);
-        } else {
+        } else if (showTabLayout) {
             pagerParams.addRule(bottom ? ABOVE : BELOW, R.id.main_tab_layout);
         }
 
         tabLayout.setSelectedTabIndicatorGravity(
                 bottom ? INDICATOR_GRAVITY_TOP : INDICATOR_GRAVITY_BOTTOM);
-        tabLayout.setVisibility(showTabLayout && tabsList.size() > 1
-                ? View.VISIBLE : View.GONE);
+        tabLayout.setVisibility(showTabLayout ? View.VISIBLE : View.GONE);
         binding.mainBottomNavigation.setVisibility(showBottomNavigation
                 ? View.VISIBLE : View.GONE);
 
