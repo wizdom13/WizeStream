@@ -3,19 +3,41 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_updates_title">
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="@string/update_app_key"
-        android:summary="@string/updates_setting_description"
-        android:title="@string/updates_setting_title"
-        app:singleLineTitle="false"
-        app:iconSpaceReserved="false" />
+    <Preference
+        android:key="@string/latest_available_version_key"
+        android:selectable="false"
+        android:summary="@string/current_version_not_checked"
+        android:title="@string/current_version_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/installed_app_version_key"
+        android:selectable="false"
+        android:title="@string/installed_app_version_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
 
     <Preference
         android:key="@string/manual_update_key"
         android:summary="@string/manual_update_description"
         android:title="@string/manual_update_title"
-        app:singleLineTitle="false"
-        app:iconSpaceReserved="false" />
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/changelog_key"
+        android:summary="@string/changelog_description"
+        android:title="@string/changelog_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/update_app_key"
+        android:summary="@string/updates_setting_description"
+        android:title="@string/updates_setting_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
 
 </PreferenceScreen>

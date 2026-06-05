@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
 
         final App app = App.getInstance();
 
-        if (sharedPreferences.getBoolean(app.getString(R.string.update_app_key), false)
+        if (sharedPreferences.getBoolean(app.getString(R.string.update_app_key), true)
                 && sharedPreferences
                 .getBoolean(app.getString(R.string.update_check_consent_key), false)) {
             // Start the worker which is checking all conditions

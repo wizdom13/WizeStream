@@ -179,6 +179,7 @@
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_debug_title">Debug</string>
     <string name="settings_category_updates_title">Updates</string>
+    <string name="settings_category_updates_summary">Version, changelog, and update checks</string>
     <string name="settings_category_player_notification_title">Player notification</string>
     <string name="settings_category_player_notification_summary">Configure current playing stream notification</string>
     <string name="settings_category_backup_restore_title">Backup and restore</string>
@@ -220,7 +221,7 @@
     <string name="notification_channel_name">NewPipe notification</string>
     <string name="notification_channel_description">Notifications for NewPipe\'s player</string>
     <string name="app_update_notification_channel_name">App update notification</string>
-    <string name="app_update_notification_channel_description">Notifications for new NewPipe versions</string>
+    <string name="app_update_notification_channel_description">Notifications for new NewPipe Material versions</string>
     <string name="hash_channel_name">Video hash notification</string>
     <string name="hash_channel_description">Notifications for video hashing progress</string>
     <string name="streams_notification_channel_name">New streams</string>
@@ -602,12 +603,12 @@
     <string name="streams_notifications_network_title">Required network connection</string>
     <string name="any_network">Any network</string>
     <!-- Updates Settings -->
-    <string name="updates_setting_title">Updates</string>
-    <string name="updates_setting_description">Show a notification to prompt app update when a new version is available</string>
+    <string name="updates_setting_title">Auto check for new version</string>
+    <string name="updates_setting_description">Check for updates in the background when the app opens</string>
     <string name="check_for_updates">Check for updates</string>
-    <string name="auto_update_check_description">NewPipe can automatically check for new versions from time to time and notify you once they are available.\nDo you want to enable this?</string>
-    <string name="manual_update_title" translatable="false">@string/check_for_updates</string>
-    <string name="manual_update_description">Manually check for new versions</string>
+    <string name="manual_update_title">Check for Updates</string>
+    <string name="manual_update_description">Check GitHub Releases for a new NewPipe Material version</string>
+    <string name="auto_update_check_description">NewPipe Material can automatically check GitHub Releases for new versions from time to time and notify you once they are available.\nDo you want to enable this?</string>
 
     <!-- Minimize to exit action -->
     <string name="minimize_on_exit_title">Minimize on app switch</string>
@@ -630,9 +631,9 @@
     <string name="low_quality_smaller">Low quality (smaller)</string>
     <string name="dont_show">Don\'t show</string>
     <!-- App update notification -->
-    <string name="app_update_unavailable_toast">You are running the latest version of NewPipe</string>
-    <string name="app_update_available_notification_title">NewPipe update is available!</string>
-    <string name="app_update_available_notification_text">Tap to download %s</string>
+    <string name="app_update_unavailable_toast">NewPipe Material is up to date</string>
+    <string name="app_update_available_notification_title">NewPipe Material update is available!</string>
+    <string name="app_update_available_notification_text">Tap to view %s</string>
     <string name="missions_header_finished">Finished</string>
     <string name="missions_header_pending">Pending</string>
     <string name="paused">paused</string>
@@ -642,6 +643,22 @@
     <string name="enqueue">Enqueue</string>
     <string name="permission_denied">Action denied by the system</string>
     <string name="checking_updates_toast">Checking for updates…</string>
+    <string name="current_version_title">Latest available version</string>
+    <string name="current_version_not_checked">Not checked yet</string>
+    <string name="installed_app_version_title">App version installed</string>
+    <string name="changelog_title">Changelog</string>
+    <string name="changelog_description">Show recent release notes from GitHub Releases</string>
+    <string name="app_update_check_failed">Could not check for updates</string>
+    <string name="app_update_available_dialog_title">Update available</string>
+    <string name="app_update_available_dialog_message">NewPipe Material %1$s is available. Installed version: %2$s.</string>
+    <string name="app_update_available_notification_text_material">NewPipe Material %1$s is available. Installed version: %2$s.</string>
+    <string name="app_update_open_release">Open release</string>
+    <string name="app_update_later">Later</string>
+    <string name="app_update_latest_release_dialog_message">Latest NewPipe Material release: %1$s. Installed version: %2$s.</string>
+    <string name="changelog_empty">No changelog provided.</string>
+    <string name="changelog_load_failed">Could not load changelog</string>
+    <string name="latest_version_summary_format">Latest available: %1$s</string>
+    <string name="installed_version_summary_format">Installed: %1$s</string>
     <!-- download notifications -->
     <string name="download_failed">Download failed</string>
     <plurals name="download_finished_notification">

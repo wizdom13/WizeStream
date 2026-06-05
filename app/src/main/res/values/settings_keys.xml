@@ -544,8 +544,16 @@
     <string name="update_check_consent_key">update_check_consent_key</string>
     <string name="update_app_key">update_app_key</string>
     <string name="manual_update_key">manual_update_key</string>
+    <string name="latest_available_version_key">latest_available_version_key</string>
+    <string name="installed_app_version_key">installed_app_version_key</string>
+    <string name="changelog_key">changelog_key</string>
     <string name="update_pref_screen_key">update_pref_screen_key</string>
     <string name="update_expiry_key">update_expiry_key</string>
+    <string name="latest_available_version_value_key">latest_available_version_value_key</string>
+    <string name="latest_available_version_code_key">latest_available_version_code_key</string>
+    <string name="latest_available_release_url_key">latest_available_release_url_key</string>
+    <string name="latest_available_changelog_key">latest_available_changelog_key</string>
+    <string name="latest_update_check_timestamp_key">latest_update_check_timestamp_key</string>
 
     <!-- Localizations   -->
     <string name="default_localization_key">system</string>
