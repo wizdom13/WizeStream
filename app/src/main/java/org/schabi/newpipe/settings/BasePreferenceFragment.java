@@ -1,17 +1,29 @@
 package org.schabi.newpipe.settings;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.content.res.TypedArray;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceGroupAdapter;
 import androidx.preference.PreferenceManager;
+import androidx.preference.PreferenceScreen;
+import androidx.preference.PreferenceViewHolder;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.MainActivity;
+import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.Objects;
@@ -34,6 +46,12 @@ public abstract class BasePreferenceFragment extends PreferenceFragmentCompat {
     }
 
     @Override
+    protected RecyclerView.Adapter onCreateAdapter(
+            @NonNull final PreferenceScreen preferenceScreen) {
+        return new CardPreferenceGroupAdapter(preferenceScreen);
+    }
+
+    @Override
     public void onViewCreated(@NonNull final View rootView,
                               @Nullable final Bundle savedInstanceState) {
         super.onViewCreated(rootView, savedInstanceState);
@@ -53,4 +71,106 @@ public abstract class BasePreferenceFragment extends PreferenceFragmentCompat {
         Objects.requireNonNull(preference);
         return preference;
     }
+
+    private static final class CardPreferenceGroupAdapter extends PreferenceGroupAdapter {
+        private final int cardColor;
+        private final int rippleColor;
+        private final int horizontalMargin;
+        private final int cardMarginTop;
+        private final int cardMarginBottom;
+        private final float cornerRadius;
+
+        CardPreferenceGroupAdapter(@NonNull final PreferenceScreen preferenceScreen) {
+            super(preferenceScreen);
+            final Context context = preferenceScreen.getContext();
+            cardColor = resolveThemeColor(context, R.attr.card_item_background_color);
+            rippleColor = resolveThemeColor(context,
+                    androidx.appcompat.R.attr.colorControlHighlight);
+            horizontalMargin = context.getResources()
+                    .getDimensionPixelSize(R.dimen.settings_card_margin_horizontal);
+            cardMarginTop = context.getResources()
+                    .getDimensionPixelSize(R.dimen.settings_card_margin_top);
+            cardMarginBottom = context.getResources()
+                    .getDimensionPixelSize(R.dimen.settings_card_margin_bottom);
+            cornerRadius = context.getResources()
+                    .getDimension(R.dimen.settings_card_corner_radius);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull final PreferenceViewHolder holder,
+                                     final int position) {
+            super.onBindViewHolder(holder, position);
+
+            final Preference preference = getItem(position);
+            if (isCategory(preference)) {
+                holder.itemView.setBackground(null);
+                updateMargins(holder.itemView, 0, 0, 0, 0);
+                return;
+            }
+
+            final boolean hasPreviousCardItem = hasCardItemAt(position - 1);
+            final boolean hasNextCardItem = hasCardItemAt(position + 1);
+
+            final float[] radii = getCornerRadii(hasPreviousCardItem, hasNextCardItem);
+            holder.itemView.setBackground(createCardBackground(radii));
+            updateMargins(holder.itemView, horizontalMargin,
+                    hasPreviousCardItem ? 0 : cardMarginTop,
+                    horizontalMargin,
+                    hasNextCardItem ? 0 : cardMarginBottom);
+        }
+
+        private boolean hasCardItemAt(final int position) {
+            return position >= 0 && position < getItemCount() && !isCategory(getItem(position));
+        }
+
+        private static boolean isCategory(@NonNull final Preference preference) {
+            return preference instanceof PreferenceCategory;
+        }
+
+        private float[] getCornerRadii(final boolean hasPreviousCardItem,
+                                       final boolean hasNextCardItem) {
+            final float topRadius = hasPreviousCardItem ? 0 : cornerRadius;
+            final float bottomRadius = hasNextCardItem ? 0 : cornerRadius;
+            return new float[]{
+                    topRadius, topRadius,
+                    topRadius, topRadius,
+                    bottomRadius, bottomRadius,
+                    bottomRadius, bottomRadius
+            };
+        }
+
+        private RippleDrawable createCardBackground(final float[] radii) {
+            final GradientDrawable content = new GradientDrawable();
+            content.setColor(cardColor);
+            content.setCornerRadii(radii);
+
+            final GradientDrawable mask = new GradientDrawable();
+            mask.setColor(0xFFFFFFFF);
+            mask.setCornerRadii(radii);
+
+            return new RippleDrawable(ColorStateList.valueOf(rippleColor), content, mask);
+        }
+
+        private static void updateMargins(@NonNull final View view,
+                                          final int start,
+                                          final int top,
+                                          final int end,
+                                          final int bottom) {
+            final ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+            if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+                final ViewGroup.MarginLayoutParams marginLayoutParams =
+                        (ViewGroup.MarginLayoutParams) layoutParams;
+                marginLayoutParams.setMargins(start, top, end, bottom);
+                view.setLayoutParams(marginLayoutParams);
+            }
+        }
+
+        private static int resolveThemeColor(@NonNull final Context context, final int attr) {
+            final TypedArray typedArray = context.obtainStyledAttributes(new int[]{attr});
+            final int color = typedArray.getColor(0, 0);
+            typedArray.recycle();
+            return color;
+        }
+    }
+
 }
