@@ -143,6 +143,12 @@ object ServiceHelper {
         }
     }
 
+    @JvmStatic
+    fun isFetchDislikeEnabled(context: Context): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean(context.getString(R.string.show_dislike_key), true)
+    }
+
     fun initService(context: Context, serviceId: Int) {
         if (serviceId == ServiceList.PeerTube.serviceId) {
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -163,6 +169,21 @@ object ServiceHelper {
 
     @JvmStatic
     fun initServices(context: Context) {
-        ServiceList.all().forEach { initService(context, it.serviceId) }
+        val fetchDislike = isFetchDislikeEnabled(context)
+        ServiceList.all().forEach {
+            initService(context, it.serviceId)
+            setFetchDislikeIfSupported(it, fetchDislike)
+        }
+    }
+
+    private fun setFetchDislikeIfSupported(service: StreamingService, fetchDislike: Boolean) {
+        service.javaClass.methods
+            .firstOrNull { method ->
+                method.name == "setFetchDislike" &&
+                    method.parameterTypes.contentEquals(
+                        arrayOf(Boolean::class.javaPrimitiveType!!)
+                    )
+            }
+            ?.let { method -> runCatching { method.invoke(service, fetchDislike) } }
     }
 }

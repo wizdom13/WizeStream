@@ -341,6 +341,9 @@
     <string name="caption_settings_key">caption_settings_key</string>
     <string name="caption_user_set_key">caption_user_set_key</string>
 
+    <!-- Show dislikes -->
+    <string name="show_dislike_key">show_dislike</string>
+
     <!-- Main-Tabs Position -->
     <string name="main_tabs_position_key">main_tabs_position</string>
 

@@ -115,6 +115,7 @@ import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PermissionHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
+import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
@@ -174,7 +175,11 @@ public final class VideoDetailFragment
     @NonNull
     final List<Integer> tabContentDescriptions = new ArrayList<>();
     private boolean tabSettingsChanged = false;
+    private boolean showDislikes = true;
     private int lastAppBarVerticalOffset = Integer.MAX_VALUE; // prevents useless updates
+    @Nullable
+    private StreamInfo currentInfo = null;
+    private FragmentVideoDetailBinding binding;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener =
             (sharedPreferences, key) -> {
@@ -187,6 +192,11 @@ public final class VideoDetailFragment
                 } else if (getString(R.string.show_description_key).equals(key)) {
                     showDescription = sharedPreferences.getBoolean(key, true);
                     tabSettingsChanged = true;
+                } else if (getString(R.string.show_dislike_key).equals(key)) {
+                    showDislikes = sharedPreferences.getBoolean(key, true);
+                    if (currentInfo != null && binding != null) {
+                        updateLikeDislikeViews(currentInfo);
+                    }
                 }
             };
 
@@ -208,8 +218,6 @@ public final class VideoDetailFragment
     protected boolean autoPlayEnabled = true;
     private boolean forceFullscreen = false;
 
-    @Nullable
-    private StreamInfo currentInfo = null;
     private Disposable currentWorker;
     @NonNull
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -223,8 +231,6 @@ public final class VideoDetailFragment
     /*//////////////////////////////////////////////////////////////////////////
     // Views
     //////////////////////////////////////////////////////////////////////////*/
-
-    private FragmentVideoDetailBinding binding;
 
     private TabAdapter pageAdapter;
 
@@ -322,6 +328,7 @@ public final class VideoDetailFragment
         showComments = prefs.getBoolean(getString(R.string.show_comments_key), true);
         showRelatedItems = prefs.getBoolean(getString(R.string.show_next_video_key), true);
         showDescription = prefs.getBoolean(getString(R.string.show_description_key), true);
+        showDislikes = ServiceHelper.isFetchDislikeEnabled(activity);
         selectedTabTag = prefs.getString(
                 getString(R.string.stream_info_selected_tab_key), COMMENTS_TAB_TAG);
         prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
@@ -1558,35 +1565,7 @@ public final class VideoDetailFragment
             binding.detailViewCountView.setVisibility(View.GONE);
         }
 
-        if (info.getDislikeCount() == -1 && info.getLikeCount() == -1) {
-            binding.detailThumbsDownImgView.setVisibility(View.VISIBLE);
-            binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
-            binding.detailThumbsUpCountView.setVisibility(View.GONE);
-            binding.detailThumbsDownCountView.setVisibility(View.GONE);
-
-            binding.detailThumbsDisabledView.setVisibility(View.VISIBLE);
-        } else {
-            if (info.getDislikeCount() >= 0) {
-                binding.detailThumbsDownCountView.setText(Localization
-                        .shortCount(activity, info.getDislikeCount()));
-                binding.detailThumbsDownCountView.setVisibility(View.VISIBLE);
-                binding.detailThumbsDownImgView.setVisibility(View.VISIBLE);
-            } else {
-                binding.detailThumbsDownCountView.setVisibility(View.GONE);
-                binding.detailThumbsDownImgView.setVisibility(View.GONE);
-            }
-
-            if (info.getLikeCount() >= 0) {
-                binding.detailThumbsUpCountView.setText(Localization.shortCount(activity,
-                        info.getLikeCount()));
-                binding.detailThumbsUpCountView.setVisibility(View.VISIBLE);
-                binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
-            } else {
-                binding.detailThumbsUpCountView.setVisibility(View.GONE);
-                binding.detailThumbsUpImgView.setVisibility(View.GONE);
-            }
-            binding.detailThumbsDisabledView.setVisibility(View.GONE);
-        }
+        updateLikeDislikeViews(info);
 
         if (info.getDuration() > 0) {
             binding.detailDurationView.setText(Localization.getDurationString(info.getDuration()));
@@ -1644,6 +1623,38 @@ public final class VideoDetailFragment
         binding.detailControlsPopup.setVisibility(noVideoStreams ? View.GONE : View.VISIBLE);
         binding.detailThumbnailPlayButton.setImageResource(
                 noVideoStreams ? R.drawable.ic_headset_shadow : R.drawable.ic_play_arrow_shadow);
+    }
+
+    private void updateLikeDislikeViews(@NonNull final StreamInfo info) {
+        if ((info.getDislikeCount() == -1 || !showDislikes) && info.getLikeCount() == -1) {
+            binding.detailThumbsDownImgView.setVisibility(showDislikes ? View.VISIBLE : View.GONE);
+            binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
+            binding.detailThumbsUpCountView.setVisibility(View.GONE);
+            binding.detailThumbsDownCountView.setVisibility(View.GONE);
+
+            binding.detailThumbsDisabledView.setVisibility(View.VISIBLE);
+        } else {
+            if (showDislikes && info.getDislikeCount() >= 0) {
+                binding.detailThumbsDownCountView.setText(Localization
+                        .shortCount(activity, info.getDislikeCount()));
+                binding.detailThumbsDownCountView.setVisibility(View.VISIBLE);
+                binding.detailThumbsDownImgView.setVisibility(View.VISIBLE);
+            } else {
+                binding.detailThumbsDownCountView.setVisibility(View.GONE);
+                binding.detailThumbsDownImgView.setVisibility(View.GONE);
+            }
+
+            if (info.getLikeCount() >= 0) {
+                binding.detailThumbsUpCountView.setText(Localization.shortCount(activity,
+                        info.getLikeCount()));
+                binding.detailThumbsUpCountView.setVisibility(View.VISIBLE);
+                binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
+            } else {
+                binding.detailThumbsUpCountView.setVisibility(View.GONE);
+                binding.detailThumbsUpImgView.setVisibility(View.GONE);
+            }
+            binding.detailThumbsDisabledView.setVisibility(View.GONE);
+        }
     }
 
     private void displayUploaderAsSubChannel(final StreamInfo info) {

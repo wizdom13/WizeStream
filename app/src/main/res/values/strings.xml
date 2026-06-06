@@ -303,6 +303,8 @@
     <string name="detail_uploader_thumbnail_view_description">Uploader\'s avatar thumbnail</string>
     <string name="detail_likes_img_view_description">Likes</string>
     <string name="detail_dislikes_img_view_description">Dislikes</string>
+    <string name="show_dislikes_title">Show dislikes</string>
+    <string name="show_dislikes_summary">Show dislike counts when available</string>
     <string name="comments_tab_description">Comments</string>
     <string name="related_items_tab_description">Related items</string>
     <string name="description_tab_description">Description</string>
