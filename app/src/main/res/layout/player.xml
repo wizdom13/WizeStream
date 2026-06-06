@@ -776,6 +776,23 @@
                     tools:src="@drawable/ic_brightness_high" />
             </RelativeLayout>
 
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/swipeSeekDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:background="@drawable/background_oval_black_transparent"
+                android:paddingStart="18dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="12dp"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="+00:15 (03:12)"
+                tools:visibility="visible" />
+
         </RelativeLayout>
 
     </RelativeLayout>

@@ -220,6 +220,37 @@ public final class PlayerHelper {
                         context.getString(R.string.default_left_gesture_control_value));
     }
 
+    public static boolean isSwipeSeekGestureEnabled(@NonNull final Context context) {
+        return getPreferences(context)
+                .getBoolean(context.getString(R.string.swipe_seek_gesture_control_key), true);
+    }
+
+    public static boolean isFullscreenGestureEnabled(@NonNull final Context context) {
+        return getPreferences(context)
+                .getBoolean(context.getString(R.string.fullscreen_gesture_control_key), true);
+    }
+
+    public static boolean isHoldToSpeedEnabled(@NonNull final Context context) {
+        return !context.getString(R.string.hold_to_speed_off_value)
+                .equals(getPreferences(context).getString(
+                        context.getString(R.string.hold_to_speed_key),
+                        context.getString(R.string.hold_to_speed_default_value)));
+    }
+
+    public static float getHoldToSpeedValue(@NonNull final Context context) {
+        final String value = getPreferences(context).getString(
+                context.getString(R.string.hold_to_speed_key),
+                context.getString(R.string.hold_to_speed_default_value));
+        if (context.getString(R.string.hold_to_speed_off_value).equals(value)) {
+            return 1.0f;
+        }
+        try {
+            return Float.parseFloat(value);
+        } catch (final NullPointerException | NumberFormatException e) {
+            return Float.parseFloat(context.getString(R.string.hold_to_speed_default_value));
+        }
+    }
+
     public static boolean isStartMainPlayerFullscreenEnabled(@NonNull final Context context) {
         return getPreferences(context)
                 .getBoolean(context.getString(R.string.start_main_player_fullscreen_key), false);

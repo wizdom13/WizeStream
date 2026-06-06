@@ -950,6 +950,13 @@ public final class Player implements PlaybackListener, Listener {
         setPlaybackParameters(speed, getPlaybackPitch(), getPlaybackSkipSilence());
     }
 
+    public void setPlaybackSpeedTemporarily(final float speed) {
+        if (!exoPlayerIsNull()) {
+            simpleExoPlayer.setPlaybackParameters(
+                    new PlaybackParameters(speed, getPlaybackPitch()));
+        }
+    }
+
     public float getPlaybackPitch() {
         return getPlaybackParameters().pitch;
     }

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import kotlin.math.abs
+import kotlin.math.sign
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
 import org.schabi.newpipe.ktx.AnimationType
@@ -17,6 +18,7 @@ import org.schabi.newpipe.player.Player
 import org.schabi.newpipe.player.helper.AudioReactor
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.ui.MainPlayerUi
+import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ThemeHelper.getAndroidDimenPx
 
 /**
@@ -31,15 +33,26 @@ class MainPlayerGestureListener(
 ) : BasePlayerGestureListener(playerUi), OnTouchListener {
     private var isMoving = false
 
+    private var isSwipeSeeking = false
+    private var accumulatedSeek = 0f
+    private var swipeSeekStartPosition = 0L
+    private var swipeSeekTargetPosition = 0L
+
+    private var isPendingFullscreenSwipe = false
+
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         super.onTouch(v, event)
-        if (event.action == MotionEvent.ACTION_UP && isMoving) {
+        if ((event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) &&
+            isMoving
+        ) {
             isMoving = false
             onScrollEnd(event)
         }
         return when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                v.parent?.requestDisallowInterceptTouchEvent(playerUi.isFullscreen)
+                v.parent?.requestDisallowInterceptTouchEvent(
+                    playerUi.isFullscreen || PlayerHelper.isFullscreenGestureEnabled(player.context)
+                )
                 true
             }
 
@@ -156,6 +169,16 @@ class MainPlayerGestureListener(
 
     override fun onScrollEnd(event: MotionEvent) {
         super.onScrollEnd(event)
+        if (isPendingFullscreenSwipe) {
+            playerUi.toggleFullscreen()
+            isPendingFullscreenSwipe = false
+            return
+        }
+        if (isSwipeSeeking) {
+            player.seekTo(swipeSeekTargetPosition)
+            binding.swipeSeekDisplay.animate(false, 200, AnimationType.SCALE_AND_ALPHA)
+            isSwipeSeeking = false
+        }
         if (binding.volumeRelativeLayout.isVisible) {
             binding.volumeRelativeLayout.animate(false, 200, AnimationType.SCALE_AND_ALPHA, 200)
         }
@@ -164,13 +187,53 @@ class MainPlayerGestureListener(
         }
     }
 
+    private fun onScrollSeek(distanceX: Float) {
+        val duration = player.exoPlayer?.duration ?: 0L
+        if (duration <= 0L) {
+            return
+        }
+
+        if (!isSwipeSeeking) {
+            isSwipeSeeking = true
+            accumulatedSeek = 0f
+            swipeSeekStartPosition = player.exoPlayer?.currentPosition ?: 0L
+            swipeSeekTargetPosition = swipeSeekStartPosition
+            binding.swipeSeekDisplay.animate(true, 200, AnimationType.SCALE_AND_ALPHA)
+            binding.volumeRelativeLayout.isVisible = false
+            binding.brightnessRelativeLayout.isVisible = false
+        }
+
+        accumulatedSeek -= distanceX
+        val thresholdPx = SEEK_SWIPE_FAST_THRESHOLD_MS / SEEK_SWIPE_FACTOR
+        val deltaMs = if (abs(accumulatedSeek) <= thresholdPx) {
+            (accumulatedSeek * SEEK_SWIPE_FACTOR).toLong()
+        } else {
+            val beyond = abs(accumulatedSeek) - thresholdPx
+            (
+                sign(accumulatedSeek) *
+                    (
+                        SEEK_SWIPE_FAST_THRESHOLD_MS +
+                            beyond * SEEK_SWIPE_FACTOR * SEEK_SWIPE_FAST_MULTIPLIER
+                        )
+                ).toLong()
+        }
+
+        swipeSeekTargetPosition = (swipeSeekStartPosition + deltaMs).coerceIn(0L, duration)
+
+        val delta = swipeSeekTargetPosition - swipeSeekStartPosition
+        val deltaText = (if (delta >= 0) "+" else "-") +
+            Localization.getDurationString(abs(delta) / 1000L)
+        val targetText = Localization.getDurationString(swipeSeekTargetPosition / 1000L)
+        binding.swipeSeekDisplay.text = "$deltaText ($targetText)"
+    }
+
     override fun onScroll(
         initialEvent: MotionEvent?,
         movingEvent: MotionEvent,
         distanceX: Float,
         distanceY: Float
     ): Boolean {
-        if (initialEvent == null || !playerUi.isFullscreen) {
+        if (initialEvent == null) {
             return false
         }
 
@@ -185,15 +248,41 @@ class MainPlayerGestureListener(
             return false
         }
 
-        val insideThreshold = abs(movingEvent.y - initialEvent.y) <= MOVEMENT_THRESHOLD
+        val isHorizontal = abs(distanceX) > abs(distanceY)
+        val insideThreshold = abs(movingEvent.y - initialEvent.y) <= MOVEMENT_THRESHOLD &&
+            abs(movingEvent.x - initialEvent.x) <= MOVEMENT_THRESHOLD
         if (
-            !isMoving && (insideThreshold || abs(distanceX) > abs(distanceY)) ||
+            !isMoving && insideThreshold ||
             player.currentState == Player.STATE_COMPLETED
         ) {
             return false
         }
 
         isMoving = true
+
+        if (isSwipeSeeking) {
+            onScrollSeek(distanceX)
+            return true
+        }
+
+        if (PlayerHelper.isFullscreenGestureEnabled(player.context) && !isHorizontal) {
+            val portion = getDisplayPortion(initialEvent)
+            if ((playerUi.isFullscreen && distanceY < 0 && portion == DisplayPortion.MIDDLE) ||
+                (!playerUi.isFullscreen && distanceY > 0)
+            ) {
+                isPendingFullscreenSwipe = true
+                return true
+            }
+        }
+
+        if (!playerUi.isFullscreen) {
+            return false
+        }
+
+        if (PlayerHelper.isSwipeSeekGestureEnabled(player.context) && isHorizontal) {
+            onScrollSeek(distanceX)
+            return true
+        }
 
         // -- Brightness and Volume control --
         if (getDisplayHalfPortion(initialEvent) == DisplayPortion.RIGHT_HALF) {
@@ -236,5 +325,8 @@ class MainPlayerGestureListener(
         private val TAG = MainPlayerGestureListener::class.java.simpleName
         private val DEBUG = MainActivity.DEBUG
         private const val MOVEMENT_THRESHOLD = 40
+        private const val SEEK_SWIPE_FACTOR = 100f // ms per pixel
+        private const val SEEK_SWIPE_FAST_MULTIPLIER = 10f
+        private const val SEEK_SWIPE_FAST_THRESHOLD_MS = 60_000L
     }
 }

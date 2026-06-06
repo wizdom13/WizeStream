@@ -943,4 +943,11 @@
     <string name="api23_requirement_dialog_title">NewPipe is dropping support for Android 5</string>
     <string name="api23_requirement_dialog_message">Unfortunately NewPipe depends on a few libraries that dropped support for Android 5.0 and 5.1. The next NewPipe release will therefore only work on devices with Android 6 or higher, sadly. Read more in the blogpost.</string>
     <string name="api23_requirement_dialog_blogpost">Blogpost</string>
+    <string name="swipe_seek_title">Swipe seek</string>
+    <string name="swipe_seek_summary">Swipe left or right on the video to seek</string>
+    <string name="fullscreen_swipe_title">Fullscreen swipe</string>
+    <string name="fullscreen_swipe_summary">Swipe up or down on the video to enter or exit fullscreen</string>
+    <string name="hold_to_speed_title">Hold to speed up</string>
+    <string name="hold_to_speed_summary">Temporarily speed up playback while holding the video</string>
+    <string name="hold_to_speed_off">Off</string>
 </resources>
