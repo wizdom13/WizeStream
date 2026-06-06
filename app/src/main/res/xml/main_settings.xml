@@ -55,6 +55,14 @@
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
+        android:fragment="org.schabi.newpipe.settings.SponsorBlockSettingsFragment"
+        android:icon="@drawable/ic_attach_money"
+        android:key="@string/sponsor_block_settings_key"
+        android:title="@string/sponsor_block_settings_title"
+        android:summary="@string/sponsor_block_settings_summary"
+        app:iconSpaceReserved="false" />
+
+    <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.BackupRestoreSettingsFragment"
         android:icon="@drawable/ic_settings_backup_restore"
         android:title="@string/settings_category_backup_restore_title"

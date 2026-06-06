@@ -17,6 +17,7 @@ import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.services.peertube.PeertubeInstance
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockApiSettings
 import org.schabi.newpipe.ktx.getStringSafe
 
 object ServiceHelper {
@@ -170,20 +171,61 @@ object ServiceHelper {
     @JvmStatic
     fun initServices(context: Context) {
         val fetchDislike = isFetchDislikeEnabled(context)
+        val sponsorBlockApiSettings = buildSponsorBlockApiSettings(context)
         ServiceList.all().forEach {
             initService(context, it.serviceId)
-            setFetchDislikeIfSupported(it, fetchDislike)
+            it.setFetchDislike(fetchDislike)
+            it.setSponsorBlockApiSettings(sponsorBlockApiSettings)
         }
     }
 
-    private fun setFetchDislikeIfSupported(service: StreamingService, fetchDislike: Boolean) {
-        service.javaClass.methods
-            .firstOrNull { method ->
-                method.name == "setFetchDislike" &&
-                    method.parameterTypes.contentEquals(
-                        arrayOf(Boolean::class.javaPrimitiveType!!)
-                    )
-            }
-            ?.let { method -> runCatching { method.invoke(service, fetchDislike) } }
+    private fun buildSponsorBlockApiSettings(context: Context): SponsorBlockApiSettings? {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        if (!preferences.getBoolean(context.getString(R.string.sponsor_block_enable_key), false)) {
+            return null
+        }
+
+        return SponsorBlockApiSettings().apply {
+            apiUrl = preferences.getString(context.getString(R.string.sponsor_block_api_url_key), null)
+                ?.takeIf(String::isNotBlank)
+            userId = preferences.getString(context.getString(R.string.sponsor_block_user_id_key), null)
+                ?.takeIf(String::isNotBlank)
+            includeSponsorCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_sponsor_key),
+                true
+            )
+            includeIntroCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_intro_key),
+                false
+            )
+            includeOutroCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_outro_key),
+                false
+            )
+            includeInteractionCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_interaction_key),
+                false
+            )
+            includeHighlightCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_highlight_key),
+                false
+            )
+            includeSelfPromoCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_self_promo_key),
+                false
+            )
+            includeMusicCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_non_music_key),
+                false
+            )
+            includePreviewCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_preview_key),
+                false
+            )
+            includeFillerCategory = preferences.getBoolean(
+                context.getString(R.string.sponsor_block_category_filler_key),
+                false
+            )
+        }
     }
 }

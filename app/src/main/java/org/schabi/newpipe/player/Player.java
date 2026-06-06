@@ -58,6 +58,7 @@ import android.media.AudioManager;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -89,6 +90,9 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.Image;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockAction;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockCategory;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
@@ -127,9 +131,12 @@ import org.schabi.newpipe.util.SerializedCache;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import coil3.target.Target;
@@ -201,6 +208,14 @@ public final class Player implements PlaybackListener, Listener {
     private Bitmap currentThumbnail;
     @Nullable
     private coil3.request.Disposable thumbnailDisposable;
+
+    @NonNull
+    private List<SponsorBlockSegment> sponsorBlockSegments = Collections.emptyList();
+    @NonNull
+    private final Set<String> skippedSponsorBlockSegments = new HashSet<>();
+    @Nullable
+    private String ignoredSponsorBlockSegment;
+    private boolean sponsorBlockSkipInProgress = false;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Player
@@ -1025,8 +1040,159 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
+        maybeSkipSponsorBlockSegment();
         onUpdateProgress(Math.max((int) simpleExoPlayer.getCurrentPosition(), 0),
                 (int) simpleExoPlayer.getDuration(), simpleExoPlayer.getBufferedPercentage());
+    }
+
+    private void maybeSkipSponsorBlockSegment() {
+        if (!isSponsorBlockEnabled() || sponsorBlockSegments.isEmpty() || !isPlaying()
+                || simpleExoPlayer.getPlaybackState()
+                        != com.google.android.exoplayer2.Player.STATE_READY) {
+            return;
+        }
+
+        final long currentPositionMillis = simpleExoPlayer.getCurrentPosition();
+        SponsorBlockSegment activeSegment = null;
+        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
+            if (isSegmentActive(segment, currentPositionMillis)) {
+                activeSegment = segment;
+                break;
+            }
+        }
+
+        if (activeSegment == null) {
+            ignoredSponsorBlockSegment = null;
+            return;
+        }
+
+        final String segmentKey = getSegmentKey(activeSegment);
+        if (segmentKey.equals(ignoredSponsorBlockSegment)
+                || skippedSponsorBlockSegments.contains(segmentKey)
+                || activeSegment.getActionType() != SponsorBlockAction.SKIP
+                || activeSegment.getCategory() == SponsorBlockCategory.HIGHLIGHT) {
+            return;
+        }
+
+        final long segmentEndMillis = Math.round(activeSegment.getEndTimeSeconds() * 1000.0d);
+        final long durationMillis = simpleExoPlayer.getDuration();
+        final long targetPositionMillis = durationMillis > 0 && durationMillis != C.TIME_UNSET
+                ? MathUtils.clamp(segmentEndMillis, 0, durationMillis)
+                : Math.max(segmentEndMillis, 0);
+        if (targetPositionMillis <= currentPositionMillis) {
+            skippedSponsorBlockSegments.add(segmentKey);
+            return;
+        }
+
+        sponsorBlockSkipInProgress = true;
+        skippedSponsorBlockSegments.add(segmentKey);
+        simpleExoPlayer.seekTo(targetPositionMillis);
+        if (prefs.getBoolean(context.getString(R.string.sponsor_block_notifications_key), true)) {
+            Toast.makeText(context,
+                    context.getString(R.string.sponsor_block_skipped_segment,
+                            getSegmentCategoryName(activeSegment)),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isSponsorBlockEnabled() {
+        return prefs.getBoolean(context.getString(R.string.sponsor_block_enable_key), false);
+    }
+
+    private boolean isSegmentActive(@NonNull final SponsorBlockSegment segment,
+                                    final long currentPositionMillis) {
+        if (!segment.isValid() || segment.getActionType() == SponsorBlockAction.UNKNOWN
+                || segment.getActionType() == SponsorBlockAction.POI
+                || segment.getActionType() == SponsorBlockAction.CHAPTER
+                || segment.getActionType() == SponsorBlockAction.FULL
+                || segment.getActionType() == SponsorBlockAction.MUTE
+                || !isCategoryEnabled(segment.getCategory())) {
+            return false;
+        }
+        final long segmentStartMillis = Math.round(segment.getStartTimeSeconds() * 1000.0d);
+        final long segmentEndMillis = Math.round(segment.getEndTimeSeconds() * 1000.0d);
+        return currentPositionMillis >= segmentStartMillis
+                && currentPositionMillis < segmentEndMillis;
+    }
+
+    private boolean isCategoryEnabled(@Nullable final SponsorBlockCategory category) {
+        if (category == null) {
+            return false;
+        }
+        switch (category) {
+            case SPONSOR:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_sponsor_key), true);
+            case INTRO:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_intro_key), false);
+            case OUTRO:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_outro_key), false);
+            case INTERACTION:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_interaction_key),
+                        false);
+            case HIGHLIGHT:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_highlight_key),
+                        false);
+            case SELF_PROMO:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_self_promo_key),
+                        false);
+            case MUSIC_OFFTOPIC:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_non_music_key),
+                        false);
+            case PREVIEW:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_preview_key), false);
+            case FILLER:
+                return prefs.getBoolean(
+                        context.getString(R.string.sponsor_block_category_filler_key), false);
+            default:
+                return false;
+        }
+    }
+
+    @NonNull
+    private String getSegmentKey(@NonNull final SponsorBlockSegment segment) {
+        if (!isNullOrEmpty(segment.getUuid())) {
+            return segment.getUuid();
+        }
+        return segment.getCategory() + ":" + segment.getActionType() + ":"
+                + segment.getStartTimeSeconds() + ":" + segment.getEndTimeSeconds();
+    }
+
+    @NonNull
+    private String getSegmentCategoryName(@NonNull final SponsorBlockSegment segment) {
+        final SponsorBlockCategory category = segment.getCategory();
+        if (category == null) {
+            return context.getString(R.string.sponsor_block_skipped_segment_fallback);
+        }
+        switch (category) {
+            case SPONSOR:
+                return context.getString(R.string.sponsor_block_category_sponsor_title);
+            case INTRO:
+                return context.getString(R.string.sponsor_block_category_intro_title);
+            case OUTRO:
+                return context.getString(R.string.sponsor_block_category_outro_title);
+            case INTERACTION:
+                return context.getString(R.string.sponsor_block_category_interaction_title);
+            case HIGHLIGHT:
+                return context.getString(R.string.sponsor_block_category_highlight_title);
+            case SELF_PROMO:
+                return context.getString(R.string.sponsor_block_category_self_promo_title);
+            case MUSIC_OFFTOPIC:
+                return context.getString(R.string.sponsor_block_category_non_music_title);
+            case PREVIEW:
+                return context.getString(R.string.sponsor_block_category_preview_title);
+            case FILLER:
+                return context.getString(R.string.sponsor_block_category_filler_title);
+            default:
+                return context.getString(R.string.sponsor_block_skipped_segment_fallback);
+        }
     }
 
     private Disposable getProgressUpdateDisposable() {
@@ -1442,6 +1608,20 @@ public final class Player implements PlaybackListener, Listener {
         }
         if (playQueue == null) {
             return;
+        }
+
+        if (discontinuityReason == DISCONTINUITY_REASON_SEEK && !sponsorBlockSkipInProgress) {
+            final String seekTargetSegmentKey = getActiveSponsorBlockSegmentKey(
+                    newPosition.positionMs);
+            if (prefs.getBoolean(context.getString(R.string.sponsor_block_graced_rewind_key),
+                    true)) {
+                ignoredSponsorBlockSegment = seekTargetSegmentKey;
+            } else if (seekTargetSegmentKey != null) {
+                skippedSponsorBlockSegments.remove(seekTargetSegmentKey);
+            }
+        }
+        if (sponsorBlockSkipInProgress) {
+            sponsorBlockSkipInProgress = false;
         }
 
         // Refresh the playback if there is a transition to the next video
@@ -1919,6 +2099,7 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
+        updateSponsorBlockSegments(info);
         maybeAutoQueueNextStream(info);
 
         loadCurrentThumbnail(info.getThumbnails());
@@ -1927,6 +2108,31 @@ public final class Player implements PlaybackListener, Listener {
         notifyMetadataUpdateToListeners();
         notifyAudioTrackUpdateToListeners();
         UIs.call(playerUi -> playerUi.onMetadataChanged(info));
+    }
+
+    private void updateSponsorBlockSegments(@NonNull final StreamInfo info) {
+        skippedSponsorBlockSegments.clear();
+        ignoredSponsorBlockSegment = null;
+        sponsorBlockSkipInProgress = false;
+        if (!isSponsorBlockEnabled()) {
+            sponsorBlockSegments = Collections.emptyList();
+            return;
+        }
+        final List<SponsorBlockSegment> segments = info.getSponsorBlockSegments();
+        sponsorBlockSegments = segments == null ? Collections.emptyList() : segments;
+    }
+
+    @Nullable
+    private String getActiveSponsorBlockSegmentKey(final long positionMillis) {
+        if (!isSponsorBlockEnabled() || sponsorBlockSegments.isEmpty()) {
+            return null;
+        }
+        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
+            if (isSegmentActive(segment, positionMillis)) {
+                return getSegmentKey(segment);
+            }
+        }
+        return null;
     }
 
     @NonNull

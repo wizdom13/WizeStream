@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:key="@string/sponsor_block_categories_key"
+    android:title="@string/sponsor_block_categories_title">
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/sponsor_block_category_sponsor_key"
+        android:summary="@string/sponsor_block_category_sponsor_summary"
+        android:title="@string/sponsor_block_category_sponsor_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_intro_key"
+        android:summary="@string/sponsor_block_category_intro_summary"
+        android:title="@string/sponsor_block_category_intro_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_outro_key"
+        android:summary="@string/sponsor_block_category_outro_summary"
+        android:title="@string/sponsor_block_category_outro_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_interaction_key"
+        android:summary="@string/sponsor_block_category_interaction_summary"
+        android:title="@string/sponsor_block_category_interaction_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_self_promo_key"
+        android:summary="@string/sponsor_block_category_self_promo_summary"
+        android:title="@string/sponsor_block_category_self_promo_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_non_music_key"
+        android:summary="@string/sponsor_block_category_non_music_summary"
+        android:title="@string/sponsor_block_category_non_music_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_preview_key"
+        android:summary="@string/sponsor_block_category_preview_summary"
+        android:title="@string/sponsor_block_category_preview_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_filler_key"
+        android:summary="@string/sponsor_block_category_filler_summary"
+        android:title="@string/sponsor_block_category_filler_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/sponsor_block_category_highlight_key"
+        android:summary="@string/sponsor_block_category_highlight_summary"
+        android:title="@string/sponsor_block_category_highlight_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+</PreferenceScreen>

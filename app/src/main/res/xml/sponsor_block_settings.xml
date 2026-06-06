@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:key="@string/sponsor_block_settings_key"
+    android:title="@string/sponsor_block_settings_title">
+
+    <Preference
+        android:key="@string/sponsor_block_home_page_key"
+        android:summary="@string/sponsor_block_home_page_summary"
+        android:title="@string/sponsor_block_home_page_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/sponsor_block_privacy_key"
+        android:summary="@string/sponsor_block_privacy_summary"
+        android:title="@string/sponsor_block_privacy_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <PreferenceCategory
+        android:title="@string/sponsor_block_settings_category_title"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/sponsor_block_enable_key"
+            android:summary="@string/sponsor_block_enable_summary"
+            android:title="@string/sponsor_block_enable_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="@string/sponsor_block_enable_key"
+            android:key="@string/sponsor_block_show_manual_skip_key"
+            android:summary="@string/sponsor_block_show_manual_skip_summary"
+            android:title="@string/sponsor_block_show_manual_skip_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="@string/sponsor_block_enable_key"
+            android:key="@string/sponsor_block_graced_rewind_key"
+            android:summary="@string/sponsor_block_graced_rewind_summary"
+            android:title="@string/sponsor_block_graced_rewind_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="@string/sponsor_block_enable_key"
+            android:key="@string/sponsor_block_notifications_key"
+            android:summary="@string/sponsor_block_notifications_summary"
+            android:title="@string/sponsor_block_notifications_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <PreferenceScreen
+            android:dependency="@string/sponsor_block_enable_key"
+            android:fragment="org.schabi.newpipe.settings.SponsorBlockCategoriesSettingsFragment"
+            android:key="@string/sponsor_block_categories_key"
+            android:summary="@string/sponsor_block_categories_summary"
+            android:title="@string/sponsor_block_categories_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

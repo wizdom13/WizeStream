@@ -952,4 +952,46 @@
     <string name="hold_to_speed_title">Hold to speed up</string>
     <string name="hold_to_speed_summary">Temporarily speed up playback while holding the video</string>
     <string name="hold_to_speed_off">Off</string>
+
+    <!-- SponsorBlock -->
+    <string name="sponsor_block_settings_title">SponsorBlock</string>
+    <string name="sponsor_block_settings_summary">Skip sponsored segments and configure categories</string>
+    <string name="sponsor_block_home_page_title">SponsorBlock website</string>
+    <string name="sponsor_block_home_page_summary">Open SponsorBlock project website</string>
+    <string name="sponsor_block_privacy_title">Privacy policy</string>
+    <string name="sponsor_block_privacy_summary">Open SponsorBlock privacy policy</string>
+    <string name="sponsor_block_homepage_url" translatable="false">https://sponsor.ajay.app</string>
+    <string name="sponsor_block_privacy_policy_url" translatable="false">https://wiki.sponsor.ajay.app/w/Privacy_Policy</string>
+    <string name="sponsor_block_settings_category_title">Settings</string>
+    <string name="sponsor_block_enable_title">Enable SponsorBlock</string>
+    <string name="sponsor_block_enable_summary">Skip or show controls for sponsored segments</string>
+    <string name="sponsor_block_show_manual_skip_title">Show manual skip button</string>
+    <string name="sponsor_block_show_manual_skip_summary">Show a button when a skippable segment starts</string>
+    <string name="sponsor_block_graced_rewind_title">Rewind after manual seek</string>
+    <string name="sponsor_block_graced_rewind_summary">Allow skipped segments to play if you manually seek back into them</string>
+    <string name="sponsor_block_notifications_title">Skip notifications</string>
+    <string name="sponsor_block_notifications_summary">Show a short message when a segment is skipped</string>
+    <string name="sponsor_block_categories_title">Categories</string>
+    <string name="sponsor_block_categories_summary">Choose which segment types to skip</string>
+    <string name="sponsor_block_category_sponsor_title">Sponsor</string>
+    <string name="sponsor_block_category_sponsor_summary">Paid promotions and sponsor messages</string>
+    <string name="sponsor_block_category_intro_title">Intro</string>
+    <string name="sponsor_block_category_intro_summary">Opening sequences and repeated intro sections</string>
+    <string name="sponsor_block_category_outro_title">Outro</string>
+    <string name="sponsor_block_category_outro_summary">End cards and closing sections</string>
+    <string name="sponsor_block_category_interaction_title">Interaction reminder</string>
+    <string name="sponsor_block_category_interaction_summary">Reminders to like, subscribe, or comment</string>
+    <string name="sponsor_block_category_self_promo_title">Self-promotion</string>
+    <string name="sponsor_block_category_self_promo_summary">Creator promotion of their own content</string>
+    <string name="sponsor_block_category_non_music_title">Non-music section</string>
+    <string name="sponsor_block_category_non_music_summary">Non-music or off-topic parts in music videos</string>
+    <string name="sponsor_block_category_preview_title">Preview/recap</string>
+    <string name="sponsor_block_category_preview_summary">Previews, recaps, and teasers</string>
+    <string name="sponsor_block_category_filler_title">Filler</string>
+    <string name="sponsor_block_category_filler_summary">Filler tangents and repeated material</string>
+    <string name="sponsor_block_category_highlight_title">Highlight</string>
+    <string name="sponsor_block_category_highlight_summary">Point-of-interest markers; not skipped automatically</string>
+    <string name="sponsor_block_skipped_segment">Skipped %1$s</string>
+    <string name="sponsor_block_skipped_segment_fallback">segment</string>
+
 </resources>
