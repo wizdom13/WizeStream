@@ -56,6 +56,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.Toast;
@@ -131,6 +132,7 @@ import org.schabi.newpipe.util.SerializedCache;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -215,7 +217,14 @@ public final class Player implements PlaybackListener, Listener {
     private final Set<String> skippedSponsorBlockSegments = new HashSet<>();
     @Nullable
     private String ignoredSponsorBlockSegment;
+    @Nullable
+    private String displayedSponsorBlockManualSkipSegment;
+    @Nullable
+    private String pendingSponsorBlockAutoSkipSegment;
+    private long pendingSponsorBlockAutoSkipShownAtMillis = 0;
     private boolean sponsorBlockSkipInProgress = false;
+
+    private static final long SPONSOR_BLOCK_MANUAL_SKIP_AUTO_DELAY_MILLIS = 1500;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Player
@@ -1043,56 +1052,131 @@ public final class Player implements PlaybackListener, Listener {
         maybeSkipSponsorBlockSegment();
         onUpdateProgress(Math.max((int) simpleExoPlayer.getCurrentPosition(), 0),
                 (int) simpleExoPlayer.getDuration(), simpleExoPlayer.getBufferedPercentage());
+        updateSponsorBlockSeekBarMarkers();
     }
 
     private void maybeSkipSponsorBlockSegment() {
         if (!isSponsorBlockEnabled() || sponsorBlockSegments.isEmpty() || !isPlaying()
                 || simpleExoPlayer.getPlaybackState()
                         != com.google.android.exoplayer2.Player.STATE_READY) {
+            hideSponsorBlockManualSkipButton();
             return;
         }
 
         final long currentPositionMillis = simpleExoPlayer.getCurrentPosition();
-        SponsorBlockSegment activeSegment = null;
-        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
-            if (isSegmentActive(segment, currentPositionMillis)) {
-                activeSegment = segment;
-                break;
-            }
-        }
+        final SponsorBlockSegment activeSegment =
+                getActiveSponsorBlockSegment(currentPositionMillis);
 
         if (activeSegment == null) {
             ignoredSponsorBlockSegment = null;
+            pendingSponsorBlockAutoSkipSegment = null;
+            hideSponsorBlockManualSkipButton();
             return;
         }
 
         final String segmentKey = getSegmentKey(activeSegment);
         if (segmentKey.equals(ignoredSponsorBlockSegment)
                 || skippedSponsorBlockSegments.contains(segmentKey)
-                || activeSegment.getActionType() != SponsorBlockAction.SKIP
-                || activeSegment.getCategory() == SponsorBlockCategory.HIGHLIGHT) {
+                || !isSkippableSponsorBlockSegment(activeSegment)) {
+            pendingSponsorBlockAutoSkipSegment = null;
+            hideSponsorBlockManualSkipButton();
             return;
         }
 
-        final long segmentEndMillis = Math.round(activeSegment.getEndTimeSeconds() * 1000.0d);
-        final long durationMillis = simpleExoPlayer.getDuration();
-        final long targetPositionMillis = durationMillis > 0 && durationMillis != C.TIME_UNSET
-                ? MathUtils.clamp(segmentEndMillis, 0, durationMillis)
-                : Math.max(segmentEndMillis, 0);
+        final long targetPositionMillis = getSponsorBlockSegmentEndMillis(activeSegment);
         if (targetPositionMillis <= currentPositionMillis) {
             skippedSponsorBlockSegments.add(segmentKey);
+            pendingSponsorBlockAutoSkipSegment = null;
+            hideSponsorBlockManualSkipButton();
             return;
         }
 
+        if (shouldShowSponsorBlockManualSkipButton()) {
+            final long now = SystemClock.uptimeMillis();
+            if (!segmentKey.equals(pendingSponsorBlockAutoSkipSegment)) {
+                pendingSponsorBlockAutoSkipSegment = segmentKey;
+                pendingSponsorBlockAutoSkipShownAtMillis = now;
+                showSponsorBlockManualSkipButton(activeSegment);
+                return;
+            }
+
+            showSponsorBlockManualSkipButton(activeSegment);
+            if (now - pendingSponsorBlockAutoSkipShownAtMillis
+                    < SPONSOR_BLOCK_MANUAL_SKIP_AUTO_DELAY_MILLIS) {
+                return;
+            }
+        }
+
+        skipSponsorBlockSegment(activeSegment);
+    }
+
+    private void skipSponsorBlockSegment(@NonNull final SponsorBlockSegment segment) {
+        final String segmentKey = getSegmentKey(segment);
+        final long targetPositionMillis = getSponsorBlockSegmentEndMillis(segment);
         sponsorBlockSkipInProgress = true;
         skippedSponsorBlockSegments.add(segmentKey);
+        pendingSponsorBlockAutoSkipSegment = null;
+        hideSponsorBlockManualSkipButton();
         simpleExoPlayer.seekTo(targetPositionMillis);
         if (prefs.getBoolean(context.getString(R.string.sponsor_block_notifications_key), true)) {
             Toast.makeText(context,
                     context.getString(R.string.sponsor_block_skipped_segment,
-                            getSegmentCategoryName(activeSegment)),
+                            getSegmentCategoryName(segment)),
                     Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private long getSponsorBlockSegmentEndMillis(@NonNull final SponsorBlockSegment segment) {
+        final long segmentEndMillis = Math.round(segment.getEndTimeSeconds() * 1000.0d);
+        final long durationMillis = simpleExoPlayer.getDuration();
+        return durationMillis > 0 && durationMillis != C.TIME_UNSET
+                ? MathUtils.clamp(segmentEndMillis, 0, durationMillis)
+                : Math.max(segmentEndMillis, 0);
+    }
+
+    private void showSponsorBlockManualSkipButton(@NonNull final SponsorBlockSegment segment) {
+        if (!isCurrentStreamEligibleForSponsorBlockUi()) {
+            hideSponsorBlockManualSkipButton();
+            return;
+        }
+
+        final String segmentKey = getSegmentKey(segment);
+        if (segmentKey.equals(displayedSponsorBlockManualSkipSegment)) {
+            return;
+        }
+
+        final String label = segment.getCategory() == SponsorBlockCategory.SPONSOR
+                ? context.getString(R.string.sponsor_block_skip_sponsor)
+                : context.getString(R.string.sponsor_block_skip_segment);
+        displayedSponsorBlockManualSkipSegment = segmentKey;
+        UIs.call(ui -> ui.showSponsorBlockSkipButton(label, () -> {
+            if (!exoPlayerIsNull() && !skippedSponsorBlockSegments.contains(segmentKey)) {
+                skipSponsorBlockSegment(segment);
+            }
+        }));
+    }
+
+    private void hideSponsorBlockManualSkipButton() {
+        if (displayedSponsorBlockManualSkipSegment == null) {
+            return;
+        }
+        displayedSponsorBlockManualSkipSegment = null;
+        UIs.call(PlayerUi::hideSponsorBlockSkipButton);
+    }
+
+    private boolean shouldShowSponsorBlockManualSkipButton() {
+        return prefs.getBoolean(context.getString(R.string.sponsor_block_show_manual_skip_key),
+                true);
+    }
+
+    @Nullable
+    private SponsorBlockSegment getActiveSponsorBlockSegment(final long positionMillis) {
+        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
+            if (isSegmentActive(segment, positionMillis)) {
+                return segment;
+            }
+        }
+        return null;
     }
 
     private boolean isSponsorBlockEnabled() {
@@ -1113,6 +1197,27 @@ public final class Player implements PlaybackListener, Listener {
         final long segmentEndMillis = Math.round(segment.getEndTimeSeconds() * 1000.0d);
         return currentPositionMillis >= segmentStartMillis
                 && currentPositionMillis < segmentEndMillis;
+    }
+
+    private boolean isSkippableSponsorBlockSegment(@NonNull final SponsorBlockSegment segment) {
+        return segment.getActionType() == SponsorBlockAction.SKIP
+                && segment.getCategory() != SponsorBlockCategory.HIGHLIGHT;
+    }
+
+    private boolean isCurrentStreamEligibleForSponsorBlockUi() {
+        if (exoPlayerIsNull()) {
+            return false;
+        }
+        final long durationMillis = simpleExoPlayer.getDuration();
+        if (durationMillis <= 0 || durationMillis == C.TIME_UNSET) {
+            return false;
+        }
+
+        return getCurrentStreamInfo()
+                .map(StreamInfo::getStreamType)
+                .map(streamType -> streamType == StreamType.VIDEO_STREAM
+                        || streamType == StreamType.POST_LIVE_STREAM)
+                .orElse(false);
     }
 
     private boolean isCategoryEnabled(@Nullable final SponsorBlockCategory category) {
@@ -1360,6 +1465,7 @@ public final class Player implements PlaybackListener, Listener {
             startProgressLoop();
         }
 
+        hideSponsorBlockManualSkipButton();
         UIs.call(PlayerUi::onBlocked);
     }
 
@@ -1391,6 +1497,7 @@ public final class Player implements PlaybackListener, Listener {
             stopProgressLoop();
         }
 
+        hideSponsorBlockManualSkipButton();
         UIs.call(PlayerUi::onPaused);
     }
 
@@ -1409,6 +1516,7 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
+        hideSponsorBlockManualSkipButton();
         UIs.call(PlayerUi::onCompleted);
 
         if (playQueue.getIndex() < playQueue.size() - 1) {
@@ -2113,13 +2221,18 @@ public final class Player implements PlaybackListener, Listener {
     private void updateSponsorBlockSegments(@NonNull final StreamInfo info) {
         skippedSponsorBlockSegments.clear();
         ignoredSponsorBlockSegment = null;
+        hideSponsorBlockManualSkipButton();
+        pendingSponsorBlockAutoSkipSegment = null;
+        pendingSponsorBlockAutoSkipShownAtMillis = 0;
         sponsorBlockSkipInProgress = false;
         if (!isSponsorBlockEnabled()) {
             sponsorBlockSegments = Collections.emptyList();
+            clearSponsorBlockSeekBarMarkers();
             return;
         }
         final List<SponsorBlockSegment> segments = info.getSponsorBlockSegments();
         sponsorBlockSegments = segments == null ? Collections.emptyList() : segments;
+        updateSponsorBlockSeekBarMarkers();
     }
 
     @Nullable
@@ -2133,6 +2246,39 @@ public final class Player implements PlaybackListener, Listener {
             }
         }
         return null;
+    }
+
+    private void updateSponsorBlockSeekBarMarkers() {
+        if (!isSponsorBlockEnabled() || sponsorBlockSegments.isEmpty()
+                || !isCurrentStreamEligibleForSponsorBlockUi()) {
+            clearSponsorBlockSeekBarMarkers();
+            return;
+        }
+
+        final List<SponsorBlockSegment> markerSegments = new ArrayList<>();
+        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
+            if (isValidSponsorBlockMarkerSegment(segment)) {
+                markerSegments.add(segment);
+            }
+        }
+
+        if (markerSegments.isEmpty()) {
+            clearSponsorBlockSeekBarMarkers();
+            return;
+        }
+
+        UIs.call(ui -> ui.updateSponsorBlockSeekBarMarkers(markerSegments,
+                simpleExoPlayer.getDuration()));
+    }
+
+    private boolean isValidSponsorBlockMarkerSegment(@NonNull final SponsorBlockSegment segment) {
+        return segment.isValid()
+                && isSkippableSponsorBlockSegment(segment)
+                && isCategoryEnabled(segment.getCategory());
+    }
+
+    private void clearSponsorBlockSeekBarMarkers() {
+        UIs.call(PlayerUi::clearSponsorBlockSeekBarMarkers);
     }
 
     @NonNull

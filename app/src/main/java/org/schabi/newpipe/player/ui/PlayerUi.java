@@ -13,6 +13,7 @@ import com.google.android.exoplayer2.Tracks;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.video.VideoSize;
 
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
 
@@ -123,6 +124,40 @@ public abstract class PlayerUi {
                                  final int duration,
                                  final int bufferPercent) {
     }
+
+    /**
+     * Shows a SponsorBlock skip affordance in UIs that can safely display one.
+     *
+     * @param label the text to display inside the skip affordance
+     * @param onClick the action to run when the skip affordance is clicked
+     */
+    public void showSponsorBlockSkipButton(@NonNull final String label,
+                                           @NonNull final Runnable onClick) {
+    }
+
+    /**
+     * Hides the SponsorBlock skip affordance if it is currently visible.
+     */
+    public void hideSponsorBlockSkipButton() {
+    }
+
+    /**
+     * Updates SponsorBlock segment markers in UIs that have a video seek bar.
+     *
+     * @param segments the eligible SponsorBlock segments to draw
+     * @param durationMillis the video duration in milliseconds
+     */
+    public void updateSponsorBlockSeekBarMarkers(
+            @NonNull final List<SponsorBlockSegment> segments,
+            final long durationMillis) {
+    }
+
+    /**
+     * Clears SponsorBlock segment markers from UIs that have a video seek bar.
+     */
+    public void clearSponsorBlockSeekBarMarkers() {
+    }
+
 
     public void onPrepared() {
     }

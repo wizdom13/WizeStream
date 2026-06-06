@@ -47,6 +47,7 @@ import com.google.android.exoplayer2.video.VideoSize;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.PlayerBinding;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamSegment;
 import org.schabi.newpipe.fragments.OnScrollBelowItemsListener;
@@ -194,6 +195,39 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         });
     }
 
+
+    @Override
+    public void showSponsorBlockSkipButton(@NonNull final String label,
+                                           @NonNull final Runnable onClick) {
+        binding.sponsorBlockSkipButton.setText(label);
+        binding.sponsorBlockSkipButton.setOnClickListener(v -> onClick.run());
+        binding.sponsorBlockSkipButton.setVisibility(View.VISIBLE);
+        binding.sponsorBlockSkipButton.bringToFront();
+    }
+
+    @Override
+    public void hideSponsorBlockSkipButton() {
+        binding.sponsorBlockSkipButton.setVisibility(View.GONE);
+        binding.sponsorBlockSkipButton.setOnClickListener(null);
+    }
+
+    @Override
+    public void updateSponsorBlockSeekBarMarkers(
+            @NonNull final List<SponsorBlockSegment> segments,
+            final long durationMillis) {
+        binding.sponsorBlockSeekBarMarkers.setPadding(
+                binding.playbackSeekBar.getPaddingLeft(),
+                0,
+                binding.playbackSeekBar.getPaddingRight(),
+                0);
+        binding.sponsorBlockSeekBarMarkers.setSegments(segments, durationMillis);
+    }
+
+    @Override
+    public void clearSponsorBlockSeekBarMarkers() {
+        binding.sponsorBlockSeekBarMarkers.clearSegments();
+    }
+
     @Override
     protected void deinitListeners() {
         super.deinitListeners();
@@ -201,6 +235,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.queueButton.setOnClickListener(null);
         binding.segmentsButton.setOnClickListener(null);
         binding.addToPlaylistButton.setOnClickListener(null);
+        hideSponsorBlockSkipButton();
+        clearSponsorBlockSeekBarMarkers();
 
         context.getContentResolver().unregisterContentObserver(settingsContentObserver);
 

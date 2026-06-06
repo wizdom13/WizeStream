@@ -993,5 +993,8 @@
     <string name="sponsor_block_category_highlight_summary">Point-of-interest markers; not skipped automatically</string>
     <string name="sponsor_block_skipped_segment">Skipped %1$s</string>
     <string name="sponsor_block_skipped_segment_fallback">segment</string>
+    <string name="sponsor_block_skip_sponsor">Skip sponsor</string>
+    <string name="sponsor_block_skip_segment">Skip segment</string>
+    <string name="sponsor_block_skip_button_content_description">Skip SponsorBlock segment</string>
 
 </resources>
