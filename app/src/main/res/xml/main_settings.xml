@@ -56,7 +56,7 @@
 
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.SponsorBlockSettingsFragment"
-        android:icon="@drawable/ic_attach_money"
+        android:icon="@drawable/ic_sponsor_block_enable"
         android:key="@string/sponsor_block_settings_key"
         android:title="@string/sponsor_block_settings_title"
         android:summary="@string/sponsor_block_settings_summary"
