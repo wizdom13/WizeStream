@@ -29,7 +29,6 @@ import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.localization.ContentCountry;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
 import org.schabi.newpipe.extractor.stream.AudioStream;
-import org.schabi.newpipe.extractor.stream.AudioTrackType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -41,6 +40,7 @@ import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.stream.Collectors;
 
 
@@ -338,31 +338,48 @@ public final class Localization {
      * @return the localized name of the audio track
      */
     public static String audioTrackName(@NonNull final Context context, final AudioStream track) {
-        final String name;
         if (track.getAudioLocale() != null) {
-            name = track.getAudioLocale().getDisplayName();
+            return audioLocaleDisplayName(track.getAudioLocale());
         } else if (track.getAudioTrackName() != null) {
-            name = track.getAudioTrackName();
+            return track.getAudioTrackName();
         } else {
-            name = context.getString(R.string.unknown_audio_track);
+            return context.getString(R.string.unknown_audio_track);
         }
-
-        if (track.getAudioTrackType() != null) {
-            final String trackType = audioTrackType(context, track.getAudioTrackType());
-            return context.getString(R.string.audio_track_name, name, trackType);
-        }
-        return name;
     }
 
     @NonNull
-    private static String audioTrackType(@NonNull final Context context,
-                                         @NonNull final AudioTrackType trackType) {
-        return switch (trackType) {
-            case ORIGINAL -> context.getString(R.string.audio_track_type_original);
-            case DUBBED -> context.getString(R.string.audio_track_type_dubbed);
-            case DESCRIPTIVE -> context.getString(R.string.audio_track_type_descriptive);
-            case SECONDARY -> context.getString(R.string.audio_track_type_secondary);
-        };
+    public static String audioLocaleDisplayName(@NonNull final String localeCode) {
+        final Locale locale = audioLocaleFromString(localeCode);
+        if (locale == null) {
+            return localeCode;
+        }
+
+        final String displayName = locale.getDisplayName();
+        return displayName.isEmpty() ? localeCode : displayName;
+    }
+
+    @Nullable
+    public static Locale audioLocaleFromString(@Nullable final String localeCode) {
+        if (localeCode == null || localeCode.isBlank()) {
+            return null;
+        }
+
+        final Locale locale = Locale.forLanguageTag(localeCode.replace('_', '-'));
+        return locale.getLanguage().isEmpty() ? null : locale;
+    }
+
+    @NonNull
+    public static String audioLocaleIso3OrRaw(@Nullable final String localeCode) {
+        final Locale locale = audioLocaleFromString(localeCode);
+        if (locale == null) {
+            return localeCode == null ? "" : localeCode;
+        }
+
+        try {
+            return locale.getISO3Language();
+        } catch (final MissingResourceException ignored) {
+            return localeCode;
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////

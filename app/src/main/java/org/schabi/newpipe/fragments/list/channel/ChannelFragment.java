@@ -46,6 +46,7 @@ import org.schabi.newpipe.local.feed.notifications.NotificationHelper;
 import org.schabi.newpipe.local.subscription.SubscriptionManager;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
+import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -357,7 +358,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 channel.setUrl(info.getUrl());
                 channel.setName(info.getName());
                 channel.setAvatarUrl(ImageStrategy.imageListToDbUrl(info.getAvatars()));
-                channel.setDescription(info.getDescription());
+                channel.setDescription(ExtractorApiCompat.descriptionText(info));
                 channel.setSubscriberCount(info.getSubscriberCount());
                 channelSubscription = null;
                 updateNotifyButton(null);
@@ -597,7 +598,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
         CoilHelper.INSTANCE.loadAvatar(binding.channelAvatarView, result.getAvatars());
         CoilHelper.INSTANCE.loadAvatar(binding.subChannelAvatarView,
-                result.getParentChannelAvatars());
+                ExtractorImageCompat.parentChannelAvatarImages(result));
 
         binding.channelTitleView.setText(result.getName());
         binding.channelSubscriberView.setVisibility(View.VISIBLE);

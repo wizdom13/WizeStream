@@ -21,6 +21,7 @@ import androidx.fragment.app.FragmentActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -28,9 +29,9 @@ import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.util.image.ImageStrategy;
 import org.schabi.newpipe.util.text.TextEllipsizer;
-import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 public class CommentInfoItemHolder extends InfoItemHolder {
 
@@ -129,7 +130,8 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         // setup comment content and click listeners to expand/ellipsize it
         textEllipsizer.setStreamingService(getServiceById(item.getServiceId()));
         textEllipsizer.setStreamUrl(item.getUrl());
-        textEllipsizer.setContent(item.getCommentText());
+        textEllipsizer.setContent(
+                new Description(item.getCommentText(), Description.PLAIN_TEXT));
         textEllipsizer.ellipsize();
 
         //noinspection ClickableViewAccessibility

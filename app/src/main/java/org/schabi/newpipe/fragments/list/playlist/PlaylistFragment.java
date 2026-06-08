@@ -329,7 +329,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         streamCount = result.getStreamCount();
         setStreamCountAndOverallDuration(result.getRelatedItems(), !result.hasNextPage());
 
-        final Description description = result.getDescription();
+        final Description description = Description.EMPTY_DESCRIPTION;
         if (description != null && description != Description.EMPTY_DESCRIPTION
                 && !isBlank(description.getContent())) {
             final TextEllipsizer ellipsizer = new TextEllipsizer(

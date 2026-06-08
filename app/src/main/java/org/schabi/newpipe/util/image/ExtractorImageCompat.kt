@@ -18,13 +18,30 @@ object ExtractorImageCompat {
         .ifEmpty { singleUrlImage(item, "getThumbnailUrl", "thumbnailUrl") }
 
     @JvmStatic
-    fun uploaderAvatarImages(streamItem: Any?): List<Image> = imageList(streamItem, "getUploaderAvatars")
-        .ifEmpty { singleUrlImage(streamItem, "getUploaderAvatarUrl", "uploaderAvatarUrl") }
+    fun uploaderAvatarImages(streamItem: Any?): List<Image> =
+        imageList(streamItem, "getUploaderAvatars")
+            .ifEmpty { singleUrlImage(streamItem, "getUploaderAvatarUrl", "uploaderAvatarUrl") }
+
+    @JvmStatic
+    fun parentChannelAvatarImages(channelInfo: Any?): List<Image> =
+        imageList(channelInfo, "getParentChannel" + "Avatars")
+            .ifEmpty {
+                singleUrlImage(
+                    channelInfo,
+                    "getParentChannelAvatarUrl",
+                    "parentChannelAvatarUrl"
+                )
+            }
 
     @JvmStatic
     fun setThumbnailImages(item: InfoItem, images: List<Image>) {
         if (!invokeSetter(item, "setThumbnails", images)) {
-            setSingleUrl(item, "setThumbnailUrl", "thumbnailUrl", ImageStrategy.imageListToDbUrl(images))
+            setSingleUrl(
+                item,
+                "setThumbnailUrl",
+                "thumbnailUrl",
+                ImageStrategy.imageListToDbUrl(images)
+            )
         }
     }
 

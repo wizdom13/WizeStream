@@ -404,8 +404,12 @@ public class StreamItemAdapter<T extends Stream, U extends Stream> extends BaseA
                 return false;
             }
 
+            final String mimeType = contentTypeHeader.split(";", 2)[0].trim();
             @Nullable MediaFormat foundFormat = null;
-            for (final MediaFormat format : MediaFormat.getAllFromMimeType(contentTypeHeader)) {
+            for (final MediaFormat format : MediaFormat.values()) {
+                if (!format.getMimeType().equals(mimeType)) {
+                    continue;
+                }
                 if (foundFormat == null) {
                     foundFormat = format;
                 } else if (foundFormat.id != format.id) {

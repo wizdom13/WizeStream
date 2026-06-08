@@ -57,6 +57,9 @@ import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.search.SearchInfo;
+import org.schabi.newpipe.extractor.search.filter.Filter;
+import org.schabi.newpipe.extractor.search.filter.FilterGroup;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.services.peertube.linkHandler.PeertubeSearchQueryHandlerFactory;
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
 import org.schabi.newpipe.fragments.BackPressable;
@@ -451,28 +454,36 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             updateService();
         }
 
-        for (final String filter : service.getSearchQHFactory().getAvailableContentFilter()) {
-            if (filter.equals(YoutubeSearchQueryHandlerFactory.MUSIC_SONGS)) {
-                final MenuItem musicItem = menu.add(2,
+        final Filter availableContentFilter = service.getSearchQHFactory()
+                .getAvailableContentFilter();
+        if (availableContentFilter == null) {
+            return;
+        }
+        for (final FilterGroup group : availableContentFilter.getFilterGroups()) {
+            for (final FilterItem filterItem : group.filterItems) {
+                final String filter = filterItem.getName();
+                if (filter.equals(YoutubeSearchQueryHandlerFactory.MUSIC_SONGS)) {
+                    final MenuItem musicItem = menu.add(2,
+                            itemId++,
+                            0,
+                            "YouTube Music");
+                    musicItem.setEnabled(false);
+                } else if (filter.equals(PeertubeSearchQueryHandlerFactory.SEPIA_VIDEOS)) {
+                    final MenuItem sepiaItem = menu.add(2,
+                            itemId++,
+                            0,
+                            "Sepia Search");
+                    sepiaItem.setEnabled(false);
+                }
+                menuItemToFilterName.put(itemId, filter);
+                final MenuItem item = menu.add(1,
                         itemId++,
                         0,
-                        "YouTube Music");
-                musicItem.setEnabled(false);
-            } else if (filter.equals(PeertubeSearchQueryHandlerFactory.SEPIA_VIDEOS)) {
-                final MenuItem sepiaItem = menu.add(2,
-                        itemId++,
-                        0,
-                        "Sepia Search");
-                sepiaItem.setEnabled(false);
-            }
-            menuItemToFilterName.put(itemId, filter);
-            final MenuItem item = menu.add(1,
-                    itemId++,
-                    0,
-                    ServiceHelper.getTranslatedFilterString(filter, c));
-            if (isFirstItem) {
-                item.setChecked(true);
-                isFirstItem = false;
+                        ServiceHelper.getTranslatedFilterString(filter, c));
+                if (isFirstItem) {
+                    item.setChecked(true);
+                    isFirstItem = false;
+                }
             }
         }
         menu.setGroupCheckable(1, true, true);
@@ -947,7 +958,11 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
         try {
             return service.getSearchQHFactory().getUrl(searchString,
-                    Arrays.asList(contentFilter), sortFilter);
+                    ExtractorHelper.resolveFilterItems(
+                            service.getSearchQHFactory().getAvailableContentFilter(),
+                            Arrays.asList(contentFilter)),
+                    ExtractorHelper.resolveFilterItems(
+                            service.getSearchQHFactory().getAvailableSortFilter(), sortFilter));
         } catch (final NullPointerException | ParsingException ignored) {
             return null;
         }

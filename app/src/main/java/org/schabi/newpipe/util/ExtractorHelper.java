@@ -46,13 +46,18 @@ import org.schabi.newpipe.extractor.comments.CommentsInfo;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.kiosk.KioskInfo;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
+import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandlerFactory;
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo;
 import org.schabi.newpipe.extractor.search.SearchInfo;
+import org.schabi.newpipe.extractor.search.filter.Filter;
+import org.schabi.newpipe.extractor.search.filter.FilterGroup;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.suggestion.SuggestionExtractor;
 import org.schabi.newpipe.util.text.TextLinkifier;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,11 +83,14 @@ public final class ExtractorHelper {
                                                final List<String> contentFilter,
                                                final String sortFilter) {
         checkServiceId(serviceId);
-        return Single.fromCallable(() ->
-                SearchInfo.getInfo(NewPipe.getService(serviceId),
-                        NewPipe.getService(serviceId)
-                                .getSearchQHFactory()
-                                .fromQuery(searchString, contentFilter, sortFilter)));
+        return Single.fromCallable(() -> {
+            final SearchQueryHandlerFactory factory = NewPipe.getService(serviceId)
+                    .getSearchQHFactory();
+            return SearchInfo.getInfo(NewPipe.getService(serviceId), factory.fromQuery(
+                    searchString,
+                    resolveFilterItems(factory.getAvailableContentFilter(), contentFilter),
+                    resolveFilterItems(factory.getAvailableSortFilter(), sortFilter)));
+        });
     }
 
     public static Single<InfoItemsPage<InfoItem>> getMoreSearchItems(
@@ -92,12 +100,55 @@ public final class ExtractorHelper {
             final String sortFilter,
             final Page page) {
         checkServiceId(serviceId);
-        return Single.fromCallable(() ->
-                SearchInfo.getMoreItems(NewPipe.getService(serviceId),
-                        NewPipe.getService(serviceId)
-                                .getSearchQHFactory()
-                                .fromQuery(searchString, contentFilter, sortFilter), page));
+        return Single.fromCallable(() -> {
+            final SearchQueryHandlerFactory factory = NewPipe.getService(serviceId)
+                    .getSearchQHFactory();
+            return SearchInfo.getMoreItems(NewPipe.getService(serviceId), factory.fromQuery(
+                    searchString,
+                    resolveFilterItems(factory.getAvailableContentFilter(), contentFilter),
+                    resolveFilterItems(factory.getAvailableSortFilter(), sortFilter)), page);
+        });
 
+    }
+
+    public static List<FilterItem> resolveFilterItems(@Nullable final Filter availableFilters,
+                                                      @Nullable final List<String> names) {
+        if (availableFilters == null || names == null || names.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        final List<FilterItem> selected = new ArrayList<>();
+        for (final String name : names) {
+            final FilterItem filterItem = findFilterItemByName(availableFilters, name);
+            if (filterItem != null) {
+                selected.add(filterItem);
+            }
+        }
+        return selected;
+    }
+
+    public static List<FilterItem> resolveFilterItems(@Nullable final Filter availableFilters,
+                                                      @Nullable final String name) {
+        if (name == null || name.isBlank()) {
+            return Collections.emptyList();
+        }
+        return resolveFilterItems(availableFilters, Collections.singletonList(name));
+    }
+
+    @Nullable
+    private static FilterItem findFilterItemByName(@NonNull final Filter filter,
+                                                   @Nullable final String name) {
+        if (name == null) {
+            return null;
+        }
+        for (final FilterGroup group : filter.getFilterGroups()) {
+            for (final FilterItem item : group.filterItems) {
+                if (name.equals(item.getName())) {
+                    return item;
+                }
+            }
+        }
+        return null;
     }
 
     public static Single<List<String>> suggestionsFor(final int serviceId, final String query) {

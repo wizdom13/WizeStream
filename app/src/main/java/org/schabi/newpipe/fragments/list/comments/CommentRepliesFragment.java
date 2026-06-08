@@ -19,6 +19,7 @@ import org.schabi.newpipe.databinding.CommentRepliesHeaderBinding;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -26,10 +27,10 @@ import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.image.CoilHelper;
-import org.schabi.newpipe.util.image.ImageStrategy;
-import org.schabi.newpipe.util.text.TextLinkifier;
-import org.schabi.newpipe.util.text.LongPressLinkMovementMethod;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
+import org.schabi.newpipe.util.image.ImageStrategy;
+import org.schabi.newpipe.util.text.LongPressLinkMovementMethod;
+import org.schabi.newpipe.util.text.TextLinkifier;
 
 import java.util.Queue;
 import java.util.function.Supplier;
@@ -110,7 +111,8 @@ public final class CommentRepliesFragment
             binding.pinnedImage.setVisibility(item.isPinned() ? View.VISIBLE : View.GONE);
 
             // setup comment content
-            TextLinkifier.fromDescription(binding.commentContent, item.getCommentText(),
+            TextLinkifier.fromDescription(binding.commentContent,
+                    new Description(item.getCommentText(), Description.PLAIN_TEXT),
                     HtmlCompat.FROM_HTML_MODE_LEGACY, getServiceById(item.getServiceId()),
                     item.getUrl(), disposables, null);
             binding.commentContent.setMovementMethod(LongPressLinkMovementMethod.getInstance());

@@ -67,7 +67,7 @@ public abstract class BaseDescriptionFragment extends BaseFragment {
      * @return description object, if available
      */
     @Nullable
-    protected abstract Description getDescription();
+    protected abstract Description displayDescription();
 
     /**
      * Get the streaming service. Used for generating description links.
@@ -104,7 +104,7 @@ public abstract class BaseDescriptionFragment extends BaseFragment {
     protected abstract void setupMetadata(LayoutInflater inflater, LinearLayout layout);
 
     private void setupDescription() {
-        final Description description = getDescription();
+        final Description description = displayDescription();
         if (description == null || isEmpty(description.getContent())
                 || description == Description.EMPTY_DESCRIPTION) {
             binding.detailDescriptionView.setVisibility(View.GONE);
@@ -137,7 +137,7 @@ public abstract class BaseDescriptionFragment extends BaseFragment {
 
     private void disableDescriptionSelection() {
         // show description content again, otherwise some links are not clickable
-        final Description description = getDescription();
+        final Description description = displayDescription();
         if (description != null) {
             TextLinkifier.fromDescription(binding.detailDescriptionView,
                     description, HtmlCompat.FROM_HTML_MODE_LEGACY,

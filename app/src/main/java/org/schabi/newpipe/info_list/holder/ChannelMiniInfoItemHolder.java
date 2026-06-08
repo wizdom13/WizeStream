@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.utils.Utils;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
@@ -75,11 +76,12 @@ public class ChannelMiniInfoItemHolder extends InfoItemHolder {
 
         if (itemChannelDescriptionView != null) {
             // itemChannelDescriptionView will be null in the mini variant
-            if (Utils.isBlank(item.getDescription())) {
+            final String description = ExtractorApiCompat.descriptionText(item);
+            if (Utils.isBlank(description)) {
                 itemChannelDescriptionView.setVisibility(View.GONE);
             } else {
                 itemChannelDescriptionView.setVisibility(View.VISIBLE);
-                itemChannelDescriptionView.setText(item.getDescription());
+                itemChannelDescriptionView.setText(description);
                 // setMaxLines utilize the line space for description if the additional details
                 // (sub / video count) are not present.
                 // Case1: 2 lines of description + 1 line additional details

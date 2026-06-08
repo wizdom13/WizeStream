@@ -7,13 +7,17 @@ import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.error.ReCaptchaActivity;
+import org.schabi.newpipe.extractor.downloader.CancellableCall;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.downloader.Request;
 import org.schabi.newpipe.extractor.downloader.Response;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
 import org.schabi.newpipe.util.InfoCache;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -131,6 +138,44 @@ public final class DownloaderImpl extends Downloader {
     @Override
     public Response execute(@NonNull final Request request)
             throws IOException, ReCaptchaException {
+        final okhttp3.Request okHttpRequest = buildRequest(request);
+        try (okhttp3.Response response = client.newCall(okHttpRequest).execute()) {
+            return buildExtractorResponse(response, request.url());
+        }
+    }
+
+    @Override
+    public CancellableCall executeAsync(@NonNull final Request request,
+                                        final AsyncCallback callback)
+            throws IOException, ReCaptchaException {
+        final Call call = client.newCall(buildRequest(request));
+        final CancellableCall cancellableCall = new CancellableCall(call);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull final Call call, @NonNull final IOException e) {
+                cancellableCall.setFinished();
+                callback.onError(e);
+            }
+
+            @Override
+            public void onResponse(@NonNull final Call call,
+                                   @NonNull final okhttp3.Response response) {
+                try (response) {
+                    final Response extractorResponse = buildExtractorResponse(
+                            response, request.url());
+                    cancellableCall.setFinished();
+                    callback.onSuccess(extractorResponse);
+                } catch (final ReCaptchaException | IOException | ExtractionException e) {
+                    cancellableCall.setFinished();
+                    callback.onError(e);
+                }
+            }
+        });
+        return cancellableCall;
+    }
+
+    @NonNull
+    private okhttp3.Request buildRequest(@NonNull final Request request) {
         final String httpMethod = request.httpMethod();
         final String url = request.url();
         final Map<String, List<String>> headers = request.headers();
@@ -156,26 +201,41 @@ public final class DownloaderImpl extends Downloader {
             headerValueList.forEach(headerValue ->
                     requestBuilder.addHeader(headerName, headerValue));
         });
-
-        try (
-                okhttp3.Response response = client.newCall(requestBuilder.build()).execute()
-        ) {
-            if (response.code() == 429) {
-                throw new ReCaptchaException("reCaptcha Challenge requested", url);
-            }
-
-            String responseBodyToReturn = null;
-            try (ResponseBody body = response.body()) {
-                responseBodyToReturn = body.string();
-            }
-
-            final String latestUrl = response.request().url().toString();
-            return new Response(
-                    response.code(),
-                    response.message(),
-                    response.headers().toMultimap(),
-                    responseBodyToReturn,
-                    latestUrl);
-        }
+        return requestBuilder.build();
     }
+
+    @NonNull
+    private static Response buildExtractorResponse(@NonNull final okhttp3.Response response,
+                                                   @NonNull final String originalUrl)
+            throws IOException, ReCaptchaException {
+        if (response.code() == 429) {
+            throw new ReCaptchaException("reCaptcha Challenge requested", originalUrl);
+        }
+
+        byte[] responseBodyBytes = new byte[0];
+        String responseBodyToReturn = null;
+        try (ResponseBody body = response.body()) {
+            if (body != null) {
+                responseBodyBytes = body.bytes();
+                responseBodyToReturn = new String(responseBodyBytes, responseCharset(body));
+            }
+        }
+
+        final String latestUrl = response.request().url().toString();
+        return new Response(
+                response.code(),
+                response.message(),
+                response.headers().toMultimap(),
+                responseBodyToReturn,
+                responseBodyBytes,
+                latestUrl);
+    }
+
+    @NonNull
+    private static Charset responseCharset(@NonNull final ResponseBody body) {
+        final MediaType contentType = body.contentType();
+        return contentType == null
+                ? StandardCharsets.UTF_8 : contentType.charset(StandardCharsets.UTF_8);
+    }
+
 }

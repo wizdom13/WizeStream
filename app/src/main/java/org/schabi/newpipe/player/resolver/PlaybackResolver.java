@@ -38,6 +38,7 @@ import org.schabi.newpipe.player.datasource.NonUriHlsDataSourceFactory;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
+import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.StreamTypeUtil;
 
 import java.io.ByteArrayInputStream;
@@ -163,7 +164,7 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
 
         if (audioStream.getAudioLocale() != null) {
             cacheKey.append(" ");
-            cacheKey.append(audioStream.getAudioLocale().getISO3Language());
+            cacheKey.append(Localization.audioLocaleIso3OrRaw(audioStream.getAudioLocale()));
         }
 
         return cacheKey.toString();
