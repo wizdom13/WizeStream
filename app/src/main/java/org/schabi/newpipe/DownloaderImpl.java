@@ -165,7 +165,7 @@ public final class DownloaderImpl extends Downloader {
                             response, request.url());
                     cancellableCall.setFinished();
                     callback.onSuccess(extractorResponse);
-                } catch (final ReCaptchaException | IOException | ExtractionException e) {
+                } catch (final IOException | ExtractionException e) {
                     cancellableCall.setFinished();
                     callback.onError(e);
                 }
