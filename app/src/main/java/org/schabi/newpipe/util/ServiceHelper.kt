@@ -22,6 +22,19 @@ import org.schabi.newpipe.ktx.getStringSafe
 
 object ServiceHelper {
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
+    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(5, 6)
+
+    @JvmStatic
+    fun isServiceVisible(service: StreamingService): Boolean {
+        // TODO: Enable PipePipeExtractor's BiliBili and NicoNico services after app-side UI
+        // flows are validated for search, detail, playback, subscriptions, and downloads.
+        return service.serviceId !in TEMPORARILY_HIDDEN_SERVICE_IDS
+    }
+
+    @JvmStatic
+    fun getVisibleServices(): List<StreamingService> {
+        return ServiceList.all().filter(::isServiceVisible)
+    }
 
     @JvmStatic
     @DrawableRes
@@ -99,7 +112,9 @@ object ServiceHelper {
                 context.getString(R.string.default_service_value)
             )
 
-        return runCatching { NewPipe.getService(serviceName) }.getOrNull()
+        return runCatching { NewPipe.getService(serviceName) }
+            .getOrNull()
+            ?.takeIf(::isServiceVisible)
     }
 
     @JvmStatic
@@ -124,8 +139,12 @@ object ServiceHelper {
 
     @JvmStatic
     fun setSelectedServiceId(context: Context, serviceId: Int) {
-        val serviceName = runCatching { NewPipe.getService(serviceId).serviceInfo.name }
-            .getOrDefault(DEFAULT_FALLBACK_SERVICE.serviceInfo.name)
+        val serviceName = runCatching { NewPipe.getService(serviceId) }
+            .getOrNull()
+            ?.takeIf(::isServiceVisible)
+            ?.serviceInfo
+            ?.name
+            ?: DEFAULT_FALLBACK_SERVICE.serviceInfo.name
 
         setSelectedServicePreferences(context, serviceName)
     }
@@ -172,11 +191,15 @@ object ServiceHelper {
     fun initServices(context: Context) {
         val fetchDislike = isFetchDislikeEnabled(context)
         val sponsorBlockApiSettings = buildSponsorBlockApiSettings(context)
+        ServiceList.all().forEach { initService(context, it.serviceId) }
+
+        // Return YouTube Dislike and SponsorBlock are app-side YouTube-only integrations.
         ServiceList.all().forEach {
-            initService(context, it.serviceId)
-            it.setFetchDislike(fetchDislike)
-            it.setSponsorBlockApiSettings(sponsorBlockApiSettings)
+            it.setFetchDislike(false)
+            it.setSponsorBlockApiSettings(null)
         }
+        ServiceList.YouTube.setFetchDislike(fetchDislike)
+        ServiceList.YouTube.setSponsorBlockApiSettings(sponsorBlockApiSettings)
     }
 
     private fun buildSponsorBlockApiSettings(context: Context): SponsorBlockApiSettings? {

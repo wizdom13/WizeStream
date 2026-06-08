@@ -105,8 +105,8 @@ public class SponsorBlockSeekBarMarkersView extends View {
         final float bottom = top + markerHeight;
 
         for (final SponsorBlockSegment segment : segments) {
-            final long startMillis = Math.round(segment.getStartTimeSeconds() * 1000.0d);
-            final long endMillis = Math.round(segment.getEndTimeSeconds() * 1000.0d);
+            final long startMillis = Math.round(segment.startTime);
+            final long endMillis = Math.round(segment.endTime);
             if (startMillis < 0 || endMillis <= startMillis || startMillis >= durationMillis) {
                 continue;
             }
@@ -123,7 +123,7 @@ public class SponsorBlockSeekBarMarkersView extends View {
                 continue;
             }
 
-            paint.setColor(getSegmentColor(segment.getCategory()));
+            paint.setColor(getSegmentColor(segment.category));
             canvas.drawRect(left, top, right, bottom, paint);
         }
     }
@@ -152,7 +152,7 @@ public class SponsorBlockSeekBarMarkersView extends View {
                 return ContextCompat.getColor(getContext(), R.color.sponsor_block_interaction);
             case SELF_PROMO:
                 return ContextCompat.getColor(getContext(), R.color.sponsor_block_self_promo);
-            case MUSIC_OFFTOPIC:
+            case NON_MUSIC:
                 return ContextCompat.getColor(getContext(), R.color.sponsor_block_music);
             case PREVIEW:
                 return ContextCompat.getColor(getContext(), R.color.sponsor_block_preview);

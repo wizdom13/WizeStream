@@ -41,20 +41,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Checkout NewPipeExtractor source
+      - name: Checkout PipePipeExtractor source
         run: |
           set -euo pipefail
+          # Temporary experiment: keep the checkout path stable while sourcing PipePipeExtractor.
           mkdir -p external
           if [ ! -d external/NewPipeExtractor/.git ]; then
             rm -rf external/NewPipeExtractor
-            git clone --depth 1 https://github.com/wizdom13/NewPipeExtractor external/NewPipeExtractor
+            git init external/NewPipeExtractor
+            git -C external/NewPipeExtractor remote add origin https://github.com/InfinityLoop1308/PipePipeExtractor
           fi
+          git -C external/NewPipeExtractor fetch --depth 1 origin 3b2af63f1f53e87292247ce6603be1e642c1a1aa
+          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
 
-      - name: Verify NewPipeExtractor source
+      - name: Verify PipePipeExtractor source
         run: |
           git -C external/NewPipeExtractor remote -v
-          git -C external/NewPipeExtractor rev-parse HEAD
-          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/NewPipeExtractor"
+          test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "3b2af63f1f53e87292247ce6603be1e642c1a1aa"
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/InfinityLoop1308/PipePipeExtractor"
           test -d external/NewPipeExtractor/extractor
       - uses: gradle/actions/wrapper-validation@v6
 
@@ -109,20 +113,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Checkout NewPipeExtractor source
+      - name: Checkout PipePipeExtractor source
         run: |
           set -euo pipefail
+          # Temporary experiment: keep the checkout path stable while sourcing PipePipeExtractor.
           mkdir -p external
           if [ ! -d external/NewPipeExtractor/.git ]; then
             rm -rf external/NewPipeExtractor
-            git clone --depth 1 https://github.com/wizdom13/NewPipeExtractor external/NewPipeExtractor
+            git init external/NewPipeExtractor
+            git -C external/NewPipeExtractor remote add origin https://github.com/InfinityLoop1308/PipePipeExtractor
           fi
+          git -C external/NewPipeExtractor fetch --depth 1 origin 3b2af63f1f53e87292247ce6603be1e642c1a1aa
+          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
 
-      - name: Verify NewPipeExtractor source
+      - name: Verify PipePipeExtractor source
         run: |
           git -C external/NewPipeExtractor remote -v
-          git -C external/NewPipeExtractor rev-parse HEAD
-          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/NewPipeExtractor"
+          test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "3b2af63f1f53e87292247ce6603be1e642c1a1aa"
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/InfinityLoop1308/PipePipeExtractor"
           test -d external/NewPipeExtractor/extractor
 
       - name: Enable KVM

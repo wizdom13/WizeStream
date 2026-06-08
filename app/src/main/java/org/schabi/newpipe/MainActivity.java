@@ -440,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showServices() {
-        for (final StreamingService s : NewPipe.getServices()) {
+        for (final StreamingService s : ServiceHelper.getVisibleServices()) {
             final String title = s.getServiceInfo().getName();
 
             final MenuItem menuItem = drawerLayoutBinding.navigation.getMenu()

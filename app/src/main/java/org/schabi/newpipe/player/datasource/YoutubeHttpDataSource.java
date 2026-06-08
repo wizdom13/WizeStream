@@ -17,7 +17,7 @@ import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isAndroidStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isIosStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isWebStreamingUrl;
-import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isWebEmbeddedPlayerStreamingUrl;
+import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isTvHtml5SimplyEmbeddedPlayerStreamingUrl;
 import static java.lang.Math.min;
 
 import android.net.Uri;
@@ -660,7 +660,7 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         }
 
         if (isWebStreamingUrl(requestUrl)
-                || isWebEmbeddedPlayerStreamingUrl(requestUrl)) {
+                || isTvHtml5SimplyEmbeddedPlayerStreamingUrl(requestUrl)) {
             httpURLConnection.setRequestProperty(HttpHeaders.ORIGIN, YOUTUBE_BASE_URL);
             httpURLConnection.setRequestProperty(HttpHeaders.REFERER, YOUTUBE_BASE_URL);
             httpURLConnection.setRequestProperty(HttpHeaders.SEC_FETCH_DEST, "empty");
