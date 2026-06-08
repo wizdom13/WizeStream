@@ -233,10 +233,15 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             final TabLayout.Tab tabToSet = binding.mainTabLayout.getTabAt(i);
             if (tabToSet != null) {
                 final Tab tab = tabsList.get(i);
-                tabToSet.setIcon(tab.getTabIconRes(requireContext()));
+                tabToSet.setIcon(getSafeTabIconRes(tab));
                 tabToSet.setContentDescription(tab.getTabName(requireContext()));
             }
         }
+    }
+
+    private int getSafeTabIconRes(final Tab tab) {
+        final int iconRes = tab.getTabIconRes(requireContext());
+        return iconRes > 0 ? iconRes : R.drawable.ic_asterisk;
     }
 
     private void updateTitleForTab(final int tabPosition) {
@@ -261,7 +266,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             final String tabName = tab.getTabName(requireContext());
             final MenuItem item = menu.add(Menu.NONE, getBottomNavigationItemId(i), i,
                     getBottomNavigationDisplayLabel(tab, tabName));
-            item.setIcon(tab.getTabIconRes(requireContext()));
+            item.setIcon(getSafeTabIconRes(tab));
             item.setCheckable(true);
             MenuItemCompat.setContentDescription(item, tabName);
         }
