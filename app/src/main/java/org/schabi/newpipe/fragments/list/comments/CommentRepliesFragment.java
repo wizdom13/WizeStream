@@ -29,6 +29,7 @@ import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ImageStrategy;
 import org.schabi.newpipe.util.text.TextLinkifier;
 import org.schabi.newpipe.util.text.LongPressLinkMovementMethod;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.Queue;
 import java.util.function.Supplier;
@@ -84,7 +85,7 @@ public final class CommentRepliesFragment
             final CommentsInfoItem item = commentsInfoItem;
 
             // load the author avatar
-            CoilHelper.INSTANCE.loadAvatar(binding.authorAvatar, item.getUploaderAvatars());
+            CoilHelper.INSTANCE.loadAvatar(binding.authorAvatar, ExtractorImageCompat.uploaderAvatarImages(item));
             binding.authorAvatar.setVisibility(ImageStrategy.shouldLoadImages()
                     ? View.VISIBLE : View.GONE);
 

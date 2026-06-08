@@ -131,6 +131,7 @@ import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SerializedCache;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2239,7 +2240,7 @@ public final class Player implements PlaybackListener, Listener {
         updateSponsorBlockSegments(info);
         maybeAutoQueueNextStream(info);
 
-        loadCurrentThumbnail(info.getThumbnails());
+        loadCurrentThumbnail(ExtractorImageCompat.thumbnailImages(info));
         registerStreamViewed();
 
         notifyMetadataUpdateToListeners();

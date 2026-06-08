@@ -86,6 +86,7 @@ import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 import java.util.Objects;
@@ -236,7 +237,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             final PlayQueueItem currentItem = player.getCurrentItem();
             if (currentItem != null) {
                 ShareUtils.shareText(context, currentItem.getTitle(),
-                        player.getVideoUrlAtCurrentTime(), currentItem.getThumbnails());
+                        player.getVideoUrlAtCurrentTime(), ExtractorImageCompat.thumbnailImages(currentItem));
             }
         }));
         binding.share.setOnLongClickListener(v -> {

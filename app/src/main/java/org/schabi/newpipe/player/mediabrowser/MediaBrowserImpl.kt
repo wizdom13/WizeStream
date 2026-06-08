@@ -37,6 +37,7 @@ import org.schabi.newpipe.local.playlist.LocalPlaylistManager
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager
 import org.schabi.newpipe.util.ExtractorHelper
 import org.schabi.newpipe.util.ServiceHelper
+import org.schabi.newpipe.util.image.ExtractorImageCompat
 import org.schabi.newpipe.util.image.ImageStrategy
 
 /**
@@ -227,7 +228,7 @@ class MediaBrowserImpl(
             else -> return null
         }
 
-        ImageStrategy.choosePreferredImage(item.thumbnails)?.let {
+        ImageStrategy.choosePreferredImage(ExtractorImageCompat.thumbnailImages(item))?.let {
             builder.setIconUri(imageUriOrNullIfDisabled(it))
         }
 
@@ -292,7 +293,7 @@ class MediaBrowserImpl(
             .setTitle(item.name)
             .setSubtitle(item.uploaderName)
 
-        ImageStrategy.choosePreferredImage(item.thumbnails)?.let {
+        ImageStrategy.choosePreferredImage(ExtractorImageCompat.thumbnailImages(item))?.let {
             builder.setIconUri(imageUriOrNullIfDisabled(it))
         }
 

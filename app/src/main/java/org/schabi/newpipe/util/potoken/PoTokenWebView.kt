@@ -196,7 +196,7 @@ class PoTokenWebView private constructor(
                             if (i != 0) poTokenU8String += ","
                             poTokenU8String += poTokenU8[i]
                         }
-                        $JS_INTERFACE.onObtainPoTokenResult(identifier, poTokenU8String)
+                        $JS_INTERFACE.onPoTokenGenerated(identifier, poTokenU8String)
                     } catch (error) {
                         $JS_INTERFACE.onObtainPoTokenError(identifier, error + "\n" + error.stack)
                     }"""
@@ -221,10 +221,7 @@ class PoTokenWebView private constructor(
      * result of the JavaScript `obtainPoToken()` function.
      */
     @JavascriptInterface
-    fun onObtainPoTokenResult(identifier: String, poTokenU8: String) {
-        if (BuildConfig.DEBUG) {
-            Log.d(TAG, "Generated poToken (before decoding): identifier=$identifier poTokenU8=$poTokenU8")
-        }
+    fun onPoTokenGenerated(identifier: String, poTokenU8: String) {
         val poToken = try {
             u8ToBase64(poTokenU8)
         } catch (t: Throwable) {
@@ -232,9 +229,6 @@ class PoTokenWebView private constructor(
             return
         }
 
-        if (BuildConfig.DEBUG) {
-            Log.d(TAG, "Generated poToken: identifier=$identifier poToken=$poToken")
-        }
         popPoTokenEmitter(identifier)?.onSuccess(poToken)
     }
 

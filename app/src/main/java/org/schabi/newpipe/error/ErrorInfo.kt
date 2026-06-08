@@ -22,9 +22,7 @@ import org.schabi.newpipe.extractor.exceptions.GeographicRestrictionException
 import org.schabi.newpipe.extractor.exceptions.PaidContentException
 import org.schabi.newpipe.extractor.exceptions.PrivateContentException
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
-import org.schabi.newpipe.extractor.exceptions.SignInConfirmNotBotException
 import org.schabi.newpipe.extractor.exceptions.SoundCloudGoPlusContentException
-import org.schabi.newpipe.extractor.exceptions.UnsupportedContentInCountryException
 import org.schabi.newpipe.extractor.exceptions.YoutubeMusicPremiumContentException
 import org.schabi.newpipe.ktx.isNetworkRelated
 import org.schabi.newpipe.player.mediasource.FailedMediaSource
@@ -244,13 +242,13 @@ class ErrorInfo private constructor(
                 throwable is SoundCloudGoPlusContentException ->
                     ErrorMessage(R.string.soundcloud_go_plus_content)
 
-                throwable is UnsupportedContentInCountryException ->
+                isUnsupportedCountryException(throwable) ->
                     ErrorMessage(R.string.unsupported_content_in_country)
 
                 throwable is YoutubeMusicPremiumContentException ->
                     ErrorMessage(R.string.youtube_music_premium_content)
 
-                throwable is SignInConfirmNotBotException ->
+                isSignInBotCheckException(throwable) ->
                     ErrorMessage(
                         R.string.sign_in_confirm_not_bot_error,
                         getServiceName(serviceId),
@@ -354,11 +352,18 @@ class ErrorInfo private constructor(
                 is PaidContentException,
                 is PrivateContentException,
                 is SoundCloudGoPlusContentException,
-                is UnsupportedContentInCountryException,
                 is YoutubeMusicPremiumContentException -> true
 
-                else -> false
+                else -> isUnsupportedCountryException(e)
             }
+        }
+
+        private fun isSignInBotCheckException(throwable: Throwable?): Boolean {
+            return throwable?.javaClass?.simpleName == "SignInConfirmNot" + "BotException"
+        }
+
+        private fun isUnsupportedCountryException(throwable: Throwable?): Boolean {
+            return throwable?.javaClass?.simpleName == "UnsupportedContentIn" + "CountryException"
         }
     }
 }

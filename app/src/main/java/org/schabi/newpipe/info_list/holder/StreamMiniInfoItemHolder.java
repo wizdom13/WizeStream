@@ -19,6 +19,7 @@ import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.views.AnimatedProgressBar;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.concurrent.TimeUnit;
 
@@ -117,7 +118,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         updateDurationMarginForProgress();
 
         // Default thumbnail is shown on error, while loading and if the url is empty
-        CoilHelper.INSTANCE.loadThumbnail(itemThumbnailView, item.getThumbnails());
+        CoilHelper.INSTANCE.loadThumbnail(itemThumbnailView, ExtractorImageCompat.thumbnailImages(item));
 
         itemView.setOnClickListener(view -> {
             if (itemBuilder.getOnStreamSelectedListener() != null) {

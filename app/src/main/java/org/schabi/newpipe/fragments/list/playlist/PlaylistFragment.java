@@ -55,6 +55,7 @@ import org.schabi.newpipe.util.PlayButtonHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.text.TextEllipsizer;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -238,7 +239,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
             ShareUtils.openUrlInBrowser(requireContext(), url);
         } else if (itemId == R.id.menu_item_share) {
             ShareUtils.shareText(requireContext(), name, url,
-                    currentInfo == null ? List.of() : currentInfo.getThumbnails());
+                    currentInfo == null ? List.of() : ExtractorImageCompat.thumbnailImages(currentInfo));
         } else if (itemId == R.id.menu_item_bookmark) {
             onBookmarkClicked();
         } else if (itemId == R.id.menu_item_append_playlist) {
@@ -322,7 +323,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
             );
         } else {
             CoilHelper.INSTANCE.loadAvatar(headerBinding.uploaderAvatarView,
-                    result.getUploaderAvatars());
+                    ExtractorImageCompat.uploaderAvatarImages(result));
         }
 
         streamCount = result.getStreamCount();

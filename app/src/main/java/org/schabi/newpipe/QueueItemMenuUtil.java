@@ -17,6 +17,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SparseItemUtil;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 
@@ -75,7 +76,7 @@ public final class QueueItemMenuUtil {
                 return true;
             } else if (itemId == R.id.menu_item_share) {
                 shareText(context, item.getTitle(), item.getUrl(),
-                        item.getThumbnails());
+                        ExtractorImageCompat.thumbnailImages(item));
                 return true;
             } else if (itemId == R.id.menu_item_download) {
                 fetchStreamInfoAndSaveToDatabase(context, item.getServiceId(), item.getUrl(),

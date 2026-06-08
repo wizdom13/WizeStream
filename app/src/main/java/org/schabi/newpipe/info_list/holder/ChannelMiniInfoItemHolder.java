@@ -15,6 +15,7 @@ import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 public class ChannelMiniInfoItemHolder extends InfoItemHolder {
     private final ImageView itemThumbnailView;
@@ -56,7 +57,7 @@ public class ChannelMiniInfoItemHolder extends InfoItemHolder {
             itemAdditionalDetailView.setText(getDetailLine(item));
         }
 
-        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView, item.getThumbnails());
+        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView, ExtractorImageCompat.thumbnailImages(item));
 
         itemView.setOnClickListener(view -> {
             if (itemBuilder.getOnChannelSelectedListener() != null) {

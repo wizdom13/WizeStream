@@ -121,6 +121,7 @@ import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -519,7 +520,7 @@ public final class VideoDetailFragment
         });
         binding.detailControlsShare.setOnClickListener(makeOnClickListener(info ->
                 ShareUtils.shareText(requireContext(), info.getName(), info.getUrl(),
-                        info.getThumbnails())));
+                        ExtractorImageCompat.thumbnailImages(info))));
         binding.detailControlsOpenInBrowser.setOnClickListener(makeOnClickListener(info ->
                 ShareUtils.openUrlInBrowser(requireContext(), info.getUrl())));
         binding.detailControlsPlayWithKodi.setOnClickListener(makeOnClickListener(info ->
@@ -765,7 +766,7 @@ public final class VideoDetailFragment
         final boolean isPlayerStopped = !isPlayerAvailable() || player.isStopped();
         if (playQueueItem != null && isPlayerStopped) {
             updateOverlayData(playQueueItem.getTitle(),
-                    playQueueItem.getUploader(), playQueueItem.getThumbnails());
+                    playQueueItem.getUploader(), ExtractorImageCompat.thumbnailImages(playQueueItem));
         }
     }
 
@@ -1588,12 +1589,12 @@ public final class VideoDetailFragment
 
         checkUpdateProgressInfo(info);
         CoilHelper.INSTANCE.loadDetailsThumbnail(binding.detailThumbnailImageView,
-                info.getThumbnails());
+                ExtractorImageCompat.thumbnailImages(info));
         showMetaInfoInTextView(info.getMetaInfo(), binding.detailMetaInfoTextView,
                 binding.detailMetaInfoSeparator, disposables);
 
         if (!isPlayerAvailable() || player.isStopped()) {
-            updateOverlayData(info.getName(), info.getUploaderName(), info.getThumbnails());
+            updateOverlayData(info.getName(), info.getUploaderName(), ExtractorImageCompat.thumbnailImages(info));
         }
 
         if (!info.getErrors().isEmpty()) {
@@ -1671,7 +1672,7 @@ public final class VideoDetailFragment
         }
 
         CoilHelper.INSTANCE.loadAvatar(binding.detailSubChannelThumbnailView,
-                info.getUploaderAvatars());
+                ExtractorImageCompat.uploaderAvatarImages(info));
         binding.detailSubChannelThumbnailView.setVisibility(View.VISIBLE);
         binding.detailUploaderThumbnailView.setVisibility(View.GONE);
     }
@@ -1706,7 +1707,7 @@ public final class VideoDetailFragment
                 info.getSubChannelAvatars());
         binding.detailSubChannelThumbnailView.setVisibility(View.VISIBLE);
         CoilHelper.INSTANCE.loadAvatar(binding.detailUploaderThumbnailView,
-                info.getUploaderAvatars());
+                ExtractorImageCompat.uploaderAvatarImages(info));
         binding.detailUploaderThumbnailView.setVisibility(View.VISIBLE);
     }
 
@@ -1880,7 +1881,7 @@ public final class VideoDetailFragment
             return;
         }
 
-        updateOverlayData(info.getName(), info.getUploaderName(), info.getThumbnails());
+        updateOverlayData(info.getName(), info.getUploaderName(), ExtractorImageCompat.thumbnailImages(info));
         if (currentInfo != null && info.getUrl().equals(currentInfo.getUrl())) {
             return;
         }
@@ -1911,7 +1912,7 @@ public final class VideoDetailFragment
             if (currentInfo != null) {
                 updateOverlayData(currentInfo.getName(),
                         currentInfo.getUploaderName(),
-                        currentInfo.getThumbnails());
+                        ExtractorImageCompat.thumbnailImages(currentInfo));
             }
             updateOverlayPlayQueueButtonVisibility();
         }

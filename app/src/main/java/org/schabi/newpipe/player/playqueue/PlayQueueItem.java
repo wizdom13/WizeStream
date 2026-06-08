@@ -8,6 +8,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.io.Serializable;
 import java.util.List;
@@ -26,7 +27,7 @@ public class PlayQueueItem implements Serializable {
     private final int serviceId;
     private final long duration;
     @NonNull
-    private final List<Image> thumbnails;
+    private final List<Image> thumbnailImages;
     @NonNull
     private final String uploader;
     private final String uploaderUrl;
@@ -40,7 +41,7 @@ public class PlayQueueItem implements Serializable {
 
     public PlayQueueItem(@NonNull final StreamInfo info) {
         this(info.getName(), info.getUrl(), info.getServiceId(), info.getDuration(),
-                info.getThumbnails(), info.getUploaderName(),
+                ExtractorImageCompat.thumbnailImages(info), info.getUploaderName(),
                 info.getUploaderUrl(), info.getStreamType());
 
         if (info.getStartPosition() > 0) {
@@ -50,7 +51,7 @@ public class PlayQueueItem implements Serializable {
 
     PlayQueueItem(@NonNull final StreamInfoItem item) {
         this(item.getName(), item.getUrl(), item.getServiceId(), item.getDuration(),
-                item.getThumbnails(), item.getUploaderName(),
+                ExtractorImageCompat.thumbnailImages(item), item.getUploaderName(),
                 item.getUploaderUrl(), item.getStreamType());
     }
 
@@ -63,7 +64,7 @@ public class PlayQueueItem implements Serializable {
         this.url = url != null ? url : EMPTY_STRING;
         this.serviceId = serviceId;
         this.duration = duration;
-        this.thumbnails = thumbnails;
+        this.thumbnailImages = thumbnails;
         this.uploader = uploader != null ? uploader : EMPTY_STRING;
         this.uploaderUrl = uploaderUrl;
         this.streamType = streamType;
@@ -107,7 +108,7 @@ public class PlayQueueItem implements Serializable {
 
     @NonNull
     public List<Image> getThumbnails() {
-        return thumbnails;
+        return thumbnailImages;
     }
 
     @NonNull

@@ -291,7 +291,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
                     requireContext(),
                     selectedItem.name,
                     selectedItem.url,
-                    selectedItem.thumbnails
+                    ExtractorImageCompat.thumbnailImages(selectedItem)
                 )
 
                 1 -> ShareUtils.openUrlInBrowser(requireContext(), selectedItem.url)

@@ -30,6 +30,7 @@ import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ImageStrategy;
 import org.schabi.newpipe.util.text.TextEllipsizer;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 public class CommentInfoItemHolder extends InfoItemHolder {
 
@@ -87,7 +88,7 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         }
 
         // load the author avatar
-        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView, item.getUploaderAvatars());
+        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView, ExtractorImageCompat.uploaderAvatarImages(item));
         if (ImageStrategy.shouldLoadImages()) {
             itemThumbnailView.setVisibility(View.VISIBLE);
             itemRoot.setPadding(commentVerticalPadding, commentVerticalPadding,

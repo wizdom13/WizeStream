@@ -23,6 +23,7 @@ import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 
@@ -113,7 +114,7 @@ public enum StreamDialogDefaultEntry {
 
     SHARE(R.string.share, (fragment, item) ->
             ShareUtils.shareText(fragment.requireContext(), item.getName(), item.getUrl(),
-                    item.getThumbnails())),
+                    ExtractorImageCompat.thumbnailImages(item))),
 
     /**
      * Opens a {@link DownloadDialog} after fetching some stream info.
