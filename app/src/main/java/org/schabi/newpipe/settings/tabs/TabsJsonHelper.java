@@ -48,14 +48,16 @@ public final class TabsJsonHelper {
         try {
             final JsonObject outerJsonObject = JsonParser.object().from(tabsJson);
 
-            if (!outerJsonObject.has(JSON_TABS_ARRAY_KEY)) {
+            if (!outerJsonObject.containsKey(JSON_TABS_ARRAY_KEY)) {
                 throw new InvalidJsonException("JSON doesn't contain \"" + JSON_TABS_ARRAY_KEY
                         + "\" array");
             }
 
             final JsonArray tabsArray = outerJsonObject.getArray(JSON_TABS_ARRAY_KEY, null);
 
-            final var returnTabs = tabsArray.streamAsJsonObjects()
+            final var returnTabs = tabsArray.stream()
+                    .filter(JsonObject.class::isInstance)
+                    .map(JsonObject.class::cast)
                     .map(Tab::from)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toUnmodifiableList());

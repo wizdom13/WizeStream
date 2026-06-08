@@ -693,7 +693,7 @@ public abstract class Tab {
         @DrawableRes
         @Override
         public int getTabIconRes(final Context context) {
-            return this.iconId;
+            return iconId > 0 ? iconId : R.drawable.ic_asterisk;
         }
 
         @Override
@@ -712,7 +712,9 @@ public abstract class Tab {
         protected void readDataFromJson(final JsonObject jsonObject) {
             feedGroupId = jsonObject.getLong(JSON_FEED_GROUP_ID_KEY, -1);
             feedGroupName = jsonObject.getString(JSON_FEED_GROUP_NAME_KEY, NO_NAME);
-            iconId = jsonObject.getInt(JSON_FEED_GROUP_ICON_KEY, R.drawable.ic_asterisk);
+            final int storedIconId = jsonObject.getInt(
+                    JSON_FEED_GROUP_ICON_KEY, R.drawable.ic_asterisk);
+            iconId = storedIconId > 0 ? storedIconId : R.drawable.ic_asterisk;
         }
 
         @Override

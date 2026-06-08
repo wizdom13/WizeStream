@@ -11,6 +11,7 @@ import com.grack.nanojson.JsonParser;
 import com.grack.nanojson.JsonParserException;
 
 import org.junit.Test;
+import org.schabi.newpipe.R;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,6 +77,22 @@ public class TabsJsonHelperTest {
         final List<Tab> nullList = null;
         returnedJson = TabsJsonHelper.getJsonToSave(nullList);
         assertTrue(isTabsArrayEmpty(returnedJson));
+    }
+
+    @Test
+    public void testFeedGroupTabReadZeroIconFallsBackToAsterisk()
+            throws JsonParserException {
+        final JsonObject jsonObject = JsonParser.object().from("{\"tab_id\":"
+                + Tab.FeedGroupTab.ID
+                + ",\"feed_group_id\":1"
+                + ",\"feed_group_name\":\"Test group\""
+                + ",\"feed_group_icon\":0}");
+
+        final Tab.FeedGroupTab feedGroupTab = requireNonNull(
+                (Tab.FeedGroupTab) Tab.from(jsonObject));
+
+        assertEquals(R.drawable.ic_asterisk, feedGroupTab.getIconId());
+        assertEquals(R.drawable.ic_asterisk, feedGroupTab.getTabIconRes(null));
     }
 
     private boolean isTabsArrayEmpty(final String returnedJson) throws JsonParserException {

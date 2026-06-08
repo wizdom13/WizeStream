@@ -89,8 +89,14 @@ jobs:
         run: |
           ./gradlew -p external/NewPipeExtractor :extractor:clean :extractor:compileJava --stacktrace
           javap -verbose -classpath external/NewPipeExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe | grep "major version: 65"
+
+      - name: Verify TabsJsonHelper nanojson compatibility
+        run: |
+          ! grep -R "has(JSON_TABS_ARRAY_KEY)" app/src/main/java app/src/test/java
+          grep -R "containsKey(JSON_TABS_ARRAY_KEY)" app/src/main/java/org/schabi/newpipe/settings/tabs/TabsJsonHelper.java
+
       - name: Build debug APK and run jvm tests
-        run: ./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
+        run: ./gradlew clean assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
 
       - name: Verify debug APK identity
         run: |
