@@ -21,6 +21,7 @@ import org.schabi.newpipe.database.subscription.SubscriptionDAO
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfo
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.stream.StreamType
 
 class FeedDAOTest {
@@ -121,10 +122,10 @@ class FeedDAOTest {
         streamDAO.insertAll(allStreams)
         subscriptionDAO.insertAll(
             listOf(
-                SubscriptionEntity.from(ChannelInfo(serviceId, "1", "https://youtube.com/channel/1", "https://youtube.com/channel/1", "channel-1")),
-                SubscriptionEntity.from(ChannelInfo(serviceId, "2", "https://youtube.com/channel/2", "https://youtube.com/channel/2", "channel-2")),
-                SubscriptionEntity.from(ChannelInfo(serviceId, "3", "https://youtube.com/channel/3", "https://youtube.com/channel/3", "channel-3")),
-                SubscriptionEntity.from(ChannelInfo(serviceId, "4", "https://youtube.com/channel/4", "https://youtube.com/channel/4", "channel-4"))
+                SubscriptionEntity.from(channelInfo("1", "https://youtube.com/channel/1", "channel-1")),
+                SubscriptionEntity.from(channelInfo("2", "https://youtube.com/channel/2", "channel-2")),
+                SubscriptionEntity.from(channelInfo("3", "https://youtube.com/channel/3", "channel-3")),
+                SubscriptionEntity.from(channelInfo("4", "https://youtube.com/channel/4", "channel-4"))
             )
         )
         feedDAO.insertAll(
@@ -138,5 +139,28 @@ class FeedDAOTest {
                 FeedEntity(7, 4)
             )
         )
+    }
+
+    private fun channelInfo(id: String, url: String, name: String): ChannelInfo {
+        val channelInfoConstructor = ChannelInfo::class.java.constructors
+            .first { it.parameterCount == 6 || it.parameterCount == 5 }
+        val constructorArguments = if (channelInfoConstructor.parameterCount == 6) {
+            arrayOf(serviceId, id, url, url, name, createListLinkHandler(id, url))
+        } else {
+            arrayOf(serviceId, id, url, url, name)
+        }
+        return channelInfoConstructor.newInstance(*constructorArguments) as ChannelInfo
+    }
+
+    private fun createListLinkHandler(id: String, url: String): ListLinkHandler {
+        val constructor = ListLinkHandler::class.java.constructors
+            .first { it.parameterCount == 5 }
+        val sortFilter = if (List::class.java.isAssignableFrom(constructor.parameterTypes[4])) {
+            emptyList<Any>()
+        } else {
+            ""
+        }
+        return constructor.newInstance(url, url, id, emptyList<Any>(), sortFilter)
+            as ListLinkHandler
     }
 }

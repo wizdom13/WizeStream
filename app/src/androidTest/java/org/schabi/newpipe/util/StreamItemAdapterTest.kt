@@ -141,7 +141,7 @@ class StreamItemAdapterTest {
         helper.assertInvalidResponse(getResponse(mapOf(Pair("content-length", "mp3"))), 0)
         helper.assertInvalidResponse(getResponse(mapOf(Pair("file-type", "mp0"))), 1)
 
-        helper.assertValidResponse(getResponse(mapOf(Pair("x-amz-meta-file-type", "aiff"))), 2, MediaFormat.AIFF)
+        helper.assertValidResponse(getResponse(mapOf(Pair("x-amz-meta-file-type", "m4a"))), 2, MediaFormat.M4A)
         helper.assertValidResponse(getResponse(mapOf(Pair("file-type", "mp3"))), 3, MediaFormat.MP3)
     }
 
@@ -178,14 +178,14 @@ class StreamItemAdapterTest {
             MediaFormat.OGG
         )
         helper.assertValidResponse(
-            getResponse(mapOf(Pair("Content-Disposition", "some-form-data; filename=\"audio.flac\""))),
+            getResponse(mapOf(Pair("Content-Disposition", "some-form-data; filename=\"audio.mp3\""))),
             6,
-            MediaFormat.FLAC
+            MediaFormat.MP3
         )
         helper.assertValidResponse(
-            getResponse(mapOf(Pair("Content-Disposition", "form-data; name=\"audio.aiff\"; filename=\"audio.aiff\""))),
+            getResponse(mapOf(Pair("Content-Disposition", "form-data; name=\"audio.m4a\"; filename=\"audio.m4a\""))),
             7,
-            MediaFormat.AIFF
+            MediaFormat.M4A
         )
         helper.assertValidResponse(
             getResponse(mapOf(Pair("Content-Disposition", "form-data; name=\"alien?\"; filename*=UTF-8''%CE%B1%CE%BB%CE%B9%CF%B5%CE%BD.m4a"))),
@@ -223,14 +223,14 @@ class StreamItemAdapterTest {
         helper.assertInvalidResponse(getResponse(mapOf()), 7)
 
         helper.assertValidResponse(
-            getResponse(mapOf(Pair("Content-Type", "audio/flac"))),
+            getResponse(mapOf(Pair("Content-Type", "audio/mp4"))),
             8,
-            MediaFormat.FLAC
+            MediaFormat.M4A
         )
         helper.assertValidResponse(
-            getResponse(mapOf(Pair("Content-Type", "audio/wav"))),
+            getResponse(mapOf(Pair("Content-Type", "audio/ogg"))),
             9,
-            MediaFormat.WAV
+            MediaFormat.OGG
         )
         helper.assertValidResponse(
             getResponse(mapOf(Pair("Content-Type", "audio/opus"))),
@@ -238,9 +238,9 @@ class StreamItemAdapterTest {
             MediaFormat.OPUS
         )
         helper.assertValidResponse(
-            getResponse(mapOf(Pair("Content-Type", "audio/aiff"))),
+            getResponse(mapOf(Pair("Content-Type", "audio/webm"))),
             11,
-            MediaFormat.AIFF
+            MediaFormat.WEBMA
         )
     }
 
@@ -340,7 +340,14 @@ class StreamItemAdapterTest {
         headers.forEach { entry ->
             listHeaders[entry.key] = listOf(entry.value)
         }
-        return Response(200, null, listHeaders, "", "")
+        val responseConstructor = Response::class.java.constructors
+            .first { it.parameterCount == 6 || it.parameterCount == 5 }
+        val constructorArguments = if (responseConstructor.parameterCount == 6) {
+            arrayOf(200, null, listHeaders, "", ByteArray(0), "")
+        } else {
+            arrayOf(200, null, listHeaders, "", "")
+        }
+        return responseConstructor.newInstance(*constructorArguments) as Response
     }
 
     /**
