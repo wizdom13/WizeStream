@@ -14,6 +14,7 @@ import androidx.room.PrimaryKey
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.util.NO_SERVICE_ID
+import org.schabi.newpipe.util.image.ExtractorImageCompat
 import org.schabi.newpipe.util.image.ImageStrategy
 
 @Entity(
@@ -54,7 +55,10 @@ data class SubscriptionEntity(
     @Ignore
     fun toChannelInfoItem(): ChannelInfoItem {
         return ChannelInfoItem(this.serviceId, this.url, this.name).apply {
-            thumbnails = ImageStrategy.dbUrlToImageList(this@SubscriptionEntity.avatarUrl)
+            ExtractorImageCompat.setThumbnailImages(
+                this,
+                ImageStrategy.dbUrlToImageList(this@SubscriptionEntity.avatarUrl)
+            )
             subscriberCount = this@SubscriptionEntity.subscriberCount ?: -1
             description = this@SubscriptionEntity.description
         }

@@ -13,6 +13,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.util.image.ExtractorImageCompat
 import org.schabi.newpipe.util.image.ImageStrategy
 
 data class PlaylistStreamEntry(
@@ -43,7 +44,10 @@ data class PlaylistStreamEntry(
             duration = streamEntity.duration
             uploaderName = streamEntity.uploader
             uploaderUrl = streamEntity.uploaderUrl
-            thumbnails = ImageStrategy.dbUrlToImageList(streamEntity.thumbnailUrl)
+            ExtractorImageCompat.setThumbnailImages(
+                this,
+                ImageStrategy.dbUrlToImageList(streamEntity.thumbnailUrl)
+            )
         }
     }
 }
