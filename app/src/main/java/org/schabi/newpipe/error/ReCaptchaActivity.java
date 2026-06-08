@@ -27,6 +27,8 @@ import org.schabi.newpipe.databinding.ActivityRecaptchaBinding;
 import org.schabi.newpipe.extractor.utils.Utils;
 import org.schabi.newpipe.util.ThemeHelper;
 
+import java.io.UnsupportedEncodingException;
+
 /*
  * Created by beneth <bmauduit@beneth.fr> on 06.12.16.
  *
@@ -187,7 +189,8 @@ public class ReCaptchaActivity extends AppCompatActivity {
 
             try {
                 handleCookies(Utils.decodeUrlUtf8(url.substring(abuseStart + 13, abuseEnd)));
-            } catch (final StringIndexOutOfBoundsException e) {
+            } catch (final StringIndexOutOfBoundsException
+                    | UnsupportedEncodingException e) {
                 if (MainActivity.DEBUG) {
                     Log.e(TAG, "handleCookiesFromUrl: invalid google abuse starting at "
                             + abuseStart + " and ending at " + abuseEnd + " for url " + url, e);
