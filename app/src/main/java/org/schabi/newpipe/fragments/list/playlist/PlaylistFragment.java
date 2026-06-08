@@ -238,8 +238,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         } else if (itemId == R.id.menu_item_openInBrowser) {
             ShareUtils.openUrlInBrowser(requireContext(), url);
         } else if (itemId == R.id.menu_item_share) {
-            ShareUtils.shareText(requireContext(), name, url,
-                    currentInfo == null ? List.of() : ExtractorImageCompat.thumbnailImages(currentInfo));
+            ShareUtils.shareText(requireContext(), name, url, currentInfo == null
+                    ? List.of() : ExtractorImageCompat.thumbnailImages(currentInfo));
         } else if (itemId == R.id.menu_item_bookmark) {
             onBookmarkClicked();
         } else if (itemId == R.id.menu_item_append_playlist) {

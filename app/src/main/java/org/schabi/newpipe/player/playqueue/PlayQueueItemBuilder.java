@@ -34,7 +34,8 @@ public class PlayQueueItemBuilder {
             holder.itemDurationView.setVisibility(View.GONE);
         }
 
-        CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView, ExtractorImageCompat.thumbnailImages(item));
+        CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
+                ExtractorImageCompat.thumbnailImages(item));
 
         holder.itemRoot.setOnClickListener(view -> {
             if (onItemClickListener != null) {

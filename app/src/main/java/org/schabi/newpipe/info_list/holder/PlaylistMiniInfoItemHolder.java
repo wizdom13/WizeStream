@@ -47,7 +47,8 @@ public class PlaylistMiniInfoItemHolder extends InfoItemHolder {
                 .localizeStreamCountMini(itemStreamCountView.getContext(), item.getStreamCount()));
         itemUploaderView.setText(item.getUploaderName());
 
-        CoilHelper.INSTANCE.loadPlaylistThumbnail(itemThumbnailView, ExtractorImageCompat.thumbnailImages(item));
+        CoilHelper.INSTANCE.loadPlaylistThumbnail(itemThumbnailView,
+                ExtractorImageCompat.thumbnailImages(item));
 
         itemView.setOnClickListener(view -> {
             if (itemBuilder.getOnPlaylistSelectedListener() != null) {

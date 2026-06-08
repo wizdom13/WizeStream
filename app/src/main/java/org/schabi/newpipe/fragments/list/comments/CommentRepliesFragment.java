@@ -85,7 +85,8 @@ public final class CommentRepliesFragment
             final CommentsInfoItem item = commentsInfoItem;
 
             // load the author avatar
-            CoilHelper.INSTANCE.loadAvatar(binding.authorAvatar, ExtractorImageCompat.uploaderAvatarImages(item));
+            CoilHelper.INSTANCE.loadAvatar(binding.authorAvatar,
+                    ExtractorImageCompat.uploaderAvatarImages(item));
             binding.authorAvatar.setVisibility(ImageStrategy.shouldLoadImages()
                     ? View.VISIBLE : View.GONE);
 

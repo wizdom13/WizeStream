@@ -765,8 +765,8 @@ public final class VideoDetailFragment
         // Update title, url, uploader from the last item in the stack (it's current now)
         final boolean isPlayerStopped = !isPlayerAvailable() || player.isStopped();
         if (playQueueItem != null && isPlayerStopped) {
-            updateOverlayData(playQueueItem.getTitle(),
-                    playQueueItem.getUploader(), ExtractorImageCompat.thumbnailImages(playQueueItem));
+            updateOverlayData(playQueueItem.getTitle(), playQueueItem.getUploader(),
+                    ExtractorImageCompat.thumbnailImages(playQueueItem));
         }
     }
 
@@ -1594,7 +1594,8 @@ public final class VideoDetailFragment
                 binding.detailMetaInfoSeparator, disposables);
 
         if (!isPlayerAvailable() || player.isStopped()) {
-            updateOverlayData(info.getName(), info.getUploaderName(), ExtractorImageCompat.thumbnailImages(info));
+            updateOverlayData(info.getName(), info.getUploaderName(),
+                    ExtractorImageCompat.thumbnailImages(info));
         }
 
         if (!info.getErrors().isEmpty()) {
@@ -1881,7 +1882,8 @@ public final class VideoDetailFragment
             return;
         }
 
-        updateOverlayData(info.getName(), info.getUploaderName(), ExtractorImageCompat.thumbnailImages(info));
+        updateOverlayData(info.getName(), info.getUploaderName(),
+                ExtractorImageCompat.thumbnailImages(info));
         if (currentInfo != null && info.getUrl().equals(currentInfo.getUrl())) {
             return;
         }

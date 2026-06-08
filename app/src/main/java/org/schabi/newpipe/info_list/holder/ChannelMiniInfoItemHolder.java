@@ -57,7 +57,8 @@ public class ChannelMiniInfoItemHolder extends InfoItemHolder {
             itemAdditionalDetailView.setText(getDetailLine(item));
         }
 
-        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView, ExtractorImageCompat.thumbnailImages(item));
+        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView,
+                ExtractorImageCompat.thumbnailImages(item));
 
         itemView.setOnClickListener(view -> {
             if (itemBuilder.getOnChannelSelectedListener() != null) {

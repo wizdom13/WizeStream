@@ -140,8 +140,8 @@ public class PlayQueueNavigator implements MediaSessionConnector.QueueNavigator 
         descBuilder.setExtras(additionalMetadata);
 
         try {
-            descBuilder.setIconUri(Uri.parse(
-                    ImageStrategy.choosePreferredImage(ExtractorImageCompat.thumbnailImages(item))));
+            descBuilder.setIconUri(Uri.parse(ImageStrategy.choosePreferredImage(
+                    ExtractorImageCompat.thumbnailImages(item))));
         } catch (final Throwable e) {
             // no thumbnail available at all, or the user disabled image loading,
             // or the obtained url is not a valid `Uri`
