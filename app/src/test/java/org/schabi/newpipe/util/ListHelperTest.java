@@ -3,9 +3,10 @@ package org.schabi.newpipe.util;
 import org.junit.Test;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.stream.AudioStream;
-import org.schabi.newpipe.extractor.stream.AudioTrackType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,12 +34,12 @@ public class ListHelperTest {
             generateAudioStream("webma-320", MediaFormat.WEBMA, 320));
 
     private static final List<AudioStream> AUDIO_TRACKS_TEST_LIST = List.of(
-            generateAudioTrack("en.or", "en.or", Locale.ENGLISH, AudioTrackType.ORIGINAL),
-            generateAudioTrack("en.du", "en.du", Locale.ENGLISH, AudioTrackType.DUBBED),
-            generateAudioTrack("en.ds", "en.ds", Locale.ENGLISH, AudioTrackType.DESCRIPTIVE),
+            generateAudioTrack("en.or", "en.or", "English original", Locale.ENGLISH),
+            generateAudioTrack("en.du", "en.du", "English dubbed", Locale.ENGLISH),
+            generateAudioTrack("en.ds", "en.ds", "English descriptive", Locale.ENGLISH),
             generateAudioTrack("unknown", null, null, null),
-            generateAudioTrack("de.du", "de.du", Locale.GERMAN, AudioTrackType.DUBBED),
-            generateAudioTrack("de.ds", "de.ds", Locale.GERMAN, AudioTrackType.DESCRIPTIVE)
+            generateAudioTrack("de.du", "de.du", "German dubbed", Locale.GERMAN),
+            generateAudioTrack("de.ds", "de.ds", "German descriptive", Locale.GERMAN)
     );
 
     private static final List<VideoStream> VIDEO_STREAMS_TEST_LIST = List.of(
@@ -453,17 +454,41 @@ public class ListHelperTest {
     private static AudioStream generateAudioTrack(
             @NonNull final String id,
             @Nullable final String trackId,
-            @Nullable final Locale locale,
-            @Nullable final AudioTrackType trackType) {
-        return new AudioStream.Builder()
+            @Nullable final String trackName,
+            @Nullable final Locale audioLocale) {
+        final AudioStream.Builder builder = new AudioStream.Builder()
                 .setId(id)
                 .setContent("", true)
                 .setMediaFormat(MediaFormat.M4A)
                 .setAverageBitrate(128)
                 .setAudioTrackId(trackId)
-                .setAudioLocale(locale)
-                .setAudioTrackType(trackType)
-                .build();
+                .setAudioTrackName(trackName);
+        setAudioLocale(builder, audioLocale == null ? null : audioLocale.toLanguageTag());
+        return builder.build();
+    }
+
+    private static void setAudioLocale(@NonNull final AudioStream.Builder builder,
+                                       @Nullable final String audioLocale) {
+        try {
+            final Method method = AudioStream.Builder.class.getMethod("setAudioLocale",
+                    String.class);
+            method.invoke(builder, audioLocale);
+        } catch (final NoSuchMethodException ignored) {
+            setLegacyAudioLocale(builder, audioLocale);
+        } catch (final IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalStateException("Unable to set audio locale", e);
+        }
+    }
+
+    private static void setLegacyAudioLocale(@NonNull final AudioStream.Builder builder,
+                                             @Nullable final String audioLocale) {
+        try {
+            final Method method = AudioStream.Builder.class.getMethod("setAudioLocale",
+                    Locale.class);
+            method.invoke(builder, Localization.audioLocaleFromString(audioLocale));
+        } catch (final ReflectiveOperationException e) {
+            throw new IllegalStateException("Unable to set legacy audio locale", e);
+        }
     }
 
     @NonNull
