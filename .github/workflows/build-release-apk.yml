@@ -33,7 +33,7 @@ jobs:
           if [ ! -d external/NewPipeExtractor/.git ]; then
             rm -rf external/NewPipeExtractor
             git init external/NewPipeExtractor
-            git -C external/NewPipeExtractor remote add origin https://github.com/InfinityLoop1308/PipePipeExtractor
+            git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
           fi
           git -C external/NewPipeExtractor fetch --depth 1 origin 3b2af63f1f53e87292247ce6603be1e642c1a1aa
           git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
@@ -42,7 +42,7 @@ jobs:
         run: |
           git -C external/NewPipeExtractor remote -v
           test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "3b2af63f1f53e87292247ce6603be1e642c1a1aa"
-          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/InfinityLoop1308/PipePipeExtractor"
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
           test -d external/NewPipeExtractor/extractor
 
       - uses: actions/setup-java@v5
