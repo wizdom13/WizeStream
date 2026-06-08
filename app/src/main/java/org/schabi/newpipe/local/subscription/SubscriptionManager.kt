@@ -12,7 +12,7 @@ import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionDAO
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.channel.ChannelInfo
-import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
+import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.local.feed.service.FeedUpdateInfo

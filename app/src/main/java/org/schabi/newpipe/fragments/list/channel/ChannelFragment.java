@@ -468,8 +468,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     .getDefaultSharedPreferences(context);
 
             for (final ListLinkHandler linkHandler : currentInfo.getTabs()) {
-                final String tab = linkHandler.getContentFilters().get(0);
-                if (ChannelTabHelper.showChannelTab(context, preferences, tab)) {
+                final String tab = ChannelTabHelper.getTabName(linkHandler);
+                if (tab != null && ChannelTabHelper.showChannelTab(context, preferences, tab)) {
                     final ChannelTabFragment channelTabFragment =
                             ChannelTabFragment.getInstance(serviceId, linkHandler, name);
                     channelTabFragment.useAsFrontPage(useAsFrontPage);

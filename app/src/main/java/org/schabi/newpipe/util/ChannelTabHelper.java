@@ -6,13 +6,16 @@ import android.content.SharedPreferences;
 import androidx.annotation.StringRes;
 
 import org.schabi.newpipe.R;
-import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs;
+import org.schabi.newpipe.extractor.linkhandler.ChannelTabs;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
 
 import java.util.List;
 import java.util.Set;
 
 public final class ChannelTabHelper {
+    private static final String CHANNEL_TAB_LIKES = "likes";
+
     private ChannelTabHelper() {
     }
 
@@ -24,7 +27,7 @@ public final class ChannelTabHelper {
         switch (tab) {
             case ChannelTabs.VIDEOS:
             case ChannelTabs.TRACKS:
-            case ChannelTabs.LIKES:
+            case CHANNEL_TAB_LIKES:
             case ChannelTabs.SHORTS:
             case ChannelTabs.LIVESTREAMS:
                 return true;
@@ -34,16 +37,25 @@ public final class ChannelTabHelper {
     }
 
     /**
+     * @param tab the channel tab link handler to inspect
+     * @return the extractor channel tab name, or null if the handler has no content filter
+     */
+    public static String getTabName(final ListLinkHandler tab) {
+        final List<FilterItem> contentFilters = tab.getContentFilters();
+        if (contentFilters.isEmpty()) {
+            return null;
+        }
+
+        return contentFilters.get(0).getName();
+    }
+
+    /**
      * @param tab the channel tab link handler to check
      * @return whether the tab should contain (playable) streams or not
      */
     public static boolean isStreamsTab(final ListLinkHandler tab) {
-        final List<String> contentFilters = tab.getContentFilters();
-        if (contentFilters.isEmpty()) {
-            return false; // this should never happen, but check just to be sure
-        } else {
-            return isStreamsTab(contentFilters.get(0));
-        }
+        final String tabName = getTabName(tab);
+        return tabName != null && isStreamsTab(tabName);
     }
 
     @StringRes
@@ -63,7 +75,7 @@ public final class ChannelTabHelper {
                 return R.string.show_channel_tabs_playlists;
             case ChannelTabs.ALBUMS:
                 return R.string.show_channel_tabs_albums;
-            case ChannelTabs.LIKES:
+            case CHANNEL_TAB_LIKES:
                 return R.string.show_channel_tabs_likes;
             default:
                 return -1;
@@ -81,7 +93,7 @@ public final class ChannelTabHelper {
                 return R.string.fetch_channel_tabs_shorts;
             case ChannelTabs.LIVESTREAMS:
                 return R.string.fetch_channel_tabs_livestreams;
-            case ChannelTabs.LIKES:
+            case CHANNEL_TAB_LIKES:
                 return R.string.fetch_channel_tabs_likes;
             default:
                 return -1;
@@ -105,7 +117,7 @@ public final class ChannelTabHelper {
                 return R.string.channel_tab_playlists;
             case ChannelTabs.ALBUMS:
                 return R.string.channel_tab_albums;
-            case ChannelTabs.LIKES:
+            case CHANNEL_TAB_LIKES:
                 return R.string.channel_tab_likes;
             default:
                 return R.string.unknown_content;
@@ -137,12 +149,12 @@ public final class ChannelTabHelper {
     public static boolean fetchFeedChannelTab(final Context context,
                                               final SharedPreferences sharedPreferences,
                                               final ListLinkHandler tab) {
-        final List<String> contentFilters = tab.getContentFilters();
-        if (contentFilters.isEmpty()) {
+        final String tabName = getTabName(tab);
+        if (tabName == null) {
             return false; // this should never happen, but check just to be sure
         }
 
-        final int key = ChannelTabHelper.getFetchFeedTabKey(contentFilters.get(0));
+        final int key = ChannelTabHelper.getFetchFeedTabKey(tabName);
         if (key == -1) {
             return false;
         }
