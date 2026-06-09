@@ -1,0 +1,11 @@
+NewPipe Material 0.28.7-m7
+
+Highlights:
+- Switched to the latest PipePipeExtractor source checkout to improve YouTube compatibility.
+- Updated app integration for the new extractor API and Java 21 bytecode requirements.
+- Improved YouTube live and post-live stream compatibility through the updated extractor.
+- Improved YouTube rating compatibility when likes and dislikes are not provided directly by the extractor.
+- Suppressed non-critical optional metadata extraction warnings in release builds when stream loading still succeeds.
+- Continued extractor compatibility and release stability cleanup.
+
+Based on NewPipe 0.28.7.
