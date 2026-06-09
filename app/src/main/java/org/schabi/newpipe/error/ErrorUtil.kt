@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
+import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
 
@@ -30,6 +31,7 @@ import org.schabi.newpipe.R
 class ErrorUtil {
     companion object {
         private const val ERROR_REPORT_NOTIFICATION_ID = 5340681
+        private const val OPTIONAL_STREAM_INFO_REQUEST_PREFIX = "Some info not extracted:"
 
         /**
          * Starts a new error activity allowing the user to report the provided error. Only use this
@@ -114,6 +116,10 @@ class ErrorUtil {
          */
         @JvmStatic
         fun createNotification(context: Context, errorInfo: ErrorInfo) {
+            if (shouldSuppressReleaseOptionalStreamInfoError(errorInfo)) {
+                return
+            }
+
             val notificationBuilder: NotificationCompat.Builder =
                 NotificationCompat.Builder(
                     context,
@@ -154,6 +160,10 @@ class ErrorUtil {
         }
 
         private fun showSnackbar(context: Context, rootView: View?, errorInfo: ErrorInfo) {
+            if (shouldSuppressReleaseOptionalStreamInfoError(errorInfo)) {
+                return
+            }
+
             if (rootView == null) {
                 // fallback to showing a notification if no root view is available
                 createNotification(context, errorInfo)
@@ -163,6 +173,12 @@ class ErrorUtil {
                         context.startActivity(getErrorActivityIntent(context, errorInfo))
                     }.show()
             }
+        }
+
+        private fun shouldSuppressReleaseOptionalStreamInfoError(errorInfo: ErrorInfo): Boolean {
+            return !BuildConfig.DEBUG &&
+                errorInfo.userAction == UserAction.REQUESTED_STREAM &&
+                errorInfo.request.startsWith(OPTIONAL_STREAM_INFO_REQUEST_PREFIX)
         }
     }
 }
