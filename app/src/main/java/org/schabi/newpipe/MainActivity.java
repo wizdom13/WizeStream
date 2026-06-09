@@ -67,7 +67,6 @@ import org.schabi.newpipe.databinding.InstanceSpinnerLayoutBinding;
 import org.schabi.newpipe.databinding.ToolbarLayoutBinding;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.extractor.NewPipe;
-import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -386,32 +385,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Material keeps the drawer focused on the single YouTube live recommendation entry instead
-     * of exposing every PipePipeExtractor YouTube kiosk. Other services keep their own kiosk
-     * menus.
+     * Returns every kiosk advertised by the selected streaming service in extractor order. The
+     * drawer item IDs are assigned from this same list both when building and selecting menu
+     * entries, so the selection index stays aligned with the visible drawer rows.
      *
      * @param service selected streaming service used to build drawer kiosk entries
-     * @return filtered kiosk IDs to show in the drawer
+     * @return all available kiosk IDs to show in the drawer
      * @throws ExtractionException if kiosk metadata cannot be loaded
      */
     private List<String> getDrawerKioskIds(final StreamingService service)
             throws ExtractionException {
-        final List<String> availableKiosks = new ArrayList<>(service.getKioskList()
-                .getAvailableKiosks());
-        if (service.getServiceId() != ServiceList.YouTube.getServiceId()) {
-            return availableKiosks;
-        }
-
-        if (availableKiosks.contains("live")) {
-            return List.of("live");
-        }
-
-        final String defaultKioskId = service.getKioskList().getDefaultKioskId();
-        if (availableKiosks.contains(defaultKioskId)) {
-            return List.of(defaultKioskId);
-        } else {
-            return List.of();
-        }
+        return new ArrayList<>(service.getKioskList().getAvailableKiosks());
     }
 
     private void optionsAboutSelected(final MenuItem item) {

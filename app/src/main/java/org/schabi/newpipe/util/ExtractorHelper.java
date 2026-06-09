@@ -32,6 +32,7 @@ import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
 import androidx.preference.PreferenceManager;
 
+import org.json.JSONObject;
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.Info;
@@ -40,6 +41,7 @@ import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
 import org.schabi.newpipe.extractor.MetaInfo;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.Page;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
@@ -67,6 +69,8 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public final class ExtractorHelper {
     private static final String TAG = ExtractorHelper.class.getSimpleName();
+    private static final String RETURN_YOUTUBE_DISLIKE_VOTES_URL =
+            "https://returnyoutubedislikeapi.com/votes?videoId=";
     private static final InfoCache CACHE = InfoCache.getInstance();
 
     private ExtractorHelper() {
@@ -166,7 +170,46 @@ public final class ExtractorHelper {
                                                    final boolean forceLoad) {
         checkServiceId(serviceId);
         return checkCache(forceLoad, serviceId, url, InfoCache.Type.STREAM,
-                Single.fromCallable(() -> StreamInfo.getInfo(NewPipe.getService(serviceId), url)));
+                Single.fromCallable(() -> getStreamInfoFromNetwork(serviceId, url)));
+    }
+
+    @NonNull
+    private static StreamInfo getStreamInfoFromNetwork(final int serviceId,
+                                                       final String url) throws Exception {
+        final StreamInfo streamInfo = StreamInfo.getInfo(NewPipe.getService(serviceId), url);
+        backfillYouTubeLikesFromReturnDislikeApi(serviceId, streamInfo);
+        return streamInfo;
+    }
+
+    private static void backfillYouTubeLikesFromReturnDislikeApi(final int serviceId,
+                                                                 final StreamInfo info) {
+        if (serviceId != ServiceList.YouTube.getServiceId() || info.getLikeCount() >= 0) {
+            return;
+        }
+
+        final String videoId = info.getId();
+        if (isNullOrEmpty(videoId)) {
+            return;
+        }
+
+        try {
+            final String responseBody = NewPipe.getDownloader()
+                    .get(RETURN_YOUTUBE_DISLIKE_VOTES_URL + videoId)
+                    .responseBody();
+            final JSONObject votes = new JSONObject(responseBody);
+            final long likes = votes.optLong("likes", -1);
+            if (likes >= 0) {
+                info.setLikeCount(likes);
+            }
+            if (info.getDislikeCount() < 0) {
+                final long dislikes = votes.optLong("dislikes", -1);
+                if (dislikes >= 0) {
+                    info.setDislikeCount(dislikes);
+                }
+            }
+        } catch (final Exception ignored) {
+            // Keep extractor-provided values when the optional ratings backfill is unavailable.
+        }
     }
 
     public static Single<ChannelInfo> getChannelInfo(final int serviceId, final String url,

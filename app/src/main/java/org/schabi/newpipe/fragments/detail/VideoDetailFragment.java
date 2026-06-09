@@ -1628,27 +1628,24 @@ public final class VideoDetailFragment
     }
 
     private void updateLikeDislikeViews(@NonNull final StreamInfo info) {
-        if (info.getLikeCount() >= 0) {
+        binding.detailThumbsDisabledView.setVisibility(View.GONE);
+
+        final boolean likesAvailable = info.getLikeCount() >= 0;
+        if (likesAvailable) {
             binding.detailThumbsUpCountView.setText(Localization.shortCount(activity,
                     info.getLikeCount()));
-            binding.detailThumbsUpCountView.setVisibility(View.VISIBLE);
-            binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
-        } else {
-            binding.detailThumbsUpCountView.setVisibility(View.GONE);
-            binding.detailThumbsUpImgView.setVisibility(View.GONE);
         }
+        binding.detailThumbsUpCountView.setVisibility(likesAvailable ? View.VISIBLE : View.GONE);
+        binding.detailThumbsUpImgView.setVisibility(likesAvailable ? View.VISIBLE : View.GONE);
 
-        if (showDislikes && info.getDislikeCount() >= 0) {
+        final boolean dislikesAvailable = showDislikes && info.getDislikeCount() >= 0;
+        if (dislikesAvailable) {
             binding.detailThumbsDownCountView.setText(Localization
                     .shortCount(activity, info.getDislikeCount()));
-            binding.detailThumbsDownCountView.setVisibility(View.VISIBLE);
-            binding.detailThumbsDownImgView.setVisibility(View.VISIBLE);
-        } else {
-            binding.detailThumbsDownCountView.setVisibility(View.GONE);
-            binding.detailThumbsDownImgView.setVisibility(View.GONE);
         }
-
-        binding.detailThumbsDisabledView.setVisibility(View.GONE);
+        binding.detailThumbsDownCountView.setVisibility(
+                dislikesAvailable ? View.VISIBLE : View.GONE);
+        binding.detailThumbsDownImgView.setVisibility(dislikesAvailable ? View.VISIBLE : View.GONE);
     }
 
     private void displayUploaderAsSubChannel(final StreamInfo info) {
