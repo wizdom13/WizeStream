@@ -1628,35 +1628,27 @@ public final class VideoDetailFragment
     }
 
     private void updateLikeDislikeViews(@NonNull final StreamInfo info) {
-        if ((info.getDislikeCount() == -1 || !showDislikes) && info.getLikeCount() == -1) {
-            binding.detailThumbsDownImgView.setVisibility(showDislikes ? View.VISIBLE : View.GONE);
+        if (info.getLikeCount() >= 0) {
+            binding.detailThumbsUpCountView.setText(Localization.shortCount(activity,
+                    info.getLikeCount()));
+            binding.detailThumbsUpCountView.setVisibility(View.VISIBLE);
             binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
-            binding.detailThumbsUpCountView.setVisibility(View.GONE);
-            binding.detailThumbsDownCountView.setVisibility(View.GONE);
-
-            binding.detailThumbsDisabledView.setVisibility(View.VISIBLE);
         } else {
-            if (showDislikes && info.getDislikeCount() >= 0) {
-                binding.detailThumbsDownCountView.setText(Localization
-                        .shortCount(activity, info.getDislikeCount()));
-                binding.detailThumbsDownCountView.setVisibility(View.VISIBLE);
-                binding.detailThumbsDownImgView.setVisibility(View.VISIBLE);
-            } else {
-                binding.detailThumbsDownCountView.setVisibility(View.GONE);
-                binding.detailThumbsDownImgView.setVisibility(View.GONE);
-            }
-
-            if (info.getLikeCount() >= 0) {
-                binding.detailThumbsUpCountView.setText(Localization.shortCount(activity,
-                        info.getLikeCount()));
-                binding.detailThumbsUpCountView.setVisibility(View.VISIBLE);
-                binding.detailThumbsUpImgView.setVisibility(View.VISIBLE);
-            } else {
-                binding.detailThumbsUpCountView.setVisibility(View.GONE);
-                binding.detailThumbsUpImgView.setVisibility(View.GONE);
-            }
-            binding.detailThumbsDisabledView.setVisibility(View.GONE);
+            binding.detailThumbsUpCountView.setVisibility(View.GONE);
+            binding.detailThumbsUpImgView.setVisibility(View.GONE);
         }
+
+        if (showDislikes && info.getDislikeCount() >= 0) {
+            binding.detailThumbsDownCountView.setText(Localization
+                    .shortCount(activity, info.getDislikeCount()));
+            binding.detailThumbsDownCountView.setVisibility(View.VISIBLE);
+            binding.detailThumbsDownImgView.setVisibility(View.VISIBLE);
+        } else {
+            binding.detailThumbsDownCountView.setVisibility(View.GONE);
+            binding.detailThumbsDownImgView.setVisibility(View.GONE);
+        }
+
+        binding.detailThumbsDisabledView.setVisibility(View.GONE);
     }
 
     private void displayUploaderAsSubChannel(final StreamInfo info) {

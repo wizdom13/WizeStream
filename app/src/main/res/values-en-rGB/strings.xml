@@ -453,6 +453,7 @@
     <string name="recently_added">Recently added</string>
     <string name="most_liked">Most liked</string>
     <string name="conferences">Conferences</string>
+    <string name="recommended_lives">Recommended Lives</string>
     <string name="title_activity_play_queue">Play queue</string>
     <string name="play_queue_remove">Remove</string>
     <string name="play_queue_stream_detail">Details</string>

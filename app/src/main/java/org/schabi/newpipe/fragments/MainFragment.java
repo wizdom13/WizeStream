@@ -275,10 +275,21 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private String getBottomNavigationDisplayLabel(final Tab tab, final String tabName) {
+        if (isLiveKioskTab(tab, tabName)) {
+            return getString(R.string.duration_live);
+        }
         if (tab.getTabId() == Tab.BookmarksTab.ID) {
             return getString(R.string.bottom_navigation_tab_bookmarks);
         }
         return tabName;
+    }
+
+    private boolean isLiveKioskTab(final Tab tab, final String tabName) {
+        if (tab instanceof Tab.KioskTab) {
+            return "live".equals(((Tab.KioskTab) tab).getKioskId());
+        }
+        return tab instanceof Tab.DefaultKioskTab
+                && getString(R.string.recommended_lives).equals(tabName);
     }
 
     private void updateBottomNavigationSelection(final int position) {

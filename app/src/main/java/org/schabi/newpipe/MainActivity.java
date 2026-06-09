@@ -67,6 +67,7 @@ import org.schabi.newpipe.databinding.InstanceSpinnerLayoutBinding;
 import org.schabi.newpipe.databinding.ToolbarLayoutBinding;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -298,11 +299,11 @@ public class MainActivity extends AppCompatActivity {
 
         int kioskMenuItemId = 0;
 
-        for (final String ks : service.getKioskList().getAvailableKiosks()) {
+        for (final String kioskId : getDrawerKioskIds(service)) {
             drawerLayoutBinding.navigation.getMenu()
                     .add(R.id.menu_kiosks_group, kioskMenuItemId, 0, KioskTranslator
-                            .getTranslatedKioskName(ks, this))
-                    .setIcon(KioskTranslator.getKioskIcon(ks));
+                            .getTranslatedKioskName(kioskId, this))
+                    .setIcon(KioskTranslator.getKioskIcon(kioskId));
             kioskMenuItemId++;
         }
 
@@ -374,13 +375,42 @@ public class MainActivity extends AppCompatActivity {
     private void kioskSelected(final MenuItem item) throws ExtractionException {
         final StreamingService currentService = ServiceHelper.getSelectedService(this);
         int kioskMenuItemId = 0;
-        for (final String kioskId : currentService.getKioskList().getAvailableKiosks()) {
+        for (final String kioskId : getDrawerKioskIds(currentService)) {
             if (kioskMenuItemId == item.getItemId()) {
                 NavigationHelper.openKioskFragment(getSupportFragmentManager(),
                         currentService.getServiceId(), kioskId);
                 break;
             }
             kioskMenuItemId++;
+        }
+    }
+
+    /**
+     * Material keeps the drawer focused on the single YouTube live recommendation entry instead
+     * of exposing every PipePipeExtractor YouTube kiosk. Other services keep their own kiosk
+     * menus.
+     *
+     * @param service selected streaming service used to build drawer kiosk entries
+     * @return filtered kiosk IDs to show in the drawer
+     * @throws ExtractionException if kiosk metadata cannot be loaded
+     */
+    private List<String> getDrawerKioskIds(final StreamingService service)
+            throws ExtractionException {
+        final List<String> availableKiosks = new ArrayList<>(service.getKioskList()
+                .getAvailableKiosks());
+        if (service.getServiceId() != ServiceList.YouTube.getServiceId()) {
+            return availableKiosks;
+        }
+
+        if (availableKiosks.contains("live")) {
+            return List.of("live");
+        }
+
+        final String defaultKioskId = service.getKioskList().getDefaultKioskId();
+        if (availableKiosks.contains(defaultKioskId)) {
+            return List.of(defaultKioskId);
+        } else {
+            return List.of();
         }
     }
 
