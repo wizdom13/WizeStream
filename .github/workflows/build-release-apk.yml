@@ -1,4 +1,4 @@
-name: "Build signed release APK on material"
+name: Build signed release APK
 
 on:
   workflow_dispatch:
@@ -22,57 +22,90 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v6
 
-      - name: Checkout PipePipeExtractor source
+      - name: Checkout latest PipePipeExtractor source
         run: |
           set -euo pipefail
-          # Temporary experiment: keep the checkout path stable while sourcing PipePipeExtractor.
           mkdir -p external
           if [ ! -d external/NewPipeExtractor/.git ]; then
             rm -rf external/NewPipeExtractor
             git init external/NewPipeExtractor
             git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
           fi
-          git -C external/NewPipeExtractor fetch --depth 1 origin 3b2af63f1f53e87292247ce6603be1e642c1a1aa
+          git -C external/NewPipeExtractor fetch --depth 1 origin main
           git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
 
       - name: Verify PipePipeExtractor source
         run: |
+          set -euo pipefail
           git -C external/NewPipeExtractor remote -v
-          test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "3b2af63f1f53e87292247ce6603be1e642c1a1aa"
           git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
+          git -C external/NewPipeExtractor rev-parse HEAD
           test -d external/NewPipeExtractor/extractor
+          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
+          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
 
-      - uses: actions/setup-java@v5
+      - name: Clean PipePipeExtractor outputs
+        run: |
+          set -euo pipefail
+          rm -rf external/NewPipeExtractor/build
+          rm -rf external/NewPipeExtractor/extractor/build
+          rm -rf external/NewPipeExtractor/timeago-parser/build
+
+      - uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
         with:
-          distribution: "temurin"
-          java-version: "21"
-          cache: "gradle"
+          java-version: 21
+          distribution: temurin
+          cache: gradle
 
-      - name: "Prepare release keystore"
+      - name: Verify PipePipeExtractor Java bytecode
+        run: |
+          set -euo pipefail
+          ./gradlew -p external/NewPipeExtractor :extractor:clean :extractor:compileJava --stacktrace
+          javap -verbose -classpath external/NewPipeExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe | grep "major version: 65"
+
+      - name: Write release keystore
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 }}
         run: |
-          test -n "$RELEASE_KEYSTORE_BASE64"
-          mkdir -p "$RUNNER_TEMP/keystore"
-          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/keystore/newpipe-material-release.jks"
+          set -euo pipefail
+          if [ -z "${RELEASE_KEYSTORE_BASE64}" ]; then
+            echo "Missing NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 secret" >&2
+            exit 1
+          fi
+          printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 -d > "$RUNNER_TEMP/newpipe-material-release.keystore"
 
-      - name: "Build signed release APK"
+      - name: Build signed release APK
         env:
-          NEWPIPE_MATERIAL_RELEASE_STORE_FILE: ${{ runner.temp }}/keystore/newpipe-material-release.jks
+          NEWPIPE_MATERIAL_RELEASE_STORE_FILE: ${{ runner.temp }}/newpipe-material-release.keystore
           NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
           NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS }}
           NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --stacktrace
-
-      - name: "Verify APK signature"
         run: |
+          set -euo pipefail
+          if [ -z "${NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD}" ] || \
+             [ -z "${NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS}" ] || \
+             [ -z "${NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD}" ]; then
+            echo "Missing one or more NewPipe Material release signing secrets" >&2
+            exit 1
+          fi
+          ./gradlew clean assembleRelease --stacktrace
+
+      - name: Verify release APK identity
+        run: |
+          set -euo pipefail
           APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
           test -n "$APK_PATH"
-          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
-          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
+          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
+          "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/release-apk-badging.txt"
+          grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/release-apk-badging.txt"
+          grep -q "application-label:'NewPipe Material'" "$RUNNER_TEMP/release-apk-badging.txt"
 
       - name: "Rename APK"
         id: release_info
@@ -112,16 +145,16 @@ jobs:
           path: ${{ steps.release_info.outputs.apk_path }}
 
       - name: "Validate changelog"
-        if: ${{ github.event_name == 'push' || inputs.release_target == 'release' || inputs.release_target == 'all' }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
         run: |
           test -s "${{ steps.release_info.outputs.changelog_path }}"
 
       - name: "Create release"
-        if: ${{ github.event_name == 'push' || inputs.release_target == 'release' || inputs.release_target == 'all' }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event_name == 'push' && github.ref_name || steps.release_info.outputs.release_tag }}
-          target_commitish: material
+          target_commitish: pipe
           name: NewPipe Material ${{ steps.release_info.outputs.version_name }}
           body_path: ${{ steps.release_info.outputs.changelog_path }}
           files: ${{ steps.release_info.outputs.apk_path }}

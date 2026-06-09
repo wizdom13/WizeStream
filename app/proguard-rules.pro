@@ -24,6 +24,9 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
+## SLF4J looks for an optional runtime binding class. The app does not ship one.
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+
 ## See https://github.com/TeamNewPipe/NewPipe/pull/1441
 -keepclassmembers class * implements java.io.Serializable {
     static final long serialVersionUID;
