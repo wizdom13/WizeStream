@@ -217,7 +217,7 @@ class StreamItemAdapterTest {
         helper.assertInvalidResponse(getResponse(mapOf(Pair("Content-Type", "audio/xyz"))), 1)
         helper.assertInvalidResponse(getResponse(mapOf(Pair("Content-Type", "mp3"))), 2)
         helper.assertInvalidResponse(getResponse(mapOf(Pair("Content-Type", "mp3"))), 3)
-        helper.assertInvalidResponse(getResponse(mapOf(Pair("Content-Type", "audio/mpeg"))), 4)
+        helper.assertValidResponse(getResponse(mapOf(Pair("Content-Type", "audio/mpeg"))), 4, MediaFormat.MP3)
         helper.assertInvalidResponse(getResponse(mapOf(Pair("Content-Type", "audio/aif"))), 5)
         helper.assertInvalidResponse(getResponse(mapOf(Pair("Content-Type", "whatever"))), 6)
         helper.assertInvalidResponse(getResponse(mapOf()), 7)
@@ -341,8 +341,8 @@ class StreamItemAdapterTest {
             listHeaders[entry.key] = listOf(entry.value)
         }
         val responseConstructor = Response::class.java.constructors
-            .first { it.parameterCount == 6 || it.parameterCount == 5 }
-        val constructorArguments = if (responseConstructor.parameterCount == 6) {
+            .first { it.parameterTypes.size == 6 || it.parameterTypes.size == 5 }
+        val constructorArguments: Array<Any?> = if (responseConstructor.parameterTypes.size == 6) {
             arrayOf(200, null, listHeaders, "", ByteArray(0), "")
         } else {
             arrayOf(200, null, listHeaders, "", "")

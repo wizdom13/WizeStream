@@ -143,24 +143,25 @@ class FeedDAOTest {
 
     private fun channelInfo(id: String, url: String, name: String): ChannelInfo {
         val channelInfoConstructor = ChannelInfo::class.java.constructors
-            .first { it.parameterCount == 6 || it.parameterCount == 5 }
-        val constructorArguments = if (channelInfoConstructor.parameterCount == 6) {
-            arrayOf(serviceId, id, url, url, name, createListLinkHandler(id, url))
+            .first { it.parameterTypes.size == 6 || it.parameterTypes.size == 5 }
+        val constructorArguments: Array<Any> = if (channelInfoConstructor.parameterTypes.size == 6) {
+            arrayOf<Any>(serviceId, id, url, url, name, createListLinkHandler(id, url))
         } else {
-            arrayOf(serviceId, id, url, url, name)
+            arrayOf<Any>(serviceId, id, url, url, name)
         }
         return channelInfoConstructor.newInstance(*constructorArguments) as ChannelInfo
     }
 
     private fun createListLinkHandler(id: String, url: String): ListLinkHandler {
         val constructor = ListLinkHandler::class.java.constructors
-            .first { it.parameterCount == 5 }
-        val sortFilter = if (List::class.java.isAssignableFrom(constructor.parameterTypes[4])) {
+            .first { it.parameterTypes.size == 5 }
+        val contentFilters: List<Any> = emptyList()
+        val sortFilter: Any = if (List::class.java.isAssignableFrom(constructor.parameterTypes[4])) {
             emptyList<Any>()
         } else {
             ""
         }
-        return constructor.newInstance(url, url, id, emptyList<Any>(), sortFilter)
+        return constructor.newInstance(url, url, id, contentFilters, sortFilter)
             as ListLinkHandler
     }
 }
