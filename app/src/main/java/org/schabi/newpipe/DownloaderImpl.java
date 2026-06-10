@@ -48,6 +48,16 @@ public final class DownloaderImpl extends Downloader {
 
     private DownloaderImpl(final OkHttpClient.Builder builder) {
         this.client = builder
+                .addInterceptor(chain -> {
+                    final okhttp3.Request originalRequest = chain.request();
+                    if (originalRequest.header("User-Agent") != null) {
+                        return chain.proceed(originalRequest);
+                    }
+
+                    return chain.proceed(originalRequest.newBuilder()
+                            .header("User-Agent", USER_AGENT)
+                            .build());
+                })
                 .readTimeout(30, TimeUnit.SECONDS)
 //                .cache(new Cache(new File(context.getExternalCacheDir(), "okhttp"),
 //                        16 * 1024 * 1024))
