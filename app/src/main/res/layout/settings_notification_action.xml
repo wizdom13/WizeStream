@@ -65,13 +65,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <CheckBox
+    <androidx.appcompat.widget.AppCompatCheckBox
         android:id="@+id/notificationActionCheckBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="false"
         android:focusable="false"
-        android:buttonTint="@color/settings_control_tint"
+        app:buttonTint="@color/settings_control_tint"
         app:layout_constraintBottom_toBottomOf="@+id/notificationActionCheckBoxClickableArea"
         app:layout_constraintEnd_toEndOf="@+id/notificationActionCheckBoxClickableArea"
         app:layout_constraintStart_toStartOf="@+id/notificationActionCheckBoxClickableArea"
