@@ -92,7 +92,7 @@ public final class ExtractorHelper {
                     .getSearchQHFactory();
             return SearchInfo.getInfo(NewPipe.getService(serviceId), factory.fromQuery(
                     searchString,
-                    resolveFilterItems(factory.getAvailableContentFilter(), contentFilter),
+                    resolveContentFilterItems(factory.getAvailableContentFilter(), contentFilter),
                     resolveFilterItems(factory.getAvailableSortFilter(), sortFilter)));
         });
     }
@@ -109,7 +109,7 @@ public final class ExtractorHelper {
                     .getSearchQHFactory();
             return SearchInfo.getMoreItems(NewPipe.getService(serviceId), factory.fromQuery(
                     searchString,
-                    resolveFilterItems(factory.getAvailableContentFilter(), contentFilter),
+                    resolveContentFilterItems(factory.getAvailableContentFilter(), contentFilter),
                     resolveFilterItems(factory.getAvailableSortFilter(), sortFilter)), page);
         });
 
@@ -131,6 +131,24 @@ public final class ExtractorHelper {
         return selected;
     }
 
+    public static List<FilterItem> resolveContentFilterItems(
+            @Nullable final Filter availableFilters,
+            @Nullable final List<String> names) {
+        final List<FilterItem> selected = resolveFilterItems(availableFilters, names);
+        if (!selected.isEmpty() || availableFilters == null
+                || availableFilters.getFilterGroups() == null) {
+            return selected;
+        }
+
+        for (final FilterGroup group : availableFilters.getFilterGroups()) {
+            if (group != null && group.filterItems != null && group.filterItems.length > 0) {
+                return Collections.singletonList(group.filterItems[0]);
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
     public static List<FilterItem> resolveFilterItems(@Nullable final Filter availableFilters,
                                                       @Nullable final String name) {
         if (name == null || name.isBlank()) {
@@ -142,10 +160,13 @@ public final class ExtractorHelper {
     @Nullable
     private static FilterItem findFilterItemByName(@NonNull final Filter filter,
                                                    @Nullable final String name) {
-        if (name == null) {
+        if (name == null || filter.getFilterGroups() == null) {
             return null;
         }
         for (final FilterGroup group : filter.getFilterGroups()) {
+            if (group == null || group.filterItems == null) {
+                continue;
+            }
             for (final FilterItem item : group.filterItems) {
                 if (name.equals(item.getName())) {
                     return item;
