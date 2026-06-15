@@ -5,6 +5,26 @@
 
 ## Rules for NewPipeExtractor
 -keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+
+## Keep extractor image APIs that are accessed reflectively by ExtractorImageCompat.
+## Debug builds work without these rules, but release shrinking can remove otherwise
+## unused thumbnail/avatar fallback accessors before Coil receives an image URL.
+-keep class org.schabi.newpipe.extractor.Image { *; }
+-keepclassmembers class org.schabi.newpipe.extractor.InfoItem {
+    public void setThumbnailUrl(java.lang.String);
+    public java.lang.String getThumbnailUrl();
+}
+-keepclassmembers class org.schabi.newpipe.extractor.stream.StreamInfoItem {
+    public java.lang.String getUploaderAvatarUrl();
+    public void setUploaderAvatarUrl(java.lang.String);
+}
+-keepclassmembers class org.schabi.newpipe.extractor.comments.CommentsInfoItem {
+    public java.lang.String getUploaderAvatarUrl();
+    public void setUploaderAvatarUrl(java.lang.String);
+    public java.util.Collection getPictures();
+    public void setPictures(java.util.Collection);
+}
+
 ## Rules for Rhino and Rhino Engine
 -keep class org.mozilla.javascript.* { *; }
 -keep class org.mozilla.javascript.** { *; }
