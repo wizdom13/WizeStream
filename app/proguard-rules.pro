@@ -14,7 +14,29 @@
     public void setThumbnailUrl(java.lang.String);
     public java.lang.String getThumbnailUrl();
 }
+-keepclassmembers class org.schabi.newpipe.extractor.stream.StreamInfo {
+    public java.util.List getThumbnails();
+    public void setThumbnails(java.util.List);
+    public java.lang.String getThumbnailUrl();
+    public void setThumbnailUrl(java.lang.String);
+    public java.util.List getUploaderAvatars();
+    public void setUploaderAvatars(java.util.List);
+    public java.lang.String getUploaderAvatarUrl();
+    public void setUploaderAvatarUrl(java.lang.String);
+    public java.util.List getSubChannelAvatars();
+    public void setSubChannelAvatars(java.util.List);
+    public java.lang.String getSubChannelAvatarUrl();
+    public void setSubChannelAvatarUrl(java.lang.String);
+    public java.util.List getRelatedItems();
+    public void setRelatedItems(java.util.List);
+}
 -keepclassmembers class org.schabi.newpipe.extractor.stream.StreamInfoItem {
+    public java.util.List getThumbnails();
+    public void setThumbnails(java.util.List);
+    public java.lang.String getThumbnailUrl();
+    public void setThumbnailUrl(java.lang.String);
+    public java.util.List getUploaderAvatars();
+    public void setUploaderAvatars(java.util.List);
     public java.lang.String getUploaderAvatarUrl();
     public void setUploaderAvatarUrl(java.lang.String);
 }

@@ -35,6 +35,7 @@ import androidx.preference.PreferenceManager;
 import org.json.JSONObject;
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.Info;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
@@ -199,6 +200,7 @@ public final class ExtractorHelper {
                                                        final String url) throws Exception {
         final StreamInfo streamInfo = StreamInfo.getInfo(NewPipe.getService(serviceId), url);
         backfillYouTubeLikesFromReturnDislikeApi(serviceId, streamInfo);
+        backfillYouTubeUploaderAvatarFromChannel(serviceId, streamInfo);
         return streamInfo;
     }
 
@@ -230,6 +232,40 @@ public final class ExtractorHelper {
             }
         } catch (final Exception ignored) {
             // Keep extractor-provided values when the optional ratings backfill is unavailable.
+        }
+    }
+
+    private static void backfillYouTubeUploaderAvatarFromChannel(final int serviceId,
+                                                                 final StreamInfo info) {
+        if (serviceId != ServiceList.YouTube.getServiceId()) {
+            return;
+        }
+        if (!isNullOrEmpty(info.getUploaderAvatarUrl())
+                || (info.getUploaderAvatars() != null && !info.getUploaderAvatars().isEmpty())) {
+            return;
+        }
+        if (isNullOrEmpty(info.getUploaderUrl())) {
+            return;
+        }
+
+        try {
+            final ChannelInfo channelInfo = ChannelInfo.getInfo(
+                    NewPipe.getService(serviceId), info.getUploaderUrl());
+            final List<Image> avatars = channelInfo.getAvatars();
+            if (avatars == null || avatars.isEmpty()) {
+                return;
+            }
+
+            info.setUploaderAvatars(avatars);
+            for (int i = avatars.size() - 1; i >= 0; i--) {
+                final Image avatar = avatars.get(i);
+                if (avatar != null && !isNullOrEmpty(avatar.getUrl())) {
+                    info.setUploaderAvatarUrl(avatar.getUrl());
+                    break;
+                }
+            }
+        } catch (final Exception ignored) {
+            // Keep the stream page usable even if the optional channel avatar fallback fails.
         }
     }
 

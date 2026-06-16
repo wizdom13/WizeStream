@@ -2,6 +2,7 @@ package org.schabi.newpipe.util.image
 
 import org.schabi.newpipe.extractor.Image
 import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 /**
@@ -16,10 +17,21 @@ object ExtractorImageCompat {
     @JvmStatic
     fun thumbnailImages(item: Any?): List<Image> = imageList(item, "getThumbnails")
         .ifEmpty { singleUrlImage(item, "getThumbnailUrl", "thumbnailUrl") }
+        .ifEmpty { youtubeThumbnailFallback(item) }
 
     @JvmStatic
-    fun uploaderAvatarImages(streamItem: Any?): List<Image> = imageList(streamItem, "getUploaderAvatars")
-        .ifEmpty { singleUrlImage(streamItem, "getUploaderAvatarUrl", "uploaderAvatarUrl") }
+    fun uploaderAvatarImages(streamItem: Any?): List<Image> {
+        if (streamItem is StreamInfo) {
+            return urlToImageList(streamItem.uploaderAvatarUrl)
+                .ifEmpty { streamItem.uploaderAvatars }
+        }
+
+        return singleUrlImage(
+            streamItem,
+            "getUploaderAvatarUrl",
+            "uploaderAvatarUrl"
+        ).ifEmpty { imageList(streamItem, "getUploaderAvatars") }
+    }
 
     @JvmStatic
     fun parentChannelAvatarImages(channelInfo: Any?): List<Image> = imageList(channelInfo, "getParentChannel" + "Avatars")
@@ -77,6 +89,39 @@ object ExtractorImageCompat {
                 ?.get(item) as? String
         }.getOrNull()
 
+        return urlToImageList(url)
+    }
+
+    private fun youtubeThumbnailFallback(item: Any?): List<Image> {
+        if (item == null) return emptyList()
+        val url = runCatching {
+            item.javaClass.methods
+                .firstOrNull { it.name == "getUrl" && it.parameterCount == 0 }
+                ?.invoke(item) as? String
+        }.getOrNull() ?: runCatching {
+            item.javaClass.fields
+                .firstOrNull { it.name == "url" }
+                ?.get(item) as? String
+        }.getOrNull()
+
+        val videoId = youtubeVideoId(url) ?: return emptyList()
+        return urlToImageList("https://i.ytimg.com/vi/$videoId/hqdefault.jpg")
+    }
+
+    private fun youtubeVideoId(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        val patterns = listOf(
+            Regex("[?&]v=([A-Za-z0-9_-]{11})(?:[&#].*)?"),
+            Regex("youtu\\.be/([A-Za-z0-9_-]{11})(?:[?&#/].*)?"),
+            Regex("/(?:embed|shorts|live)/([A-Za-z0-9_-]{11})(?:[?&#/].*)?"),
+            Regex("/watch/([A-Za-z0-9_-]{11})(?:[?&#/].*)?")
+        )
+        return patterns.firstNotNullOfOrNull { pattern ->
+            pattern.find(url)?.groupValues?.getOrNull(1)
+        }
+    }
+
+    private fun urlToImageList(url: String?): List<Image> {
         return url?.takeIf { it.isNotBlank() }?.let {
             listOf(
                 Image(
