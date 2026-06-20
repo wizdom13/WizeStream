@@ -1,0 +1,11 @@
+NewPipe Material 0.28.8-m8
+
+Highlights:
+
+* Updated the app base version to NewPipe 0.28.8.
+* Improved YouTube thumbnail, poster, and avatar loading.
+* Improved YouTube embedded web playback request handling.
+* Fixed channel tab pagination compatibility with the updated extractor.
+* Improved release build stability.
+
+Based on NewPipe 0.28.8.
