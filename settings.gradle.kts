@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+rootProject.name = "NewPipe_Material"
 
 pluginManagement {
     repositories {
