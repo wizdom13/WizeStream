@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -7,15 +8,16 @@
     tools:context=".error.ErrorActivity">
 
     <include
-        layout="@layout/toolbar_layout"
-        android:id="@+id/toolbar_layout"/>
+        android:id="@+id/toolbar_layout"
+        layout="@layout/toolbar_layout" />
 
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
-        android:background="?attr/colorSurface">
+        android:background="?attr/colorSurface"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -23,9 +25,9 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:orientation="vertical"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingStart="@dimen/activity_horizontal_margin"
             android:paddingTop="@dimen/activity_vertical_margin"
-            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingEnd="@dimen/activity_horizontal_margin"
             android:paddingBottom="@dimen/activity_vertical_margin">
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -38,122 +40,199 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:text="@string/what_happened_headline"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
-
-            <org.schabi.newpipe.views.NewPipeTextView
-                android:id="@+id/errorMessageView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/info_labels"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <org.schabi.newpipe.views.NewPipeTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:text="@string/what_device_headline"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
-
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp">
 
-                <org.schabi.newpipe.views.NewPipeTextView
-                    android:id="@+id/errorInfoLabelsView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/info_labels"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-
-                <HorizontalScrollView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingLeft="16dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <org.schabi.newpipe.views.NewPipeTextView
-                        android:id="@+id/errorInfosView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="@string/what_happened_headline"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/errorMessageView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/info_labels"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/what_device_headline"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/errorInfoLabelsView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/info_labels"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="16dp">
+
+                            <org.schabi.newpipe.views.NewPipeTextView
+                                android:id="@+id/errorInfosView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </HorizontalScrollView>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/error_details_headline"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="8dp">
+
+                        <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/errorView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textIsSelectable="true"
+                            android:typeface="monospace" />
+                    </HorizontalScrollView>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/your_comment"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <org.schabi.newpipe.views.NewPipeEditText
+                        android:id="@+id/errorCommentBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="3"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/errorReportEmailButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/error_report_button_text" />
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/error_report_open_github_notice"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
-                </HorizontalScrollView>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/errorReportCopyButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/copy_for_github" />
 
-            </LinearLayout>
-
-            <org.schabi.newpipe.views.NewPipeTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:text="@string/error_details_headline"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
-
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center">
-
-                <org.schabi.newpipe.views.NewPipeTextView
-                    android:id="@+id/errorView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textIsSelectable="true"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:typeface="monospace" />
-            </HorizontalScrollView>
-
-            <org.schabi.newpipe.views.NewPipeTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:text="@string/your_comment"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
-
-            <org.schabi.newpipe.views.NewPipeEditText
-                android:id="@+id/errorCommentBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType=""
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?attr/colorOnSurfaceVariant" />
-
-            <Button
-                android:id="@+id/errorReportEmailButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/error_report_button_text" />
-
-            <org.schabi.newpipe.views.NewPipeTextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="5dp"
-                android:text="@string/error_report_open_github_notice"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/errorReportCopyButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/copy_for_github" />
-
-            <Button
-                android:id="@+id/errorReportGitHubButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/error_report_open_issue_button_text" />
-
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/errorReportGitHubButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/error_report_open_issue_button_text" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
-
 </FrameLayout>

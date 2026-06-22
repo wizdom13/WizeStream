@@ -126,6 +126,7 @@ import org.schabi.newpipe.player.ui.PopupPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.InfoCache;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SerializedCache;
@@ -212,6 +213,9 @@ public final class Player implements PlaybackListener, Listener {
     private Bitmap currentThumbnail;
     @Nullable
     private coil3.request.Disposable thumbnailDisposable;
+    @NonNull
+    private final PlayerHttpErrorRecovery.RecoveryGuard mediaUrlRecoveryGuard =
+        new PlayerHttpErrorRecovery.RecoveryGuard();
 
     @NonNull
     private List<SponsorBlockSegment> sponsorBlockSegments = Collections.emptyList();
@@ -1864,6 +1868,10 @@ public final class Player implements PlaybackListener, Listener {
         saveStreamProgressState();
         boolean isCatchableException = false;
 
+        if (tryRecoverFromStaleYouTubeMediaUrl(error)) {
+            return;
+        }
+
         switch (error.errorCode) {
             case ERROR_CODE_BEHIND_LIVE_WINDOW:
                 isCatchableException = true;
@@ -1910,6 +1918,33 @@ public final class Player implements PlaybackListener, Listener {
         if (fragmentListener != null) {
             fragmentListener.onPlayerError(error, isCatchableException);
         }
+    }
+
+
+    private boolean tryRecoverFromStaleYouTubeMediaUrl(@NonNull final PlaybackException error) {
+        if (error.errorCode != ERROR_CODE_IO_BAD_HTTP_STATUS || playQueue == null) {
+            return false;
+        }
+
+        final PlayQueueItem item = playQueue.getItem();
+        if (!PlayerHttpErrorRecovery.isRecoverableYouTubeMediaUrlFailure(error, item)) {
+            return false;
+        }
+
+        final String recoveryKey = item.getServiceId() + ":" + item.getUrl();
+        if (!mediaUrlRecoveryGuard.canRetry(recoveryKey)) {
+            return false;
+        }
+        if (DEBUG) {
+            Log.w(TAG, "Refreshing YouTube StreamInfo after stale media URL response");
+        }
+
+        setRecovery();
+        InfoCache.getInstance()
+                .removeInfo(item.getServiceId(), item.getUrl(), InfoCache.Type.STREAM);
+        reloadPlayQueueManager();
+        onBuffering();
+        return true;
     }
 
     private void createErrorNotification(@NonNull final PlaybackException error) {
