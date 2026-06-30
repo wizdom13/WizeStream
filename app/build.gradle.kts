@@ -43,6 +43,11 @@ configure<ApplicationExtension> {
     }
     namespace = NEWPIPE_APPLICATION_ID_OLD
 
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = NEWPIPE_MATERIAL_APPLICATION_ID
         resValue("string", "app_name", "NewPipe Material")
