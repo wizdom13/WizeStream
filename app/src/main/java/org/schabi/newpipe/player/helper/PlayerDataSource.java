@@ -45,6 +45,9 @@ public class PlayerDataSource {
      */
     private static final double PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT = 15;
 
+    private static final int YOUTUBE_CONNECT_TIMEOUT_MILLIS = 15_000;
+    private static final int YOUTUBE_READ_TIMEOUT_MILLIS = 30_000;
+
     /**
      * The maximum number of generated manifests per cache, in
      * {@link YoutubeProgressiveDashManifestCreator}, {@link YoutubeOtfDashManifestCreator} and
@@ -201,6 +204,8 @@ public class PlayerDataSource {
             final boolean rangeParameterEnabled,
             final boolean rnParameterEnabled) {
         return new YoutubeHttpDataSource.Factory()
+                .setConnectTimeoutMs(YOUTUBE_CONNECT_TIMEOUT_MILLIS)
+                .setReadTimeoutMs(YOUTUBE_READ_TIMEOUT_MILLIS)
                 .setRangeParameterEnabled(rangeParameterEnabled)
                 .setRnParameterEnabled(rnParameterEnabled);
     }
