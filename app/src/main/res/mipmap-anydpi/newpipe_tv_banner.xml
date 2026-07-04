@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+
+    <path
+        android:fillColor="@color/light_m3_secondary_container_color"
+        android:pathData="M0,0h320v180h-320z" />
+
+    <path
+        android:fillColor="@color/light_m3_on_primary_color"
+        android:pathData="M84,44a46,46 0,1 0,0.1,0z" />
+
+    <path
+        android:fillColor="@color/light_m3_primary_color"
+        android:strokeColor="@color/light_m3_primary_color"
+        android:strokeWidth="4"
+        android:strokeLineJoin="round"
+        android:pathData="M68,62 L120,90 L68,118 Z" />
+
+    <path
+        android:fillColor="@color/light_m3_on_primary_color"
+        android:pathData="M74,104 L74,74 L80,74 L87,86 L94,80 L100,80 L100,98 L94,98 L94,90 L87,96 L80,84 L80,104 Z" />
+
+    <path
+        android:fillColor="@color/light_m3_on_secondary_container_color"
+        android:pathData="M144,73h16v34h-9l-16,-19v19h-16v-34h9l16,19z M170,73h58v12h-21v22h-16v-22h-21z M237,73h16v34h-16z" />
+</vector>

@@ -14,8 +14,8 @@
         android:scaleY="0.88">
 
         <path
-            android:fillColor="#BA1A1A"
-            android:strokeColor="#BA1A1A"
+            android:fillColor="@color/light_m3_primary_color"
+            android:strokeColor="@color/light_m3_primary_color"
             android:strokeWidth="5"
             android:strokeLineJoin="round"
             android:pathData="M 34,26 L 86,54 L 34,82 Z" />
