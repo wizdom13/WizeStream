@@ -20,6 +20,7 @@ import androidx.preference.PreferenceManager;
 
 import com.grack.nanojson.JsonParserException;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
@@ -32,7 +33,6 @@ import org.schabi.newpipe.settings.export.ImportExportManager;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.NavigationHelper;
-import org.schabi.newpipe.util.ZipHelper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -160,13 +160,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
             final StoredFileHelper file = new StoredFileHelper(
                     requireContext(), result.getData().getData(), ZIP_MIME_TYPE);
 
-            new MaterialAlertDialogBuilder(requireActivity())
-                    .setMessage(R.string.override_current_data)
-                    .setPositiveButton(R.string.ok, (d, id) ->
-                            importDatabase(file, lastImportDataUri))
-                    .setNegativeButton(R.string.cancel, (d, id) ->
-                            d.cancel())
-                    .show();
+            showImportConfirmation(file, lastImportDataUri);
         }
     }
 
@@ -180,39 +174,80 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
             manager.exportDatabase(preferences, file);
 
             saveLastImportExportDataUri(exportDataUri); // save export path only on success
-            Toast.makeText(requireContext(), R.string.export_complete_toast, Toast.LENGTH_SHORT)
-                    .show();
+            Snackbar.make(getListView(), getString(R.string.backup_exported_with_file,
+                    file.getName()), Snackbar.LENGTH_LONG).show();
         } catch (final Exception e) {
             showErrorSnackbar(e, "Exporting database and settings");
         }
     }
 
-    private void importDatabase(final StoredFileHelper file, final Uri importDataUri) {
-        // check if file is supported
-        if (!ZipHelper.isValidZipFile(file)) {
+    private void showImportConfirmation(final StoredFileHelper file, final Uri importDataUri) {
+        try {
+            final ImportExportManager.BackupContents contents = manager.inspectBackup(file);
+            if (!contents.getHasRecognizableBackupData()) {
+                Toast.makeText(requireContext(), R.string.backup_invalid_or_empty,
+                                Toast.LENGTH_LONG)
+                        .show();
+                return;
+            }
+
+            new MaterialAlertDialogBuilder(requireActivity())
+                    .setTitle(R.string.import_full_backup_title)
+                    .setMessage(getString(R.string.override_current_data) + "\n\n"
+                            + getString(R.string.import_full_backup_detected_contents,
+                            describeBackupContents(contents)))
+                    .setPositiveButton(R.string.import_full_backup_button, (d, id) ->
+                            importDatabase(file, importDataUri, contents))
+                    .setNegativeButton(R.string.cancel, (d, id) -> d.cancel())
+                    .show();
+        } catch (final Exception e) {
             Toast.makeText(requireContext(), R.string.no_valid_zip_file, Toast.LENGTH_SHORT)
                     .show();
+        }
+    }
+
+    private String describeBackupContents(final ImportExportManager.BackupContents contents) {
+        final StringBuilder builder = new StringBuilder();
+        appendBackupContent(builder, contents.getHasDatabase(), R.string.backup_contents_database);
+        appendBackupContent(builder, contents.getHasJsonPreferences(),
+                R.string.backup_contents_json_preferences);
+        appendBackupContent(builder, contents.getHasSerializedPreferences(),
+                R.string.backup_contents_legacy_preferences);
+        appendBackupContent(builder, contents.getHasManifest(), R.string.backup_contents_manifest);
+        return builder.length() == 0
+                ? getString(R.string.backup_contents_none) : builder.toString();
+    }
+
+    private void appendBackupContent(final StringBuilder builder, final boolean shouldAppend,
+                                     final int stringRes) {
+        if (!shouldAppend) {
             return;
         }
+        if (builder.length() > 0) {
+            builder.append(", ");
+        }
+        builder.append(getString(stringRes));
+    }
 
+    private void importDatabase(final StoredFileHelper file, final Uri importDataUri,
+                                final ImportExportManager.BackupContents contents) {
         try {
             manager.ensureDbDirectoryExists();
 
             // replace the current database
-            if (!manager.extractDb(file)) {
+            if (contents.getHasDatabase() && !manager.extractDb(file)) {
                 Toast.makeText(requireContext(), R.string.could_not_import_all_files,
                                 Toast.LENGTH_LONG)
                         .show();
             }
 
             // if settings file exist, ask if it should be imported.
-            final boolean hasJsonPrefs = manager.exportHasJsonPrefs(file);
-            if (hasJsonPrefs || manager.exportHasSerializedPrefs(file)) {
+            final boolean hasJsonPrefs = contents.getHasJsonPreferences();
+            if (hasJsonPrefs || contents.getHasSerializedPreferences()) {
                 new MaterialAlertDialogBuilder(requireContext())
                         .setTitle(R.string.import_settings)
                         .setMessage(hasJsonPrefs ? null : requireContext()
                                 .getString(R.string.import_settings_vulnerable_format))
-                        .setOnDismissListener(dialog -> finishImport(importDataUri))
                         .setNegativeButton(R.string.cancel, (dialog, which) -> {
                             dialog.dismiss();
                             finishImport(importDataUri);
@@ -284,8 +319,12 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private void finishImport(final Uri importDataUri) {
         // save import path only on success
         saveLastImportExportDataUri(importDataUri);
-        // restart app to properly load db
-        NavigationHelper.restartApp(requireActivity());
+        new MaterialAlertDialogBuilder(requireContext())
+                .setMessage(R.string.backup_import_succeeded_restart)
+                .setCancelable(false)
+                .setPositiveButton(R.string.restart, (dialog, which) ->
+                        NavigationHelper.restartApp(requireActivity()))
+                .show();
     }
 
     private Uri getImportExportDataUri() {

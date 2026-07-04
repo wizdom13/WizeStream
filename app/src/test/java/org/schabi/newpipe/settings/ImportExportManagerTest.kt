@@ -3,7 +3,6 @@ package org.schabi.newpipe.settings
 import android.content.SharedPreferences
 import com.grack.nanojson.JsonParser
 import java.io.File
-import java.io.ObjectInputStream
 import java.nio.file.Paths
 import java.util.zip.ZipFile
 import kotlin.io.path.createTempDirectory
@@ -65,24 +64,46 @@ class ImportExportManagerTest {
         `when`(storedFileHelper.openAndTruncateStream()).thenReturn(FileStream(output))
         ImportExportManager(fileLocator).exportDatabase(sharedPreferences, storedFileHelper)
 
-        val zipFile = ZipFile(output)
-        val entries = zipFile.entries().toList()
-        assertEquals(3, entries.size)
+        ZipFile(output).use { zipFile ->
+            val entries = zipFile.entries().toList()
+            val entryNames = entries.map { it.name }.toSet()
 
-        zipFile.getInputStream(entries.first { it.name == "newpipe.db" }).use { actual ->
-            db.inputStream().use { expected ->
-                assertEquals(expected.reader().readText(), actual.reader().readText())
+            assertEquals(
+                setOf(
+                    BackupFileLocator.FILE_NAME_DB,
+                    BackupFileLocator.FILE_NAME_JSON_PREFS,
+                    BackupFileLocator.FILE_NAME_MANIFEST
+                ),
+                entryNames
+            )
+            assertFalse(entryNames.contains(BackupFileLocator.FILE_NAME_SERIALIZED_PREFS))
+
+            zipFile.getInputStream(
+                entries.first { it.name == BackupFileLocator.FILE_NAME_DB }
+            ).use { actual ->
+                db.inputStream().use { expected ->
+                    assertEquals(expected.reader().readText(), actual.reader().readText())
+                }
             }
-        }
 
-        zipFile.getInputStream(entries.first { it.name == "newpipe.settings" }).use { actual ->
-            val actualPreferences = ObjectInputStream(actual).readObject()
-            assertEquals(expectedPreferences, actualPreferences)
-        }
+            zipFile.getInputStream(
+                entries.first { it.name == BackupFileLocator.FILE_NAME_JSON_PREFS }
+            ).use { actual ->
+                val actualPreferences = JsonParser.`object`().from(actual)
+                assertEquals(expectedPreferences, actualPreferences)
+            }
 
-        zipFile.getInputStream(entries.first { it.name == "preferences.json" }).use { actual ->
-            val actualPreferences = JsonParser.`object`().from(actual)
-            assertEquals(expectedPreferences, actualPreferences)
+            zipFile.getInputStream(
+                entries.first { it.name == BackupFileLocator.FILE_NAME_MANIFEST }
+            ).use { actual ->
+                val manifest = JsonParser.`object`().from(actual)
+                assertEquals("NewPipe", manifest.getString("appName"))
+                assertTrue(manifest.containsKey("backupFormatVersion"))
+                assertTrue(manifest.containsKey("createdTimestamp"))
+                assertTrue(manifest.getBoolean("includesDatabase"))
+                assertTrue(manifest.getBoolean("includesPreferences"))
+                assertFalse(manifest.getBoolean("includesSponsorBlockSettings"))
+            }
         }
     }
 
@@ -146,6 +167,7 @@ class ImportExportManagerTest {
         assertEquals(0, db.fileSize())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `Contains setting must return true if a settings file exists in the zip`() {
         val zip = File(classloader.getResource("settings/db_ser_json.zip")?.file!!)
@@ -153,6 +175,7 @@ class ImportExportManagerTest {
         assertTrue(ImportExportManager(fileLocator).exportHasSerializedPrefs(storedFileHelper))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `Contains setting must return false if no settings file exists in the zip`() {
         val emptyZip = File(classloader.getResource("settings/nodb_noser_nojson.zip")?.file!!)
@@ -160,6 +183,7 @@ class ImportExportManagerTest {
         assertFalse(ImportExportManager(fileLocator).exportHasSerializedPrefs(storedFileHelper))
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `Preferences must be set from the settings file`() {
         val zip = File(classloader.getResource("settings/db_ser_json.zip")?.file!!)
@@ -177,6 +201,7 @@ class ImportExportManagerTest {
         verify(editor, atLeastOnce()).putInt(anyString(), anyInt())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun `Importing preferences with a serialization injected class should fail`() {
         val emptyZip = File(classloader.getResource("settings/db_vulnser_json.zip")?.file!!)

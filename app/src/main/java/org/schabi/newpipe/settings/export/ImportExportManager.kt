@@ -7,10 +7,11 @@ import com.grack.nanojson.JsonParserException
 import com.grack.nanojson.JsonWriter
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.io.ObjectOutputStream
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.deleteIfExists
+import org.schabi.newpipe.streams.io.SharpInputStream
 import org.schabi.newpipe.streams.io.SharpOutputStream
 import org.schabi.newpipe.streams.io.StoredFileHelper
 import org.schabi.newpipe.util.ZipHelper
@@ -18,6 +19,18 @@ import org.schabi.newpipe.util.ZipHelper
 class ImportExportManager(private val fileLocator: BackupFileLocator) {
     companion object {
         const val TAG = "ImportExportManager"
+        private const val MANIFEST_FORMAT_VERSION = 1
+    }
+
+    data class BackupContents(
+        val hasDatabase: Boolean,
+        val hasJsonPreferences: Boolean,
+        val hasSerializedPreferences: Boolean,
+        val hasManifest: Boolean,
+        val manifest: String?
+    ) {
+        val hasRecognizableBackupData: Boolean
+            get() = hasDatabase || hasJsonPreferences || hasSerializedPreferences
     }
 
     /**
@@ -33,18 +46,8 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
             val name = BackupFileLocator.FILE_NAME_DB
             ZipHelper.addFileToZip(outZip, name, fileLocator.db)
 
-            // add the legacy vulnerable serialized preferences (will be removed in the future)
-            ZipHelper.addFileToZip(
-                outZip,
-                BackupFileLocator.FILE_NAME_SERIALIZED_PREFS
-            ) { byteOutput ->
-                ObjectOutputStream(byteOutput).use { output ->
-                    output.writeObject(preferences.all)
-                    output.flush()
-                }
-            }
-
-            // add the JSON preferences
+            // add the JSON preferences; legacy serialized preferences are still supported when
+            // importing old backups, but new backups avoid writing that vulnerable format.
             ZipHelper.addFileToZip(
                 outZip,
                 BackupFileLocator.FILE_NAME_JSON_PREFS
@@ -53,6 +56,29 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
                     .indent("")
                     .on(byteOutput)
                     .`object`(preferences.all)
+                    .done()
+            }
+
+            ZipHelper.addFileToZip(
+                outZip,
+                BackupFileLocator.FILE_NAME_MANIFEST
+            ) { byteOutput ->
+                JsonWriter
+                    .indent("")
+                    .on(byteOutput)
+                    .`object`()
+                    .value("appName", "NewPipe")
+                    .value("backupFormatVersion", MANIFEST_FORMAT_VERSION)
+                    .value("createdTimestamp", System.currentTimeMillis())
+                    .value("includesDatabase", true)
+                    .value("includesPreferences", true)
+                    .value(
+                        "includesSponsorBlockSettings",
+                        preferences.all.keys.any {
+                            it.startsWith("sponsor_block_")
+                        }
+                    )
+                    .end()
                     .done()
             }
         }
@@ -95,6 +121,42 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
 
     fun exportHasJsonPrefs(zipFile: StoredFileHelper): Boolean {
         return ZipHelper.zipContainsFile(zipFile, BackupFileLocator.FILE_NAME_JSON_PREFS)
+    }
+
+    @Throws(IOException::class)
+    fun inspectBackup(zipFile: StoredFileHelper): BackupContents {
+        var hasDatabase = false
+        var hasJsonPreferences = false
+        var hasSerializedPreferences = false
+        var hasManifest = false
+        var manifest: String? = null
+
+        ZipInputStream(SharpInputStream(zipFile.stream).buffered()).use { inZip ->
+            var entry = inZip.nextEntry
+            while (entry != null) {
+                when (entry.name) {
+                    BackupFileLocator.FILE_NAME_DB -> hasDatabase = true
+
+                    BackupFileLocator.FILE_NAME_JSON_PREFS -> hasJsonPreferences = true
+
+                    BackupFileLocator.FILE_NAME_SERIALIZED_PREFS -> hasSerializedPreferences = true
+
+                    BackupFileLocator.FILE_NAME_MANIFEST -> {
+                        hasManifest = true
+                        manifest = inZip.readBytes().decodeToString()
+                    }
+                }
+                entry = inZip.nextEntry
+            }
+        }
+
+        return BackupContents(
+            hasDatabase,
+            hasJsonPreferences,
+            hasSerializedPreferences,
+            hasManifest,
+            manifest
+        )
     }
 
     /**
@@ -152,25 +214,27 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
     fun loadJsonPrefs(zipFile: StoredFileHelper, preferences: SharedPreferences) {
         ZipHelper.extractFileFromZip(zipFile, BackupFileLocator.FILE_NAME_JSON_PREFS) {
             val jsonObject = JsonParser.`object`().from(it)
+            val entries = mutableMapOf<String, Any?>()
+
+            for ((key, value) in jsonObject) {
+                when (value) {
+                    is Boolean, is Float, is Int, is Long, is String -> entries[key] = value
+                    is JsonArray -> entries[key] = value.mapNotNull { e -> e as? String }.toSet()
+                }
+            }
 
             val editor = preferences.edit()
             editor.clear()
 
-            for ((key, value) in jsonObject) {
+            for ((key, value) in entries) {
+                @Suppress("UNCHECKED_CAST")
                 when (value) {
                     is Boolean -> editor.putBoolean(key, value)
-
                     is Float -> editor.putFloat(key, value)
-
                     is Int -> editor.putInt(key, value)
-
                     is Long -> editor.putLong(key, value)
-
                     is String -> editor.putString(key, value)
-
-                    is JsonArray -> {
-                        editor.putStringSet(key, value.mapNotNull { e -> e as? String }.toSet())
-                    }
+                    is Set<*> -> editor.putStringSet(key, value as Set<String>?)
                 }
             }
 
