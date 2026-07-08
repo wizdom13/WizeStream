@@ -1,6 +1,7 @@
 package org.schabi.newpipe.settings;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -67,6 +68,9 @@ public class SettingsActivity extends AppCompatActivity implements
     private static final String TAG = "SettingsActivity";
     private static final boolean DEBUG = MainActivity.DEBUG;
 
+    public static final String EXTRA_OPEN_UPDATE_SETTINGS =
+            "org.schabi.newpipe.settings.OPEN_UPDATE_SETTINGS";
+
     @IdRes
     private static final int FRAGMENT_HOLDER_ID = R.id.settings_fragment_holder;
 
@@ -110,13 +114,20 @@ public class SettingsActivity extends AppCompatActivity implements
             }
         } else {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.settings_fragment_holder, new MainSettingsFragment())
+                    .replace(R.id.settings_fragment_holder, createInitialFragment(getIntent()))
                     .commit();
         }
 
         if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(this);
         }
+    }
+
+    private Fragment createInitialFragment(@NonNull final Intent intent) {
+        if (intent.getBooleanExtra(EXTRA_OPEN_UPDATE_SETTINGS, false)) {
+            return new UpdateSettingsFragment();
+        }
+        return new MainSettingsFragment();
     }
 
     @Override

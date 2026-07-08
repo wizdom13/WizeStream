@@ -27,7 +27,9 @@ object NewPipeMaterialUpdateRepository {
         val publishedAt: String,
         val draft: Boolean,
         val prerelease: Boolean,
-        val apkUrl: String?
+        val apkUrl: String?,
+        val apkName: String? = null,
+        val apkSize: Long? = null
     )
 
     fun fetchLatestCandidateRelease(): Release? {
@@ -110,6 +112,7 @@ object NewPipeMaterialUpdateRepository {
         val body = json.getString("body", "") ?: ""
         val publishedAt = json.getString("published_at", "") ?: ""
         val assets = json.getArray("assets", JsonArray()) ?: JsonArray()
+        val apkAsset = findApkAsset(assets)
         return Release(
             version = tagName.ifBlank { name },
             title = name.ifBlank { tagName },
@@ -118,18 +121,19 @@ object NewPipeMaterialUpdateRepository {
             publishedAt = publishedAt,
             draft = json.getBoolean("draft", false),
             prerelease = json.getBoolean("prerelease", false),
-            apkUrl = findApkAssetUrl(assets)
+            apkUrl = apkAsset?.getString("browser_download_url", null),
+            apkName = apkAsset?.getString("name", null),
+            apkSize = apkAsset?.getLong("size", -1)?.takeIf { it >= 0 }
         )
     }
 
-    private fun findApkAssetUrl(assets: JsonArray): String? {
+    private fun findApkAsset(assets: JsonArray): JsonObject? {
         return assets
             .filterIsInstance<JsonObject>()
             .firstOrNull { asset ->
                 val name = asset.getString("name", "")?.lowercase(Locale.ROOT) ?: ""
                 name.endsWith(".apk")
             }
-            ?.getString("browser_download_url", null)
     }
 
     private data class SemanticVersion(
@@ -164,7 +168,9 @@ object NewPipeMaterialUpdateRepository {
 
             fun parse(raw: String): SemanticVersion? {
                 val match = VERSION_REGEX.matchEntire(raw.trim()) ?: return null
-                val numbers = match.groupValues[1].split('.').map { it.toIntOrNull() ?: return null }
+                val numbers = match.groupValues[1]
+                    .split('.')
+                    .map { it.toIntOrNull() ?: return null }
                 val suffixPrefix = match.groupValues[2].lowercase(Locale.ROOT)
                 val suffixNumber = match.groupValues[3].takeIf { it.isNotBlank() }?.toIntOrNull()
                 return SemanticVersion(numbers, suffixPrefix, suffixNumber)

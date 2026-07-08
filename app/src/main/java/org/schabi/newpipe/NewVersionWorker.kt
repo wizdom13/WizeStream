@@ -7,7 +7,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.PendingIntentCompat
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.preference.PreferenceManager
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
@@ -18,6 +17,7 @@ import androidx.work.workDataOf
 import java.io.IOException
 import java.util.UUID
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
+import org.schabi.newpipe.settings.SettingsActivity
 import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository
 import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository.VersionComparison
 import org.schabi.newpipe.util.ReleaseVersionUtil
@@ -43,9 +43,10 @@ class NewVersionWorker(
         release: NewPipeMaterialUpdateRepository.Release,
         installedVersion: String
     ) {
-        val releaseUrl = release.htmlUrl.ifBlank { NewPipeMaterialUpdateRepository.RELEASES_URL }
-        val intent = Intent(Intent.ACTION_VIEW, releaseUrl.toUri())
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val intent = Intent(applicationContext, SettingsActivity::class.java).apply {
+            putExtra(SettingsActivity.EXTRA_OPEN_UPDATE_SETTINGS, true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         val pendingIntent = PendingIntentCompat.getActivity(
             applicationContext,
             0,
@@ -137,7 +138,11 @@ class NewVersionWorker(
                 Result.success(result?.toOutputData() ?: Data.EMPTY)
             }
         } catch (e: IOException) {
-            Log.w(TAG, "Could not fetch NewPipe Material GitHub releases: probably network problem", e)
+            Log.w(
+                TAG,
+                "Could not fetch NewPipe Material GitHub releases: probably network problem",
+                e
+            )
             Result.failure()
         } catch (e: ReCaptchaException) {
             Log.e(TAG, "ReCaptchaException should never happen here.", e)
@@ -153,7 +158,13 @@ class NewVersionWorker(
             OUTPUT_COMPARISON to comparison.name,
             OUTPUT_LATEST_VERSION to release.version,
             OUTPUT_INSTALLED_VERSION to installedVersion,
-            OUTPUT_RELEASE_URL to release.htmlUrl
+            OUTPUT_RELEASE_URL to release.htmlUrl,
+            OUTPUT_APK_URL to release.apkUrl.orEmpty(),
+            OUTPUT_APK_NAME to release.apkName.orEmpty(),
+            OUTPUT_APK_SIZE to (release.apkSize ?: -1L),
+            OUTPUT_CHANGELOG to release.body,
+            OUTPUT_RELEASE_TITLE to release.title,
+            OUTPUT_PUBLISHED_AT to release.publishedAt
         )
     }
 
@@ -164,6 +175,12 @@ class NewVersionWorker(
         const val OUTPUT_LATEST_VERSION = "latestVersion"
         const val OUTPUT_INSTALLED_VERSION = "installedVersion"
         const val OUTPUT_RELEASE_URL = "releaseUrl"
+        const val OUTPUT_APK_URL = "apkUrl"
+        const val OUTPUT_APK_NAME = "apkName"
+        const val OUTPUT_APK_SIZE = "apkSize"
+        const val OUTPUT_CHANGELOG = "changelog"
+        const val OUTPUT_RELEASE_TITLE = "releaseTitle"
+        const val OUTPUT_PUBLISHED_AT = "publishedAt"
 
         /**
          * Start a worker which checks GitHub Releases for NewPipe Material updates.
