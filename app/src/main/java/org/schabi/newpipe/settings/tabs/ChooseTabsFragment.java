@@ -36,6 +36,11 @@ import org.schabi.newpipe.settings.SelectKioskFragment;
 import org.schabi.newpipe.settings.SelectPlaylistFragment;
 import org.schabi.newpipe.settings.SelectFeedGroupFragment;
 import org.schabi.newpipe.settings.tabs.AddTabDialog.ChooseTabListItem;
+import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.util.KioskTranslator;
+import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.ArrayList;
@@ -151,7 +156,11 @@ public class ChooseTabsFragment extends Fragment {
 
             final Dialog.OnClickListener actionListener = (dialog, which) -> {
                 final ChooseTabListItem selected = availableTabs[which];
-                addTab(selected.tabId);
+                if (selected.tab != null) {
+                    addTab(selected.tab);
+                } else {
+                    addTab(selected.tabId);
+                }
             };
 
             new AddTabDialog(requireContext(), availableTabs, actionListener)
@@ -160,6 +169,9 @@ public class ChooseTabsFragment extends Fragment {
     }
 
     private void addTab(final Tab tab) {
+        if (tabList.contains(tab)) {
+            return;
+        }
         tabList.add(tab);
         selectedTabsAdapter.notifyDataSetChanged();
     }
@@ -221,52 +233,94 @@ public class ChooseTabsFragment extends Fragment {
     private ChooseTabListItem[] getAvailableTabs(final Context context) {
         final ArrayList<ChooseTabListItem> returnList = new ArrayList<>();
 
-        for (final Tab.Type type : Tab.Type.values()) {
-            final Tab tab = type.getTab();
-            switch (type) {
-                case BLANK:
-                    if (!tabList.contains(tab)) {
-                        returnList.add(new ChooseTabListItem(tab.getTabId(),
-                                getString(R.string.blank_page_summary),
-                                tab.getTabIconRes(context)));
-                    }
-                    break;
-                case KIOSK:
-                    returnList.add(new ChooseTabListItem(tab.getTabId(),
-                            getString(R.string.kiosk_page_summary),
-                            R.drawable.ic_whatshot));
-                    break;
-                case CHANNEL:
-                    returnList.add(new ChooseTabListItem(tab.getTabId(),
-                            getString(R.string.channel_page_summary),
-                            tab.getTabIconRes(context)));
-                    break;
-                case DEFAULT_KIOSK:
-                    if (!tabList.contains(tab)) {
-                        returnList.add(new ChooseTabListItem(tab.getTabId(),
-                                getString(R.string.default_kiosk_page_summary),
-                                R.drawable.ic_whatshot));
-                    }
-                    break;
-                case PLAYLIST:
-                    returnList.add(new ChooseTabListItem(tab.getTabId(),
-                            getString(R.string.playlist_page_summary),
-                            tab.getTabIconRes(context)));
-                    break;
-                case FEEDGROUP:
-                    returnList.add(new ChooseTabListItem(tab.getTabId(),
-                            getString(R.string.feed_group_page_summary),
-                            tab.getTabIconRes(context)));
-                    break;
-                default:
-                    if (!tabList.contains(tab)) {
-                        returnList.add(new ChooseTabListItem(context, tab));
-                    }
-                    break;
-            }
-        }
+        final ArrayList<ChooseTabListItem> localSections = new ArrayList<>();
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.FEED);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.SUBSCRIPTIONS);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.BOOKMARKS);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.DOWNLOADS);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.HISTORY);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.BLANK);
+        appendGroup(returnList, R.string.add_tab_local_sections, localSections);
+
+        final ArrayList<ChooseTabListItem> currentService = new ArrayList<>();
+        addSingletonTabIfAvailable(context, currentService, Tab.Type.DEFAULT_KIOSK);
+        addCurrentServiceKiosks(context, currentService);
+        appendGroup(returnList, R.string.add_tab_current_service, currentService);
+
+        final ArrayList<ChooseTabListItem> customContent = new ArrayList<>();
+        addGenericTab(customContent, Tab.Type.KIOSK, getString(R.string.kiosk_page_summary),
+                R.drawable.ic_whatshot);
+        addGenericTab(customContent, Tab.Type.FEEDGROUP,
+                getString(R.string.feed_group_page_summary),
+                Tab.Type.FEEDGROUP.getTab().getTabIconRes(context));
+        addGenericTab(customContent, Tab.Type.CHANNEL, getString(R.string.channel_page_summary),
+                Tab.Type.CHANNEL.getTab().getTabIconRes(context));
+        addGenericTab(customContent, Tab.Type.PLAYLIST, getString(R.string.playlist_page_summary),
+                Tab.Type.PLAYLIST.getTab().getTabIconRes(context));
+        appendGroup(returnList, R.string.add_tab_custom_content, customContent);
 
         return returnList.toArray(new ChooseTabListItem[0]);
+    }
+
+    private void appendGroup(final ArrayList<ChooseTabListItem> returnList,
+                             final int headerStringRes,
+                             final ArrayList<ChooseTabListItem> groupItems) {
+        if (!groupItems.isEmpty()) {
+            returnList.add(ChooseTabListItem.header(getString(headerStringRes)));
+            returnList.addAll(groupItems);
+        }
+    }
+
+    private void addSingletonTabIfAvailable(final Context context,
+                                            final ArrayList<ChooseTabListItem> returnList,
+                                            final Tab.Type type) {
+        final Tab tab = type.getTab();
+        if (tabList.contains(tab)) {
+            return;
+        }
+        if (type == Tab.Type.BLANK) {
+            returnList.add(new ChooseTabListItem(tab.getTabId(),
+                    getString(R.string.blank_page_summary), tab.getTabIconRes(context)));
+        } else if (type == Tab.Type.DEFAULT_KIOSK) {
+            returnList.add(new ChooseTabListItem(tab.getTabId(),
+                    getString(R.string.default_kiosk_page_summary),
+                    getString(R.string.default_kiosk_follows_selected_service),
+                    R.drawable.ic_whatshot));
+        } else {
+            returnList.add(new ChooseTabListItem(context, tab));
+        }
+    }
+
+    private void addGenericTab(final ArrayList<ChooseTabListItem> returnList,
+                               final Tab.Type type,
+                               final String title,
+                               final int icon) {
+        returnList.add(new ChooseTabListItem(type.getTab().getTabId(), title, icon));
+    }
+
+    private void addCurrentServiceKiosks(final Context context,
+                                         final ArrayList<ChooseTabListItem> returnList) {
+        final int selectedServiceId = ServiceHelper.getSelectedServiceId(context);
+        try {
+            final StreamingService service = NewPipe.getService(selectedServiceId);
+            final String defaultKioskId = service.getKioskList().getDefaultKioskId();
+            final boolean defaultKioskSelected = tabList.contains(Tab.Type.DEFAULT_KIOSK.getTab());
+            for (final String kioskId : service.getKioskList().getAvailableKiosks()) {
+                if (defaultKioskSelected && kioskId.equals(defaultKioskId)) {
+                    continue;
+                }
+                final Tab.KioskTab kioskTab = new Tab.KioskTab(selectedServiceId, kioskId);
+                if (!tabList.contains(kioskTab)) {
+                    returnList.add(new ChooseTabListItem(kioskTab,
+                            KioskTranslator.getTranslatedKioskName(kioskId, context),
+                            getNameOfServiceById(selectedServiceId),
+                            KioskTranslator.getKioskIcon(kioskId)));
+                }
+            }
+        } catch (final ExtractionException e) {
+            ErrorUtil.showSnackbar(this, new ErrorInfo(e, UserAction.REQUESTED_KIOSK,
+                    "Loading current service kiosks for home customization"));
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -344,6 +398,18 @@ public class ChooseTabsFragment extends Fragment {
             notifyItemMoved(fromPosition, toPosition);
         }
 
+        private void removeItem(final int position) {
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            tabList.remove(position);
+            notifyItemRemoved(position);
+            if (tabList.isEmpty()) {
+                tabList.add(Tab.Type.BLANK.getTab());
+                notifyItemInserted(0);
+            }
+        }
+
         @NonNull
         @Override
         public ChooseTabsFragment.SelectedTabsAdapter.TabViewHolder onCreateViewHolder(
@@ -368,6 +434,7 @@ public class ChooseTabsFragment extends Fragment {
             private final AppCompatImageView tabIconView;
             private final TextView tabNameView;
             private final ImageView handle;
+            private final ImageView remove;
 
             TabViewHolder(final View itemView) {
                 super(itemView);
@@ -375,11 +442,13 @@ public class ChooseTabsFragment extends Fragment {
                 tabNameView = itemView.findViewById(R.id.tabName);
                 tabIconView = itemView.findViewById(R.id.tabIcon);
                 handle = itemView.findViewById(R.id.handle);
+                remove = itemView.findViewById(R.id.remove);
             }
 
             @SuppressLint("ClickableViewAccessibility")
             void bind(final int position, final TabViewHolder holder) {
                 handle.setOnTouchListener(getOnTouchListener(holder));
+                remove.setOnClickListener(v -> removeItem(getBindingAdapterPosition()));
 
                 final Tab tab = tabList.get(position);
                 final Tab.Type type = Tab.typeFrom(tab.getTabId());

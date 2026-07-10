@@ -2,6 +2,7 @@ package org.schabi.newpipe.settings.tabs;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.AppCompatImageView;
 
@@ -23,7 +25,11 @@ public final class AddTabDialog {
 
         dialog = new AlertDialog.Builder(context)
                 .setTitle(context.getString(R.string.tab_choose))
-                .setAdapter(new DialogListAdapter(context, items), actions)
+                .setAdapter(new DialogListAdapter(context, items), (dialogInterface, which) -> {
+                    if (!items[which].header) {
+                        actions.onClick(dialogInterface, which);
+                    }
+                })
                 .create();
     }
 
@@ -33,19 +39,57 @@ public final class AddTabDialog {
 
     static final class ChooseTabListItem {
         final int tabId;
+        @Nullable
+        final Tab tab;
         final String itemName;
+        @Nullable
+        final String itemSubtitle;
         @DrawableRes
         final int itemIcon;
+        final boolean header;
 
         ChooseTabListItem(final Context context, final Tab tab) {
-            this(tab.getTabId(), tab.getTabName(context), tab.getTabIconRes(context));
+            this(tab, tab.getTabName(context), null, tab.getTabIconRes(context));
         }
 
         ChooseTabListItem(final int tabId, final String itemName,
                           @DrawableRes final int itemIcon) {
+            this(tabId, itemName, null, itemIcon);
+        }
+
+        ChooseTabListItem(final int tabId, final String itemName,
+                          @Nullable final String itemSubtitle,
+                          @DrawableRes final int itemIcon) {
             this.tabId = tabId;
+            this.tab = null;
             this.itemName = itemName;
+            this.itemSubtitle = itemSubtitle;
             this.itemIcon = itemIcon;
+            this.header = false;
+        }
+
+        ChooseTabListItem(final Tab tab, final String itemName,
+                          @Nullable final String itemSubtitle,
+                          @DrawableRes final int itemIcon) {
+            this.tabId = tab.getTabId();
+            this.tab = tab;
+            this.itemName = itemName;
+            this.itemSubtitle = itemSubtitle;
+            this.itemIcon = itemIcon;
+            this.header = false;
+        }
+
+        static ChooseTabListItem header(final String itemName) {
+            return new ChooseTabListItem(itemName);
+        }
+
+        private ChooseTabListItem(final String itemName) {
+            this.tabId = -1;
+            this.tab = null;
+            this.itemName = itemName;
+            this.itemSubtitle = null;
+            this.itemIcon = 0;
+            this.header = true;
         }
     }
 
@@ -63,6 +107,16 @@ public final class AddTabDialog {
         }
 
         @Override
+        public boolean areAllItemsEnabled() {
+            return false;
+        }
+
+        @Override
+        public boolean isEnabled(final int position) {
+            return !getItem(position).header;
+        }
+
+        @Override
         public int getCount() {
             return items.length;
         }
@@ -74,7 +128,7 @@ public final class AddTabDialog {
 
         @Override
         public long getItemId(final int position) {
-            return getItem(position).tabId;
+            return getItem(position).header ? position : getItem(position).tabId;
         }
 
         @Override
@@ -87,9 +141,27 @@ public final class AddTabDialog {
             final ChooseTabListItem item = getItem(position);
             final AppCompatImageView tabIconView = convertView.findViewById(R.id.tabIcon);
             final TextView tabNameView = convertView.findViewById(R.id.tabName);
+            final TextView tabSubtitleView = convertView.findViewById(R.id.tabSubtitle);
 
-            tabIconView.setImageResource(item.itemIcon > 0 ? item.itemIcon : fallbackIcon);
-            tabNameView.setText(item.itemName);
+            if (item.header) {
+                tabIconView.setVisibility(View.GONE);
+                tabNameView.setText(item.itemName);
+                tabNameView.setTypeface(Typeface.DEFAULT_BOLD);
+                tabSubtitleView.setVisibility(View.GONE);
+                convertView.setEnabled(false);
+            } else {
+                tabIconView.setVisibility(View.VISIBLE);
+                tabIconView.setImageResource(item.itemIcon > 0 ? item.itemIcon : fallbackIcon);
+                tabNameView.setText(item.itemName);
+                tabNameView.setTypeface(Typeface.DEFAULT);
+                if (item.itemSubtitle == null || item.itemSubtitle.isEmpty()) {
+                    tabSubtitleView.setVisibility(View.GONE);
+                } else {
+                    tabSubtitleView.setText(item.itemSubtitle);
+                    tabSubtitleView.setVisibility(View.VISIBLE);
+                }
+                convertView.setEnabled(true);
+            }
 
             return convertView;
         }

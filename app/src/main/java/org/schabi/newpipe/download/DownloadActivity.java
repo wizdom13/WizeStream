@@ -2,8 +2,6 @@ package org.schabi.newpipe.download;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.ViewTreeObserver;
 
@@ -69,16 +67,6 @@ public class DownloadActivity extends AppCompatActivity {
                 .replace(R.id.frame, fragment, MISSIONS_FRAGMENT_TAG)
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
                 .commit();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(final Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        final MenuInflater inflater = getMenuInflater();
-
-        inflater.inflate(R.menu.download_menu, menu);
-
-        return true;
     }
 
     @Override

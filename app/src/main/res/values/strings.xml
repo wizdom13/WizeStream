@@ -438,9 +438,17 @@
     <string name="title_last_played">Last Played</string>
     <string name="title_most_played">Most Played</string>
     <!-- Content -->
-    <string name="main_page_content">Content of main page</string>
-    <string name="main_page_content_summary">What tabs are shown on the main page</string>
-    <string name="main_page_content_swipe_remove">Swipe items to remove them</string>
+    <string name="main_page_content">Customize home</string>
+    <string name="main_page_content_summary">Choose which sections appear on your home screen</string>
+    <string name="main_page_content_swipe_remove">Choose which sections appear on your home screen and drag them to change their order. Up to five sections use the bottom navigation bar; additional sections use the scrollable tab bar.</string>
+    <string name="remove_home_section">Remove home section</string>
+    <string name="drag_home_section">Drag home section</string>
+    <string name="downloads_permission_required">Storage permission is required to show downloads.</string>
+    <string name="grant_permission">Grant permission</string>
+    <string name="default_kiosk_follows_selected_service">Follows selected service</string>
+    <string name="add_tab_local_sections">Local sections</string>
+    <string name="add_tab_current_service">Current service</string>
+    <string name="add_tab_custom_content">Custom content</string>
     <string name="blank_page_summary">Blank page</string>
     <string name="kiosk_page_summary">Kiosk page</string>
     <string name="default_kiosk_page_summary">Default Kiosk</string>

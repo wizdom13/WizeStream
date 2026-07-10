@@ -38,6 +38,8 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
+import org.schabi.newpipe.settings.tabs.HomeNavigationMode;
+import org.schabi.newpipe.settings.tabs.HomeNavigationModeResolver;
 import org.schabi.newpipe.settings.tabs.Tab;
 import org.schabi.newpipe.settings.tabs.TabsManager;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -113,6 +115,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             public void onPageSelected(final int position) {
                 updateTitleForTab(position);
                 updateBottomNavigationSelection(position);
+                requireActivity().invalidateOptionsMenu();
             }
         });
         binding.mainBottomNavigation.setOnItemSelectedListener(item -> {
@@ -184,10 +187,24 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         }
         inflater.inflate(R.menu.menu_main_fragment, menu);
 
+        final MenuItem searchItem = menu.findItem(R.id.action_search);
+        if (searchItem != null) {
+            searchItem.setVisible(!isCurrentDownloadsTab());
+        }
+
         final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null) {
             supportActionBar.setDisplayHomeAsUpEnabled(false);
         }
+    }
+
+    private boolean isCurrentDownloadsTab() {
+        if (binding == null || tabsList.isEmpty()) {
+            return false;
+        }
+        final int position = binding.pager.getCurrentItem();
+        return position >= 0 && position < tabsList.size()
+                && tabsList.get(position) instanceof Tab.DownloadsTab;
     }
 
     @Override
@@ -315,11 +332,11 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         final ScrollableTabLayout tabLayout = binding.mainTabLayout;
         final ViewPager viewPager = binding.pager;
         final boolean bottom = mainTabsPositionBottom;
-        final boolean hasMultipleTabs = tabsList.size() > 1;
-        final boolean showBottomNavigation = bottom
-                && hasMultipleTabs
-                && tabsList.size() <= BOTTOM_NAVIGATION_MAX_ITEM_COUNT;
-        final boolean showTabLayout = hasMultipleTabs && !showBottomNavigation;
+        final HomeNavigationMode navigationMode = HomeNavigationModeResolver
+                .resolveNavigationMode(tabsList.size(), bottom);
+        final boolean showBottomNavigation = navigationMode
+                == HomeNavigationMode.BOTTOM_NAVIGATION;
+        final boolean showTabLayout = navigationMode == HomeNavigationMode.SCROLLABLE_TABS;
 
         final var tabParams = (RelativeLayout.LayoutParams) tabLayout.getLayoutParams();
         final var pagerParams = (RelativeLayout.LayoutParams) viewPager.getLayoutParams();

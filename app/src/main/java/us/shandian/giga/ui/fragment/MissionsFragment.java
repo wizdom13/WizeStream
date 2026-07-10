@@ -22,7 +22,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.MenuHost;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -65,6 +68,8 @@ public class MissionsFragment extends Fragment {
     private Context mContext;
 
     private DownloadManagerBinder mBinder;
+    private boolean bindingRegistered;
+    private boolean serviceConnected;
     private boolean mForceUpdate;
 
     private DownloadMission unsafeMissionTarget = null;
@@ -75,7 +80,12 @@ public class MissionsFragment extends Fragment {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
             mBinder = (DownloadManagerBinder) binder;
+            serviceConnected = true;
             mBinder.clearDownloadNotifications();
+
+            if (getView() == null) {
+                return;
+            }
 
             mAdapter = new MissionAdapter(mContext, mBinder.getDownloadManager(), mEmpty, getView());
 
@@ -83,7 +93,9 @@ public class MissionsFragment extends Fragment {
 
             setAdapterButtons();
 
-            mBinder.addMissionEventListener(mAdapter);
+            if (mBinder != null) {
+                mBinder.addMissionEventListener(mAdapter);
+            }
             mBinder.enableNotifications(false);
 
             updateList();
@@ -91,10 +103,21 @@ public class MissionsFragment extends Fragment {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            // What to do?
+            mBinder = null;
+            serviceConnected = false;
         }
 
+        @Override
+        public void onBindingDied(final ComponentName name) {
+            mBinder = null;
+            serviceConnected = false;
+        }
 
+        @Override
+        public void onNullBinding(final ComponentName name) {
+            mBinder = null;
+            serviceConnected = false;
+        }
     };
 
     @Override
@@ -105,7 +128,8 @@ public class MissionsFragment extends Fragment {
         mLinear = mPrefs.getBoolean("linear", false);
 
         // Bind the service
-        mContext.bindService(new Intent(mContext, DownloadManagerService.class), mConnection, Context.BIND_AUTO_CREATE);
+        bindingRegistered = mContext.bindService(new Intent(mContext, DownloadManagerService.class),
+                mConnection, Context.BIND_AUTO_CREATE);
 
         // Views
         mEmpty = v.findViewById(R.id.list_empty_view);
@@ -127,9 +151,15 @@ public class MissionsFragment extends Fragment {
         });
         mLinearManager = new LinearLayoutManager(getActivity());
 
-        setHasOptionsMenu(true);
-
         return v;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull final View view, final Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        final MenuHost menuHost = requireActivity();
+        menuHost.addMenuProvider(getMenuProvider(), getViewLifecycleOwner(),
+                Lifecycle.State.RESUMED);
     }
 
     /**
@@ -159,33 +189,75 @@ public class MissionsFragment extends Fragment {
 
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mBinder == null || mAdapter == null) return;
+    public void onDestroyView() {
+        cleanupServiceBinding();
+        super.onDestroyView();
+    }
 
-        mBinder.removeMissionEventListener(mAdapter);
-        mBinder.enableNotifications(true);
-        mContext.unbindService(mConnection);
-        mAdapter.onDestroy();
+    @Override
+    public void onDestroy() {
+        cleanupServiceBinding();
+        super.onDestroy();
+    }
+
+    private void cleanupServiceBinding() {
+        if (mBinder != null) {
+            if (mAdapter != null) {
+                mBinder.removeMissionEventListener(mAdapter);
+            }
+            mBinder.enableNotifications(true);
+        }
+
+        if (bindingRegistered) {
+            mContext.unbindService(mConnection);
+            bindingRegistered = false;
+        }
+        serviceConnected = false;
+
+        if (mAdapter != null) {
+            mAdapter.onDestroy();
+        }
 
         mBinder = null;
         mAdapter = null;
+        mSwitch = null;
+        mClear = null;
+        mStart = null;
+        mPause = null;
+        mList = null;
+        mEmpty = null;
+        mGridManager = null;
+        mLinearManager = null;
     }
 
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        mSwitch = menu.findItem(R.id.switch_mode);
-        mClear = menu.findItem(R.id.clear_list);
-        mStart = menu.findItem(R.id.start_downloads);
-        mPause = menu.findItem(R.id.pause_downloads);
+    private MenuProvider getMenuProvider() {
+        return new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull final Menu menu,
+                                     @NonNull final android.view.MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.download_menu, menu);
+            }
 
-        if (mAdapter != null) setAdapterButtons();
+            @Override
+            public void onPrepareMenu(@NonNull final Menu menu) {
+                mSwitch = menu.findItem(R.id.switch_mode);
+                mClear = menu.findItem(R.id.clear_list);
+                mStart = menu.findItem(R.id.start_downloads);
+                mPause = menu.findItem(R.id.pause_downloads);
 
-        super.onPrepareOptionsMenu(menu);
+                if (mAdapter != null) {
+                    setAdapterButtons();
+                }
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull final MenuItem item) {
+                return handleMenuItemSelected(item);
+            }
+        };
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    private boolean handleMenuItemSelected(final MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.switch_mode) {
             mLinear = !mLinear;
@@ -195,15 +267,20 @@ public class MissionsFragment extends Fragment {
             showClearDownloadHistoryPrompt();
             return true;
         } else if (itemId == R.id.start_downloads) {
-            mBinder.getDownloadManager().startAllMissions();
+            if (mBinder != null) {
+                mBinder.getDownloadManager().startAllMissions();
+            }
             return true;
         } else if (itemId == R.id.pause_downloads) {
-            mBinder.getDownloadManager().pauseAllMissions(false);
-            mAdapter.refreshMissionItems();// update items view
-
-            return super.onOptionsItemSelected(item);
+            if (mBinder != null) {
+                mBinder.getDownloadManager().pauseAllMissions(false);
+            }
+            if (mAdapter != null) {
+                mAdapter.refreshMissionItems(); // update items view
+            }
+            return true;
         }
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
     public void showClearDownloadHistoryPrompt() {
@@ -231,6 +308,10 @@ public class MissionsFragment extends Fragment {
     }
 
     private void updateList() {
+        if (mList == null || mAdapter == null) {
+            return;
+        }
+
         if (mLinear) {
             mList.setLayoutManager(mLinearManager);
         } else {
@@ -255,7 +336,9 @@ public class MissionsFragment extends Fragment {
     }
 
     private void setAdapterButtons() {
-        if (mClear == null || mStart == null || mPause == null) return;
+        if (mClear == null || mStart == null || mPause == null || mAdapter == null) {
+            return;
+        }
 
         mAdapter.setClearButton(mClear);
         mAdapter.setMasterButtons(mStart, mPause);
@@ -298,8 +381,12 @@ public class MissionsFragment extends Fragment {
                 mAdapter.forceUpdate();
             }
 
-            mBinder.addMissionEventListener(mAdapter);
-            mAdapter.checkMasterButtonsVisibility();
+            if (mBinder != null) {
+                mBinder.addMissionEventListener(mAdapter);
+            }
+            if (mStart != null && mPause != null) {
+                mAdapter.checkMasterButtonsVisibility();
+            }
         }
         if (mBinder != null) mBinder.enableNotifications(false);
     }
@@ -310,7 +397,9 @@ public class MissionsFragment extends Fragment {
 
         if (mAdapter != null) {
             mForceUpdate = true;
-            mBinder.removeMissionEventListener(mAdapter);
+            if (mBinder != null) {
+                mBinder.removeMissionEventListener(mAdapter);
+            }
             mAdapter.onPaused();
         }
 

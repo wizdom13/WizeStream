@@ -37,13 +37,27 @@
             android:layout_marginLeft="16dp"
             android:layout_marginTop="6dp"
             android:layout_marginBottom="6dp"
-            android:layout_toLeftOf="@+id/handle"
+            android:layout_toLeftOf="@+id/remove"
             android:layout_toRightOf="@+id/tabIcon"
             android:ellipsize="end"
             android:maxLines="2"
             android:textAppearance="?textAppearanceListItem"
             tools:ignore="RtlHardcoded"
             tools:text="Lorem ipsum dolor sit amet" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/remove"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/handle"
+            android:layout_centerVertical="true"
+            android:contentDescription="@string/remove_home_section"
+            android:paddingLeft="16dp"
+            android:paddingTop="12dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="12dp"
+            android:src="@drawable/ic_delete"
+            tools:ignore="RtlHardcoded" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/handle"
@@ -55,7 +69,8 @@
             android:paddingTop="12dp"
             android:paddingRight="16dp"
             android:paddingBottom="12dp"
+            android:contentDescription="@string/drag_home_section"
             android:src="@drawable/ic_drag_handle"
-            tools:ignore="ContentDescription,RtlHardcoded" />
+            tools:ignore="RtlHardcoded" />
     </RelativeLayout>
 </com.google.android.material.card.MaterialCardView>

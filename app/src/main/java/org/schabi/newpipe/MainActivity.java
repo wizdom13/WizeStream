@@ -82,6 +82,10 @@ import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.settings.UpdateSettingsFragment;
+import org.schabi.newpipe.settings.tabs.HomeDestinationKey;
+import org.schabi.newpipe.settings.tabs.HomeDestinationResolver;
+import org.schabi.newpipe.settings.tabs.HomeDrawerPolicy;
+import org.schabi.newpipe.settings.tabs.TabsManager;
 import org.schabi.newpipe.settings.migration.MigrationManager;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -101,8 +105,11 @@ import org.schabi.newpipe.views.FocusOverlayView;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -119,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean servicesShown = false;
 
     private BroadcastReceiver broadcastReceiver;
+    private final Map<Integer, HomeDrawerPolicy.KioskTarget> drawerKioskTargets = new HashMap<>();
 
     private static final int ITEM_ID_SUBSCRIPTIONS = -1;
     private static final int ITEM_ID_FEED = -2;
@@ -128,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_SETTINGS = 0;
     private static final int ITEM_ID_DONATION = 1;
     private static final int ITEM_ID_ABOUT = 2;
+    private static final int ITEM_ID_KIOSK_BASE = 100;
 
     private static final int ORDER = 0;
     public static final String KEY_IS_IN_BACKGROUND = "is_in_background";
@@ -274,49 +283,74 @@ public class MainActivity extends AppCompatActivity {
      * @throws ExtractionException if the service didn't provide available kiosks
      */
     private void addDrawerMenuForCurrentService() throws ExtractionException {
-        //Tabs
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_tabs_group, ITEM_ID_SUBSCRIPTIONS, ORDER,
-                        R.string.tab_subscriptions)
-                .setIcon(R.drawable.ic_tv);
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_tabs_group, ITEM_ID_FEED, ORDER, R.string.fragment_feed_title)
-                .setIcon(R.drawable.ic_subscriptions);
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_tabs_group, ITEM_ID_BOOKMARKS, ORDER, R.string.tab_bookmarks)
-                .setIcon(R.drawable.ic_bookmark);
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_tabs_group, ITEM_ID_DOWNLOADS, ORDER, R.string.downloads)
-                .setIcon(R.drawable.ic_file_download);
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_tabs_group, ITEM_ID_HISTORY, ORDER, R.string.action_history)
-                .setIcon(R.drawable.ic_history);
+        final Menu menu = drawerLayoutBinding.navigation.getMenu();
+        menu.removeGroup(R.id.menu_tabs_group);
+        menu.removeGroup(R.id.menu_kiosks_group);
+        menu.removeGroup(R.id.menu_options_about_group);
+        drawerKioskTargets.clear();
 
-        //Kiosks
+        final Set<HomeDestinationKey> homeDestinations = HomeDestinationResolver.fromTabs(this,
+                TabsManager.getManager(this).getTabs());
+
+        addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.SUBSCRIPTIONS,
+                ITEM_ID_SUBSCRIPTIONS, R.string.tab_subscriptions, R.drawable.ic_tv);
+        addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.FEED,
+                ITEM_ID_FEED, R.string.fragment_feed_title, R.drawable.ic_subscriptions);
+        addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.BOOKMARKS,
+                ITEM_ID_BOOKMARKS, R.string.tab_bookmarks, R.drawable.ic_bookmark);
+        addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.DOWNLOADS,
+                ITEM_ID_DOWNLOADS, R.string.downloads, R.drawable.ic_file_download);
+        addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.HISTORY,
+                ITEM_ID_HISTORY, R.string.action_history, R.drawable.ic_history);
+
+        try {
+            addDrawerKiosks(homeDestinations);
+        } catch (final Exception e) {
+            ErrorUtil.showUiErrorSnackbar(this, "Loading drawer kiosks", e);
+        } finally {
+            addDrawerUtilityItems();
+        }
+    }
+
+    private void addDrawerUtilityItems() {
+        final Menu menu = drawerLayoutBinding.navigation.getMenu();
+        menu.add(R.id.menu_options_about_group, ITEM_ID_SETTINGS, ORDER, R.string.settings)
+                .setIcon(R.drawable.ic_settings);
+        menu.add(R.id.menu_options_about_group, ITEM_ID_DONATION, ORDER,
+                R.string.donation_title)
+                .setIcon(R.drawable.volunteer_activism_ic);
+        menu.add(R.id.menu_options_about_group, ITEM_ID_ABOUT, ORDER, R.string.tab_about)
+                .setIcon(R.drawable.ic_info_outline);
+    }
+
+    private void addDrawerKiosks(final Set<HomeDestinationKey> homeDestinations)
+            throws ExtractionException {
+        final Menu menu = drawerLayoutBinding.navigation.getMenu();
         final int currentServiceId = ServiceHelper.getSelectedServiceId(this);
         final StreamingService service = NewPipe.getService(currentServiceId);
-
-        int kioskMenuItemId = 0;
-
-        for (final String kioskId : getDrawerKioskIds(service)) {
-            drawerLayoutBinding.navigation.getMenu()
-                    .add(R.id.menu_kiosks_group, kioskMenuItemId, 0, KioskTranslator
-                            .getTranslatedKioskName(kioskId, this))
+        final Map<Integer, HomeDrawerPolicy.KioskTarget> kioskTargets =
+                HomeDrawerPolicy.assignKioskMenuIds(homeDestinations, currentServiceId,
+                        getDrawerKioskIds(service), ITEM_ID_KIOSK_BASE);
+        drawerKioskTargets.putAll(kioskTargets);
+        for (final Map.Entry<Integer, HomeDrawerPolicy.KioskTarget> entry
+                : kioskTargets.entrySet()) {
+            final String kioskId = entry.getValue().getKioskId();
+            menu.add(R.id.menu_kiosks_group, entry.getKey(), ORDER,
+                    KioskTranslator.getTranslatedKioskName(kioskId, this))
                     .setIcon(KioskTranslator.getKioskIcon(kioskId));
-            kioskMenuItemId++;
         }
+    }
 
-        //Settings and About
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_options_about_group, ITEM_ID_SETTINGS, ORDER, R.string.settings)
-                .setIcon(R.drawable.ic_settings);
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_options_about_group, ITEM_ID_DONATION, ORDER,
-                        R.string.donation_title)
-                .setIcon(R.drawable.volunteer_activism_ic);
-        drawerLayoutBinding.navigation.getMenu()
-                .add(R.id.menu_options_about_group, ITEM_ID_ABOUT, ORDER, R.string.tab_about)
-                .setIcon(R.drawable.ic_info_outline);
+    private void addDrawerTabIfUnconfigured(final Set<HomeDestinationKey> homeDestinations,
+                                            final HomeDestinationKey key,
+                                            final int itemId,
+                                            final int titleRes,
+                                            final int iconRes) {
+        if (HomeDrawerPolicy.shouldShow(homeDestinations, key)) {
+            drawerLayoutBinding.navigation.getMenu()
+                    .add(R.id.menu_tabs_group, itemId, ORDER, titleRes)
+                    .setIcon(iconRes);
+        }
     }
 
     private boolean drawerItemSelected(final MenuItem item) {
@@ -372,15 +406,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void kioskSelected(final MenuItem item) throws ExtractionException {
-        final StreamingService currentService = ServiceHelper.getSelectedService(this);
-        int kioskMenuItemId = 0;
-        for (final String kioskId : getDrawerKioskIds(currentService)) {
-            if (kioskMenuItemId == item.getItemId()) {
-                NavigationHelper.openKioskFragment(getSupportFragmentManager(),
-                        currentService.getServiceId(), kioskId);
-                break;
-            }
-            kioskMenuItemId++;
+        final HomeDrawerPolicy.KioskTarget target = drawerKioskTargets.get(item.getItemId());
+        if (target != null) {
+            NavigationHelper.openKioskFragment(getSupportFragmentManager(),
+                    target.getServiceId(), target.getKioskId());
         }
     }
 
@@ -568,10 +597,21 @@ public class MainActivity extends AppCompatActivity {
             NavigationHelper.openMainActivity(this);
         }
 
+        if (!servicesShown) {
+            try {
+                addDrawerMenuForCurrentService();
+            } catch (final Exception e) {
+                ErrorUtil.showUiErrorSnackbar(this, "Refreshing drawer", e);
+            }
+        }
+
         final boolean isHistoryEnabled = sharedPreferences.getBoolean(
                 getString(R.string.enable_watch_history_key), true);
-        drawerLayoutBinding.navigation.getMenu().findItem(ITEM_ID_HISTORY)
-                .setVisible(isHistoryEnabled);
+        final MenuItem historyItem = drawerLayoutBinding.navigation.getMenu()
+                .findItem(ITEM_ID_HISTORY);
+        if (historyItem != null) {
+            historyItem.setVisible(isHistoryEnabled);
+        }
     }
 
     @Override

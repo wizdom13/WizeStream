@@ -27,6 +27,23 @@ public final class PermissionHelper {
 
     private PermissionHelper() { }
 
+    public static boolean hasStoragePermissions(final Context context) {
+        if (NewPipeSettings.useStorageAccessFramework(context)) {
+            return true; // Storage permissions are not needed for SAF
+        }
+
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(context,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    public static String[] getStoragePermissions() {
+        return new String[]{
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    }
+
     public static boolean checkStoragePermissions(final Activity activity, final int requestCode) {
         if (NewPipeSettings.useStorageAccessFramework(activity)) {
             return true; // Storage permissions are not needed for SAF
@@ -43,9 +60,7 @@ public final class PermissionHelper {
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity,
-                    new String[]{
-                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    getStoragePermissions(),
                     requestCode);
 
             return false;

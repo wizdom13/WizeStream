@@ -17,18 +17,36 @@
         tools:ignore="ContentDescription,RtlHardcoded"
         tools:src="@drawable/ic_kiosk_hot" />
 
-    <org.schabi.newpipe.views.NewPipeTextView
-        android:id="@+id/tabName"
+    <LinearLayout
+        android:id="@+id/tabTextContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_marginLeft="?dialogPreferredPadding"
         android:layout_marginRight="?dialogPreferredPadding"
         android:layout_toRightOf="@+id/tabIcon"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:textAppearance="?textAppearanceListItem"
-        android:textColor="?attr/colorOnSurface"
-        tools:ignore="RtlHardcoded"
-        tools:text="Lorem ipsum dolor sit amet" />
+        android:orientation="vertical"
+        tools:ignore="RtlHardcoded">
+
+        <org.schabi.newpipe.views.NewPipeTextView
+            android:id="@+id/tabName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?textAppearanceListItem"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Lorem ipsum dolor sit amet" />
+
+        <org.schabi.newpipe.views.NewPipeTextView
+            android:id="@+id/tabSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?textAppearanceCaption"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:text="YouTube" />
+    </LinearLayout>
 </RelativeLayout>

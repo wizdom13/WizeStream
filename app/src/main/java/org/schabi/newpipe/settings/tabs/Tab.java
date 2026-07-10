@@ -18,6 +18,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.download.DownloadsTabFragment;
 import org.schabi.newpipe.fragments.BlankFragment;
 import org.schabi.newpipe.fragments.list.channel.ChannelFragment;
 import org.schabi.newpipe.fragments.list.kiosk.DefaultKioskFragment;
@@ -165,7 +166,8 @@ public abstract class Tab {
         KIOSK(new KioskTab()),
         CHANNEL(new ChannelTab()),
         PLAYLIST(new PlaylistTab()),
-        FEEDGROUP(new FeedGroupTab());
+        FEEDGROUP(new FeedGroupTab()),
+        DOWNLOADS(new DownloadsTab());
 
         private final Tab tab;
 
@@ -307,6 +309,31 @@ public abstract class Tab {
         @Override
         public StatisticsPlaylistFragment getFragment(final Context context) {
             return new StatisticsPlaylistFragment();
+        }
+    }
+
+    public static class DownloadsTab extends Tab {
+        public static final int ID = 10;
+
+        @Override
+        public int getTabId() {
+            return ID;
+        }
+
+        @Override
+        public String getTabName(final Context context) {
+            return context.getString(R.string.downloads);
+        }
+
+        @DrawableRes
+        @Override
+        public int getTabIconRes(final Context context) {
+            return R.drawable.ic_file_download;
+        }
+
+        @Override
+        public DownloadsTabFragment getFragment(final Context context) {
+            return new DownloadsTabFragment();
         }
     }
 
