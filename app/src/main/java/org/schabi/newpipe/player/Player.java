@@ -56,7 +56,6 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.support.v4.media.session.MediaSessionCompat;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.Toast;
@@ -94,6 +93,9 @@ import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockAction;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockCategory;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior;
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryRepository;
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockPlaybackDecision;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
@@ -225,12 +227,8 @@ public final class Player implements PlaybackListener, Listener {
     private String ignoredSponsorBlockSegment;
     @Nullable
     private String displayedSponsorBlockManualSkipSegment;
-    @Nullable
-    private String pendingSponsorBlockAutoSkipSegment;
-    private long pendingSponsorBlockAutoSkipShownAtMillis = 0;
     private boolean sponsorBlockSkipInProgress = false;
 
-    private static final long SPONSOR_BLOCK_MANUAL_SKIP_AUTO_DELAY_MILLIS = 1500;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Player
@@ -1070,49 +1068,29 @@ public final class Player implements PlaybackListener, Listener {
         }
 
         final long currentPositionMillis = simpleExoPlayer.getCurrentPosition();
+        ignoredSponsorBlockSegment = getUpdatedIgnoredSponsorBlockSegment(currentPositionMillis);
         final SponsorBlockSegment activeSegment =
-                getActiveSponsorBlockSegment(currentPositionMillis);
+                getActiveSponsorBlockPlaybackSegment(currentPositionMillis);
 
         if (activeSegment == null) {
-            ignoredSponsorBlockSegment = null;
-            pendingSponsorBlockAutoSkipSegment = null;
             hideSponsorBlockManualSkipButton();
             return;
         }
 
         final String segmentKey = getSegmentKey(activeSegment);
-        if (segmentKey.equals(ignoredSponsorBlockSegment)
-                || skippedSponsorBlockSegments.contains(segmentKey)
-                || !isSkippableSponsorBlockSegment(activeSegment)) {
-            pendingSponsorBlockAutoSkipSegment = null;
-            hideSponsorBlockManualSkipButton();
-            return;
-        }
-
+        final SponsorBlockBehavior behavior = getSponsorBlockBehavior(activeSegment);
         final long targetPositionMillis = getSponsorBlockSegmentEndMillis(activeSegment);
         if (targetPositionMillis <= currentPositionMillis) {
             skippedSponsorBlockSegments.add(segmentKey);
-            pendingSponsorBlockAutoSkipSegment = null;
             hideSponsorBlockManualSkipButton();
             return;
         }
 
-        if (shouldShowSponsorBlockManualSkipButton()) {
-            final long now = SystemClock.uptimeMillis();
-            if (!segmentKey.equals(pendingSponsorBlockAutoSkipSegment)) {
-                pendingSponsorBlockAutoSkipSegment = segmentKey;
-                pendingSponsorBlockAutoSkipShownAtMillis = now;
-                showSponsorBlockManualSkipButton(activeSegment);
-                return;
-            }
-
+        if (behavior == SponsorBlockBehavior.MANUAL) {
             showSponsorBlockManualSkipButton(activeSegment);
-            if (now - pendingSponsorBlockAutoSkipShownAtMillis
-                    < SPONSOR_BLOCK_MANUAL_SKIP_AUTO_DELAY_MILLIS) {
-                return;
-            }
+            return;
         }
-
+        hideSponsorBlockManualSkipButton();
         skipSponsorBlockSegment(activeSegment);
     }
 
@@ -1121,7 +1099,6 @@ public final class Player implements PlaybackListener, Listener {
         final long targetPositionMillis = getSponsorBlockSegmentEndMillis(segment);
         sponsorBlockSkipInProgress = true;
         skippedSponsorBlockSegments.add(segmentKey);
-        pendingSponsorBlockAutoSkipSegment = null;
         hideSponsorBlockManualSkipButton();
         simpleExoPlayer.seekTo(targetPositionMillis);
         if (prefs.getBoolean(context.getString(R.string.sponsor_block_notifications_key), true)) {
@@ -1170,19 +1147,43 @@ public final class Player implements PlaybackListener, Listener {
         UIs.call(PlayerUi::hideSponsorBlockSkipButton);
     }
 
-    private boolean shouldShowSponsorBlockManualSkipButton() {
-        return prefs.getBoolean(context.getString(R.string.sponsor_block_show_manual_skip_key),
-                true);
+    @Nullable
+    private SponsorBlockSegment getActiveSponsorBlockPlaybackSegment(final long positionMillis) {
+        return SponsorBlockPlaybackDecision.findFirstRunnableSegment(
+                sponsorBlockSegments,
+                positionMillis,
+                new SponsorBlockSegmentProvider(),
+                new SponsorBlockCategoryStateProvider(),
+                (segment, behavior) -> isRunnableSponsorBlockSegment(segment, behavior));
+    }
+
+    private boolean isRunnableSponsorBlockSegment(
+            @NonNull final SponsorBlockSegment segment,
+            @NonNull final SponsorBlockBehavior behavior) {
+        final String segmentKey = getSegmentKey(segment);
+        return !skippedSponsorBlockSegments.contains(segmentKey)
+                && (behavior != SponsorBlockBehavior.SKIP
+                || !segmentKey.equals(ignoredSponsorBlockSegment));
     }
 
     @Nullable
-    private SponsorBlockSegment getActiveSponsorBlockSegment(final long positionMillis) {
-        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
-            if (isSegmentActive(segment, positionMillis)) {
-                return segment;
-            }
-        }
-        return null;
+    private SponsorBlockSegment getActiveSponsorBlockActionableSegment(final long positionMillis) {
+        return SponsorBlockPlaybackDecision.findFirstActionableSegment(
+                sponsorBlockSegments,
+                positionMillis,
+                new SponsorBlockSegmentProvider(),
+                new SponsorBlockCategoryStateProvider());
+    }
+
+    @Nullable
+    private String getUpdatedIgnoredSponsorBlockSegment(final long positionMillis) {
+        return SponsorBlockPlaybackDecision.resolveIgnoredSegmentForProgress(
+                ignoredSponsorBlockSegment,
+                sponsorBlockSegments,
+                positionMillis,
+                new SponsorBlockSegmentProvider(),
+                this::getSegmentKey,
+                new SponsorBlockCategoryStateProvider());
     }
 
     private boolean isSponsorBlockEnabled() {
@@ -1218,22 +1219,53 @@ public final class Player implements PlaybackListener, Listener {
         return segment.action;
     }
 
-    private boolean isSegmentActive(@NonNull final SponsorBlockSegment segment,
-                                    final long currentPositionMillis) {
-        if (!isValidSponsorBlockSegment(segment)
-                || getSponsorBlockSegmentAction(segment) == SponsorBlockAction.POI
-                || !isCategoryEnabled(getSponsorBlockSegmentCategory(segment))) {
-            return false;
-        }
-        final long segmentStartMillis = getSponsorBlockSegmentStartTimeMillis(segment);
-        final long segmentEndMillis = getSponsorBlockSegmentEndTimeMillis(segment);
-        return currentPositionMillis >= segmentStartMillis
-                && currentPositionMillis < segmentEndMillis;
+    @NonNull
+    private SponsorBlockBehavior getSponsorBlockBehavior(
+            @NonNull final SponsorBlockSegment segment) {
+        return SponsorBlockCategoryRepository.getBehavior(
+                context, getSponsorBlockSegmentCategory(segment));
     }
 
-    private boolean isSkippableSponsorBlockSegment(@NonNull final SponsorBlockSegment segment) {
-        return getSponsorBlockSegmentAction(segment) == SponsorBlockAction.SKIP
-                && getSponsorBlockSegmentCategory(segment) != SponsorBlockCategory.HIGHLIGHT;
+    private final class SponsorBlockCategoryStateProvider
+            implements SponsorBlockPlaybackDecision.CategoryStateProvider {
+        @Override
+        public boolean isEnabled(@NonNull final SponsorBlockCategory category) {
+            return isCategoryEnabled(category);
+        }
+
+        @NonNull
+        @Override
+        public SponsorBlockBehavior getBehavior(
+                @NonNull final SponsorBlockCategory category) {
+            return SponsorBlockCategoryRepository.getBehavior(context, category);
+        }
+    }
+
+    private final class SponsorBlockSegmentProvider
+            implements SponsorBlockPlaybackDecision.SegmentProvider<SponsorBlockSegment> {
+        @Override
+        public long getStartMillis(@NonNull final SponsorBlockSegment segment) {
+            return getSponsorBlockSegmentStartTimeMillis(segment);
+        }
+
+        @Override
+        public long getEndMillis(@NonNull final SponsorBlockSegment segment) {
+            return getSponsorBlockSegmentEndTimeMillis(segment);
+        }
+
+        @Nullable
+        @Override
+        public SponsorBlockCategory getCategory(
+                @NonNull final SponsorBlockSegment segment) {
+            return getSponsorBlockSegmentCategory(segment);
+        }
+
+        @Nullable
+        @Override
+        public SponsorBlockAction getAction(
+                @NonNull final SponsorBlockSegment segment) {
+            return getSponsorBlockSegmentAction(segment);
+        }
     }
 
     private boolean isCurrentStreamEligibleForSponsorBlockUi() {
@@ -1253,44 +1285,8 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     private boolean isCategoryEnabled(@Nullable final SponsorBlockCategory category) {
-        if (category == null) {
-            return false;
-        }
-        switch (category) {
-            case SPONSOR:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_sponsor_key), true);
-            case INTRO:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_intro_key), false);
-            case OUTRO:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_outro_key), false);
-            case INTERACTION:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_interaction_key),
-                        false);
-            case HIGHLIGHT:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_highlight_key),
-                        false);
-            case SELF_PROMO:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_self_promo_key),
-                        false);
-            case NON_MUSIC:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_non_music_key),
-                        false);
-            case PREVIEW:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_preview_key), false);
-            case FILLER:
-                return prefs.getBoolean(
-                        context.getString(R.string.sponsor_block_category_filler_key), false);
-            default:
-                return false;
-        }
+        return category != null
+                && SponsorBlockCategoryRepository.isApiCategoryEnabled(context, category);
     }
 
     @NonNull
@@ -1755,12 +1751,13 @@ public final class Player implements PlaybackListener, Listener {
         if (discontinuityReason == DISCONTINUITY_REASON_SEEK && !sponsorBlockSkipInProgress) {
             final String seekTargetSegmentKey = getActiveSponsorBlockSegmentKey(
                     newPosition.positionMs);
-            if (prefs.getBoolean(context.getString(R.string.sponsor_block_graced_rewind_key),
-                    true)) {
-                ignoredSponsorBlockSegment = seekTargetSegmentKey;
-            } else if (seekTargetSegmentKey != null) {
-                skippedSponsorBlockSegments.remove(seekTargetSegmentKey);
-            }
+            ignoredSponsorBlockSegment = SponsorBlockPlaybackDecision
+                    .resolveIgnoredSegmentAfterManualSeek(
+                            seekTargetSegmentKey,
+                            prefs.getBoolean(
+                                    context.getString(R.string.sponsor_block_graced_rewind_key),
+                                    true),
+                            skippedSponsorBlockSegments);
         }
         if (sponsorBlockSkipInProgress) {
             sponsorBlockSkipInProgress = false;
@@ -2287,8 +2284,6 @@ public final class Player implements PlaybackListener, Listener {
         skippedSponsorBlockSegments.clear();
         ignoredSponsorBlockSegment = null;
         hideSponsorBlockManualSkipButton();
-        pendingSponsorBlockAutoSkipSegment = null;
-        pendingSponsorBlockAutoSkipShownAtMillis = 0;
         sponsorBlockSkipInProgress = false;
         if (!isSponsorBlockEnabled()) {
             sponsorBlockSegments = Collections.emptyList();
@@ -2305,12 +2300,8 @@ public final class Player implements PlaybackListener, Listener {
         if (!isSponsorBlockEnabled() || sponsorBlockSegments.isEmpty()) {
             return null;
         }
-        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
-            if (isSegmentActive(segment, positionMillis)) {
-                return getSegmentKey(segment);
-            }
-        }
-        return null;
+        final SponsorBlockSegment segment = getActiveSponsorBlockActionableSegment(positionMillis);
+        return segment == null ? null : getSegmentKey(segment);
     }
 
     private void updateSponsorBlockSeekBarMarkers() {
@@ -2338,7 +2329,8 @@ public final class Player implements PlaybackListener, Listener {
 
     private boolean isValidSponsorBlockMarkerSegment(@NonNull final SponsorBlockSegment segment) {
         return isValidSponsorBlockSegment(segment)
-                && isSkippableSponsorBlockSegment(segment)
+                && (getSponsorBlockSegmentAction(segment) == SponsorBlockAction.SKIP
+                || getSponsorBlockSegmentAction(segment) == SponsorBlockAction.POI)
                 && isCategoryEnabled(getSponsorBlockSegmentCategory(segment));
     }
 

@@ -9,9 +9,9 @@ import android.view.View;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockAction;
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryRepository;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockCategory;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 
@@ -107,18 +107,23 @@ public class SponsorBlockSeekBarMarkersView extends View {
         for (final SponsorBlockSegment segment : segments) {
             final long startMillis = Math.round(segment.startTime);
             final long endMillis = Math.round(segment.endTime);
-            if (startMillis < 0 || endMillis <= startMillis || startMillis >= durationMillis) {
+            if (startMillis < 0 || startMillis >= durationMillis) {
                 continue;
             }
 
             final float startFraction = Math.max(0.0f,
                     Math.min(1.0f, startMillis / (float) durationMillis));
-            final float endFraction = Math.max(startFraction,
-                    Math.min(1.0f, endMillis / (float) durationMillis));
             final float left = clamp(leftBound + (availableWidth * startFraction), 0.0f, width);
-            final float unclampedRight = Math.max(left + MIN_MARKER_WIDTH_PX,
-                    leftBound + (availableWidth * endFraction));
-            final float right = clamp(unclampedRight, left, rightBound);
+            final float right;
+            if (segment.action == SponsorBlockAction.POI || endMillis <= startMillis) {
+                right = clamp(left + MIN_MARKER_WIDTH_PX, left, rightBound);
+            } else {
+                final float endFraction = Math.max(startFraction,
+                        Math.min(1.0f, endMillis / (float) durationMillis));
+                final float unclampedRight = Math.max(left + MIN_MARKER_WIDTH_PX,
+                        leftBound + (availableWidth * endFraction));
+                right = clamp(unclampedRight, left, rightBound);
+            }
             if (right <= left) {
                 continue;
             }
@@ -138,27 +143,6 @@ public class SponsorBlockSeekBarMarkersView extends View {
 
     @ColorInt
     private int getSegmentColor(@Nullable final SponsorBlockCategory category) {
-        if (category == null) {
-            return ContextCompat.getColor(getContext(), R.color.sponsor_block_filler);
-        }
-        switch (category) {
-            case SPONSOR:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_sponsor);
-            case INTRO:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_intro);
-            case OUTRO:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_outro);
-            case INTERACTION:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_interaction);
-            case SELF_PROMO:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_self_promo);
-            case NON_MUSIC:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_music);
-            case PREVIEW:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_preview);
-            case FILLER:
-            default:
-                return ContextCompat.getColor(getContext(), R.color.sponsor_block_filler);
-        }
+        return SponsorBlockCategoryRepository.getColor(getContext(), category);
     }
 }

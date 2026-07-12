@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <View
+        android:id="@+id/color_preview"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:contentDescription="@string/sponsor_block_color_preview" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@id/red"
+        android:text="@string/sponsor_block_color_red" />
+
+    <SeekBar
+        android:id="@+id/red"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/sponsor_block_color_red"
+        android:max="255" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@id/green"
+        android:text="@string/sponsor_block_color_green" />
+
+    <SeekBar
+        android:id="@+id/green"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/sponsor_block_color_green"
+        android:max="255" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@id/blue"
+        android:text="@string/sponsor_block_color_blue" />
+
+    <SeekBar
+        android:id="@+id/blue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/sponsor_block_color_blue"
+        android:max="255" />
+
+    <EditText
+        android:id="@+id/hex"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/sponsor_block_color_hex_label"
+        android:inputType="textNoSuggestions|textCapCharacters"
+        android:singleLine="true" />
+</LinearLayout>

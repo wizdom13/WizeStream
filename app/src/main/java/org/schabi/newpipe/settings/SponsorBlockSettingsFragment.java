@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryRepository;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 
@@ -18,6 +19,7 @@ public class SponsorBlockSettingsFragment extends BasePreferenceFragment {
     public void onCreatePreferences(@Nullable final Bundle savedInstanceState,
                                     @Nullable final String rootKey) {
         addPreferencesFromResourceRegistry();
+        SponsorBlockCategoryRepository.migrateBehaviorOnce(requireContext());
 
         requirePreference(R.string.sponsor_block_home_page_key).setOnPreferenceClickListener(
                 preference -> {
@@ -34,17 +36,17 @@ public class SponsorBlockSettingsFragment extends BasePreferenceFragment {
     }
 
     @Override
-    public void onCreate(@Nullable final Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onStart() {
+        super.onStart();
         getPreferenceManager().getSharedPreferences()
                 .registerOnSharedPreferenceChangeListener(preferenceChangeListener);
     }
 
     @Override
-    public void onDestroy() {
+    public void onStop() {
         getPreferenceManager().getSharedPreferences()
                 .unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
-        super.onDestroy();
+        super.onStop();
     }
 
     private void onPreferenceChanged(@NonNull final SharedPreferences preferences,

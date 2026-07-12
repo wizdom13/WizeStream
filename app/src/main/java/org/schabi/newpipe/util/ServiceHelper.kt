@@ -19,6 +19,8 @@ import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.services.peertube.PeertubeInstance
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockApiSettings
 import org.schabi.newpipe.ktx.getStringSafe
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryRepository
 
 object ServiceHelper {
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
@@ -213,41 +215,17 @@ object ServiceHelper {
                 ?.takeIf(String::isNotBlank)
             userId = preferences.getString(context.getString(R.string.sponsor_block_user_id_key), null)
                 ?.takeIf(String::isNotBlank)
-            includeSponsorCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_sponsor_key),
-                true
-            )
-            includeIntroCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_intro_key),
-                false
-            )
-            includeOutroCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_outro_key),
-                false
-            )
-            includeInteractionCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_interaction_key),
-                false
-            )
-            includeHighlightCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_highlight_key),
-                false
-            )
-            includeSelfPromoCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_self_promo_key),
-                false
-            )
-            includeMusicCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_non_music_key),
-                false
-            )
-            includePreviewCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_preview_key),
-                false
-            )
-            includeFillerCategory = preferences.getBoolean(
-                context.getString(R.string.sponsor_block_category_filler_key),
-                false
+            includeSponsorCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.SPONSOR)
+            includeIntroCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.INTRO)
+            includeOutroCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.OUTRO)
+            includeInteractionCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.INTERACTION)
+            includeHighlightCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.HIGHLIGHT)
+            includeSelfPromoCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.SELF_PROMO)
+            includeMusicCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.NON_MUSIC)
+            includePreviewCategory = SponsorBlockCategoryRepository.isEnabled(context, SponsorBlockCategoryConfig.PREVIEW)
+            includeFillerCategory = SponsorBlockCategoryRepository.isEnabled(
+                context,
+                SponsorBlockCategoryConfig.FILLER
             )
         }
     }

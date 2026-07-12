@@ -106,6 +106,7 @@
     <color name="sponsor_block_music">#FF9900</color>
     <color name="sponsor_block_preview">#008FD6</color>
     <color name="sponsor_block_filler">#7300FF</color>
+    <color name="sponsor_block_highlight">#FF1684</color>
 
     <color name="subscribe_text_color">#fff</color>
     <color name="subscribed_background_color">#d6d6d6</color>

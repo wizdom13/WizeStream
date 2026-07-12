@@ -33,15 +33,6 @@
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:dependency="@string/sponsor_block_enable_key"
-            android:key="@string/sponsor_block_show_manual_skip_key"
-            android:summary="@string/sponsor_block_show_manual_skip_summary"
-            android:title="@string/sponsor_block_show_manual_skip_title"
-            app:iconSpaceReserved="false"
-            app:singleLineTitle="false" />
-
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:dependency="@string/sponsor_block_enable_key"
             android:key="@string/sponsor_block_graced_rewind_key"
             android:summary="@string/sponsor_block_graced_rewind_summary"
             android:title="@string/sponsor_block_graced_rewind_title"
