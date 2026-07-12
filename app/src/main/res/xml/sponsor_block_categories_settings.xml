@@ -1,8 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" android:key="@string/sponsor_block_categories_key" android:title="@string/sponsor_block_categories_title">
-    <PreferenceCategory android:title="@string/sponsor_block_category_presets_title" />
-    <Preference android:key="sponsor_block_activate_all" android:title="@string/sponsor_block_activate_all_title" />
-    <Preference android:key="sponsor_block_deactivate_all" android:title="@string/sponsor_block_deactivate_all_title" />
-    <Preference android:key="sponsor_block_reset_defaults" android:title="@string/sponsor_block_reset_defaults_title" />
-    <PreferenceCategory android:title="@string/sponsor_block_categories_group_title" />
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:key="@string/sponsor_block_categories_key"
+    android:title="@string/sponsor_block_categories_title">
+
+    <PreferenceCategory
+        android:key="sponsor_block_category_presets_group"
+        android:title="@string/sponsor_block_category_presets_title"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            android:icon="@drawable/ic_done"
+            android:key="sponsor_block_activate_all"
+            android:title="@string/sponsor_block_activate_all_title" />
+
+        <Preference
+            android:icon="@drawable/ic_remove_circle"
+            android:key="sponsor_block_deactivate_all"
+            android:title="@string/sponsor_block_deactivate_all_title" />
+
+        <Preference
+            android:icon="@drawable/ic_settings_backup_restore"
+            android:key="sponsor_block_reset_defaults"
+            android:title="@string/sponsor_block_reset_defaults_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="sponsor_block_categories_group"
+        android:title="@string/sponsor_block_categories_group_title"
+        app:iconSpaceReserved="false" />
 </PreferenceScreen>

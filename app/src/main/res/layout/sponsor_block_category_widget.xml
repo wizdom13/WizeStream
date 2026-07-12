@@ -14,8 +14,5 @@
         android:src="@drawable/ic_settings"
         android:tint="?attr/colorControlNormal" />
 
-    <androidx.appcompat.widget.SwitchCompat
-        android:id="@+id/switchWidget"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <include layout="@layout/preference_widget_material_switch" />
 </LinearLayout>

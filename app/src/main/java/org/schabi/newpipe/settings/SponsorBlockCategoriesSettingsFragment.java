@@ -6,6 +6,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 
 import java.util.Objects;
 
@@ -33,12 +34,14 @@ public class SponsorBlockCategoriesSettingsFragment extends BasePreferenceFragme
                     return true;
                 });
 
+        final PreferenceCategory categoriesGroup = requirePreferenceCategoryByKey(
+                "sponsor_block_categories_group");
         for (final SponsorBlockCategoryConfig category : SponsorBlockCategoryConfig.ALL) {
             final SponsorBlockCategoryPreference preference =
                     new SponsorBlockCategoryPreference(requireContext());
             preference.setCategory(category);
             preference.setOnConfigureClickListener(this::openCategorySettings);
-            getPreferenceScreen().addPreference(preference);
+            categoriesGroup.addPreference(preference);
         }
     }
 
@@ -65,6 +68,11 @@ public class SponsorBlockCategoriesSettingsFragment extends BasePreferenceFragme
     @NonNull
     private Preference requirePreferenceByKey(@NonNull final String key) {
         return Objects.requireNonNull(findPreference(key));
+    }
+
+    @NonNull
+    private PreferenceCategory requirePreferenceCategoryByKey(@NonNull final String key) {
+        return (PreferenceCategory) requirePreferenceByKey(key);
     }
 
     private void setupPresetPreference(@NonNull final String key, final boolean enabled) {
