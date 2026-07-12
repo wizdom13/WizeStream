@@ -1,5 +1,6 @@
 package org.schabi.newpipe.settings;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -221,6 +222,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
                                            final String changelog) {
         final StringBuilder message = new StringBuilder(getString(
                 R.string.app_update_available_dialog_message, latestVersion, installedVersion));
+        message.append("\n\n").append(getString(R.string.app_update_store_source_warning));
         if (apkSize >= 0) {
             message.append("\n\n").append(getString(R.string.app_update_apk_size_format,
                     formatApkSize(apkSize)));
@@ -232,7 +234,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.app_update_available_dialog_title)
                 .setMessage(message)
-                .setPositiveButton(hasApk ? R.string.app_update_download_apk
+                .setPositiveButton(hasApk ? R.string.app_update_download_from_github
                         : R.string.app_update_open_release, (dialog, which) -> {
                             if (hasApk) {
                                 startApkDownload(apkUrl, apkName, latestVersion, releaseUrl);
@@ -255,7 +257,18 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     private void openReleasePage(final String releaseUrl) {
         final String url = releaseUrl == null || releaseUrl.isBlank()
                 ? NewPipeMaterialUpdateRepository.RELEASES_URL : releaseUrl;
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        try {
+            if (intent.resolveActivity(requireContext().getPackageManager()) != null) {
+                startActivity(intent);
+            } else {
+                Toast.makeText(requireContext(), R.string.app_update_no_browser,
+                        Toast.LENGTH_LONG).show();
+            }
+        } catch (final ActivityNotFoundException e) {
+            Toast.makeText(requireContext(), R.string.app_update_no_browser,
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private void startApkDownload(final String apkUrl, final String apkName,
