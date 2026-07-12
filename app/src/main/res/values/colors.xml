@@ -5,6 +5,7 @@
     <color name="defaultIconTint">@color/black</color>
 
     <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="launcher_icon_primary">#46674F</color>
 
     <color name="placeholder_background">#999999</color>
     <color name="placeholder_foreground">#6C6C6C</color>
