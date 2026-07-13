@@ -47,8 +47,9 @@ public final class KeyboardUtil {
 
         final InputMethodManager imm = ContextCompat.getSystemService(activity,
                 InputMethodManager.class);
-        imm.hideSoftInputFromWindow(editText.getWindowToken(),
-                InputMethodManager.HIDE_NOT_ALWAYS);
+        // Do not use HIDE_NOT_ALWAYS here: the keyboard is shown with SHOW_FORCED above, and older
+        // Android versions may therefore refuse to dismiss it after a search is submitted.
+        imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
 
         editText.clearFocus();
     }
