@@ -3,4 +3,5 @@
     <string name="app_update_store_source_warning">If you installed NewPipe Material through IzzyOnDroid or another app store, update it through the same store whenever possible. APKs downloaded directly from GitHub bypass the review and verification performed by your app store.</string>
     <string name="app_update_download_from_github">Download from GitHub</string>
     <string name="app_update_no_browser">No compatible browser was found. Please open the release page manually.</string>
+    <string name="app_update_check_setting_description">Check GitHub Releases for updates. If installed through IzzyOnDroid or another app store, update through the same store whenever possible; direct GitHub APKs bypass store review and verification.</string>
 </resources>

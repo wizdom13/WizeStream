@@ -35,7 +35,7 @@
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="@string/update_app_key"
-        android:summary="@string/updates_setting_description"
+        android:summary="@string/app_update_check_setting_description"
         android:title="@string/updates_setting_title"
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
