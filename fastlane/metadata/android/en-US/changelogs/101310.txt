@@ -1,0 +1,12 @@
+NewPipe Material 0.28.8-m10
+
+Highlights:
+
+* Added customizable Home navigation with Downloads and smarter drawer entries.
+* Added per-category SponsorBlock behavior, colors, presets, and playback improvements.
+* Polished SponsorBlock settings with app switches, aligned headers, and icons.
+* Updated the launcher icon to follow the Android 12+ system palette.
+* Improved update downloads on Android.
+* Clarified GitHub update safety and handled missing browsers.
+
+Based on NewPipe 0.28.8.
