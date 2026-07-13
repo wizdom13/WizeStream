@@ -503,22 +503,20 @@
             android:layout_below="@id/separatorCheckbox"
             android:orientation="vertical">
 
-            <CheckBox
+            <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/unhookCheckbox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:buttonTint="?attr/colorPrimary"
                 android:checked="false"
                 android:clickable="true"
                 android:focusable="true"
                 android:text="@string/unhook_checkbox"
                 android:textColor="?attr/colorOnSurface" />
 
-            <CheckBox
+            <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/skipSilenceCheckbox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:buttonTint="?attr/colorPrimary"
                 android:checked="false"
                 android:clickable="true"
                 android:focusable="true"
