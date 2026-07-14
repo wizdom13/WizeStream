@@ -1,0 +1,3 @@
+[submodule "external/NewPipeExtractor"]
+	path = external/NewPipeExtractor
+	url = https://github.com/wizdom13/PipePipeExtractor.git

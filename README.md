@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPL%20v3-blue.svg" alt="License: GPLv3"></a>
-  <a href="https://github.com/wizdom13/NewPipe_Material/actions"><img src="https://github.com/wizdom13/NewPipe_Material/actions/workflows/ci.yml/badge.svg?branch=material" alt="Build status"></a>
+  <a href="https://github.com/wizdom13/NewPipe_Material/actions"><img src="https://github.com/wizdom13/NewPipe_Material/actions/workflows/ci.yml/badge.svg?branch=pipe" alt="Build status"></a>
 </p>
 
 <p align="center">Translations are welcome, but only native-speaker reviewed translations will be added.</p>
@@ -145,24 +145,44 @@ Do not publish NewPipe Material, NewPipe, or forks of NewPipe to Google Play. Th
 
 ## Building from source
 
+NewPipe Material uses a pinned `PipePipeExtractor` Git submodule. Clone the repository together with its pinned submodule:
+
+```bash
+git clone --recurse-submodules https://github.com/wizdom13/NewPipe_Material.git
+cd NewPipe_Material
+```
+
+For an existing checkout or after switching commits or tags:
+
+```bash
+git submodule sync --recursive
+git submodule update --init --recursive
+```
+
 Requirements:
 
+- Git with submodule support
 - JDK 21
-- Android SDK
-- Gradle wrapper from this repository
+- Android SDK with the required platform and build tools
+- Accepted Android SDK licenses
 
-Useful validation commands:
-
-```bash
-./gradlew runCheckstyle -DskipFormatKtlint
-./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
-```
-
-Build a debug APK:
+Build the debug APK and run JVM checks using the same committed entry point used by CI:
 
 ```bash
-./gradlew assembleDebug -DskipFormatKtlint
+scripts/build.sh debug
 ```
+
+Other available build modes:
+
+```bash
+scripts/build.sh release
+scripts/build.sh connected
+scripts/build.sh checkstyle
+```
+
+Do not use `git submodule update --remote` for release builds. Every release must use the exact extractor commit recorded by the app commit or tag.
+
+See [BUILDING.md](BUILDING.md) for the complete build, signing, submodule, and reproducible-release instructions.
 
 The debug APK uses the app label **NewPipe Material Debug** and package `org.wisso.newpipematerial.debug`.
 
@@ -179,14 +199,19 @@ NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS
 NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD
 ```
 
-When all four values are present, the release build uses the configured signing key. If they are missing, the release signing config is not applied.
-
-Recommended release validation:
+When all four values are present, build the signed release APK with:
 
 ```bash
-./gradlew assembleRelease -DskipFormatKtlint
+scripts/build.sh release
+```
+
+The release APK is generated under `app/build/outputs/apk/release/`. Verify it with:
+
+```bash
 apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 ```
+
+A published APK must be built from the exact commit referenced by its release tag, including the pinned extractor submodule commit. Do not replace an existing release APK with one built from a newer commit; publish a new version and tag instead.
 
 ---
 
@@ -223,28 +248,25 @@ Contributions are welcome, especially focused Material 3 polish, bug fixes, QA f
 
 Please keep changes focused and testable. For UI work, include before/after screenshots where possible and verify Light, Dark, Black, Follow system, and at least one manual Theme color preset.
 
-### PipePipeExtractor source checkout
+### PipePipeExtractor submodule
 
-NewPipe Material builds against the `wizdom13/PipePipeExtractor` fork from source through Gradle composite-build dependency substitution. Before running Gradle locally, clone the extractor source into the preferred in-repo path:
-
-```bash
-git clone https://github.com/wizdom13/PipePipeExtractor external/NewPipeExtractor
-```
-
-Alternatively, clone it next to this repository so it is available as `../PipePipeExtractor`:
+NewPipe Material builds against the `wizdom13/PipePipeExtractor` fork through the pinned submodule at `external/NewPipeExtractor`. Initialize it with:
 
 ```bash
-git clone https://github.com/wizdom13/PipePipeExtractor ../PipePipeExtractor
+git submodule sync --recursive
+git submodule update --init --recursive
 ```
 
-The in-repo checkout directory remains `external/NewPipeExtractor` because the app still substitutes the upstream `com.github.TeamNewPipe:NewPipeExtractor` dependency with the local PipePipeExtractor `:extractor` project.
+The submodule commit recorded by the NewPipe Material repository is part of the source definition. Do not replace it with the latest extractor branch tip when preparing a release or reproducible build.
 
-Useful checks before opening a pull request:
+Use the shared scripts for validation:
 
 ```bash
-./gradlew runCheckstyle -DskipFormatKtlint
-./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
+scripts/build.sh checkstyle
+scripts/build.sh debug
 ```
+
+Detailed instructions are maintained in [BUILDING.md](BUILDING.md).
 
 ---
 

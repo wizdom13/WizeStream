@@ -25,24 +25,14 @@ include(":app") // androidApp
 include(":desktopApp")
 include("shared")
 
-val externalNewPipeExtractor = file("external/NewPipeExtractor")
-val adjacentNewPipeExtractor = file("../PipePipeExtractor")
-
-val newPipeExtractorDir = when {
-    externalNewPipeExtractor.isDirectory -> externalNewPipeExtractor
-    adjacentNewPipeExtractor.isDirectory -> adjacentNewPipeExtractor
-    else -> throw GradleException(
-        "PipePipeExtractor source checkout not found. " +
-            "Clone https://github.com/wizdom13/PipePipeExtractor into external/NewPipeExtractor " +
-            "or run git clone https://github.com/wizdom13/PipePipeExtractor ..\\PipePipeExtractor " +
-            "for a Windows-style adjacent checkout. The external directory name remains " +
-            "NewPipeExtractor because the app still depends on the TeamNewPipe artifact name " +
-            "while this experiment substitutes it with PipePipeExtractor source."
+val newPipeExtractorDir = file("external/NewPipeExtractor")
+if (!newPipeExtractorDir.isDirectory) {
+    throw GradleException(
+        "PipePipeExtractor submodule checkout not found. " +
+            "Run git submodule update --init --recursive or scripts/prepare-extractor.sh."
     )
 }
 
-// Temporary experiment: resolve the TeamNewPipe extractor artifact to PipePipeExtractor
-// source so local and CI builds exercise the same extractor checkout.
 includeBuild(newPipeExtractorDir) {
     dependencySubstitution {
         substitute(module("com.github.TeamNewPipe:NewPipeExtractor"))
