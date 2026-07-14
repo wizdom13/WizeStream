@@ -43,6 +43,25 @@
             app:itemTextColor="@color/tab_layout_material_item_color"
             app:labelVisibilityMode="selected" />
 
+        <org.schabi.newpipe.views.ThemedSplashOverlay
+            android:id="@+id/themed_splash_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/colorSurface"
+            android:clickable="true"
+            android:elevation="32dp"
+            android:focusable="true"
+            android:importantForAccessibility="noHideDescendants">
+
+            <ImageView
+                android:layout_width="144dp"
+                android:layout_height="144dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_newpipe_material_splash_themed" />
+
+        </org.schabi.newpipe.views.ThemedSplashOverlay>
+
     </org.schabi.newpipe.views.FocusAwareCoordinator>
 
     <include

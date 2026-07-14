@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Android 12+ system splash screen.
-         This is separate from android:windowBackground used by pre-Android 12 startup. -->
+    <!-- Android 12+ creates this system-owned splash before the app can read
+         the selected theme-color preference. Keep the first frame neutral and
+         monochrome, then crossfade into the app-owned themed splash. -->
     <style name="OpeningTheme" parent="Base.OpeningTheme">
-        <item name="android:windowSplashScreenBackground">@color/light_m3_secondary_container_color</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_newpipe_material_splash</item>
+        <item name="android:windowSplashScreenBackground">?attr/colorSurface</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_newpipe_material_splash_system</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
-        <item name="android:statusBarColor">@color/light_m3_secondary_container_color</item>
-        <item name="android:navigationBarColor">@color/light_m3_secondary_container_color</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>

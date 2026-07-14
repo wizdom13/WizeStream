@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:drawable="@color/light_m3_secondary_container_color" />
+    <!-- The platform starting window is created before the app can read the
+         runtime theme-color preference. Keep that frame neutral and monochrome;
+         the app-owned themed splash takes over immediately afterwards. -->
+    <item android:drawable="?attr/colorSurface" />
 
     <item
-        android:drawable="@drawable/ic_newpipe_material_splash"
+        android:drawable="@drawable/ic_newpipe_material_splash_system"
         android:gravity="center" />
 </layer-list>
