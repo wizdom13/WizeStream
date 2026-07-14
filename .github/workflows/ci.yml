@@ -36,62 +36,33 @@ on:
 jobs:
   build-and-test-jvm:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
       - uses: actions/checkout@v6
-
-      - name: Checkout latest PipePipeExtractor source
-        run: |
-          set -euo pipefail
-          mkdir -p external
-          if [ ! -d external/NewPipeExtractor/.git ]; then
-            rm -rf external/NewPipeExtractor
-            git init external/NewPipeExtractor
-            git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
-          fi
-          git -C external/NewPipeExtractor fetch --depth 1 origin main
-          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
-
-      - name: Verify PipePipeExtractor source
-        run: |
-          git -C external/NewPipeExtractor remote -v
-          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
-          git -C external/NewPipeExtractor rev-parse HEAD
-          test -d external/NewPipeExtractor/extractor
-          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
-          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
-
-      - name: Clean PipePipeExtractor outputs
-        run: |
-          rm -rf external/NewPipeExtractor/build
-          rm -rf external/NewPipeExtractor/extractor/build
-          rm -rf external/NewPipeExtractor/timeago-parser/build
+        with:
+          submodules: recursive
 
       - uses: gradle/actions/wrapper-validation@v6
 
-      - name: create and checkout branch
+      - name: Create and checkout branch
         if: github.event_name == 'pull_request'
         env:
           BRANCH: ${{ github.head_ref }}
         run: git checkout -B "$BRANCH"
 
-      - name: set up JDK
+      - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           java-version: 21
-          distribution: "temurin"
-          cache: 'gradle'
+          distribution: temurin
+          cache: gradle
 
-      - name: Verify PipePipeExtractor Java bytecode
-        run: |
-          ./gradlew -p external/NewPipeExtractor :extractor:clean :extractor:compileJava --stacktrace
-          javap -verbose -classpath external/NewPipeExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe | grep "major version: 65"
+      - name: Verify pinned PipePipeExtractor bytecode
+        run: scripts/build.sh extractor-bytecode | grep "major version: 65"
 
-      - name: Build debug APK and run jvm tests
-        run: ./gradlew clean assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
+      - name: Build debug APK and run JVM tests
+        run: scripts/build.sh debug
 
       - name: Verify debug APK identity
         run: |
@@ -120,39 +91,22 @@ jobs:
           - api-level: 35
             target: default
             arch: x86_64
-
     permissions:
       contents: read
-
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
-      - name: Checkout latest PipePipeExtractor source
-        run: |
-          set -euo pipefail
-          mkdir -p external
-          if [ ! -d external/NewPipeExtractor/.git ]; then
-            rm -rf external/NewPipeExtractor
-            git init external/NewPipeExtractor
-            git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
-          fi
-          git -C external/NewPipeExtractor fetch --depth 1 origin main
-          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
 
-      - name: Verify PipePipeExtractor source
-        run: |
-          git -C external/NewPipeExtractor remote -v
-          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
-          git -C external/NewPipeExtractor rev-parse HEAD
-          test -d external/NewPipeExtractor/extractor
-          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
-          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
-
-      - name: Clean PipePipeExtractor outputs
-        run: |
-          rm -rf external/NewPipeExtractor/build
-          rm -rf external/NewPipeExtractor/extractor/build
-          rm -rf external/NewPipeExtractor/timeago-parser/build
+      - name: Prepare pinned PipePipeExtractor
+        run: scripts/prepare-extractor.sh
 
       - name: Enable KVM
         run: |
@@ -160,20 +114,13 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: set up JDK
-        uses: actions/setup-java@v5
-        with:
-          java-version: 21
-          distribution: "temurin"
-          cache: 'gradle'
-
-      - name: Run android tests
+      - name: Run Android tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
-          script: ./gradlew connectedCheck --stacktrace
+          script: scripts/build.sh connected
 
       - name: Upload test report when tests fail
         uses: actions/upload-artifact@v7
