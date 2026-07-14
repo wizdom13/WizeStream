@@ -29,6 +29,8 @@ import androidx.fragment.app.FragmentStatePagerAdapterMenuWorkaround;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.tabs.TabLayout;
 
 import org.schabi.newpipe.BaseFragment;
@@ -54,6 +56,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     private static final int BOTTOM_NAVIGATION_ITEM_ID_BASE = 10_000;
 
     private FragmentMainBinding binding;
+    private BottomNavigationView bottomNavigation;
     private SelectedTabsPagerAdapter pagerAdapter;
 
     private final List<Tab> tabsList = new ArrayList<>();
@@ -107,6 +110,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         super.initViews(rootView, savedInstanceState);
 
         binding = FragmentMainBinding.bind(rootView);
+        bottomNavigation = requireActivity().findViewById(R.id.main_bottom_navigation);
 
         binding.mainTabLayout.setupWithViewPager(binding.pager);
         binding.mainTabLayout.addOnTabSelectedListener(this);
@@ -118,7 +122,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
                 requireActivity().invalidateOptionsMenu();
             }
         });
-        binding.mainBottomNavigation.setOnItemSelectedListener(item -> {
+        bottomNavigation.setOnItemSelectedListener(item -> {
             final int position = getBottomNavigationItemPosition(item.getItemId());
             if (position < 0 || position >= tabsList.size()) {
                 return false;
@@ -129,7 +133,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             updateTitleForTab(position);
             return true;
         });
-        binding.mainBottomNavigation.setOnItemReselectedListener(item -> {
+        bottomNavigation.setOnItemReselectedListener(item -> {
             final int position = getBottomNavigationItemPosition(item.getItemId());
             if (position >= 0 && position < tabsList.size()) {
                 updateTitleForTab(position);
@@ -153,8 +157,14 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         final boolean newMainTabsPosition = prefs.getBoolean(mainTabsPositionKey, true);
         if (mainTabsPositionBottom != newMainTabsPosition) {
             mainTabsPositionBottom = newMainTabsPosition;
-            updateMainNavigationMode();
         }
+        updateMainNavigationMode();
+    }
+
+    @Override
+    public void onPause() {
+        setBottomNavigationRequestedVisibility(false);
+        super.onPause();
     }
 
     @Override
@@ -169,6 +179,15 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
 
     @Override
     public void onDestroyView() {
+        if (bottomNavigation != null) {
+            bottomNavigation.setOnItemSelectedListener(null);
+            bottomNavigation.setOnItemReselectedListener(null);
+            bottomNavigation.getMenu().clear();
+            bottomNavigation.setTag(Boolean.FALSE);
+            bottomNavigation.setAlpha(1.0f);
+            bottomNavigation.setVisibility(View.GONE);
+            bottomNavigation = null;
+        }
         super.onDestroyView();
         binding = null;
     }
@@ -272,7 +291,11 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private void updateBottomNavigationItems() {
-        final Menu menu = binding.mainBottomNavigation.getMenu();
+        if (bottomNavigation == null) {
+            return;
+        }
+
+        final Menu menu = bottomNavigation.getMenu();
         menu.clear();
         if (tabsList.size() > BOTTOM_NAVIGATION_MAX_ITEM_COUNT) {
             return;
@@ -310,13 +333,14 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private void updateBottomNavigationSelection(final int position) {
-        if (binding == null || tabsList.size() > BOTTOM_NAVIGATION_MAX_ITEM_COUNT
+        if (binding == null || bottomNavigation == null
+                || tabsList.size() > BOTTOM_NAVIGATION_MAX_ITEM_COUNT
                 || position < 0 || position >= tabsList.size()) {
             return;
         }
         final int itemId = getBottomNavigationItemId(position);
-        if (binding.mainBottomNavigation.getSelectedItemId() != itemId) {
-            binding.mainBottomNavigation.setSelectedItemId(itemId);
+        if (bottomNavigation.getSelectedItemId() != itemId) {
+            bottomNavigation.setSelectedItemId(itemId);
         }
     }
 
@@ -329,6 +353,10 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private void updateMainNavigationMode() {
+        if (binding == null || bottomNavigation == null) {
+            return;
+        }
+
         final ScrollableTabLayout tabLayout = binding.mainTabLayout;
         final ViewPager viewPager = binding.pager;
         final boolean bottom = mainTabsPositionBottom;
@@ -347,8 +375,10 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
 
         pagerParams.removeRule(BELOW);
         pagerParams.removeRule(ABOVE);
+        pagerParams.bottomMargin = 0;
         if (showBottomNavigation) {
-            pagerParams.addRule(ABOVE, R.id.main_bottom_navigation);
+            pagerParams.bottomMargin = getResources()
+                    .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
         } else if (showTabLayout) {
             pagerParams.addRule(bottom ? ABOVE : BELOW, R.id.main_tab_layout);
         }
@@ -356,11 +386,35 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         tabLayout.setSelectedTabIndicatorGravity(
                 bottom ? INDICATOR_GRAVITY_TOP : INDICATOR_GRAVITY_BOTTOM);
         tabLayout.setVisibility(showTabLayout ? View.VISIBLE : View.GONE);
-        binding.mainBottomNavigation.setVisibility(showBottomNavigation
-                ? View.VISIBLE : View.GONE);
+        setBottomNavigationRequestedVisibility(showBottomNavigation);
 
         tabLayout.setLayoutParams(tabParams);
         viewPager.setLayoutParams(pagerParams);
+    }
+
+    private void setBottomNavigationRequestedVisibility(final boolean visible) {
+        if (bottomNavigation == null) {
+            return;
+        }
+
+        bottomNavigation.setTag(visible);
+        bottomNavigation.setAlpha(1.0f);
+        if (!visible) {
+            bottomNavigation.setVisibility(View.GONE);
+            return;
+        }
+
+        final View playerSheet = requireActivity().findViewById(R.id.fragment_player_holder);
+        final int playerState = playerSheet == null
+                ? BottomSheetBehavior.STATE_HIDDEN
+                : BottomSheetBehavior.from(playerSheet).getState();
+        final boolean playerCoversNavigation = playerState == BottomSheetBehavior.STATE_EXPANDED
+                || playerState == BottomSheetBehavior.STATE_DRAGGING
+                || playerState == BottomSheetBehavior.STATE_SETTLING
+                || playerState == BottomSheetBehavior.STATE_HALF_EXPANDED;
+
+        bottomNavigation.setVisibility(playerCoversNavigation ? View.INVISIBLE : View.VISIBLE);
+        bottomNavigation.bringToFront();
     }
 
     @Override

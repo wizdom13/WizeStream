@@ -15,8 +15,8 @@
             android:layout_marginTop="?attr/actionBarSize" />
 
         <include
-            layout="@layout/toolbar_layout"
-            android:id="@+id/toolbar_layout"/>
+            android:id="@+id/toolbar_layout"
+            layout="@layout/toolbar_layout" />
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/fragment_player_holder"
@@ -27,10 +27,26 @@
             app:behavior_peekHeight="0dp"
             app:layout_behavior="org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior" />
 
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/main_bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/main_bottom_navigation_height"
+            android:layout_gravity="bottom"
+            android:background="?attr/colorSurface"
+            android:elevation="8dp"
+            android:visibility="gone"
+            app:itemActiveIndicatorStyle="@style/NewPipeMaterialBottomNavigationActiveIndicator"
+            app:itemIconTint="@color/tab_layout_material_item_color"
+            app:itemPaddingBottom="@dimen/main_bottom_navigation_item_padding_bottom"
+            app:itemPaddingTop="@dimen/main_bottom_navigation_item_padding_top"
+            app:itemRippleColor="?attr/colorControlHighlight"
+            app:itemTextColor="@color/tab_layout_material_item_color"
+            app:labelVisibilityMode="selected" />
+
     </org.schabi.newpipe.views.FocusAwareCoordinator>
 
     <include
-        layout="@layout/drawer_layout"
-        android:id="@+id/drawer_layout" />
+        android:id="@+id/drawer_layout"
+        layout="@layout/drawer_layout" />
 
 </org.schabi.newpipe.views.FocusAwareDrawerLayout>

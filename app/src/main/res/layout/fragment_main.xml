@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
     <org.schabi.newpipe.views.ScrollableTabLayout
         android:id="@+id/main_tab_layout"
         android:layout_width="match_parent"
@@ -26,20 +25,5 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/main_tab_layout" />
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/main_bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/main_bottom_navigation_height"
-        android:layout_alignParentBottom="true"
-        android:background="?attr/colorSurface"
-        android:visibility="gone"
-        app:itemActiveIndicatorStyle="@style/NewPipeMaterialBottomNavigationActiveIndicator"
-        app:itemIconTint="@color/tab_layout_material_item_color"
-        app:itemPaddingBottom="@dimen/main_bottom_navigation_item_padding_bottom"
-        app:itemPaddingTop="@dimen/main_bottom_navigation_item_padding_top"
-        app:itemRippleColor="?attr/colorControlHighlight"
-        app:itemTextColor="@color/tab_layout_material_item_color"
-        app:labelVisibilityMode="selected" />
 
 </RelativeLayout>
