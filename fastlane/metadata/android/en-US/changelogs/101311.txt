@@ -1,0 +1,11 @@
+NewPipe Material 0.28.8-m11
+
+Highlights:
+
+* Fixed playback option checkboxes that could render incorrectly.
+* Fixed the search keyboard not closing reliably on older Android versions.
+* Improved the warning shown before enabling GitHub update checks.
+* Pinned PipePipeExtractor to ensure consistent and reproducible builds.
+* Unified local, CI, and external builds through shared build scripts and updated documentation.
+
+Based on NewPipe 0.28.8.
