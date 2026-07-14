@@ -59,7 +59,8 @@ jobs:
           cache: gradle
 
       - name: Verify pinned PipePipeExtractor bytecode
-        run: scripts/build.sh extractor-bytecode | grep "major version: 65"
+        run: |
+          scripts/build.sh extractor-bytecode | grep "major version: 65"
 
       - name: Build debug APK and run JVM tests
         run: scripts/build.sh debug
