@@ -3,6 +3,8 @@ package org.schabi.newpipe.local.dialog;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.ContextThemeWrapper;
+import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -46,16 +48,16 @@ public final class PlaylistCreationDialog extends PlaylistDialog {
             return super.onCreateDialog(savedInstanceState);
         }
 
+        final int dialogTheme = ThemeHelper.getDialogTheme(requireContext());
+        final ContextThemeWrapper themedContext =
+                new ContextThemeWrapper(requireContext(), dialogTheme);
         final DialogEditTextBinding dialogBinding =
-                DialogEditTextBinding.inflate(getLayoutInflater());
-        dialogBinding.getRoot().getContext().setTheme(ThemeHelper.getDialogTheme(requireContext()));
+                DialogEditTextBinding.inflate(LayoutInflater.from(themedContext));
         dialogBinding.dialogEditText.setHint(R.string.name);
         dialogBinding.dialogEditText.setInputType(InputType.TYPE_CLASS_TEXT);
 
         final MaterialAlertDialogBuilder dialogBuilder =
-                new MaterialAlertDialogBuilder(
-                        requireContext(),
-                        ThemeHelper.getDialogTheme(requireContext()))
+                new MaterialAlertDialogBuilder(themedContext)
                 .setTitle(R.string.create_playlist)
                 .setView(dialogBinding.getRoot())
                 .setCancelable(true)
