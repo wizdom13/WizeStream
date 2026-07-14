@@ -1,0 +1,256 @@
+name: Nightly release
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: newpipe-material-nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NIGHTLY_REPOSITORY: wizdom13/NewPipe_Material_Nightly
+  NIGHTLY_RETENTION_COUNT: "14"
+
+jobs:
+  build-and-publish:
+    name: Build and publish nightly
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out pipe
+        uses: actions/checkout@v6
+        with:
+          ref: pipe
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Prepare nightly metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          source_sha="$(git rev-parse HEAD)"
+          build_date="$(date -u +%Y%m%d)"
+          version_code="$(date -u +%y%j%H%M)"
+          short_sha="${source_sha::7}"
+          nightly_tag="nightly-${build_date}-${short_sha}"
+          version_suffix="-nightly.${build_date}.${short_sha}"
+          apk_name="NewPipe-Material-nightly-${build_date}-${short_sha}.apk"
+          extractor_sha="$(git -C external/NewPipeExtractor rev-parse HEAD)"
+
+          {
+            echo "source_sha=$source_sha"
+            echo "build_date=$build_date"
+            echo "version_code=$version_code"
+            echo "short_sha=$short_sha"
+            echo "nightly_tag=$nightly_tag"
+            echo "version_suffix=$version_suffix"
+            echo "apk_name=$apk_name"
+            echo "extractor_sha=$extractor_sha"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Skip unchanged source commit
+        id: existing
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_REPO_TOKEN }}
+          SHORT_SHA: ${{ steps.metadata.outputs.short_sha }}
+          SOURCE_SHA: ${{ steps.metadata.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "$GH_TOKEN" || {
+            echo "NIGHTLY_REPO_TOKEN is missing" >&2
+            exit 1
+          }
+
+          existing_tag="$(
+            gh api "repos/${NIGHTLY_REPOSITORY}/releases" \
+              --paginate \
+              --jq '.[].tag_name' \
+            | grep -E "^nightly-[0-9]{8}-${SHORT_SHA}$" \
+            | head -n 1 \
+            || true
+          )"
+
+          if [[ -n "$existing_tag" ]]; then
+            echo "Source commit ${SOURCE_SHA} was already published as ${existing_tag}."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build debug APK and run JVM checks
+        if: steps.existing.outputs.skip != 'true'
+        run: scripts/build.sh debug
+
+      - name: Restore release signing key
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 || secrets.SIGNING_KEY }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS || secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "$SIGNING_KEYSTORE_BASE64" || {
+            echo "Missing release keystore secret. Add NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64." >&2
+            exit 1
+          }
+          test -n "$RELEASE_STORE_PASSWORD" || {
+            echo "Missing release store password secret." >&2
+            exit 1
+          }
+          test -n "$RELEASE_KEY_ALIAS" || {
+            echo "Missing release key alias secret." >&2
+            exit 1
+          }
+          test -n "$RELEASE_KEY_PASSWORD" || {
+            echo "Missing release key password secret." >&2
+            exit 1
+          }
+
+          keystore_path="$RUNNER_TEMP/newpipe-material-release.keystore"
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          chmod 600 "$keystore_path"
+
+          {
+            echo "NEWPIPE_MATERIAL_RELEASE_STORE_FILE=$keystore_path"
+            echo "NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD"
+            echo "NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS"
+            echo "NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Build optimized nightly APK
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
+          VERSION_SUFFIX: ${{ steps.metadata.outputs.version_suffix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          scripts/build.sh nightly \
+            -DversionCodeOverride="$VERSION_CODE" \
+            -DversionNameSuffix="$VERSION_SUFFIX"
+
+      - name: Prepare and verify release assets
+        if: steps.existing.outputs.skip != 'true'
+        id: assets
+        env:
+          APK_NAME: ${{ steps.metadata.outputs.apk_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          source_apk="$(find app/build/outputs/apk/nightly -type f -name '*.apk' | head -n 1)"
+          test -n "$source_apk"
+
+          mkdir -p dist
+          apk_path="dist/$APK_NAME"
+          checksum_path="${apk_path}.sha256"
+          cp "$source_apk" "$apk_path"
+          sha256sum "$apk_path" > "$checksum_path"
+
+          build_tools="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
+          aapt="$ANDROID_HOME/build-tools/$build_tools/aapt"
+          apksigner="$ANDROID_HOME/build-tools/$build_tools/apksigner"
+
+          "$aapt" dump badging "$apk_path" | tee "$RUNNER_TEMP/nightly-apk-badging.txt"
+          grep -q "package: name='org.wisso.newpipematerial.nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
+          grep -q "application-label:'NewPipe Material Nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
+          "$apksigner" verify --verbose --print-certs "$apk_path"
+
+          {
+            echo "apk_path=$apk_path"
+            echo "checksum_path=$checksum_path"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish immutable prerelease
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_REPO_TOKEN }}
+          NIGHTLY_TAG: ${{ steps.metadata.outputs.nightly_tag }}
+          BUILD_DATE: ${{ steps.metadata.outputs.build_date }}
+          VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
+          VERSION_SUFFIX: ${{ steps.metadata.outputs.version_suffix }}
+          SOURCE_SHA: ${{ steps.metadata.outputs.source_sha }}
+          EXTRACTOR_SHA: ${{ steps.metadata.outputs.extractor_sha }}
+          APK_PATH: ${{ steps.assets.outputs.apk_path }}
+          CHECKSUM_PATH: ${{ steps.assets.outputs.checksum_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > "$RUNNER_TEMP/nightly-release-notes.md" <<EOF
+          Automated NewPipe Material nightly build.
+
+          - Version suffix: \`${VERSION_SUFFIX}\`
+          - Version code: \`${VERSION_CODE}\`
+          - Source commit: \`${SOURCE_SHA}\`
+          - PipePipeExtractor commit: \`${EXTRACTOR_SHA}\`
+          - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          This is an unstable testing build. It uses the application ID
+          \`org.wisso.newpipematerial.nightly\` and can be installed alongside the stable app.
+          EOF
+
+          gh release create "$NIGHTLY_TAG" \
+            --repo "$NIGHTLY_REPOSITORY" \
+            --target main \
+            --prerelease \
+            --title "NewPipe Material Nightly ${BUILD_DATE}" \
+            --notes-file "$RUNNER_TEMP/nightly-release-notes.md" \
+            "$APK_PATH" \
+            "$CHECKSUM_PATH"
+
+      - name: Remove nightlies beyond retention limit
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_REPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          releases_file="$RUNNER_TEMP/nightly-releases.json"
+          gh api "repos/${NIGHTLY_REPOSITORY}/releases" --paginate > "$releases_file"
+
+          while IFS=$'\t' read -r release_id tag_name; do
+            [[ -n "$release_id" && -n "$tag_name" ]] || continue
+            echo "Deleting old nightly ${tag_name}"
+            gh api -X DELETE "repos/${NIGHTLY_REPOSITORY}/releases/${release_id}"
+            gh api -X DELETE "repos/${NIGHTLY_REPOSITORY}/git/refs/tags/${tag_name}" || true
+          done < <(
+            jq -s -r \
+              --argjson keep "$NIGHTLY_RETENTION_COUNT" \
+              'add | sort_by(.created_at) | reverse | .[$keep:][] | [.id, .tag_name] | @tsv' \
+              "$releases_file"
+          )
+
+      - name: Upload workflow artifact
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: newpipe-material-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}
+          path: |
+            ${{ steps.assets.outputs.apk_path }}
+            ${{ steps.assets.outputs.checksum_path }}
+          retention-days: 14

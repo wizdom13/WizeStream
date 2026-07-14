@@ -16,6 +16,14 @@ case "$MODE" in
     release)
         exec ./gradlew clean assembleRelease --stacktrace -DskipFormatKtlint "$@"
         ;;
+    nightly)
+        exec ./gradlew \
+            --init-script "$ROOT_DIR/scripts/nightly.init.gradle" \
+            clean assembleNightly \
+            --stacktrace \
+            -DskipFormatKtlint \
+            "$@"
+        ;;
     checkstyle)
         exec ./gradlew runCheckstyle --stacktrace -DskipFormatKtlint "$@"
         ;;
@@ -27,7 +35,7 @@ case "$MODE" in
         exec javap -verbose -classpath external/NewPipeExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe
         ;;
     *)
-        echo "Usage: $0 {debug|release|checkstyle|connected|extractor-bytecode} [extra Gradle arguments]" >&2
+        echo "Usage: $0 {debug|release|nightly|checkstyle|connected|extractor-bytecode} [extra Gradle arguments]" >&2
         exit 2
         ;;
 esac
