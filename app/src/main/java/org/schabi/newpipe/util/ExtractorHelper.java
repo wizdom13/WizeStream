@@ -199,14 +199,17 @@ public final class ExtractorHelper {
     private static StreamInfo getStreamInfoFromNetwork(final int serviceId,
                                                        final String url) throws Exception {
         final StreamInfo streamInfo = StreamInfo.getInfo(NewPipe.getService(serviceId), url);
-        backfillYouTubeLikesFromReturnDislikeApi(serviceId, streamInfo);
+        backfillYouTubeRatingsAndViewCount(serviceId, streamInfo);
         backfillYouTubeUploaderAvatarFromChannel(serviceId, streamInfo);
         return streamInfo;
     }
 
-    private static void backfillYouTubeLikesFromReturnDislikeApi(final int serviceId,
-                                                                 final StreamInfo info) {
-        if (serviceId != ServiceList.YouTube.getServiceId() || info.getLikeCount() >= 0) {
+    private static void backfillYouTubeRatingsAndViewCount(final int serviceId,
+                                                           final StreamInfo info) {
+        if (serviceId != ServiceList.YouTube.getServiceId()
+                || (info.getLikeCount() >= 0
+                && info.getDislikeCount() >= 0
+                && info.getViewCount() >= 0)) {
             return;
         }
 
@@ -220,9 +223,11 @@ public final class ExtractorHelper {
                     .get(RETURN_YOUTUBE_DISLIKE_VOTES_URL + videoId)
                     .responseBody();
             final JSONObject votes = new JSONObject(responseBody);
-            final long likes = votes.optLong("likes", -1);
-            if (likes >= 0) {
-                info.setLikeCount(likes);
+            if (info.getLikeCount() < 0) {
+                final long likes = votes.optLong("likes", -1);
+                if (likes >= 0) {
+                    info.setLikeCount(likes);
+                }
             }
             if (info.getDislikeCount() < 0) {
                 final long dislikes = votes.optLong("dislikes", -1);
@@ -230,8 +235,14 @@ public final class ExtractorHelper {
                     info.setDislikeCount(dislikes);
                 }
             }
+            if (info.getViewCount() < 0) {
+                final long views = votes.optLong("viewCount", -1);
+                if (views >= 0) {
+                    info.setViewCount(views);
+                }
+            }
         } catch (final Exception ignored) {
-            // Keep extractor-provided values when the optional ratings backfill is unavailable.
+            // Keep extractor-provided values when the optional metadata backfill is unavailable.
         }
     }
 
@@ -240,17 +251,26 @@ public final class ExtractorHelper {
         if (serviceId != ServiceList.YouTube.getServiceId()) {
             return;
         }
-        if (!isNullOrEmpty(info.getUploaderAvatarUrl())
-                || (info.getUploaderAvatars() != null && !info.getUploaderAvatars().isEmpty())) {
-            return;
-        }
-        if (isNullOrEmpty(info.getUploaderUrl())) {
+
+        final boolean avatarMissing = isNullOrEmpty(info.getUploaderAvatarUrl())
+                && (info.getUploaderAvatars() == null || info.getUploaderAvatars().isEmpty());
+        final boolean subscriberCountMissing = info.getUploaderSubscriberCount() < 0;
+        if ((!avatarMissing && !subscriberCountMissing) || isNullOrEmpty(info.getUploaderUrl())) {
             return;
         }
 
         try {
-            final ChannelInfo channelInfo = ChannelInfo.getInfo(
-                    NewPipe.getService(serviceId), info.getUploaderUrl());
+            final ChannelInfo channelInfo = getChannelInfo(
+                    serviceId, info.getUploaderUrl(), false).blockingGet();
+
+            if (subscriberCountMissing && channelInfo.getSubscriberCount() >= 0) {
+                info.setUploaderSubscriberCount(channelInfo.getSubscriberCount());
+            }
+
+            if (!avatarMissing) {
+                return;
+            }
+
             final List<Image> avatars = channelInfo.getAvatars();
             if (avatars == null || avatars.isEmpty()) {
                 return;
@@ -265,7 +285,7 @@ public final class ExtractorHelper {
                 }
             }
         } catch (final Exception ignored) {
-            // Keep the stream page usable even if the optional channel avatar fallback fails.
+            // Keep the stream page usable if the optional channel metadata fallback fails.
         }
     }
 
