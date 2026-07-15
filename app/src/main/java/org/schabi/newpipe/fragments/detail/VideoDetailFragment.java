@@ -61,6 +61,7 @@ import com.evernote.android.state.State;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.tabs.TabLayout;
 
@@ -147,6 +148,15 @@ public final class VideoDetailFragment
 
     private static final float MAX_OVERLAY_ALPHA = 0.9f;
     private static final float MAX_PLAYER_HEIGHT = 0.7f;
+    private static final int LEGACY_PLAYER_COLLAPSE_MODE =
+            CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PARALLAX;
+    private static final int PINNED_PLAYER_COLLAPSE_MODE =
+            CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PIN;
+    private static final int LEGACY_DETAIL_SCROLL_FLAGS =
+            AppBarLayout.LayoutParams.SCROLL_FLAG_SCROLL;
+    private static final int PINNED_DETAIL_SCROLL_FLAGS =
+            AppBarLayout.LayoutParams.SCROLL_FLAG_SCROLL
+                    | AppBarLayout.LayoutParams.SCROLL_FLAG_EXIT_UNTIL_COLLAPSED;
 
     public static final String ACTION_SHOW_MAIN_PLAYER =
             App.PACKAGE_NAME + ".VideoDetailFragment.ACTION_SHOW_MAIN_PLAYER";
@@ -177,6 +187,7 @@ public final class VideoDetailFragment
     final List<Integer> tabContentDescriptions = new ArrayList<>();
     private boolean tabSettingsChanged = false;
     private boolean showDislikes = true;
+    private boolean pinVideoWhileScrolling = false;
     private int lastAppBarVerticalOffset = Integer.MAX_VALUE; // prevents useless updates
     @Nullable
     private StreamInfo currentInfo = null;
@@ -193,6 +204,9 @@ public final class VideoDetailFragment
                 } else if (getString(R.string.show_description_key).equals(key)) {
                     showDescription = sharedPreferences.getBoolean(key, true);
                     tabSettingsChanged = true;
+                } else if (getString(R.string.pin_video_while_scrolling_key).equals(key)) {
+                    pinVideoWhileScrolling = sharedPreferences.getBoolean(key, false);
+                    updatePinnedPlayerLayout();
                 } else if (getString(R.string.show_dislike_key).equals(key)) {
                     showDislikes = sharedPreferences.getBoolean(key, true);
                     if (currentInfo != null && binding != null) {
@@ -247,6 +261,7 @@ public final class VideoDetailFragment
     @Override
     public void onServiceConnected(@NonNull final PlayerService connectedPlayerService) {
         playerService = connectedPlayerService;
+        updatePinnedPlayerLayout();
     }
 
     @Override
@@ -282,11 +297,13 @@ public final class VideoDetailFragment
             openVideoPlayerAutoFullscreen();
         }
         updateOverlayPlayQueueButtonVisibility();
+        updatePinnedPlayerLayout();
     }
 
     @Override
     public void onPlayerDisconnected() {
         player = null;
+        updatePinnedPlayerLayout();
         // the binding could be null at this point, if the app is finishing
         if (binding != null) {
             restoreDefaultBrightness();
@@ -330,6 +347,8 @@ public final class VideoDetailFragment
         showRelatedItems = prefs.getBoolean(getString(R.string.show_next_video_key), true);
         showDescription = prefs.getBoolean(getString(R.string.show_description_key), true);
         showDislikes = ServiceHelper.isFetchDislikeEnabled(activity);
+        pinVideoWhileScrolling = prefs.getBoolean(
+                getString(R.string.pin_video_while_scrolling_key), false);
         selectedTabTag = prefs.getString(
                 getString(R.string.stream_info_selected_tab_key), COMMENTS_TAB_TAG);
         prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
@@ -432,6 +451,7 @@ public final class VideoDetailFragment
         disposables.clear();
         positionSubscriber = null;
         currentWorker = null;
+        updatePinnedPlayerLayout();
         bottomSheetBehavior.removeBottomSheetCallback(bottomSheetCallback);
 
         if (activity.isFinishing()) {
@@ -1308,6 +1328,7 @@ public final class VideoDetailFragment
                     playerUi.removeViewFromParent();
                     binding.playerPlaceholder.addView(playerUi.getBinding().getRoot());
                     playerUi.setupVideoSurfaceIfNeeded();
+                    updatePinnedPlayerLayout();
                 }
             });
         });
@@ -1319,6 +1340,7 @@ public final class VideoDetailFragment
         if (player != null) {
             player.UIs().get(VideoPlayerUi.class).ifPresent(VideoPlayerUi::removeViewFromParent);
         }
+        updatePinnedPlayerLayout();
     }
 
     private void makeDefaultHeightForVideoPlaceholder() {
@@ -1382,11 +1404,119 @@ public final class VideoDetailFragment
                 new FrameLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
         binding.detailThumbnailImageView.setMinimumHeight(newHeight);
+        updatePinnedPlayerLayout(newHeight);
         if (isPlayerAvailable()) {
             final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
             player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
                     ui.getBinding().surfaceView.setHeights(newHeight,
                             ui.isFullscreen() ? newHeight : maxHeight));
+        }
+    }
+
+    static boolean isPhoneDetailLayout(final boolean hasRelatedItemsLayout) {
+        return !hasRelatedItemsLayout;
+    }
+
+    static int getContentTopMargin(final boolean phoneDetailLayout,
+                                   final int thumbnailHeight) {
+        return phoneDetailLayout && thumbnailHeight > 0 ? thumbnailHeight : 0;
+    }
+
+    static int resolveThumbnailHeight(final int requestedHeight,
+                                      final int layoutHeight,
+                                      final int measuredHeight) {
+        return requestedHeight > 0
+                ? requestedHeight
+                : layoutHeight > 0
+                        ? layoutHeight
+                        : Math.max(measuredHeight, 0);
+    }
+
+    static boolean shouldUsePinnedPlayerLayout(final boolean preferenceEnabled,
+                                               final boolean videoPlayerSelected,
+                                               final boolean playerAttached,
+                                               final boolean fullscreen,
+                                               final boolean phoneDetailLayout,
+                                               final boolean tvLayout,
+                                               final boolean tabletLayout) {
+        return preferenceEnabled
+                && videoPlayerSelected
+                && playerAttached
+                && !fullscreen
+                && phoneDetailLayout
+                && !tvLayout
+                && !tabletLayout;
+    }
+
+    private void updatePinnedPlayerLayout() {
+        updatePinnedPlayerLayout(0);
+    }
+
+    private void updatePinnedPlayerLayout(final int requestedThumbnailHeight) {
+        if (binding == null || getView() == null) {
+            return;
+        }
+
+        final boolean playerAttached = getRoot()
+                .map(root -> root.getParent() == binding.playerPlaceholder)
+                .orElse(false);
+        final boolean phoneDetailLayout = isPhoneDetailLayout(binding.relatedItemsLayout != null);
+        final boolean usePinnedMode = shouldUsePinnedPlayerLayout(
+                pinVideoWhileScrolling,
+                isPlayerAvailable() && player.videoPlayerSelected(), playerAttached,
+                isFullscreen(), phoneDetailLayout,
+                DeviceUtils.isTv(requireContext()), DeviceUtils.isTablet(requireContext()));
+        final int layoutHeight = binding.detailThumbnailImageView.getLayoutParams().height;
+        final int thumbnailHeight = resolveThumbnailHeight(requestedThumbnailHeight, layoutHeight,
+                binding.detailThumbnailImageView.getHeight());
+        final int playerHeight = usePinnedMode ? thumbnailHeight : 0;
+        final int collapseMode = usePinnedMode
+                ? PINNED_PLAYER_COLLAPSE_MODE : LEGACY_PLAYER_COLLAPSE_MODE;
+        final int scrollFlags = usePinnedMode
+                ? PINNED_DETAIL_SCROLL_FLAGS : LEGACY_DETAIL_SCROLL_FLAGS;
+
+        final AppBarLayout.LayoutParams appBarParams =
+                (AppBarLayout.LayoutParams) binding.detailCollapsingToolbarLayout.getLayoutParams();
+        boolean changed = false;
+        if (appBarParams.getScrollFlags() != scrollFlags) {
+            appBarParams.setScrollFlags(scrollFlags);
+            binding.detailCollapsingToolbarLayout.setLayoutParams(appBarParams);
+            changed = true;
+        }
+        final int desiredContentTopMargin = getContentTopMargin(phoneDetailLayout, thumbnailHeight);
+        final ViewGroup.MarginLayoutParams contentParams =
+                (ViewGroup.MarginLayoutParams) binding.detailContentRootLayout.getLayoutParams();
+        if (contentParams.topMargin != desiredContentTopMargin) {
+            contentParams.topMargin = desiredContentTopMargin;
+            binding.detailContentRootLayout.setLayoutParams(contentParams);
+            changed = true;
+        }
+
+        if (binding.detailCollapsingToolbarLayout.getMinimumHeight() != playerHeight) {
+            binding.detailCollapsingToolbarLayout.setMinimumHeight(playerHeight);
+            changed = true;
+        }
+
+        final CollapsingToolbarLayout.LayoutParams thumbnailParams =
+                (CollapsingToolbarLayout.LayoutParams)
+                        binding.detailThumbnailRootLayout.getLayoutParams();
+        if (thumbnailParams.getCollapseMode() != collapseMode) {
+            thumbnailParams.setCollapseMode(collapseMode);
+            binding.detailThumbnailRootLayout.setLayoutParams(thumbnailParams);
+            changed = true;
+        }
+
+        if (phoneDetailLayout) {
+            final ViewGroup collapsingToolbarLayout = binding.detailCollapsingToolbarLayout;
+            final View frontView = usePinnedMode
+                    ? binding.detailThumbnailRootLayout : binding.detailContentRootLayout;
+            if (collapsingToolbarLayout.indexOfChild(frontView)
+                    != collapsingToolbarLayout.getChildCount() - 1) {
+                frontView.bringToFront();
+            }
+        }
+        if (changed) {
+            binding.appBarLayout.requestLayout();
         }
     }
 
@@ -1933,6 +2063,7 @@ public final class VideoDetailFragment
             }
         }
         scrollToTop();
+        updatePinnedPlayerLayout();
 
         tryAddVideoPlayerView();
     }
@@ -2447,6 +2578,7 @@ public final class VideoDetailFragment
                             player.UIs().get(MainPlayerUi.class)
                                     .ifPresent(MainPlayerUi::toggleFullscreen);
                         }
+                        updatePinnedPlayerLayout();
                         setOverlayLook(binding.appBarLayout, behavior, 1);
                         break;
                     case BottomSheetBehavior.STATE_COLLAPSED:
@@ -2461,6 +2593,7 @@ public final class VideoDetailFragment
                             player.UIs().get(MainPlayerUi.class)
                                     .ifPresent(MainPlayerUi::closeItemsList);
                         }
+                        updatePinnedPlayerLayout();
                         setOverlayLook(binding.appBarLayout, behavior, 0);
                         break;
                     case BottomSheetBehavior.STATE_DRAGGING:
