@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -12,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.widget.TextViewCompat;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceManager;
 import androidx.work.WorkInfo;
@@ -25,6 +28,7 @@ import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository;
 import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository.VersionComparison;
 import org.schabi.newpipe.update.UpdateDownloadWorker;
 import org.schabi.newpipe.update.UpdateInstallHelper;
+import org.schabi.newpipe.util.DeviceUtils;
 
 import java.util.Locale;
 import java.util.UUID;
@@ -37,6 +41,9 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class UpdateSettingsFragment extends BasePreferenceFragment {
     private static final int CHANGELOG_PREVIEW_MAX_CHARS = 900;
     private static final int CHANGELOG_PREVIEW_MAX_LINES = 8;
+    private static final float UPDATE_DIALOG_MESSAGE_MAX_HEIGHT_FRACTION = 0.43f;
+    private static final int DIALOG_CONTENT_HORIZONTAL_PADDING_DP = 24;
+    private static final int DIALOG_CONTENT_VERTICAL_PADDING_DP = 8;
 
     private final CompositeDisposable disposables = new CompositeDisposable();
 
@@ -233,7 +240,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
         final boolean hasApk = apkUrl != null && !apkUrl.isBlank();
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.app_update_available_dialog_title)
-                .setMessage(message)
+                .setView(createUpdateMessageView(message))
                 .setPositiveButton(hasApk ? R.string.app_update_download_from_github
                         : R.string.app_update_open_release, (dialog, which) -> {
                             if (hasApk) {
@@ -252,6 +259,28 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
                             }
                         })
                 .show();
+    }
+
+    @NonNull
+    private ScrollView createUpdateMessageView(@NonNull final CharSequence message) {
+        final Context context = requireContext();
+        final TextView textView = new TextView(context);
+        TextViewCompat.setTextAppearance(textView,
+                com.google.android.material.R.style.TextAppearance_MaterialComponents_Body1);
+        final int horizontalPadding = DeviceUtils.dpToPx(DIALOG_CONTENT_HORIZONTAL_PADDING_DP,
+                context);
+        final int verticalPadding = DeviceUtils.dpToPx(DIALOG_CONTENT_VERTICAL_PADDING_DP,
+                context);
+        textView.setPaddingRelative(horizontalPadding, verticalPadding,
+                horizontalPadding, verticalPadding);
+        textView.setText(message);
+
+        final int maxHeight = (int) (context.getResources().getDisplayMetrics().heightPixels
+                * UPDATE_DIALOG_MESSAGE_MAX_HEIGHT_FRACTION);
+        final ScrollView scrollView = new MaxHeightScrollView(context, maxHeight);
+        scrollView.addView(textView, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return scrollView;
     }
 
     private void openReleasePage(final String releaseUrl) {
@@ -278,10 +307,21 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
         final ProgressBar progressBar = new ProgressBar(requireContext(), null,
                 android.R.attr.progressBarStyleHorizontal);
         progressBar.setIndeterminate(true);
+
+        final FrameLayout progressContainer = new FrameLayout(requireContext());
+        final int horizontalPadding = DeviceUtils.dpToPx(DIALOG_CONTENT_HORIZONTAL_PADDING_DP,
+                requireContext());
+        final int verticalPadding = DeviceUtils.dpToPx(DIALOG_CONTENT_VERTICAL_PADDING_DP,
+                requireContext());
+        progressContainer.setPaddingRelative(horizontalPadding, verticalPadding,
+                horizontalPadding, verticalPadding);
+        progressContainer.addView(progressBar, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         final AlertDialog progressDialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.app_update_download_progress_title)
                 .setMessage(getString(R.string.app_update_download_progress_unknown))
-                .setView(progressBar)
+                .setView(progressContainer)
                 .setNegativeButton(R.string.cancel, (dialog, which) ->
                         WorkManager.getInstance(requireContext()).cancelWorkById(workId))
                 .show();
@@ -303,7 +343,8 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
                         String message = getString(
                                 R.string.app_update_download_progress_message, percent);
                         if (downloadedBytes >= 0 && totalBytes > 0) {
-                            message += "\n" + getString(R.string.app_update_downloaded_size_format,
+                            message += "\n" + getString(
+                                    R.string.app_update_downloaded_size_format,
                                     formatApkSize(downloadedBytes), formatApkSize(totalBytes));
                         }
                         progressDialog.setMessage(message);
@@ -403,6 +444,34 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
                 .setView(scrollView)
                 .setPositiveButton(R.string.ok, null)
                 .show();
+    }
+
+    private static final class MaxHeightScrollView extends ScrollView {
+        private final int maxHeight;
+
+        private MaxHeightScrollView(@NonNull final Context context, final int maxHeight) {
+            super(context);
+            this.maxHeight = maxHeight;
+        }
+
+        @Override
+        protected void onMeasure(final int widthMeasureSpec,
+                                 final int heightMeasureSpec) {
+        final int parentMode = MeasureSpec.getMode(heightMeasureSpec);
+        final int parentHeight = MeasureSpec.getSize(heightMeasureSpec);
+
+        final int heightLimit = parentMode == MeasureSpec.UNSPECIFIED
+                ? maxHeight
+                : Math.min(maxHeight, parentHeight);
+
+        final int cappedMode = parentMode == MeasureSpec.EXACTLY
+                && parentHeight <= maxHeight
+                ? MeasureSpec.EXACTLY
+                : MeasureSpec.AT_MOST;
+
+        super.onMeasure(widthMeasureSpec,
+                MeasureSpec.makeMeasureSpec(heightLimit, cappedMode));
+        }
     }
 
     public static void askForConsentToUpdateChecks(final Context context) {
