@@ -22,8 +22,6 @@ dependencyResolutionManagement {
     }
 }
 include(":app") // androidApp
-include(":desktopApp")
-include("shared")
 
 val newPipeExtractorDir = file("external/NewPipeExtractor")
 if (!newPipeExtractorDir.isDirectory) {
