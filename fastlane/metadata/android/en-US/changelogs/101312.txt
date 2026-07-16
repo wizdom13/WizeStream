@@ -1,0 +1,11 @@
+NewPipe Material 0.28.8-m12
+
+Highlights:
+
+* Added swipe down to the miniplayer without disabling fullscreen swipe, with a default-on toggle.
+* Added an option to keep the video visible while scrolling.
+* Added view and subscriber counts.
+* Positioned the miniplayer above bottom navigation.
+* Improved the splash transition, playlist dialog theming, and update dialogs on small screens.
+
+Based on NewPipe 0.28.8.
