@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="swipe_down_to_miniplayer_key" translatable="false">swipe_down_to_miniplayer</string>
+    <string name="swipe_down_to_miniplayer_title">Swipe down to miniplayer</string>
+    <string name="swipe_down_to_miniplayer_summary">Allow swiping down on the video to minimize it to the miniplayer</string>
+</resources>

@@ -8,6 +8,7 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
+import androidx.preference.PreferenceManager
 import kotlin.math.abs
 import kotlin.math.sign
 import org.schabi.newpipe.MainActivity
@@ -39,30 +40,75 @@ class MainPlayerGestureListener(
     private var swipeSeekTargetPosition = 0L
 
     private var isPendingFullscreenSwipe = false
+    private var initialTouchX = 0f
+    private var initialTouchY = 0f
+    private var isDelegatingToBottomSheet = false
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
+        if (isDelegatingToBottomSheet) {
+            if (event.actionMasked == MotionEvent.ACTION_UP ||
+                event.actionMasked == MotionEvent.ACTION_CANCEL
+            ) {
+                super.onTouch(v, event)
+                isDelegatingToBottomSheet = false
+            }
+            v.parent?.requestDisallowInterceptTouchEvent(false)
+            return false
+        }
+
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            initialTouchX = event.x
+            initialTouchY = event.y
+        }
+
+        val fullscreenGestureEnabled = PlayerHelper.isFullscreenGestureEnabled(player.context)
+        val swipeDownToMiniplayerEnabled = isSwipeDownToMiniplayerEnabled()
+
         super.onTouch(v, event)
-        if ((event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) &&
-            isMoving
+
+        if (event.actionMasked == MotionEvent.ACTION_MOVE &&
+            shouldDelegateDownwardSwipeToBottomSheet(
+                playerUi.isFullscreen,
+                swipeDownToMiniplayerEnabled,
+                event.x - initialTouchX,
+                event.y - initialTouchY
+            )
         ) {
+            isDelegatingToBottomSheet = true
+            isMoving = false
+            isPendingFullscreenSwipe = false
+            v.parent?.requestDisallowInterceptTouchEvent(false)
+            return false
+        }
+
+        val gestureEnded = event.actionMasked == MotionEvent.ACTION_UP ||
+            event.actionMasked == MotionEvent.ACTION_CANCEL
+        if (gestureEnded && isMoving) {
             isMoving = false
             onScrollEnd(event)
         }
-        return when (event.action) {
+        return when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
                 v.parent?.requestDisallowInterceptTouchEvent(
-                    playerUi.isFullscreen || PlayerHelper.isFullscreenGestureEnabled(player.context)
+                    playerUi.isFullscreen ||
+                        fullscreenGestureEnabled ||
+                        !swipeDownToMiniplayerEnabled
                 )
                 true
             }
 
-            MotionEvent.ACTION_UP -> {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 v.parent?.requestDisallowInterceptTouchEvent(false)
                 false
             }
 
             else -> true
         }
+    }
+
+    private fun isSwipeDownToMiniplayerEnabled(): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(player.context)
+            .getBoolean(player.context.getString(R.string.swipe_down_to_miniplayer_key), true)
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
@@ -328,5 +374,18 @@ class MainPlayerGestureListener(
         private const val SEEK_SWIPE_FACTOR = 100f // ms per pixel
         private const val SEEK_SWIPE_FAST_MULTIPLIER = 10f
         private const val SEEK_SWIPE_FAST_THRESHOLD_MS = 60_000L
+
+        @JvmStatic
+        fun shouldDelegateDownwardSwipeToBottomSheet(
+            isFullscreen: Boolean,
+            swipeDownToMiniplayerEnabled: Boolean,
+            deltaX: Float,
+            deltaY: Float
+        ): Boolean {
+            return swipeDownToMiniplayerEnabled &&
+                !isFullscreen &&
+                deltaY > MOVEMENT_THRESHOLD &&
+                abs(deltaY) > abs(deltaX)
+        }
     }
 }
