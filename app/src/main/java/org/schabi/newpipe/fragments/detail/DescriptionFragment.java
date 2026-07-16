@@ -3,6 +3,7 @@ package org.schabi.newpipe.fragments.detail;
 import static org.schabi.newpipe.extractor.stream.StreamExtractor.NO_AGE_LIMIT;
 import static org.schabi.newpipe.util.Localization.getAppLocale;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -17,13 +18,13 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
-import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 
 public class DescriptionFragment extends BaseDescriptionFragment {
+    private static final String TAG = "DescriptionDebug";
 
     @State
     StreamInfo streamInfo;
@@ -36,11 +37,28 @@ public class DescriptionFragment extends BaseDescriptionFragment {
         // keep empty constructor for State when resuming fragment from memory
     }
 
-
     @Nullable
     @Override
     protected Description displayDescription() {
-        return ExtractorApiCompat.description(streamInfo);
+        if (streamInfo == null) {
+            Log.e(TAG, "StreamInfo is null");
+            return Description.EMPTY_DESCRIPTION;
+        }
+
+        final Description description = streamInfo.getDescription();
+        final int contentLength = description == null || description.getContent() == null
+                ? -1 : description.getContent().length();
+        final int descriptionType = description == null ? -1 : description.getType();
+        Log.d(TAG, "url=" + streamInfo.getUrl()
+                + ", descriptionType=" + descriptionType
+                + ", descriptionLength=" + contentLength
+                + ", extractionErrors=" + streamInfo.getErrors().size());
+
+        for (final Throwable error : streamInfo.getErrors()) {
+            Log.e(TAG, "StreamInfo extraction error", error);
+        }
+
+        return description == null ? Description.EMPTY_DESCRIPTION : description;
     }
 
     @NonNull
@@ -56,7 +74,7 @@ public class DescriptionFragment extends BaseDescriptionFragment {
 
     @NonNull
     @Override
-    protected String getStreamUrl() {
+    public String getStreamUrl() {
         return streamInfo.getUrl();
     }
 

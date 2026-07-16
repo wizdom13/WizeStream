@@ -22,15 +22,18 @@ object ExtractorImageCompat {
     @JvmStatic
     fun uploaderAvatarImages(streamItem: Any?): List<Image> {
         if (streamItem is StreamInfo) {
-            return urlToImageList(streamItem.uploaderAvatarUrl)
-                .ifEmpty { streamItem.uploaderAvatars }
+            return streamItem.uploaderAvatars
+                .ifEmpty { urlToImageList(streamItem.uploaderAvatarUrl) }
         }
 
-        return singleUrlImage(
-            streamItem,
-            "getUploaderAvatarUrl",
-            "uploaderAvatarUrl"
-        ).ifEmpty { imageList(streamItem, "getUploaderAvatars") }
+        return imageList(streamItem, "getUploaderAvatars")
+            .ifEmpty {
+                singleUrlImage(
+                    streamItem,
+                    "getUploaderAvatarUrl",
+                    "uploaderAvatarUrl"
+                )
+            }
     }
 
     @JvmStatic
