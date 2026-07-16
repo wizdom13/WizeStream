@@ -1,0 +1,229 @@
+name: Workflows cleanup
+
+"on":
+  workflow_dispatch:
+    inputs:
+      workflow_to_clean:
+        description: Workflow whose GitHub Actions data should be cleaned
+        required: true
+        default: All
+        type: choice
+        options:
+          - CI
+          - Build release
+          - Nightly release
+          - Workflows cleanup
+          - All
+      delete_artifacts:
+        description: Delete artifacts created by the selected workflow
+        required: true
+        default: true
+        type: boolean
+      delete_caches:
+        description: Delete repository caches (available only when Workflow is All)
+        required: true
+        default: true
+        type: boolean
+      delete_workflow_runs:
+        description: Delete completed runs of the selected workflow older than the selected age
+        required: true
+        default: false
+        type: boolean
+      runs_older_than_days:
+        description: Minimum age of workflow runs to delete
+        required: true
+        default: 30
+        type: number
+      dry_run:
+        description: Preview cleanup without deleting anything
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: ci-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Clean GitHub Actions storage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Delete selected CI data
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_WORKFLOW: ${{ inputs.workflow_to_clean }}
+          DELETE_ARTIFACTS: ${{ inputs.delete_artifacts }}
+          DELETE_CACHES: ${{ inputs.delete_caches }}
+          DELETE_WORKFLOW_RUNS: ${{ inputs.delete_workflow_runs }}
+          RUNS_OLDER_THAN_DAYS: ${{ inputs.runs_older_than_days }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          case "$TARGET_WORKFLOW" in
+            "CI"|"Build release"|"Nightly release"|"Workflows cleanup"|"All") ;;
+            *)
+              echo "Unsupported workflow selection: $TARGET_WORKFLOW" >&2
+              exit 1
+              ;;
+          esac
+
+          artifacts_found=0
+          artifacts_deleted=0
+          caches_found=0
+          caches_deleted=0
+          caches_skipped=false
+          runs_found=0
+          runs_deleted=0
+          selected_runs=0
+
+          declare -A selected_run_ids=()
+
+          delete_endpoint() {
+            local endpoint="$1"
+            local description="$2"
+
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "[dry run] Would delete: $description"
+              return 0
+            fi
+
+            gh api --method DELETE "$endpoint" --silent
+            echo "Deleted: $description"
+          }
+
+          workflow_is_selected() {
+            local workflow_name="$1"
+            [[ "$TARGET_WORKFLOW" == "All" || "$workflow_name" == "$TARGET_WORKFLOW" ]]
+          }
+
+          echo "Collecting workflow runs for scope: ${TARGET_WORKFLOW}..."
+          mapfile -t workflow_runs < <(
+            gh api --paginate \
+              "/repos/${GH_REPO}/actions/runs?per_page=100" \
+              --jq '.workflow_runs[] | [.id, .name, .display_title, .created_at, .status] | @tsv'
+          )
+
+          for workflow_run in "${workflow_runs[@]}"; do
+            IFS=$'\t' read -r run_id run_name run_title run_created_at run_status \
+              <<< "$workflow_run"
+
+            if workflow_is_selected "$run_name"; then
+              selected_run_ids["$run_id"]=1
+              ((selected_runs += 1))
+            fi
+          done
+
+          echo "Matched ${selected_runs} workflow runs."
+
+          if [[ "$DELETE_ARTIFACTS" == "true" ]]; then
+            echo "Collecting artifacts for workflow scope: ${TARGET_WORKFLOW}..."
+            mapfile -t artifacts < <(
+              gh api --paginate \
+                "/repos/${GH_REPO}/actions/artifacts?per_page=100" \
+                --jq '.artifacts[] | [.id, .name, .size_in_bytes, (.workflow_run.id // 0)] | @tsv'
+            )
+
+            for artifact in "${artifacts[@]}"; do
+              IFS=$'\t' read -r artifact_id artifact_name artifact_size artifact_run_id \
+                <<< "$artifact"
+
+              if [[ "$TARGET_WORKFLOW" == "All" ||
+                    -n "${selected_run_ids[$artifact_run_id]:-}" ]]; then
+                ((artifacts_found += 1))
+                delete_endpoint \
+                  "/repos/${GH_REPO}/actions/artifacts/${artifact_id}" \
+                  "artifact '${artifact_name}' (${artifact_size} bytes)"
+                ((artifacts_deleted += 1))
+              fi
+            done
+          fi
+
+          if [[ "$DELETE_CACHES" == "true" ]]; then
+            if [[ "$TARGET_WORKFLOW" != "All" ]]; then
+              caches_skipped=true
+              echo "Skipping caches: GitHub exposes caches at repository scope and does not identify the workflow that created each cache."
+            else
+              echo "Collecting all GitHub Actions caches..."
+              mapfile -t caches < <(
+                gh api --paginate \
+                  "/repos/${GH_REPO}/actions/caches?per_page=100" \
+                  --jq '.actions_caches[] | [.id, .key, .ref, .size_in_bytes] | @tsv'
+              )
+
+              caches_found=${#caches[@]}
+              for cache in "${caches[@]}"; do
+                IFS=$'\t' read -r cache_id cache_key cache_ref cache_size <<< "$cache"
+                delete_endpoint \
+                  "/repos/${GH_REPO}/actions/caches/${cache_id}" \
+                  "cache '${cache_key}' for '${cache_ref}' (${cache_size} bytes)"
+                ((caches_deleted += 1))
+              done
+            fi
+          fi
+
+          if [[ "$DELETE_WORKFLOW_RUNS" == "true" ]]; then
+            if ! [[ "$RUNS_OLDER_THAN_DAYS" =~ ^[0-9]+$ ]]; then
+              echo "runs_older_than_days must be a non-negative whole number." >&2
+              exit 1
+            fi
+
+            cutoff_epoch=$(date -u -d "${RUNS_OLDER_THAN_DAYS} days ago" +%s)
+            cutoff_iso=$(date -u -d "@${cutoff_epoch}" +%Y-%m-%dT%H:%M:%SZ)
+            echo "Collecting completed ${TARGET_WORKFLOW} runs created before ${cutoff_iso}..."
+
+            for workflow_run in "${workflow_runs[@]}"; do
+              IFS=$'\t' read -r run_id run_name run_title run_created_at run_status \
+                <<< "$workflow_run"
+
+              if ! workflow_is_selected "$run_name" || [[ "$run_status" != "completed" ]]; then
+                continue
+              fi
+
+              run_epoch=$(date -u -d "$run_created_at" +%s)
+              if (( run_epoch < cutoff_epoch )); then
+                ((runs_found += 1))
+                delete_endpoint \
+                  "/repos/${GH_REPO}/actions/runs/${run_id}" \
+                  "workflow run '${run_name}: ${run_title}' created ${run_created_at}"
+                ((runs_deleted += 1))
+              fi
+            done
+          fi
+
+          if [[ "$DRY_RUN" == "true" ]]; then
+            action_word="would be deleted"
+          else
+            action_word="deleted"
+          fi
+
+          {
+            echo "## CI cleanup summary"
+            echo
+            echo "Workflow scope: \`${TARGET_WORKFLOW}\`"
+            echo
+            echo "| Resource | Found | Result |"
+            echo "|---|---:|---:|"
+            echo "| Artifacts | ${artifacts_found} | ${artifacts_deleted} ${action_word} |"
+            if [[ "$caches_skipped" == "true" ]]; then
+              echo "| Caches | 0 | Skipped for workflow-specific cleanup |"
+            else
+              echo "| Caches | ${caches_found} | ${caches_deleted} ${action_word} |"
+            fi
+            echo "| Old workflow runs | ${runs_found} | ${runs_deleted} ${action_word} |"
+            echo
+            echo "Dry run: \`${DRY_RUN}\`"
+            if [[ "$caches_skipped" == "true" ]]; then
+              echo
+              echo "> Caches were not deleted because GitHub does not expose cache ownership by workflow. Select \`All\` to delete repository-wide caches."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
