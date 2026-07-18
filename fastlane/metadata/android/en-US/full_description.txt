@@ -3,6 +3,7 @@ NewPipe Material is an independent fork of NewPipe for Android, focused on Mater
 NewPipe Material keeps the lightweight, privacy-friendly approach inherited from NewPipe. It does not require a platform account, does not depend on Google framework libraries, and is designed to work without Google Play Services.
 
 Features inherited from NewPipe include:
+
 - Watch videos and live streams from supported services
 - Background playback
 - Popup playback
@@ -14,15 +15,26 @@ Features inherited from NewPipe include:
 - Download video, audio, and captions where available
 - Import and export app data for backup and migration
 
-NewPipe Material adds a modern fork identity and Material-focused polish:
+NewPipe Material includes Material-focused enhancements and additional playback features:
+
 - Material 3-inspired surfaces, dialogs, settings, tabs, and navigation
-- Dynamic Material You color support where available
-- Manual theme color presets
-- NewPipe Material app identity
-- Clear fork attribution
-- Release builds signed for NewPipe Material
+- Dynamic Material You colors and manual theme color presets
+- Bottom navigation with a configurable default main tab
+- SponsorBlock integration for skipping configured sponsor and other marked segments
+- YouTube dislike count support
+- Enhanced player gestures: swipe to seek, fullscreen swipe controls, and hold to temporarily speed up playback
+- Swipe down on the video player to return to the miniplayer
+- Optional keep-video-visible mode while scrolling the video details page
+- Separate app identity and application ID, allowing side-by-side installation with official NewPipe
+
+NewPipe Material is independently maintained, clearly identifies itself as a fork, and uses its own release signing key. Releases are available through GitHub and IzzyOnDroid.
+
+Storage permissions:
+
+On Android versions where legacy storage access is used, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE allow NewPipe Material to read existing files and save downloaded video, audio, captions, and exported backup files. When the Storage Access Framework is enabled, the app does not request these permissions; access is limited to files and folders selected by the user through Android's system picker.
 
 Important fork notice:
+
 NewPipe Material is independently maintained. It is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
 
 NewPipe Material is free software based on NewPipe and distributed under the GNU General Public License version 3 or later. It preserves upstream NewPipe credits, license notices, and third-party license information.
