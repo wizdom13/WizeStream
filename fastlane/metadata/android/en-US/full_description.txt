@@ -31,7 +31,7 @@ NewPipe Material is independently maintained, clearly identifies itself as a for
 
 Storage permissions:
 
-On Android versions where legacy storage access is used, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE allow NewPipe Material to read existing files and save downloaded video, audio, captions, and exported backup files. When the Storage Access Framework is enabled, the app does not request these permissions; access is limited to files and folders selected by the user through Android's system picker.
+On Android 6-9, NewPipe Material can optionally use a legacy storage backend instead of Android's Storage Access Framework. This mode is also used on some Fire TV devices because of a platform-specific SAF issue. In legacy mode, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE allow the app to read existing files and save downloaded video, audio, captions, and exported backups. On Android 10 and newer, SAF is always used, and these storage permissions are not requested.
 
 Important fork notice:
 
