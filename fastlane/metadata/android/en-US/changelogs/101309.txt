@@ -1,4 +1,4 @@
-NewPipe Material 0.28.8-m9
+WizeStream 0.28.8-m9
 
 Highlights:
 
@@ -7,7 +7,7 @@ Highlights:
 * Improved large-screen and landscape layouts with Material 3 styling.
 * Updated launcher, splash, and TV banner artwork to use Material 3 colors.
 * Added playback retry handling for HTTP 403/404 errors.
-* Recognized NewPipe Material release builds correctly.
+* Recognized WizeStream release builds correctly.
 * Fixed PipePipeExtractor source checkout instructions.
 * Disabled Android dependency metadata in APK builds.
 

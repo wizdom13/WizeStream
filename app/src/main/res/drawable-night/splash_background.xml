@@ -4,6 +4,6 @@
     <item android:drawable="@color/dark_m3_secondary_container_color" />
 
     <item
-        android:drawable="@drawable/ic_newpipe_material_splash"
+        android:drawable="@drawable/ic_wizestream_splash"
         android:gravity="center" />
 </layer-list>

@@ -79,7 +79,7 @@
     <string name="theme_color_title">Theme color</string>
     <string name="theme_color_summary">Choose app accent color style</string>
     <string name="theme_color_follow_system_title">Follow system</string>
-    <string name="theme_color_newpipe_material_title">App default</string>
+    <string name="theme_color_wizestream_title">App default</string>
     <string name="theme_color_neutral_title">Neutral</string>
     <string name="theme_color_green_title">Green</string>
     <string name="theme_color_blue_title">Blue</string>
@@ -224,7 +224,7 @@
     <string name="notification_channel_name">NewPipe notification</string>
     <string name="notification_channel_description">Notifications for NewPipe\'s player</string>
     <string name="app_update_notification_channel_name">App update notification</string>
-    <string name="app_update_notification_channel_description">Notifications for new NewPipe Material versions</string>
+    <string name="app_update_notification_channel_description">Notifications for new WizeStream versions</string>
     <string name="hash_channel_name">Video hash notification</string>
     <string name="hash_channel_description">Notifications for video hashing progress</string>
     <string name="streams_notification_channel_name">New streams</string>
@@ -417,8 +417,8 @@
     <string name="tab_about">About \u0026 FAQ</string>
     <string name="tab_licenses">Licenses</string>
     <string name="app_description">Libre lightweight streaming on Android.</string>
-    <string name="contribution_title">Contribute to NewPipe Material</string>
-    <string name="contribution_encouragement">Report issues, review code, or contribute to the NewPipe Material fork on GitHub.</string>
+    <string name="contribution_title">Contribute to WizeStream</string>
+    <string name="contribution_encouragement">Report issues, review code, or contribute to the WizeStream fork on GitHub.</string>
     <string name="view_on_github">View on GitHub</string>
     <string name="donation_title">Donate</string>
     <string name="donation_encouragement">NewPipe is developed by volunteers spending their free time bringing you the best user experience. Give back to help developers make NewPipe even better while they enjoy a cup of coffee.</string>
@@ -635,8 +635,8 @@
     <string name="updates_setting_description">Check for updates in the background when the app opens</string>
     <string name="check_for_updates">Check for updates</string>
     <string name="manual_update_title">Check for Updates</string>
-    <string name="manual_update_description">Check GitHub Releases for a new NewPipe Material version</string>
-    <string name="auto_update_check_description">NewPipe Material can automatically check GitHub Releases for new versions from time to time and notify you once they are available.\nDo you want to enable this?</string>
+    <string name="manual_update_description">Check GitHub Releases for a new WizeStream version</string>
+    <string name="auto_update_check_description">WizeStream can automatically check GitHub Releases for new versions from time to time and notify you once they are available.\nDo you want to enable this?</string>
 
     <!-- Minimize to exit action -->
     <string name="minimize_on_exit_title">Minimize on app switch</string>
@@ -659,8 +659,8 @@
     <string name="low_quality_smaller">Low quality (smaller)</string>
     <string name="dont_show">Don\'t show</string>
     <!-- App update notification -->
-    <string name="app_update_unavailable_toast">NewPipe Material is up to date</string>
-    <string name="app_update_available_notification_title">NewPipe Material update is available!</string>
+    <string name="app_update_unavailable_toast">WizeStream is up to date</string>
+    <string name="app_update_available_notification_title">WizeStream update is available!</string>
     <string name="app_update_available_notification_text">Tap to view %s</string>
     <string name="missions_header_finished">Finished</string>
     <string name="missions_header_pending">Pending</string>
@@ -678,22 +678,22 @@
     <string name="changelog_description">Show recent release notes from GitHub Releases</string>
     <string name="app_update_check_failed">Could not check for updates</string>
     <string name="app_update_available_dialog_title">Update available</string>
-    <string name="app_update_available_dialog_message">NewPipe Material %1$s is available. Installed version: %2$s.</string>
-    <string name="app_update_available_notification_text_material">NewPipe Material %1$s is available. Installed version: %2$s.</string>
+    <string name="app_update_available_dialog_message">WizeStream %1$s is available. Installed version: %2$s.</string>
+    <string name="app_update_available_notification_text_material">WizeStream %1$s is available. Installed version: %2$s.</string>
     <string name="app_update_open_release">Open release</string>
     <string name="app_update_later">Later</string>
-    <string name="app_update_latest_release_dialog_message">Latest NewPipe Material release: %1$s. Installed version: %2$s.</string>
+    <string name="app_update_latest_release_dialog_message">Latest WizeStream release: %1$s. Installed version: %2$s.</string>
     <string name="app_update_download_apk">Download APK</string>
     <string name="app_update_download_progress_title">Downloading update</string>
     <string name="app_update_download_progress_message">Downloading… %1$d%%</string>
     <string name="app_update_download_progress_unknown">Downloading…</string>
     <string name="app_update_download_failed">Could not download update</string>
     <string name="app_update_download_complete_title">Update downloaded</string>
-    <string name="app_update_download_complete_message">NewPipe Material %1$s is ready to install.</string>
+    <string name="app_update_download_complete_message">WizeStream %1$s is ready to install.</string>
     <string name="app_update_download_complete_message_generic">This update is ready to install.</string>
     <string name="app_update_install_now">Install now</string>
     <string name="app_update_install_permission_title">Allow update install</string>
-    <string name="app_update_install_permission_message">Android needs permission before NewPipe Material can open the package installer. After enabling permission, return here and tap Install now again.</string>
+    <string name="app_update_install_permission_message">Android needs permission before WizeStream can open the package installer. After enabling permission, return here and tap Install now again.</string>
     <string name="app_update_open_install_settings">Open settings</string>
     <string name="app_update_apk_size_format">APK size: %1$s</string>
     <string name="app_update_changelog_preview_title">What is new</string>

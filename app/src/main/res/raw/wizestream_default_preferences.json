@@ -84,7 +84,7 @@
   "preferred_open_action_key": "always_ask_player",
   "theme": "auto_device_theme",
   "use_external_audio_player": false,
-  "import_export_data_path": "content://com.android.externalstorage.documents/document/primary%3AMovies%2FNewPipeMaterialData%20(1).zip",
+  "import_export_data_path": "content://com.android.externalstorage.documents/document/primary%3AMovies%2FwizestreamData%20(1).zip",
   "feed_show_partially_watched_items": true,
   "default_video_format": "video_mp4",
   "show_description": true,

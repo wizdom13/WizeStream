@@ -1,6 +1,6 @@
-# Building NewPipe Material
+# Building WizeStream
 
-NewPipe Material uses a pinned `PipePipeExtractor` Git submodule at `external/NewPipeExtractor`. The submodule commit recorded by each NewPipe Material commit or tag is part of the source definition and must not be replaced with the latest extractor branch tip.
+WizeStream uses a pinned `PipePipeExtractor` Git submodule at `external/NewPipeExtractor`. The submodule commit recorded by each WizeStream commit or tag is part of the source definition and must not be replaced with the latest extractor branch tip.
 
 ## Requirements
 
@@ -12,9 +12,11 @@ NewPipe Material uses a pinned `PipePipeExtractor` Git submodule at `external/Ne
 ## Clone the exact source
 
 ```bash
-git clone --recurse-submodules https://github.com/wizdom13/NewPipe_Material.git
-cd NewPipe_Material
+git clone --recurse-submodules https://github.com/wizdom13/WizeStream.git
+cd WizeStream
 ```
+
+The repository path above remains valid until the GitHub repository is renamed to `WizeStream`.
 
 For an existing checkout or after switching tags:
 
@@ -61,7 +63,7 @@ scripts/build.sh checkstyle
 
 ## Release signing
 
-Provide all four signing variables before running `scripts/build.sh release`:
+The existing environment-variable names are retained for build and secret compatibility. Provide all four before running `scripts/build.sh release`:
 
 ```text
 NEWPIPE_MATERIAL_RELEASE_STORE_FILE
@@ -74,4 +76,4 @@ The resulting APK is written under `app/build/outputs/apk/release/`.
 
 ## Reproducible release rule
 
-Every published APK must be built from the exact commit referenced by its release tag, including the submodule commit recorded by that tag. An APK must not be replaced with one built from a newer untagged commit; publish a new version and tag instead.
+Every published WizeStream APK must be built from the exact commit referenced by its release tag, including the submodule commit recorded by that tag. An APK must not be replaced with one built from a newer untagged commit; publish a new version and tag instead.

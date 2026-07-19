@@ -1,16 +1,18 @@
+@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
+
 package org.schabi.newpipe.update
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository.VersionComparison
+import org.schabi.newpipe.update.wizestreamUpdateRepository.VersionComparison
 
-class NewPipeMaterialUpdateRepositoryTest {
+class wizestreamUpdateRepositoryTest {
     @Test
     fun compareInstalledToLatestDetectsNewerMaterialRelease() {
         assertEquals(
             VersionComparison.NEWER,
-            NewPipeMaterialUpdateRepository.compareInstalledToLatest("0.28.7-m3", "0.28.8-m1")
+            wizestreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "0.28.8-m1")
         )
     }
 
@@ -18,7 +20,7 @@ class NewPipeMaterialUpdateRepositoryTest {
     fun compareInstalledToLatestTreatsMatchingVPrefixedTagAsCurrent() {
         assertEquals(
             VersionComparison.SAME_OR_OLDER,
-            NewPipeMaterialUpdateRepository.compareInstalledToLatest("0.28.7-m3", "v0.28.7-m3")
+            wizestreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "v0.28.7-m3")
         )
     }
 
@@ -26,7 +28,7 @@ class NewPipeMaterialUpdateRepositoryTest {
     fun compareInstalledToLatestFailsSafelyForUnknownInstalledVersion() {
         assertEquals(
             VersionComparison.UNKNOWN,
-            NewPipeMaterialUpdateRepository.compareInstalledToLatest("material-dev", "v0.28.7-m3")
+            wizestreamUpdateRepository.compareInstalledToLatest("material-dev", "v0.28.7-m3")
         )
     }
 
@@ -37,7 +39,7 @@ class NewPipeMaterialUpdateRepositoryTest {
 
         assertEquals(
             published,
-            NewPipeMaterialUpdateRepository.selectLatestCandidateRelease(listOf(draft, published))
+            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(draft, published))
         )
     }
 
@@ -48,7 +50,7 @@ class NewPipeMaterialUpdateRepositoryTest {
 
         assertEquals(
             prerelease,
-            NewPipeMaterialUpdateRepository.selectLatestCandidateRelease(listOf(stable, prerelease))
+            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(stable, prerelease))
         )
     }
 
@@ -59,13 +61,13 @@ class NewPipeMaterialUpdateRepositoryTest {
 
         assertEquals(
             newer,
-            NewPipeMaterialUpdateRepository.selectLatestCandidateRelease(listOf(older, newer))
+            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(older, newer))
         )
     }
 
     @Test
     fun selectLatestCandidateReleaseHandlesEmptyListSafely() {
-        assertNull(NewPipeMaterialUpdateRepository.selectLatestCandidateRelease(emptyList()))
+        assertNull(wizestreamUpdateRepository.selectLatestCandidateRelease(emptyList()))
     }
 
     @Test
@@ -74,11 +76,11 @@ class NewPipeMaterialUpdateRepositoryTest {
 
         assertEquals(
             prerelease,
-            NewPipeMaterialUpdateRepository.selectLatestCandidateRelease(listOf(prerelease))
+            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(prerelease))
         )
         assertEquals(
             VersionComparison.NEWER,
-            NewPipeMaterialUpdateRepository.compareInstalledToLatest("0.28.7-m3", prerelease.version)
+            wizestreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", prerelease.version)
         )
     }
 
@@ -87,10 +89,10 @@ class NewPipeMaterialUpdateRepositoryTest {
         publishedAt: String,
         draft: Boolean = false,
         prerelease: Boolean = false
-    ) = NewPipeMaterialUpdateRepository.Release(
+    ) = wizestreamUpdateRepository.Release(
         version = version,
         title = version,
-        htmlUrl = "https://github.com/wizdom13/NewPipe_Material/releases/tag/$version",
+        htmlUrl = "https://github.com/wizdom13/WizeStream/releases/tag/$version",
         body = "Release notes",
         publishedAt = publishedAt,
         draft = draft,

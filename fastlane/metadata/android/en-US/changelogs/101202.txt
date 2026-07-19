@@ -1,7 +1,7 @@
-NewPipe Material 0.28.7-m2
+WizeStream 0.28.7-m2
 
 Highlights:
-- Added NewPipe Material version identity using the 0.28.7-m2 format.
+- Added WizeStream version identity using the 0.28.7-m2 format.
 - Updated release workflow to publish signed APKs from m-tags.
 - Added per-release changelog support from changelogs/m*.txt.
 - Improved GitHub release naming and APK artifact naming.

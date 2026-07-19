@@ -35,7 +35,7 @@
             android:background="?attr/colorSurface"
             android:elevation="8dp"
             android:visibility="gone"
-            app:itemActiveIndicatorStyle="@style/NewPipeMaterialBottomNavigationActiveIndicator"
+            app:itemActiveIndicatorStyle="@style/wizestreamBottomNavigationActiveIndicator"
             app:itemIconTint="@color/tab_layout_material_item_color"
             app:itemPaddingBottom="@dimen/main_bottom_navigation_item_padding_bottom"
             app:itemPaddingTop="@dimen/main_bottom_navigation_item_padding_top"
@@ -58,7 +58,7 @@
                 android:layout_height="144dp"
                 android:layout_gravity="center"
                 android:contentDescription="@null"
-                android:src="@drawable/ic_newpipe_material_splash_themed" />
+                android:src="@drawable/ic_wizestream_splash_themed" />
 
         </org.schabi.newpipe.views.ThemedSplashOverlay>
 

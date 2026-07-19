@@ -50,7 +50,7 @@ configure<ApplicationExtension> {
 
     defaultConfig {
         applicationId = NEWPIPE_MATERIAL_APPLICATION_ID
-        resValue("string", "app_name", "NewPipe Material")
+        resValue("string", "app_name", "WizeStream")
         minSdk {
             version = release(NEWPIPE_VERSION_SDK_MIN)
         }
@@ -98,7 +98,7 @@ configure<ApplicationExtension> {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "NewPipe Material Debug")
+            resValue("string", "app_name", "WizeStream Debug")
         }
 
         release {
@@ -305,7 +305,7 @@ dependencies {
     // Properly restarting
     implementation(libs.jakewharton.phoenix)
 
-    // Reactive extensions for Java VM
+    // Reactive extensions
     implementation(libs.reactivex.rxjava)
     implementation(libs.reactivex.rxandroid)
     // RxJava binding APIs for Android UI widgets

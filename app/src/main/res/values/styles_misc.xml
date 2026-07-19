@@ -28,30 +28,30 @@
         <item name="android:progressTint">?attr/colorPrimary</item>
     </style>
 
-    <style name="Widget.NewPipeMaterial.Snackbar" parent="Widget.Material3.Snackbar">
+    <style name="Widget.wizestream.Snackbar" parent="Widget.Material3.Snackbar">
         <item name="backgroundTint">?attr/colorSurfaceInverse</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.NewPipeMaterial.Snackbar</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.wizestream.Snackbar</item>
         <item name="elevation">6dp</item>
     </style>
 
-    <style name="Widget.NewPipeMaterial.Snackbar.TextView"
+    <style name="Widget.wizestream.Snackbar.TextView"
         parent="Widget.Material3.Snackbar.TextView">
         <item name="android:textColor">?attr/colorOnSurfaceInverse</item>
     </style>
 
-    <style name="Widget.NewPipeMaterial.Button.TextButton.Snackbar"
+    <style name="Widget.wizestream.Button.TextButton.Snackbar"
         parent="Widget.Material3.Button.TextButton.Snackbar">
         <item name="android:textColor">?attr/colorPrimaryInverse</item>
     </style>
 
-    <style name="ShapeAppearance.NewPipeMaterial.Snackbar" parent="ShapeAppearance.Material3.Corner.Small">
+    <style name="ShapeAppearance.wizestream.Snackbar" parent="ShapeAppearance.Material3.Corner.Small">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">8dp</item>
     </style>
 
-    <style name="ShapeAppearanceOverlay.NewPipeMaterial" parent="" />
+    <style name="ShapeAppearanceOverlay.wizestream" parent="" />
 
-    <style name="ShapeAppearanceOverlay.NewPipeMaterial.StreamThumbnail">
+    <style name="ShapeAppearanceOverlay.wizestream.StreamThumbnail">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">@dimen/stream_thumbnail_corner_radius</item>
     </style>

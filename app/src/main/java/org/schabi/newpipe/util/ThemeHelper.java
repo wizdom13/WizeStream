@@ -73,23 +73,23 @@ public final class ThemeHelper {
 
     @StyleRes
     private static int getThemeColorOverlay(final Context context) {
-        if (isThemeColor(context, R.string.theme_color_newpipe_material_value,
-                "newpipe_material")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_NewPipeMaterial;
+        if (isThemeColor(context, R.string.theme_color_wizestream_value,
+                "wizestream")) {
+            return R.style.ThemeOverlay_wizestream_ThemeColor_wizestream;
         } else if (isThemeColor(context, R.string.theme_color_neutral_value, "neutral")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Neutral;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Neutral;
         } else if (isThemeColor(context, R.string.theme_color_green_value, "green")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Green;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Green;
         } else if (isThemeColor(context, R.string.theme_color_blue_value, "blue")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Blue;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Blue;
         } else if (isThemeColor(context, R.string.theme_color_purple_value, "purple")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Purple;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Purple;
         } else if (isThemeColor(context, R.string.theme_color_orange_value, "orange")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Orange;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Orange;
         } else if (isThemeColor(context, R.string.theme_color_pink_value, "pink")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Pink;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Pink;
         } else if (isThemeColor(context, R.string.theme_color_red_value, "red")) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Red;
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Red;
         }
         return 0;
     }
@@ -131,13 +131,13 @@ public final class ThemeHelper {
         if (isFollowSystemThemeColor(context)) {
             return defaultTheme;
         }
-        if (isThemeColor(context, R.string.theme_color_newpipe_material_value,
-                "newpipe_material")) {
+        if (isThemeColor(context, R.string.theme_color_wizestream_value,
+                "wizestream")) {
             return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_NewPipeMaterial
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_NewPipeMaterial)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_NewPipeMaterial
-                            : R.style.DarkDialogTheme_ThemeColor_NewPipeMaterial);
+                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_wizestream
+                            : R.style.DarkDialogMinWidthTheme_ThemeColor_wizestream)
+                    : (light ? R.style.LightDialogTheme_ThemeColor_wizestream
+                            : R.style.DarkDialogTheme_ThemeColor_wizestream);
         } else if (isThemeColor(context, R.string.theme_color_neutral_value, "neutral")) {
             return minWidth
                     ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Neutral

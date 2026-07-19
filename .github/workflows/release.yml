@@ -79,11 +79,11 @@ jobs:
             echo "Missing NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 secret" >&2
             exit 1
           fi
-          printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 -d > "$RUNNER_TEMP/newpipe-material-release.keystore"
+          printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 -d > "$RUNNER_TEMP/wizestream-release.keystore"
 
       - name: Build signed release APK
         env:
-          NEWPIPE_MATERIAL_RELEASE_STORE_FILE: ${{ runner.temp }}/newpipe-material-release.keystore
+          NEWPIPE_MATERIAL_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
           NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
           NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS }}
           NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD }}
@@ -92,7 +92,7 @@ jobs:
           if [ -z "${NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD}" ] || \
              [ -z "${NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS}" ] || \
              [ -z "${NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD}" ]; then
-            echo "Missing one or more NewPipe Material release signing secrets" >&2
+            echo "Missing one or more WizeStream release signing secrets" >&2
             exit 1
           fi
           ./gradlew clean assembleRelease --stacktrace
@@ -105,7 +105,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/release-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/release-apk-badging.txt"
-          grep -q "application-label:'NewPipe Material'" "$RUNNER_TEMP/release-apk-badging.txt"
+          grep -q "application-label:'WizeStream'" "$RUNNER_TEMP/release-apk-badging.txt"
 
       - name: "Rename APK"
         id: release_info
@@ -119,7 +119,7 @@ jobs:
             exit 1
           fi
 
-          APK_NAME="NewPipeMaterial_v${VERSION_NAME}.apk"
+          APK_NAME="wizestream_v${VERSION_NAME}.apk"
           APK_PATH="app/build/outputs/apk/release/${APK_NAME}"
           CHANGELOG_PATH="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
 
@@ -141,7 +141,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && (inputs.release_target == 'artifacts' || inputs.release_target == 'all') }}
         uses: actions/upload-artifact@v7
         with:
-          name: newpipe-material-signed-release-apk
+          name: wizestream-signed-release-apk
           path: ${{ steps.release_info.outputs.apk_path }}
 
       - name: "Validate changelog"
@@ -155,7 +155,7 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'push' && github.ref_name || steps.release_info.outputs.release_tag }}
           target_commitish: pipe
-          name: NewPipe Material ${{ steps.release_info.outputs.version_name }}
+          name: WizeStream ${{ steps.release_info.outputs.version_name }}
           body_path: ${{ steps.release_info.outputs.changelog_path }}
           files: ${{ steps.release_info.outputs.apk_path }}
           fail_on_unmatched_files: true

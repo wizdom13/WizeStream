@@ -14,6 +14,6 @@
         <path
             android:fillColor="#000000"
             android:fillType="evenOdd"
-            android:pathData="M 34,26 L 86,54 L 34,82 Z M 40,68 L 40,38 L 46,38 L 53,50 L 60,44 L 66,44 L 66,62 L 60,62 L 60,54 L 53,60 L 46,48 L 46,68 Z" />
+            android:pathData="M 34,26 L 86,54 L 34,82 Z M 40,38 L 40,68 L 46,68 L 53,56 L 60,62 L 66,62 L 66,44 L 60,44 L 60,52 L 53,46 L 46,58 L 46,38 Z" />
     </group>
 </vector>

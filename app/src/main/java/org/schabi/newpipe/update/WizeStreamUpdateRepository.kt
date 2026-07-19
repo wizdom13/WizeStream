@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
+
 package org.schabi.newpipe.update
 
 import com.grack.nanojson.JsonArray
@@ -9,8 +11,8 @@ import java.util.Locale
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.DownloaderImpl
 
-object NewPipeMaterialUpdateRepository {
-    const val RELEASES_URL = "https://api.github.com/repos/wizdom13/NewPipe_Material/releases"
+object wizestreamUpdateRepository {
+    const val RELEASES_URL = "https://api.github.com/repos/wizdom13/WizeStream/releases"
     private const val MAX_CHANGELOG_RELEASES = 20
 
     enum class VersionComparison {

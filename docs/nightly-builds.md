@@ -4,24 +4,24 @@ The `Nightly release` workflow builds the latest `pipe` commit every day at 02:0
 
 Successful builds are published as prereleases in:
 
-- https://github.com/wizdom13/NewPipe_Material_Nightly/releases
+- https://github.com/wizdom13/WizeStream_Nightly/releases
 
 The workflow skips publishing when the checked-out `pipe` commit already has a nightly release.
 
 ## Nightly identity
 
 - Application ID: `org.wisso.newpipematerial.nightly`
-- Application label: `NewPipe Material Nightly`
+- Application label: `WizeStream Nightly`
 - Build type: optimized, non-debuggable, inherited from `release`
-- Signing key: the same release signing key used for stable NewPipe Material builds
+- Signing key: the same release signing key used for stable WizeStream builds
 
 The nightly application ID differs from the stable application ID, so both applications can be installed at the same time even though they use the same signing key.
 
 ## Required source-repository secrets
 
-Add these secrets to `wizdom13/NewPipe_Material`:
+Add these secrets to `wizdom13/WizeStream`:
 
-- `NIGHTLY_REPO_TOKEN`: fine-grained token with `Contents: Read and write` access to `wizdom13/NewPipe_Material_Nightly`
+- `NIGHTLY_REPO_TOKEN`: fine-grained token with `Contents: Read and write` access to `wizdom13/WizeStream_Nightly`
 - `NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64`: Base64-encoded release keystore
 - `NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD`
 - `NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS`

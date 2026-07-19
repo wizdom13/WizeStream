@@ -20,7 +20,7 @@
 
     <Preference
         android:key="@string/manual_update_key"
-        android:summary="@string/manual_update_description"
+        android:summary="@string/wizestream_manual_update_description"
         android:title="@string/manual_update_title"
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />

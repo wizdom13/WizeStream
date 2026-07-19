@@ -1,8 +1,8 @@
-# Contributing to NewPipe Material
+# Contributing to WizeStream
 
-Thank you for your interest in contributing to NewPipe Material.
+Thank you for your interest in contributing to WizeStream.
 
-NewPipe Material is an independent fork of NewPipe focused on Material 3 design, app identity, release readiness, and careful product polish while preserving the core NewPipe experience.
+WizeStream is an independent fork of NewPipe focused on Material 3 design, app identity, release readiness, and careful product polish while preserving the core NewPipe experience.
 
 This project welcomes focused contributions, but changes must respect the project direction and avoid unnecessary behavior changes.
 
@@ -10,17 +10,17 @@ This project welcomes focused contributions, but changes must respect the projec
 
 ## Project direction
 
-NewPipe Material focuses on:
+WizeStream focuses on:
 
 * Material 3 visual polish
 * Dynamic and manual theme colors
-* NewPipe Material app identity
+* WizeStream app identity
 * Release-ready signed builds
 * Clear fork attribution
 * Preserving NewPipe behavior and compatibility
 * Safe, reviewable, well-scoped changes
 
-NewPipe Material is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
+WizeStream is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
 
 ---
 
@@ -28,7 +28,7 @@ NewPipe Material is not affiliated with, sponsored by, or endorsed by the offici
 
 This repository is maintained by Wisso.
 
-All contributions are reviewed according to the goals of NewPipe Material. The maintainer may accept, request changes, delay, or reject contributions based on project direction, quality, risk, maintainability, or release timing.
+All contributions are reviewed according to the goals of WizeStream. The maintainer may accept, request changes, delay, or reject contributions based on project direction, quality, risk, maintainability, or release timing.
 
 Please do not treat an opened issue or pull request as approval to implement broad changes. Large changes should be discussed first.
 
@@ -123,7 +123,7 @@ Player overlays, queue overlays, notification templates, and file-picker surface
 
 ## Behavior-preservation rule
 
-Most NewPipe Material work should be visual or identity polish only.
+Most WizeStream work should be visual or identity polish only.
 
 Do not change behavior unless the pull request is specifically about that behavior.
 
@@ -213,13 +213,13 @@ When opening an issue, include:
 * Actual behavior
 * Screenshots or logs if relevant
 
-For service breakages, please check whether the issue also affects upstream NewPipe. Some service problems may come from upstream extractor changes rather than NewPipe Material-specific code.
+For service breakages, please check whether the issue also affects upstream NewPipe. Some service problems may come from upstream extractor changes rather than WizeStream-specific code.
 
 ---
 
 ## Respect upstream NewPipe
 
-NewPipe Material is based on NewPipe and preserves upstream credits and license notices.
+WizeStream is based on NewPipe and preserves upstream credits and license notices.
 
 Please respect upstream NewPipe, TeamNewPipe, NewPipe e.V., and the NewPipe community. Fork-specific issues belong in this repository. Upstream issues should be reported upstream only when they are not caused by this fork.
 
@@ -227,6 +227,6 @@ Please respect upstream NewPipe, TeamNewPipe, NewPipe e.V., and the NewPipe comm
 
 ## License
 
-By contributing to NewPipe Material, you agree that your contribution will be distributed under the same license as the project.
+By contributing to WizeStream, you agree that your contribution will be distributed under the same license as the project.
 
-NewPipe Material is free software based on NewPipe and is distributed under the GNU General Public License version 3 or later.
+WizeStream is free software based on NewPipe and is distributed under the GNU General Public License version 3 or later.

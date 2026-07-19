@@ -1,11 +1,11 @@
-NewPipe Material 0.28.7-m1
+WizeStream 0.28.7-m1
 
 Highlights:
-- First NewPipe Material release based on NewPipe 0.28.7.
+- First WizeStream release based on NewPipe 0.28.7.
 - Added Material 3 visual polish across the app.
 - Improved bottom navigation with Material-style bottom navigation behavior.
 - Improved About screen fork attribution.
-- Added NewPipe Material identity and fork attribution.
+- Added WizeStream identity and fork attribution.
 - Fixed fullscreen status bar restoration after rotating video playback.
 - Removed flaky live YouTube dependency from subscription instrumentation tests.
 - Completed Material readiness audit and release QA documentation.

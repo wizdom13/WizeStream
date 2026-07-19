@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Light dialog theme-color overlays -->
-    <style name="LightDialogTheme_ThemeColor_NewPipeMaterial" parent="LightDialogTheme">
+    <style name="LightDialogTheme_ThemeColor_wizestream" parent="LightDialogTheme">
         <item name="colorPrimary">#46674F</item>
         <item name="colorPrimaryFixedDim">#AED4AF</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -122,7 +122,7 @@
     </style>
 
     <!-- Dark dialog theme-color overlays -->
-    <style name="DarkDialogTheme_ThemeColor_NewPipeMaterial" parent="DarkDialogTheme">
+    <style name="DarkDialogTheme_ThemeColor_wizestream" parent="DarkDialogTheme">
         <item name="colorPrimary">#AED4AF</item>
         <item name="colorPrimaryFixedDim">#AED4AF</item>
         <item name="colorOnPrimary">#19361E</item>
@@ -243,8 +243,8 @@
     </style>
 
     <!-- Min-width dialog wrappers reuse the same theme-color roles. -->
-    <style name="LightDialogMinWidthTheme_ThemeColor_NewPipeMaterial"
-        parent="LightDialogTheme_ThemeColor_NewPipeMaterial">
+    <style name="LightDialogMinWidthTheme_ThemeColor_wizestream"
+        parent="LightDialogTheme_ThemeColor_wizestream">
         <item name="android:windowMinWidthMajor">@dimen/abc_dialog_min_width_major</item>
         <item name="android:windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
     </style>
@@ -284,8 +284,8 @@
         <item name="android:windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
     </style>
 
-    <style name="DarkDialogMinWidthTheme_ThemeColor_NewPipeMaterial"
-        parent="DarkDialogTheme_ThemeColor_NewPipeMaterial">
+    <style name="DarkDialogMinWidthTheme_ThemeColor_wizestream"
+        parent="DarkDialogTheme_ThemeColor_wizestream">
         <item name="android:windowMinWidthMajor">@dimen/abc_dialog_min_width_major</item>
         <item name="android:windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
     </style>

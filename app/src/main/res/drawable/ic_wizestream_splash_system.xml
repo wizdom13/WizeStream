@@ -26,6 +26,6 @@
 
         <path
             android:fillColor="@color/ic_launcher_background"
-            android:pathData="M40,68 L40,38 L46,38 L53,50 L60,44 L66,44 L66,62 L60,62 L60,54 L53,60 L46,48 L46,68 Z" />
+            android:pathData="M40,38 L40,68 L46,68 L53,56 L60,62 L66,62 L66,44 L60,44 L60,52 L53,46 L46,58 L46,38 Z" />
     </group>
 </vector>

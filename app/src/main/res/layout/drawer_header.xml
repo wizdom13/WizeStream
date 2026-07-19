@@ -30,10 +30,10 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="72dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:gravity="center"
+            android:gravity="start|center_vertical"
             android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingEnd="16dp"
             tools:ignore="UseCompoundDrawables">
 
             <ImageView
@@ -45,13 +45,13 @@
 
             <org.schabi.newpipe.views.NewPipeTextView
                 android:id="@+id/drawer_header_newpipe_title"
-                android:layout_width="@dimen/drawer_header_newpipe_title_default_width"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="@dimen/drawer_header_newpipe_icon_title_space"
+                android:layout_weight="1"
                 android:ellipsize="end"
                 android:gravity="start|center_vertical"
-                android:hyphenationFrequency="full"
                 android:maxLines="1"
+                android:singleLine="true"
                 android:text="@string/app_name"
                 android:textColor="?attr/colorOnPrimary"
                 android:textStyle="bold"

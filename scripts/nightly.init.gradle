@@ -10,7 +10,7 @@ allprojects {
                     initWith(releaseBuildType)
                     applicationIdSuffix ".nightly"
                     debuggable false
-                    resValue "string", "app_name", "NewPipe Material Nightly"
+                    resValue "string", "app_name", "WizeStream Nightly"
                 }
             }
         }

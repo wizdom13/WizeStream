@@ -1,4 +1,4 @@
-NewPipe Material 0.28.7-m3
+WizeStream 0.28.7-m3
 
 Highlights:
 - Added localized Fastlane metadata and store assets.

@@ -1,4 +1,4 @@
-NewPipe Material 0.28.8-m8
+WizeStream 0.28.8-m8
 
 Highlights:
 

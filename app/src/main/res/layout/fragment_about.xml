@@ -31,7 +31,6 @@
             android:textAppearance="@android:style/TextAppearance.Large"
             android:textColor="?attr/colorOnSurface" />
 
-
         <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/about_app_version"
             android:layout_width="wrap_content"
@@ -66,7 +65,7 @@
                 <org.schabi.newpipe.views.NewPipeTextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/newpipe_material_fork_title"
+                    android:text="@string/wizestream_fork_title"
                     android:textAppearance="@android:style/TextAppearance.Medium"
                     android:textColor="?attr/colorOnSurface" />
 
@@ -74,21 +73,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="@string/newpipe_material_fork_attribution"
+                    android:text="@string/wizestream_fork_attribution"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/newpipe_material_author_developer"
+                    android:text="@string/wizestream_author_developer"
                     android:textColor="?attr/colorOnSurface" />
 
                 <org.schabi.newpipe.views.NewPipeTextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="@string/newpipe_material_upstream_title"
+                    android:text="@string/wizestream_upstream_title"
                     android:textAppearance="@android:style/TextAppearance.Medium"
                     android:textColor="?attr/colorOnSurface" />
 
@@ -96,7 +95,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="@string/newpipe_material_upstream_attribution"
+                    android:text="@string/wizestream_upstream_attribution"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -127,14 +126,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="10dp"
-            android:text="@string/contribution_title"
+            android:text="@string/wizestream_contribution_title"
             android:textAppearance="@android:style/TextAppearance.Medium"
             android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/contribution_encouragement"
+            android:text="@string/wizestream_contribution_encouragement"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
         <com.google.android.material.button.MaterialButton

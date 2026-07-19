@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: newpipe-material-nightly
+  group: wizestream-nightly
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 env:
-  NIGHTLY_REPOSITORY: wizdom13/NewPipe_Material_Nightly
+  NIGHTLY_REPOSITORY: wizdom13/WizeStream_Nightly
   NIGHTLY_RETENTION_COUNT: "14"
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
           short_sha="${source_sha::7}"
           nightly_tag="nightly-${build_date}-${short_sha}"
           version_suffix="-nightly.${build_date}.${short_sha}"
-          apk_name="NewPipe-Material-nightly-${build_date}-${short_sha}.apk"
+          apk_name="WizeStream-nightly-${build_date}-${short_sha}.apk"
           extractor_sha="$(git -C external/NewPipeExtractor rev-parse HEAD)"
 
           {
@@ -129,7 +129,7 @@ jobs:
             exit 1
           }
 
-          keystore_path="$RUNNER_TEMP/newpipe-material-release.keystore"
+          keystore_path="$RUNNER_TEMP/wizestream-release.keystore"
           printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
           chmod 600 "$keystore_path"
 
@@ -176,7 +176,7 @@ jobs:
 
           "$aapt" dump badging "$apk_path" | tee "$RUNNER_TEMP/nightly-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial.nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
-          grep -q "application-label:'NewPipe Material Nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
+          grep -q "application-label:'WizeStream Nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
           "$apksigner" verify --verbose --print-certs "$apk_path"
 
           {
@@ -201,7 +201,7 @@ jobs:
           set -euo pipefail
 
           cat > "$RUNNER_TEMP/nightly-release-notes.md" <<EOF
-          Automated NewPipe Material nightly build.
+          Automated WizeStream nightly build.
 
           - Version suffix: \`${VERSION_SUFFIX}\`
           - Version code: \`${VERSION_CODE}\`
@@ -217,7 +217,7 @@ jobs:
             --repo "$NIGHTLY_REPOSITORY" \
             --target main \
             --prerelease \
-            --title "NewPipe Material Nightly ${BUILD_DATE}" \
+            --title "WizeStream Nightly ${BUILD_DATE}" \
             --notes-file "$RUNNER_TEMP/nightly-release-notes.md" \
             "$APK_PATH" \
             "$CHECKSUM_PATH"
@@ -249,7 +249,7 @@ jobs:
         if: steps.existing.outputs.skip != 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: newpipe-material-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}
+          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}
           path: |
             ${{ steps.assets.outputs.apk_path }}
             ${{ steps.assets.outputs.checksum_path }}

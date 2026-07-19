@@ -2,9 +2,9 @@
 <resources>
     <!-- The app's minimum supported API is 23, so this overrides the legacy default
          consent text on every supported device without duplicating the resource in values/. -->
-    <string name="auto_update_check_description">NewPipe Material can periodically check GitHub Releases for new versions and notify you when one is available.
+    <string name="auto_update_check_description">WizeStream can periodically check GitHub Releases for new versions and notify you when one is available.
 
-If you installed NewPipe Material through IzzyOnDroid or another app store, update it through the same store whenever possible. APKs downloaded directly from GitHub bypass the review and verification performed by that store.
+If you installed WizeStream through IzzyOnDroid or another app store, update it through the same store whenever possible. APKs downloaded directly from GitHub bypass the review and verification performed by that store.
 
 Do you want to enable automatic update checks?</string>
 </resources>

@@ -127,13 +127,16 @@ class UpdateDownloadWorker(
             val notificationManager = applicationContext.getSystemService(
                 Context.NOTIFICATION_SERVICE
             ) as NotificationManager
-            notificationManager.createNotificationChannel(
-                NotificationChannel(
-                    channelId,
-                    applicationContext.getString(R.string.app_update_notification_channel_name),
-                    NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(
+                channelId,
+                applicationContext.getString(R.string.wizestream_update_notification_channel_name),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = applicationContext.getString(
+                    R.string.wizestream_update_notification_channel_description
                 )
-            )
+            }
+            notificationManager.createNotificationChannel(channel)
         }
         val progressText = if (percent < 0) {
             applicationContext.getString(R.string.app_update_download_progress_unknown)
@@ -195,7 +198,7 @@ class UpdateDownloadWorker(
         }
 
         private fun defaultApkName(version: String): String {
-            return "NewPipeMaterial_${version.ifBlank { "update" }}.apk"
+            return "WizeStream_${version.ifBlank { "update" }}.apk"
         }
 
         private fun sanitizeFilename(filename: String): String {

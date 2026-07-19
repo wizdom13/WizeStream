@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
+
 package org.schabi.newpipe.settings
 
 import android.content.Context
@@ -9,19 +11,19 @@ import java.io.InputStream
 import org.schabi.newpipe.R
 
 /**
- * Applies the canonical NewPipe Material default SharedPreferences snapshot.
+ * Applies the canonical WizeStream default SharedPreferences snapshot.
  */
-object NewPipeMaterialDefaultPreferences {
-    const val DEFAULTS_APPLIED_KEY = "newpipe_material_defaults_applied"
+object wizestreamDefaultPreferences {
+    const val DEFAULTS_APPLIED_KEY = "wizestream_defaults_applied"
 
     /**
-     * Apply the bundled NewPipe Material default preferences.
+     * Apply the bundled WizeStream default preferences.
      *
      * @param clearFirst when true, clears existing preferences before applying the snapshot.
      */
     @JvmStatic
     fun applyBundledDefaults(context: Context, clearFirst: Boolean = false) {
-        context.resources.openRawResource(R.raw.newpipe_material_default_preferences).use { input ->
+        context.resources.openRawResource(R.raw.wizestream_default_preferences).use { input ->
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
             applyDefaults(input, preferences, clearFirst)
         }
@@ -41,7 +43,7 @@ object NewPipeMaterialDefaultPreferences {
             return
         }
 
-        context.resources.openRawResource(R.raw.newpipe_material_default_preferences).use { input ->
+        context.resources.openRawResource(R.raw.wizestream_default_preferences).use { input ->
             applyDefaults(input, preferences, clearFirst = false)
         }
     }
@@ -64,7 +66,7 @@ object NewPipeMaterialDefaultPreferences {
         editor.putBoolean(DEFAULTS_APPLIED_KEY, true)
 
         if (!editor.commit()) {
-            throw IllegalStateException("Unable to commit NewPipe Material default preferences")
+            throw IllegalStateException("Unable to commit WizeStream default preferences")
         }
     }
 
@@ -85,7 +87,7 @@ object NewPipeMaterialDefaultPreferences {
             is JsonArray -> editor.putStringSet(key, value.toStringSet(key))
 
             else -> throw IllegalArgumentException(
-                "Unsupported NewPipe Material default preference type for key: $key"
+                "Unsupported WizeStream default preference type for key: $key"
             )
         }
     }

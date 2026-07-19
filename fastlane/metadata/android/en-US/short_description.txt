@@ -1,1 +1,1 @@
-A Material 3-focused independent NewPipe fork.
+A Material 3-focused streaming app based on NewPipe.

@@ -110,7 +110,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     .setCancelable(true)
                     .setPositiveButton(R.string.ok, (dialogInterface, i) -> {
                         // Clears the default SharedPreferences and applies Material defaults.
-                        NewPipeMaterialDefaultPreferences.applyBundledDefaults(
+                        wizestreamDefaultPreferences.applyBundledDefaults(
                                 requireContext(), true);
                         // Restarts the app
                         if (getActivity() == null) {

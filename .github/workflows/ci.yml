@@ -72,12 +72,12 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/debug-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial.debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
-          grep -q "application-label:'NewPipe Material Debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
+          grep -q "application-label:'WizeStream Debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: newpipe-material-debug-apk
+          name: wizestream-debug-apk
           path: app/build/outputs/apk/debug/*.apk
 
   test-android:

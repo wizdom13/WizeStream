@@ -6,7 +6,7 @@
          monochrome, then crossfade into the app-owned themed splash. -->
     <style name="OpeningTheme" parent="Base.OpeningTheme">
         <item name="android:windowSplashScreenBackground">?attr/colorSurface</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_newpipe_material_splash_system</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_wizestream_splash_system</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:navigationBarColor">?attr/colorSurface</item>

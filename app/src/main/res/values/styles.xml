@@ -17,9 +17,9 @@
     <style name="Base.V21" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="actionColor">?attr/colorOnSurface</item>
         <item name="floatingActionButtonStyle">@style/FloatingActionButtonTheme</item>
-        <item name="snackbarStyle">@style/Widget.NewPipeMaterial.Snackbar</item>
-        <item name="snackbarButtonStyle">@style/Widget.NewPipeMaterial.Button.TextButton.Snackbar</item>
-        <item name="snackbarTextViewStyle">@style/Widget.NewPipeMaterial.Snackbar.TextView</item>
+        <item name="snackbarStyle">@style/Widget.wizestream.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/Widget.wizestream.Button.TextButton.Snackbar</item>
+        <item name="snackbarTextViewStyle">@style/Widget.wizestream.Snackbar.TextView</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorControlActivated">?attr/colorSecondary</item>
     </style>
@@ -146,7 +146,7 @@
 
 
     <!-- Theme color preset overlays -->
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_NewPipeMaterial">
+    <style name="ThemeOverlay_wizestream_ThemeColor_wizestream">
         <item name="colorPrimary">#46674F</item>
         <item name="colorPrimaryFixedDim">#AED4AF</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -161,7 +161,7 @@
         <item name="colorOnSecondaryContainer">#10200F</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Neutral">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Neutral">
         <item name="colorPrimary">#5F5F5F</item>
         <item name="colorPrimaryFixedDim">#C7C7C7</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -176,7 +176,7 @@
         <item name="colorOnSecondaryContainer">#1B1B1B</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Green">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Green">
         <item name="colorPrimary">#386A20</item>
         <item name="colorPrimaryFixedDim">#9ED67D</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -191,7 +191,7 @@
         <item name="colorOnSecondaryContainer">#131F0D</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Blue">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Blue">
         <item name="colorPrimary">#0061A4</item>
         <item name="colorPrimaryFixedDim">#9ECAFF</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -206,7 +206,7 @@
         <item name="colorOnSecondaryContainer">#101C2B</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Purple">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Purple">
         <item name="colorPrimary">#6750A4</item>
         <item name="colorPrimaryFixedDim">#D0BCFF</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -221,7 +221,7 @@
         <item name="colorOnSecondaryContainer">#1D192B</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Orange">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Orange">
         <item name="colorPrimary">#9B4300</item>
         <item name="colorPrimaryFixedDim">#FFB86C</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -236,7 +236,7 @@
         <item name="colorOnSecondaryContainer">#2C160D</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Pink">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Pink">
         <item name="colorPrimary">#984061</item>
         <item name="colorPrimaryFixedDim">#FFB1CB</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -251,7 +251,7 @@
         <item name="colorOnSecondaryContainer">#2B151D</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Red">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Red">
         <item name="colorPrimary">#BA1A1A</item>
         <item name="colorPrimaryFixedDim">#FFB4AB</item>
         <item name="colorOnPrimary">#FFFFFF</item>
@@ -392,7 +392,7 @@
     <style name="RouterActivityThemeDark" parent="Base.RouterActivityThemeDark" />
 
 
-    <style name="NewPipeMaterialBottomNavigationActiveIndicator"
+    <style name="wizestreamBottomNavigationActiveIndicator"
         parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">?attr/colorPrimaryContainer</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>

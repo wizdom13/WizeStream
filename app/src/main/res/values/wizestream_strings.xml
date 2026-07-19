@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="wizestream_about_title">About WizeStream</string>
+    <string name="wizestream_fork_title">WizeStream</string>
+    <string name="wizestream_version_format">Version %1$s\nBased on NewPipe %2$s</string>
+    <string name="wizestream_fork_attribution">WizeStream is an independently maintained Android streaming app based on NewPipe, focused on Material 3 design and playback enhancements. It is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.</string>
+    <string name="wizestream_author_developer">Author and developer: Wissam Shehadeh (Wisso)</string>
+    <string name="wizestream_upstream_title">Upstream NewPipe attribution</string>
+    <string name="wizestream_upstream_attribution">WizeStream is built from NewPipe and preserves the NewPipe libre software license, upstream credits, and third-party license notices.</string>
+    <string name="wizestream_contribution_title">Contribute to WizeStream</string>
+    <string name="wizestream_contribution_encouragement">Report issues, review code, or contribute to WizeStream on GitHub.</string>
+</resources>

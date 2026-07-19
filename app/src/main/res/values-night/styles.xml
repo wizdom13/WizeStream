@@ -8,7 +8,7 @@
 
 
     <!-- Theme color preset overlays -->
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_NewPipeMaterial">
+    <style name="ThemeOverlay_wizestream_ThemeColor_wizestream">
         <item name="colorPrimary">#AED4AF</item>
         <item name="colorPrimaryFixedDim">#AED4AF</item>
         <item name="colorOnPrimary">#19361E</item>
@@ -23,7 +23,7 @@
         <item name="colorOnSecondaryContainer">#D5E8CF</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Neutral">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Neutral">
         <item name="colorPrimary">#C7C7C7</item>
         <item name="colorPrimaryFixedDim">#C7C7C7</item>
         <item name="colorOnPrimary">#303030</item>
@@ -38,7 +38,7 @@
         <item name="colorOnSecondaryContainer">#E5E5E5</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Green">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Green">
         <item name="colorPrimary">#9ED67D</item>
         <item name="colorPrimaryFixedDim">#9ED67D</item>
         <item name="colorOnPrimary">#123800</item>
@@ -53,7 +53,7 @@
         <item name="colorOnSecondaryContainer">#D9E7CB</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Blue">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Blue">
         <item name="colorPrimary">#9ECAFF</item>
         <item name="colorPrimaryFixedDim">#9ECAFF</item>
         <item name="colorOnPrimary">#003258</item>
@@ -68,7 +68,7 @@
         <item name="colorOnSecondaryContainer">#D7E3F8</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Purple">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Purple">
         <item name="colorPrimary">#D0BCFF</item>
         <item name="colorPrimaryFixedDim">#D0BCFF</item>
         <item name="colorOnPrimary">#381E72</item>
@@ -83,7 +83,7 @@
         <item name="colorOnSecondaryContainer">#E8DEF8</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Orange">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Orange">
         <item name="colorPrimary">#FFB86C</item>
         <item name="colorPrimaryFixedDim">#FFB86C</item>
         <item name="colorOnPrimary">#4A2800</item>
@@ -98,7 +98,7 @@
         <item name="colorOnSecondaryContainer">#FFDCC2</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Pink">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Pink">
         <item name="colorPrimary">#FFB1CB</item>
         <item name="colorPrimaryFixedDim">#FFB1CB</item>
         <item name="colorOnPrimary">#5E1134</item>
@@ -113,7 +113,7 @@
         <item name="colorOnSecondaryContainer">#FFD8E7</item>
     </style>
 
-    <style name="ThemeOverlay_NewPipeMaterial_ThemeColor_Red">
+    <style name="ThemeOverlay_wizestream_ThemeColor_Red">
         <item name="colorPrimary">#FFB4AB</item>
         <item name="colorPrimaryFixedDim">#FFB4AB</item>
         <item name="colorOnPrimary">#690005</item>

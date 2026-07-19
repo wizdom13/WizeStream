@@ -1,4 +1,4 @@
-NewPipe Material 0.28.7-m7
+WizeStream 0.28.7-m7
 
 Highlights:
 - Switched to the latest PipePipeExtractor source checkout to improve YouTube compatibility.

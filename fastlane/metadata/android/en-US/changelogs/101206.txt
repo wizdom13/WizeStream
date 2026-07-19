@@ -1,8 +1,8 @@
-NewPipe Material 0.28.7-m6
+WizeStream 0.28.7-m6
 
 Highlights:
 - Added an Updates settings screen with current version, installed app version, manual update checks, changelog viewing, and optional automatic background update checks.
-- Improved update checks for NewPipe Material GitHub Releases, including prerelease-aware release selection and in-app manual check results.
+- Improved update checks for WizeStream GitHub Releases, including prerelease-aware release selection and in-app manual check results.
 - Added Swipe seek, Fullscreen swipe, and Hold to speed up player gesture settings under Video and audio.
 - Added Show dislikes in Appearance, enabled by default where supported by the extractor.
 - Added SponsorBlock settings, category controls, automatic skipping, manual skip overlay button, and seek-bar segment markers for supported YouTube segments.

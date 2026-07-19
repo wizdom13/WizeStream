@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wizestream_manual_update_description">Check GitHub Releases for a new WizeStream version</string>
+    <string name="wizestream_auto_update_check_description">WizeStream can automatically check GitHub Releases for new versions from time to time and notify you when one is available.\nDo you want to enable this?</string>
+    <string name="wizestream_update_unavailable_toast">WizeStream is up to date</string>
+    <string name="wizestream_update_available_notification_title">WizeStream update is available!</string>
+    <string name="wizestream_update_available_notification_text">WizeStream %1$s is available. Installed version: %2$s.</string>
+    <string name="wizestream_update_available_dialog_message">WizeStream %1$s is available. Installed version: %2$s.</string>
+    <string name="wizestream_update_download_complete_message">WizeStream %1$s is ready to install.</string>
+    <string name="wizestream_update_install_permission_message">Android needs permission before WizeStream can open the package installer. After enabling permission, return here and tap Install now again.</string>
+    <string name="wizestream_update_notification_channel_name">WizeStream updates</string>
+    <string name="wizestream_update_notification_channel_description">Notifications for new WizeStream versions</string>
+</resources>

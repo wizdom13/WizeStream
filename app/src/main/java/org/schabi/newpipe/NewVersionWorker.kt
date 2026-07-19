@@ -18,8 +18,8 @@ import java.io.IOException
 import java.util.UUID
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import org.schabi.newpipe.settings.SettingsActivity
-import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository
-import org.schabi.newpipe.update.NewPipeMaterialUpdateRepository.VersionComparison
+import org.schabi.newpipe.update.wizestreamUpdateRepository
+import org.schabi.newpipe.update.wizestreamUpdateRepository.VersionComparison
 import org.schabi.newpipe.util.ReleaseVersionUtil
 
 class NewVersionWorker(
@@ -28,7 +28,7 @@ class NewVersionWorker(
 ) : Worker(context, workerParams) {
 
     private data class UpdateCheckResult(
-        val release: NewPipeMaterialUpdateRepository.Release,
+        val release: wizestreamUpdateRepository.Release,
         val installedVersion: String,
         val comparison: VersionComparison
     )
@@ -40,7 +40,7 @@ class NewVersionWorker(
     }
 
     private fun showUpdateNotification(
-        release: NewPipeMaterialUpdateRepository.Release,
+        release: wizestreamUpdateRepository.Release,
         installedVersion: String
     ) {
         val intent = Intent(applicationContext, SettingsActivity::class.java).apply {
@@ -61,11 +61,13 @@ class NewVersionWorker(
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setContentTitle(
-                applicationContext.getString(R.string.app_update_available_notification_title)
+                applicationContext.getString(
+                    R.string.wizestream_update_available_notification_title
+                )
             )
             .setContentText(
                 applicationContext.getString(
-                    R.string.app_update_available_notification_text_material,
+                    R.string.wizestream_update_available_notification_text,
                     release.version,
                     installedVersion
                 )
@@ -89,8 +91,8 @@ class NewVersionWorker(
             }
         }
 
-        val releases = NewPipeMaterialUpdateRepository.fetchReleases()
-        val release = NewPipeMaterialUpdateRepository.selectLatestCandidateRelease(releases)
+        val releases = wizestreamUpdateRepository.fetchReleases()
+        val release = wizestreamUpdateRepository.selectLatestCandidateRelease(releases)
 
         val newExpiry = ReleaseVersionUtil.coerceUpdateCheckExpiry(null)
         prefs.edit {
@@ -102,8 +104,8 @@ class NewVersionWorker(
         }
 
         release ?: return null
-        val installedVersion = NewPipeMaterialUpdateRepository.installedVersionName()
-        val comparison = NewPipeMaterialUpdateRepository.compareInstalledToLatest(
+        val installedVersion = wizestreamUpdateRepository.installedVersionName()
+        val comparison = wizestreamUpdateRepository.compareInstalledToLatest(
             installedVersion,
             release.version
         )
@@ -140,7 +142,7 @@ class NewVersionWorker(
         } catch (e: IOException) {
             Log.w(
                 TAG,
-                "Could not fetch NewPipe Material GitHub releases: probably network problem",
+                "Could not fetch WizeStream GitHub releases: probably network problem",
                 e
             )
             Result.failure()
@@ -148,7 +150,7 @@ class NewVersionWorker(
             Log.e(TAG, "ReCaptchaException should never happen here.", e)
             Result.failure()
         } catch (e: Exception) {
-            Log.w(TAG, "Could not check NewPipe Material GitHub releases", e)
+            Log.w(TAG, "Could not check WizeStream GitHub releases", e)
             Result.failure()
         }
     }
@@ -183,7 +185,7 @@ class NewVersionWorker(
         const val OUTPUT_PUBLISHED_AT = "publishedAt"
 
         /**
-         * Start a worker which checks GitHub Releases for NewPipe Material updates.
+         * Start a worker which checks GitHub Releases for WizeStream updates.
          * Manual checks bypass the stored expiry timestamp, while automatic checks respect it
          * to avoid contacting GitHub on every app launch.
          */

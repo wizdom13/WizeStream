@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
+
 package org.schabi.newpipe.settings
 
 import android.content.SharedPreferences
@@ -15,7 +17,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.withSettings
 
-class NewPipeMaterialDefaultPreferencesTest {
+class wizestreamDefaultPreferencesTest {
     private lateinit var preferences: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
 
@@ -29,7 +31,7 @@ class NewPipeMaterialDefaultPreferencesTest {
 
     @Test
     fun `default parser writes SharedPreferences values with their JSON types`() {
-        NewPipeMaterialDefaultPreferences.applyDefaults(
+        wizestreamDefaultPreferences.applyDefaults(
             """
                 {
                   "boolean_value": true,
@@ -53,13 +55,13 @@ class NewPipeMaterialDefaultPreferencesTest {
         verify(editor).putLong("long_value", 1780082904574L)
         verify(editor).putFloat("float_value", 1.2f)
         verify(editor).putString("saved_tabs_key", "{\"tabs\":[{\"tab_id\":2}]}")
-        verify(editor).putBoolean(NewPipeMaterialDefaultPreferences.DEFAULTS_APPLIED_KEY, true)
+        verify(editor).putBoolean(wizestreamDefaultPreferences.DEFAULTS_APPLIED_KEY, true)
         verify(editor).commit()
     }
 
     @Test
     fun `default parser does not clear preferences unless requested`() {
-        NewPipeMaterialDefaultPreferences.applyDefaults(
+        wizestreamDefaultPreferences.applyDefaults(
             "{\"theme_color\":\"follow_system\"}".byteInputStream(),
             preferences,
             clearFirst = false
@@ -73,7 +75,7 @@ class NewPipeMaterialDefaultPreferencesTest {
     @Test
     fun `default parser rejects non-string arrays`() {
         assertThrows(IllegalArgumentException::class.java) {
-            NewPipeMaterialDefaultPreferences.applyDefaults(
+            wizestreamDefaultPreferences.applyDefaults(
                 "{\"bad_set\":[\"one\", 2]}".byteInputStream(),
                 preferences
             )
@@ -81,13 +83,13 @@ class NewPipeMaterialDefaultPreferencesTest {
     }
 
     @Test
-    fun `bundled NewPipe Material defaults include accepted baseline values`() {
+    fun `bundled WizeStream defaults include accepted baseline values`() {
         val defaultsPath = listOf(
-            Path.of("src/main/res/raw/newpipe_material_default_preferences.json"),
-            Path.of("app/src/main/res/raw/newpipe_material_default_preferences.json")
+            Path.of("src/main/res/raw/wizestream_default_preferences.json"),
+            Path.of("app/src/main/res/raw/wizestream_default_preferences.json")
         ).first { it.exists() }
 
-        NewPipeMaterialDefaultPreferences.applyDefaults(
+        wizestreamDefaultPreferences.applyDefaults(
             ByteArrayInputStream(Files.readAllBytes(defaultsPath)),
             preferences
         )

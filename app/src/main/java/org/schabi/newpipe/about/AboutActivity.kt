@@ -24,7 +24,7 @@ class AboutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeHelper.setTheme(this)
-        title = getString(R.string.newpipe_material_about_title)
+        title = getString(R.string.wizestream_about_title)
 
         val aboutBinding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(aboutBinding.root)
@@ -69,7 +69,7 @@ class AboutActivity : AppCompatActivity() {
         ): View {
             FragmentAboutBinding.inflate(inflater, container, false).apply {
                 aboutAppVersion.text = getString(
-                    R.string.newpipe_material_version_format,
+                    R.string.wizestream_version_format,
                     BuildConfig.VERSION_NAME,
                     BuildConfig.UPSTREAM_NEWPIPE_VERSION_NAME
                 )
