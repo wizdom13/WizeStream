@@ -159,6 +159,17 @@ To migrate:
 
 Always keep a backup before importing data between builds.
 
+### Nightly builds
+
+Automated nightly builds of the latest `pipe` commit are available here:
+
+https://github.com/wizdom13/WizeStream_Nightly/releases
+
+Nightly builds are unstable testing versions and use the separate application ID
+`org.wisso.newpipematerial.nightly`, so they can be installed alongside the stable app.
+
+See [Nightly build documentation](docs/nightly-builds.md) for details.
+
 ### Google Play warning
 
 Do not publish WizeStream or forks of NewPipe to Google Play without first reviewing all applicable upstream, platform, and trademark requirements.
