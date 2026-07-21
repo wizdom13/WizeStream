@@ -3,10 +3,12 @@
 package org.schabi.newpipe.settings
 
 import android.content.SharedPreferences
+import com.grack.nanojson.JsonParser
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
@@ -120,8 +122,29 @@ class wizestreamDefaultPreferencesTest {
                 )
             )
         )
-        verify(editor).putLong("kao_last_checked", 1780082904574L)
-        verify(editor).putInt("last_used_preferences_version", 8)
         verify(editor).commit()
+    }
+
+    @Test
+    fun `bundled WizeStream defaults exclude runtime-owned state`() {
+        val defaultsPath = listOf(
+            Path.of("src/main/res/raw/wizestream_default_preferences.json"),
+            Path.of("app/src/main/res/raw/wizestream_default_preferences.json")
+        ).first { it.exists() }
+        val defaults = Files.newInputStream(defaultsPath).use { input ->
+            JsonParser.`object`().from(input)
+        }
+
+        setOf(
+            "import_export_data_path",
+            "kao_last_checked",
+            "is_in_background",
+            "last_used_preferences_version"
+        ).forEach { key ->
+            assertFalse(
+                "Bundled defaults must not contain runtime-owned key: $key",
+                defaults.containsKey(key)
+            )
+        }
     }
 }
