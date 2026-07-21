@@ -18,8 +18,8 @@ import java.io.IOException
 import java.util.UUID
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import org.schabi.newpipe.settings.SettingsActivity
-import org.schabi.newpipe.update.wizestreamUpdateRepository
-import org.schabi.newpipe.update.wizestreamUpdateRepository.VersionComparison
+import org.schabi.newpipe.update.WizeStreamUpdateRepository
+import org.schabi.newpipe.update.WizeStreamUpdateRepository.VersionComparison
 import org.schabi.newpipe.util.ReleaseVersionUtil
 
 class NewVersionWorker(
@@ -28,7 +28,7 @@ class NewVersionWorker(
 ) : Worker(context, workerParams) {
 
     private data class UpdateCheckResult(
-        val release: wizestreamUpdateRepository.Release,
+        val release: WizeStreamUpdateRepository.Release,
         val installedVersion: String,
         val comparison: VersionComparison
     )
@@ -40,7 +40,7 @@ class NewVersionWorker(
     }
 
     private fun showUpdateNotification(
-        release: wizestreamUpdateRepository.Release,
+        release: WizeStreamUpdateRepository.Release,
         installedVersion: String
     ) {
         val intent = Intent(applicationContext, SettingsActivity::class.java).apply {
@@ -56,7 +56,7 @@ class NewVersionWorker(
         )
         val channelId = applicationContext.getString(R.string.app_update_notification_channel_id)
         val notificationBuilder = NotificationCompat.Builder(applicationContext, channelId)
-            .setSmallIcon(R.drawable.ic_newpipe_update)
+            .setSmallIcon(R.drawable.ic_wizestream_update)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
@@ -91,8 +91,8 @@ class NewVersionWorker(
             }
         }
 
-        val releases = wizestreamUpdateRepository.fetchReleases()
-        val release = wizestreamUpdateRepository.selectLatestCandidateRelease(releases)
+        val releases = WizeStreamUpdateRepository.fetchReleases()
+        val release = WizeStreamUpdateRepository.selectLatestCandidateRelease(releases)
 
         val newExpiry = ReleaseVersionUtil.coerceUpdateCheckExpiry(null)
         prefs.edit {
@@ -104,8 +104,8 @@ class NewVersionWorker(
         }
 
         release ?: return null
-        val installedVersion = wizestreamUpdateRepository.installedVersionName()
-        val comparison = wizestreamUpdateRepository.compareInstalledToLatest(
+        val installedVersion = WizeStreamUpdateRepository.installedVersionName()
+        val comparison = WizeStreamUpdateRepository.compareInstalledToLatest(
             installedVersion,
             release.version
         )

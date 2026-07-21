@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
-
 package org.schabi.newpipe.settings
 
 import android.content.Context
@@ -13,7 +11,7 @@ import org.schabi.newpipe.R
 /**
  * Applies the canonical WizeStream default SharedPreferences snapshot.
  */
-object wizestreamDefaultPreferences {
+object WizeStreamDefaultPreferences {
     const val DEFAULTS_APPLIED_KEY = "wizestream_defaults_applied"
 
     /**

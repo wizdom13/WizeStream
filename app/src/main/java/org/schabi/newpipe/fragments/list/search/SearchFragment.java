@@ -847,7 +847,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             return;
         }
 
-        // Check if theSearchString is a URL which can be opened by NewPipe directly
+        // Check if theSearchString is a URL which can be opened by WizeStream directly
         // and open it if possible.
         try {
             final StreamingService streamingService = NewPipe.getServiceByUrl(theSearchString);

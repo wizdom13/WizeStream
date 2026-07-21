@@ -11,20 +11,16 @@
 
     <path
         android:fillColor="@color/light_m3_on_primary_color"
-        android:pathData="M84,44a46,46 0,1 0,0.1,0z" />
+        android:pathData="M160,44a46,46 0,1 0,0.1,0z" />
 
     <path
         android:fillColor="@color/light_m3_primary_color"
         android:strokeColor="@color/light_m3_primary_color"
         android:strokeWidth="4"
         android:strokeLineJoin="round"
-        android:pathData="M68,62 L120,90 L68,118 Z" />
+        android:pathData="M144,62 L196,90 L144,118 Z" />
 
     <path
         android:fillColor="@color/light_m3_on_primary_color"
-        android:pathData="M74,104 L74,74 L80,74 L87,86 L94,80 L100,80 L100,98 L94,98 L94,90 L87,96 L80,84 L80,104 Z" />
-
-    <path
-        android:fillColor="@color/light_m3_on_secondary_container_color"
-        android:pathData="M144,73h16v34h-9l-16,-19v19h-16v-34h9l16,19z M170,73h58v12h-21v22h-16v-22h-21z M237,73h16v34h-16z" />
+        android:pathData="M150,104 L150,74 L156,74 L163,86 L170,80 L176,80 L176,98 L170,98 L170,90 L163,96 L156,84 L156,104 Z" />
 </vector>

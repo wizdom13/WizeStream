@@ -24,8 +24,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.NewVersionWorker;
 import org.schabi.newpipe.R;
-import org.schabi.newpipe.update.wizestreamUpdateRepository;
-import org.schabi.newpipe.update.wizestreamUpdateRepository.VersionComparison;
+import org.schabi.newpipe.update.WizeStreamUpdateRepository;
+import org.schabi.newpipe.update.WizeStreamUpdateRepository.VersionComparison;
 import org.schabi.newpipe.update.UpdateDownloadWorker;
 import org.schabi.newpipe.update.UpdateInstallHelper;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -69,9 +69,9 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
 
     private final Preference.OnPreferenceClickListener changelogClick = preference -> {
         Toast.makeText(getContext(), R.string.checking_updates_toast, Toast.LENGTH_SHORT).show();
-        disposables.add(Single.fromCallable(() -> wizestreamUpdateRepository.INSTANCE
+        disposables.add(Single.fromCallable(() -> WizeStreamUpdateRepository.INSTANCE
                         .formatChangelog(
-                                wizestreamUpdateRepository.INSTANCE.fetchReleases(),
+                                WizeStreamUpdateRepository.INSTANCE.fetchReleases(),
                                 getString(R.string.changelog_empty)))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -127,7 +127,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
 
         requirePreference(R.string.installed_app_version_key).setSummary(getString(
                 R.string.installed_version_summary_format,
-                wizestreamUpdateRepository.INSTANCE.installedVersionSummary()));
+                WizeStreamUpdateRepository.INSTANCE.installedVersionSummary()));
     }
 
     private void observeManualUpdateWork(@NonNull final UUID workId) {
@@ -285,7 +285,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
 
     private void openReleasePage(final String releaseUrl) {
         final String url = releaseUrl == null || releaseUrl.isBlank()
-                ? wizestreamUpdateRepository.RELEASES_URL : releaseUrl;
+                ? WizeStreamUpdateRepository.RELEASES_URL : releaseUrl;
         final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         try {
             if (intent.resolveActivity(requireContext().getPackageManager()) != null) {

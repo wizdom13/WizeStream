@@ -178,8 +178,8 @@ public final class ShareUtils {
             chooserIntent.putExtra(Intent.EXTRA_TITLE, context.getString(R.string.open_with));
         }
 
-        // Avoid opening in NewPipe
-        // (Implementation note: if the URL is one for which NewPipe itself
+        // Avoid opening in WizeStream
+        // (Implementation note: if the URL is one for which WizeStream itself
         // is set as handler on Android >= 12, we actually remove the only eligible app
         // for this link, and browsers will not be offered to the user. For that, use
         // `openUrlInBrowser`.)

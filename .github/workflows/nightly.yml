@@ -104,16 +104,16 @@ jobs:
       - name: Restore release signing key
         if: steps.existing.outputs.skip != 'true'
         env:
-          SIGNING_KEYSTORE_BASE64: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 || secrets.SIGNING_KEY }}
-          RELEASE_STORE_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS || secrets.KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD }}
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.WIZESTREAM_RELEASE_KEYSTORE_BASE64 || secrets.NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 || secrets.SIGNING_KEY }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_STORE_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.WIZESTREAM_RELEASE_KEY_ALIAS || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS || secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_KEY_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD || secrets.KEY_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
 
           test -n "$SIGNING_KEYSTORE_BASE64" || {
-            echo "Missing release keystore secret. Add NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64." >&2
+            echo "Missing release keystore secret. Add WIZESTREAM_RELEASE_KEYSTORE_BASE64." >&2
             exit 1
           }
           test -n "$RELEASE_STORE_PASSWORD" || {
@@ -134,10 +134,10 @@ jobs:
           chmod 600 "$keystore_path"
 
           {
-            echo "NEWPIPE_MATERIAL_RELEASE_STORE_FILE=$keystore_path"
-            echo "NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD"
-            echo "NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS"
-            echo "NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
+            echo "WIZESTREAM_RELEASE_STORE_FILE=$keystore_path"
+            echo "WIZESTREAM_RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD"
+            echo "WIZESTREAM_RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS"
+            echo "WIZESTREAM_RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
           } >> "$GITHUB_ENV"
 
       - name: Build optimized nightly APK

@@ -67,7 +67,7 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
                     .indent("")
                     .on(byteOutput)
                     .`object`()
-                    .value("appName", "NewPipe")
+                    .value("appName", "WizeStream")
                     .value("backupFormatVersion", MANIFEST_FORMAT_VERSION)
                     .value("createdTimestamp", System.currentTimeMillis())
                     .value("includesDatabase", true)

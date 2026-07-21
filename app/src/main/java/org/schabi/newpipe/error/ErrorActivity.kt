@@ -150,7 +150,7 @@ class ErrorActivity : AppCompatActivity() {
                         .putExtra(Intent.EXTRA_SUBJECT, errorEmailSubject)
                         .putExtra(Intent.EXTRA_TEXT, buildJson())
                     ShareUtils.openIntentInApp(context, intent)
-                } else if (action == "GITHUB") { // open the NewPipe issue page on GitHub
+                } else if (action == "GITHUB") { // open the WizeStream issue form on GitHub
                     ShareUtils.openUrlInApp(this, ERROR_GITHUB_ISSUE_URL)
                 }
             }

@@ -51,7 +51,7 @@ class NotificationHelper(val context: Context) {
             .setNumber(newStreams.size)
             .setBadgeIconType(NotificationCompat.BADGE_ICON_LARGE)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setSmallIcon(R.drawable.ic_newpipe_triangle_white)
+            .setSmallIcon(R.drawable.ic_wizestream_triangle_white)
             .setColor(ContextCompat.getColor(context, R.color.ic_launcher_background))
             .setColorized(true)
             .setAutoCancel(true)
@@ -75,7 +75,11 @@ class NotificationHelper(val context: Context) {
         )
 
         val avatarIcon =
-            CoilHelper.loadBitmapBlocking(context, data.avatarUrl, R.drawable.ic_newpipe_triangle_white)
+            CoilHelper.loadBitmapBlocking(
+                context,
+                data.avatarUrl,
+                R.drawable.ic_wizestream_triangle_white
+            )
         summaryBuilder.setLargeIcon(avatarIcon)
 
         // Show individual stream notifications, set channel icon only if there is actually one
@@ -109,7 +113,7 @@ class NotificationHelper(val context: Context) {
             context,
             context.getString(R.string.streams_notification_channel_id)
         )
-            .setSmallIcon(R.drawable.ic_newpipe_triangle_white)
+            .setSmallIcon(R.drawable.ic_wizestream_triangle_white)
             .setLargeIcon(channelIcon)
             .setContentTitle(item.name)
             .setContentText(item.uploaderName)
@@ -139,7 +143,7 @@ class NotificationHelper(val context: Context) {
          * If this is the case, the app cannot create any notifications
          * and display them to the user.
          * <br>
-         * On Android 26 and above, notification channels are used by NewPipe.
+         * On Android 26 and above, notification channels are used by WizeStream.
          * These can be configured by the user, too.
          * The notification channel for new streams is also checked by this method.
          *
@@ -172,10 +176,11 @@ class NotificationHelper(val context: Context) {
         }
 
         /**
-         * Open the system's notification settings for NewPipe on Android Oreo (API 26) and later.
-         * Open the system's app settings for NewPipe on previous Android versions.
+         * Open the system's notification settings for WizeStream on Android Oreo (API 26)
+         * and later.
+         * Open the system's app settings for WizeStream on previous Android versions.
          */
-        fun openNewPipeSystemNotificationSettings(context: Context) {
+        fun openSystemNotificationSettings(context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                     .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

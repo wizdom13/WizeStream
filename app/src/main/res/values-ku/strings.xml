@@ -91,8 +91,8 @@
     <string name="always">هەمیشە</string>
     <string name="just_once">تەنها ئێستا</string>
     <string name="file">فایل</string>
-    <string name="notification_channel_name">پەیامی NewPipe</string>
-    <string name="notification_channel_description">پەیامەکانی NewPipe بۆ پاشبنەما و لێدانەکانی پەنجەرە</string>
+    <string name="notification_channel_name">پەیامی WizeStream</string>
+    <string name="notification_channel_description">پەیامەکانی WizeStream بۆ پاشبنەما و لێدانەکانی پەنجەرە</string>
     <string name="unknown_content">(نەزانراو)</string>
     <string name="switch_to_background">گۆڕین بۆ پاشبنەما</string>
     <string name="switch_to_popup">گۆڕین بۆ پەنجەرە</string>
@@ -261,7 +261,7 @@
     <string name="app_license">ئەم ئەپە سەرچاوە کراوەیە : دەتوانی بەکاریبهێنی، بیخوێنیتەوە و هاوبەشی پێبکەیت و بەرەوپێشی ببەیت.
 \nبەتایبەتی دەتوانی دابەشیبکەیتەوە یاخوود بگۆڕیت بەپێی مەرجەکانی GNU مۆڵەتنامەی گشتی وەک ئەپێکی بڵاوی خۆڕایی!</string>
     <string name="privacy_policy_title">سیاسەتی تایبەتی ئەپ</string>
-    <string name="privacy_policy_encouragement">پڕۆژەی ئەپەکە زانیارییە تایبەتییەکانت بەوردی دەپارێزێ. هەروەها ئەپەکە هیچ داتایەک بەبێ ئاگاداری تۆ بەکارنابات. 
+    <string name="privacy_policy_encouragement">پڕۆژەی ئەپەکە زانیارییە تایبەتییەکانت بەوردی دەپارێزێ. هەروەها ئەپەکە هیچ داتایەک بەبێ ئاگاداری تۆ بەکارنابات.
 \nسیاسەتی تایبەتی ئەپ بەوردەکاری ڕوونکردنەوەت دەداتێ لەسەر ئەو داتایانەی وەریاندەگرێ و بەکاریاندەبات.</string>
     <string name="read_privacy_policy">خوێندنەوەی سیاسەتی تایبەتی</string>
     <string name="channels">کەناڵەکان</string>

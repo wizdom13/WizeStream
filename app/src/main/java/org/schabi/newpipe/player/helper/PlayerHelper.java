@@ -441,7 +441,7 @@ public final class PlayerHelper {
                 AspectRatioFrameLayout.RESIZE_MODE_FIT);
     }
 
-    @SuppressLint("SwitchIntDef") // only fit, fill and zoom are supported by NewPipe
+    @SuppressLint("SwitchIntDef") // only fit, fill and zoom are supported by WizeStream
     @ResizeMode
     public static int nextResizeModeAndSaveToPrefs(final Player player,
                                                    @ResizeMode final int resizeMode) {

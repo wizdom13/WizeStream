@@ -31,7 +31,7 @@ public final class MigrationManager {
     }
 
     /**
-     * Run all migrations that are needed for the current version of NewPipe.
+     * Run all migrations that are needed for the current version of WizeStream.
      * This method should be called at the start of the application, before any other operations
      * that depend on the settings.
      *

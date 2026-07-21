@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
-
 package org.schabi.newpipe.settings
 
 import android.content.SharedPreferences
@@ -19,7 +17,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.withSettings
 
-class wizestreamDefaultPreferencesTest {
+class WizeStreamDefaultPreferencesTest {
     private lateinit var preferences: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
 
@@ -33,7 +31,7 @@ class wizestreamDefaultPreferencesTest {
 
     @Test
     fun `default parser writes SharedPreferences values with their JSON types`() {
-        wizestreamDefaultPreferences.applyDefaults(
+        WizeStreamDefaultPreferences.applyDefaults(
             """
                 {
                   "boolean_value": true,
@@ -57,13 +55,13 @@ class wizestreamDefaultPreferencesTest {
         verify(editor).putLong("long_value", 1780082904574L)
         verify(editor).putFloat("float_value", 1.2f)
         verify(editor).putString("saved_tabs_key", "{\"tabs\":[{\"tab_id\":2}]}")
-        verify(editor).putBoolean(wizestreamDefaultPreferences.DEFAULTS_APPLIED_KEY, true)
+        verify(editor).putBoolean(WizeStreamDefaultPreferences.DEFAULTS_APPLIED_KEY, true)
         verify(editor).commit()
     }
 
     @Test
     fun `default parser does not clear preferences unless requested`() {
-        wizestreamDefaultPreferences.applyDefaults(
+        WizeStreamDefaultPreferences.applyDefaults(
             "{\"theme_color\":\"follow_system\"}".byteInputStream(),
             preferences,
             clearFirst = false
@@ -77,7 +75,7 @@ class wizestreamDefaultPreferencesTest {
     @Test
     fun `default parser rejects non-string arrays`() {
         assertThrows(IllegalArgumentException::class.java) {
-            wizestreamDefaultPreferences.applyDefaults(
+            WizeStreamDefaultPreferences.applyDefaults(
                 "{\"bad_set\":[\"one\", 2]}".byteInputStream(),
                 preferences
             )
@@ -91,7 +89,7 @@ class wizestreamDefaultPreferencesTest {
             Path.of("app/src/main/res/raw/wizestream_default_preferences.json")
         ).first { it.exists() }
 
-        wizestreamDefaultPreferences.applyDefaults(
+        WizeStreamDefaultPreferences.applyDefaults(
             ByteArrayInputStream(Files.readAllBytes(defaultsPath)),
             preferences
         )

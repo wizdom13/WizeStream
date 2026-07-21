@@ -148,7 +148,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="10dp"
-            android:text="@string/donation_title"
+            android:text="@string/wizestream_upstream_donation_title"
             android:textAppearance="@android:style/TextAppearance.Medium"
             android:textColor="?attr/colorOnSurface" />
 
