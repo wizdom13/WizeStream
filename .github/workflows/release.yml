@@ -24,36 +24,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Check out release source
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
-      - name: Checkout latest PipePipeExtractor source
-        run: |
-          set -euo pipefail
-          mkdir -p external
-          if [ ! -d external/NewPipeExtractor/.git ]; then
-            rm -rf external/NewPipeExtractor
-            git init external/NewPipeExtractor
-            git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
-          fi
-          git -C external/NewPipeExtractor fetch --depth 1 origin main
-          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
-
-      - name: Verify PipePipeExtractor source
-        run: |
-          set -euo pipefail
-          git -C external/NewPipeExtractor remote -v
-          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
-          git -C external/NewPipeExtractor rev-parse HEAD
-          test -d external/NewPipeExtractor/extractor
-          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
-          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
-
-      - name: Clean PipePipeExtractor outputs
-        run: |
-          set -euo pipefail
-          rm -rf external/NewPipeExtractor/build
-          rm -rf external/NewPipeExtractor/extractor/build
-          rm -rf external/NewPipeExtractor/timeago-parser/build
+      - name: Prepare pinned PipePipeExtractor source
+        run: scripts/prepare-extractor.sh
 
       - uses: gradle/actions/wrapper-validation@v6
 
