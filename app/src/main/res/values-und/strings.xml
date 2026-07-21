@@ -126,7 +126,7 @@
     <string name="file_deleted">فائل مٹا دتی گئی اے</string>
     <string name="play_all">سارے چلاؤ</string>
     <string name="just_once">صرف ایس بار</string>
-    <string name="notification_channel_name">نیوپائیپ نوٹ</string>
+    <string name="notification_channel_name">WizeStream نوٹ</string>
     <string name="import_data_title">ڈیٹابیس اِمپورٹ کرو</string>
     <string name="export_data_title">ڈیٹابیس ایکسپورٹ کرو</string>
     <string name="error_report_open_issue_button_text">کِٹ‌ہب تے رپورٹ کریو</string>

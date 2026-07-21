@@ -22,17 +22,17 @@ The nightly application ID differs from the stable application ID, so both appli
 Add these secrets to `wizdom13/WizeStream`:
 
 - `NIGHTLY_REPO_TOKEN`: fine-grained token with `Contents: Read and write` access to `wizdom13/WizeStream_Nightly`
-- `NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64`: Base64-encoded release keystore
-- `NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD`
-- `NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS`
-- `NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD`
+- `WIZESTREAM_RELEASE_KEYSTORE_BASE64`: Base64-encoded release keystore
+- `WIZESTREAM_RELEASE_STORE_PASSWORD`
+- `WIZESTREAM_RELEASE_KEY_ALIAS`
+- `WIZESTREAM_RELEASE_KEY_PASSWORD`
 
 For compatibility with existing setups, the workflow also accepts these fallback secret names:
 
-- Keystore: `RELEASE_KEYSTORE_BASE64` or `SIGNING_KEY`
-- Store password: `KEYSTORE_PASSWORD`
-- Alias: `KEY_ALIAS`
-- Key password: `KEY_PASSWORD`
+- Keystore: `NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_BASE64`, or `SIGNING_KEY`
+- Store password: `NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD` or `KEYSTORE_PASSWORD`
+- Alias: `NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS` or `KEY_ALIAS`
+- Key password: `NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD` or `KEY_PASSWORD`
 
 To encode the existing keystore on Linux:
 

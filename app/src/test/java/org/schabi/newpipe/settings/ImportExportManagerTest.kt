@@ -97,7 +97,7 @@ class ImportExportManagerTest {
                 entries.first { it.name == BackupFileLocator.FILE_NAME_MANIFEST }
             ).use { actual ->
                 val manifest = JsonParser.`object`().from(actual)
-                assertEquals("NewPipe", manifest.getString("appName"))
+                assertEquals("WizeStream", manifest.getString("appName"))
                 assertTrue(manifest.containsKey("backupFormatVersion"))
                 assertTrue(manifest.containsKey("createdTimestamp"))
                 assertTrue(manifest.getBoolean("includesDatabase"))

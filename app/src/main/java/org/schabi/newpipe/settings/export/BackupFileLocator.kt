@@ -5,7 +5,7 @@ import java.nio.file.Path
 import kotlin.io.path.div
 
 /**
- * Locates specific files of NewPipe based on the home directory of the app.
+ * Locates WizeStream files based on the home directory of the app.
  */
 class BackupFileLocator(context: Context) {
     companion object {

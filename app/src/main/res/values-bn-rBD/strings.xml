@@ -93,7 +93,7 @@
     <string name="msg_name">ফাইলের নাম</string>
     <string name="msg_threads">থ্রেড</string>
     <string name="msg_error">ত্রুটি</string>
-    <string name="msg_running">NewPipe ডাউনলোড হচ্ছে</string>
+    <string name="msg_running">WizeStream ডাউনলোড হচ্ছে</string>
     <string name="msg_running_detail">বিস্তারিত জানার জন্য আলতো চাপ</string>
     <string name="msg_wait">অনুগ্রহপূর্বক অপেক্ষা করো…</string>
     <string name="msg_copied">ক্লিপবোর্ডে অনুলিপি করা হয়েছে</string>
@@ -151,7 +151,7 @@
     <string name="show_search_suggestions_title">অনুসন্ধানের পরামর্শ</string>
     <string name="search_showing_result_for">ফলাফল দেখাচ্ছে: %s এর জন্যে</string>
     <string name="tab_about">সম্পর্কিত</string>
-    <string name="title_activity_about">নিউপাইপ এর সম্বন্ধে</string>
+    <string name="title_activity_about">WizeStream এর সম্বন্ধে</string>
     <string name="trending">ট্রেন্ডিং</string>
     <string name="feed_create_new_group_button_title">নতুন</string>
     <string name="feed_notification_loading">ফিড লোড হচ্ছে…</string>
@@ -195,9 +195,9 @@
     <string name="title_most_played">সবথেকে বেশি চালানো</string>
     <string name="title_last_played">শেষ চালানো</string>
     <string name="read_full_license">লাইসেন্স পড়ুন</string>
-    <string name="app_license_title">নিউপাইপ এর লাইসেন্স</string>
+    <string name="app_license_title">WizeStream এর লাইসেন্স</string>
     <string name="read_privacy_policy">প্রাইভেসি পলিসি পড়ুন</string>
-    <string name="privacy_policy_title">নিউপাইপ এর গোপনীয়তা নীতি</string>
+    <string name="privacy_policy_title">WizeStream এর গোপনীয়তা নীতি</string>
     <string name="give_back">ফিরিয়ে দিন</string>
     <string name="view_on_github">গিটহাব এ দেখুন</string>
     <string name="title_licenses">থার্ড-পার্টি লাইসেন্স সমূহ</string>
@@ -236,9 +236,9 @@
     <string name="switch_to_main">মেন এ ফিরে যান</string>
     <string name="switch_to_popup">পপ-আপ এ খুলুন</string>
     <string name="switch_to_background">পেছনে নিয়ে যান</string>
-    <string name="app_update_notification_channel_description">নতুন নিউপাইপ ভার্সন এর নোটিফিকেশন</string>
+    <string name="app_update_notification_channel_description">নতুন WizeStream ভার্সন এর নোটিফিকেশন</string>
     <string name="app_update_notification_channel_name">অ্যাপ আপডেট নোটিফিকেশন</string>
-    <string name="notification_channel_name">নিউ পাইপ নোটিফিকেশন</string>
+    <string name="notification_channel_name">WizeStream নোটিফিকেশন</string>
     <string name="play_all">সব চালু করুন</string>
     <string name="file_deleted">ফাইল ডিলিট হয়েছে</string>
     <string name="best_resolution">সেরা রেজুলিউসন</string>
@@ -324,7 +324,7 @@
         <item quantity="one">%d মিনিট</item>
         <item quantity="other">%d মিনিট</item>
     </plurals>
-    <string name="website_encouragement">আরও তথ্য এবং খবরের জন্য নিউপাইপ ওয়েবসাইট দেখো।</string>
+    <string name="website_encouragement">আরও তথ্য এবং খবরের জন্য WizeStream ওয়েবসাইট দেখো।</string>
     <string name="open_with">দিয়ে খুলো</string>
     <string name="comments_tab_description">মতামত</string>
     <string name="off">বন্ধ</string>
@@ -379,7 +379,7 @@
     <string name="notification_action_4_title">পঞ্চম পদক্ষেপ বোতাম</string>
     <string name="show_description_summary">ভিডিও বর্ণনা ও বাড়তি তথ্য লুকাতে বন্ধ করুন</string>
     <string name="dont_show">দেখিও না</string>
-    <string name="app_update_available_notification_title">নিউ পাইপ আপডেট এসেছে!</string>
+    <string name="app_update_available_notification_title">WizeStream আপডেট এসেছে!</string>
     <string name="comments_are_disabled">মন্তব্যসমূহ নিষ্ক্রিয় আছে</string>
     <plurals name="views">
         <item quantity="one">%s বার দেখেছে</item>

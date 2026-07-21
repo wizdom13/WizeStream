@@ -52,7 +52,7 @@ public final class SettingMigrations {
     private static final Migration MIGRATION_0_1 = new Migration(0, 1) {
         @Override
         public void migrate(@NonNull final Context context) {
-            // We changed the content of the dialog which opens when sharing a link to NewPipe
+            // We changed the content of the dialog which opens when sharing a link to WizeStream
             // by removing the "open detail page" option.
             // Therefore, show the dialog once again to ensure users need to choose again and are
             // aware of the changed dialog.

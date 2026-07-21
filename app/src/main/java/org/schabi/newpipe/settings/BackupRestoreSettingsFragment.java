@@ -91,7 +91,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
             NoFileManagerSafeGuard.launchSafe(
                     requestExportPathLauncher,
                     StoredFileHelper.getNewPicker(requireContext(),
-                            "NewPipeData-" + exportDateFormat.format(new Date()) + ".zip",
+                            "WizeStreamData-" + exportDateFormat.format(new Date()) + ".zip",
                             ZIP_MIME_TYPE, getImportExportDataUri()),
                     TAG,
                     getContext()
@@ -110,7 +110,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     .setCancelable(true)
                     .setPositiveButton(R.string.ok, (dialogInterface, i) -> {
                         // Clears the default SharedPreferences and applies Material defaults.
-                        wizestreamDefaultPreferences.applyBundledDefaults(
+                        WizeStreamDefaultPreferences.applyBundledDefaults(
                                 requireContext(), true);
                         // Restarts the app
                         if (getActivity() == null) {

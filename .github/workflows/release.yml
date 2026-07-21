@@ -49,26 +49,26 @@ jobs:
 
       - name: Write release keystore
         env:
-          RELEASE_KEYSTORE_BASE64: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.WIZESTREAM_RELEASE_KEYSTORE_BASE64 || secrets.NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           if [ -z "${RELEASE_KEYSTORE_BASE64}" ]; then
-            echo "Missing NEWPIPE_MATERIAL_RELEASE_KEYSTORE_BASE64 secret" >&2
+            echo "Missing WIZESTREAM_RELEASE_KEYSTORE_BASE64 secret" >&2
             exit 1
           fi
           printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 -d > "$RUNNER_TEMP/wizestream-release.keystore"
 
       - name: Build signed release APK
         env:
-          NEWPIPE_MATERIAL_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
-          NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
-          NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS }}
-          NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD: ${{ secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD }}
+          WIZESTREAM_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
+          WIZESTREAM_RELEASE_STORE_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_STORE_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
+          WIZESTREAM_RELEASE_KEY_ALIAS: ${{ secrets.WIZESTREAM_RELEASE_KEY_ALIAS || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS }}
+          WIZESTREAM_RELEASE_KEY_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_KEY_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ -z "${NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD}" ] || \
-             [ -z "${NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS}" ] || \
-             [ -z "${NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD}" ]; then
+          if [ -z "${WIZESTREAM_RELEASE_STORE_PASSWORD}" ] || \
+             [ -z "${WIZESTREAM_RELEASE_KEY_ALIAS}" ] || \
+             [ -z "${WIZESTREAM_RELEASE_KEY_PASSWORD}" ]; then
             echo "Missing one or more WizeStream release signing secrets" >&2
             exit 1
           fi

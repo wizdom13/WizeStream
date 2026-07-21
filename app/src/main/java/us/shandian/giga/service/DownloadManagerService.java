@@ -230,7 +230,8 @@ public class DownloadManagerService extends Service {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
 
         if (mNotificationManager != null && downloadDoneNotification != null) {
-            downloadDoneNotification.setDeleteIntent(null);// prevent NewPipe running when is killed, cleared from recent, etc
+            // Prevent WizeStream from running when killed or cleared from recents.
+            downloadDoneNotification.setDeleteIntent(null);
             mNotificationManager.notify(DOWNLOADS_NOTIFICATION_ID, downloadDoneNotification.build());
         }
 

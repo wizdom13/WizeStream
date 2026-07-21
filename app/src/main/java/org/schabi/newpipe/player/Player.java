@@ -1854,7 +1854,7 @@ public final class Player implements PlaybackListener, Listener {
      *
      * @see com.google.android.exoplayer2.Player.Listener#onPlayerError(PlaybackException)
      */
-    // Any error code not explicitly covered here are either unrelated to NewPipe use case
+    // Any error code not explicitly covered here is either unrelated to the WizeStream use case
     // (e.g. DRM) or not recoverable (e.g. Decoder error). In both cases, the player should
     // shutdown.
     @SuppressWarnings("SwitchIntDef")

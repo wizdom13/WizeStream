@@ -14,10 +14,14 @@ plugins {
     checkstyle
 }
 
-val releaseStoreFile = System.getenv("NEWPIPE_MATERIAL_RELEASE_STORE_FILE")
-val releaseStorePassword = System.getenv("NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD")
-val releaseKeyAlias = System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS")
-val releaseKeyPassword = System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD")
+val releaseStoreFile = System.getenv("WIZESTREAM_RELEASE_STORE_FILE")
+    ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_STORE_FILE")
+val releaseStorePassword = System.getenv("WIZESTREAM_RELEASE_STORE_PASSWORD")
+    ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = System.getenv("WIZESTREAM_RELEASE_KEY_ALIAS")
+    ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("WIZESTREAM_RELEASE_KEY_PASSWORD")
+    ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD")
 val hasReleaseSigningConfig = listOf(
     releaseStoreFile,
     releaseStorePassword,
@@ -41,7 +45,7 @@ configure<ApplicationExtension> {
             minorApiLevel = NEWPIPE_VERSION_SDK_COMPILE_MINOR
         }
     }
-    namespace = NEWPIPE_APPLICATION_ID_OLD
+    namespace = UPSTREAM_NEWPIPE_NAMESPACE
 
     dependenciesInfo {
         includeInApk = false
@@ -49,7 +53,7 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = NEWPIPE_MATERIAL_APPLICATION_ID
+        applicationId = WIZESTREAM_APPLICATION_ID
         resValue("string", "app_name", "WizeStream")
         minSdk {
             version = release(NEWPIPE_VERSION_SDK_MIN)
@@ -59,15 +63,15 @@ configure<ApplicationExtension> {
         }
 
         versionCode = System.getProperty("versionCodeOverride")?.toInt()
-            ?: NEWPIPE_MATERIAL_VERSION_CODE
+            ?: WIZESTREAM_VERSION_CODE
 
-        versionName = NEWPIPE_MATERIAL_VERSION_NAME
+        versionName = WIZESTREAM_VERSION_NAME
         System.getProperty("versionNameSuffix")?.let { versionNameSuffix = it }
 
         buildConfigField(
             "String",
-            "NEWPIPE_MATERIAL_VERSION_NAME",
-            "\"$NEWPIPE_MATERIAL_VERSION_NAME\""
+            "WIZESTREAM_VERSION_NAME",
+            "\"$WIZESTREAM_VERSION_NAME\""
         )
         buildConfigField(
             "String",
@@ -76,8 +80,8 @@ configure<ApplicationExtension> {
         )
         buildConfigField(
             "int",
-            "NEWPIPE_MATERIAL_RELEASE_NUMBER",
-            "$NEWPIPE_MATERIAL_RELEASE_NUMBER"
+            "WIZESTREAM_RELEASE_NUMBER",
+            "$WIZESTREAM_RELEASE_NUMBER"
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

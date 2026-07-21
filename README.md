@@ -23,6 +23,9 @@ It is **not affiliated with, sponsored by, or endorsed by** the official NewPipe
 
 WizeStream preserves the NewPipe libre software license, upstream credits, and third-party license notices.
 
+- [Frequently asked questions](docs/faq.md)
+- [Privacy policy](PRIVACY.md)
+
 ### Rebranding from NewPipe Material
 
 This project was previously distributed as **NewPipe Material**. In July 2026, NewPipe e.V. asked the project to adopt a unique name that does not use the registered NewPipe word mark, in accordance with its trademark policy. The project was therefore renamed to **WizeStream**.
@@ -223,14 +226,16 @@ The debug APK uses the app label **WizeStream Debug** and package `org.wisso.new
 
 ## Release signing
 
-The existing signing environment-variable names are retained for build compatibility:
+Configure release signing with the WizeStream environment-variable names:
 
 ```text
-NEWPIPE_MATERIAL_RELEASE_STORE_FILE
-NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD
-NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS
-NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD
+WIZESTREAM_RELEASE_STORE_FILE
+WIZESTREAM_RELEASE_STORE_PASSWORD
+WIZESTREAM_RELEASE_KEY_ALIAS
+WIZESTREAM_RELEASE_KEY_PASSWORD
 ```
+
+The legacy `NEWPIPE_MATERIAL_RELEASE_*` names remain accepted as fallbacks for existing environments.
 
 When all four values are present, build the signed release APK with:
 

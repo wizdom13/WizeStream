@@ -144,7 +144,7 @@ class UpdateDownloadWorker(
             applicationContext.getString(R.string.app_update_download_progress_message, percent)
         }
         val notification = NotificationCompat.Builder(applicationContext, channelId)
-            .setSmallIcon(R.drawable.ic_newpipe_update)
+            .setSmallIcon(R.drawable.ic_wizestream_update)
             .setContentTitle(
                 applicationContext.getString(R.string.app_update_download_progress_title)
             )

@@ -46,7 +46,7 @@ public final class NewPipeSettings {
     private NewPipeSettings() { }
 
     public static void initSettings(final Context context) {
-        wizestreamDefaultPreferences.applyBundledDefaultsIfNeeded(
+        WizeStreamDefaultPreferences.applyBundledDefaultsIfNeeded(
                 context, App.getInstance().isFirstRun());
 
         // first run migrations, then setDefaultValues, since the latter requires the correct types
@@ -91,7 +91,8 @@ public final class NewPipeSettings {
             }
 
             final SharedPreferences.Editor spEditor = prefs.edit();
-            spEditor.putString(key, getNewPipeChildFolderPathForDir(getDir(defaultDirectoryName)));
+            spEditor.putString(key,
+                    getWizeStreamChildFolderPathForDir(getDir(defaultDirectoryName)));
             spEditor.apply();
         }
     }
@@ -101,8 +102,8 @@ public final class NewPipeSettings {
         return new File(Environment.getExternalStorageDirectory(), defaultDirectoryName);
     }
 
-    private static String getNewPipeChildFolderPathForDir(final File dir) {
-        return new File(dir, "NewPipe").toURI().toString();
+    private static String getWizeStreamChildFolderPathForDir(final File dir) {
+        return new File(dir, "WizeStream").toURI().toString();
     }
 
     public static boolean useStorageAccessFramework(final Context context) {

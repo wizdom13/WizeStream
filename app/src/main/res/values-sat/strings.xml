@@ -182,7 +182,7 @@
     <string name="artists">ᱟᱨᱴᱤᱥᱴ ᱠᱚ</string>
     <string name="disabled">ᱵᱷᱮᱜᱟᱨ ᱦᱚᱲ</string>
     <string name="clear">ᱠᱞᱟᱨ</string>
-    <string name="notification_channel_description">ᱱᱤᱭᱩ ᱯᱟᱭᱯᱮ ᱨᱮᱱᱟᱜ ᱯᱞᱮᱭᱟᱨ ᱞᱟᱹᱜᱤᱫ ᱱᱳᱴᱤᱯᱷᱤᱠᱮᱥᱚᱱ</string>
+    <string name="notification_channel_description">WizeStream ᱨᱮᱱᱟᱜ ᱯᱞᱮᱭᱟᱨ ᱞᱟᱹᱜᱤᱫ ᱱᱳᱴᱤᱯᱷᱤᱠᱮᱥᱚᱱ</string>
     <string name="hash_channel_description">ᱵᱷᱤᱰᱤᱭᱳ ᱦᱟᱥᱤᱝ ᱯᱨᱚᱜᱨᱮᱥ ᱞᱟᱹᱜᱤᱫ ᱠᱷᱚᱵᱚᱨ</string>
     <string name="streams_notification_channel_name">ᱱᱟᱣᱟ ᱫᱟᱨᱮ ᱠᱚ</string>
     <string name="streams_notification_channel_description">ᱥᱮᱞᱮᱫ ᱞᱟᱹᱜᱤᱫ ᱱᱟᱣᱟ ᱥᱴᱨᱚᱢ ᱠᱚ ᱵᱟᱰᱟᱭ ᱦᱚᱪᱚ</string>
@@ -294,7 +294,7 @@
     <string name="seekbar_preview_thumbnail_title">Seekbar thumbnail preview ᱧᱮᱞᱢᱮ</string>
     <string name="low_quality_smaller">ᱠᱚᱢ ᱠᱣᱟᱞᱤᱴᱤ (ᱢᱤᱫ ᱠᱷᱚᱱ ᱠᱚᱢ)</string>
     <string name="dont_show">ᱵᱟᱝ ᱧᱮᱞᱚᱜ</string>
-    <string name="app_update_unavailable_toast">ᱟᱢ NewPipe ᱨᱮᱭᱟᱜ ᱱᱟᱣᱟ ᱵᱟᱨᱥᱚᱱ ᱪᱟᱞᱟᱜ ᱠᱟᱱᱟ</string>
+    <string name="app_update_unavailable_toast">ᱟᱢ WizeStream ᱨᱮᱭᱟᱜ ᱱᱟᱣᱟ ᱵᱟᱨᱥᱚᱱ ᱪᱟᱞᱟᱜ ᱠᱟᱱᱟ</string>
     <string name="missions_header_pending">ᱯᱮᱱᱰᱤᱝ</string>
     <string name="queued">ᱠᱩᱠᱞᱤ</string>
     <string name="post_processing">ᱯᱟᱥᱴᱟ ᱯᱨᱚᱥᱟᱥᱚᱱ</string>
@@ -437,7 +437,7 @@
     <string name="switch_to_main">ᱢᱩᱬᱩᱛ ᱨᱮ ᱞᱤᱱ ᱢᱮ</string>
     <string name="export_data_title">ᱮᱠᱥᱯᱳᱨᱴ ᱰᱮᱴᱟᱵᱮᱥ</string>
     <string name="import_data_summary">ᱟᱢᱟᱜ ᱱᱮᱛᱟᱨᱟᱜ ᱱᱟᱜᱟᱢ, ᱥᱟᱵᱽᱥᱠᱨᱟᱭᱵᱽᱥ, ᱯᱷᱟᱭᱞᱤᱥᱴ ᱟᱨ (ᱵᱟᱪᱷᱱᱟᱣ ᱞᱮᱠᱟᱛᱮ) ᱥᱤᱴᱤᱝ ᱠᱚ ᱩᱪᱟᱹᱲᱟ</string>
-    <string name="clear_cookie_summary">ᱟᱢ ᱢᱤᱫ reCAPTCHA ᱥᱟᱯᱲᱟᱣ ᱞᱮᱠᱷᱟᱱ NewPipe ᱥᱟᱦᱴᱟᱨᱮ ᱥᱚᱫᱚᱨ ᱟᱠᱟᱱ ᱠᱩᱠᱤ ᱠᱚ ᱵᱚᱫᱚᱞ ᱢᱮ</string>
+    <string name="clear_cookie_summary">ᱟᱢ ᱢᱤᱫ reCAPTCHA ᱥᱟᱯᱲᱟᱣ ᱞᱮᱠᱷᱟᱱ WizeStream ᱥᱟᱦᱴᱟᱨᱮ ᱥᱚᱫᱚᱨ ᱟᱠᱟᱱ ᱠᱩᱠᱤ ᱠᱚ ᱵᱚᱫᱚᱞ ᱢᱮ</string>
     <string name="clear_playback_states_title">ᱯᱷᱟᱭᱞᱟᱣ ᱴᱷᱟᱶ ᱠᱚ ᱵᱚᱫᱚᱞ ᱢᱮ</string>
     <string name="clear_playback_states_summary">ᱡᱚᱛᱚ ᱯᱞᱮᱤᱯᱷᱟᱭᱤᱰ ᱯᱚᱡᱤᱥᱚᱱ ᱠᱚ ᱵᱚᱫᱚᱞᱟ</string>
     <string name="delete_playback_states_alert">ᱡᱚᱛᱚ ᱯᱞᱮᱵᱟᱠ ᱯᱳᱡᱤᱥᱚᱱ ᱠᱚ ᱵᱚᱫᱚᱞ ᱢᱮ?</string>
@@ -457,7 +457,7 @@
     <string name="saved_tabs_invalid_json">ᱥᱚᱞᱦᱮ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱵᱟᱝ ᱯᱟᱲᱦᱟᱣ ᱫᱟᱲᱮᱭᱟᱜ ᱠᱟᱱᱟ, ᱚᱱᱟᱛᱮ ᱵᱮᱵᱷᱟᱨᱤᱡᱽ ᱠᱚ</string>
     <string name="restore_defaults_confirmation">ᱟᱢ ᱥᱩᱯᱚᱨᱴ ᱠᱚ ᱵᱚᱫᱚᱞ ᱢᱮᱢᱮ?</string>
     <string name="permission_display_over_apps">ᱮᱴᱟᱜ ᱮᱯ ᱨᱮ ᱵᱚᱫᱚᱞ ᱞᱟᱹᱜᱤᱫ ᱫᱟᱣ ᱮᱢ ᱢᱮ</string>
-    <string name="error_report_notification_title">NewPipe ᱨᱮ ᱢᱤᱫᱴᱟᱹᱝ ᱵᱷᱩᱞ ᱧᱟᱢ ᱞᱮᱱᱟ, ᱠᱷᱚᱵᱚᱨ ᱞᱟᱹᱜᱤᱫ ᱴᱟᱯ ᱢᱮ</string>
+    <string name="error_report_notification_title">WizeStream ᱨᱮ ᱢᱤᱫᱴᱟᱹᱝ ᱵᱷᱩᱞ ᱧᱟᱢ ᱞᱮᱱᱟ, ᱠᱷᱚᱵᱚᱨ ᱞᱟᱹᱜᱤᱫ ᱴᱟᱯ ᱢᱮ</string>
     <string name="sorry_string">ᱤᱧᱤᱧ ᱵᱟᱹᱧ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ, ᱱᱚᱶᱟ ᱫᱚ ᱵᱟᱝ ᱦᱩᱭᱩᱜ ᱞᱟᱹᱠᱛᱤ ᱛᱟᱦᱮᱸᱫ ᱾</string>
     <string name="error_report_button_text">ᱤ-ᱢᱮᱞ ᱤᱫᱤ ᱠᱟᱛᱮ ᱨᱤᱯᱚᱨᱴ ᱢᱮ</string>
     <string name="copy_for_github">ᱯᱷᱚᱨᱢᱮᱴ ᱟᱠᱟᱱ ᱨᱤᱯᱳᱨᱴ ᱠᱚᱯᱤ ᱢᱮ</string>
@@ -478,7 +478,7 @@
     <string name="no_subscribers">ᱚᱵᱷᱤᱱᱮᱛᱟᱨ ᱵᱟᱹᱱᱩᱜᱼᱟ</string>
     <string name="no_one_watching">ᱚᱠᱚᱭ ᱦᱚᱸ ᱵᱟᱝ ᱧᱮᱞᱚᱜ ᱠᱟᱱᱟ</string>
     <string name="done">ᱜᱚᱴᱟ ᱟᱠᱟᱱᱟ</string>
-    <string name="title_activity_about">ᱱᱤᱭᱩ ᱯᱟᱭᱯᱮ ᱵᱟᱵᱚᱛ</string>
+    <string name="title_activity_about">WizeStream ᱵᱟᱵᱚᱛ</string>
     <string name="title_licenses">ᱯᱮᱨᱟᱜ ᱞᱟᱭᱥᱮᱱᱥ</string>
     <string name="donation_title">ᱰᱳᱱᱮᱴ ᱢᱮ</string>
     <string name="no_one_listening">ᱡᱟᱦᱟᱸᱭ ᱜᱮᱭ ᱟᱸᱡᱚᱢᱟ</string>
@@ -494,9 +494,9 @@
     <string name="recaptcha_solve">ᱥᱚᱞᱦᱮ</string>
     <string name="donation_encouragement">ᱱᱤᱭᱩ ᱯᱟᱭᱤᱯ ᱫᱚ ᱱᱤᱡᱮᱨᱟᱜ ᱚᱠᱛᱚ ᱟᱢᱟᱜ ᱵᱮᱵᱷᱟᱨᱤᱭᱟᱹ ᱵᱷᱟᱹᱜᱤ ᱵᱷᱟᱹᱜᱤ ᱥᱟᱹᱜᱟᱹᱭ ᱮᱢ ᱠᱟᱛᱮ ᱵᱮᱱᱟᱣ ᱟᱠᱟᱱᱟ ᱾ ᱱᱤᱣ ᱯᱟᱭᱤᱯ ᱵᱮᱨᱮᱫ ᱞᱟᱹᱜᱤᱫ ᱮᱱᱮᱢᱤᱭᱟᱹ ᱠᱚ ᱜᱚᱲᱚ ᱥᱚᱦᱚᱫ ᱮᱢ ᱢᱮ ᱾</string>
     <string name="website_title">ᱣᱮᱵᱽᱥᱟᱭᱤᱴ</string>
-    <string name="app_license_title">ᱱᱤᱣ ᱯᱟᱭᱯ ᱨᱮᱭᱟᱜ ᱞᱟᱭᱥᱮᱱᱥ</string>
+    <string name="app_license_title">WizeStream ᱨᱮᱭᱟᱜ ᱞᱟᱭᱥᱮᱱᱥ</string>
     <string name="app_license">ᱱᱤᱭᱩ ᱯᱟᱭᱯ ᱫᱚ ᱠᱚᱯᱤᱞᱮᱠᱴ ᱞᱤᱵᱨᱮ ᱥᱚᱯᱷᱴᱣᱮᱭᱟᱨ ᱠᱟᱱᱟ ᱾ ᱟᱢ ᱱᱚᱶᱟ ᱵᱮᱵᱷᱟᱨ, ᱯᱟᱲᱦᱟᱣ, ᱮᱴᱟᱜ ᱦᱚᱲ ᱥᱟᱶ ᱮᱢ ᱟᱨ ᱵᱮᱵᱚᱥᱛᱟ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾ ᱟᱢ ᱱᱚᱶᱟ GNU General Public License ᱞᱮᱠᱟᱛᱮ ᱯᱟᱨᱥᱟᱞ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱟᱨ/ᱟᱨᱵᱟᱝ Free Software Foundation ᱦᱚᱛᱮᱛᱮ ᱵᱮᱵᱦᱟᱨ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ, ᱡᱟᱦᱟᱸ ᱫᱚ ᱞᱟᱭᱥᱮᱱᱥ ᱨᱮᱱᱟᱜ ᱵᱟᱨᱥᱚᱱ ᱓ ᱥᱮ (ᱛᱟᱢᱟᱜ ᱵᱟᱪᱷᱟᱣ ᱞᱮᱠᱟᱛᱮ) ᱡᱟᱦᱟᱸᱱᱟᱜ ᱛᱟᱭᱚᱢ ᱵᱟᱨᱥᱚᱱ ᱠᱟᱱᱟ ᱾</string>
-    <string name="website_encouragement">ᱟᱨᱦᱚᱸ ᱵᱟᱰᱟᱭ ᱟᱨ ᱠᱷᱚᱵᱚᱨ ᱞᱟᱹᱜᱤᱫ NewPipe ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱧᱮᱞ ᱢᱮ ᱾</string>
+    <string name="website_encouragement">ᱟᱨᱦᱚᱸ ᱵᱟᱰᱟᱭ ᱟᱨ ᱠᱷᱚᱵᱚᱨ ᱞᱟᱹᱜᱤᱫ WizeStream ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱧᱮᱞ ᱢᱮ ᱾</string>
     <string name="faq_description">ᱡᱩᱫᱤ ᱟᱢ ᱱᱚᱶᱟ ᱮᱯᱞᱤᱠᱮᱥᱚᱱ ᱵᱮᱵᱚᱦᱟᱨ ᱨᱮ ᱠᱷᱟᱡᱽᱱᱟ ᱮ ᱧᱟᱢᱟ, ᱮᱱᱠᱷᱟᱱ ᱱᱚᱶᱟ ᱥᱟᱸᱣ ᱡᱩᱲᱟᱹᱣ ᱟᱠᱟᱱ ᱯᱩᱥᱴᱟᱹ ᱠᱚ ᱧᱮᱞ ᱢᱮ!</string>
     <string name="faq">ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱨᱮ ᱧᱮᱞ ᱢᱮ</string>
     <string name="title_activity_history">ᱱᱟᱜᱟᱢ</string>
@@ -599,7 +599,7 @@
     <string name="feed_load_error">Error loading feed ᱥᱟᱯᱲᱟᱣ</string>
     <string name="feed_load_error_account_info">\'%s\' ᱞᱟᱹᱜᱤᱫ ᱯᱷᱤᱰ ᱞᱚᱰ ᱵᱟᱝ ᱦᱩᱭ ᱫᱟᱲᱮᱭᱟᱜ-ᱟ.</string>
     <string name="feed_load_error_terminated">ᱮᱠᱴᱚᱨᱟᱜ ᱮᱠᱟᱶᱴ ᱫᱚ ᱛᱷᱟᱯᱚᱱ ᱟᱠᱟᱱᱟ ᱾
-\nNewPipe ᱫᱚ ᱱᱚᱣᱟ ᱯᱷᱤᱰ ᱫᱚ ᱟᱵᱚ ᱦᱟᱵᱤᱡ ᱵᱟᱝ ᱞᱚᱰ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾
+\nWizeStream ᱫᱚ ᱱᱚᱣᱟ ᱯᱷᱤᱰ ᱫᱚ ᱟᱵᱚ ᱦᱟᱵᱤᱡ ᱵᱟᱝ ᱞᱚᱰ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾
 \nᱟᱢ ᱱᱚᱣᱟ ᱪᱟᱱᱮᱨ ᱠᱷᱚᱱ ᱟᱹᱪᱩᱨ ᱚᱪᱚᱜ ᱠᱟᱹᱢᱤᱭᱟᱢ ᱥᱮ?</string>
     <string name="feed_load_error_fast_unknown">ᱯᱷᱚᱥᱴ ᱯᱷᱤᱰ ᱢᱚᱰ ᱱᱚᱶᱟ ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱮᱢ ᱮᱫᱟ ᱾</string>
     <string name="feed_use_dedicated_fetch_method_title">ᱡᱩᱫᱤ ᱢᱮᱱᱟᱜᱼᱟ ᱮᱢ ᱟᱠᱟᱱ ᱡᱚᱢᱟᱜ ᱠᱷᱚᱱ ᱦᱟᱛᱟᱣ</string>
@@ -711,7 +711,7 @@
     <string name="msg_name">ᱯᱷᱤᱞᱤᱢ ᱧᱩᱛᱩᱢ</string>
     <string name="msg_threads">ᱛᱷᱤᱭᱮᱴᱚᱨ</string>
     <string name="msg_error">ᱪᱷᱟᱸᱪ</string>
-    <string name="msg_running">NewPipe ᱮᱯᱞᱤᱠᱮᱥᱚᱱ</string>
+    <string name="msg_running">WizeStream ᱮᱯᱞᱤᱠᱮᱥᱚᱱ</string>
     <string name="msg_running_detail">ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱴᱟᱯ ᱢᱮ</string>
     <string name="msg_calculating_hash">ᱦᱟᱥᱤ ᱠᱚᱞᱠᱟᱛᱟ</string>
     <string name="no_dir_yet">ᱱᱤᱛ ᱦᱟᱹᱵᱤᱡ ᱰᱟᱩᱱᱞᱚᱰ ᱯᱷᱳᱞᱰᱟᱨ ᱥᱮᱴ ᱵᱟᱝ, ᱱᱤᱛ ᱦᱟᱹᱵᱤᱡ ᱰᱟᱩᱱᱞᱚᱰ ᱯᱷᱳᱞᱰᱟᱨ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
@@ -719,7 +719,7 @@
     <string name="tab_about">About &amp; FAQ</string>
     <string name="tab_licenses">ᱞᱟᱭᱥᱮᱱᱥ</string>
     <string name="contribution_title">ᱥᱮᱞᱮᱫᱚᱜ ᱢᱮ</string>
-    <string name="privacy_policy_title">ᱱᱤᱭᱩ ᱯᱟᱭᱯᱮ ᱨᱮᱱᱟᱜ ᱯᱨᱟᱭᱵᱷᱮᱴᱤ ᱯᱚᱞᱤᱥᱤ</string>
+    <string name="privacy_policy_title">WizeStream ᱨᱮᱱᱟᱜ ᱯᱨᱟᱭᱵᱷᱮᱴᱤ ᱯᱚᱞᱤᱥᱤ</string>
     <string name="privacy_policy_encouragement">ᱱᱤᱣ ᱯᱟᱭᱤᱯ ᱯᱨᱚᱡᱮᱠᱴ ᱟᱢᱟᱜ ᱯᱨᱟᱭᱵᱷᱮᱴ ᱟᱹᱰᱤ ᱥᱚᱨᱮᱥ ᱜᱮᱭᱟ. ᱚᱱᱟᱛᱮ, ᱟᱢᱟᱜ ᱟᱹᱭᱫᱟᱹᱨᱤ ᱵᱟᱹᱱᱩᱜ ᱠᱷᱟᱱ ᱱᱚᱶᱟ ᱮᱯᱞᱤᱠᱮᱥᱚᱱ ᱡᱟᱦᱟᱱ ᱰᱮᱴᱟ ᱵᱟᱭ ᱥᱟᱢᱟᱝᱟ ᱾_x000D_
 \nᱱᱤᱣ ᱯᱟᱭᱤᱯ ᱨᱮᱱᱟᱜ ᱯᱨᱟᱭᱵᱷᱮᱴ ᱯᱚᱞᱤᱥᱤ ᱨᱮ ᱡᱟᱦᱟᱸᱱ ᱰᱮᱴᱟ ᱠᱚ ᱟᱢ ᱠᱨᱮᱥᱚᱨ ᱨᱮᱯᱳᱨᱴ ᱚᱠᱟᱛᱮ ᱟᱢ ᱚᱠᱟ ᱞᱮᱠᱟᱛᱮ ᱟᱢᱟᱜ ᱰᱮᱴᱟ ᱠᱚ ᱵᱚᱫᱚᱞᱟ ᱟᱨ ᱵᱚᱫᱚᱞᱟ ᱚᱱᱟ ᱵᱟᱵᱚᱫ ᱛᱮ ᱡᱚᱛᱚ ᱵᱟᱰᱟᱭ ᱮᱢᱚᱜ ᱟ᱾</string>
     <string name="read_privacy_policy">ᱯᱨᱟᱭᱵᱷᱮᱴᱤ ᱯᱚᱞᱤᱥ ᱯᱟᱲᱦᱟᱣ ᱢᱮ</string>
@@ -736,7 +736,7 @@
     <string name="just_once">ᱢᱤᱫ ᱫᱷᱟᱣ</string>
     <string name="file">ᱯᱷᱤᱞᱤ</string>
     <string name="notifications">ᱱᱳᱴᱤᱯᱷᱤᱠᱮᱥᱚᱱ</string>
-    <string name="notification_channel_name">ᱱᱤᱭᱩ ᱯᱟᱭᱯᱮ ᱵᱟᱰᱟᱭ ᱦᱚᱪᱚ</string>
+    <string name="notification_channel_name">WizeStream ᱵᱟᱰᱟᱭ ᱦᱚᱪᱚ</string>
     <string name="playback_step">ᱥᱴᱮᱯ</string>
     <string name="error_connect_host">ᱥᱮᱵᱟ ᱨᱮ ᱡᱚᱲᱟᱣ ᱵᱟᱭ ᱫᱟᱲᱮᱭᱟᱜ ᱠᱟᱱᱟ</string>
     <string name="error_http_not_found">ᱵᱟᱝ ᱧᱟᱢ ᱟᱠᱟᱱᱟ</string>

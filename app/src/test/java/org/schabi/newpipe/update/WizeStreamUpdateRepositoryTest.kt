@@ -1,18 +1,16 @@
-@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
-
 package org.schabi.newpipe.update
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.schabi.newpipe.update.wizestreamUpdateRepository.VersionComparison
+import org.schabi.newpipe.update.WizeStreamUpdateRepository.VersionComparison
 
-class wizestreamUpdateRepositoryTest {
+class WizeStreamUpdateRepositoryTest {
     @Test
     fun compareInstalledToLatestDetectsNewerMaterialRelease() {
         assertEquals(
             VersionComparison.NEWER,
-            wizestreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "0.28.8-m1")
+            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "0.28.8-m1")
         )
     }
 
@@ -20,7 +18,7 @@ class wizestreamUpdateRepositoryTest {
     fun compareInstalledToLatestTreatsMatchingVPrefixedTagAsCurrent() {
         assertEquals(
             VersionComparison.SAME_OR_OLDER,
-            wizestreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "v0.28.7-m3")
+            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "v0.28.7-m3")
         )
     }
 
@@ -28,7 +26,7 @@ class wizestreamUpdateRepositoryTest {
     fun compareInstalledToLatestFailsSafelyForUnknownInstalledVersion() {
         assertEquals(
             VersionComparison.UNKNOWN,
-            wizestreamUpdateRepository.compareInstalledToLatest("material-dev", "v0.28.7-m3")
+            WizeStreamUpdateRepository.compareInstalledToLatest("material-dev", "v0.28.7-m3")
         )
     }
 
@@ -39,7 +37,7 @@ class wizestreamUpdateRepositoryTest {
 
         assertEquals(
             published,
-            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(draft, published))
+            WizeStreamUpdateRepository.selectLatestCandidateRelease(listOf(draft, published))
         )
     }
 
@@ -50,7 +48,7 @@ class wizestreamUpdateRepositoryTest {
 
         assertEquals(
             prerelease,
-            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(stable, prerelease))
+            WizeStreamUpdateRepository.selectLatestCandidateRelease(listOf(stable, prerelease))
         )
     }
 
@@ -61,13 +59,13 @@ class wizestreamUpdateRepositoryTest {
 
         assertEquals(
             newer,
-            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(older, newer))
+            WizeStreamUpdateRepository.selectLatestCandidateRelease(listOf(older, newer))
         )
     }
 
     @Test
     fun selectLatestCandidateReleaseHandlesEmptyListSafely() {
-        assertNull(wizestreamUpdateRepository.selectLatestCandidateRelease(emptyList()))
+        assertNull(WizeStreamUpdateRepository.selectLatestCandidateRelease(emptyList()))
     }
 
     @Test
@@ -76,11 +74,11 @@ class wizestreamUpdateRepositoryTest {
 
         assertEquals(
             prerelease,
-            wizestreamUpdateRepository.selectLatestCandidateRelease(listOf(prerelease))
+            WizeStreamUpdateRepository.selectLatestCandidateRelease(listOf(prerelease))
         )
         assertEquals(
             VersionComparison.NEWER,
-            wizestreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", prerelease.version)
+            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", prerelease.version)
         )
     }
 
@@ -89,7 +87,7 @@ class wizestreamUpdateRepositoryTest {
         publishedAt: String,
         draft: Boolean = false,
         prerelease: Boolean = false
-    ) = wizestreamUpdateRepository.Release(
+    ) = WizeStreamUpdateRepository.Release(
         version = version,
         title = version,
         htmlUrl = "https://github.com/wizdom13/WizeStream/releases/tag/$version",

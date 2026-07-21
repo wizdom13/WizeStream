@@ -285,7 +285,7 @@ public class StoredDirectoryHelper {
     /**
      * @return {@code false} if the storage is direct, or the SAF storage is valid; {@code true} if
      * SAF access to this SAF storage is denied (e.g. the user clicked on {@code Android settings ->
-     * Apps & notifications -> NewPipe -> Storage & cache -> Clear access});
+     * Apps & notifications -> WizeStream -> Storage & cache -> Clear access});
      */
     public boolean isInvalidSafStorage() {
         return docTree != null && docTree.getName() == null;

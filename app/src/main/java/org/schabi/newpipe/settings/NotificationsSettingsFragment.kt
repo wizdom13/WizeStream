@@ -79,7 +79,7 @@ class NotificationsSettingsFragment : BasePreferenceFragment(), OnSharedPreferen
                     Snackbar.LENGTH_INDEFINITE
                 ).apply {
                     setAction(R.string.settings) {
-                        NotificationHelper.openNewPipeSystemNotificationSettings(it.context)
+                        NotificationHelper.openSystemNotificationSettings(it.context)
                     }
                     addCallback(object : Snackbar.Callback() {
                         override fun onDismissed(transientBottomBar: Snackbar, event: Int) {

@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:filename", "ktlint:standard:class-naming")
-
 package org.schabi.newpipe.update
 
 import com.grack.nanojson.JsonArray
@@ -11,7 +9,7 @@ import java.util.Locale
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.DownloaderImpl
 
-object wizestreamUpdateRepository {
+object WizeStreamUpdateRepository {
     const val RELEASES_URL = "https://api.github.com/repos/wizdom13/WizeStream/releases"
     private const val MAX_CHANGELOG_RELEASES = 20
 
@@ -81,7 +79,7 @@ object wizestreamUpdateRepository {
     }
 
     fun installedVersionName(): String {
-        return BuildConfig.NEWPIPE_MATERIAL_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
+        return BuildConfig.WIZESTREAM_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
     }
 
     fun installedVersionSummary(): String {

@@ -47,7 +47,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
 
     /**
      * Maximum opacity allowed for Android 12 and higher to allow touches on other apps when using
-     * NewPipe's popup player.
+     * WizeStream's popup player.
      *
      * <p>
      * This value is hardcoded instead of being get dynamically with the method linked of the

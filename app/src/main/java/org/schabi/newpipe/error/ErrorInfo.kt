@@ -55,7 +55,7 @@ class ErrorInfo private constructor(
      */
     val recaptchaUrl: String?,
     /**
-     * If present, this resource can alternatively be opened in browser (useful if NewPipe is
+     * If present, this resource can alternatively be opened in browser (useful if WizeStream is
      * badly broken).
      */
     val openInBrowserUrl: String?

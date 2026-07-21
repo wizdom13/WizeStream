@@ -23,7 +23,7 @@ public final class InternalUrlsHandler {
     }
 
     /**
-     * Handle a YouTube timestamp description URL in NewPipe.
+     * Handle a YouTube timestamp description URL in WizeStream.
      * <p>
      * This method will check if the provided url is a YouTube timestamp description URL ({@code
      * https://www.youtube.com/watch?v=}video_id{@code &t=}time_in_seconds). If yes, the popup
@@ -32,7 +32,7 @@ public final class InternalUrlsHandler {
      *
      * @param context     the context to use
      * @param url         the URL to check if it can be handled
-     * @return true if the URL can be handled by NewPipe, false if it cannot
+     * @return true if the URL can be handled by WizeStream, false if it cannot
      */
     public static boolean handleUrlDescriptionTimestamp(final Context context,
                                                         @NonNull final String url) {

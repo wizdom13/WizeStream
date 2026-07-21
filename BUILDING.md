@@ -16,8 +16,6 @@ git clone --recurse-submodules https://github.com/wizdom13/WizeStream.git
 cd WizeStream
 ```
 
-The repository path above remains valid until the GitHub repository is renamed to `WizeStream`.
-
 For an existing checkout or after switching tags:
 
 ```bash
@@ -63,14 +61,16 @@ scripts/build.sh checkstyle
 
 ## Release signing
 
-The existing environment-variable names are retained for build and secret compatibility. Provide all four before running `scripts/build.sh release`:
+Provide all four WizeStream signing variables before running `scripts/build.sh release`:
 
 ```text
-NEWPIPE_MATERIAL_RELEASE_STORE_FILE
-NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD
-NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS
-NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD
+WIZESTREAM_RELEASE_STORE_FILE
+WIZESTREAM_RELEASE_STORE_PASSWORD
+WIZESTREAM_RELEASE_KEY_ALIAS
+WIZESTREAM_RELEASE_KEY_PASSWORD
 ```
+
+The legacy `NEWPIPE_MATERIAL_RELEASE_*` names remain accepted as fallbacks so existing CI secrets and local build environments continue to work during migration.
 
 The resulting APK is written under `app/build/outputs/apk/release/`.
 

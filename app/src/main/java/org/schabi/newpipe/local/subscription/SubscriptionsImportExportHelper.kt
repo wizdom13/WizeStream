@@ -56,7 +56,7 @@ class SubscriptionsImportExportHelper(
 
     fun onExportSelected() {
         val date = SimpleDateFormat("yyyyMMddHHmm", Locale.ENGLISH).format(Date())
-        val exportName = "newpipe_subscriptions_$date.json"
+        val exportName = "wizestream_subscriptions_$date.json"
 
         NoFileManagerSafeGuard.launchSafe(
             requestExportLauncher,

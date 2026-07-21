@@ -95,8 +95,8 @@
     <string name="best_resolution">أفضل دقة</string>
     <string name="undo">تراجع</string>
     <string name="play_all">تشغيل الكل</string>
-    <string name="notification_channel_name">تنبيهات NewPipe</string>
-    <string name="notification_channel_description">تنبيهات مشغل NewPipe</string>
+    <string name="notification_channel_name">تنبيهات WizeStream</string>
+    <string name="notification_channel_description">تنبيهات مشغل WizeStream</string>
     <string name="unknown_content">[غير معروف]</string>
     <string name="could_not_setup_download_menu">تعذر إعداد قائمة التنزيل</string>
     <string name="app_ui_crash">تعطل التطبيق / واجهة المستخدم</string>
@@ -135,7 +135,7 @@
     <string name="msg_name">اسم الملف</string>
     <string name="msg_threads">التقسيم</string>
     <string name="msg_error">الخطأ</string>
-    <string name="msg_running">يقوم نيوبايب بالتنزيل</string>
+    <string name="msg_running">يقوم WizeStream بالتنزيل</string>
     <string name="msg_running_detail">انقر للحصول على التفاصيل</string>
     <string name="msg_wait">يُرجى الإنتظار…</string>
     <string name="msg_copied">تم نسخه إلى الحافظة</string>
@@ -147,7 +147,7 @@
     <string name="settings_file_replacement_character_title">استبدال الحرف</string>
     <string name="charset_letters_and_digits">الحروف والأرقام</string>
     <string name="charset_most_special_characters">معظم الأحرف الخاصة</string>
-    <string name="title_activity_about">عن تطبيق نيوپايپ</string>
+    <string name="title_activity_about">عن تطبيق WizeStream</string>
     <string name="title_licenses">تراخيص الجهات الخارجية</string>
     <string name="tab_licenses">التراخيص</string>
     <string name="app_description">تطبيق مجاني خفيف البث على أندرويد.</string>
@@ -158,8 +158,8 @@
     <string name="donation_encouragement">يتم تطوير NewPipe من قبل متطوعين يقضون وقت فراغهم لتقديم أفضل تجربة لك. حان الوقت لرد المساعدة مع المطورين وجعل NewPipe أكثر و أفضل بينما يستمتعون بفنجان من القهوة.</string>
     <string name="give_back">رد الجميل</string>
     <string name="website_title">موقع الويب</string>
-    <string name="website_encouragement">قم بزيارة موقع NewPipe لمزيد من المعلومات والمستجدات.</string>
-    <string name="app_license_title">تراخيص NewPipe</string>
+    <string name="website_encouragement">قم بزيارة موقع WizeStream لمزيد من المعلومات والمستجدات.</string>
+    <string name="app_license_title">تراخيص WizeStream</string>
     <string name="read_full_license">قراءة الرخصة</string>
     <string name="delete_item_search_history">هل تريد حذف هذا العنصر من سجل البحث؟</string>
     <string name="main_page_content">محتوى الشاشة الرئيسية</string>
@@ -282,7 +282,7 @@
     <string name="invalid_file">الملف غير موجود أو الإذن بالقراءة أو الكتابة إليه غير موجود</string>
     <string name="no_streams_available_download">لا يوجد بث متاح للتنزيل</string>
     <string name="one_item_deleted">تم حذف عنصر واحد.</string>
-    <string name="app_license">NewPipe هو برنامج مفتوح المصدر وبحقوق متروكة: يمكنك استخدام الكود ودراسته وتحسينه كما شئت. وعلى وجه التحديد يمكنك إعادة توزيعه / أو تعديله تحت شروط رخصة GNU العمومية والتي نشرتها مؤسسة البرمجيات الحرة، سواء الإصدار 3 من الرخصة، أو (باختيارك) أي إصدار أحدث.</string>
+    <string name="app_license">WizeStream هو برنامج مفتوح المصدر وبحقوق متروكة: يمكنك استخدام الكود ودراسته وتحسينه كما شئت. وعلى وجه التحديد يمكنك إعادة توزيعه / أو تعديله تحت شروط رخصة GNU العمومية والتي نشرتها مؤسسة البرمجيات الحرة، سواء الإصدار 3 من الرخصة، أو (باختيارك) أي إصدار أحدث.</string>
     <string name="title_last_played">آخر ما تم تشغيله</string>
     <string name="title_most_played">الأكثر تشغيلا</string>
     <string name="override_current_data">هذا سوف يُزيل إعداداتك الحالية.</string>
@@ -302,25 +302,25 @@
 \n5. انقر على زر \"تحميل\" بعد ظهوره
 \n6. انقر على IMPORT FILE أدناه وحدد الملف البريدي تحميلها
 \n7. [إذا فشل استيراد الرمز البريدي] استخراج ملف .csv (عادة تحت عنوان \"يوتيوب ويوتيوب الموسيقى / الاشتراكات / الاشتراكات.csv\")، انقر على IMPORT FILE أدناه وحدد ملف csv المستخرج</string>
-    <string name="import_soundcloud_instructions">قم باستيراد ملف تعريف SoundCloud عن طريق كتابة عنوان URL أو معرفك: 
-\n 
-\n1. تمكين \"وضع سطح المكتب\" في متصفح الويب (الموقع غير متاح للأجهزة المحمولة) 
-\n2. انتقل إلى عنوان URL هذا: %1$s 
+    <string name="import_soundcloud_instructions">قم باستيراد ملف تعريف SoundCloud عن طريق كتابة عنوان URL أو معرفك:
+\n
+\n1. تمكين \"وضع سطح المكتب\" في متصفح الويب (الموقع غير متاح للأجهزة المحمولة)
+\n2. انتقل إلى عنوان URL هذا: %1$s
 \n3. تسجيل الدخول عندما يطلب منك
 \n4. انسخ عنوان URL للملف الشخصي الذي تمت إعادة توجيهك إليه.</string>
-    <string name="import_network_expensive_warning">ضع في اعتبارك أن هذه العملية يمكن أن تكون مكلفة اذا كنت تستخدم بيانات اشتراك انترنت. 
-\n 
+    <string name="import_network_expensive_warning">ضع في اعتبارك أن هذه العملية يمكن أن تكون مكلفة اذا كنت تستخدم بيانات اشتراك انترنت.
+\n
 \nهل تريد الاستمرار؟</string>
     <string name="playback_speed_control">ضوابط سرعة التشغيل</string>
     <string name="playback_tempo">سرعة الأداء</string>
     <string name="playback_pitch">تردد الصوت</string>
     <string name="unhook_checkbox">إلغاء الإرتباط (قد يسبب تشويه)</string>
     <string name="import_settings">هل تريد أيضا استيراد الإعدادات؟</string>
-    <string name="privacy_policy_title">سياسة خصوصية NewPipe</string>
-    <string name="privacy_policy_encouragement">يأخذ مشروع NewPipe خصوصيتك على محمل الجد. لذلك، لا يجمع التطبيق أي بيانات دون موافقتك.
-\nتوضح سياسة خصوصية NewPipe بالتفصيل البيانات التي يتم إرسالها وتخزينها عند إرسال تقرير الأعطال.</string>
+    <string name="privacy_policy_title">سياسة خصوصية WizeStream</string>
+    <string name="privacy_policy_encouragement">يأخذ مشروع WizeStream خصوصيتك على محمل الجد. لذلك، لا يجمع التطبيق أي بيانات دون موافقتك.
+\nتوضح سياسة خصوصية WizeStream بالتفصيل البيانات التي يتم إرسالها وتخزينها عند إرسال تقرير الأعطال.</string>
     <string name="read_privacy_policy">الإطلاع على سياسة الخصوصية</string>
-    <string name="start_accept_privacy_policy">من أجل الامتثال للائحة الأوروبية العامة لحماية البيانات (GDPR)، فإننا نلفت انتباهك إلى سياسة خصوصية NewPipe. يرجى قراءتها بعناية.
+    <string name="start_accept_privacy_policy">من أجل الامتثال للائحة الأوروبية العامة لحماية البيانات (GDPR)، فإننا نلفت انتباهك إلى سياسة خصوصية WizeStream. يرجى قراءتها بعناية.
 \nويجب عليك قبولها لإرسال تقرير الأخطاء إلينا.</string>
     <string name="accept">قبول</string>
     <string name="decline">رفض</string>
@@ -344,7 +344,7 @@
     <string name="file_deleted">تم حذف الملف</string>
     <string name="app_update_notification_channel_name">تنبيه تحديث التطبيق</string>
     <string name="events">الأحداث</string>
-    <string name="app_update_notification_channel_description">إشعارات لإصدار NewPipe الجديد</string>
+    <string name="app_update_notification_channel_description">إشعارات لإصدار WizeStream الجديد</string>
     <string name="download_to_sdcard_error_title">وحدة التخزين الخارجية غير متوفرة</string>
     <string name="download_to_sdcard_error_message">لا يمكن التنزيل على بطاقة SD الخارجية. هل تريد إعادة تعيين موقع مجلد التنزيل؟</string>
     <string name="saved_tabs_invalid_json">يتم الان استخدام علامات التبويب الافتراضية بعد حدوث خطأ أثناء قراءة علامات التبويب المحفوظة</string>
@@ -359,7 +359,7 @@
     <string name="list">القائمة</string>
     <string name="grid">الشبكة</string>
     <string name="auto">تلقائي</string>
-    <string name="app_update_available_notification_title">تحديث NewPipe متاح!</string>
+    <string name="app_update_available_notification_title">تحديث WizeStream متاح!</string>
     <string name="missions_header_finished">انتهى</string>
     <string name="missions_header_pending">ريثما</string>
     <string name="paused">متوقف</string>
@@ -403,7 +403,7 @@
     <string name="overwrite_unrelated_warning">يوجد ملف بهذا الاسم مسبقاً</string>
     <string name="overwrite_failed">لا يمكن الكتابة فوق الملف</string>
     <string name="download_already_pending">هناك تنزيل معلق بهذا الاسم</string>
-    <string name="error_postprocessing_stopped">تم إغلاق NewPipe أثناء العمل على الملف</string>
+    <string name="error_postprocessing_stopped">تم إغلاق WizeStream أثناء العمل على الملف</string>
     <string name="error_insufficient_storage_left">لم يتبقى مساحة في الجهاز</string>
     <string name="error_progress_lost">تم فقد التقدم بسبب حذف الملف</string>
     <string name="error_timeout">انتهى وقت الاتصال</string>
@@ -474,7 +474,7 @@
     </plurals>
     <string name="feed_use_dedicated_fetch_method_help_text">هل تعتقد أن تحميل التغذية بطيءٌ جدًا؟ إذا كان الأمر كذلك، فحاول تمكين التحميل السريع (يمكنك تغييره في الإعدادات أو بالضغط على الزر أدناه).
 \n
-\nيقدم NewPipe استراتيجيتين لتحميل الخلاصة:
+\nيقدم WizeStream استراتيجيتين لتحميل الخلاصة:
 \n• جلب قناة الاشتراك بأكملها، وهي بطيئة ولكنها كاملة.
 \n• استخدام نقطة نهاية خدمة مخصصة، وهي سريعة ولكنها عادةً لا تكتمل.
 \n
@@ -536,7 +536,7 @@
     <string name="new_seek_duration_toast">نظرا لقيود مشغل ExoPlayer مدة التقديم تم ضبطها الى %d ثانية</string>
     <string name="unmute">إلغاء الكتم</string>
     <string name="mute">كتم الصوت</string>
-    <string name="content_not_supported">هذا المحتوى ليس مدعومًا من قبل NewPipe.
+    <string name="content_not_supported">هذا المحتوى ليس مدعومًا من قبل WizeStream.
 \n
 \nنأمل أن يكون مدعومًا في التحديثات القادمة.</string>
     <string name="infinite_videos">∞ فيديو</string>
@@ -587,7 +587,7 @@
     <string name="notification_action_0_title">زر الإجراء الأول</string>
     <string name="notification_scale_to_square_image_summary">قم بقص الصورة المصغرة للفيديو الموضحة في الإشعار من نسبة العرض إلى الارتفاع 16: 9 إلى 1: 1</string>
     <string name="notification_scale_to_square_image_title">اقتصاص الصورة المصغرة إلى نسبة العرض إلى الارتفاع 1:1</string>
-    <string name="clear_cookie_summary">امسح ملفات تعريف الارتباط التي يخزنها NewPipe عند حل reCAPTCHA</string>
+    <string name="clear_cookie_summary">امسح ملفات تعريف الارتباط التي يخزنها WizeStream عند حل reCAPTCHA</string>
     <string name="recaptcha_cookies_cleared">تم مسح ملفات تعريف الارتباط reCAPTCHA</string>
     <string name="clear_cookie_title">امسح ملفات تعريف الارتباط reCAPTCHA</string>
     <string name="youtube_restricted_mode_enabled_summary">يوفر YouTube \"وضع تقييد المحتوى\" الذي يخفي المحتوى المحتمل للكبار</string>
@@ -613,14 +613,14 @@
     <string name="show_description_summary">قم بإيقاف التشغيل لإخفاء وصف الفيديو والمعلومات الإضافية</string>
     <string name="show_description_title">إظهار الوصف</string>
     <string name="open_with">افتح باستخدام</string>
-    <string name="paid_content">يتوفر هذا المحتوى فقط للمستخدمين الذين قاموا بالدفع، لذلك لا يمكن بثه أو تنزيله عبر NewPipe.</string>
-    <string name="youtube_music_premium_content">يتوفر هذا الفيديو فقط لأعضاء YouTube Music Premium، لذلك لا يمكن بثه أو تنزيله من قبل NewPipe.</string>
-    <string name="private_content">هذا المحتوى خاص، لذلك لا يمكن دفقه أو تنزيله بواسطة NewPipe.</string>
-    <string name="soundcloud_go_plus_content">هذا مسار SoundCloud Go+، على الأقل في بلدك، لذلك لا يمكن دفقه أو تنزيله بواسطة NewPipe.</string>
+    <string name="paid_content">يتوفر هذا المحتوى فقط للمستخدمين الذين قاموا بالدفع، لذلك لا يمكن بثه أو تنزيله عبر WizeStream.</string>
+    <string name="youtube_music_premium_content">يتوفر هذا الفيديو فقط لأعضاء YouTube Music Premium، لذلك لا يمكن بثه أو تنزيله من قبل WizeStream.</string>
+    <string name="private_content">هذا المحتوى خاص، لذلك لا يمكن دفقه أو تنزيله بواسطة WizeStream.</string>
+    <string name="soundcloud_go_plus_content">هذا مسار SoundCloud Go+، على الأقل في بلدك، لذلك لا يمكن دفقه أو تنزيله بواسطة WizeStream.</string>
     <string name="georestricted_content">هذا المحتوى غير متوفر في بلدك.</string>
     <string name="crash_the_app">اغلق التطبيق قسريا</string>
     <string name="restricted_video_no_stream">هذا الفيديو مقيد بالفئة العمرية.
-\nنظرًا لسياسات YouTube الجديدة المتعلقة بمقاطع الفيديو المقيدة بالفئة العمرية، لا يمكن لـ NewPipe الوصول إلى أي من تدفقات الفيديو الخاصة به، وبالتالي لا يتمكن من تشغيلها.</string>
+\nنظرًا لسياسات YouTube الجديدة المتعلقة بمقاطع الفيديو المقيدة بالفئة العمرية، لا يمكن لـ WizeStream الوصول إلى أي من تدفقات الفيديو الخاصة به، وبالتالي لا يتمكن من تشغيلها.</string>
     <string name="radio">إذاعة</string>
     <string name="featured">المميزة</string>
     <string name="recaptcha_solve">حل</string>
@@ -651,7 +651,7 @@
     <string name="account_terminated">تم إنهاء الحساب</string>
     <string name="feed_load_error_fast_unknown">لا يوفر وضع التغذية السريعة مزيدًا من المعلومات حول هذا الموضوع.</string>
     <string name="feed_load_error_terminated">حساب منشئ المحتوى قد تم إنهائه.
-\nلن يتمكن NewPipe من تحميل هذه الخلاصة في المستقبل.
+\nلن يتمكن WizeStream من تحميل هذه الخلاصة في المستقبل.
 \nهل تريد إلغاء الاشتراك من هذه القناة؟</string>
     <string name="feed_load_error_account_info">تعذر تحميل تغذية لـ\'%s\'.</string>
     <string name="feed_load_error">خطأ في تحميل الخلاصة</string>
@@ -701,7 +701,7 @@
     <string name="crash_the_player">تحطيم المشغل</string>
     <string name="error_report_channel_name">إشعار الإبلاغ عن الأخطاء</string>
     <string name="error_report_channel_description">التنبيهات المتعلقة بالإبلاغ عن الأخطاء</string>
-    <string name="error_report_notification_title">واجه NewPipe خطأ، اضغط للتقرير</string>
+    <string name="error_report_notification_title">واجه WizeStream خطأ، اضغط للتقرير</string>
     <string name="error_report_notification_toast">حدث خطأ، انظر للإشعار</string>
     <string name="create_error_notification">قم بإنشاء تنبيه بالخطأ</string>
     <string name="no_appropriate_file_manager_message">لم يتم العثور على مدير ملفات مناسب لهذا الإجراء.
@@ -752,7 +752,7 @@
     <string name="faq_description">إذا كنت تواجه مشكلة في استخدام التطبيق ، فتأكد من مراجعة هذه الإجابات للأسئلة الشائعة!</string>
     <string name="faq">مشاهدة على الموقع</string>
     <string name="sort">فرز</string>
-    <string name="app_update_unavailable_toast">أنت تقوم بتشغيل أحدث إصدار من NewPipe</string>
+    <string name="app_update_unavailable_toast">أنت تقوم بتشغيل أحدث إصدار من WizeStream</string>
     <string name="app_update_available_notification_text">انقر للتنزيل %s</string>
     <string name="fast_mode">الوضع السريع</string>
     <string name="import_subscriptions_hint">استيراد الاشتراكات أو تصديرها من القائمة المكونة من 3 نقاط</string>
@@ -868,7 +868,7 @@
 \n
 \nهل انت متأكد انك تريد المتابعة؟</string>
     <string name="yes">نعم</string>
-    <string name="auto_update_check_description">يمكن لـ NewPipe البحث تلقائيًا عن الإصدارات الجديدة من وقت لآخر وإعلامك بمجرد توفرها.
+    <string name="auto_update_check_description">يمكن لـ WizeStream البحث تلقائيًا عن الإصدارات الجديدة من وقت لآخر وإعلامك بمجرد توفرها.
 \nهل تريد تمكين هذا؟</string>
     <string name="no">لا</string>
     <string name="import_settings_vulnerable_format">تستخدم الإعدادات الموجودة في عملية التصدير التي يتم استيرادها تنسيقًا عرضة للاختراق تم إهماله منذ NewPipe 0.27.0. تأكد من أن التصدير الذي يتم استيراده من مصدر موثوق به، ويفضل استخدام عمليات التصدير التي تم الحصول عليها من NewPipe 0.27.0 أو الأحدث في المستقبل فقط. سيتم قريبًا إزالة دعم استيراد الإعدادات بهذا التنسيق الضعيف تمامًا، وبعد ذلك لن تتمكن الإصدارات القديمة من NewPipe من استيراد إعدادات التصدير من الإصدارات الجديدة بعد الآن.</string>
@@ -884,7 +884,7 @@
     <string name="migration_info_6_7_title">تمت إزالة صفحة أفضل 50 من SoundCloud</string>
     <string name="migration_info_6_7_message">أوقفت SoundCloud صفحة أفضل 50 الأصلية. تمت إزالة علامة التبويب المقابلة من صفحتك الرئيسية.</string>
     <string name="migration_info_7_8_title">تمت إزالة تريندات YouTube المجمعة</string>
-    <string name="migration_info_7_8_message">أوقف YouTube صفحة الترند المدمجة اعتبارًا من 21 يوليو 2025. استبدلت NewPipe صفحة الموضوعات المتداولة الافتراضية بصفحة الموضوعات المتداولة الشائعة مع البث المباشر المتداول.\n\nيمكنك أيضًا تحديد صفحات رائجة مختلفة في \"الإعدادات &gt; المحتوى &gt; محتوى الصفحة الرئيسية\".</string>
+    <string name="migration_info_7_8_message">أوقف YouTube صفحة الترند المدمجة اعتبارًا من 21 يوليو 2025. استبدلت WizeStream صفحة الموضوعات المتداولة الافتراضية بصفحة الموضوعات المتداولة الشائعة مع البث المباشر المتداول.\n\nيمكنك أيضًا تحديد صفحات رائجة مختلفة في \"الإعدادات &gt; المحتوى &gt; محتوى الصفحة الرئيسية\".</string>
     <string name="trending_gaming">توجهات الألعاب</string>
     <string name="trending_podcasts">توجهات البث الصوتي</string>
     <string name="trending_movies">الأفلام والعروض الأكثر رواجاً</string>

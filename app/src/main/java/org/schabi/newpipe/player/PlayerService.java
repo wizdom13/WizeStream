@@ -129,7 +129,7 @@ public final class PlayerService extends MediaBrowserServiceCompat {
                     + "], flags = [" + flags + "], startId = [" + startId + "]");
         }
 
-        // All internal NewPipe intents used to interact with the player, that are sent to the
+        // All internal WizeStream intents used to interact with the player, that are sent to the
         // PlayerService using startForegroundService(), will have SHOULD_START_FOREGROUND_EXTRA,
         // to ensure startForeground() is called (otherwise Android will force-crash the app).
         if (intent.getBooleanExtra(SHOULD_START_FOREGROUND_EXTRA, false)) {

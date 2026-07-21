@@ -9,7 +9,7 @@ import org.schabi.newpipe.BuildConfig
 object ReleaseVersionUtil {
     /**
      * WizeStream is signed with the fork's own release key configured by the
-     * NEWPIPE_MATERIAL_* release workflow secrets, so the upstream TeamNewPipe
+     * WIZESTREAM_* release workflow secrets, so the upstream TeamNewPipe
      * certificate hash cannot be used to decide whether this APK is a release build.
      *
      * Gate release-only update UI and consent prompts on the actual fork release build
