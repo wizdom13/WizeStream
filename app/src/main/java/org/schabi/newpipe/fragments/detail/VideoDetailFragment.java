@@ -32,7 +32,6 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -45,10 +44,8 @@ import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
@@ -56,6 +53,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
+import androidx.viewpager.widget.ViewPager;
 
 import com.evernote.android.state.State;
 import com.google.android.exoplayer2.PlaybackException;
@@ -63,7 +61,6 @@ import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.tabs.TabLayout;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
@@ -124,7 +121,6 @@ import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -169,9 +165,10 @@ public final class VideoDetailFragment
     public static final String ACTION_VIDEO_FRAGMENT_STOPPED =
             App.PACKAGE_NAME + ".VideoDetailFragment.ACTION_VIDEO_FRAGMENT_STOPPED";
 
-    private static final String COMMENTS_TAB_TAG = "COMMENTS";
-    private static final String RELATED_TAB_TAG = "NEXT VIDEO";
-    private static final String DESCRIPTION_TAB_TAG = "DESCRIPTION TAB";
+    private static final String COMMENTS_TAB_TAG = VideoDetailNavigationMapper.COMMENTS_TAB_TAG;
+    private static final String RELATED_TAB_TAG = VideoDetailNavigationMapper.RELATED_TAB_TAG;
+    private static final String DESCRIPTION_TAB_TAG =
+            VideoDetailNavigationMapper.DESCRIPTION_TAB_TAG;
     private static final String EMPTY_TAB_TAG = "EMPTY TAB";
 
     // tabs
@@ -179,12 +176,6 @@ public final class VideoDetailFragment
     private boolean showRelatedItems;
     private boolean showDescription;
     private String selectedTabTag;
-    @AttrRes
-    @NonNull
-    final List<Integer> tabIcons = new ArrayList<>();
-    @StringRes
-    @NonNull
-    final List<Integer> tabContentDescriptions = new ArrayList<>();
     private boolean tabSettingsChanged = false;
     private boolean showDislikes = true;
     private boolean pinVideoWhileScrolling = false;
@@ -638,8 +629,8 @@ public final class VideoDetailFragment
                     VideoPlayerUi.DEFAULT_CONTROLS_DURATION, 0);
             binding.detailSecondaryControlPanel.setVisibility(View.GONE);
         }
-        // view pager height has changed, update the tab layout
-        updateTabLayoutVisibility();
+        // ViewPager height has changed, update the detail navigation.
+        updateDetailNavigationVisibility();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -652,7 +643,27 @@ public final class VideoDetailFragment
 
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
-        binding.tabLayout.setupWithViewPager(binding.viewPager);
+        binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(final int position) {
+                updateDetailNavigationSelection(position);
+            }
+        });
+        binding.detailNavigation.setOnItemSelectedListener(item -> {
+            final String tabTag = VideoDetailNavigationMapper.getTabTag(item.getItemId());
+            if (tabTag == null) {
+                return false;
+            }
+
+            final int position = pageAdapter.getItemPositionByTitle(tabTag);
+            if (position < 0) {
+                return false;
+            }
+            if (binding.viewPager.getCurrentItem() != position) {
+                binding.viewPager.setCurrentItem(position);
+            }
+            return true;
+        });
 
         binding.detailThumbnailRootLayout.requestFocus();
 
@@ -697,11 +708,11 @@ public final class VideoDetailFragment
         binding.detailControlsPopup.setOnTouchListener(controlsTouchListener);
 
         binding.appBarLayout.addOnOffsetChangedListener((layout, verticalOffset) -> {
-            // prevent useless updates to tab layout visibility if nothing changed
+            // Prevent useless updates to detail navigation visibility if nothing changed.
             if (verticalOffset != lastAppBarVerticalOffset) {
                 lastAppBarVerticalOffset = verticalOffset;
-                // the view was scrolled
-                updateTabLayoutVisibility();
+                // The view was scrolled.
+                updateDetailNavigationVisibility();
             }
         });
 
@@ -924,59 +935,58 @@ public final class VideoDetailFragment
             selectedTabTag = pageAdapter.getItemTitle(binding.viewPager.getCurrentItem());
         }
         pageAdapter.clearAllItems();
-        tabIcons.clear();
-        tabContentDescriptions.clear();
 
         if (shouldShowComments()) {
             pageAdapter.addFragment(
                     CommentsFragment.getInstance(serviceId, url, title), COMMENTS_TAB_TAG);
-            tabIcons.add(R.drawable.ic_comment);
-            tabContentDescriptions.add(R.string.comments_tab_description);
         }
 
         if (showRelatedItems && binding.relatedItemsLayout == null) {
             // temp empty fragment. will be updated in handleResult
             pageAdapter.addFragment(EmptyFragment.newInstance(false), RELATED_TAB_TAG);
-            tabIcons.add(R.drawable.ic_art_track);
-            tabContentDescriptions.add(R.string.related_items_tab_description);
         }
 
         if (showDescription) {
             // temp empty fragment. will be updated in handleResult
             pageAdapter.addFragment(EmptyFragment.newInstance(false), DESCRIPTION_TAB_TAG);
-            tabIcons.add(R.drawable.ic_description);
-            tabContentDescriptions.add(R.string.description_tab_description);
         }
 
         if (pageAdapter.getCount() == 0) {
             pageAdapter.addFragment(EmptyFragment.newInstance(true), EMPTY_TAB_TAG);
         }
         pageAdapter.notifyDataSetUpdate();
+        updateDetailNavigationItems();
 
-        if (pageAdapter.getCount() >= 2) {
-            final int position = pageAdapter.getItemPositionByTitle(selectedTabTag);
-            if (position != -1) {
-                binding.viewPager.setCurrentItem(position);
-            }
-            updateTabIconsAndContentDescriptions();
+        int position = pageAdapter.getItemPositionByTitle(selectedTabTag);
+        if (position < 0) {
+            position = Math.min(binding.viewPager.getCurrentItem(), pageAdapter.getCount() - 1);
         }
-        // the page adapter now contains tabs: show the tab layout
-        updateTabLayoutVisibility();
+        binding.viewPager.setCurrentItem(position, false);
+        updateDetailNavigationSelection(binding.viewPager.getCurrentItem());
+        // The page adapter now contains destinations: show the navigation when useful.
+        updateDetailNavigationVisibility();
     }
 
-    /**
-     * To be called whenever {@link #pageAdapter} is modified, since that triggers a refresh in
-     * {@link FragmentVideoDetailBinding#tabLayout} resetting all tab's icons and content
-     * descriptions. This reads icons from {@link #tabIcons} and content descriptions from
-     * {@link #tabContentDescriptions}, which are all set in {@link #initTabs()}.
-     */
-    private void updateTabIconsAndContentDescriptions() {
-        for (int i = 0; i < tabIcons.size(); ++i) {
-            final TabLayout.Tab tab = binding.tabLayout.getTabAt(i);
-            if (tab != null) {
-                tab.setIcon(tabIcons.get(i));
-                tab.setContentDescription(tabContentDescriptions.get(i));
-            }
+    private void updateDetailNavigationItems() {
+        setDetailNavigationItemVisible(R.id.video_detail_navigation_comments, COMMENTS_TAB_TAG);
+        setDetailNavigationItemVisible(R.id.video_detail_navigation_related, RELATED_TAB_TAG);
+        setDetailNavigationItemVisible(
+                R.id.video_detail_navigation_description, DESCRIPTION_TAB_TAG);
+    }
+
+    private void setDetailNavigationItemVisible(final int itemId, final String tabTag) {
+        final var item = binding.detailNavigation.getMenu().findItem(itemId);
+        if (item != null) {
+            item.setVisible(pageAdapter.getItemPositionByTitle(tabTag) >= 0);
+        }
+    }
+
+    private void updateDetailNavigationSelection(final int position) {
+        final int itemId = VideoDetailNavigationMapper.getNavigationItemId(
+                pageAdapter.getItemTitle(position));
+        if (itemId != VideoDetailNavigationMapper.NO_NAVIGATION_ITEM_ID
+                && binding.detailNavigation.getSelectedItemId() != itemId) {
+            binding.detailNavigation.setSelectedItemId(itemId);
         }
     }
 
@@ -997,10 +1007,9 @@ public final class VideoDetailFragment
         }
 
         binding.viewPager.setVisibility(View.VISIBLE);
-        // make sure the tab layout is visible
-        updateTabLayoutVisibility();
+        // Make sure the detail navigation is visible.
+        updateDetailNavigationVisibility();
         pageAdapter.notifyDataSetUpdate();
-        updateTabIconsAndContentDescriptions();
     }
 
     private boolean shouldShowComments() {
@@ -1014,7 +1023,7 @@ public final class VideoDetailFragment
         }
     }
 
-    public void updateTabLayoutVisibility() {
+    public void updateDetailNavigationVisibility() {
 
         if (binding == null) {
             //If binding is null we do not need to and should not do anything with its object(s)
@@ -1022,12 +1031,12 @@ public final class VideoDetailFragment
         }
 
         if (pageAdapter.getCount() < 2 || binding.viewPager.getVisibility() != View.VISIBLE) {
-            // hide tab layout if there is only one tab or if the view pager is also hidden
-            binding.tabLayout.setVisibility(View.GONE);
+            // Hide navigation if there is only one destination or if the pager is hidden.
+            binding.detailNavigation.setVisibility(View.GONE);
         } else {
             // call `post()` to be sure `viewPager.getHitRect()`
             // is up to date and not being currently recomputed
-            binding.tabLayout.post(() -> {
+            binding.detailNavigation.post(() -> {
                 final var activity = getActivity();
                 if (activity != null) {
                     final Rect pagerHitRect = new Rect();
@@ -1035,18 +1044,17 @@ public final class VideoDetailFragment
 
                     final int height = DeviceUtils.getWindowHeight(activity.getWindowManager());
                     final int viewPagerVisibleHeight = height - pagerHitRect.top;
-                    // see TabLayout.DEFAULT_HEIGHT, which is equal to 48dp
-                    final float tabLayoutHeight = TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DIP, 48, getResources().getDisplayMetrics());
+                    final int navigationHeight = getResources().getDimensionPixelSize(
+                            R.dimen.video_detail_navigation_height);
 
-                    if (viewPagerVisibleHeight > tabLayoutHeight * 2) {
-                        // no translation at all when viewPagerVisibleHeight > tabLayout.height * 3
-                        binding.tabLayout.setTranslationY(
-                                Math.max(0, tabLayoutHeight * 3 - viewPagerVisibleHeight));
-                        binding.tabLayout.setVisibility(View.VISIBLE);
+                    if (viewPagerVisibleHeight > navigationHeight * 2) {
+                        // No translation when the visible pager is taller than three bars.
+                        binding.detailNavigation.setTranslationY(
+                                Math.max(0, navigationHeight * 3 - viewPagerVisibleHeight));
+                        binding.detailNavigation.setVisibility(View.VISIBLE);
                     } else {
-                        // view pager is not visible enough
-                        binding.tabLayout.setVisibility(View.GONE);
+                        // The pager is not visible enough.
+                        binding.detailNavigation.setVisibility(View.GONE);
                     }
                 }
             });
@@ -1055,8 +1063,8 @@ public final class VideoDetailFragment
 
     public void scrollToTop() {
         binding.appBarLayout.setExpanded(true, true);
-        // notify tab layout of scrolling
-        updateTabLayoutVisibility();
+        // Notify the detail navigation of scrolling.
+        updateDetailNavigationVisibility();
     }
 
     public void scrollToComment(final CommentsInfoItem comment) {
@@ -1556,7 +1564,7 @@ public final class VideoDetailFragment
 
         // hide comments / related streams / description tabs
         binding.viewPager.setVisibility(View.GONE);
-        binding.tabLayout.setVisibility(View.GONE);
+        binding.detailNavigation.setVisibility(View.GONE);
     }
 
     private void hideAgeRestrictedContent() {

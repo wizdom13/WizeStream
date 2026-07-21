@@ -398,4 +398,12 @@
         <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
     </style>
 
+    <style name="Widget.WizeStream.VideoDetailNavigation.ActiveIndicator"
+        parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:width">@dimen/video_detail_navigation_active_indicator_width</item>
+        <item name="android:height">@dimen/video_detail_navigation_active_indicator_height</item>
+        <item name="android:color">?attr/colorSecondaryContainer</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+    </style>
+
 </resources>

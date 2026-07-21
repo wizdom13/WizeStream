@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/video_detail_navigation_comments"
+        android:icon="@drawable/video_detail_navigation_comments_icon"
+        android:title="@string/comments_tab_description" />
+    <item
+        android:id="@+id/video_detail_navigation_related"
+        android:icon="@drawable/video_detail_navigation_related_icon"
+        android:title="@string/related_items_tab_description" />
+    <item
+        android:id="@+id/video_detail_navigation_description"
+        android:icon="@drawable/video_detail_navigation_description_icon"
+        android:title="@string/description_tab_description" />
+</menu>

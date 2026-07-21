@@ -600,23 +600,27 @@
                 android:id="@+id/view_pager"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingBottom="48dp"
+                android:paddingBottom="@dimen/video_detail_navigation_height"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tab_layout"
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/detail_navigation"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="@dimen/video_detail_navigation_height"
                 android:layout_gravity="bottom|center"
-                app:elevation="16dp"
                 android:background="?attr/colorSurface"
-                app:tabBackground="?attr/colorSurface"
-                app:tabGravity="fill"
-                app:tabIconTint="@color/tab_layout_material_item_color"
-                app:tabIndicatorColor="?attr/colorPrimary"
-                app:tabIndicatorGravity="top"
-                app:tabRippleColor="?attr/colorControlHighlight"
-                app:tabTextColor="@color/tab_layout_material_item_color" />
+                android:visibility="gone"
+                app:elevation="16dp"
+                app:itemActiveIndicatorStyle="@style/Widget.WizeStream.VideoDetailNavigation.ActiveIndicator"
+                app:itemHorizontalTranslationEnabled="false"
+                app:itemIconTint="@color/video_detail_navigation_icon_color"
+                app:itemPaddingBottom="@dimen/video_detail_navigation_item_padding"
+                app:itemPaddingTop="@dimen/video_detail_navigation_item_padding"
+                app:itemRippleColor="?attr/colorControlHighlight"
+                app:itemTextColor="@color/video_detail_navigation_text_color"
+                app:labelVisibilityMode="labeled"
+                app:menu="@menu/video_detail_navigation"
+                tools:visibility="visible" />
 
         </org.schabi.newpipe.views.FocusAwareCoordinator>
 
