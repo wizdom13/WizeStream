@@ -693,8 +693,11 @@
     <string name="app_update_download_complete_message_generic">This update is ready to install.</string>
     <string name="app_update_install_now">Install now</string>
     <string name="app_update_install_permission_title">Allow update install</string>
-    <string name="app_update_install_permission_message">Android needs permission before WizeStream can open the package installer. After enabling permission, return here and tap Install now again.</string>
+    <string name="app_update_install_permission_message">Android needs permission before WizeStream can open the package installer. Enable the permission and return to WizeStream; installation will resume automatically.</string>
     <string name="app_update_open_install_settings">Open settings</string>
+    <string name="app_update_install_permission_unavailable">Android could not open the install permission settings.</string>
+    <string name="app_update_missing_checksum">Direct download is unavailable because this release does not provide a valid SHA-256 checksum.</string>
+    <string name="app_update_verification_failed">The downloaded update failed security verification and will not be installed.</string>
     <string name="app_update_apk_size_format">APK size: %1$s</string>
     <string name="app_update_changelog_preview_title">What is new</string>
     <string name="app_update_full_changelog">Full changelog</string>

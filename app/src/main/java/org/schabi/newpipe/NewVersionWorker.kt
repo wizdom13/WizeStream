@@ -164,6 +164,7 @@ class NewVersionWorker(
             OUTPUT_APK_URL to release.apkUrl.orEmpty(),
             OUTPUT_APK_NAME to release.apkName.orEmpty(),
             OUTPUT_APK_SIZE to (release.apkSize ?: -1L),
+            OUTPUT_APK_SHA256 to release.apkSha256.orEmpty(),
             OUTPUT_CHANGELOG to release.body,
             OUTPUT_RELEASE_TITLE to release.title,
             OUTPUT_PUBLISHED_AT to release.publishedAt
@@ -180,6 +181,7 @@ class NewVersionWorker(
         const val OUTPUT_APK_URL = "apkUrl"
         const val OUTPUT_APK_NAME = "apkName"
         const val OUTPUT_APK_SIZE = "apkSize"
+        const val OUTPUT_APK_SHA256 = "apkSha256"
         const val OUTPUT_CHANGELOG = "changelog"
         const val OUTPUT_RELEASE_TITLE = "releaseTitle"
         const val OUTPUT_PUBLISHED_AT = "publishedAt"

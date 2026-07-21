@@ -82,6 +82,53 @@ class WizeStreamUpdateRepositoryTest {
         )
     }
 
+    @Test
+    fun parseReleasesReadsGitHubSha256Digest() {
+        val releases = WizeStreamUpdateRepository.parseReleases(
+            releaseJson("sha256:${"ab".repeat(32)}")
+        )
+
+        assertEquals("ab".repeat(32), releases.single().apkSha256)
+        assertEquals(12_345L, releases.single().apkSize)
+    }
+
+    @Test
+    fun parseReleasesRejectsUnsupportedOrMalformedDigest() {
+        val unsupported = WizeStreamUpdateRepository.parseReleases(
+            releaseJson("sha512:${"ab".repeat(64)}")
+        )
+        val malformed = WizeStreamUpdateRepository.parseReleases(
+            releaseJson("sha256:not-a-checksum")
+        )
+
+        assertNull(unsupported.single().apkSha256)
+        assertNull(malformed.single().apkSha256)
+    }
+
+    private fun releaseJson(digest: String): String {
+        return """
+            [
+              {
+                "tag_name": "v0.28.8-m12",
+                "name": "WizeStream 0.28.8-m12",
+                "html_url": "https://github.com/wizdom13/WizeStream/releases/tag/v0.28.8-m12",
+                "body": "Release notes",
+                "published_at": "2026-07-21T00:00:00Z",
+                "draft": false,
+                "prerelease": false,
+                "assets": [
+                  {
+                    "name": "WizeStream_v0.28.8-m12.apk",
+                    "browser_download_url": "https://example.invalid/WizeStream.apk",
+                    "size": 12345,
+                    "digest": "$digest"
+                  }
+                ]
+              }
+            ]
+        """.trimIndent()
+    }
+
     private fun release(
         version: String,
         publishedAt: String,

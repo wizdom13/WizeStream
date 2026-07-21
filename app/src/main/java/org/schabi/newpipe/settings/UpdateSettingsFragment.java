@@ -12,7 +12,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.widget.TextViewCompat;
 import androidx.preference.Preference;
@@ -44,8 +47,22 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     private static final float UPDATE_DIALOG_MESSAGE_MAX_HEIGHT_FRACTION = 0.43f;
     private static final int DIALOG_CONTENT_HORIZONTAL_PADDING_DP = 24;
     private static final int DIALOG_CONTENT_VERTICAL_PADDING_DP = 8;
+    private static final String STATE_PENDING_APK_PATH = "pendingApkPath";
+    private static final String STATE_PENDING_APK_SHA256 = "pendingApkSha256";
+    private static final String STATE_PENDING_APK_VERSION = "pendingApkVersion";
 
     private final CompositeDisposable disposables = new CompositeDisposable();
+    private final ActivityResultLauncher<Intent> installPermissionLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> resumePendingInstallation());
+
+    @Nullable
+    private String pendingApkPath;
+    @Nullable
+    private String pendingApkSha256;
+    @Nullable
+    private String pendingApkVersion;
 
     private final Preference.OnPreferenceChangeListener updatePreferenceChange = (p, nVal) -> {
         final boolean checkForUpdates = (boolean) nVal;
@@ -89,6 +106,16 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     };
 
     @Override
+    public void onCreate(@Nullable final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            pendingApkPath = savedInstanceState.getString(STATE_PENDING_APK_PATH);
+            pendingApkSha256 = savedInstanceState.getString(STATE_PENDING_APK_SHA256);
+            pendingApkVersion = savedInstanceState.getString(STATE_PENDING_APK_VERSION);
+        }
+    }
+
+    @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
         addPreferencesFromResourceRegistry();
 
@@ -105,6 +132,15 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     public void onResume() {
         super.onResume();
         refreshVersionSummaries();
+        resumePendingInstallation();
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull final Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_PENDING_APK_PATH, pendingApkPath);
+        outState.putString(STATE_PENDING_APK_SHA256, pendingApkSha256);
+        outState.putString(STATE_PENDING_APK_VERSION, pendingApkVersion);
     }
 
     @Override
@@ -159,6 +195,8 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
         final String apkName = workInfo.getOutputData().getString(NewVersionWorker.OUTPUT_APK_NAME);
         final long apkSize = workInfo.getOutputData().getLong(
                 NewVersionWorker.OUTPUT_APK_SIZE, -1L);
+        final String apkSha256 = workInfo.getOutputData().getString(
+                NewVersionWorker.OUTPUT_APK_SHA256);
         final String changelog = workInfo.getOutputData().getString(
                 NewVersionWorker.OUTPUT_CHANGELOG);
         final String comparisonName = workInfo.getOutputData().getString(
@@ -179,7 +217,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
         }
 
         showUpdateAvailableDialog(latestVersion, installedVersion, releaseUrl, apkUrl, apkName,
-                apkSize, changelog);
+                apkSize, apkSha256, changelog);
     }
 
     @NonNull
@@ -220,12 +258,14 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
         return String.format(Locale.getDefault(), "%.1f %s", size, units[unit]);
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void showUpdateAvailableDialog(final String latestVersion,
                                            final String installedVersion,
                                            final String releaseUrl,
                                            final String apkUrl,
                                            final String apkName,
                                            final long apkSize,
+                                           final String apkSha256,
                                            final String changelog) {
         final StringBuilder message = new StringBuilder(getString(
                 R.string.app_update_available_dialog_message, latestVersion, installedVersion));
@@ -234,25 +274,31 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
             message.append("\n\n").append(getString(R.string.app_update_apk_size_format,
                     formatApkSize(apkSize)));
         }
+        final boolean hasApkUrl = apkUrl != null && !apkUrl.isBlank();
+        final boolean hasVerifiedApk = hasApkUrl && apkSize > 0
+                && apkSha256 != null && !apkSha256.isBlank();
+        if (hasApkUrl && !hasVerifiedApk) {
+            message.append("\n\n").append(getString(R.string.app_update_missing_checksum));
+        }
         message.append("\n\n").append(getString(R.string.app_update_changelog_preview_title))
                 .append("\n").append(formatChangelogPreview(changelog));
 
-        final boolean hasApk = apkUrl != null && !apkUrl.isBlank();
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.app_update_available_dialog_title)
                 .setView(createUpdateMessageView(message))
-                .setPositiveButton(hasApk ? R.string.app_update_download_from_github
+                .setPositiveButton(hasVerifiedApk ? R.string.app_update_download_from_github
                         : R.string.app_update_open_release, (dialog, which) -> {
-                            if (hasApk) {
-                                startApkDownload(apkUrl, apkName, latestVersion, releaseUrl);
+                            if (hasVerifiedApk) {
+                                startApkDownload(apkUrl, apkName, latestVersion, releaseUrl,
+                                        apkSize, apkSha256);
                             } else {
                                 openReleasePage(releaseUrl);
                             }
                         })
                 .setNegativeButton(R.string.app_update_later, null)
-                .setNeutralButton(hasApk ? R.string.app_update_full_changelog
+                .setNeutralButton(hasVerifiedApk ? R.string.app_update_full_changelog
                         : R.string.app_update_release_page, (dialog, which) -> {
-                            if (hasApk) {
+                            if (hasVerifiedApk) {
                                 showChangelogDialog(changelog == null ? "" : changelog);
                             } else {
                                 openReleasePage(releaseUrl);
@@ -301,9 +347,10 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     }
 
     private void startApkDownload(final String apkUrl, final String apkName,
-                                  final String version, final String releaseUrl) {
+                                  final String version, final String releaseUrl,
+                                  final long apkSize, final String apkSha256) {
         final UUID workId = UpdateDownloadWorker.enqueue(requireContext(), apkUrl, apkName,
-                version);
+                version, apkSize, apkSha256);
         final ProgressBar progressBar = new ProgressBar(requireContext(), null,
                 android.R.attr.progressBarStyleHorizontal);
         progressBar.setIndeterminate(true);
@@ -366,42 +413,82 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
                 UpdateDownloadWorker.OUTPUT_APK_PATH);
         final String version = workInfo.getOutputData().getString(
                 UpdateDownloadWorker.OUTPUT_VERSION);
-        if (apkPath == null || apkPath.isBlank()) {
+        final String apkSha256 = workInfo.getOutputData().getString(
+                UpdateDownloadWorker.OUTPUT_APK_SHA256);
+        if (apkPath == null || apkPath.isBlank() || version == null || version.isBlank()
+                || apkSha256 == null || apkSha256.isBlank()) {
             Toast.makeText(getContext(), R.string.app_update_download_failed, Toast.LENGTH_SHORT)
                     .show();
             return;
         }
-        final int messageRes = version == null || version.isBlank()
-                ? R.string.app_update_download_complete_message_generic
-                : R.string.app_update_download_complete_message;
-        final String message = version == null || version.isBlank()
-                ? getString(messageRes)
-                : getString(messageRes, version);
+        final String message = getString(R.string.app_update_download_complete_message, version);
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.app_update_download_complete_title)
                 .setMessage(message)
-                .setPositiveButton(R.string.app_update_install_now, (dialog, which) -> {
-                    if (UpdateInstallHelper.canRequestPackageInstalls(requireContext())) {
-                        if (!UpdateInstallHelper.installApk(requireContext(), apkPath)) {
-                            Toast.makeText(getContext(), R.string.app_update_download_failed,
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        showInstallPermissionDialog();
-                    }
-                })
+                .setPositiveButton(R.string.app_update_install_now, (dialog, which) ->
+                        beginInstallation(apkPath, apkSha256, version))
                 .setNegativeButton(R.string.app_update_later, null)
                 .show();
+    }
+
+    private void beginInstallation(@NonNull final String apkPath,
+                                   @NonNull final String apkSha256,
+                                   @NonNull final String version) {
+        pendingApkPath = apkPath;
+        pendingApkSha256 = apkSha256;
+        pendingApkVersion = version;
+        if (UpdateInstallHelper.canRequestPackageInstalls(requireContext())) {
+            resumePendingInstallation();
+        } else {
+            showInstallPermissionDialog();
+        }
     }
 
     private void showInstallPermissionDialog() {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.app_update_install_permission_title)
                 .setMessage(R.string.app_update_install_permission_message)
-                .setPositiveButton(R.string.app_update_open_install_settings, (dialog, which) ->
-                        UpdateInstallHelper.openInstallPermissionSettings(requireContext()))
-                .setNegativeButton(R.string.app_update_later, null)
+                .setPositiveButton(R.string.app_update_open_install_settings,
+                        (dialog, which) -> openInstallPermissionSettings())
+                .setNegativeButton(R.string.app_update_later,
+                        (dialog, which) -> clearPendingInstallation())
                 .show();
+    }
+
+    private void openInstallPermissionSettings() {
+        try {
+            installPermissionLauncher.launch(
+                    UpdateInstallHelper.createInstallPermissionIntent(requireContext()));
+        } catch (final ActivityNotFoundException | SecurityException e) {
+            clearPendingInstallation();
+            Toast.makeText(requireContext(), R.string.app_update_install_permission_unavailable,
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void resumePendingInstallation() {
+        if (pendingApkPath == null || pendingApkPath.isBlank()
+                || pendingApkSha256 == null || pendingApkSha256.isBlank()
+                || pendingApkVersion == null || pendingApkVersion.isBlank()
+                || !isAdded()
+                || !UpdateInstallHelper.canRequestPackageInstalls(requireContext())) {
+            return;
+        }
+
+        final String apkPath = pendingApkPath;
+        final String apkSha256 = pendingApkSha256;
+        final String version = pendingApkVersion;
+        clearPendingInstallation();
+        if (!UpdateInstallHelper.installApk(requireContext(), apkPath, apkSha256, version)) {
+            Toast.makeText(requireContext(), R.string.app_update_verification_failed,
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void clearPendingInstallation() {
+        pendingApkPath = null;
+        pendingApkSha256 = null;
+        pendingApkVersion = null;
     }
 
     private void showDownloadFailedDialog(final String releaseUrl) {

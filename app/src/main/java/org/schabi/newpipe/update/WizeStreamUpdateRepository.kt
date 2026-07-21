@@ -29,7 +29,8 @@ object WizeStreamUpdateRepository {
         val prerelease: Boolean,
         val apkUrl: String?,
         val apkName: String? = null,
-        val apkSize: Long? = null
+        val apkSize: Long? = null,
+        val apkSha256: String? = null
     )
 
     fun fetchLatestCandidateRelease(): Release? {
@@ -123,7 +124,10 @@ object WizeStreamUpdateRepository {
             prerelease = json.getBoolean("prerelease", false),
             apkUrl = apkAsset?.getString("browser_download_url", null),
             apkName = apkAsset?.getString("name", null),
-            apkSize = apkAsset?.getLong("size", -1)?.takeIf { it >= 0 }
+            apkSize = apkAsset?.getLong("size", -1)?.takeIf { it >= 0 },
+            apkSha256 = UpdateChecksum.fromGitHubDigest(
+                apkAsset?.getString("digest", null)
+            )
         )
     }
 

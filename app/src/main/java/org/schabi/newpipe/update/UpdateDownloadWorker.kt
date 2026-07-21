@@ -37,21 +37,37 @@ class UpdateDownloadWorker(
         val apkName = inputData.getString(INPUT_APK_NAME)
             ?.takeIf { it.isNotBlank() }
             ?: defaultApkName(version)
-        if (apkUrl.isBlank()) {
+        val expectedSize = inputData.getLong(INPUT_APK_SIZE, -1L)
+        val expectedSha256 = UpdateChecksum.normalizeSha256(
+            inputData.getString(INPUT_APK_SHA256)
+        )
+        if (apkUrl.isBlank() || version.isBlank() || expectedSize <= 0L ||
+            expectedSha256 == null
+        ) {
             return failure(applicationContext.getString(R.string.app_update_download_failed))
         }
 
-        val updateDir = File(applicationContext.cacheDir, UPDATE_CACHE_DIR).apply { mkdirs() }
-        val outputFile = File(updateDir, sanitizeFilename(apkName))
+        val updateDir = File(applicationContext.cacheDir, UPDATE_CACHE_DIR)
+        if (!updateDir.exists() && !updateDir.mkdirs()) {
+            return failure(applicationContext.getString(R.string.app_update_download_failed))
+        }
+        val outputFile = File(updateDir, "$id-${sanitizeFilename(apkName)}")
         return try {
             setForegroundAsync(createForegroundInfo(UNKNOWN_PROGRESS))
             val downloadedFile = download(apkUrl, outputFile)
-            validateDownload(outputFile, downloadedFile)
+            validateDownload(outputFile, downloadedFile, expectedSize)
+            UpdateApkVerifier.verify(
+                applicationContext,
+                outputFile,
+                expectedSha256,
+                version
+            )
             Result.success(
                 workDataOf(
                     OUTPUT_APK_PATH to outputFile.absolutePath,
                     OUTPUT_APK_NAME to outputFile.name,
-                    OUTPUT_VERSION to version
+                    OUTPUT_VERSION to version,
+                    OUTPUT_APK_SHA256 to expectedSha256
                 )
             )
         } catch (e: Exception) {
@@ -96,7 +112,11 @@ class UpdateDownloadWorker(
         }
     }
 
-    private fun validateDownload(outputFile: File, downloadedFile: DownloadedFile) {
+    private fun validateDownload(
+        outputFile: File,
+        downloadedFile: DownloadedFile,
+        expectedSize: Long
+    ) {
         if (!outputFile.exists() || outputFile.length() <= 0L) {
             throw IOException("Downloaded APK is empty")
         }
@@ -107,6 +127,9 @@ class UpdateDownloadWorker(
             downloadedFile.downloadedBytes != downloadedFile.totalBytes
         ) {
             throw IOException("Downloaded APK is incomplete")
+        }
+        if (downloadedFile.downloadedBytes != expectedSize) {
+            throw IOException("Downloaded APK does not match the release asset size")
         }
     }
 
@@ -174,22 +197,34 @@ class UpdateDownloadWorker(
         const val INPUT_APK_URL = "apkUrl"
         const val INPUT_APK_NAME = "apkName"
         const val INPUT_VERSION = "version"
+        const val INPUT_APK_SIZE = "apkSize"
+        const val INPUT_APK_SHA256 = "apkSha256"
         const val PROGRESS_PERCENT = "progressPercent"
         const val PROGRESS_BYTES_DOWNLOADED = "progressBytesDownloaded"
         const val PROGRESS_TOTAL_BYTES = "progressTotalBytes"
         const val OUTPUT_APK_PATH = "apkPath"
         const val OUTPUT_APK_NAME = "apkName"
         const val OUTPUT_VERSION = "version"
+        const val OUTPUT_APK_SHA256 = "apkSha256"
         const val OUTPUT_ERROR = "error"
 
         @JvmStatic
-        fun enqueue(context: Context, apkUrl: String, apkName: String?, version: String): UUID {
+        fun enqueue(
+            context: Context,
+            apkUrl: String,
+            apkName: String?,
+            version: String,
+            apkSize: Long,
+            apkSha256: String
+        ): UUID {
             val request = OneTimeWorkRequestBuilder<UpdateDownloadWorker>()
                 .setInputData(
                     workDataOf(
                         INPUT_APK_URL to apkUrl,
                         INPUT_APK_NAME to apkName.orEmpty(),
-                        INPUT_VERSION to version
+                        INPUT_VERSION to version,
+                        INPUT_APK_SIZE to apkSize,
+                        INPUT_APK_SHA256 to apkSha256
                     )
                 )
                 .build()
