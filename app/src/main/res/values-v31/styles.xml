@@ -5,6 +5,7 @@
          the selected theme-color preference. Keep the first frame neutral and
          monochrome, then crossfade into the app-owned themed splash. -->
     <style name="OpeningTheme" parent="Base.OpeningTheme">
+        <item name="android:windowDisablePreview">false</item>
         <item name="android:windowSplashScreenBackground">?attr/colorSurface</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_wizestream_splash_system</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>

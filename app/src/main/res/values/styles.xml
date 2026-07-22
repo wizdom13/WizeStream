@@ -7,6 +7,7 @@
         <item name="colorAccent">@android:color/transparent</item>
 
         <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:windowDisablePreview">true</item>
     </style>
     <style name="Base.OpeningTheme" parent="Base.V21.OpeningTheme">
         <item name="android:navigationBarColor">?attr/colorSurface</item>
