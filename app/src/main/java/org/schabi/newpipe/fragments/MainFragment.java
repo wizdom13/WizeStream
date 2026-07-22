@@ -277,7 +277,7 @@ public class MainFragment extends BaseFragment
 
         final MenuItem searchItem = menu.findItem(R.id.action_search);
         if (searchItem != null) {
-            searchItem.setVisible(!isCurrentDownloadsTab() && !contextualSearchOpen);
+            searchItem.setVisible(!contextualSearchOpen);
         }
 
         updateContextualSearchToolbar(false);
@@ -286,15 +286,6 @@ public class MainFragment extends BaseFragment
         if (supportActionBar != null) {
             supportActionBar.setDisplayHomeAsUpEnabled(false);
         }
-    }
-
-    private boolean isCurrentDownloadsTab() {
-        if (binding == null || tabsList.isEmpty()) {
-            return false;
-        }
-        final int position = binding.pager.getCurrentItem();
-        return position >= 0 && position < tabsList.size()
-                && tabsList.get(position) instanceof Tab.DownloadsTab;
     }
 
     @Override

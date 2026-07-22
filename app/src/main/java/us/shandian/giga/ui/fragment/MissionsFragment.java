@@ -22,6 +22,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuHost;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
@@ -34,6 +35,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.nononsenseapps.filepicker.Utils;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.download.DownloadActivity;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.settings.NewPipeSettings;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
@@ -52,13 +55,18 @@ public class MissionsFragment extends Fragment {
 
     private static final String TAG = "MissionsFragment";
     private static final int SPAN_SIZE = 2;
+    private static final String STATE_SEARCH_QUERY = "search_query";
+    private static final String STATE_STANDALONE_SEARCH_EXPANDED =
+            "standalone_search_expanded";
 
     private SharedPreferences mPrefs;
     private boolean mLinear;
+    private MenuItem mSearch = null;
     private MenuItem mSwitch;
     private MenuItem mClear = null;
     private MenuItem mStart = null;
     private MenuItem mPause = null;
+    private SearchView mSearchView;
 
     private RecyclerView mList;
     private View mEmpty;
@@ -71,6 +79,8 @@ public class MissionsFragment extends Fragment {
     private boolean bindingRegistered;
     private boolean serviceConnected;
     private boolean mForceUpdate;
+    private String mSearchQuery = "";
+    private boolean mStandaloneSearchExpanded;
 
     private DownloadMission unsafeMissionTarget = null;
     private final ActivityResultLauncher<Intent> requestDownloadSaveAsLauncher =
@@ -88,6 +98,7 @@ public class MissionsFragment extends Fragment {
             }
 
             mAdapter = new MissionAdapter(mContext, mBinder.getDownloadManager(), mEmpty, getView());
+            mAdapter.setSearchQuery(mSearchQuery);
 
             mAdapter.setRecover(MissionsFragment.this::recoverMission);
 
@@ -157,9 +168,23 @@ public class MissionsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull final View view, final Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        if (savedInstanceState != null && requireActivity() instanceof DownloadActivity) {
+            mSearchQuery = ContextualSearchHelper.normalizeQuery(
+                    savedInstanceState.getString(STATE_SEARCH_QUERY));
+            mStandaloneSearchExpanded = savedInstanceState.getBoolean(
+                    STATE_STANDALONE_SEARCH_EXPANDED);
+        }
         final MenuHost menuHost = requireActivity();
         menuHost.addMenuProvider(getMenuProvider(), getViewLifecycleOwner(),
                 Lifecycle.State.RESUMED);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull final Bundle outState) {
+        outState.putString(STATE_SEARCH_QUERY, mSearchQuery);
+        outState.putBoolean(STATE_STANDALONE_SEARCH_EXPANDED,
+                mStandaloneSearchExpanded);
+        super.onSaveInstanceState(outState);
     }
 
     /**
@@ -220,10 +245,12 @@ public class MissionsFragment extends Fragment {
 
         mBinder = null;
         mAdapter = null;
+        mSearch = null;
         mSwitch = null;
         mClear = null;
         mStart = null;
         mPause = null;
+        mSearchView = null;
         mList = null;
         mEmpty = null;
         mGridManager = null;
@@ -236,10 +263,12 @@ public class MissionsFragment extends Fragment {
             public void onCreateMenu(@NonNull final Menu menu,
                                      @NonNull final android.view.MenuInflater menuInflater) {
                 menuInflater.inflate(R.menu.download_menu, menu);
+                configureStandaloneSearch(menu);
             }
 
             @Override
             public void onPrepareMenu(@NonNull final Menu menu) {
+                mSearch = menu.findItem(R.id.search_downloads);
                 mSwitch = menu.findItem(R.id.switch_mode);
                 mClear = menu.findItem(R.id.clear_list);
                 mStart = menu.findItem(R.id.start_downloads);
@@ -248,6 +277,7 @@ public class MissionsFragment extends Fragment {
                 if (mAdapter != null) {
                     setAdapterButtons();
                 }
+                updateStandaloneSearchMenuItems();
             }
 
             @Override
@@ -255,6 +285,78 @@ public class MissionsFragment extends Fragment {
                 return handleMenuItemSelected(item);
             }
         };
+    }
+
+    private void configureStandaloneSearch(@NonNull final Menu menu) {
+        mSearch = menu.findItem(R.id.search_downloads);
+        final boolean isStandalone = requireActivity() instanceof DownloadActivity;
+        mSearch.setVisible(isStandalone);
+        if (!isStandalone) {
+            return;
+        }
+
+        mSearchView = (SearchView) mSearch.getActionView();
+        mSearchView.setMaxWidth(Integer.MAX_VALUE);
+        mSearchView.setQueryHint(getString(R.string.search));
+        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(final String query) {
+                setSearchQuery(query);
+                updateStandaloneSearchMenuItems();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(final String newText) {
+                setSearchQuery(newText);
+                updateStandaloneSearchMenuItems();
+                return true;
+            }
+        });
+        mSearch.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+            @Override
+            public boolean onMenuItemActionExpand(@NonNull final MenuItem item) {
+                mStandaloneSearchExpanded = true;
+                updateStandaloneSearchMenuItems();
+                return true;
+            }
+
+            @Override
+            public boolean onMenuItemActionCollapse(@NonNull final MenuItem item) {
+                mStandaloneSearchExpanded = false;
+                setSearchQuery("");
+                updateStandaloneSearchMenuItems();
+                return true;
+            }
+        });
+
+        if (mStandaloneSearchExpanded) {
+            mSearch.expandActionView();
+            mSearchView.setQuery(mSearchQuery, false);
+        }
+    }
+
+    private void updateStandaloneSearchMenuItems() {
+        if (!(requireActivity() instanceof DownloadActivity)) {
+            return;
+        }
+
+        if (mSwitch != null) {
+            mSwitch.setVisible(!mStandaloneSearchExpanded);
+        }
+        if (mAdapter != null) {
+            mAdapter.setMenuActionsSuppressed(mStandaloneSearchExpanded);
+        } else if (mStandaloneSearchExpanded) {
+            setMenuItemVisible(mClear, false);
+            setMenuItemVisible(mStart, false);
+            setMenuItemVisible(mPause, false);
+        }
+    }
+
+    private static void setMenuItemVisible(final MenuItem item, final boolean visible) {
+        if (item != null) {
+            item.setVisible(visible);
+        }
     }
 
     private boolean handleMenuItemSelected(final MenuItem item) {
@@ -342,6 +444,14 @@ public class MissionsFragment extends Fragment {
 
         mAdapter.setClearButton(mClear);
         mAdapter.setMasterButtons(mStart, mPause);
+        mAdapter.setMenuActionsSuppressed(mStandaloneSearchExpanded);
+    }
+
+    public void setSearchQuery(@NonNull final String query) {
+        mSearchQuery = ContextualSearchHelper.normalizeQuery(query);
+        if (mAdapter != null) {
+            mAdapter.setSearchQuery(mSearchQuery);
+        }
     }
 
     private void recoverMission(@NonNull DownloadMission mission) {

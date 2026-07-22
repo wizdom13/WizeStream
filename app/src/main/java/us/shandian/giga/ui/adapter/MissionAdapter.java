@@ -113,6 +113,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
     private MenuItem mClear;
     private MenuItem mStartButton;
     private MenuItem mPauseButton;
+    private boolean mMenuActionsSuppressed;
     private final View mEmptyMessage;
     private RecoverHelper mRecover;
     private final View mView;
@@ -187,7 +188,10 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
                 str = R.string.missions_header_pending;
             } else {
                 str = R.string.missions_header_finished;
-                if (mClear != null) mClear.setVisible(true);
+                if (mClear != null && !mMenuActionsSuppressed
+                        && !mIterator.isSearchActive()) {
+                    mClear.setVisible(true);
+                }
             }
 
             ((ViewHolderHeader) view).header.setText(str);
@@ -732,7 +736,11 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         mIterator.end();
 
         checkEmptyMessageVisibility();
-        if (mClear != null) mClear.setVisible(mIterator.hasFinishedMissions());
+        if (mClear != null) {
+            mClear.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
+                    && mIterator.hasFinishedMissions());
+        }
+        checkMasterButtonsVisibility();
     }
 
     public void forceUpdate() {
@@ -744,15 +752,29 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         }
 
         notifyDataSetChanged();
+        checkEmptyMessageVisibility();
+        if (mClear != null) {
+            mClear.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
+                    && mIterator.hasFinishedMissions());
+        }
+        checkMasterButtonsVisibility();
     }
 
     public void setLinear(boolean isLinear) {
         mLayout = isLinear ? R.layout.mission_item_linear : R.layout.mission_item;
     }
 
+    public void setSearchQuery(@NonNull final String query) {
+        if (mIterator.setSearchQuery(query)) {
+            applyChanges();
+        }
+    }
+
     public void setClearButton(MenuItem clearButton) {
-        if (mClear == null)
-            clearButton.setVisible(mIterator.hasFinishedMissions());
+        if (mClear == null) {
+            clearButton.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
+                    && mIterator.hasFinishedMissions());
+        }
 
         mClear = clearButton;
     }
@@ -766,12 +788,29 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         if (init) checkMasterButtonsVisibility();
     }
 
+    public void setMenuActionsSuppressed(final boolean suppressed) {
+        mMenuActionsSuppressed = suppressed;
+        if (mClear != null) {
+            mClear.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
+                    && mIterator.hasFinishedMissions());
+        }
+        checkMasterButtonsVisibility();
+    }
+
     private void checkEmptyMessageVisibility() {
+        final TextView emptyStateMessage = mEmptyMessage.findViewById(R.id.empty_state_message);
+        emptyStateMessage.setText(mIterator.isSearchActive()
+                ? R.string.search_no_results : R.string.empty_list_subtitle);
         int flag = mIterator.getOldListSize() > 0 ? View.GONE : View.VISIBLE;
         if (mEmptyMessage.getVisibility() != flag) mEmptyMessage.setVisibility(flag);
     }
 
     public void checkMasterButtonsVisibility() {
+        if (mMenuActionsSuppressed || mIterator.isSearchActive()) {
+            setButtonVisible(mPauseButton, false);
+            setButtonVisible(mStartButton, false);
+            return;
+        }
         boolean[] state = mIterator.hasValidPendingMissions();
         Log.d(TAG, "checkMasterButtonsVisibility() running=" + state[0] + " paused=" + state[1]);
         setButtonVisible(mPauseButton, state[0]);
@@ -779,7 +818,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
     }
 
     private static void setButtonVisible(MenuItem button, boolean visible) {
-        if (button.isVisible() != visible)
+        if (button != null && button.isVisible() != visible)
             button.setVisible(visible);
     }
 

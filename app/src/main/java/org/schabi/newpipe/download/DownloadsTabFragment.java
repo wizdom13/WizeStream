@@ -13,6 +13,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.util.PermissionHelper;
 
 import java.util.Map;
@@ -20,13 +22,14 @@ import java.util.Map;
 import us.shandian.giga.service.DownloadManagerService;
 import us.shandian.giga.ui.fragment.MissionsFragment;
 
-public class DownloadsTabFragment extends Fragment {
+public class DownloadsTabFragment extends Fragment implements ContextualSearchable {
     private static final String MISSIONS_FRAGMENT_TAG = "missions_fragment";
 
     private View downloadsContainerView;
     private View permissionRequiredView;
     private View grantPermissionButton;
     private boolean permissionRequestInFlight;
+    private String contextualSearchQuery = "";
 
     private final ActivityResultLauncher<String[]> requestPermissionsLauncher =
             registerForActivityResult(new RequestMultiplePermissions(), this::onPermissionsResult);
@@ -92,9 +95,15 @@ public class DownloadsTabFragment extends Fragment {
         permissionRequiredView.setVisibility(View.GONE);
         downloadsContainerView.setVisibility(View.VISIBLE);
         requireContext().startService(new Intent(requireContext(), DownloadManagerService.class));
-        if (getChildFragmentManager().findFragmentByTag(MISSIONS_FRAGMENT_TAG) == null) {
+        final Fragment currentFragment = getChildFragmentManager()
+                .findFragmentByTag(MISSIONS_FRAGMENT_TAG);
+        if (currentFragment instanceof MissionsFragment) {
+            ((MissionsFragment) currentFragment).setSearchQuery(contextualSearchQuery);
+        } else {
+            final MissionsFragment missionsFragment = new MissionsFragment();
+            missionsFragment.setSearchQuery(contextualSearchQuery);
             getChildFragmentManager().beginTransaction()
-                    .replace(R.id.downloads_tab_container, new MissionsFragment(),
+                    .replace(R.id.downloads_tab_container, missionsFragment,
                             MISSIONS_FRAGMENT_TAG)
                     .commit();
         }
@@ -109,6 +118,16 @@ public class DownloadsTabFragment extends Fragment {
             getChildFragmentManager().beginTransaction()
                     .remove(missionsFragment)
                     .commit();
+        }
+    }
+
+    @Override
+    public void setContextualSearchQuery(@NonNull final String query) {
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(query);
+        final Fragment missionsFragment = getChildFragmentManager()
+                .findFragmentByTag(MISSIONS_FRAGMENT_TAG);
+        if (missionsFragment instanceof MissionsFragment) {
+            ((MissionsFragment) missionsFragment).setSearchQuery(contextualSearchQuery);
         }
     }
 }

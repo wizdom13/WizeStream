@@ -4,6 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <item
+        android:id="@+id/search_downloads"
+        android:icon="@drawable/ic_search"
+        android:title="@string/search"
+        android:visible="false"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="always|collapseActionView"
+        tools:ignore="AlwaysShowAction" />
+
+    <item
         android:id="@+id/switch_mode"
         android:icon="@drawable/ic_apps"
         android:title="@string/grid"

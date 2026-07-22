@@ -7,6 +7,7 @@ import android.view.ViewTreeObserver;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import org.schabi.newpipe.R;
@@ -61,6 +62,12 @@ public class DownloadActivity extends AppCompatActivity {
     }
 
     private void updateFragments() {
+        final Fragment currentFragment = getSupportFragmentManager()
+                .findFragmentByTag(MISSIONS_FRAGMENT_TAG);
+        if (currentFragment instanceof MissionsFragment) {
+            return;
+        }
+
         final MissionsFragment fragment = new MissionsFragment();
 
         getSupportFragmentManager().beginTransaction()

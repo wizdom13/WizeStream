@@ -19,6 +19,7 @@ import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.FinishedMission;
 import us.shandian.giga.get.Mission;
 import us.shandian.giga.get.sqlite.FinishedMissionStore;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.streams.io.StoredDirectoryHelper;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import us.shandian.giga.util.Utility;
@@ -599,6 +600,7 @@ public class DownloadManager {
         ArrayList<Mission> hidden;
 
         boolean hasFinished = false;
+        String searchQuery = "";
 
         private MissionIterator() {
             hidden = new ArrayList<>(2);
@@ -620,6 +622,11 @@ public class DownloadManager {
                     return pending.remove(mission) || finished.remove(mission);
                 });
 
+                if (ContextualSearchHelper.isActive(searchQuery)) {
+                    pending.removeIf(mission -> !matchesSearchQuery(mission));
+                    finished.removeIf(mission -> !matchesSearchQuery(mission));
+                }
+
                 int fakeTotal = pending.size();
                 if (fakeTotal > 0) fakeTotal++;
 
@@ -640,6 +647,11 @@ public class DownloadManager {
 
                 return list;
             }
+        }
+
+        private boolean matchesSearchQuery(@NonNull final Mission mission) {
+            return ContextualSearchHelper.matches(searchQuery,
+                    mission.storage == null ? null : mission.storage.getName());
         }
 
         public MissionItem getItem(int position) {
@@ -676,6 +688,19 @@ public class DownloadManager {
 
         public void unHide(Mission mission) {
             hidden.remove(mission);
+        }
+
+        public boolean setSearchQuery(@NonNull final String query) {
+            final String normalizedQuery = ContextualSearchHelper.normalizeQuery(query);
+            if (searchQuery.equals(normalizedQuery)) {
+                return false;
+            }
+            searchQuery = normalizedQuery;
+            return true;
+        }
+
+        public boolean isSearchActive() {
+            return ContextualSearchHelper.isActive(searchQuery);
         }
 
         public boolean hasFinishedMissions() {

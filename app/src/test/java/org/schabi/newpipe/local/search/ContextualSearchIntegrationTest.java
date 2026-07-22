@@ -1,5 +1,6 @@
 package org.schabi.newpipe.local.search;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -10,6 +11,8 @@ import java.nio.file.Path;
 public class ContextualSearchIntegrationTest {
     private final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
             ? Path.of("src/main/java") : Path.of("app/src/main/java");
+    private final Path resourceDirectory = Files.exists(Path.of("src/main/res"))
+            ? Path.of("src/main/res") : Path.of("app/src/main/res");
 
     @Test
     public void requestedLocalTabsImplementContextualSearchContract() throws Exception {
@@ -21,6 +24,8 @@ public class ContextualSearchIntegrationTest {
                 "ContextualSearchable");
         assertSourceContains("org/schabi/newpipe/local/bookmark/BookmarkFragment.java",
                 "ContextualSearchable");
+        assertSourceContains("org/schabi/newpipe/download/DownloadsTabFragment.java",
+                "implements ContextualSearchable");
         assertSourceContains("org/schabi/newpipe/local/subscription/SubscriptionViewModel.kt",
                 "getSubscriptions(filterQuery = it)");
         assertSourceContains("org/schabi/newpipe/MainActivity.java",
@@ -52,6 +57,57 @@ public class ContextualSearchIntegrationTest {
                 "TooltipCompat.setTooltipText(contextualGlobalSearchButton");
     }
 
+    @Test
+    public void downloadsSearchIsBufferedFilteredAndRefreshSafe() throws Exception {
+        final String mainFragment = read("org/schabi/newpipe/fragments/MainFragment.java");
+        assertTrue(mainFragment.contains("searchItem.setVisible(!contextualSearchOpen)"));
+        assertFalse(mainFragment.contains("isCurrentDownloadsTab()"));
+
+        assertSourceContains("org/schabi/newpipe/download/DownloadsTabFragment.java",
+                "missionsFragment.setSearchQuery(contextualSearchQuery)");
+        assertSourceContains("us/shandian/giga/ui/fragment/MissionsFragment.java",
+                "mAdapter.setSearchQuery(mSearchQuery)");
+
+        final String manager = read("us/shandian/giga/service/DownloadManager.java");
+        assertTrue(manager.contains("pending.removeIf(mission -> !matchesSearchQuery(mission))"));
+        assertTrue(manager.contains("finished.removeIf(mission -> !matchesSearchQuery(mission))"));
+        assertTrue(manager.contains("ContextualSearchHelper.matches(searchQuery"));
+        assertTrue(manager.contains("ArrayList<Mission> hidden"));
+        assertTrue(manager.indexOf("pending.removeIf") < manager.indexOf("int fakeTotal"));
+        assertTrue(manager.indexOf("finished.removeIf") < manager.indexOf("int fakeTotal"));
+
+        final String adapter = read("us/shandian/giga/ui/adapter/MissionAdapter.java");
+        assertTrue(adapter.contains("R.string.search_no_results"));
+        assertTrue(adapter.contains("!mIterator.isSearchActive()"));
+        assertTrue(adapter.contains("mIterator.start()"));
+        assertTrue(adapter.contains("mIterator.end()"));
+    }
+
+    @Test
+    public void standaloneDownloadsSearchRestoresAndControlsItsToolbar() throws Exception {
+        final String activity = read("org/schabi/newpipe/download/DownloadActivity.java");
+        assertTrue(activity.contains("findFragmentByTag(MISSIONS_FRAGMENT_TAG)"));
+        assertTrue(activity.contains("currentFragment instanceof MissionsFragment"));
+
+        final String fragment = read("us/shandian/giga/ui/fragment/MissionsFragment.java");
+        assertTrue(fragment.contains("requireActivity() instanceof DownloadActivity"));
+        assertTrue(fragment.contains("STATE_STANDALONE_SEARCH_EXPANDED"));
+        assertTrue(fragment.contains("mSearchView.setQuery(mSearchQuery, false)"));
+        assertTrue(fragment.contains("setSearchQuery(\"\")"));
+        assertTrue(fragment.contains("mSwitch.setVisible(!mStandaloneSearchExpanded)"));
+        assertTrue(fragment.contains(
+                "mAdapter.setMenuActionsSuppressed(mStandaloneSearchExpanded)"));
+
+        final String adapter = read("us/shandian/giga/ui/adapter/MissionAdapter.java");
+        assertTrue(adapter.contains("mMenuActionsSuppressed || mIterator.isSearchActive()"));
+
+        final String menu = readResource("menu/download_menu.xml");
+        assertTrue(menu.contains("android:id=\"@+id/search_downloads\""));
+        assertTrue(menu.contains(
+                "app:actionViewClass=\"androidx.appcompat.widget.SearchView\""));
+        assertTrue(menu.contains("app:showAsAction=\"always|collapseActionView\""));
+    }
+
     private void assertSourceContains(final String relativePath, final String expected)
             throws Exception {
         assertTrue(relativePath, read(relativePath).contains(expected));
@@ -59,5 +115,9 @@ public class ContextualSearchIntegrationTest {
 
     private String read(final String relativePath) throws Exception {
         return Files.readString(sourceDirectory.resolve(relativePath));
+    }
+
+    private String readResource(final String relativePath) throws Exception {
+        return Files.readString(resourceDirectory.resolve(relativePath));
     }
 }
