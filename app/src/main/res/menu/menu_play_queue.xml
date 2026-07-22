@@ -19,6 +19,13 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_sleep_timer"
+        android:icon="@drawable/ic_sleep_timer"
+        android:title="@string/sleep_timer"
+        android:visible="true"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_audio_track"
         android:tooltipText="@string/audio_track"
         android:visible="false"

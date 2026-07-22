@@ -16,6 +16,7 @@ import com.google.android.exoplayer2.video.VideoSize;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.helper.SleepTimer;
 
 import java.util.List;
 
@@ -187,6 +188,19 @@ public abstract class PlayerUi {
     }
 
     public void onMuteUnmuteChanged(final boolean isMuted) {
+    }
+
+    /**
+     * Called when sleep timer state or its displayed countdown changes.
+     *
+     * @param mode the active timer mode, or {@link SleepTimer.Mode#NONE}
+     * @param remainingMillis estimated wall-clock time remaining, or
+     *                        {@link SleepTimer#REMAINING_TIME_UNSET}
+     * @param fadeOutEnabled whether final fade-out is enabled
+     */
+    public void onSleepTimerChanged(@NonNull final SleepTimer.Mode mode,
+                                    final long remainingMillis,
+                                    final boolean fadeOutEnabled) {
     }
 
     /**

@@ -62,6 +62,8 @@ import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
 import org.schabi.newpipe.player.helper.PlayerHelper;
+import org.schabi.newpipe.player.helper.SleepTimer;
+import org.schabi.newpipe.player.helper.SleepTimerDialog;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueAdapter;
@@ -70,6 +72,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItemBuilder;
 import org.schabi.newpipe.player.playqueue.PlayQueueItemHolder;
 import org.schabi.newpipe.player.playqueue.PlayQueueItemTouchCallback;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
@@ -169,6 +172,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }));
         binding.queueButton.setOnClickListener(v -> onQueueClicked());
         binding.segmentsButton.setOnClickListener(v -> onSegmentsClicked());
+        binding.sleepTimerButton.setOnClickListener(v ->
+                getParentActivity().ifPresent(activity -> SleepTimerDialog.show(activity, player)));
 
         binding.addToPlaylistButton.setOnClickListener(v ->
                 getParentActivity().map(FragmentActivity::getSupportFragmentManager)
@@ -235,6 +240,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
         binding.queueButton.setOnClickListener(null);
         binding.segmentsButton.setOnClickListener(null);
+        binding.sleepTimerButton.setOnClickListener(null);
         binding.addToPlaylistButton.setOnClickListener(null);
         hideSponsorBlockSkipButton();
         clearSponsorBlockSeekBarMarkers();
@@ -324,6 +330,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 R.drawable.ic_expand_more));
         binding.share.setVisibility(View.VISIBLE);
         binding.openInBrowser.setVisibility(View.VISIBLE);
+        binding.sleepTimerButton.setVisibility(View.VISIBLE);
         binding.switchMute.setVisibility(View.VISIBLE);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         // Top controls have a large minHeight which is allows to drag the player
@@ -335,6 +342,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
         // Reset workaround changes from popup player
         binding.audioTrackTextView.setMaxWidth(Integer.MAX_VALUE);
+        updateSleepTimerButton(player.getSleepTimerMode(),
+                player.getSleepTimerRemainingMillis());
     }
 
     @Override
@@ -446,6 +455,36 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         if (isQueueVisible) {
             updateQueueTime(currentProgress);
         }
+    }
+
+    @Override
+    public void onSleepTimerChanged(@NonNull final SleepTimer.Mode mode,
+                                    final long remainingMillis,
+                                    final boolean fadeOutEnabled) {
+        super.onSleepTimerChanged(mode, remainingMillis, fadeOutEnabled);
+        updateSleepTimerButton(mode, remainingMillis);
+    }
+
+    private void updateSleepTimerButton(@NonNull final SleepTimer.Mode mode,
+                                        final long remainingMillis) {
+        if (mode == SleepTimer.Mode.NONE) {
+            binding.sleepTimerButton.setContentDescription(context.getString(R.string.sleep_timer));
+            binding.sleepTimerButton.setActivated(false);
+            binding.sleepTimerCountdown.setVisibility(View.GONE);
+            return;
+        }
+
+        if (remainingMillis == SleepTimer.REMAINING_TIME_UNSET) {
+            binding.sleepTimerCountdown.setText(R.string.sleep_timer_on_short);
+        } else {
+            binding.sleepTimerCountdown.setText(Localization.getDurationString(
+                    (remainingMillis + 999L) / 1_000L));
+        }
+        final String status = SleepTimerDialog.getStatusText(context, mode, remainingMillis);
+        binding.sleepTimerButton.setContentDescription(context.getString(
+                R.string.sleep_timer_active_description, status));
+        binding.sleepTimerButton.setActivated(true);
+        binding.sleepTimerCountdown.setVisibility(View.VISIBLE);
     }
 
     @Override

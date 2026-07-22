@@ -34,6 +34,8 @@ import org.schabi.newpipe.fragments.OnScrollBelowItemsListener;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
+import org.schabi.newpipe.player.helper.SleepTimer;
+import org.schabi.newpipe.player.helper.SleepTimerDialog;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueAdapter;
@@ -121,6 +123,8 @@ public final class PlayQueueActivity extends AppCompatActivity
                     .setVisible(!player.popupPlayerSelected());
             menu.findItem(R.id.action_switch_background)
                     .setVisible(!player.audioPlayerSelected());
+            updateSleepTimerMenuItem(player.getSleepTimerMode(),
+                    player.getSleepTimerRemainingMillis());
         }
         return super.onPrepareOptionsMenu(m);
     }
@@ -139,6 +143,11 @@ public final class PlayQueueActivity extends AppCompatActivity
             return true;
         } else if (itemId == R.id.action_playback_speed) {
             openPlaybackParameterDialog();
+            return true;
+        } else if (itemId == R.id.action_sleep_timer) {
+            if (player != null) {
+                SleepTimerDialog.show(this, player);
+            }
             return true;
         } else if (itemId == R.id.action_mute) {
             player.toggleMute();
@@ -519,6 +528,30 @@ public final class PlayQueueActivity extends AppCompatActivity
             }
 
             scrollToSelected();
+        }
+    }
+
+    @Override
+    public void onSleepTimerChanged(final SleepTimer.Mode mode,
+                                    final long remainingMillis,
+                                    final boolean fadeOutEnabled) {
+        updateSleepTimerMenuItem(mode, remainingMillis);
+    }
+
+    private void updateSleepTimerMenuItem(final SleepTimer.Mode mode,
+                                          final long remainingMillis) {
+        if (menu == null) {
+            return;
+        }
+        final MenuItem timerItem = menu.findItem(R.id.action_sleep_timer);
+        if (timerItem == null) {
+            return;
+        }
+        if (mode == SleepTimer.Mode.NONE) {
+            timerItem.setTitle(R.string.sleep_timer);
+        } else {
+            timerItem.setTitle(getString(R.string.sleep_timer_menu_active,
+                    SleepTimerDialog.getStatusText(this, mode, remainingMillis)));
         }
     }
 

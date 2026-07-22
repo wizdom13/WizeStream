@@ -367,6 +367,20 @@
                         tools:ignore="RtlHardcoded" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/sleepTimerButton"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/sleep_timer"
+                        android:focusable="true"
+                        android:padding="@dimen/player_main_buttons_padding"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_sleep_timer"
+                        app:tint="@color/white" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/switchMute"
                         android:layout_width="wrap_content"
                         android:layout_height="37dp"
@@ -397,6 +411,22 @@
                         tools:visibility="visible" />
 
                 </LinearLayout>
+
+                <org.schabi.newpipe.views.NewPipeTextView
+                    android:id="@+id/sleepTimerCountdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="28dp"
+                    android:layout_gravity="end"
+                    android:background="#60000000"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="29:59"
+                    tools:visibility="visible" />
 
             </LinearLayout>
 

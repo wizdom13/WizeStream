@@ -497,6 +497,30 @@
     <string name="start_here_on_background">Start playing in the background</string>
     <string name="start_here_on_popup">Start playing in a popup</string>
     <string name="loading_stream_details">Loading stream details…</string>
+    <!-- Sleep timer -->
+    <string name="sleep_timer">Sleep timer</string>
+    <string name="sleep_timer_15_minutes">15 minutes</string>
+    <string name="sleep_timer_30_minutes">30 minutes</string>
+    <string name="sleep_timer_45_minutes">45 minutes</string>
+    <string name="sleep_timer_60_minutes">60 minutes</string>
+    <string name="sleep_timer_end_current">End of current video</string>
+    <string name="sleep_timer_end_queue">End of queue</string>
+    <string name="sleep_timer_custom">Custom duration</string>
+    <string name="sleep_timer_custom_minutes">Minutes (1–1440)</string>
+    <string name="sleep_timer_fade_out">Fade out during the final 30 seconds</string>
+    <string name="sleep_timer_turn_off">Turn off</string>
+    <string name="sleep_timer_invalid_duration">Enter a duration from 1 to 1440 minutes</string>
+    <string name="sleep_timer_unavailable">A playable item is required for this option</string>
+    <string name="sleep_timer_active_status">Active · %1$s</string>
+    <string name="sleep_timer_remaining">%1$s remaining</string>
+    <string name="sleep_timer_end_current_status">Ends after the current video</string>
+    <string name="sleep_timer_end_current_remaining">Ends after the current video · %1$s remaining</string>
+    <string name="sleep_timer_end_queue_status">Ends after the queue</string>
+    <string name="sleep_timer_end_queue_remaining">Ends after the queue · %1$s remaining</string>
+    <string name="sleep_timer_active_description">Sleep timer active: %1$s</string>
+    <string name="sleep_timer_menu_active">Sleep timer · %1$s</string>
+    <string name="sleep_timer_on_short">On</string>
+    <string name="sleep_timer_finished">Sleep timer finished</string>
     <!-- Drawer -->
     <string name="drawer_open">Open Drawer</string>
     <string name="drawer_close">Close Drawer</string>
