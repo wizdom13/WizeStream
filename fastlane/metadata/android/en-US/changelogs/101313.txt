@@ -1,0 +1,12 @@
+WizeStream 0.28.8-m13
+
+Highlights:
+
+* Completed project-wide rebranding from NewPipe Material to WizeStream.
+* Added sleep timer presets, custom time, end-of-video/queue and fade-out.
+* Added search to subscriptions, playlists, feeds, history and Downloads.
+* Modernized video details navigation while keeping playback visible.
+* Hardened updates with checksum and APK identity checks.
+* Fixed YouTube reloads, metadata and double splash on older Android.
+
+Based on NewPipe 0.28.8.
