@@ -12,6 +12,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.info_list.ItemViewMode
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.subscription.item.ChannelItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardGridItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardItem
@@ -52,7 +53,14 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
             { mutableStateLiveData.postValue(SubscriptionState.ErrorState(it)) }
         )
 
-    private var stateItemsDisposable = subscriptionManager.subscriptions()
+    private val filterQuery = BehaviorProcessor.createDefault("")
+
+    private var stateItemsDisposable = filterQuery
+        .distinctUntilChanged()
+        .switchMap {
+            subscriptionManager.getSubscriptions(filterQuery = it)
+                .subscribeOn(Schedulers.io())
+        }
         .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
         .map { it.map { entity -> ChannelItem(entity.toChannelInfoItem(), entity.uid, ChannelItem.ItemVersion.MINI) } }
         .subscribeOn(Schedulers.io())
@@ -73,6 +81,10 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     fun getListViewMode(): Boolean {
         return listViewMode.value ?: true
+    }
+
+    fun setFilterQuery(query: String) {
+        filterQuery.onNext(ContextualSearchHelper.normalizeQuery(query))
     }
 
     sealed class SubscriptionState {

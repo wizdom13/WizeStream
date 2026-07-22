@@ -39,12 +39,15 @@ import org.schabi.newpipe.local.holder.LocalBookmarkPlaylistItemHolder;
 import org.schabi.newpipe.local.holder.RemoteBookmarkPlaylistItemHolder;
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.debounce.DebounceSavable;
 import org.schabi.newpipe.util.debounce.DebounceSaver;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,7 +56,7 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 
 public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistLocalItem>, Void>
-        implements DebounceSavable {
+        implements DebounceSavable, ContextualSearchable {
 
     private static final int MINIMUM_INITIAL_DRAG_VELOCITY = 12;
     @State
@@ -73,6 +76,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private DebounceSaver debounceSaver;
 
     private List<Pair<Long, LocalItem.LocalItemType>> deletedItems;
+    private List<PlaylistLocalItem> completePlaylists = Collections.emptyList();
+    private String contextualSearchQuery = "";
 
     ///////////////////////////////////////////////////////////////////////////
     // Fragment LifeCycle - Creation
@@ -123,7 +128,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
 
-        itemListAdapter.setUseItemHandle(true);
+        itemListAdapter.setUseItemHandle(!isContextualSearchActive());
     }
 
     @Override
@@ -155,6 +160,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
             @Override
             public void held(final LocalItem selectedItem) {
+                if (isContextualSearchActive()) {
+                    return;
+                }
                 if (selectedItem instanceof PlaylistMetadataEntry) {
                     showLocalDialog((PlaylistMetadataEntry) selectedItem);
                 } else if (selectedItem instanceof PlaylistRemoteEntity) {
@@ -165,7 +173,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             @Override
             public void drag(final LocalItem selectedItem,
                              final RecyclerView.ViewHolder viewHolder) {
-                if (itemTouchHelper != null) {
+                if (!isContextualSearchActive() && itemTouchHelper != null) {
                     itemTouchHelper.startDrag(viewHolder);
                 }
             }
@@ -284,20 +292,64 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     @Override
     public void handleResult(@NonNull final List<PlaylistLocalItem> result) {
         super.handleResult(result);
+        completePlaylists = new ArrayList<>(result);
+        showFilteredPlaylists();
+    }
+
+    private void showFilteredPlaylists() {
+        if (itemListAdapter == null) {
+            return;
+        }
 
         itemListAdapter.clearStreamItemList();
+        itemListAdapter.setUseItemHandle(!isContextualSearchActive());
+        setEmptyStateMessage(isContextualSearchActive()
+                ? R.string.search_no_results : R.string.empty_list_subtitle);
 
-        if (result.isEmpty()) {
+        final List<PlaylistLocalItem> filteredPlaylists = ContextualSearchHelper.filter(
+                completePlaylists,
+                contextualSearchQuery,
+                playlist -> new String[]{playlist.getOrderingName()});
+
+        if (filteredPlaylists.isEmpty()) {
             showEmptyState();
             return;
         }
 
-        itemListAdapter.addItems(result);
+        itemListAdapter.addItems(filteredPlaylists);
         if (itemsListState != null) {
             itemsList.getLayoutManager().onRestoreInstanceState(itemsListState);
             itemsListState = null;
         }
         hideLoading();
+    }
+
+    @Override
+    public void setContextualSearchQuery(@NonNull final String query) {
+        final String normalizedQuery = ContextualSearchHelper.normalizeQuery(query);
+        if (!isContextualSearchActive() && ContextualSearchHelper.isActive(normalizedQuery)) {
+            captureCanonicalOrderFromAdapter();
+            saveImmediate();
+        }
+        contextualSearchQuery = normalizedQuery;
+        showFilteredPlaylists();
+    }
+
+    private boolean isContextualSearchActive() {
+        return ContextualSearchHelper.isActive(contextualSearchQuery);
+    }
+
+    private void captureCanonicalOrderFromAdapter() {
+        if (itemListAdapter == null) {
+            return;
+        }
+        final List<PlaylistLocalItem> displayedOrder = new ArrayList<>();
+        for (final LocalItem item : itemListAdapter.getItemsList()) {
+            if (item instanceof PlaylistLocalItem) {
+                displayedOrder.add((PlaylistLocalItem) item);
+            }
+        }
+        completePlaylists = displayedOrder;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -357,7 +409,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
     @Override
     public void saveImmediate() {
-        if (itemListAdapter == null) {
+        if (itemListAdapter == null || isContextualSearchActive()) {
             return;
         }
 
@@ -442,7 +494,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                                   @NonNull final RecyclerView.ViewHolder target) {
 
                 // Allow swap LocalBookmarkPlaylistItemHolder and RemoteBookmarkPlaylistItemHolder.
-                if (itemListAdapter == null
+                if (isContextualSearchActive() || itemListAdapter == null
                         || source.getItemViewType() != target.getItemViewType()
                         && !(
                         (

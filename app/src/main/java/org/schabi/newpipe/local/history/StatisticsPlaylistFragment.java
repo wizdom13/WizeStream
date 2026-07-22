@@ -32,6 +32,8 @@ import org.schabi.newpipe.fragments.list.playlist.PlaylistControlViewHolder;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.BaseLocalListFragment;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.settings.HistorySettingsFragment;
@@ -52,11 +54,13 @@ import io.reactivex.rxjava3.disposables.Disposable;
 
 public class StatisticsPlaylistFragment
         extends BaseLocalListFragment<List<StreamStatisticsEntry>, Void>
-        implements PlaylistControlViewHolder {
+        implements PlaylistControlViewHolder, ContextualSearchable {
     private final CompositeDisposable disposables = new CompositeDisposable();
     @State
     Parcelable itemsListState;
     private StatisticSortMode sortMode = StatisticSortMode.LAST_PLAYED;
+    private List<StreamStatisticsEntry> completeHistory = Collections.emptyList();
+    private String contextualSearchQuery = "";
 
     private StatisticPlaylistControlBinding headerBinding;
     private PlaylistControlBinding playlistControlBinding;
@@ -255,6 +259,11 @@ public class StatisticsPlaylistFragment
     @Override
     public void handleResult(@NonNull final List<StreamStatisticsEntry> result) {
         super.handleResult(result);
+        completeHistory = new ArrayList<>(result);
+        showFilteredHistory();
+    }
+
+    private void showFilteredHistory() {
         if (itemListAdapter == null) {
             return;
         }
@@ -262,13 +271,23 @@ public class StatisticsPlaylistFragment
         playlistControlBinding.getRoot().setVisibility(View.VISIBLE);
 
         itemListAdapter.clearStreamItemList();
+        setEmptyStateMessage(ContextualSearchHelper.isActive(contextualSearchQuery)
+                ? R.string.search_no_results : R.string.empty_view_no_videos);
 
-        if (result.isEmpty()) {
+        final List<StreamStatisticsEntry> filteredHistory = ContextualSearchHelper.filter(
+                completeHistory,
+                contextualSearchQuery,
+                item -> new String[]{
+                        item.getStreamEntity().getTitle(),
+                        item.getStreamEntity().getUploader()
+                });
+
+        if (filteredHistory.isEmpty()) {
             showEmptyState();
             return;
         }
 
-        itemListAdapter.addItems(processResult(result));
+        itemListAdapter.addItems(processResult(filteredHistory));
         if (itemsListState != null && itemsList.getLayoutManager() != null) {
             itemsList.getLayoutManager().onRestoreInstanceState(itemsListState);
             itemsListState = null;
@@ -279,6 +298,12 @@ public class StatisticsPlaylistFragment
         headerBinding.sortButton.setOnClickListener(view -> toggleSortMode());
 
         hideLoading();
+    }
+
+    @Override
+    public void setContextualSearchQuery(@NonNull final String query) {
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(query);
+        showFilteredHistory();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -389,4 +414,3 @@ public class StatisticsPlaylistFragment
         MOST_PLAYED,
     }
 }
-

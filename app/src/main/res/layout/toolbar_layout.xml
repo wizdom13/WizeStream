@@ -24,6 +24,12 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
+        <include
+            android:id="@+id/toolbar_contextual_search_container"
+            layout="@layout/toolbar_contextual_search_layout"
+            android:visibility="gone"
+            tools:visibility="gone" />
+
     </com.google.android.material.appbar.MaterialToolbar>
 
 </LinearLayout>

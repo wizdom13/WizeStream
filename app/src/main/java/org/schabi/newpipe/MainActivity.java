@@ -124,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
     private ActionBarDrawerToggle toggle;
 
     private boolean servicesShown = false;
+    private boolean contextualSearchToolbarActive;
 
     private BroadcastReceiver broadcastReceiver;
     private final Map<Integer, HomeDrawerPolicy.KioskTarget> drawerKioskTargets = new HashMap<>();
@@ -784,6 +785,10 @@ public class MainActivity extends AppCompatActivity {
         if (!(fragment instanceof SearchFragment)) {
             toolbarLayoutBinding.toolbarSearchContainer.getRoot().setVisibility(View.GONE);
         }
+        if (!(fragment instanceof MainFragment)) {
+            toolbarLayoutBinding.toolbarContextualSearchContainer.getRoot()
+                    .setVisibility(View.GONE);
+        }
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -844,6 +849,12 @@ public class MainActivity extends AppCompatActivity {
                 .findFragmentById(R.id.fragment_holder);
         if (fragment instanceof MainFragment) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            if (contextualSearchToolbarActive) {
+                toolbarLayoutBinding.toolbar.setNavigationIcon(null);
+                toolbarLayoutBinding.toolbar.setNavigationOnClickListener(null);
+                mainBinding.getRoot().setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED);
+                return;
+            }
             if (toggle != null) {
                 toggle.syncState();
                 toolbarLayoutBinding.toolbar.setNavigationOnClickListener(v -> mainBinding.getRoot()
@@ -855,6 +866,11 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             toolbarLayoutBinding.toolbar.setNavigationOnClickListener(v -> onHomeButtonPressed());
         }
+    }
+
+    public void setContextualSearchToolbarActive(final boolean active) {
+        contextualSearchToolbarActive = active;
+        updateDrawerNavigation();
     }
 
     private void handleIntent(final Intent intent) {

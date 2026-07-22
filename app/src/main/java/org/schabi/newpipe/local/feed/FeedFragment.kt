@@ -75,6 +75,8 @@ import org.schabi.newpipe.ktx.animateHideRecyclerViewAllowingScrolling
 import org.schabi.newpipe.ktx.slideUp
 import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedLoadService
+import org.schabi.newpipe.local.search.ContextualSearchHelper
+import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.Localization
@@ -84,7 +86,7 @@ import org.schabi.newpipe.util.ThemeHelper.getItemViewMode
 import org.schabi.newpipe.util.ThemeHelper.resolveDrawable
 import org.schabi.newpipe.util.ThemeHelper.shouldUseGridLayout
 
-class FeedFragment : BaseStateFragment<FeedState>() {
+class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private var _feedBinding: FragmentFeedBinding? = null
     private val feedBinding get() = _feedBinding!!
 
@@ -99,6 +101,8 @@ class FeedFragment : BaseStateFragment<FeedState>() {
     private var groupId = FeedGroupEntity.GROUP_ALL_ID
     private var groupName = ""
     private var oldestSubscriptionUpdate: OffsetDateTime? = null
+    private var latestLoadedState: FeedState.LoadedState? = null
+    private var contextualSearchQuery = ""
 
     private lateinit var groupAdapter: GroupieAdapter
 
@@ -411,26 +415,8 @@ class FeedFragment : BaseStateFragment<FeedState>() {
 
     @SuppressLint("StringFormatMatches")
     private fun handleLoadedState(loadedState: FeedState.LoadedState) {
-        val itemVersion = when (getItemViewMode(requireContext())) {
-            ItemViewMode.GRID -> StreamItem.ItemVersion.GRID
-            ItemViewMode.CARD -> StreamItem.ItemVersion.CARD
-            else -> StreamItem.ItemVersion.NORMAL
-        }
-        loadedState.items.forEach { it.itemVersion = itemVersion }
-
-        // This need to be saved in a variable as the update occurs async
-        val oldOldestSubscriptionUpdate = oldestSubscriptionUpdate
-
-        groupAdapter.updateAsync(loadedState.items, false) {
-            oldOldestSubscriptionUpdate?.run {
-                highlightNewItemsAfter(oldOldestSubscriptionUpdate)
-            }
-        }
-
-        listState?.run {
-            feedBinding.itemsList.layoutManager?.onRestoreInstanceState(listState)
-            listState = null
-        }
+        latestLoadedState = loadedState
+        showFilteredFeedItems(loadedState, true)
 
         val feedsNotLoaded = loadedState.notLoadedCount > 0
         feedBinding.refreshSubtitleText.isVisible = feedsNotLoaded
@@ -448,12 +434,62 @@ class FeedFragment : BaseStateFragment<FeedState>() {
             handleItemsErrors(loadedState.itemsErrors)
         }
         oldestSubscriptionUpdate = loadedState.oldestUpdate
+    }
 
-        if (loadedState.items.isEmpty()) {
+    private fun showFilteredFeedItems(
+        loadedState: FeedState.LoadedState,
+        restoreListState: Boolean
+    ) {
+        val itemVersion = when (getItemViewMode(requireContext())) {
+            ItemViewMode.GRID -> StreamItem.ItemVersion.GRID
+            ItemViewMode.CARD -> StreamItem.ItemVersion.CARD
+            else -> StreamItem.ItemVersion.NORMAL
+        }
+
+        val displayedItems = ContextualSearchHelper.filter(
+            loadedState.items,
+            contextualSearchQuery
+        ) { item ->
+            val stream = item.streamWithState.stream
+            arrayOf(stream.title, stream.uploader)
+        }
+        displayedItems.forEach { it.itemVersion = itemVersion }
+
+        // This need to be saved in a variable as the update occurs async
+        val oldOldestSubscriptionUpdate = oldestSubscriptionUpdate
+
+        groupAdapter.updateAsync(displayedItems, false) {
+            if (restoreListState) {
+                oldOldestSubscriptionUpdate?.run {
+                    highlightNewItemsAfter(oldOldestSubscriptionUpdate)
+                }
+            }
+        }
+
+        if (restoreListState) {
+            listState?.run {
+                feedBinding.itemsList.layoutManager?.onRestoreInstanceState(listState)
+                listState = null
+            }
+        }
+
+        setEmptyStateMessage(
+            if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                R.string.search_no_results
+            } else {
+                R.string.empty_list_subtitle
+            }
+        )
+        if (displayedItems.isEmpty()) {
             showEmptyState()
         } else {
             hideLoading()
         }
+    }
+
+    override fun setContextualSearchQuery(query: String) {
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(query)
+        latestLoadedState?.let { showFilteredFeedItems(it, false) }
     }
 
     private fun handleErrorState(errorState: FeedState.ErrorState): Boolean {

@@ -10,18 +10,25 @@ import static com.google.android.material.tabs.TabLayout.INDICATOR_GRAVITY_TOP;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.inputmethod.EditorInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.view.MenuItemCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -34,16 +41,20 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.tabs.TabLayout;
 
 import org.schabi.newpipe.BaseFragment;
+import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.FragmentMainBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.settings.tabs.HomeNavigationMode;
 import org.schabi.newpipe.settings.tabs.HomeNavigationModeResolver;
 import org.schabi.newpipe.settings.tabs.Tab;
 import org.schabi.newpipe.settings.tabs.TabsManager;
+import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.views.ScrollableTabLayout;
@@ -51,13 +62,30 @@ import org.schabi.newpipe.views.ScrollableTabLayout;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainFragment extends BaseFragment implements TabLayout.OnTabSelectedListener {
+public class MainFragment extends BaseFragment
+        implements TabLayout.OnTabSelectedListener, BackPressable {
     private static final int BOTTOM_NAVIGATION_MAX_ITEM_COUNT = 5;
     private static final int BOTTOM_NAVIGATION_ITEM_ID_BASE = 10_000;
+    private static final long CONTEXTUAL_SEARCH_DEBOUNCE_MILLIS = 250L;
+    private static final String STATE_CONTEXTUAL_SEARCH_OPEN = "contextual_search_open";
+    private static final String STATE_CONTEXTUAL_SEARCH_QUERY = "contextual_search_query";
+    private static final String STATE_CONTEXTUAL_SEARCH_TAB = "contextual_search_tab";
 
     private FragmentMainBinding binding;
     private BottomNavigationView bottomNavigation;
     private SelectedTabsPagerAdapter pagerAdapter;
+
+    private View contextualSearchContainer;
+    private EditText contextualSearchEditText;
+    private View contextualSearchClose;
+    private View contextualGlobalSearchButton;
+    private TextWatcher contextualSearchTextWatcher;
+    private ContextualSearchable contextualSearchTarget;
+    private final Handler contextualSearchHandler = new Handler(Looper.getMainLooper());
+    private boolean contextualSearchOpen;
+    private boolean tabsSetupInProgress;
+    private String contextualSearchQuery = "";
+    private int contextualSearchTabPosition = -1;
 
     private final List<Tab> tabsList = new ArrayList<>();
     private TabsManager tabsManager;
@@ -78,6 +106,14 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        if (savedInstanceState != null) {
+            contextualSearchOpen = savedInstanceState
+                    .getBoolean(STATE_CONTEXTUAL_SEARCH_OPEN, false);
+            contextualSearchQuery = savedInstanceState
+                    .getString(STATE_CONTEXTUAL_SEARCH_QUERY, "");
+            contextualSearchTabPosition = savedInstanceState
+                    .getInt(STATE_CONTEXTUAL_SEARCH_TAB, -1);
+        }
         tabsManager = TabsManager.getManager(activity);
         tabsManager.setSavedTabsListener(() -> {
             if (DEBUG) {
@@ -117,6 +153,10 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         binding.pager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(final int position) {
+                if (contextualSearchOpen && !tabsSetupInProgress
+                        && contextualSearchTabPosition != position) {
+                    closeContextualSearch();
+                }
                 updateTitleForTab(position);
                 updateBottomNavigationSelection(position);
                 requireActivity().invalidateOptionsMenu();
@@ -141,6 +181,10 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         });
 
         setupTabs();
+        initContextualSearchToolbar();
+        if (contextualSearchOpen) {
+            binding.pager.post(this::restoreContextualSearch);
+        }
     }
 
     @Override
@@ -164,7 +208,18 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     @Override
     public void onPause() {
         setBottomNavigationRequestedVisibility(false);
+        if (contextualSearchEditText != null) {
+            KeyboardUtil.hideKeyboard(activity, contextualSearchEditText);
+        }
         super.onPause();
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull final Bundle outState) {
+        outState.putBoolean(STATE_CONTEXTUAL_SEARCH_OPEN, contextualSearchOpen);
+        outState.putString(STATE_CONTEXTUAL_SEARCH_QUERY, contextualSearchQuery);
+        outState.putInt(STATE_CONTEXTUAL_SEARCH_TAB, contextualSearchTabPosition);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -179,6 +234,20 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
 
     @Override
     public void onDestroyView() {
+        contextualSearchHandler.removeCallbacksAndMessages(null);
+        setActivityContextualSearchToolbarActive(false);
+        if (contextualSearchEditText != null && contextualSearchTextWatcher != null) {
+            contextualSearchEditText.removeTextChangedListener(contextualSearchTextWatcher);
+        }
+        if (contextualSearchContainer != null) {
+            contextualSearchContainer.setVisibility(View.GONE);
+        }
+        contextualSearchContainer = null;
+        contextualSearchEditText = null;
+        contextualSearchClose = null;
+        contextualGlobalSearchButton = null;
+        contextualSearchTextWatcher = null;
+        contextualSearchTarget = null;
         if (bottomNavigation != null) {
             bottomNavigation.setOnItemSelectedListener(null);
             bottomNavigation.setOnItemReselectedListener(null);
@@ -208,8 +277,10 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
 
         final MenuItem searchItem = menu.findItem(R.id.action_search);
         if (searchItem != null) {
-            searchItem.setVisible(!isCurrentDownloadsTab());
+            searchItem.setVisible(!isCurrentDownloadsTab() && !contextualSearchOpen);
         }
+
+        updateContextualSearchToolbar(false);
 
         final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null) {
@@ -229,6 +300,11 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         if (item.getItemId() == R.id.action_search) {
+            final ContextualSearchable searchable = getCurrentContextualSearchable();
+            if (searchable != null) {
+                openContextualSearch(searchable);
+                return true;
+            }
             try {
                 NavigationHelper.openSearchFragment(getFM(),
                         ServiceHelper.getSelectedServiceId(activity), "");
@@ -245,10 +321,16 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     //////////////////////////////////////////////////////////////////////////*/
 
     private void setupTabs() {
+        tabsSetupInProgress = true;
         tabsList.clear();
         tabsList.addAll(tabsManager.getTabs());
 
-        if (pagerAdapter == null || !pagerAdapter.sameTabs(tabsList)) {
+        final boolean replacePagerAdapter = pagerAdapter == null
+                || !pagerAdapter.sameTabs(tabsList);
+        if (contextualSearchOpen && pagerAdapter != null && replacePagerAdapter) {
+            closeContextualSearch();
+        }
+        if (replacePagerAdapter) {
             pagerAdapter = new SelectedTabsPagerAdapter(requireContext(),
                     getChildFragmentManager(), tabsList);
         }
@@ -262,6 +344,13 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         updateTitleForTab(binding.pager.getCurrentItem());
 
         hasTabsChanged = false;
+        tabsSetupInProgress = false;
+
+        if (contextualSearchOpen
+                && (contextualSearchTabPosition < 0
+                || contextualSearchTabPosition >= tabsList.size())) {
+            closeContextualSearch();
+        }
     }
 
     private void updateTabsIconAndDescription() {
@@ -281,7 +370,215 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private void updateTitleForTab(final int tabPosition) {
+        if (contextualSearchOpen || tabPosition < 0 || tabPosition >= tabsList.size()) {
+            return;
+        }
         setTitle(tabsList.get(tabPosition).getTabName(requireContext()));
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+    // Contextual local search
+    //////////////////////////////////////////////////////////////////////////*/
+
+    private void initContextualSearchToolbar() {
+        contextualSearchContainer = requireActivity()
+                .findViewById(R.id.toolbar_contextual_search_container);
+        contextualSearchEditText = requireActivity()
+                .findViewById(R.id.contextual_search_edit_text);
+        contextualSearchClose = requireActivity().findViewById(R.id.contextual_search_close);
+        contextualGlobalSearchButton = requireActivity()
+                .findViewById(R.id.contextual_global_search_button);
+
+        contextualSearchClose.setOnClickListener(view -> closeContextualSearch());
+        contextualGlobalSearchButton.setOnClickListener(view -> openGlobalSearchFromContext());
+        contextualSearchEditText.setOnEditorActionListener((view, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE
+                    || actionId == EditorInfo.IME_ACTION_SEARCH) {
+                dispatchContextualSearchQuery();
+                KeyboardUtil.hideKeyboard(activity, contextualSearchEditText);
+                return true;
+            }
+            return false;
+        });
+
+        contextualSearchTextWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(final CharSequence text, final int start,
+                                          final int count, final int after) {
+                // No-op.
+            }
+
+            @Override
+            public void onTextChanged(final CharSequence text, final int start,
+                                      final int before, final int count) {
+                // Changes are normalized in afterTextChanged.
+            }
+
+            @Override
+            public void afterTextChanged(final Editable text) {
+                if (!contextualSearchOpen) {
+                    return;
+                }
+                contextualSearchQuery = ContextualSearchHelper.normalizeQuery(text);
+                contextualSearchHandler.removeCallbacksAndMessages(null);
+                contextualSearchHandler.postDelayed(
+                        MainFragment.this::dispatchContextualSearchQuery,
+                        CONTEXTUAL_SEARCH_DEBOUNCE_MILLIS);
+            }
+        };
+        contextualSearchEditText.addTextChangedListener(contextualSearchTextWatcher);
+    }
+
+    private void openContextualSearch(@NonNull final ContextualSearchable searchable) {
+        contextualSearchHandler.removeCallbacksAndMessages(null);
+        contextualSearchTarget = searchable;
+        contextualSearchOpen = true;
+        contextualSearchQuery = "";
+        contextualSearchTabPosition = binding.pager.getCurrentItem();
+
+        contextualSearchEditText.setText("");
+        updateContextualSearchToolbar(true);
+        dispatchContextualSearchQuery();
+        requireActivity().invalidateOptionsMenu();
+    }
+
+    private void restoreContextualSearch() {
+        if (!contextualSearchOpen || binding == null
+                || binding.pager.getCurrentItem() != contextualSearchTabPosition) {
+            abandonContextualSearchRestore();
+            return;
+        }
+
+        contextualSearchTarget = getCurrentContextualSearchable();
+        if (contextualSearchTarget == null) {
+            abandonContextualSearchRestore();
+            return;
+        }
+
+        contextualSearchEditText.setText(contextualSearchQuery);
+        contextualSearchEditText.setSelection(contextualSearchEditText.length());
+        updateContextualSearchToolbar(false);
+        dispatchContextualSearchQuery();
+        requireActivity().invalidateOptionsMenu();
+    }
+
+    private void abandonContextualSearchRestore() {
+        clearContextualSearchState();
+        updateContextualSearchToolbar(false);
+        if (binding != null && !tabsList.isEmpty()) {
+            updateTitleForTab(binding.pager.getCurrentItem());
+        }
+        if (isAdded()) {
+            requireActivity().invalidateOptionsMenu();
+        }
+    }
+
+    private void updateContextualSearchToolbar(final boolean requestKeyboard) {
+        if (contextualSearchContainer == null || contextualSearchEditText == null
+                || contextualGlobalSearchButton == null) {
+            return;
+        }
+
+        contextualSearchContainer.setVisibility(contextualSearchOpen ? View.VISIBLE : View.GONE);
+        final ActionBar actionBar = activity.getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowTitleEnabled(!contextualSearchOpen);
+        }
+        setActivityContextualSearchToolbarActive(contextualSearchOpen);
+        if (!contextualSearchOpen || binding == null || tabsList.isEmpty()) {
+            return;
+        }
+
+        final int position = binding.pager.getCurrentItem();
+        final String tabName = tabsList.get(position).getTabName(requireContext());
+        contextualSearchEditText.setHint(getString(R.string.contextual_search_hint, tabName));
+
+        final int serviceId = ServiceHelper.getSelectedServiceId(requireContext());
+        final String serviceName = ServiceHelper.getNameOfServiceById(serviceId);
+        final String globalSearchDescription =
+                getString(R.string.search_service_instead, serviceName);
+        contextualGlobalSearchButton.setContentDescription(globalSearchDescription);
+        TooltipCompat.setTooltipText(contextualGlobalSearchButton, globalSearchDescription);
+
+        if (requestKeyboard) {
+            contextualSearchEditText.requestFocus();
+            KeyboardUtil.showKeyboard(activity, contextualSearchEditText);
+        }
+    }
+
+    private void setActivityContextualSearchToolbarActive(final boolean active) {
+        if (activity instanceof MainActivity) {
+            ((MainActivity) activity).setContextualSearchToolbarActive(active);
+        }
+    }
+
+    private void dispatchContextualSearchQuery() {
+        contextualSearchHandler.removeCallbacksAndMessages(null);
+        if (!contextualSearchOpen || contextualSearchTarget == null) {
+            return;
+        }
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(
+                contextualSearchEditText == null
+                        ? contextualSearchQuery : contextualSearchEditText.getText());
+        contextualSearchTarget.setContextualSearchQuery(contextualSearchQuery);
+    }
+
+    private void openGlobalSearchFromContext() {
+        final String query = ContextualSearchHelper.normalizeQuery(
+                contextualSearchEditText == null ? "" : contextualSearchEditText.getText());
+        closeContextualSearch();
+        try {
+            NavigationHelper.openSearchFragment(getFM(),
+                    ServiceHelper.getSelectedServiceId(activity), query);
+        } catch (final Exception e) {
+            ErrorUtil.showUiErrorSnackbar(this, "Opening search fragment", e);
+        }
+    }
+
+    private void closeContextualSearch() {
+        contextualSearchHandler.removeCallbacksAndMessages(null);
+        if (contextualSearchTarget != null) {
+            contextualSearchTarget.setContextualSearchQuery("");
+        }
+        clearContextualSearchState();
+
+        if (contextualSearchEditText != null) {
+            contextualSearchEditText.setText("");
+            KeyboardUtil.hideKeyboard(activity, contextualSearchEditText);
+        }
+        updateContextualSearchToolbar(false);
+        if (binding != null && !tabsList.isEmpty()) {
+            updateTitleForTab(binding.pager.getCurrentItem());
+        }
+        if (isAdded()) {
+            requireActivity().invalidateOptionsMenu();
+        }
+    }
+
+    private void clearContextualSearchState() {
+        contextualSearchOpen = false;
+        contextualSearchQuery = "";
+        contextualSearchTabPosition = -1;
+        contextualSearchTarget = null;
+    }
+
+    @Nullable
+    private ContextualSearchable getCurrentContextualSearchable() {
+        if (pagerAdapter == null) {
+            return null;
+        }
+        final Fragment primaryFragment = pagerAdapter.getPrimaryFragment();
+        return primaryFragment instanceof ContextualSearchable
+                ? (ContextualSearchable) primaryFragment : null;
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        if (!contextualSearchOpen) {
+            return false;
+        }
+        closeContextualSearch();
+        return true;
     }
 
     public void commitPlaylistTabs() {
@@ -448,6 +745,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
          * The fragments are removed when {@link LocalPlaylistFragment#onDestroy()} is called.
          */
         private final List<LocalPlaylistFragment> localPlaylistFragments = new ArrayList<>();
+        private Fragment primaryFragment;
 
         private SelectedTabsPagerAdapter(final Context context,
                                          final FragmentManager fragmentManager,
@@ -483,6 +781,18 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
 
         public List<LocalPlaylistFragment> getLocalPlaylistFragments() {
             return localPlaylistFragments;
+        }
+
+        @Override
+        public void setPrimaryItem(@NonNull final ViewGroup container, final int position,
+                                   @NonNull final Object object) {
+            super.setPrimaryItem(container, position, object);
+            primaryFragment = (Fragment) object;
+        }
+
+        @Nullable
+        public Fragment getPrimaryFragment() {
+            return primaryFragment;
         }
 
         @Override

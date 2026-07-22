@@ -34,6 +34,8 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.fragments.BaseStateFragment
 import org.schabi.newpipe.ktx.animate
+import org.schabi.newpipe.local.search.ContextualSearchHelper
+import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionViewModel.SubscriptionState
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupDialog
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupReorderDialog
@@ -46,6 +48,7 @@ import org.schabi.newpipe.local.subscription.item.FeedGroupCarouselItem
 import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
+import org.schabi.newpipe.local.subscription.item.SearchNoResultsPlaceholderItem
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ServiceHelper
@@ -53,7 +56,7 @@ import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountChannels
 import org.schabi.newpipe.util.external_communication.ShareUtils
 import org.schabi.newpipe.util.image.ExtractorImageCompat
 
-class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
+class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualSearchable {
     private var _binding: FragmentSubscriptionBinding? = null
     private val binding get() = _binding!!
 
@@ -67,6 +70,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
     private lateinit var feedGroupsCarousel: FeedGroupCarouselItem
     private lateinit var feedGroupsSortMenuItem: GroupsHeader
     private val subscriptionsSection = Section()
+    private var contextualSearchQuery = ""
 
     @State
     @JvmField
@@ -201,6 +205,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
         binding.itemsList.itemAnimator = null
 
         viewModel = ViewModelProvider(this)[SubscriptionViewModel::class.java]
+        viewModel.setFilterQuery(contextualSearchQuery)
         viewModel.stateLiveData.observe(viewLifecycleOwner) { it?.let(this::handleResult) }
         viewModel.feedGroupsLiveData.observe(viewLifecycleOwner) {
             it?.let { (groups, listViewMode) ->
@@ -273,6 +278,20 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
                 listOf(subscriptionsSection)
             )
         )
+    }
+
+    override fun setContextualSearchQuery(query: String) {
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(query)
+        subscriptionsSection.setPlaceholder(
+            if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                SearchNoResultsPlaceholderItem()
+            } else {
+                ImportSubscriptionsHintPlaceholderItem()
+            }
+        )
+        if (::viewModel.isInitialized) {
+            viewModel.setFilterQuery(contextualSearchQuery)
+        }
     }
 
     private fun toggleListViewMode() {
