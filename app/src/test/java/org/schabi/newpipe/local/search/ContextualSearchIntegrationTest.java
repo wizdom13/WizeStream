@@ -33,6 +33,19 @@ public class ContextualSearchIntegrationTest {
     }
 
     @Test
+    public void subscriptionNoResultsUsesDedicatedStaticLayout() throws Exception {
+        final String item = read(
+                "org/schabi/newpipe/local/subscription/item/"
+                        + "SearchNoResultsPlaceholderItem.kt");
+        final String layout = readResource("layout/list_search_no_results.xml");
+
+        assertTrue(item.contains("R.layout.list_search_no_results"));
+        assertFalse(item.contains("ListEmptyViewBinding"));
+        assertTrue(layout.contains("android:text=\"@string/search_no_results\""));
+        assertFalse(layout.contains("android:id="));
+    }
+
+    @Test
     public void bookmarkFilteringProtectsCanonicalOrdering() throws Exception {
         final String source = read(
                 "org/schabi/newpipe/local/bookmark/BookmarkFragment.java");

@@ -65,6 +65,15 @@ jobs:
       - name: Build debug APK and run JVM tests
         run: scripts/build.sh debug
 
+      - name: Build release resource smoke APK
+        run: |
+          ./gradlew assembleRelease --stacktrace -DskipFormatKtlint
+          APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
+          test -s "$APK_PATH"
+          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
+          "$AAPT" dump resources "$APK_PATH" > "$RUNNER_TEMP/release-resources.txt"
+          grep -q "layout/list_search_no_results" "$RUNNER_TEMP/release-resources.txt"
+
       - name: Verify debug APK identity
         run: |
           APK_PATH="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
