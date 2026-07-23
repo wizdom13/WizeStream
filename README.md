@@ -5,7 +5,10 @@
 <p align="center"><b>A Material 3-focused streaming app based on NewPipe.</b></p>
 
 <p align="center">
-  <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" height="80" alt="Get it on IzzyOnDroid"></a>
+  <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a>
+  <a href="https://github.com/wizdom13/WizeStream/releases"><img src="https://i.ibb.co/q0mdc4Z/get-it-on-github.png" height="80" alt="Get it on GitHub"></a>
+  <br>
+  <a href="https://github-store.org/app?repo=wizdom13/WizeStream"><img src="https://raw.githubusercontent.com/kurikomi-labs/komi-store/main/media-resources/ghs_download_badge.png" height="58" alt="Get it on GitHub Store"></a>
 </p>
 
 <p align="center">
@@ -13,6 +16,22 @@
   <a href="https://github.com/wizdom13/WizeStream/actions"><img src="https://github.com/wizdom13/WizeStream/actions/workflows/ci.yml/badge.svg?branch=pipe" alt="Build status"></a>
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/org.wisso.newpipematerial&amp;label=IzzyOnDroid" alt="Latest version on IzzyOnDroid"></a>
   <a href="https://shields.rbtlog.dev/org.wisso.newpipematerial"><img src="https://shields.rbtlog.dev/simple/org.wisso.newpipematerial" alt="Reproducible build status"></a>
+</p>
+
+<p align="center">
+  <a href="#important-project-notice">Project notice</a> •
+  <a href="#what-is-wizestream">About</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#supported-services">Services</a> •
+  <a href="#features">Features</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#building-from-source">Build</a> •
+  <a href="#release-signing">Signing</a> •
+  <a href="#development-status">Development</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#upstream-newpipe">Upstream</a> •
+  <a href="#donate">Donate</a> •
+  <a href="#license">License</a>
 </p>
 
 <p align="center">Translations are welcome, but only native-speaker reviewed translations will be added.</p>
@@ -147,11 +166,13 @@ WizeStream additions include:
 
 ### IzzyOnDroid
 
-<a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" height="80" alt="Get it at IzzyOnDroid"></a>
+<a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it at IzzyOnDroid"></a>
 
 Install WizeStream through an F-Droid-compatible client from the IzzyOnDroid repository.
 
 ### Release APK
+
+<a href="https://github.com/wizdom13/WizeStream/releases"><img src="https://i.ibb.co/q0mdc4Z/get-it-on-github.png" height="80" alt="Get it on GitHub"></a>
 
 Install WizeStream from this repository's GitHub releases or signed build artifacts when available.
 
@@ -160,10 +181,15 @@ Releases: https://github.com/wizdom13/WizeStream/releases
 WizeStream uses a different application ID from official NewPipe, so both apps can be installed side by side:
 
 ```text
-Official NewPipe:  org.schabi.newpipe / net.newpipe.app depending on upstream build
 WizeStream:        org.wisso.newpipematerial
 Debug build:       org.wisso.newpipematerial.debug
 ```
+
+### GitHub Store
+
+<a href="https://github-store.org/app?repo=wizdom13/WizeStream"><img src="https://raw.githubusercontent.com/kurikomi-labs/komi-store/main/media-resources/ghs_download_badge.png" height="58" alt="Get it on GitHub Store"></a>
+
+Install WizeStream through GitHub Store.
 
 ### Migrating data
 
