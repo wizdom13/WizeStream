@@ -73,6 +73,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
           "$AAPT" dump resources "$APK_PATH" > "$RUNNER_TEMP/release-resources.txt"
           grep -q "layout/list_search_no_results" "$RUNNER_TEMP/release-resources.txt"
+          grep -q "layout/list_empty_view_subscriptions" "$RUNNER_TEMP/release-resources.txt"
 
       - name: Verify debug APK identity
         run: |
