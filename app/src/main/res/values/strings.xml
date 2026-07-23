@@ -959,6 +959,7 @@
     <string name="channel_tab_tracks">Tracks</string>
     <string name="channel_tab_shorts">Shorts</string>
     <string name="channel_tab_livestreams">Live</string>
+    <string name="filter_unwatched">Unwatched</string>
     <string name="channel_tab_channels">Channels</string>
     <string name="channel_tab_playlists">Playlists</string>
     <string name="channel_tab_albums">Albums</string>

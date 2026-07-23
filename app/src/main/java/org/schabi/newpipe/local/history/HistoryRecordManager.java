@@ -307,6 +307,26 @@ public class HistoryRecordManager {
         }).subscribeOn(Schedulers.io());
     }
 
+    public Single<List<StreamStateEntity>> loadStreamStateBatch(
+            final List<? extends InfoItem> items) {
+        return Single.fromCallable(() -> {
+            final List<StreamStateEntity> result = new ArrayList<>(items.size());
+            for (final InfoItem item : items) {
+                final List<StreamEntity> entities = streamTable
+                        .getStream(item.getServiceId(), item.getUrl()).blockingFirst();
+                if (entities.isEmpty()) {
+                    result.add(null);
+                    continue;
+                }
+
+                final List<StreamStateEntity> states = streamStateTable
+                        .getState(entities.get(0).getUid()).blockingFirst();
+                result.add(states.isEmpty() ? null : states.get(0));
+            }
+            return result;
+        }).subscribeOn(Schedulers.io());
+    }
+
     ///////////////////////////////////////////////////////
     // Utility
     ///////////////////////////////////////////////////////

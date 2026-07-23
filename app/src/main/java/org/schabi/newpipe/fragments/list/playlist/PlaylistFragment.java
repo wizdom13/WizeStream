@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 
+import com.evernote.android.state.State;
 import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.shape.ShapeAppearanceModel;
 
@@ -29,6 +30,8 @@ import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
+import org.schabi.newpipe.database.stream.model.StreamStateEntity;
+import org.schabi.newpipe.databinding.FragmentPlaylistBinding;
 import org.schabi.newpipe.databinding.PlaylistControlBinding;
 import org.schabi.newpipe.databinding.PlaylistHeaderBinding;
 import org.schabi.newpipe.error.ErrorInfo;
@@ -45,6 +48,7 @@ import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
+import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlaylistPlayQueue;
@@ -52,13 +56,16 @@ import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
+import org.schabi.newpipe.util.StreamListFilter;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.text.TextEllipsizer;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -86,11 +93,17 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
     private PlaylistHeaderBinding headerBinding;
     private PlaylistControlBinding playlistControlBinding;
+    private FragmentPlaylistBinding binding;
 
     private MenuItem playlistBookmarkButton;
 
     private long streamCount;
     private long playlistOverallDurationSeconds;
+    @State
+    protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
+    private final List<StreamInfoItem> unfilteredItems = new ArrayList<>();
+    private final Map<String, StreamStateEntity> streamStates = new HashMap<>();
+    private HistoryRecordManager historyRecordManager;
 
     public static PlaylistFragment getInstance(final int serviceId, final String url,
                                                final String name) {
@@ -139,6 +152,18 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     @Override
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
+        binding = FragmentPlaylistBinding.bind(rootView);
+        historyRecordManager = new HistoryRecordManager(requireContext());
+        if (selectedStreamFilter != StreamListFilter.NONE) {
+            binding.streamFilterChips.streamFilterChipGroup
+                    .check(selectedStreamFilter.getChipId());
+        }
+        binding.streamFilterChips.streamFilterChipGroup
+                .setOnCheckedStateChangeListener((group, checkedIds) -> {
+                    selectedStreamFilter = StreamListFilter.fromChipId(
+                            checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
+                    applyStreamFilter();
+                });
 
         // Is mini variant still relevant?
         // Only the remote playlist screen uses it now
@@ -184,6 +209,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
     @Override
     public void onDestroyView() {
+        binding = null;
         headerBinding = null;
         playlistControlBinding = null;
 
@@ -200,6 +226,13 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         }
 
         bookmarkReactor = null;
+    }
+
+    @Override
+    public void startLoading(final boolean forceLoad) {
+        unfilteredItems.clear();
+        streamStates.clear();
+        super.startLoading(forceLoad);
     }
 
     @Override
@@ -276,14 +309,18 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     }
 
     @Override
-    public void handleNextItems(final ListExtractor.InfoItemsPage result) {
+    public void handleNextItems(final ListExtractor.InfoItemsPage<StreamInfoItem> result) {
         super.handleNextItems(result);
+        unfilteredItems.addAll(result.getItems());
+        refreshStreamStates();
         setStreamCountAndOverallDuration(result.getItems(), !result.hasNextPage());
     }
 
     @Override
     public void handleResult(@NonNull final PlaylistInfo result) {
         super.handleResult(result);
+        unfilteredItems.clear();
+        unfilteredItems.addAll(result.getRelatedItems());
 
         animate(headerBinding.getRoot(), true, 100);
         animate(headerBinding.uploaderLayout, true, 300);
@@ -365,6 +402,44 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                 .subscribe(getPlaylistBookmarkSubscriber());
 
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
+        refreshStreamStates();
+    }
+
+    private void refreshStreamStates() {
+        final List<StreamInfoItem> snapshot = new ArrayList<>(unfilteredItems);
+        applyStreamFilter();
+        disposables.add(historyRecordManager.loadStreamStateBatch(snapshot)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(states -> {
+                    if (!unfilteredItems.equals(snapshot)) {
+                        return;
+                    }
+                    streamStates.clear();
+                    for (int i = 0; i < snapshot.size(); i++) {
+                        streamStates.put(snapshot.get(i).getUrl(), states.get(i));
+                    }
+                    applyStreamFilter();
+                }, throwable -> Log.w(TAG, "Unable to load playlist stream states", throwable)));
+    }
+
+    private void applyStreamFilter() {
+        if (infoListAdapter == null) {
+            return;
+        }
+        final List<StreamInfoItem> displayedItems = unfilteredItems.stream()
+                .filter(item -> StreamListFilter.matches(
+                        selectedStreamFilter, item, streamStates.get(item.getUrl())))
+                .collect(Collectors.toList());
+        infoListAdapter.clearStreamItemList();
+        infoListAdapter.addInfoItemList(displayedItems);
+        showListFooter(hasMoreItems());
+        playlistControlBinding.getRoot().setVisibility(
+                displayedItems.isEmpty() ? View.GONE : View.VISIBLE);
+        if (displayedItems.isEmpty()) {
+            showEmptyState();
+        } else {
+            hideLoading();
+        }
     }
 
     public PlayQueue getPlayQueue() {

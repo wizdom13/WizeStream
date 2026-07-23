@@ -58,6 +58,7 @@ import java.util.function.Consumer
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.databinding.FragmentFeedBinding
 import org.schabi.newpipe.error.ErrorInfo
@@ -81,6 +82,7 @@ import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.NavigationHelper
+import org.schabi.newpipe.util.StreamListFilter
 import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountStreams
 import org.schabi.newpipe.util.ThemeHelper.getItemViewMode
 import org.schabi.newpipe.util.ThemeHelper.resolveDrawable
@@ -103,6 +105,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private var oldestSubscriptionUpdate: OffsetDateTime? = null
     private var latestLoadedState: FeedState.LoadedState? = null
     private var contextualSearchQuery = ""
+
+    @State
+    @JvmField
+    var selectedStreamFilter = StreamListFilter.NONE
 
     private lateinit var groupAdapter: GroupieAdapter
 
@@ -165,6 +171,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         feedBinding.itemsList.adapter = groupAdapter
         setupListViewMode()
+        if (selectedStreamFilter != StreamListFilter.NONE) {
+            feedBinding.streamFilterChips.streamFilterChipGroup
+                .check(selectedStreamFilter.chipId)
+        }
     }
 
     override fun onPause() {
@@ -202,6 +212,13 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             hideNewItemsLoaded(true)
             feedBinding.itemsList.scrollToPosition(0)
         }
+        feedBinding.streamFilterChips.streamFilterChipGroup
+            .setOnCheckedStateChangeListener { _, checkedIds ->
+                selectedStreamFilter = StreamListFilter.fromChipId(
+                    checkedIds.firstOrNull() ?: View.NO_ID
+                )
+                latestLoadedState?.let { showFilteredFeedItems(it, false) }
+            }
     }
 
     // /////////////////////////////////////////////////////////////////////////
@@ -446,8 +463,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             else -> StreamItem.ItemVersion.NORMAL
         }
 
+        val streamFilteredItems = loadedState.items.filter { item ->
+            val streamWithState = item.streamWithState
+            val stream = streamWithState.stream.toStreamInfoItem()
+            val state = streamWithState.stateProgressMillis?.let {
+                StreamStateEntity(streamWithState.stream.uid, it)
+            }
+            StreamListFilter.matches(selectedStreamFilter, stream, state)
+        }
         val displayedItems = ContextualSearchHelper.filter(
-            loadedState.items,
+            streamFilteredItems,
             contextualSearchQuery
         ) { item ->
             val stream = item.streamWithState.stream
@@ -474,7 +499,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
 
         setEmptyStateMessage(
-            if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+            if (ContextualSearchHelper.isActive(contextualSearchQuery) ||
+                selectedStreamFilter != StreamListFilter.NONE
+            ) {
                 R.string.search_no_results
             } else {
                 R.string.empty_list_subtitle
