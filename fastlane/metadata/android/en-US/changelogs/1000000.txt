@@ -1,0 +1,6 @@
+WizeStream 1.0.0
+
+* Adopted an independent semantic version and release cycle.
+* Added unified filters for stream lists.
+* Fixed subscription import when a source has no matching placeholder.
+* Improved release and update validation.

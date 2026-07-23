@@ -14,7 +14,7 @@ on:
           - all
   push:
     tags:
-    - "v*-m*"    
+      - "v*.*.*"
 
 permissions:
   contents: write
@@ -90,6 +90,11 @@ jobs:
           VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
           VERSION_CODE="$(jq -r ".elements[0].versionCode" "app/build/outputs/apk/release/output-metadata.json")"
           RELEASE_TAG="v${VERSION_NAME}"
+
+          if [[ ! "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Gradle versionName '$VERSION_NAME' is not a stable semantic version (X.Y.Z)"
+            exit 1
+          fi
 
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$RELEASE_TAG" ]; then
             echo "Tag mismatch: pushed tag is '$GITHUB_REF_NAME' but Gradle versionName is '$VERSION_NAME' and expects tag '$RELEASE_TAG'"

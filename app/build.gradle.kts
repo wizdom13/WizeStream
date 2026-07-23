@@ -41,8 +41,8 @@ kotlin {
 
 configure<ApplicationExtension> {
     compileSdk {
-        version = release(NEWPIPE_VERSION_SDK_COMPILE_MAJOR) {
-            minorApiLevel = NEWPIPE_VERSION_SDK_COMPILE_MINOR
+        version = release(ANDROID_COMPILE_SDK_MAJOR) {
+            minorApiLevel = ANDROID_COMPILE_SDK_MINOR
         }
     }
     namespace = UPSTREAM_NEWPIPE_NAMESPACE
@@ -56,10 +56,10 @@ configure<ApplicationExtension> {
         applicationId = WIZESTREAM_APPLICATION_ID
         resValue("string", "app_name", "WizeStream")
         minSdk {
-            version = release(NEWPIPE_VERSION_SDK_MIN)
+            version = release(ANDROID_MIN_SDK)
         }
         targetSdk {
-            version = release(NEWPIPE_VERSION_SDK_TARGET)
+            version = release(ANDROID_TARGET_SDK)
         }
 
         versionCode = System.getProperty("versionCodeOverride")?.toInt()
@@ -67,22 +67,6 @@ configure<ApplicationExtension> {
 
         versionName = WIZESTREAM_VERSION_NAME
         System.getProperty("versionNameSuffix")?.let { versionNameSuffix = it }
-
-        buildConfigField(
-            "String",
-            "WIZESTREAM_VERSION_NAME",
-            "\"$WIZESTREAM_VERSION_NAME\""
-        )
-        buildConfigField(
-            "String",
-            "UPSTREAM_NEWPIPE_VERSION_NAME",
-            "\"$NEWPIPE_VERSION_NAME\""
-        )
-        buildConfigField(
-            "int",
-            "WIZESTREAM_RELEASE_NUMBER",
-            "$WIZESTREAM_RELEASE_NUMBER"
-        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

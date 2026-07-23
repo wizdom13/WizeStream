@@ -28,7 +28,7 @@ body:
     attributes:
       label: Affected WizeStream version
       description: "Which WizeStream version shows the problem?"
-      placeholder: "Example: 0.28.8-m12 — shown in About"
+      placeholder: "Example: 1.0.0 — shown in About"
     validations:
       required: true
 

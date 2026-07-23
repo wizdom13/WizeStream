@@ -70,8 +70,7 @@ class AboutActivity : AppCompatActivity() {
             FragmentAboutBinding.inflate(inflater, container, false).apply {
                 aboutAppVersion.text = getString(
                     R.string.wizestream_version_format,
-                    BuildConfig.VERSION_NAME,
-                    BuildConfig.UPSTREAM_NEWPIPE_VERSION_NAME
+                    BuildConfig.VERSION_NAME
                 )
                 aboutGithubLink.openLink(R.string.github_url)
                 aboutDonationLink.openLink(R.string.donation_url)

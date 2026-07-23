@@ -38,6 +38,18 @@ The rebranding changes the public app name, visual identity, repository name, an
 
 WizeStream remains based on NewPipe and continues to preserve upstream attribution, licensing, and third-party notices. The rename is intended to clearly distinguish this independently maintained project from official NewPipe while respecting the upstream project's trademark policy. See [issue #34](https://github.com/wizdom13/WizeStream/issues/34) for the original request.
 
+### Independent versioning
+
+WizeStream has its own release cycle and follows semantic versioning:
+
+- `MAJOR.MINOR.PATCH`, such as `1.0.0`, `1.1.0`, and `1.1.1`
+- Git tags use the corresponding `vMAJOR.MINOR.PATCH` form
+- WizeStream version numbers do not contain or follow NewPipe version numbers
+
+NewPipe remains an upstream source and is credited as required, but its version is development
+metadata rather than part of WizeStream's public version identity. The currently tracked upstream
+baseline is recorded in [UPSTREAM.md](UPSTREAM.md).
+
 ---
 
 ## What is WizeStream?
@@ -299,6 +311,9 @@ The recorded submodule commit is part of the source definition. Do not replace i
 ## Upstream NewPipe
 
 WizeStream is based on NewPipe.
+
+WizeStream does not mirror NewPipe's release numbers. See [UPSTREAM.md](UPSTREAM.md) for the
+upstream baseline currently tracked by this repository.
 
 Upstream resources:
 

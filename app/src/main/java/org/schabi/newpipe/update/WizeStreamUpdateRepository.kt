@@ -53,7 +53,14 @@ object WizeStreamUpdateRepository {
     fun selectLatestCandidateRelease(releases: List<Release>): Release? {
         return releases
             .filter { !it.draft && it.version.isNotBlank() }
-            .maxByOrNull { parsePublishedAt(it.publishedAt) }
+            .mapNotNull { release ->
+                SemanticVersion.parse(release.version)?.let { release to it }
+            }
+            .maxWithOrNull(
+                compareBy<Pair<Release, SemanticVersion>> { it.second }
+                    .thenBy { parsePublishedAt(it.first.publishedAt) }
+            )
+            ?.first
     }
 
     fun formatChangelog(releases: List<Release>, emptyText: String): String {
@@ -80,7 +87,7 @@ object WizeStreamUpdateRepository {
     }
 
     fun installedVersionName(): String {
-        return BuildConfig.WIZESTREAM_VERSION_NAME.ifBlank { BuildConfig.VERSION_NAME }
+        return BuildConfig.VERSION_NAME
     }
 
     fun installedVersionSummary(): String {
@@ -141,43 +148,109 @@ object WizeStreamUpdateRepository {
     }
 
     private data class SemanticVersion(
-        val numbers: List<Int>,
-        val suffixPrefix: String,
-        val suffixNumber: Int?
+        val major: Int,
+        val minor: Int,
+        val patch: Int,
+        val prerelease: List<String>,
+        val legacyRevision: Int? = null
     ) : Comparable<SemanticVersion> {
         override fun compareTo(other: SemanticVersion): Int {
-            val maxSize = maxOf(numbers.size, other.numbers.size)
-            for (index in 0 until maxSize) {
-                val current = numbers.getOrElse(index) { 0 }
-                val otherValue = other.numbers.getOrElse(index) { 0 }
-                if (current != otherValue) {
-                    return current.compareTo(otherValue)
+            compareValuesBy(
+                this,
+                other,
+                SemanticVersion::major,
+                SemanticVersion::minor,
+                SemanticVersion::patch
+            ).takeIf { it != 0 }?.let { return it }
+
+            if (legacyRevision != null || other.legacyRevision != null) {
+                return when {
+                    legacyRevision == null -> -1
+                    other.legacyRevision == null -> 1
+                    else -> legacyRevision.compareTo(other.legacyRevision)
                 }
             }
 
-            if (suffixPrefix != other.suffixPrefix) {
-                return suffixPrefix.compareTo(other.suffixPrefix)
+            if (prerelease.isEmpty() || other.prerelease.isEmpty()) {
+                return when {
+                    prerelease.isEmpty() && other.prerelease.isEmpty() -> 0
+                    prerelease.isEmpty() -> 1
+                    else -> -1
+                }
             }
 
-            return when {
-                suffixNumber == null && other.suffixNumber == null -> 0
-                suffixNumber == null -> -1
-                other.suffixNumber == null -> 1
-                else -> suffixNumber.compareTo(other.suffixNumber)
+            val maxSize = maxOf(prerelease.size, other.prerelease.size)
+            for (index in 0 until maxSize) {
+                val current = prerelease.getOrNull(index) ?: return -1
+                val otherValue = other.prerelease.getOrNull(index) ?: return 1
+                if (current == otherValue) {
+                    continue
+                }
+
+                val currentNumber = current.toIntOrNull()
+                val otherNumber = otherValue.toIntOrNull()
+                return when {
+                    currentNumber != null && otherNumber != null ->
+                        currentNumber.compareTo(otherNumber)
+
+                    currentNumber != null -> -1
+
+                    otherNumber != null -> 1
+
+                    else -> current.compareTo(otherValue)
+                }
             }
+            return 0
         }
 
         companion object {
-            private val VERSION_REGEX = Regex("^v?(\\d+(?:\\.\\d+)*)(?:[-_]?([a-zA-Z]+)(\\d+)?)?$")
+            private val LEGACY_VERSION_REGEX =
+                Regex("^v?(\\d+)\\.(\\d+)\\.(\\d+)-m(\\d+)$")
+            private val VERSION_REGEX = Regex(
+                "^v?(\\d+)\\.(\\d+)\\.(\\d+)" +
+                    "(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?" +
+                    "(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+            )
 
             fun parse(raw: String): SemanticVersion? {
+                LEGACY_VERSION_REGEX.matchEntire(raw.trim())?.let { match ->
+                    val major = parseNumber(match.groupValues[1]) ?: return null
+                    val minor = parseNumber(match.groupValues[2]) ?: return null
+                    val patch = parseNumber(match.groupValues[3]) ?: return null
+                    val legacyRevision = parseNumber(match.groupValues[4]) ?: return null
+                    return SemanticVersion(
+                        major = major,
+                        minor = minor,
+                        patch = patch,
+                        prerelease = emptyList(),
+                        legacyRevision = legacyRevision
+                    )
+                }
+
                 val match = VERSION_REGEX.matchEntire(raw.trim()) ?: return null
-                val numbers = match.groupValues[1]
-                    .split('.')
-                    .map { it.toIntOrNull() ?: return null }
-                val suffixPrefix = match.groupValues[2].lowercase(Locale.ROOT)
-                val suffixNumber = match.groupValues[3].takeIf { it.isNotBlank() }?.toIntOrNull()
-                return SemanticVersion(numbers, suffixPrefix, suffixNumber)
+                val major = parseNumber(match.groupValues[1]) ?: return null
+                val minor = parseNumber(match.groupValues[2]) ?: return null
+                val patch = parseNumber(match.groupValues[3]) ?: return null
+                val prerelease = match.groupValues[4]
+                    .takeIf { it.isNotBlank() }
+                    ?.split('.')
+                    .orEmpty()
+                val hasInvalidNumericIdentifier = prerelease.any { identifier ->
+                    identifier.all(Char::isDigit) &&
+                        identifier.length > 1 &&
+                        identifier.startsWith('0')
+                }
+                if (hasInvalidNumericIdentifier) {
+                    return null
+                }
+                return SemanticVersion(major, minor, patch, prerelease)
+            }
+
+            private fun parseNumber(value: String): Int? {
+                if (value.length > 1 && value.startsWith('0')) {
+                    return null
+                }
+                return value.toIntOrNull()
             }
         }
     }

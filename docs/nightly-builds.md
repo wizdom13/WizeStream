@@ -57,7 +57,7 @@ Each published nightly receives:
 For example:
 
 ```text
-0.28.8-m11-nightly.20260714.dc108a3
+1.0.0-nightly.20260714.dc108a3
 nightly-20260714-dc108a3
 ```
 

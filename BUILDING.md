@@ -59,6 +59,23 @@ Run style checks:
 scripts/build.sh checkstyle
 ```
 
+## Versioning and release tags
+
+Stable WizeStream releases use semantic versions in `MAJOR.MINOR.PATCH` form. Update the three
+`WIZESTREAM_VERSION_*` components in `buildSrc/src/main/kotlin/ProjectConfig.kt`; do not derive
+them from a NewPipe version.
+
+The Android version code is encoded as:
+
+```text
+MAJOR × 1,000,000 + MINOR × 1,000 + PATCH
+```
+
+Keep `MINOR` and `PATCH` between 0 and 999. Add the release notes at
+`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, then tag the exact release commit
+as `vMAJOR.MINOR.PATCH`. The release workflow rejects a tag that does not match Gradle's
+`versionName`.
+
 ## Release signing
 
 Provide all four WizeStream signing variables before running `scripts/build.sh release`:

@@ -7,10 +7,10 @@ import org.schabi.newpipe.update.WizeStreamUpdateRepository.VersionComparison
 
 class WizeStreamUpdateRepositoryTest {
     @Test
-    fun compareInstalledToLatestDetectsNewerMaterialRelease() {
+    fun compareInstalledToLatestDetectsNewerMinorRelease() {
         assertEquals(
             VersionComparison.NEWER,
-            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "0.28.8-m1")
+            WizeStreamUpdateRepository.compareInstalledToLatest("1.0.0", "1.1.0")
         )
     }
 
@@ -18,7 +18,46 @@ class WizeStreamUpdateRepositoryTest {
     fun compareInstalledToLatestTreatsMatchingVPrefixedTagAsCurrent() {
         assertEquals(
             VersionComparison.SAME_OR_OLDER,
-            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", "v0.28.7-m3")
+            WizeStreamUpdateRepository.compareInstalledToLatest("1.1.1", "v1.1.1")
+        )
+    }
+
+    @Test
+    fun compareInstalledToLatestMigratesLegacyMSeriesToOnePointZero() {
+        assertEquals(
+            VersionComparison.NEWER,
+            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.8-m14", "v1.0.0")
+        )
+    }
+
+    @Test
+    fun compareInstalledToLatestPreservesLegacyMSeriesOrdering() {
+        assertEquals(
+            VersionComparison.NEWER,
+            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.8", "0.28.8-m14")
+        )
+        assertEquals(
+            VersionComparison.SAME_OR_OLDER,
+            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.8-m14", "0.28.8")
+        )
+    }
+
+    @Test
+    fun compareInstalledToLatestUsesSemanticPrereleasePrecedence() {
+        assertEquals(
+            VersionComparison.NEWER,
+            WizeStreamUpdateRepository.compareInstalledToLatest(
+                "1.1.0-beta.2",
+                "1.1.0-beta.11"
+            )
+        )
+        assertEquals(
+            VersionComparison.NEWER,
+            WizeStreamUpdateRepository.compareInstalledToLatest("1.1.0-beta.11", "1.1.0")
+        )
+        assertEquals(
+            VersionComparison.SAME_OR_OLDER,
+            WizeStreamUpdateRepository.compareInstalledToLatest("1.1.0", "1.1.0-rc.1")
         )
     }
 
@@ -26,14 +65,18 @@ class WizeStreamUpdateRepositoryTest {
     fun compareInstalledToLatestFailsSafelyForUnknownInstalledVersion() {
         assertEquals(
             VersionComparison.UNKNOWN,
-            WizeStreamUpdateRepository.compareInstalledToLatest("material-dev", "v0.28.7-m3")
+            WizeStreamUpdateRepository.compareInstalledToLatest("wizestream-dev", "v1.0.0")
+        )
+        assertEquals(
+            VersionComparison.UNKNOWN,
+            WizeStreamUpdateRepository.compareInstalledToLatest("1.0.0", "v1.01.0")
         )
     }
 
     @Test
     fun selectLatestCandidateReleaseIgnoresDrafts() {
-        val draft = release("0.29.0-m1", "2026-02-01T00:00:00Z", draft = true)
-        val published = release("0.28.8-m1", "2026-01-01T00:00:00Z")
+        val draft = release("1.1.0", "2026-02-01T00:00:00Z", draft = true)
+        val published = release("1.0.0", "2026-01-01T00:00:00Z")
 
         assertEquals(
             published,
@@ -43,8 +86,8 @@ class WizeStreamUpdateRepositoryTest {
 
     @Test
     fun selectLatestCandidateReleaseIncludesPrereleases() {
-        val stable = release("0.28.7-m3", "2026-01-01T00:00:00Z")
-        val prerelease = release("0.28.8-m1", "2026-01-02T00:00:00Z", prerelease = true)
+        val stable = release("1.0.0", "2026-01-01T00:00:00Z")
+        val prerelease = release("1.1.0-beta.1", "2026-01-02T00:00:00Z", prerelease = true)
 
         assertEquals(
             prerelease,
@@ -53,9 +96,22 @@ class WizeStreamUpdateRepositoryTest {
     }
 
     @Test
-    fun selectLatestCandidateReleaseUsesNewestPublishedNonDraftRelease() {
-        val older = release("0.29.0-m1", "2026-01-01T00:00:00Z")
-        val newer = release("0.28.8-m1", "2026-01-02T00:00:00Z")
+    fun selectLatestCandidateReleaseUsesHighestSemanticVersion() {
+        val higherVersion = release("1.1.0", "2026-01-01T00:00:00Z")
+        val laterBackport = release("1.0.1", "2026-01-02T00:00:00Z")
+
+        assertEquals(
+            higherVersion,
+            WizeStreamUpdateRepository.selectLatestCandidateRelease(
+                listOf(higherVersion, laterBackport)
+            )
+        )
+    }
+
+    @Test
+    fun selectLatestCandidateReleaseUsesPublishTimeToBreakVersionTies() {
+        val older = release("1.1.0", "2026-01-01T00:00:00Z")
+        val newer = release("v1.1.0", "2026-01-02T00:00:00Z")
 
         assertEquals(
             newer,
@@ -70,7 +126,7 @@ class WizeStreamUpdateRepositoryTest {
 
     @Test
     fun selectLatestCandidateReleaseCanSelectPrereleaseNewerThanInstalled() {
-        val prerelease = release("0.28.8-m1", "2026-01-02T00:00:00Z", prerelease = true)
+        val prerelease = release("1.1.0-beta.1", "2026-01-02T00:00:00Z", prerelease = true)
 
         assertEquals(
             prerelease,
@@ -78,7 +134,18 @@ class WizeStreamUpdateRepositoryTest {
         )
         assertEquals(
             VersionComparison.NEWER,
-            WizeStreamUpdateRepository.compareInstalledToLatest("0.28.7-m3", prerelease.version)
+            WizeStreamUpdateRepository.compareInstalledToLatest("1.0.0", prerelease.version)
+        )
+    }
+
+    @Test
+    fun selectLatestCandidateReleaseIgnoresMalformedVersions() {
+        val malformed = release("latest", "2026-02-01T00:00:00Z")
+        val semantic = release("1.0.0", "2026-01-01T00:00:00Z")
+
+        assertEquals(
+            semantic,
+            WizeStreamUpdateRepository.selectLatestCandidateRelease(listOf(malformed, semantic))
         )
     }
 
@@ -109,16 +176,16 @@ class WizeStreamUpdateRepositoryTest {
         return """
             [
               {
-                "tag_name": "v0.28.8-m12",
-                "name": "WizeStream 0.28.8-m12",
-                "html_url": "https://github.com/wizdom13/WizeStream/releases/tag/v0.28.8-m12",
+                "tag_name": "v1.0.0",
+                "name": "WizeStream 1.0.0",
+                "html_url": "https://github.com/wizdom13/WizeStream/releases/tag/v1.0.0",
                 "body": "Release notes",
                 "published_at": "2026-07-21T00:00:00Z",
                 "draft": false,
                 "prerelease": false,
                 "assets": [
                   {
-                    "name": "WizeStream_v0.28.8-m12.apk",
+                    "name": "wizestream_v1.0.0.apk",
                     "browser_download_url": "https://example.invalid/WizeStream.apk",
                     "size": 12345,
                     "digest": "$digest"
