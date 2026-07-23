@@ -232,9 +232,7 @@ public final class ThemeHelper {
             themeName = "BlackTheme";
         }
         themeName += "." + service.getServiceInfo().getName();
-        final int resourceId = context.getResources()
-                .getIdentifier(themeName, "style", context.getPackageName());
-        return resourceId > 0 ? resourceId : baseTheme;
+        return getThemeOrDefault(themeName, baseTheme);
     }
 
     @StyleRes
@@ -378,5 +376,27 @@ public final class ThemeHelper {
 
     public static int getGridSpanCount(final Context context, final int minWidth) {
         return Math.max(1, context.getResources().getDisplayMetrics().widthPixels / minWidth);
+    }
+
+    @StyleRes
+    private static int getThemeOrDefault(final String name, @StyleRes final int baseTheme) {
+        return switch (name) {
+            case "LightTheme.YouTube" -> R.style.LightTheme_YouTube;
+            case "DarkTheme.YouTube" -> R.style.DarkTheme_YouTube;
+            case "BlackTheme.YouTube" -> R.style.BlackTheme_YouTube;
+            case "LightTheme.SoundCloud" -> R.style.LightTheme_SoundCloud;
+            case "DarkTheme.SoundCloud" -> R.style.DarkTheme_SoundCloud;
+            case "BlackTheme.SoundCloud" -> R.style.BlackTheme_SoundCloud;
+            case "LightTheme.PeerTube" -> R.style.LightTheme_PeerTube;
+            case "DarkTheme.PeerTube" -> R.style.DarkTheme_PeerTube;
+            case "BlackTheme.PeerTube" -> R.style.BlackTheme_PeerTube;
+            case "LightTheme.media.ccc.de" -> R.style.LightTheme_media_ccc_de;
+            case "DarkTheme.media.ccc.de" -> R.style.DarkTheme_media_ccc_de;
+            case "BlackTheme.media.ccc.de" -> R.style.BlackTheme_media_ccc_de;
+            case "LightTheme.Bandcamp" -> R.style.LightTheme_Bandcamp;
+            case "DarkTheme.Bandcamp" -> R.style.DarkTheme_Bandcamp;
+            case "BlackTheme.Bandcamp" -> R.style.BlackTheme_Bandcamp;
+            default -> baseTheme;
+        };
     }
 }
