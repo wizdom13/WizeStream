@@ -32,5 +32,5 @@ node_modules/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
-# Local composite-build checkout for extractor source (PipePipeExtractor experiment)
-/external/NewPipeExtractor/
+# Local composite-build checkout for WizeStreamExtractor source
+/external/WizeStreamExtractor/

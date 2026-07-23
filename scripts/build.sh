@@ -31,8 +31,8 @@ case "$MODE" in
         exec ./gradlew connectedCheck --stacktrace "$@"
         ;;
     extractor-bytecode)
-        ./gradlew -p external/NewPipeExtractor :extractor:clean :extractor:compileJava --stacktrace "$@"
-        exec javap -verbose -classpath external/NewPipeExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe
+        ./gradlew -p external/WizeStreamExtractor :extractor:clean :extractor:compileJava --stacktrace "$@"
+        exec javap -verbose -classpath external/WizeStreamExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe
         ;;
     *)
         echo "Usage: $0 {debug|release|nightly|checkstyle|connected|extractor-bytecode} [extra Gradle arguments]" >&2

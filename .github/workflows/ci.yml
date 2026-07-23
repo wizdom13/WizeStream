@@ -58,7 +58,7 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Verify pinned PipePipeExtractor bytecode
+      - name: Verify pinned WizeStreamExtractor bytecode
         run: |
           scripts/build.sh extractor-bytecode | grep "major version: 65"
 
@@ -116,7 +116,7 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Prepare pinned PipePipeExtractor
+      - name: Prepare pinned WizeStreamExtractor
         run: scripts/prepare-extractor.sh
 
       - name: Enable KVM

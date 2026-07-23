@@ -28,7 +28,7 @@ object ServiceHelper {
 
     @JvmStatic
     fun isServiceVisible(service: StreamingService): Boolean {
-        // TODO: Enable PipePipeExtractor's BiliBili and NicoNico services after app-side UI
+        // TODO: Enable WizeStreamExtractor's BiliBili and NicoNico services after app-side UI
         // flows are validated for search, detail, playback, subscriptions, and downloads.
         return service.serviceId !in TEMPORARILY_HIDDEN_SERVICE_IDS
     }

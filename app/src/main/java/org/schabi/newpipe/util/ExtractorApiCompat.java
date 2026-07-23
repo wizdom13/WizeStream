@@ -9,7 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Compatibility helpers for extractor API accessors that differ across PipePipeExtractor builds.
+ * Compatibility helpers for extractor API accessors that differ across WizeStreamExtractor builds.
  */
 public final class ExtractorApiCompat {
     private static final String DESCRIPTION_GETTER = "get" + "Description";

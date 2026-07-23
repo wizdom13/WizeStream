@@ -1,6 +1,6 @@
 # Building WizeStream
 
-WizeStream uses a pinned `PipePipeExtractor` Git submodule at `external/NewPipeExtractor`. The submodule commit recorded by each WizeStream commit or tag is part of the source definition and must not be replaced with the latest extractor branch tip.
+WizeStream uses a pinned `WizeStreamExtractor` Git submodule at `external/WizeStreamExtractor`. The submodule commit recorded by each WizeStream commit or tag is part of the source definition and must not be replaced with the latest extractor branch tip.
 
 ## Requirements
 

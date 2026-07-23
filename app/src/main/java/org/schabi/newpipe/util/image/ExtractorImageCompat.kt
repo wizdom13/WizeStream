@@ -8,7 +8,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 /**
  * Compatibility helpers for extractor image APIs.
  *
- * PipePipeExtractor builds may expose either NewPipeExtractor's Image-list getters
+ * WizeStreamExtractor builds may expose either NewPipeExtractor's Image-list getters
  * (getThumbnails()/getUploaderAvatars()) or older/smaller single URL accessors
  * (getThumbnailUrl()/thumbnailUrl and getUploaderAvatarUrl()/uploaderAvatarUrl). Keep these
  * differences isolated here instead of sprinkling branch-specific API checks through the app.

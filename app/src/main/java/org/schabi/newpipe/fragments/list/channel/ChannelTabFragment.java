@@ -166,7 +166,7 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
         unfilteredItems.addAll(result.getRelatedItems());
         refreshStreamStates();
 
-        // Latest PipePipeExtractor no longer uses raw-data-ready channel tab handlers;
+        // Latest WizeStreamExtractor no longer uses raw-data-ready channel tab handlers;
         // keep the fetched ListLinkHandler from ChannelInfo as-is.
 
         if (playlistControlBinding != null) {

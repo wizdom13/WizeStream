@@ -23,15 +23,15 @@ dependencyResolutionManagement {
 }
 include(":app") // androidApp
 
-val newPipeExtractorDir = file("external/NewPipeExtractor")
-if (!newPipeExtractorDir.isDirectory) {
+val wizeStreamExtractorDir = file("external/WizeStreamExtractor")
+if (!wizeStreamExtractorDir.isDirectory) {
     throw GradleException(
-        "PipePipeExtractor submodule checkout not found. " +
+        "WizeStreamExtractor submodule checkout not found. " +
             "Run git submodule update --init --recursive or scripts/prepare-extractor.sh."
     )
 }
 
-includeBuild(newPipeExtractorDir) {
+includeBuild(wizeStreamExtractorDir) {
     dependencySubstitution {
         substitute(module("com.github.TeamNewPipe:NewPipeExtractor"))
             .using(project(":extractor"))

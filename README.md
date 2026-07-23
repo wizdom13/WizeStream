@@ -223,7 +223,7 @@ Do not publish WizeStream or forks of NewPipe to Google Play without first revie
 
 ## Building from source
 
-WizeStream uses a pinned `PipePipeExtractor` Git submodule. Clone the repository together with its pinned submodule:
+WizeStream uses a pinned `WizeStreamExtractor` Git submodule. Clone the repository together with its pinned submodule:
 
 ```bash
 git clone --recurse-submodules https://github.com/wizdom13/WizeStream.git
@@ -321,9 +321,9 @@ Contributions are welcome, especially focused Material 3 polish, bug fixes, QA f
 
 Please keep changes focused and testable. For UI work, include before-and-after screenshots where possible and verify Light, Dark, Black, Follow system, and at least one manual theme color preset.
 
-### PipePipeExtractor submodule
+### WizeStreamExtractor submodule
 
-WizeStream builds against the `wizdom13/PipePipeExtractor` fork through the pinned submodule at `external/NewPipeExtractor`.
+WizeStream builds against the [`wizdom13/WizeStreamExtractor`](https://github.com/wizdom13/WizeStreamExtractor) fork through the pinned submodule at `external/WizeStreamExtractor`.
 
 ```bash
 git submodule sync --recursive

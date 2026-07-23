@@ -26,7 +26,7 @@ Use the same source from which you installed it whenever possible. IzzyOnDroid u
 
 ## Which services are supported?
 
-Service support comes from the pinned PipePipeExtractor source included with each WizeStream build. See the main [README](../README.md#supported-services) for the current list.
+Service support comes from the pinned WizeStreamExtractor source included with each WizeStream build. See the main [README](../README.md#supported-services) for the current list.
 
 ## Where should I report a problem?
 
