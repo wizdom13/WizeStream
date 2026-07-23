@@ -123,14 +123,14 @@
     <string name="title_activity_about">O WizeStreamu</string>
     <string name="title_licenses">Licence treće strane</string>
     <string name="copyright" formatted="true">© %1$s od %2$s pod %3$s</string>
-    <string name="tab_about">O aplikaciji i ČPP</string>
+    <string name="tab_about">Informacije i ČPP</string>
     <string name="tab_licenses">Licence</string>
-    <string name="app_description">Slobodan i mali tok na Android uređaju.</string>
+    <string name="app_description">Slobodan i jednostavan streaming na Android uređaju.</string>
     <string name="view_on_github">Pogledaj na GitHubu</string>
     <string name="app_license_title">WizeStream licenca</string>
     <string name="contribution_encouragement">Ako imate ideja za prijevod, promjene u dizajnu, čišćenje koda ili neke veće promjene u kodu, pomoć je uvijek dobro došla. Što više radimo, to bolji postajemo!</string>
     <string name="read_full_license">Pročitaj licencu</string>
-    <string name="contribution_title">Doprinos</string>
+    <string name="contribution_title">Doprinesi</string>
     <string name="title_activity_history">Povijest</string>
     <string name="action_history">Povijest</string>
     <string name="notification_channel_name">WizeStream obavijest</string>
@@ -245,7 +245,7 @@
     <string name="dismiss">Odbaci</string>
     <string name="rename">Preimenuj</string>
     <string name="one_item_deleted">1 stavka izbrisana.</string>
-    <string name="give_back">Vrati</string>
+    <string name="give_back">Daj nešto zauzvrat</string>
     <string name="website_encouragement">Posjeti WizeStream web-stranicu za više informacija i vijesti.</string>
     <string name="privacy_policy_title">WizeStream pravila o privatnosti</string>
     <string name="read_privacy_policy">Pročitaj pravila o privatnosti</string>
@@ -741,7 +741,7 @@
     <string name="msg_failed_to_copy">Neuspjelo kopiranje u međuspremnik</string>
     <string name="faq_title">Često postavljena pitanja</string>
     <string name="faq_description">Ako imaš problema s korištenjem aplikacije, pogledaj odgovore na česta pitanja!</string>
-    <string name="faq">Pogledaj na web stranici</string>
+    <string name="faq">Pogledaj na web-stranici</string>
     <string name="play_queue_audio_track">Audio snimka: %s</string>
     <string name="audio_track">Traka audio snimke</string>
     <string name="duplicate_in_playlist">Zasivljene playliste već sadrže ovu stavku.</string>
@@ -885,4 +885,3 @@
     <string name="api23_requirement_dialog_message">Nažalost WizeStream ovisi o nekoliko biblioteka koje su ukinule podršku za Android 5.0 i 5.1. Sljedeće WizeStream izdanje će stoga nažalost raditi samo na uređajima s Androidom 6 ili novije. Pročitaj više u objavi na blogu.</string>
     <string name="api23_requirement_dialog_blogpost">Objava na blogu</string>
 </resources>
-

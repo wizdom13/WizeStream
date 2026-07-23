@@ -220,9 +220,9 @@
     <string name="unsubscribe">لغو اشتراک</string>
     <string name="tab_choose">گزینش زبانه</string>
     <string name="enable_watch_history_title">تاریخچه تماشا</string>
-    <string name="settings_category_history_title">تاریخچه و حافظه نهان</string>
+    <string name="settings_category_history_title">تاریخچه و انباره</string>
     <string name="settings_category_debug_title">اشکال‌زدایی</string>
-    <string name="settings_category_updates_title">به‌روزرسانی‌ها</string>
+    <string name="settings_category_updates_title">به‌روز رسانی‌ها</string>
     <string name="open_in_popup_mode">گشودن در حالت تصویردرتصویر</string>
     <string name="default_popup_resolution_title">وضوح پیش‌گزیدهٔ تصویردرتصویر</string>
     <string name="controls_popup_title">تصویردرتصویر</string>
@@ -756,7 +756,7 @@
     <string name="duration">مدّت</string>
     <string name="rewind">پسروی</string>
     <string name="question_mark">؟</string>
-    <string name="settings_category_backup_restore_title">پشتیبان‌گیری و بازیابی</string>
+    <string name="settings_category_backup_restore_title">پشتیبان و بازگردانی</string>
     <string name="no_live_streams">بدون جریان زنده</string>
     <string name="image_quality_title">کیفیت تصویر</string>
     <string name="image_quality_medium">کیفیت متوسّط</string>
@@ -856,4 +856,3 @@
     <string name="api23_requirement_dialog_title">WizeStream دارد پشتیبانی از اندروید ۵ را رها می‌کند</string>
     <string name="player_http_invalid_status">هنگام پخش کردن کارساز خطای HTTP ‏%1$s داد</string>
 </resources>
-

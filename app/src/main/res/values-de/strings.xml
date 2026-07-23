@@ -354,7 +354,7 @@
     <string name="low_quality_smaller">Niedrige Qualität (kleiner)</string>
     <string name="dont_show">Nicht anzeigen</string>
     <string name="app_update_available_notification_title">Eine WizeStream-Aktualisierung ist verfügbar!</string>
-    <string name="missions_header_finished">Fertig</string>
+    <string name="missions_header_finished">Abgeschlossen</string>
     <string name="missions_header_pending">Ausstehend</string>
     <string name="paused">pausiert</string>
     <string name="queued">eingereiht</string>
@@ -871,4 +871,3 @@
     <string name="api23_requirement_dialog_title">WizeStream stellt die Unterstützung für Android 5 ein</string>
     <string name="api23_requirement_dialog_message">Leider ist WizeStream auf einige Bibliotheken angewiesen, welche die Unterstützung für Android 5.0 und 5.1 eingestellt haben. Die nächste Version von WizeStream wird daher leider nur auf Geräten mit Android 6 oder höher funktionieren. Mehr dazu im Blogbeitrag.</string>
 </resources>
-
