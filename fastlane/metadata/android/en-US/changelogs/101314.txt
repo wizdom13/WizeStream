@@ -1,0 +1,8 @@
+WizeStream 0.28.8-m14
+
+Hotfix:
+
+* Fixed a crash when opening or restoring local search with no matching results.
+* Added release-build and Android API 23/35 regression checks.
+
+Based on NewPipe 0.28.8.
