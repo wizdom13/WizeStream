@@ -45,6 +45,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.evernote.android.state.State
+import com.google.android.material.appbar.AppBarLayout
 import com.xwray.groupie.GroupieAdapter
 import com.xwray.groupie.Item
 import com.xwray.groupie.OnItemClickListener
@@ -110,6 +111,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     @JvmField
     var selectedStreamFilter = StreamListFilter.NONE
 
+    @State
+    @JvmField
+    var feedHeaderExpanded = true
+
     private lateinit var groupAdapter: GroupieAdapter
 
     private var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
@@ -117,6 +122,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private var isRefreshing = false
 
     private var lastNewItemsCount = 0
+
+    private val feedHeaderOffsetListener = AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
+        feedHeaderExpanded = verticalOffset == 0
+    }
 
     init {
         setHasOptionsMenu(true)
@@ -154,6 +163,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         groupAdapter = GroupieAdapter().apply {
             setOnItemClickListener(listenerStreamItem)
             setOnItemLongClickListener(listenerStreamItem)
+        }
+
+        val restoreFeedHeaderExpanded = feedHeaderExpanded
+        feedBinding.feedHeader.addOnOffsetChangedListener(feedHeaderOffsetListener)
+        feedBinding.feedHeader.post {
+            _feedBinding?.feedHeader?.setExpanded(restoreFeedHeaderExpanded, false)
         }
 
         feedBinding.itemsList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -208,9 +223,13 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.initListeners()
         feedBinding.refreshRootView.setOnClickListener { reloadContent() }
         feedBinding.swipeRefreshLayout.setOnRefreshListener { reloadContent() }
+        feedBinding.swipeRefreshLayout.setOnChildScrollUpCallback { _, _ ->
+            !feedHeaderExpanded || feedBinding.itemsList.canScrollVertically(-1)
+        }
         feedBinding.newItemsLoadedButton.setOnClickListener {
             hideNewItemsLoaded(true)
             feedBinding.itemsList.scrollToPosition(0)
+            feedBinding.feedHeader.setExpanded(true, true)
         }
         feedBinding.streamFilterChips.streamFilterChipGroup
             .setOnCheckedStateChangeListener { _, checkedIds ->
@@ -322,6 +341,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         // Ensure that all animations are canceled
         tryGetNewItemsLoadedButton()?.clearAnimation()
 
+        feedBinding.feedHeader.removeOnOffsetChangedListener(feedHeaderOffsetListener)
         feedBinding.itemsList.adapter = null
         _feedBinding = null
         super.onDestroyView()
@@ -335,6 +355,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.showLoading()
         feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         feedBinding.refreshRootView.animate(false, 0)
+        feedBinding.streamFilterChips.root.animate(false, 0)
         feedBinding.loadingProgressText.animate(true, 200)
         feedBinding.swipeRefreshLayout.isRefreshing = true
         isRefreshing = true
@@ -344,6 +365,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.hideLoading()
         feedBinding.itemsList.animate(true, 0)
         feedBinding.refreshRootView.animate(true, 200)
+        feedBinding.streamFilterChips.root.animate(true, 200)
         feedBinding.loadingProgressText.animate(false, 0)
         feedBinding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
@@ -353,6 +375,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.showEmptyState()
         feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         feedBinding.refreshRootView.animate(true, 200)
+        feedBinding.streamFilterChips.root.animate(true, 200)
         feedBinding.loadingProgressText.animate(false, 0)
         feedBinding.swipeRefreshLayout.isRefreshing = false
     }
@@ -371,6 +394,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.handleError()
         feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         feedBinding.refreshRootView.animate(false, 0)
+        feedBinding.streamFilterChips.root.animate(true, 200)
         feedBinding.loadingProgressText.animate(false, 0)
         feedBinding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
