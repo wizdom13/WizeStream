@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.MenuProvider;
+import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 
 import com.evernote.android.state.State;
@@ -101,7 +102,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     private MenuItem menuRssButton;
     private MenuItem menuNotifyButton;
     private SubscriptionEntity channelSubscription;
-    private MenuProvider menuProvider;
 
     public static ChannelFragment getInstance(final int serviceId, final String url,
                                               final String name) {
@@ -138,57 +138,57 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     @Override
     public void onViewCreated(@NonNull final View rootView, final Bundle savedInstanceState) {
         super.onViewCreated(rootView, savedInstanceState);
-            menuProvider = new MenuProvider() {
-                @Override
-                public void onCreateMenu(@NonNull final Menu menu,
-                                         @NonNull final MenuInflater inflater) {
-                    inflater.inflate(R.menu.menu_channel, menu);
+        final MenuProvider menuProvider = new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull final Menu menu,
+                                     @NonNull final MenuInflater inflater) {
+                inflater.inflate(R.menu.menu_channel, menu);
 
-                    if (DEBUG) {
-                        Log.d(TAG, "onCreateOptionsMenu() called with: "
-                                + "menu = [" + menu + "], inflater = [" + inflater + "]");
+                if (DEBUG) {
+                    Log.d(TAG, "onCreateOptionsMenu() called with: "
+                            + "menu = [" + menu + "], inflater = [" + inflater + "]");
+                }
+
+            }
+
+            @Override
+            public void onPrepareMenu(@NonNull final Menu menu) {
+                menuRssButton = menu.findItem(R.id.menu_item_rss);
+                menuNotifyButton = menu.findItem(R.id.menu_item_notify);
+                updateRssButton();
+                updateNotifyButton(channelSubscription);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull final MenuItem item) {
+                final int itemId = item.getItemId();
+                if (itemId == R.id.menu_item_notify) {
+                    final boolean value = !item.isChecked();
+                    item.setEnabled(false);
+                    setNotify(value);
+                } else if (itemId == R.id.action_settings) {
+                    NavigationHelper.openSettings(requireContext());
+                } else if (itemId == R.id.menu_item_rss) {
+                    if (currentInfo != null) {
+                        ShareUtils.openUrlInApp(requireContext(), currentInfo.getFeedUrl());
                     }
-
-                }
-
-                @Override
-                public void onPrepareMenu(@NonNull final Menu menu) {
-                    menuRssButton = menu.findItem(R.id.menu_item_rss);
-                    menuNotifyButton = menu.findItem(R.id.menu_item_notify);
-                    updateRssButton();
-                    updateNotifyButton(channelSubscription);
-                }
-
-                @Override
-                public boolean onMenuItemSelected(@NonNull final MenuItem item) {
-                    final int itemId = item.getItemId();
-                    if (itemId == R.id.menu_item_notify) {
-                        final boolean value = !item.isChecked();
-                        item.setEnabled(false);
-                        setNotify(value);
-                    } else if (itemId == R.id.action_settings) {
-                        NavigationHelper.openSettings(requireContext());
-                    } else if (itemId == R.id.menu_item_rss) {
-                        if (currentInfo != null) {
-                            ShareUtils.openUrlInApp(requireContext(), currentInfo.getFeedUrl());
-                        }
-                    } else if (itemId == R.id.menu_item_openInBrowser) {
-                        if (currentInfo != null) {
-                            ShareUtils.openUrlInBrowser(requireContext(),
-                                    currentInfo.getOriginalUrl());
-                        }
-                    } else if (itemId == R.id.menu_item_share) {
-                        if (currentInfo != null) {
-                            ShareUtils.shareText(requireContext(), name,
-                                    currentInfo.getOriginalUrl(), currentInfo.getAvatars());
-                        }
-                    } else {
-                        return false;
+                } else if (itemId == R.id.menu_item_openInBrowser) {
+                    if (currentInfo != null) {
+                        ShareUtils.openUrlInBrowser(requireContext(),
+                                currentInfo.getOriginalUrl());
                     }
-                    return true;
+                } else if (itemId == R.id.menu_item_share) {
+                    if (currentInfo != null) {
+                        ShareUtils.shareText(requireContext(), name,
+                                currentInfo.getOriginalUrl(), currentInfo.getAvatars());
+                    }
+                } else {
+                    return false;
                 }
-            };
-            activity.addMenuProvider(menuProvider);
+                return true;
+            }
+        };
+        activity.addMenuProvider(menuProvider, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
     @Override // called from onViewCreated in BaseFragment.onViewCreated
@@ -229,14 +229,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        if (menuProvider != null) {
-            activity.removeMenuProvider(menuProvider);
-        }
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
         if (currentWorker != null) {
@@ -244,7 +236,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
         disposables.clear();
         binding = null;
-        menuProvider = null;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
