@@ -1193,13 +1193,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         final MenuItem captionOffItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
                 0, Menu.NONE, R.string.caption_none);
         captionOffItem.setOnMenuItemClickListener(menuItem -> {
-            final int textRendererIndex = player.getCaptionRendererIndex();
-            if (textRendererIndex != RENDERER_UNAVAILABLE) {
-                player.getTrackSelector().setParameters(player.getTrackSelector()
-                        .buildUponParameters().setRendererDisabled(textRendererIndex, true));
-            }
-            player.getPrefs().edit()
-                    .remove(context.getString(R.string.caption_user_set_key)).apply();
+            player.setCaptionPreference(null);
             return true;
         });
 
@@ -1209,25 +1203,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             final MenuItem captionItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
                     i + 1, Menu.NONE, captionLanguage);
             captionItem.setOnMenuItemClickListener(menuItem -> {
-                final int textRendererIndex = player.getCaptionRendererIndex();
-                if (textRendererIndex != RENDERER_UNAVAILABLE) {
-                    // DefaultTrackSelector will select for text tracks in the following order.
-                    // When multiple tracks share the same rank, a random track will be chosen.
-                    // 1. ANY track exactly matching preferred language name
-                    // 2. ANY track exactly matching preferred language stem
-                    // 3. ROLE_FLAG_CAPTION track matching preferred language stem
-                    // 4. ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND track matching preferred language stem
-                    // This means if a caption track of preferred language is not available,
-                    // then an auto-generated track of that language will be chosen automatically.
-                    player.getTrackSelector().setParameters(player.getTrackSelector()
-                            .buildUponParameters()
-                            .setPreferredTextLanguages(captionLanguage,
-                                    PlayerHelper.captionLanguageStemOf(captionLanguage))
-                            .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
-                            .setRendererDisabled(textRendererIndex, false));
-                    player.getPrefs().edit().putString(context.getString(
-                            R.string.caption_user_set_key), captionLanguage).apply();
-                }
+                player.setCaptionPreference(captionLanguage);
                 return true;
             });
         }
@@ -1242,8 +1218,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         // If user prefers to show no caption, then disable the renderer.
         // Otherwise, DefaultTrackSelector may automatically find an available caption
         // and display that.
-        final String userPreferredLanguage =
-                player.getPrefs().getString(context.getString(R.string.caption_user_set_key), null);
+        final String userPreferredLanguage = player.getCaptionPreference();
         if (userPreferredLanguage == null) {
             player.getTrackSelector().setParameters(player.getTrackSelector().buildUponParameters()
                     .setRendererDisabled(textRendererIndex, true));

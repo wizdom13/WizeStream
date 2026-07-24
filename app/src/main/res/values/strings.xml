@@ -190,6 +190,8 @@
     <string name="peertube_instance_add_exists">Instance already exists</string>
     <string name="settings_category_player_title">Player</string>
     <string name="settings_category_player_behavior_title">Behavior</string>
+    <string name="per_channel_playback_profiles_title">Remember playback settings per channel</string>
+    <string name="per_channel_playback_profiles_summary">Remember playback speed, video quality, and subtitle preference separately for each channel</string>
     <string name="pin_video_while_scrolling_key">pin_video_while_scrolling</string>
     <string name="pin_video_while_scrolling_title">Keep video visible while scrolling</string>
     <string name="pin_video_while_scrolling_summary">Pin the playing video above comments, related videos, and the description.</string>

@@ -65,6 +65,19 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     @Override
     @Nullable
     public MediaSource resolve(@NonNull final StreamInfo info) {
+        return resolve(info, playbackQuality);
+    }
+
+    /**
+     * Resolves a stream with a quality override that applies only to this media source.
+     *
+     * @param info stream to resolve
+     * @param qualityOverride preferred resolution, or {@code null} to use the default resolution
+     * @return the resolved media source
+     */
+    @Nullable
+    public MediaSource resolve(@NonNull final StreamInfo info,
+                               @Nullable final String qualityOverride) {
         final MediaSource liveSource = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info);
         if (liveSource != null) {
             streamSourceType = SourceType.LIVE_STREAM;
@@ -83,11 +96,11 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         final int videoIndex;
         if (videoStreamsList.isEmpty()) {
             videoIndex = -1;
-        } else if (playbackQuality == null) {
+        } else if (qualityOverride == null) {
             videoIndex = qualityResolver.getDefaultResolutionIndex(videoStreamsList);
         } else {
             videoIndex = qualityResolver.getOverrideResolutionIndex(videoStreamsList,
-                    getPlaybackQuality());
+                    qualityOverride);
         }
 
         final int audioIndex =
