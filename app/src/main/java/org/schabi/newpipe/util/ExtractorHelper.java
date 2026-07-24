@@ -84,6 +84,21 @@ public final class ExtractorHelper {
         }
     }
 
+    public static Single<SearchInfo> searchForFilters(final int serviceId,
+                                                      final String searchString,
+                                                      final List<String> contentFilter,
+                                                      final List<Integer> sortFilterIds) {
+        checkServiceId(serviceId);
+        return Single.fromCallable(() -> {
+            final SearchQueryHandlerFactory factory = NewPipe.getService(serviceId)
+                    .getSearchQHFactory();
+            return SearchInfo.getInfo(NewPipe.getService(serviceId), factory.fromQuery(
+                    searchString,
+                    resolveContentFilterItems(factory.getAvailableContentFilter(), contentFilter),
+                    resolveFilterItemsByIds(factory, sortFilterIds)));
+        });
+    }
+
     public static Single<SearchInfo> searchFor(final int serviceId, final String searchString,
                                                final List<String> contentFilter,
                                                final String sortFilter) {
@@ -102,7 +117,7 @@ public final class ExtractorHelper {
             final int serviceId,
             final String searchString,
             final List<String> contentFilter,
-            final String sortFilter,
+            final List<Integer> sortFilterIds,
             final Page page) {
         checkServiceId(serviceId);
         return Single.fromCallable(() -> {
@@ -111,7 +126,7 @@ public final class ExtractorHelper {
             return SearchInfo.getMoreItems(NewPipe.getService(serviceId), factory.fromQuery(
                     searchString,
                     resolveContentFilterItems(factory.getAvailableContentFilter(), contentFilter),
-                    resolveFilterItems(factory.getAvailableSortFilter(), sortFilter)), page);
+                    resolveFilterItemsByIds(factory, sortFilterIds)), page);
         });
 
     }
@@ -156,6 +171,23 @@ public final class ExtractorHelper {
             return Collections.emptyList();
         }
         return resolveFilterItems(availableFilters, Collections.singletonList(name));
+    }
+
+    public static List<FilterItem> resolveFilterItemsByIds(
+            @NonNull final SearchQueryHandlerFactory factory,
+            @Nullable final List<Integer> identifiers) {
+        if (identifiers == null || identifiers.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<FilterItem> selected = new ArrayList<>();
+        for (final Integer identifier : identifiers) {
+            final FilterItem filterItem = identifier == null
+                    ? null : factory.getFilterItem(identifier);
+            if (filterItem != null) {
+                selected.add(filterItem);
+            }
+        }
+        return selected;
     }
 
     @Nullable

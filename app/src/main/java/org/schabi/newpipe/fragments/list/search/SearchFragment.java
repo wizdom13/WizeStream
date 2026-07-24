@@ -21,7 +21,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
@@ -34,7 +33,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.TooltipCompat;
-import androidx.collection.SparseArrayCompat;
 import androidx.core.text.HtmlCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -57,11 +55,6 @@ import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.search.SearchInfo;
-import org.schabi.newpipe.extractor.search.filter.Filter;
-import org.schabi.newpipe.extractor.search.filter.FilterGroup;
-import org.schabi.newpipe.extractor.search.filter.FilterItem;
-import org.schabi.newpipe.extractor.services.peertube.linkHandler.PeertubeSearchQueryHandlerFactory;
-import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
 import org.schabi.newpipe.fragments.BackPressable;
 import org.schabi.newpipe.fragments.list.BaseListFragment;
 import org.schabi.newpipe.ktx.AnimationType;
@@ -111,9 +104,6 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private final PublishSubject<String> suggestionPublisher = PublishSubject.create();
 
     @State
-    int filterItemCheckedId = -1;
-
-    @State
     protected int serviceId = Constants.NO_SERVICE_ID;
 
     // these three represents the current search query
@@ -128,7 +118,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     String[] contentFilter = new String[0];
 
     @State
-    String sortFilter;
+    int[] sortFilter = new int[0];
 
     // these represents the last search
     @State
@@ -146,7 +136,6 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     @State
     boolean wasSearchFocused = false;
 
-    private final SparseArrayCompat<String> menuItemToFilterName = new SparseArrayCompat<>();
     private StreamingService service;
     @Nullable
     private Page nextPage;
@@ -169,6 +158,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private View searchToolbarContainer;
     private EditText searchEditText;
     private View searchClear;
+    private View searchFilter;
 
     private boolean suggestionsPanelVisible = false;
 
@@ -182,7 +172,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     public static SearchFragment getInstance(final int serviceId, final String searchString) {
         final SearchFragment searchFragment = new SearchFragment();
-        searchFragment.setQuery(serviceId, searchString, new String[0], "");
+        searchFragment.setQuery(serviceId, searchString, new String[0], new int[0]);
 
         if (!TextUtils.isEmpty(searchString)) {
             searchFragment.setSearchOnResume();
@@ -229,9 +219,13 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         // Add the service name to search string hint
         // to make it more obvious which platform is being searched.
         if (service != null) {
-            searchEditText.setHint(
-                    getString(R.string.search_with_service_name,
-                            service.getServiceInfo().getName()));
+            if (contentFilter.length == 0) {
+                searchEditText.setHint(
+                        getString(R.string.search_with_service_name,
+                                service.getServiceInfo().getName()));
+            } else {
+                updateSearchHint(contentFilter[0]);
+            }
         }
         showSearchOnStart();
         initSearchListeners();
@@ -240,9 +234,22 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private void updateService() {
         try {
             service = NewPipe.getService(serviceId);
+            updateSearchFilterVisibility();
         } catch (final Exception e) {
             ErrorUtil.showUiErrorSnackbar(this, "Getting service for id " + serviceId, e);
         }
+    }
+
+    private void updateSearchFilterVisibility() {
+        if (searchFilter == null || searchEditText == null) {
+            return;
+        }
+        final boolean hasFilters = SearchFilterDialog.hasFilters(service);
+        searchFilter.setVisibility(hasFilters ? View.VISIBLE : View.GONE);
+        final ViewGroup.MarginLayoutParams layoutParams =
+                (ViewGroup.MarginLayoutParams) searchEditText.getLayoutParams();
+        layoutParams.rightMargin = DeviceUtils.dpToPx(hasFilters ? 96 : 48, requireContext());
+        searchEditText.setLayoutParams(layoutParams);
     }
 
     @Override
@@ -384,6 +391,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         searchToolbarContainer = activity.findViewById(R.id.toolbar_search_container);
         searchEditText = searchToolbarContainer.findViewById(R.id.toolbar_search_edit_text);
         searchClear = searchToolbarContainer.findViewById(R.id.toolbar_search_clear);
+        searchFilter = searchToolbarContainer.findViewById(R.id.toolbar_search_filter);
+        updateSearchFilterVisibility();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -420,7 +429,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 && !isSearchEditBlank())) {
             search(!TextUtils.isEmpty(searchString)
                     ? searchString
-                    : getSearchEditString(), this.contentFilter, "");
+                    : getSearchEditString(), this.contentFilter, this.sortFilter);
         } else {
             if (searchEditText != null) {
                 searchEditText.setText("");
@@ -445,68 +454,6 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             supportActionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        int itemId = 0;
-        boolean isFirstItem = true;
-        final Context c = getContext();
-
-        if (service == null) {
-            Log.w(TAG, "onCreateOptionsMenu() called with null service");
-            updateService();
-        }
-
-        final Filter availableContentFilter = service.getSearchQHFactory()
-                .getAvailableContentFilter();
-        if (availableContentFilter == null) {
-            return;
-        }
-        for (final FilterGroup group : availableContentFilter.getFilterGroups()) {
-            for (final FilterItem filterItem : group.filterItems) {
-                final String filter = filterItem.getName();
-                if (filter.equals(YoutubeSearchQueryHandlerFactory.MUSIC_SONGS)) {
-                    final MenuItem musicItem = menu.add(2,
-                            itemId++,
-                            0,
-                            "YouTube Music");
-                    musicItem.setEnabled(false);
-                } else if (filter.equals(PeertubeSearchQueryHandlerFactory.SEPIA_VIDEOS)) {
-                    final MenuItem sepiaItem = menu.add(2,
-                            itemId++,
-                            0,
-                            "Sepia Search");
-                    sepiaItem.setEnabled(false);
-                }
-                menuItemToFilterName.put(itemId, filter);
-                final MenuItem item = menu.add(1,
-                        itemId++,
-                        0,
-                        ServiceHelper.getTranslatedFilterString(filter, c));
-                if (isFirstItem) {
-                    item.setChecked(true);
-                    isFirstItem = false;
-                }
-            }
-        }
-        menu.setGroupCheckable(1, true, true);
-
-        restoreFilterChecked(menu, filterItemCheckedId);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
-        final var filter = Collections.singletonList(menuItemToFilterName.get(item.getItemId()));
-        changeContentFilter(item, filter);
-        return true;
-    }
-
-    private void restoreFilterChecked(final Menu menu, final int itemId) {
-        if (itemId != -1) {
-            final MenuItem item = menu.findItem(itemId);
-            if (item == null) {
-                return;
-            }
-
-            item.setChecked(true);
-        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -560,6 +507,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         });
 
         TooltipCompat.setTooltipText(searchClear, getString(R.string.clear));
+        TooltipCompat.setTooltipText(searchFilter, getString(R.string.search_filters));
+        searchFilter.setOnClickListener(v -> showSearchFilterDialog());
 
         searchEditText.setOnClickListener(v -> {
             if (DEBUG) {
@@ -587,7 +536,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         suggestionListAdapter.setListener(new SuggestionListAdapter.OnSuggestionItemSelected() {
             @Override
             public void onSuggestionItemSelected(final SuggestionItem item) {
-                search(item.query, new String[0], "");
+                search(item.query, new String[0], new int[0]);
                 searchEditText.setText(item.query);
             }
 
@@ -645,7 +594,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                             && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER
                             || event.getAction() == EditorInfo.IME_ACTION_SEARCH)) {
                         searchEditText.setText(getSearchEditString().trim());
-                        search(getSearchEditString(), new String[0], "");
+                        search(getSearchEditString(), new String[0], new int[0]);
                         return true;
                     }
                     return false;
@@ -839,7 +788,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
      */
     private void search(@NonNull final String theSearchString,
                         final String[] theContentFilter,
-                        final String theSortFilter) {
+                        final int[] theSortFilter) {
         if (DEBUG) {
             Log.d(TAG, "search() called with: query = [" + theSearchString + "]");
         }
@@ -897,10 +846,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (searchDisposable != null) {
             searchDisposable.dispose();
         }
-        searchDisposable = ExtractorHelper.searchFor(serviceId,
+        searchDisposable = ExtractorHelper.searchForFilters(serviceId,
                 searchString,
                 Arrays.asList(contentFilter),
-                sortFilter)
+                getSelectedSortFilterIds())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnEvent((searchResult, throwable) -> isLoading.set(false))
@@ -922,7 +871,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 serviceId,
                 searchString,
                 asList(contentFilter),
-                sortFilter,
+                getSelectedSortFilterIds(),
                 nextPage)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -961,8 +910,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                     ExtractorHelper.resolveFilterItems(
                             service.getSearchQHFactory().getAvailableContentFilter(),
                             Arrays.asList(contentFilter)),
-                    ExtractorHelper.resolveFilterItems(
-                            service.getSearchQHFactory().getAvailableSortFilter(), sortFilter));
+                    ExtractorHelper.resolveFilterItemsByIds(
+                            service.getSearchQHFactory(),
+                            getSelectedSortFilterIds()));
         } catch (final NullPointerException | ParsingException ignored) {
             return null;
         }
@@ -972,39 +922,57 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     // Utils
     //////////////////////////////////////////////////////////////////////////*/
 
-    private void changeContentFilter(final MenuItem item, final List<String> theContentFilter) {
-        filterItemCheckedId = item.getItemId();
-        item.setChecked(true);
-
-        if (service != null) {
-            final boolean isNotFiltered = theContentFilter.isEmpty()
-                    || "all".equals(theContentFilter.get(0));
-            if (isNotFiltered) {
-                searchEditText.setHint(
-                        getString(R.string.search_with_service_name,
-                                service.getServiceInfo().getName()));
-            } else {
-                searchEditText.setHint(getString(R.string.search_with_service_name_and_filter,
-                        service.getServiceInfo().getName(),
-                        item.getTitle()));
-            }
+    private void showSearchFilterDialog() {
+        if (service == null) {
+            updateService();
         }
+        if (service == null || !SearchFilterDialog.hasFilters(service)) {
+            return;
+        }
+        SearchFilterDialog.show(requireContext(), service, contentFilter, sortFilter,
+                (selectedContentFilter, selectedSortFilters) -> {
+                    contentFilter = selectedContentFilter.isEmpty()
+                            ? new String[0] : new String[]{selectedContentFilter};
+                    sortFilter = selectedSortFilters.stream()
+                            .mapToInt(Integer::intValue)
+                            .toArray();
+                    if (!selectedContentFilter.isEmpty()) {
+                        updateSearchHint(selectedContentFilter);
+                    }
+                    if (!TextUtils.isEmpty(searchString)) {
+                        search(searchString, contentFilter, sortFilter);
+                    }
+                });
+    }
 
-        contentFilter = theContentFilter.toArray(new String[0]);
-
-        if (!TextUtils.isEmpty(searchString)) {
-            search(searchString, contentFilter, sortFilter);
+    private void updateSearchHint(@NonNull final String selectedContentFilter) {
+        if (service == null || searchEditText == null) {
+            return;
+        }
+        if ("all".equals(selectedContentFilter)) {
+            searchEditText.setHint(getString(R.string.search_with_service_name,
+                    service.getServiceInfo().getName()));
+        } else {
+            searchEditText.setHint(getString(R.string.search_with_service_name_and_filter,
+                    service.getServiceInfo().getName(),
+                    ServiceHelper.getTranslatedFilterString(
+                            selectedContentFilter, requireContext())));
         }
     }
 
     private void setQuery(final int theServiceId,
                           final String theSearchString,
                           final String[] theContentFilter,
-                          final String theSortFilter) {
+                          final int[] theSortFilter) {
         serviceId = theServiceId;
         searchString = theSearchString;
         contentFilter = theContentFilter;
         sortFilter = theSortFilter;
+    }
+
+    @NonNull
+    private List<Integer> getSelectedSortFilterIds() {
+        return Arrays.stream(sortFilter).boxed().collect(Collectors.toList());
     }
 
     private String getSearchEditString() {
