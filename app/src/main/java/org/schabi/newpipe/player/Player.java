@@ -2884,18 +2884,16 @@ public final class Player implements PlaybackListener, Listener {
     public void setCaptionPreference(@Nullable final String language) {
         final int textRendererIndex = getCaptionRendererIndex();
         if (textRendererIndex != RENDERER_UNAVAILABLE) {
-            final DefaultTrackSelector.ParametersBuilder parameters =
-                    trackSelector.buildUponParameters();
             if (language == null) {
-                parameters.setRendererDisabled(textRendererIndex, true);
+                trackSelector.setParameters(trackSelector.buildUponParameters()
+                        .setRendererDisabled(textRendererIndex, true));
             } else {
-                parameters
+                trackSelector.setParameters(trackSelector.buildUponParameters()
                         .setPreferredTextLanguages(
                                 language, PlayerHelper.captionLanguageStemOf(language))
                         .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
-                        .setRendererDisabled(textRendererIndex, false);
+                        .setRendererDisabled(textRendererIndex, false));
             }
-            trackSelector.setParameters(parameters);
         }
 
         final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
