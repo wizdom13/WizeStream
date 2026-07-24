@@ -107,6 +107,7 @@ import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.helper.AudioReactor;
+import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager;
 import org.schabi.newpipe.player.helper.CustomRenderersFactory;
 import org.schabi.newpipe.player.helper.LoadController;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
@@ -653,7 +654,7 @@ public final class Player implements PlaybackListener, Listener {
         final boolean playbackSkipSilence = getPrefs().getBoolean(getContext().getString(
                 R.string.playback_skip_silence_key), getPlaybackSkipSilence());
         final PlaybackParameters savedParameters = retrievePlaybackParametersFromPrefs(this);
-        setPlaybackParameters(savedParameters.speed, savedParameters.pitch, playbackSkipSilence);
+        applyPlaybackParameters(savedParameters.speed, savedParameters.pitch, playbackSkipSilence);
 
         playQueue = queue;
         playQueue.init();
@@ -1035,10 +1036,42 @@ public final class Player implements PlaybackListener, Listener {
         final float roundedSpeed = Math.round(speed * 100.0f) / 100.0f;
         final float roundedPitch = Math.round(pitch * 100.0f) / 100.0f;
 
-        savePlaybackParametersToPrefs(this, roundedSpeed, roundedPitch, skipSilence);
+        final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
+        if (ChannelPlaybackProfileManager.saveSpeed(
+                context, currentInfo, currentItem, roundedSpeed)) {
+            prefs.edit()
+                    .putFloat(context.getString(R.string.playback_pitch_key), roundedPitch)
+                    .putBoolean(context.getString(R.string.playback_skip_silence_key), skipSilence)
+                    .apply();
+        } else {
+            savePlaybackParametersToPrefs(this, roundedSpeed, roundedPitch, skipSilence);
+        }
+        applyPlaybackParameters(roundedSpeed, roundedPitch, skipSilence);
+    }
+
+    private void applyPlaybackParameters(final float speed, final float pitch,
+                                         final boolean skipSilence) {
         simpleExoPlayer.setPlaybackParameters(
-                new PlaybackParameters(roundedSpeed, roundedPitch));
+                new PlaybackParameters(speed, pitch));
         simpleExoPlayer.setSkipSilenceEnabled(skipSilence);
+    }
+
+    private void applyPlaybackSpeedProfile(@NonNull final PlayQueueItem item) {
+        if (ChannelPlaybackProfileManager.isAvailable(context, item)) {
+            applyPlaybackSpeedProfile(ChannelPlaybackProfileManager.getSpeed(context, item));
+        }
+    }
+
+    private void applyPlaybackSpeedProfile(@NonNull final StreamInfo info) {
+        if (ChannelPlaybackProfileManager.isAvailable(context, info)) {
+            applyPlaybackSpeedProfile(ChannelPlaybackProfileManager.getSpeed(context, info));
+        }
+    }
+
+    private void applyPlaybackSpeedProfile(@Nullable final Float profileSpeed) {
+        final float speed = profileSpeed != null
+                ? profileSpeed : retrievePlaybackParametersFromPrefs(this).speed;
+        simpleExoPlayer.setPlaybackParameters(new PlaybackParameters(speed, getPlaybackPitch()));
     }
     //endregion
 
@@ -2353,6 +2386,7 @@ public final class Player implements PlaybackListener, Listener {
                 || !currentItem.getUrl().equals(item.getUrl());
 
         currentItem = item;
+        applyPlaybackSpeedProfile(item);
 
         if (playQueueIndex != playQueue.getIndex()) {
             // wrong window (this should be impossible, as this method is called with
@@ -2603,6 +2637,7 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
+        applyPlaybackSpeedProfile(info);
         updateSponsorBlockSegments(info);
         maybeAutoQueueNextStream(info);
 
@@ -2785,6 +2820,10 @@ public final class Player implements PlaybackListener, Listener {
         // Note that the video is not fetched when the app is in background because the video
         // renderer is fully disabled (see useVideoAndSubtitles method), except for HLS streams
         // (see https://github.com/google/ExoPlayer/issues/9282).
+        if (ChannelPlaybackProfileManager.isAvailable(context, info)) {
+            return videoResolver.resolve(
+                    info, ChannelPlaybackProfileManager.getQuality(context, info));
+        }
         return videoResolver.resolve(info);
     }
 
@@ -2830,6 +2869,44 @@ public final class Player implements PlaybackListener, Listener {
         }
 
         return RENDERER_UNAVAILABLE;
+    }
+
+    @Nullable
+    public String getCaptionPreference() {
+        final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
+        if (currentInfo != null
+                && ChannelPlaybackProfileManager.hasCaptionPreference(context, currentInfo)) {
+            return ChannelPlaybackProfileManager.getCaptionPreference(context, currentInfo);
+        }
+        return prefs.getString(context.getString(R.string.caption_user_set_key), null);
+    }
+
+    public void setCaptionPreference(@Nullable final String language) {
+        final int textRendererIndex = getCaptionRendererIndex();
+        if (textRendererIndex != RENDERER_UNAVAILABLE) {
+            if (language == null) {
+                trackSelector.setParameters(trackSelector.buildUponParameters()
+                        .setRendererDisabled(textRendererIndex, true));
+            } else {
+                trackSelector.setParameters(trackSelector.buildUponParameters()
+                        .setPreferredTextLanguages(
+                                language, PlayerHelper.captionLanguageStemOf(language))
+                        .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
+                        .setRendererDisabled(textRendererIndex, false));
+            }
+        }
+
+        final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
+        if (!ChannelPlaybackProfileManager.saveCaptionPreference(
+                context, currentInfo, currentItem, language)) {
+            final SharedPreferences.Editor editor = prefs.edit();
+            if (language == null) {
+                editor.remove(context.getString(R.string.caption_user_set_key));
+            } else {
+                editor.putString(context.getString(R.string.caption_user_set_key), language);
+            }
+            editor.apply();
+        }
     }
     //endregion
 
@@ -3132,6 +3209,10 @@ public final class Player implements PlaybackListener, Listener {
     public void setPlaybackQuality(@Nullable final String quality) {
         saveStreamProgressState();
         setRecovery();
+        if (quality != null) {
+            ChannelPlaybackProfileManager.saveQuality(
+                    context, getCurrentStreamInfo().orElse(null), currentItem, quality);
+        }
         videoResolver.setPlaybackQuality(quality);
         reloadPlayQueueManager();
     }
