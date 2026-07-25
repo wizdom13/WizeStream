@@ -309,16 +309,28 @@ public final class ExtractorHelper {
             }
 
             info.setUploaderAvatars(avatars);
-            for (int i = avatars.size() - 1; i >= 0; i--) {
-                final Image avatar = avatars.get(i);
-                if (avatar != null && !isNullOrEmpty(avatar.getUrl())) {
-                    info.setUploaderAvatarUrl(avatar.getUrl());
-                    break;
-                }
+            final String avatarUrl = findLastNonEmptyImageUrl(avatars);
+            if (avatarUrl != null) {
+                info.setUploaderAvatarUrl(avatarUrl);
             }
         } catch (final Exception ignored) {
             // Keep the stream page usable if the optional channel metadata fallback fails.
         }
+    }
+
+    @Nullable
+    static String findLastNonEmptyImageUrl(@Nullable final List<Image> images) {
+        if (images == null) {
+            return null;
+        }
+
+        for (int i = images.size() - 1; i >= 0; i--) {
+            final Image image = images.get(i);
+            if (image != null && !isNullOrEmpty(image.getUrl())) {
+                return image.getUrl();
+            }
+        }
+        return null;
     }
 
     public static Single<ChannelInfo> getChannelInfo(final int serviceId, final String url,
@@ -381,8 +393,45 @@ public final class ExtractorHelper {
                                                        final boolean forceLoad) {
         checkServiceId(serviceId);
         return checkCache(forceLoad, serviceId, url, InfoCache.Type.PLAYLIST,
-                Single.fromCallable(() ->
-                        PlaylistInfo.getInfo(NewPipe.getService(serviceId), url)));
+                Single.fromCallable(() -> getPlaylistInfoFromNetwork(serviceId, url)));
+    }
+
+    @NonNull
+    private static PlaylistInfo getPlaylistInfoFromNetwork(final int serviceId,
+                                                           final String url) throws Exception {
+        final PlaylistInfo playlistInfo =
+                PlaylistInfo.getInfo(NewPipe.getService(serviceId), url);
+        backfillYouTubePlaylistUploaderAvatarFromChannel(serviceId, playlistInfo);
+        return playlistInfo;
+    }
+
+    private static void backfillYouTubePlaylistUploaderAvatarFromChannel(
+            final int serviceId,
+            @NonNull final PlaylistInfo info) {
+        if (!shouldBackfillYouTubePlaylistUploaderAvatar(
+                serviceId, info.getUploaderUrl(), info.getUploaderAvatarUrl())) {
+            return;
+        }
+
+        try {
+            final ChannelInfo channelInfo = getChannelInfo(
+                    serviceId, info.getUploaderUrl(), false).blockingGet();
+            final String avatarUrl = findLastNonEmptyImageUrl(channelInfo.getAvatars());
+            if (avatarUrl != null) {
+                info.setUploaderAvatarUrl(avatarUrl);
+            }
+        } catch (final Exception ignored) {
+            // Keep the playlist page usable if the optional channel metadata fallback fails.
+        }
+    }
+
+    static boolean shouldBackfillYouTubePlaylistUploaderAvatar(
+            final int serviceId,
+            @Nullable final String uploaderUrl,
+            @Nullable final String uploaderAvatarUrl) {
+        return serviceId == ServiceList.YouTube.getServiceId()
+                && !isNullOrEmpty(uploaderUrl)
+                && isNullOrEmpty(uploaderAvatarUrl);
     }
 
     public static Single<InfoItemsPage<StreamInfoItem>> getMorePlaylistItems(final int serviceId,
