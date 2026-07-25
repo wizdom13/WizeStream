@@ -29,52 +29,92 @@ import kotlinx.serialization.json.Json
 class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
     private val stateFile = AtomicFile(context.noBackupFilesDir.resolve(STATE_FILE_NAME))
 
-    @Synchronized
     override fun loadOrCreateIdentity(): DeviceIdentity {
-        val existingState = readState()
-        if (existingState != null) {
-            return try {
-                DeviceIdentity(
-                    unmarshalPrivateKey(Base64.getDecoder().decode(existingState.privateKey))
+        return synchronized(STATE_LOCK) {
+            val existingState = readState()
+            if (existingState != null) {
+                return@synchronized try {
+                    DeviceIdentity(
+                        unmarshalPrivateKey(
+                            Base64.getDecoder().decode(existingState.privateKey)
+                        )
+                    )
+                } catch (error: Exception) {
+                    throw PairingException("The saved device identity is invalid", error)
+                }
+            }
+
+            val identity = DeviceIdentity(generateKeyPair(KeyType.ED25519).first)
+            writeState(
+                PersistedSyncState(
+                    privateKey = Base64.getEncoder()
+                        .encodeToString(identity.privateKey.bytes())
                 )
-            } catch (error: Exception) {
-                throw PairingException("The saved device identity is invalid", error)
+            )
+            identity
+        }
+    }
+
+    override fun getTrustedPeers(): List<TrustedPeer> {
+        return synchronized(STATE_LOCK) {
+            loadOrCreateIdentity()
+            requireNotNull(readState()).trustedPeers.sortedBy {
+                it.deviceName.lowercase()
             }
         }
-
-        val identity = DeviceIdentity(generateKeyPair(KeyType.ED25519).first)
-        writeState(
-            PersistedSyncState(
-                privateKey = Base64.getEncoder().encodeToString(identity.privateKey.bytes())
-            )
-        )
-        return identity
     }
 
-    @Synchronized
-    override fun getTrustedPeers(): List<TrustedPeer> {
-        loadOrCreateIdentity()
-        return requireNotNull(readState()).trustedPeers.sortedBy {
-            it.deviceName.lowercase()
+    override fun saveTrustedPeer(peer: TrustedPeer) {
+        synchronized(STATE_LOCK) {
+            loadOrCreateIdentity()
+            val state = requireNotNull(readState())
+            val existingPeer = state.trustedPeers.firstOrNull {
+                it.peerId == peer.peerId
+            }
+            val savedPeer = peer.copy(
+                lastSyncAtEpochMillis = existingPeer?.lastSyncAtEpochMillis,
+                lastSyncError = existingPeer?.lastSyncError
+            )
+            val peers = state.trustedPeers
+                .filterNot { it.peerId == peer.peerId }
+                .plus(savedPeer)
+                .takeLast(MAX_TRUSTED_PEERS)
+            writeState(state.copy(trustedPeers = peers))
         }
     }
 
-    @Synchronized
-    override fun saveTrustedPeer(peer: TrustedPeer) {
-        loadOrCreateIdentity()
-        val state = requireNotNull(readState())
-        val peers = state.trustedPeers
-            .filterNot { it.peerId == peer.peerId }
-            .plus(peer)
-            .takeLast(MAX_TRUSTED_PEERS)
-        writeState(state.copy(trustedPeers = peers))
+    override fun updateTrustedPeerSyncStatus(
+        peerId: String,
+        syncedAtEpochMillis: Long?,
+        error: String?
+    ) {
+        synchronized(STATE_LOCK) {
+            loadOrCreateIdentity()
+            val state = requireNotNull(readState())
+            if (state.trustedPeers.none { it.peerId == peerId }) {
+                return
+            }
+            val peers = state.trustedPeers.map { peer ->
+                if (peer.peerId != peerId) {
+                    peer
+                } else {
+                    peer.copy(
+                        lastSyncAtEpochMillis = syncedAtEpochMillis
+                            ?: peer.lastSyncAtEpochMillis,
+                        lastSyncError = error?.take(MAX_SYNC_ERROR_LENGTH)
+                    )
+                }
+            }
+            writeState(state.copy(trustedPeers = peers))
+        }
     }
 
-    @Synchronized
     override fun clearTrustedPeers() {
-        loadOrCreateIdentity()
-        val state = requireNotNull(readState())
-        writeState(state.copy(trustedPeers = emptyList()))
+        synchronized(STATE_LOCK) {
+            loadOrCreateIdentity()
+            val state = requireNotNull(readState())
+            writeState(state.copy(trustedPeers = emptyList()))
+        }
     }
 
     private fun readState(): PersistedSyncState? {
@@ -192,6 +232,8 @@ class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
         private const val MAX_GCM_IV_BYTES = 16
         private const val MAX_STATE_FILE_BYTES = 1024 * 1024
         private const val MAX_TRUSTED_PEERS = 32
+        private const val MAX_SYNC_ERROR_LENGTH = 512
+        private val STATE_LOCK = Any()
         private val JSON = Json {
             encodeDefaults = true
             ignoreUnknownKeys = false

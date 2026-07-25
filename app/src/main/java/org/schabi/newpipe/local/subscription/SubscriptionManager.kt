@@ -1,6 +1,7 @@
 package org.schabi.newpipe.local.subscription
 
 import android.content.Context
+import android.util.Log
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Flowable
@@ -16,6 +17,7 @@ import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.local.feed.service.FeedUpdateInfo
+import org.schabi.newpipe.sync.RoomSubscriptionSyncStore
 import org.schabi.newpipe.util.ExtractorHelper
 import org.schabi.newpipe.util.image.ImageStrategy
 
@@ -23,6 +25,9 @@ class SubscriptionManager(context: Context) {
     private val database = NewPipeDatabase.getInstance(context)
     private val subscriptionTable = database.subscriptionDAO()
     private val feedDatabaseManager = FeedDatabaseManager(context)
+    private val subscriptionSyncStore by lazy {
+        RoomSubscriptionSyncStore.get(context)
+    }
 
     fun subscriptionTable(): SubscriptionDAO = subscriptionTable
     fun subscriptions() = subscriptionTable.getAll()
@@ -53,6 +58,7 @@ class SubscriptionManager(context: Context) {
     fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo>>) {
         val listEntities = infoList.map { SubscriptionEntity.from(it.first) }
         subscriptionTable.upsertAll(listEntities)
+        listEntities.forEach(::recordSubscriptionUpsert)
 
         database.runInTransaction {
             infoList.forEachIndexed { index, info ->
@@ -106,17 +112,27 @@ class SubscriptionManager(context: Context) {
     }
 
     fun deleteSubscription(serviceId: Int, url: String): Completable {
-        return Completable.fromCallable { subscriptionTable.deleteSubscription(serviceId, url) }
+        return Completable.fromCallable {
+            val deleted = subscriptionTable.deleteSubscription(serviceId, url)
+            if (deleted > 0) {
+                recordSubscriptionDelete(serviceId, url)
+            }
+            deleted
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun insertSubscription(subscriptionEntity: SubscriptionEntity) {
         subscriptionTable.insert(subscriptionEntity)
+        recordSubscriptionUpsert(subscriptionEntity)
     }
 
     fun deleteSubscription(subscriptionEntity: SubscriptionEntity) {
         subscriptionTable.delete(subscriptionEntity)
+        subscriptionEntity.url?.let { url ->
+            recordSubscriptionDelete(subscriptionEntity.serviceId, url)
+        }
     }
 
     /**
@@ -135,5 +151,25 @@ class SubscriptionManager(context: Context) {
                     database.streamDAO().upsertAll(entities)
                 }
             }.onErrorComplete()
+    }
+
+    private fun recordSubscriptionUpsert(subscription: SubscriptionEntity) {
+        try {
+            subscriptionSyncStore.recordLocalUpsert(subscription)
+        } catch (error: Exception) {
+            Log.e(TAG, "Could not journal a subscription addition", error)
+        }
+    }
+
+    private fun recordSubscriptionDelete(serviceId: Int, url: String) {
+        try {
+            subscriptionSyncStore.recordLocalDelete(serviceId, url)
+        } catch (error: Exception) {
+            Log.e(TAG, "Could not journal a subscription deletion", error)
+        }
+    }
+
+    companion object {
+        private const val TAG = "SubscriptionManager"
     }
 }

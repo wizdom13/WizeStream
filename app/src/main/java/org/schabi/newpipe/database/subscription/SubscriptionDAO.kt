@@ -21,6 +21,9 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
     @Query("SELECT * FROM subscriptions ORDER BY name COLLATE NOCASE ASC")
     abstract override fun getAll(): Flowable<List<SubscriptionEntity>>
 
+    @Query("SELECT * FROM subscriptions")
+    abstract fun getAllDirect(): List<SubscriptionEntity>
+
     @Query(
         """
         SELECT * FROM subscriptions
@@ -74,6 +77,9 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
     @Query("SELECT * FROM subscriptions WHERE url LIKE :url AND service_id = :serviceId")
     abstract fun getSubscription(serviceId: Int, url: String): Maybe<SubscriptionEntity>
 
+    @Query("SELECT * FROM subscriptions WHERE url = :url AND service_id = :serviceId")
+    abstract fun getSubscriptionDirect(serviceId: Int, url: String): SubscriptionEntity?
+
     @Query("SELECT * FROM subscriptions WHERE uid = :subscriptionId")
     abstract fun getSubscription(subscriptionId: Long): SubscriptionEntity
 
@@ -88,6 +94,9 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     internal abstract fun silentInsertAllInternal(entities: List<SubscriptionEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract fun insertIgnore(entity: SubscriptionEntity): Long
 
     @Transaction
     open fun upsertAll(entities: List<SubscriptionEntity>): List<SubscriptionEntity> {

@@ -5,10 +5,16 @@
 
     <Preference
         android:key="@string/device_sync_status_key"
-        android:summary="@string/device_sync_status_summary"
         android:title="@string/device_sync_status_title"
         app:iconSpaceReserved="false"
         app:selectable="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/device_sync_sync_now_key"
+        android:summary="@string/device_sync_sync_now_summary"
+        android:title="@string/device_sync_sync_now_title"
+        app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
     <Preference

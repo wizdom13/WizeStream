@@ -27,7 +27,9 @@ data class TrustedPeer(
     val publicKey: String,
     val deviceName: String,
     val addresses: List<String>,
-    val pairedAtEpochMillis: Long
+    val pairedAtEpochMillis: Long,
+    val lastSyncAtEpochMillis: Long? = null,
+    val lastSyncError: String? = null
 )
 
 @Serializable
@@ -97,6 +99,12 @@ interface SyncStateRepository {
     fun getTrustedPeers(): List<TrustedPeer>
 
     fun saveTrustedPeer(peer: TrustedPeer)
+
+    fun updateTrustedPeerSyncStatus(
+        peerId: String,
+        syncedAtEpochMillis: Long?,
+        error: String?
+    )
 
     fun clearTrustedPeers()
 }
