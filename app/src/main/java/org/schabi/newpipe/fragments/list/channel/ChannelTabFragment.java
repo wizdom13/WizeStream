@@ -8,18 +8,26 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import com.evernote.android.state.State;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.databinding.FragmentChannelTabBinding;
 import org.schabi.newpipe.databinding.PlaylistControlBinding;
+import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.ListExtractor;
+import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandlerFactory;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.fragments.list.playlist.PlaylistControlViewHolder;
@@ -29,9 +37,11 @@ import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
+import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.StreamListFilter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +62,8 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
     protected String channelName;
     @State
     protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
+    @State
+    protected String selectedChannelVideoSort;
 
     private FragmentChannelTabBinding binding;
     private PlaylistControlBinding playlistControlBinding;
@@ -59,15 +71,19 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
     private final Map<String, StreamStateEntity> streamStates = new HashMap<>();
     private HistoryRecordManager historyRecordManager;
     private Disposable streamStateWorker;
+    private ListLinkHandlerFactory channelTabLinkHandlerFactory;
+    private List<FilterItem> availableChannelVideoSortFilters = Collections.emptyList();
 
     @NonNull
     public static ChannelTabFragment getInstance(final int serviceId,
                                                  final ListLinkHandler tabHandler,
-                                                 final String channelName) {
+                                                 final String channelName,
+                                                 @Nullable final String selectedChannelVideoSort) {
         final ChannelTabFragment instance = new ChannelTabFragment();
         instance.serviceId = serviceId;
         instance.tabHandler = tabHandler;
         instance.channelName = channelName;
+        instance.selectedChannelVideoSort = selectedChannelVideoSort;
         return instance;
     }
 
@@ -94,11 +110,23 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
 
     @Override
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
+        initChannelVideoSort();
         super.initViews(rootView, savedInstanceState);
         binding = FragmentChannelTabBinding.bind(rootView);
         historyRecordManager = new HistoryRecordManager(requireContext());
+        final boolean showStreamFilters = ChannelTabHelper.isStreamsTab(tabHandler);
+        final boolean showChannelVideoSort = availableChannelVideoSortFilters.size() > 1;
+        binding.channelTabControls.setVisibility(
+                showStreamFilters || showChannelVideoSort ? View.VISIBLE : View.GONE);
         binding.streamFilterChips.getRoot().setVisibility(
-                ChannelTabHelper.isStreamsTab(tabHandler) ? View.VISIBLE : View.GONE);
+                showStreamFilters ? View.VISIBLE : View.GONE);
+        binding.channelVideoSortButton.setVisibility(
+                showChannelVideoSort ? View.VISIBLE : View.GONE);
+        if (showChannelVideoSort) {
+            updateChannelVideoSortButton();
+            binding.channelVideoSortButton.setOnClickListener(
+                    ignored -> showChannelVideoSortDialog());
+        }
         if (selectedStreamFilter != StreamListFilter.NONE) {
             binding.streamFilterChips.streamFilterChipGroup
                     .check(selectedStreamFilter.getChipId());
@@ -109,6 +137,103 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
                             checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
                     applyStreamFilter();
                 });
+    }
+
+    private void initChannelVideoSort() {
+        try {
+            channelTabLinkHandlerFactory =
+                    NewPipe.getService(serviceId).getChannelTabLHFactory();
+            availableChannelVideoSortFilters =
+                    ChannelTabSortHelper.getAvailableSortFilters(
+                            channelTabLinkHandlerFactory, tabHandler);
+            if (availableChannelVideoSortFilters.size() <= 1) {
+                return;
+            }
+
+            final int currentIndex = ChannelTabSortHelper.getSelectedSortFilterIndex(
+                    tabHandler, availableChannelVideoSortFilters);
+            final int selectedIndex = selectedChannelVideoSort == null
+                    ? currentIndex
+                    : ChannelTabSortHelper.getSortFilterIndex(
+                            selectedChannelVideoSort, availableChannelVideoSortFilters);
+            if (selectedChannelVideoSort != null && currentIndex != selectedIndex) {
+                tabHandler = ChannelTabSortHelper.withSortFilter(
+                        channelTabLinkHandlerFactory,
+                        tabHandler,
+                        availableChannelVideoSortFilters.get(selectedIndex));
+            }
+            selectedChannelVideoSort =
+                    availableChannelVideoSortFilters.get(selectedIndex).getName();
+        } catch (final ExtractionException exception) {
+            Log.w(TAG, "Unable to initialize channel video sorting", exception);
+            channelTabLinkHandlerFactory = null;
+            availableChannelVideoSortFilters = Collections.emptyList();
+        }
+    }
+
+    private void showChannelVideoSortDialog() {
+        final String[] labels = availableChannelVideoSortFilters.stream()
+                .map(filter -> ServiceHelper.getTranslatedFilterString(
+                        filter.getName(), requireContext()))
+                .toArray(String[]::new);
+        final int selectedIndex = ChannelTabSortHelper.getSelectedSortFilterIndex(
+                tabHandler, availableChannelVideoSortFilters);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.sort)
+                .setSingleChoiceItems(labels, selectedIndex, (dialog, which) -> {
+                    dialog.dismiss();
+                    applyChannelVideoSort(which);
+                })
+                .show();
+    }
+
+    private void applyChannelVideoSort(final int selectedIndex) {
+        if (channelTabLinkHandlerFactory == null
+                || selectedIndex < 0
+                || selectedIndex >= availableChannelVideoSortFilters.size()
+                || selectedIndex == ChannelTabSortHelper.getSelectedSortFilterIndex(
+                        tabHandler, availableChannelVideoSortFilters)) {
+            return;
+        }
+
+        try {
+            final FilterItem selectedFilter =
+                    availableChannelVideoSortFilters.get(selectedIndex);
+            tabHandler = ChannelTabSortHelper.withSortFilter(
+                    channelTabLinkHandlerFactory, tabHandler, selectedFilter);
+            selectedChannelVideoSort = selectedFilter.getName();
+            final Fragment parent = getParentFragment();
+            if (parent instanceof ChannelFragment) {
+                ((ChannelFragment) parent).setSelectedChannelVideoSort(
+                        selectedChannelVideoSort);
+            }
+            updateChannelVideoSortButton();
+            currentNextPage = null;
+            itemsList.scrollToPosition(0);
+            startLoading(false);
+        } catch (final ParsingException exception) {
+            showSnackBarError(new ErrorInfo(
+                    exception,
+                    UserAction.REQUESTED_CHANNEL,
+                    "Changing channel video sort order",
+                    serviceId,
+                    tabHandler.getUrl()));
+        }
+    }
+
+    private void updateChannelVideoSortButton() {
+        final int selectedIndex = ChannelTabSortHelper.getSelectedSortFilterIndex(
+                tabHandler, availableChannelVideoSortFilters);
+        if (selectedIndex < 0) {
+            return;
+        }
+        final String label = ServiceHelper.getTranslatedFilterString(
+                availableChannelVideoSortFilters.get(selectedIndex).getName(),
+                requireContext());
+        binding.channelVideoSortButton.setText(label);
+        binding.channelVideoSortButton.setContentDescription(
+                getString(R.string.channel_video_sort_content_description, label));
     }
 
     @Override
