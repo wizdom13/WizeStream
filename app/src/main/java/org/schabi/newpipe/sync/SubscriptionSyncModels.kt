@@ -106,23 +106,33 @@ data class SubscriptionSyncResult(
 data class DeviceSyncAttempt(
     val peer: TrustedPeer,
     val result: SubscriptionSyncResult? = null,
-    val error: String? = null
+    val error: String? = null,
+    val playlistResult: PlaylistSyncResult? = null,
+    val playlistError: String? = null
 )
 
 data class DeviceSyncSummary(
     val attempts: List<DeviceSyncAttempt>
 ) {
     val succeeded: Int
-        get() = attempts.count { it.result != null }
+        get() = attempts.count {
+            it.result != null && it.playlistResult != null
+        }
 
     val failed: Int
         get() = attempts.size - succeeded
 
     val sentChanges: Int
-        get() = attempts.sumOf { it.result?.sentChanges ?: 0 }
+        get() = attempts.sumOf {
+            (it.result?.sentChanges ?: 0) +
+                (it.playlistResult?.sentChanges ?: 0)
+        }
 
     val receivedChanges: Int
-        get() = attempts.sumOf { it.result?.receivedChanges ?: 0 }
+        get() = attempts.sumOf {
+            (it.result?.receivedChanges ?: 0) +
+                (it.playlistResult?.receivedChanges ?: 0)
+        }
 }
 
 internal data class SubscriptionVersionStamp(

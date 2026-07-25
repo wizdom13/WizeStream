@@ -19,6 +19,9 @@ interface PlaylistDAO : BasicDAO<PlaylistEntity> {
     @Query("SELECT * FROM playlists")
     override fun getAll(): Flowable<List<PlaylistEntity>>
 
+    @Query("SELECT * FROM playlists")
+    fun getAllDirect(): List<PlaylistEntity>
+
     @Query("DELETE FROM playlists")
     override fun deleteAll(): Int
 
@@ -28,6 +31,9 @@ interface PlaylistDAO : BasicDAO<PlaylistEntity> {
 
     @Query("SELECT * FROM playlists WHERE uid = :playlistId")
     fun getPlaylist(playlistId: Long): Flowable<MutableList<PlaylistEntity>>
+
+    @Query("SELECT * FROM playlists WHERE uid = :playlistId")
+    fun getPlaylistDirect(playlistId: Long): PlaylistEntity?
 
     @Query("DELETE FROM playlists WHERE uid = :playlistId")
     fun deletePlaylist(playlistId: Long): Int

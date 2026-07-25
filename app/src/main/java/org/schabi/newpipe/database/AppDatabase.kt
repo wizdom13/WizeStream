@@ -31,6 +31,12 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.database.subscription.SubscriptionDAO
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.database.sync.PlaylistSyncChangeEntity
+import org.schabi.newpipe.database.sync.PlaylistSyncDAO
+import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
+import org.schabi.newpipe.database.sync.PlaylistSyncOriginStateEntity
+import org.schabi.newpipe.database.sync.PlaylistSyncPeerStateEntity
+import org.schabi.newpipe.database.sync.PlaylistSyncRecordEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncChangeEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncDAO
 import org.schabi.newpipe.database.sync.SubscriptionSyncOriginStateEntity
@@ -39,7 +45,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_10,
+    version = Migrations.DB_VER_11,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -56,7 +62,12 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
         SubscriptionSyncChangeEntity::class,
         SubscriptionSyncRecordEntity::class,
         SubscriptionSyncOriginStateEntity::class,
-        SubscriptionSyncPeerStateEntity::class
+        SubscriptionSyncPeerStateEntity::class,
+        PlaylistSyncChangeEntity::class,
+        PlaylistSyncRecordEntity::class,
+        PlaylistSyncOriginStateEntity::class,
+        PlaylistSyncPeerStateEntity::class,
+        PlaylistSyncLocalMapEntity::class
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -71,6 +82,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun streamStateDAO(): StreamStateDAO
     abstract fun subscriptionDAO(): SubscriptionDAO
     abstract fun subscriptionSyncDAO(): SubscriptionSyncDAO
+    abstract fun playlistSyncDAO(): PlaylistSyncDAO
 
     companion object {
         const val DATABASE_NAME: String = "newpipe.db"
