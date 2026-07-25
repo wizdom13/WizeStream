@@ -17,6 +17,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven(url = "https://dl.cloudsmith.io/public/consensys/maven/maven/")
+        maven(url = "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/")
         maven(url = "https://jitpack.io")
         maven(url = "https://repo.clojars.org")
     }
