@@ -134,6 +134,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_9_10
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_11,
+            true,
+            Migrations.MIGRATION_10_11
+        )
 
         val migratedDatabaseV3 = getMigratedDatabase()
         val listFromDB = migratedDatabaseV3.streamDAO().getAll().blockingFirst()
@@ -237,6 +243,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_9_10
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_11,
+            true,
+            Migrations.MIGRATION_10_11
+        )
 
         val migratedDatabaseV8 = getMigratedDatabase()
         val listFromDB = migratedDatabaseV8.searchHistoryDAO().getAll().blockingFirst()
@@ -316,6 +328,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_9_10
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_11,
+            true,
+            Migrations.MIGRATION_10_11
+        )
 
         val migratedDatabaseV9 = getMigratedDatabase()
         var localListFromDB = migratedDatabaseV9.playlistDAO().getAll().blockingFirst()
@@ -370,6 +388,27 @@ class DatabaseMigrationTest {
             Migrations.DB_VER_10,
             true,
             Migrations.MIGRATION_9_10
+        )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_11,
+            true,
+            Migrations.MIGRATION_10_11
+        )
+    }
+
+    @Test
+    fun migrateDatabaseFrom10to11() {
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_10
+        ).close()
+
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_11,
+            true,
+            Migrations.MIGRATION_10_11
         )
     }
 

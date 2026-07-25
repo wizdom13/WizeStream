@@ -30,6 +30,7 @@ object Migrations {
     const val DB_VER_8 = 8
     const val DB_VER_9 = 9
     const val DB_VER_10 = 10
+    const val DB_VER_11 = 11
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -397,6 +398,73 @@ object Migrations {
             "CREATE INDEX IF NOT EXISTS " +
                 "`index_subscription_sync_peer_state_origin_peer_id` " +
                 "ON `subscription_sync_peer_state` (`origin_peer_id`)"
+        )
+    }
+
+    val MIGRATION_10_11 = Migration(DB_VER_10, DB_VER_11) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `playlist_sync_changes` " +
+                "(`origin_peer_id` TEXT NOT NULL, `origin_revision` INTEGER NOT NULL, " +
+                "`lamport_version` INTEGER NOT NULL, `record_id` TEXT NOT NULL, " +
+                "`record_type` TEXT NOT NULL, `parent_record_id` TEXT, " +
+                "`change_type` TEXT NOT NULL, `record_json` TEXT, " +
+                "PRIMARY KEY(`origin_peer_id`, `origin_revision`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_playlist_sync_changes_record_id` " +
+                "ON `playlist_sync_changes` (`record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_playlist_sync_changes_parent_record_id` " +
+                "ON `playlist_sync_changes` (`parent_record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_playlist_sync_changes_lamport_version_origin_peer_id_" +
+                "origin_revision` ON `playlist_sync_changes` " +
+                "(`lamport_version`, `origin_peer_id`, `origin_revision`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `playlist_sync_records` " +
+                "(`record_id` TEXT NOT NULL, `record_type` TEXT NOT NULL, " +
+                "`parent_record_id` TEXT, `lamport_version` INTEGER NOT NULL, " +
+                "`origin_peer_id` TEXT NOT NULL, `origin_revision` INTEGER NOT NULL, " +
+                "`is_deleted` INTEGER NOT NULL, `record_json` TEXT, " +
+                "PRIMARY KEY(`record_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_playlist_sync_records_parent_record_id` " +
+                "ON `playlist_sync_records` (`parent_record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_playlist_sync_records_record_type` " +
+                "ON `playlist_sync_records` (`record_type`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `playlist_sync_origin_state` " +
+                "(`origin_peer_id` TEXT NOT NULL, `contiguous_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `playlist_sync_peer_state` " +
+                "(`peer_id` TEXT NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`acknowledged_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`peer_id`, `origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_playlist_sync_peer_state_origin_peer_id` " +
+                "ON `playlist_sync_peer_state` (`origin_peer_id`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `playlist_sync_local_map` " +
+                "(`playlist_record_id` TEXT NOT NULL, `playlist_uid` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`playlist_record_id`))"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_playlist_sync_local_map_playlist_uid` " +
+                "ON `playlist_sync_local_map` (`playlist_uid`)"
         )
     }
 }

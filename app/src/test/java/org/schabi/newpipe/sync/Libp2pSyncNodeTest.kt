@@ -104,6 +104,64 @@ class Libp2pSyncNodeTest {
         }
     }
 
+    @Test
+    fun `paired nodes exchange playlists over a Noise authenticated stream`() {
+        val tabletState = InMemorySyncStateRepository()
+        val phoneState = InMemorySyncStateRepository()
+        val tabletPlaylists = TestPlaylistSyncStore(
+            tabletState.loadOrCreateIdentity().peerId.toBase58()
+        )
+        val phonePlaylists = TestPlaylistSyncStore(
+            phoneState.loadOrCreateIdentity().peerId.toBase58()
+        )
+        val tablet = Libp2pSyncNode(
+            stateRepository = tabletState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test tablet",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            playlistSyncEngine = PlaylistSyncEngine(tabletPlaylists)
+        )
+        val phone = Libp2pSyncNode(
+            stateRepository = phoneState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test phone",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            playlistSyncEngine = PlaylistSyncEngine(phonePlaylists)
+        )
+        val tabletPlaylistId = tabletPlaylists.createLocalPlaylist(
+            "Tablet",
+            listOf(TABLET_PLAYLIST_URL)
+        )
+        phonePlaylists.bookmarkRemotePlaylist(
+            0,
+            PHONE_PLAYLIST_URL,
+            "Phone remote"
+        )
+
+        try {
+            tablet.start()
+            phone.start()
+            val trustedTablet = phone.pair(tablet.createPairingCode())
+
+            val result = phone.syncPlaylists(trustedTablet)
+
+            assertEquals(1, result.changedPlaylists)
+            assertEquals(
+                listOf(TABLET_PLAYLIST_URL),
+                phonePlaylists.playlistUrls(tabletPlaylistId)
+            )
+            assertEquals(
+                setOf(PHONE_PLAYLIST_URL),
+                tabletPlaylists.remotePlaylistUrls
+            )
+        } finally {
+            phone.stop()
+            tablet.stop()
+        }
+    }
+
     private fun loopbackAddresses(host: Host): List<String> {
         return host.listenAddresses().map { address ->
             address.toString().replace("/ip4/0.0.0.0/", "/ip4/127.0.0.1/")
@@ -116,6 +174,10 @@ class Libp2pSyncNodeTest {
             "https://example.com/channel/tablet"
         private const val PHONE_SUBSCRIPTION_URL =
             "https://example.com/channel/phone"
+        private const val TABLET_PLAYLIST_URL =
+            "https://example.com/watch/tablet"
+        private const val PHONE_PLAYLIST_URL =
+            "https://example.com/playlist/phone"
     }
 
     private class InMemorySyncStateRepository : SyncStateRepository {

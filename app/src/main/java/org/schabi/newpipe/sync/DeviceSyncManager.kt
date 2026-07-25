@@ -14,6 +14,9 @@ class DeviceSyncManager private constructor(context: Context) {
     private val subscriptionSyncEngine = SubscriptionSyncEngine(
         RoomSubscriptionSyncStore.get(applicationContext)
     )
+    private val playlistSyncEngine = PlaylistSyncEngine(
+        RoomPlaylistSyncStore.get(applicationContext)
+    )
     private val deviceName = listOf(Build.MANUFACTURER, Build.MODEL)
         .map(String::trim)
         .filter(String::isNotEmpty)
@@ -25,7 +28,8 @@ class DeviceSyncManager private constructor(context: Context) {
             pairingSecurity = PairingSecurity(),
             deviceName = deviceName,
             advertisedAddressProvider = AndroidNetworkAddressProvider::addresses,
-            subscriptionSyncEngine = subscriptionSyncEngine
+            subscriptionSyncEngine = subscriptionSyncEngine,
+            playlistSyncEngine = playlistSyncEngine
         )
     }
 
@@ -75,9 +79,46 @@ class DeviceSyncManager private constructor(context: Context) {
         return DeviceSyncSummary(attempts)
     }
 
+    @Synchronized
+    fun sync(): DeviceSyncSummary {
+        node.start()
+        val peers = trustedPeers
+        if (peers.isEmpty()) {
+            throw SubscriptionSyncException("Pair a trusted device before synchronizing")
+        }
+        val attempts = peers.map { peer ->
+            val subscription = runCatching {
+                node.syncSubscriptions(peer)
+            }
+            val playlist = runCatching {
+                node.syncPlaylists(peer)
+            }
+            val errors = listOfNotNull(
+                subscription.exceptionOrNull()?.message,
+                playlist.exceptionOrNull()?.message
+            )
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                if (errors.isEmpty()) System.currentTimeMillis() else null,
+                errors.takeIf { it.isNotEmpty() }?.joinToString("; ")
+            )
+            DeviceSyncAttempt(
+                peer = peer,
+                result = subscription.getOrNull(),
+                error = subscription.exceptionOrNull()?.message
+                    ?: subscription.exceptionOrNull()?.javaClass?.simpleName,
+                playlistResult = playlist.getOrNull(),
+                playlistError = playlist.exceptionOrNull()?.message
+                    ?: playlist.exceptionOrNull()?.javaClass?.simpleName
+            )
+        }
+        return DeviceSyncSummary(attempts)
+    }
+
     fun clearTrustedPeers() {
         stateRepository.clearTrustedPeers()
         subscriptionSyncEngine.clearPeerKnowledge()
+        playlistSyncEngine.clearPeerKnowledge()
     }
 
     companion object {

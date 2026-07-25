@@ -19,6 +19,9 @@ interface PlaylistRemoteDAO : BasicDAO<PlaylistRemoteEntity> {
     @Query("SELECT * FROM remote_playlists")
     override fun getAll(): Flowable<List<PlaylistRemoteEntity>>
 
+    @Query("SELECT * FROM remote_playlists")
+    fun getAllDirect(): List<PlaylistRemoteEntity>
+
     @Query("DELETE FROM remote_playlists")
     override fun deleteAll(): Int
 

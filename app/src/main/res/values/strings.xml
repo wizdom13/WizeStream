@@ -221,18 +221,22 @@
     <string name="device_sync_trusted_devices_key" translatable="false">device_sync_trusted_devices</string>
     <string name="device_sync_clear_devices_key" translatable="false">device_sync_clear_trusted_devices</string>
     <string name="device_sync_status_title">Current status</string>
-    <string name="device_sync_status_no_devices">Pair another device to synchronize subscriptions</string>
+    <string name="device_sync_status_no_devices">Pair another device to synchronize your data</string>
     <string name="device_sync_status_ready">Ready to synchronize. Trusted devices: %1$d</string>
     <string name="device_sync_status_last_sync">Last successful synchronization: %1$s</string>
     <string name="device_sync_status_errors">Trusted devices needing attention: %1$d</string>
-    <string name="device_sync_sync_now_title">Sync subscriptions now</string>
-    <string name="device_sync_sync_now_summary">Exchange subscription additions and deletions with trusted devices</string>
-    <string name="device_sync_sync_in_progress">Synchronizing subscriptions…</string>
-    <string name="device_sync_sync_complete_title">Subscription synchronization complete</string>
+    <string name="device_sync_sync_now_title">Sync now</string>
+    <string name="device_sync_sync_now_summary">Exchange subscriptions and playlists with trusted devices</string>
+    <string name="device_sync_sync_in_progress">Synchronizing data…</string>
+    <string name="device_sync_sync_complete_title">Synchronization complete</string>
     <string name="device_sync_sync_complete_summary">Successful devices: %1$d. Failed devices: %2$d. Changes sent: %3$d; received: %4$d.</string>
     <string name="device_sync_sync_peer_succeeded">%1$s — sent %2$d, received %3$d</string>
     <string name="device_sync_sync_peer_failed">%1$s — failed: %2$s</string>
-    <string name="device_sync_sync_failed">Subscription synchronization failed</string>
+    <string name="device_sync_category_subscriptions">Subscriptions</string>
+    <string name="device_sync_category_playlists">Playlists</string>
+    <string name="device_sync_sync_category_succeeded">%1$s — sent %2$d, received %3$d</string>
+    <string name="device_sync_sync_category_failed">%1$s — failed: %2$s</string>
+    <string name="device_sync_sync_failed">Synchronization failed</string>
     <string name="device_sync_identity_title">This device PeerID</string>
     <string name="device_sync_show_code_title">Show pairing code</string>
     <string name="device_sync_show_code_summary">Let another WizeStream device scan this one-time QR code</string>

@@ -17,6 +17,7 @@ import org.schabi.newpipe.database.playlist.PlaylistMetadataEntry
 import org.schabi.newpipe.database.playlist.PlaylistStreamEntry
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity.Companion.DEFAULT_THUMBNAIL_ID
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
+import org.schabi.newpipe.database.stream.model.StreamEntity
 
 @Dao
 interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
@@ -67,6 +68,17 @@ interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
         """
     )
     fun getOrderedStreamsOf(playlistId: Long): Flowable<MutableList<PlaylistStreamEntry>>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query(
+        """
+        SELECT streams.* FROM streams
+        INNER JOIN playlist_stream_join ON streams.uid = stream_id
+        WHERE playlist_id = :playlistId
+        ORDER BY join_index ASC
+        """
+    )
+    fun getOrderedStreamsDirect(playlistId: Long): List<StreamEntity>
 
     // If a playlist has no streams, there won’t be any rows in the **playlist_stream_join** table
     // that have a foreign key to that playlist. Thus, the **playlist_id** will not have a

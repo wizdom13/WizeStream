@@ -22,12 +22,16 @@ class Libp2pSyncNode(
         currentHost.listenAddresses().map(Multiaddr::toString)
     },
     private val subscriptionSyncEngine: SubscriptionSyncEngine? = null,
-    private val listenAddress: String = LISTEN_ADDRESS
+    private val listenAddress: String = LISTEN_ADDRESS,
+    private val playlistSyncEngine: PlaylistSyncEngine? = null
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
     private val subscriptionProtocol = SubscriptionSyncProtocolBinding(
         ::handleSubscriptionSyncRequest
+    )
+    private val playlistProtocol = PlaylistSyncProtocolBinding(
+        ::handlePlaylistSyncRequest
     )
     private val host: Host = host {
         identity {
@@ -36,6 +40,7 @@ class Libp2pSyncNode(
         protocols {
             +pairingProtocol
             +subscriptionProtocol
+            +playlistProtocol
         }
         network {
             listen(listenAddress)
@@ -237,6 +242,101 @@ class Libp2pSyncNode(
         }
     }
 
+    @Throws(PlaylistSyncException::class)
+    fun syncPlaylists(peer: TrustedPeer): PlaylistSyncResult {
+        checkStarted()
+        val engine = playlistSyncEngine
+            ?: throw PlaylistSyncException("Playlist synchronization is unavailable")
+        ensureTrusted(peer.peerId)
+        val remotePeerId = parsePeerId(peer.peerId)
+        val remoteAddresses = parseAddresses(remotePeerId, peer.addresses)
+
+        var sentChanges = 0
+        var receivedChanges = 0
+        var changedPlaylists = 0
+        var rounds = 0
+
+        try {
+            while (true) {
+                if (rounds >= MAX_SYNC_ROUNDS) {
+                    throw PlaylistSyncException(
+                        "Playlist synchronization needs too many batches; run it again to continue"
+                    )
+                }
+                rounds += 1
+                val request = engine.createRequest(peer.peerId)
+                val streamPromise = playlistProtocol.dial(
+                    host,
+                    remotePeerId,
+                    *remoteAddresses
+                )
+                val controller = try {
+                    streamPromise.controller.get(
+                        SYNC_TIMEOUT_SECONDS,
+                        TimeUnit.SECONDS
+                    )
+                } catch (error: Exception) {
+                    throw PlaylistSyncException(
+                        "Could not reach ${peer.deviceName}",
+                        error
+                    )
+                }
+
+                val response = try {
+                    controller.sendRequest(request)
+                    controller.response.get(SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                } catch (error: Exception) {
+                    throw PlaylistSyncException(
+                        "Playlist synchronization with ${peer.deviceName} failed",
+                        error
+                    )
+                } finally {
+                    controller.close()
+                }
+
+                val applied = engine.handleResponse(peer.peerId, response)
+                sentChanges += request.changes.size
+                receivedChanges += response.changes.size
+                changedPlaylists += applied.changedPlaylists
+
+                if (!request.hasMore && !response.hasMore) {
+                    break
+                }
+            }
+
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                System.currentTimeMillis(),
+                null
+            )
+            return PlaylistSyncResult(
+                peer = peer,
+                sentChanges = sentChanges,
+                receivedChanges = receivedChanges,
+                changedPlaylists = changedPlaylists,
+                rounds = rounds
+            )
+        } catch (error: PlaylistSyncException) {
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                null,
+                error.message ?: "Playlist synchronization failed"
+            )
+            throw error
+        } catch (error: Exception) {
+            val wrapped = PlaylistSyncException(
+                "Playlist synchronization with ${peer.deviceName} failed",
+                error
+            )
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                null,
+                wrapped.message
+            )
+            throw wrapped
+        }
+    }
+
     private fun handlePairingRequest(
         remotePeerId: PeerId,
         request: PairingRequest,
@@ -277,6 +377,35 @@ class Libp2pSyncNode(
                 accepted = false,
                 error = (
                     error.message ?: "The synchronization request was rejected"
+                    ).take(MAX_SYNC_ERROR_LENGTH)
+            )
+        }
+        controller.sendResponse(response)
+        stateRepository.updateTrustedPeerSyncStatus(
+            peerIdValue,
+            if (response.accepted) System.currentTimeMillis() else null,
+            response.error
+        )
+    }
+
+    private fun handlePlaylistSyncRequest(
+        remotePeerId: PeerId,
+        request: PlaylistSyncRequest,
+        controller: PlaylistSyncProtocolController
+    ) {
+        val peerIdValue = remotePeerId.toBase58()
+        val response = try {
+            ensureTrusted(peerIdValue)
+            val engine = playlistSyncEngine
+                ?: throw PlaylistSyncException(
+                    "Playlist synchronization is unavailable"
+                )
+            engine.handleRequest(peerIdValue, request)
+        } catch (error: Exception) {
+            PlaylistSyncResponse(
+                accepted = false,
+                error = (
+                    error.message ?: "The playlist synchronization request was rejected"
                     ).take(MAX_SYNC_ERROR_LENGTH)
             )
         }

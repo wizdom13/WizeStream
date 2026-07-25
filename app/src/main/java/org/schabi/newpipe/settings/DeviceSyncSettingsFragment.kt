@@ -51,7 +51,7 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         scanPairingCodePreference = requirePreference(R.string.device_sync_scan_code_key)
 
         syncNowPreference.setOnPreferenceClickListener {
-            syncSubscriptions()
+            syncData()
             true
         }
         showPairingCodePreference.setOnPreferenceClickListener {
@@ -99,13 +99,13 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         }
     }
 
-    private fun syncSubscriptions() {
+    private fun syncData() {
         setActionsEnabled(false)
         syncNowPreference.summary = getString(R.string.device_sync_sync_in_progress)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val summary = withContext(Dispatchers.IO) {
-                    syncManager.syncSubscriptions()
+                    syncManager.sync()
                 }
                 updateState()
                 showSyncSummary(summary)
@@ -233,21 +233,19 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
 
     private fun showSyncSummary(summary: DeviceSyncSummary) {
         val details = summary.attempts.joinToString(separator = "\n") { attempt ->
-            val result = attempt.result
-            if (result != null) {
-                getString(
-                    R.string.device_sync_sync_peer_succeeded,
-                    attempt.peer.deviceName,
-                    result.sentChanges,
-                    result.receivedChanges
-                )
-            } else {
-                getString(
-                    R.string.device_sync_sync_peer_failed,
-                    attempt.peer.deviceName,
-                    attempt.error ?: getString(R.string.general_error)
-                )
-            }
+            val subscriptionDetails = categorySyncSummary(
+                getString(R.string.device_sync_category_subscriptions),
+                attempt.result?.sentChanges,
+                attempt.result?.receivedChanges,
+                attempt.error
+            )
+            val playlistDetails = categorySyncSummary(
+                getString(R.string.device_sync_category_playlists),
+                attempt.playlistResult?.sentChanges,
+                attempt.playlistResult?.receivedChanges,
+                attempt.playlistError
+            )
+            "${attempt.peer.deviceName}\n$subscriptionDetails\n$playlistDetails"
         }
         val summaryText = getString(
             R.string.device_sync_sync_complete_summary,
@@ -261,6 +259,28 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
             .setMessage("$summaryText\n\n$details")
             .setPositiveButton(R.string.ok, null)
             .show()
+    }
+
+    private fun categorySyncSummary(
+        category: String,
+        sentChanges: Int?,
+        receivedChanges: Int?,
+        error: String?
+    ): String {
+        return if (sentChanges != null && receivedChanges != null) {
+            getString(
+                R.string.device_sync_sync_category_succeeded,
+                category,
+                sentChanges,
+                receivedChanges
+            )
+        } else {
+            getString(
+                R.string.device_sync_sync_category_failed,
+                category,
+                error ?: getString(R.string.general_error)
+            )
+        }
     }
 
     private fun statusSummary(peers: List<TrustedPeer>): CharSequence {
