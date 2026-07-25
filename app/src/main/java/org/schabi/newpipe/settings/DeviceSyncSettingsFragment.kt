@@ -140,6 +140,7 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
             .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
             .setPrompt(getString(R.string.device_sync_scan_prompt))
             .setBeepEnabled(false)
+            .setCaptureActivity(DeviceSyncCaptureActivity::class.java)
             .setOrientationLocked(false)
         scanPairingCode.launch(options)
     }
