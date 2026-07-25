@@ -112,11 +112,25 @@ class WizeStreamDefaultPreferencesTest {
                     "show_channel_tabs_likes",
                     "show_channel_tabs_videos",
                     "show_channel_tabs_albums",
+                    "show_channel_tabs_podcasts",
                     "show_channel_tabs_channels",
                     "show_channel_tabs_tracks",
                     "show_channel_tabs_about",
                     "show_channel_tabs_shorts",
                     "show_channel_tabs_playlists"
+                )
+            )
+        )
+        verify(editor).putStringSet(
+            eq("feed_fetch_channel_tabs"),
+            eq(
+                setOf(
+                    "fetch_channel_tabs_shorts",
+                    "fetch_channel_tabs_videos",
+                    "fetch_channel_tabs_livestreams",
+                    "fetch_channel_tabs_tracks",
+                    "fetch_channel_tabs_podcasts",
+                    "fetch_channel_tabs_likes"
                 )
             )
         )
