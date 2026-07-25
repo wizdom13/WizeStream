@@ -120,6 +120,7 @@ internal class TestPlaylistSyncStore(
     }
 
     fun addLocalItem(playlistId: String, url: String): String {
+        val currentOrder = orderedItemIds(playlistId)
         val itemId = PlaylistRecordId.item()
         upsert(
             itemId,
@@ -132,7 +133,7 @@ internal class TestPlaylistSyncStore(
                 )
             )
         )
-        updateOrder(playlistId, orderedItemIds(playlistId) + itemId)
+        updateOrder(playlistId, currentOrder + itemId)
         return itemId
     }
 
