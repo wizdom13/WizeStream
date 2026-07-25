@@ -7,6 +7,7 @@ package org.schabi.newpipe.settings
 
 import android.graphics.Color
 import android.os.Bundle
+import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
@@ -21,6 +22,8 @@ import kotlinx.coroutines.withContext
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
 import org.schabi.newpipe.sync.DeviceSyncManager
+import org.schabi.newpipe.sync.DeviceSyncSummary
+import org.schabi.newpipe.sync.TrustedPeer
 
 class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     private val scanPairingCode = registerForActivityResult(ScanContract()) { result ->
@@ -31,6 +34,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         get() = DeviceSyncManager.get(requireContext())
 
     private lateinit var identityPreference: Preference
+    private lateinit var statusPreference: Preference
+    private lateinit var syncNowPreference: Preference
     private lateinit var trustedDevicesPreference: Preference
     private lateinit var showPairingCodePreference: Preference
     private lateinit var scanPairingCodePreference: Preference
@@ -39,10 +44,16 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         addPreferencesFromResourceRegistry()
 
         identityPreference = requirePreference(R.string.device_sync_identity_key)
+        statusPreference = requirePreference(R.string.device_sync_status_key)
+        syncNowPreference = requirePreference(R.string.device_sync_sync_now_key)
         trustedDevicesPreference = requirePreference(R.string.device_sync_trusted_devices_key)
         showPairingCodePreference = requirePreference(R.string.device_sync_show_code_key)
         scanPairingCodePreference = requirePreference(R.string.device_sync_scan_code_key)
 
+        syncNowPreference.setOnPreferenceClickListener {
+            syncSubscriptions()
+            true
+        }
         showPairingCodePreference.setOnPreferenceClickListener {
             createPairingCode()
             true
@@ -61,26 +72,55 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     override fun onResume() {
         super.onResume()
         updateState()
+        startListening()
     }
 
     private fun updateState() {
         identityPreference.summary = syncManager.peerId
         val peers = syncManager.trustedPeers
+        syncNowPreference.isEnabled = peers.isNotEmpty()
+        statusPreference.summary = statusSummary(peers)
         trustedDevicesPreference.summary = if (peers.isEmpty()) {
             getString(R.string.device_sync_no_trusted_devices)
         } else {
-            peers.joinToString(separator = "\n") { peer ->
-                getString(
-                    R.string.device_sync_trusted_device_summary,
-                    peer.deviceName,
-                    abbreviatePeerId(peer.peerId)
-                )
+            peers.joinToString(separator = "\n\n", transform = ::trustedPeerSummary)
+        }
+    }
+
+    private fun startListening() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    syncManager.startListening()
+                }
+            } catch (error: Exception) {
+                statusPreference.summary = error.message ?: getString(R.string.general_error)
+            }
+        }
+    }
+
+    private fun syncSubscriptions() {
+        setActionsEnabled(false)
+        syncNowPreference.summary = getString(R.string.device_sync_sync_in_progress)
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val summary = withContext(Dispatchers.IO) {
+                    syncManager.syncSubscriptions()
+                }
+                updateState()
+                showSyncSummary(summary)
+            } catch (error: Exception) {
+                showError(R.string.device_sync_sync_failed, error)
+            } finally {
+                syncNowPreference.setSummary(R.string.device_sync_sync_now_summary)
+                setActionsEnabled(true)
+                updateState()
             }
         }
     }
 
     private fun createPairingCode() {
-        setPairingActionsEnabled(false)
+        setActionsEnabled(false)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val code = withContext(Dispatchers.IO) {
@@ -88,9 +128,9 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 }
                 showPairingCodeDialog(code)
             } catch (error: Exception) {
-                showError(error)
+                showError(R.string.device_sync_pairing_failed, error)
             } finally {
-                setPairingActionsEnabled(true)
+                setActionsEnabled(true)
             }
         }
     }
@@ -105,7 +145,7 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     }
 
     private fun pairWithCode(code: String) {
-        setPairingActionsEnabled(false)
+        setActionsEnabled(false)
         scanPairingCodePreference.summary = getString(R.string.device_sync_pairing_in_progress)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -119,10 +159,10 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     Toast.LENGTH_LONG
                 ).show()
             } catch (error: Exception) {
-                showError(error)
+                showError(R.string.device_sync_pairing_failed, error)
             } finally {
                 scanPairingCodePreference.setSummary(R.string.device_sync_scan_code_summary)
-                setPairingActionsEnabled(true)
+                setActionsEnabled(true)
             }
         }
     }
@@ -169,20 +209,121 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
             .setMessage(R.string.device_sync_clear_devices_confirmation)
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.clear) { _, _ ->
-                syncManager.clearTrustedPeers()
-                updateState()
+                clearTrustedDevices()
             }
             .show()
     }
 
-    private fun setPairingActionsEnabled(enabled: Boolean) {
-        showPairingCodePreference.isEnabled = enabled
-        scanPairingCodePreference.isEnabled = enabled
+    private fun clearTrustedDevices() {
+        setActionsEnabled(false)
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    syncManager.clearTrustedPeers()
+                }
+            } catch (error: Exception) {
+                showError(R.string.device_sync_clear_devices_failed, error)
+            } finally {
+                setActionsEnabled(true)
+                updateState()
+            }
+        }
     }
 
-    private fun showError(error: Exception) {
+    private fun showSyncSummary(summary: DeviceSyncSummary) {
+        val details = summary.attempts.joinToString(separator = "\n") { attempt ->
+            val result = attempt.result
+            if (result != null) {
+                getString(
+                    R.string.device_sync_sync_peer_succeeded,
+                    attempt.peer.deviceName,
+                    result.sentChanges,
+                    result.receivedChanges
+                )
+            } else {
+                getString(
+                    R.string.device_sync_sync_peer_failed,
+                    attempt.peer.deviceName,
+                    attempt.error ?: getString(R.string.general_error)
+                )
+            }
+        }
+        val summaryText = getString(
+            R.string.device_sync_sync_complete_summary,
+            summary.succeeded,
+            summary.failed,
+            summary.sentChanges,
+            summary.receivedChanges
+        )
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.device_sync_pairing_failed)
+            .setTitle(R.string.device_sync_sync_complete_title)
+            .setMessage("$summaryText\n\n$details")
+            .setPositiveButton(R.string.ok, null)
+            .show()
+    }
+
+    private fun statusSummary(peers: List<TrustedPeer>): CharSequence {
+        if (peers.isEmpty()) {
+            return getString(R.string.device_sync_status_no_devices)
+        }
+        val errors = peers.count { it.lastSyncError != null }
+        if (errors > 0) {
+            return getString(R.string.device_sync_status_errors, errors)
+        }
+        val latestSync = peers.mapNotNull(TrustedPeer::lastSyncAtEpochMillis).maxOrNull()
+        return if (latestSync == null) {
+            getString(R.string.device_sync_status_ready, peers.size)
+        } else {
+            getString(
+                R.string.device_sync_status_last_sync,
+                relativeTime(latestSync)
+            )
+        }
+    }
+
+    private fun trustedPeerSummary(peer: TrustedPeer): String {
+        val identity = getString(
+            R.string.device_sync_trusted_device_summary,
+            peer.deviceName,
+            abbreviatePeerId(peer.peerId)
+        )
+        return when {
+            peer.lastSyncError != null -> getString(
+                R.string.device_sync_trusted_device_error,
+                identity,
+                peer.lastSyncError
+            )
+
+            peer.lastSyncAtEpochMillis != null -> getString(
+                R.string.device_sync_trusted_device_last_sync,
+                identity,
+                relativeTime(peer.lastSyncAtEpochMillis)
+            )
+
+            else -> getString(
+                R.string.device_sync_trusted_device_never_synced,
+                identity
+            )
+        }
+    }
+
+    private fun relativeTime(epochMillis: Long): CharSequence {
+        return DateUtils.getRelativeTimeSpanString(
+            epochMillis,
+            System.currentTimeMillis(),
+            DateUtils.MINUTE_IN_MILLIS
+        )
+    }
+
+    private fun setActionsEnabled(enabled: Boolean) {
+        showPairingCodePreference.isEnabled = enabled
+        scanPairingCodePreference.isEnabled = enabled
+        syncNowPreference.isEnabled = enabled && syncManager.trustedPeers.isNotEmpty()
+    }
+
+    private fun showError(title: Int, error: Exception) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
             .setMessage(error.message ?: getString(R.string.general_error))
             .setPositiveButton(R.string.ok, null)
             .show()

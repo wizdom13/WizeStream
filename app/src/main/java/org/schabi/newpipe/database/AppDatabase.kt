@@ -31,10 +31,15 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.database.subscription.SubscriptionDAO
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.database.sync.SubscriptionSyncChangeEntity
+import org.schabi.newpipe.database.sync.SubscriptionSyncDAO
+import org.schabi.newpipe.database.sync.SubscriptionSyncOriginStateEntity
+import org.schabi.newpipe.database.sync.SubscriptionSyncPeerStateEntity
+import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_9,
+    version = Migrations.DB_VER_10,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -47,7 +52,11 @@ import org.schabi.newpipe.database.subscription.SubscriptionEntity
         FeedEntity::class,
         FeedGroupEntity::class,
         FeedGroupSubscriptionEntity::class,
-        FeedLastUpdatedEntity::class
+        FeedLastUpdatedEntity::class,
+        SubscriptionSyncChangeEntity::class,
+        SubscriptionSyncRecordEntity::class,
+        SubscriptionSyncOriginStateEntity::class,
+        SubscriptionSyncPeerStateEntity::class
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -61,6 +70,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun streamHistoryDAO(): StreamHistoryDAO
     abstract fun streamStateDAO(): StreamStateDAO
     abstract fun subscriptionDAO(): SubscriptionDAO
+    abstract fun subscriptionSyncDAO(): SubscriptionSyncDAO
 
     companion object {
         const val DATABASE_NAME: String = "newpipe.db"

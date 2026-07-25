@@ -29,6 +29,7 @@ object Migrations {
     const val DB_VER_7 = 7
     const val DB_VER_8 = 8
     const val DB_VER_9 = 9
+    const val DB_VER_10 = 10
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -347,5 +348,55 @@ object Migrations {
         } finally {
             db.endTransaction()
         }
+    }
+
+    val MIGRATION_9_10 = Migration(DB_VER_9, DB_VER_10) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `subscription_sync_changes` " +
+                "(`origin_peer_id` TEXT NOT NULL, `origin_revision` INTEGER NOT NULL, " +
+                "`lamport_version` INTEGER NOT NULL, `record_id` TEXT NOT NULL, " +
+                "`change_type` TEXT NOT NULL, `service_id` INTEGER NOT NULL, " +
+                "`url` TEXT NOT NULL, `name` TEXT, `avatar_url` TEXT, " +
+                "`subscriber_count` INTEGER, `description` TEXT, " +
+                "PRIMARY KEY(`origin_peer_id`, `origin_revision`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_subscription_sync_changes_record_id` " +
+                "ON `subscription_sync_changes` (`record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_subscription_sync_changes_lamport_version_origin_peer_id_" +
+                "origin_revision` ON `subscription_sync_changes` " +
+                "(`lamport_version`, `origin_peer_id`, `origin_revision`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `subscription_sync_records` " +
+                "(`record_id` TEXT NOT NULL, `service_id` INTEGER NOT NULL, " +
+                "`url` TEXT NOT NULL, `lamport_version` INTEGER NOT NULL, " +
+                "`origin_peer_id` TEXT NOT NULL, `origin_revision` INTEGER NOT NULL, " +
+                "`is_deleted` INTEGER NOT NULL, PRIMARY KEY(`record_id`))"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_subscription_sync_records_service_id_url` " +
+                "ON `subscription_sync_records` (`service_id`, `url`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `subscription_sync_origin_state` " +
+                "(`origin_peer_id` TEXT NOT NULL, `contiguous_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `subscription_sync_peer_state` " +
+                "(`peer_id` TEXT NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`acknowledged_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`peer_id`, `origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_subscription_sync_peer_state_origin_peer_id` " +
+                "ON `subscription_sync_peer_state` (`origin_peer_id`)"
+        )
     }
 }

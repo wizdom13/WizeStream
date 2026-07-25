@@ -9,7 +9,11 @@ import android.content.Context
 import android.os.Build
 
 class DeviceSyncManager private constructor(context: Context) {
-    private val stateRepository = AndroidSyncStateRepository(context.applicationContext)
+    private val applicationContext = context.applicationContext
+    private val stateRepository = AndroidSyncStateRepository(applicationContext)
+    private val subscriptionSyncEngine = SubscriptionSyncEngine(
+        RoomSubscriptionSyncStore.get(applicationContext)
+    )
     private val deviceName = listOf(Build.MANUFACTURER, Build.MODEL)
         .map(String::trim)
         .filter(String::isNotEmpty)
@@ -20,7 +24,8 @@ class DeviceSyncManager private constructor(context: Context) {
             stateRepository = stateRepository,
             pairingSecurity = PairingSecurity(),
             deviceName = deviceName,
-            advertisedAddressProvider = AndroidNetworkAddressProvider::addresses
+            advertisedAddressProvider = AndroidNetworkAddressProvider::addresses,
+            subscriptionSyncEngine = subscriptionSyncEngine
         )
     }
 
@@ -42,8 +47,37 @@ class DeviceSyncManager private constructor(context: Context) {
         return node.pair(pairingCode)
     }
 
+    @Synchronized
+    fun startListening() {
+        node.start()
+    }
+
+    @Synchronized
+    fun syncSubscriptions(): DeviceSyncSummary {
+        node.start()
+        val peers = trustedPeers
+        if (peers.isEmpty()) {
+            throw SubscriptionSyncException("Pair a trusted device before synchronizing")
+        }
+        val attempts = peers.map { peer ->
+            try {
+                DeviceSyncAttempt(
+                    peer = peer,
+                    result = node.syncSubscriptions(peer)
+                )
+            } catch (error: Exception) {
+                DeviceSyncAttempt(
+                    peer = peer,
+                    error = error.message ?: "Subscription synchronization failed"
+                )
+            }
+        }
+        return DeviceSyncSummary(attempts)
+    }
+
     fun clearTrustedPeers() {
         stateRepository.clearTrustedPeers()
+        subscriptionSyncEngine.clearPeerKnowledge()
     }
 
     companion object {
