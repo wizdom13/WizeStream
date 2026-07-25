@@ -83,6 +83,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     protected String name;
     @State
     protected String url;
+    @State
+    protected String selectedChannelVideoSort;
 
     private ChannelInfo currentInfo;
     private Disposable currentWorker;
@@ -464,7 +466,11 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 final String tab = ChannelTabHelper.getTabName(linkHandler);
                 if (tab != null && ChannelTabHelper.showChannelTab(context, preferences, tab)) {
                     final ChannelTabFragment channelTabFragment =
-                            ChannelTabFragment.getInstance(serviceId, linkHandler, name);
+                            ChannelTabFragment.getInstance(
+                                    serviceId,
+                                    linkHandler,
+                                    name,
+                                    selectedChannelVideoSort);
                     channelTabFragment.useAsFrontPage(useAsFrontPage);
                     tabAdapter.addFragment(channelTabFragment,
                             context.getString(ChannelTabHelper.getTranslationKey(tab)));
@@ -490,6 +496,10 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         if (ltab != null) {
             binding.tabLayout.selectTab(ltab);
         }
+    }
+
+    void setSelectedChannelVideoSort(@NonNull final String selectedSort) {
+        selectedChannelVideoSort = selectedSort;
     }
 
 
