@@ -30,6 +30,7 @@ public final class ChannelTabHelper {
             case CHANNEL_TAB_LIKES:
             case ChannelTabs.SHORTS:
             case ChannelTabs.LIVESTREAMS:
+            case ChannelTabs.PODCASTS:
                 return true;
             default:
                 return false;
@@ -75,6 +76,8 @@ public final class ChannelTabHelper {
                 return R.string.show_channel_tabs_playlists;
             case ChannelTabs.ALBUMS:
                 return R.string.show_channel_tabs_albums;
+            case ChannelTabs.PODCASTS:
+                return R.string.show_channel_tabs_podcasts;
             case CHANNEL_TAB_LIKES:
                 return R.string.show_channel_tabs_likes;
             default:
@@ -117,6 +120,8 @@ public final class ChannelTabHelper {
                 return R.string.channel_tab_playlists;
             case ChannelTabs.ALBUMS:
                 return R.string.channel_tab_albums;
+            case ChannelTabs.PODCASTS:
+                return R.string.channel_tab_podcasts;
             case CHANNEL_TAB_LIKES:
                 return R.string.channel_tab_likes;
             default:

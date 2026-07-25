@@ -112,6 +112,7 @@ class WizeStreamDefaultPreferencesTest {
                     "show_channel_tabs_likes",
                     "show_channel_tabs_videos",
                     "show_channel_tabs_albums",
+                    "show_channel_tabs_podcasts",
                     "show_channel_tabs_channels",
                     "show_channel_tabs_tracks",
                     "show_channel_tabs_about",
