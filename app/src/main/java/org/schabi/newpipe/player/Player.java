@@ -2071,6 +2071,16 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     @Override
+    public void onTimelineChanged(@NonNull final Timeline timeline, final int reason) {
+        if (currentItem != null && isLive()) {
+            // A live timeline can reset ExoPlayer's playback parameters while it is prepared or
+            // refreshed. Restore the active channel profile (or the global playback speed) after
+            // the dynamic timeline is available.
+            applyPlaybackSpeedProfile(currentItem);
+        }
+    }
+
+    @Override
     public void onTracksChanged(@NonNull final Tracks tracks) {
         if (DEBUG) {
             Log.d(TAG, "ExoPlayer - onTracksChanged(), "
