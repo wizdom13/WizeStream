@@ -11,7 +11,11 @@ import android.content.SharedPreferences;
 import org.junit.Test;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.linkhandler.ChannelTabs;
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
+import org.schabi.newpipe.extractor.search.filter.Filter;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class ChannelTabHelperTest {
@@ -29,5 +33,30 @@ public class ChannelTabHelperTest {
         assertTrue(ChannelTabHelper.showChannelTab(context, preferences, ChannelTabs.PODCASTS));
         assertEquals(R.string.channel_tab_podcasts,
                 ChannelTabHelper.getTranslationKey(ChannelTabs.PODCASTS));
+    }
+
+    @Test
+    public void podcastsCanBeSelectedForFeedFetching() {
+        final Context context = mock(Context.class);
+        final SharedPreferences preferences = mock(SharedPreferences.class);
+        when(context.getString(R.string.feed_fetch_channel_tabs_key))
+                .thenReturn("feed_fetch_channel_tabs");
+        when(context.getString(R.string.fetch_channel_tabs_podcasts))
+                .thenReturn("fetch_channel_tabs_podcasts");
+        when(preferences.getStringSet("feed_fetch_channel_tabs", null))
+                .thenReturn(Set.of("fetch_channel_tabs_podcasts"));
+
+        assertTrue(ChannelTabHelper.fetchFeedChannelTab(
+                context, preferences, handler(ChannelTabs.PODCASTS)));
+    }
+
+    private static ListLinkHandler handler(final String tab) {
+        return new ListLinkHandler(
+                "https://www.youtube.com/channel/UC123/" + tab,
+                "https://www.youtube.com/channel/UC123/" + tab,
+                "channel/UC123",
+                Collections.singletonList(
+                        new FilterItem(Filter.ITEM_IDENTIFIER_UNKNOWN, tab)),
+                null);
     }
 }

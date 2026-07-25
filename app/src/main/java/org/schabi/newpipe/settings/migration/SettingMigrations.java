@@ -239,6 +239,24 @@ public final class SettingMigrations {
         }
     };
 
+    private static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        protected void migrate(@NonNull final Context context) {
+            // Existing users have an explicit set of channel tabs to fetch. Enable Podcasts by
+            // default while preserving every existing selection.
+            final String fetchChannelTabsKey =
+                    context.getString(R.string.feed_fetch_channel_tabs_key);
+            final Set<String> enabledTabs = sp.getStringSet(fetchChannelTabsKey, null);
+            if (enabledTabs != null) {
+                sp.edit()
+                        .putStringSet(fetchChannelTabsKey, copyAndAdd(
+                                enabledTabs,
+                                context.getString(R.string.fetch_channel_tabs_podcasts)))
+                        .apply();
+            }
+        }
+    };
+
     static Set<String> copyAndAdd(final Set<String> values, final String value) {
         final Set<String> updatedValues = new HashSet<>(values);
         updatedValues.add(value);
@@ -261,12 +279,13 @@ public final class SettingMigrations {
             MIGRATION_6_7,
             MIGRATION_7_8,
             MIGRATION_8_9,
+            MIGRATION_9_10,
     };
 
     /**
      * Version number for preferences. Must be incremented every time a migration is necessary.
      */
-    private static final int VERSION = 9;
+    private static final int VERSION = 10;
 
 
     static void runMigrationsIfNeeded(@NonNull final Context context) {

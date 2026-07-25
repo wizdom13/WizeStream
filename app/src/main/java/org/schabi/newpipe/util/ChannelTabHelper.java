@@ -96,6 +96,8 @@ public final class ChannelTabHelper {
                 return R.string.fetch_channel_tabs_shorts;
             case ChannelTabs.LIVESTREAMS:
                 return R.string.fetch_channel_tabs_livestreams;
+            case ChannelTabs.PODCASTS:
+                return R.string.fetch_channel_tabs_podcasts;
             case CHANNEL_TAB_LIKES:
                 return R.string.fetch_channel_tabs_likes;
             default:

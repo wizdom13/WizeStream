@@ -121,6 +121,19 @@ class WizeStreamDefaultPreferencesTest {
                 )
             )
         )
+        verify(editor).putStringSet(
+            eq("feed_fetch_channel_tabs"),
+            eq(
+                setOf(
+                    "fetch_channel_tabs_shorts",
+                    "fetch_channel_tabs_videos",
+                    "fetch_channel_tabs_livestreams",
+                    "fetch_channel_tabs_tracks",
+                    "fetch_channel_tabs_podcasts",
+                    "fetch_channel_tabs_likes"
+                )
+            )
+        )
         verify(editor).commit()
     }
 

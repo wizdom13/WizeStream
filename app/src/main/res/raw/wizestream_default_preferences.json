@@ -46,6 +46,7 @@
     "fetch_channel_tabs_videos",
     "fetch_channel_tabs_livestreams",
     "fetch_channel_tabs_tracks",
+    "fetch_channel_tabs_podcasts",
     "fetch_channel_tabs_likes"
   ],
   "show_thumbnail_key": true,
