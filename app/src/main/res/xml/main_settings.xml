@@ -70,6 +70,13 @@
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
+        android:fragment="org.schabi.newpipe.settings.DeviceSyncSettingsFragment"
+        android:icon="@drawable/ic_devices"
+        android:title="@string/settings_category_device_sync_title"
+        android:summary="@string/settings_category_device_sync_summary"
+        app:iconSpaceReserved="false" />
+
+    <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.DebugSettingsFragment"
         android:icon="@drawable/ic_bug_report"
         android:key="@string/debug_pref_screen_key"
