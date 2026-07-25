@@ -13,12 +13,12 @@ import kotlinx.serialization.json.Json
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
+import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncChangeEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncOriginStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncRecordEntity
-import org.schabi.newpipe.database.stream.model.StreamEntity
 
 internal interface PlaylistSyncStore {
     val localPeerId: String
@@ -196,7 +196,7 @@ internal class RoomPlaylistSyncStore internal constructor(
                 PlaylistApplyResult(
                     acceptedChanges = accepted,
                     changedPlaylists =
-                    affectedLocalPlaylists.size + affectedRemotePlaylists.size
+                        affectedLocalPlaylists.size + affectedRemotePlaylists.size
                 )
             }
         )
