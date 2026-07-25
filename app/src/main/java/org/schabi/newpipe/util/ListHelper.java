@@ -16,6 +16,7 @@ import androidx.preference.PreferenceManager;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.AudioTrackType;
 import org.schabi.newpipe.extractor.stream.DeliveryMethod;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -850,12 +851,16 @@ public final class ListHelper {
 
     private static boolean isLikelyOriginalAudio(@NonNull final AudioStream stream,
                                                  final boolean preferOriginalAudio) {
-        return preferOriginalAudio && containsAudioTrackText(stream, "original");
+        return preferOriginalAudio
+                && (stream.getAudioTrackType() == AudioTrackType.ORIGINAL
+                || containsAudioTrackText(stream, "original"));
     }
 
     private static boolean isLikelyDescriptiveAudio(@NonNull final AudioStream stream,
                                                     final boolean preferDescriptiveAudio) {
-        return preferDescriptiveAudio && containsAudioTrackText(stream, "descriptive");
+        return preferDescriptiveAudio
+                && (stream.getAudioTrackType() == AudioTrackType.DESCRIPTIVE
+                || containsAudioTrackText(stream, "descriptive"));
     }
 
     private static boolean containsAudioTrackText(@NonNull final AudioStream stream,

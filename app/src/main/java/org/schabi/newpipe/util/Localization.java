@@ -29,6 +29,7 @@ import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.localization.ContentCountry;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.AudioTrackType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -338,12 +339,36 @@ public final class Localization {
      * @return the localized name of the audio track
      */
     public static String audioTrackName(@NonNull final Context context, final AudioStream track) {
+        final String name;
         if (track.getAudioLocale() != null) {
-            return audioLocaleDisplayName(track.getAudioLocale());
+            name = audioLocaleDisplayName(track.getAudioLocale());
         } else if (track.getAudioTrackName() != null) {
-            return track.getAudioTrackName();
+            name = track.getAudioTrackName();
         } else {
-            return context.getString(R.string.unknown_audio_track);
+            name = context.getString(R.string.unknown_audio_track);
+        }
+
+        if (track.getAudioTrackType() == null) {
+            return name;
+        }
+        return context.getString(R.string.audio_track_name, name,
+                audioTrackType(context, track.getAudioTrackType()));
+    }
+
+    @NonNull
+    private static String audioTrackType(@NonNull final Context context,
+                                         @NonNull final AudioTrackType trackType) {
+        switch (trackType) {
+            case ORIGINAL:
+                return context.getString(R.string.audio_track_type_original);
+            case DUBBED:
+                return context.getString(R.string.audio_track_type_dubbed);
+            case DESCRIPTIVE:
+                return context.getString(R.string.audio_track_type_descriptive);
+            case SECONDARY:
+                return context.getString(R.string.audio_track_type_secondary);
+            default:
+                throw new IllegalStateException("Unknown audio track type: " + trackType);
         }
     }
 

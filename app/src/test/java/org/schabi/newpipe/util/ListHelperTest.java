@@ -3,6 +3,7 @@ package org.schabi.newpipe.util;
 import org.junit.Test;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.AudioTrackType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 
 import java.lang.reflect.InvocationTargetException;
@@ -396,6 +397,27 @@ public class ListHelperTest {
     }
 
     @Test
+    public void getAudioTrackUsesStructuredTrackType() {
+        final List<AudioStream> tracks = List.of(
+                generateAudioTrack("original", "track-0", "English", Locale.ENGLISH,
+                        AudioTrackType.ORIGINAL),
+                generateAudioTrack("dubbed", "track-1", "German", Locale.GERMAN,
+                        AudioTrackType.DUBBED),
+                generateAudioTrack("descriptive", "track-2", "English", Locale.ENGLISH,
+                        AudioTrackType.DESCRIPTIVE)
+        );
+
+        Comparator<AudioStream> cmp =
+                ListHelper.getAudioTrackComparator(Locale.GERMAN, true, false);
+        AudioStream stream = tracks.get(ListHelper.getAudioIndexByHighestRank(tracks, cmp));
+        assertEquals("original", stream.getId());
+
+        cmp = ListHelper.getAudioTrackComparator(Locale.ENGLISH, false, true);
+        stream = tracks.get(ListHelper.getAudioIndexByHighestRank(tracks, cmp));
+        assertEquals("descriptive", stream.getId());
+    }
+
+    @Test
     public void getVideoDefaultStreamIndexCombinations() {
         final List<VideoStream> testList = List.of(
                 generateVideoStream("mpeg_4-1080", MediaFormat.MPEG_4, "1080p",  false),
@@ -456,13 +478,23 @@ public class ListHelperTest {
             @Nullable final String trackId,
             @Nullable final String trackName,
             @Nullable final Locale audioLocale) {
+        return generateAudioTrack(id, trackId, trackName, audioLocale, null);
+    }
+
+    private static AudioStream generateAudioTrack(
+            @NonNull final String id,
+            @Nullable final String trackId,
+            @Nullable final String trackName,
+            @Nullable final Locale audioLocale,
+            @Nullable final AudioTrackType audioTrackType) {
         final AudioStream.Builder builder = new AudioStream.Builder()
                 .setId(id)
                 .setContent("", true)
                 .setMediaFormat(MediaFormat.M4A)
                 .setAverageBitrate(128)
                 .setAudioTrackId(trackId)
-                .setAudioTrackName(trackName);
+                .setAudioTrackName(trackName)
+                .setAudioTrackType(audioTrackType);
         setAudioLocale(builder, audioLocale == null ? null : audioLocale.toLanguageTag());
         return builder.build();
     }
