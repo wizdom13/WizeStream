@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/settings_category_device_sync_title">
+
+    <Preference
+        android:key="@string/device_sync_status_key"
+        android:summary="@string/device_sync_status_summary"
+        android:title="@string/device_sync_status_title"
+        app:iconSpaceReserved="false"
+        app:selectable="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/device_sync_identity_key"
+        android:selectable="false"
+        android:title="@string/device_sync_identity_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/device_sync_show_code_key"
+        android:summary="@string/device_sync_show_code_summary"
+        android:title="@string/device_sync_show_code_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/device_sync_scan_code_key"
+        android:summary="@string/device_sync_scan_code_summary"
+        android:title="@string/device_sync_scan_code_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <PreferenceCategory
+        android:layout="@layout/settings_category_header_layout"
+        android:title="@string/device_sync_trusted_devices_title">
+
+        <Preference
+            android:key="@string/device_sync_trusted_devices_key"
+            android:selectable="false"
+            android:title="@string/device_sync_trusted_devices_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/device_sync_clear_devices_key"
+            android:summary="@string/device_sync_clear_devices_summary"
+            android:title="@string/device_sync_clear_devices_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -69,6 +69,11 @@
 ## SLF4J looks for an optional runtime binding class. The app does not ship one.
 -dontwarn org.slf4j.impl.StaticLoggerBinder
 
+## Netty probes for optional desktop logging and BlockHound integrations.
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn reactor.blockhound.integration.BlockHoundIntegration
+
 ## See https://github.com/TeamNewPipe/NewPipe/pull/1441
 -keepclassmembers class * implements java.io.Serializable {
     static final long serialVersionUID;
