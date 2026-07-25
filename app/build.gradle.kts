@@ -137,7 +137,9 @@ configure<ApplicationExtension> {
             excludes += setOf(
                 "META-INF/README.md",
                 "META-INF/CHANGES",
-                "META-INF/COPYRIGHT" // "COPYRIGHT" belongs to RxJava...
+                "META-INF/COPYRIGHT", // "COPYRIGHT" belongs to RxJava...
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
             )
         }
     }
@@ -260,6 +262,12 @@ dependencies {
     // HTML parser
     implementation(libs.jsoup)
 
+    // End-to-end encrypted peer-to-peer device synchronization
+    implementation(libs.jvm.libp2p) {
+        exclude(group = "io.netty", module = "netty-codec-native-quic")
+        exclude(group = "io.netty", module = "netty-tcnative-boringssl-static")
+    }
+
     // HTTP client
     implementation(libs.squareup.okhttp)
 
@@ -301,6 +309,10 @@ dependencies {
 
     // Date and time formatting
     implementation(libs.ocpsoft.prettytime)
+
+    // QR code generation and scanning for device pairing
+    implementation(libs.zxing.android.embedded)
+    implementation(libs.zxing.core)
 
     // Debugging and memory leak detection
     debugImplementation(libs.squareup.leakcanary.watcher)

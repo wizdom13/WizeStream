@@ -203,6 +203,7 @@
     <string name="settings_category_content_summary">Services, languages, regions, and content filters</string>
     <string name="settings_category_notification_summary">Notification actions, alerts, and update messages</string>
     <string name="settings_category_backup_restore_summary">Export, import, and restore app data</string>
+    <string name="settings_category_device_sync_summary">Securely pair trusted devices for private synchronization</string>
     <string name="settings_category_history_title">History and cache</string>
     <string name="settings_category_appearance_title">Appearance</string>
     <string name="settings_category_debug_title">Debug</string>
@@ -211,6 +212,33 @@
     <string name="settings_category_player_notification_title">Player notification</string>
     <string name="settings_category_player_notification_summary">Configure current playing stream notification</string>
     <string name="settings_category_backup_restore_title">Backup and restore</string>
+    <string name="settings_category_device_sync_title">Device synchronization</string>
+    <string name="device_sync_status_key" translatable="false">device_sync_status</string>
+    <string name="device_sync_identity_key" translatable="false">device_sync_identity</string>
+    <string name="device_sync_show_code_key" translatable="false">device_sync_show_pairing_code</string>
+    <string name="device_sync_scan_code_key" translatable="false">device_sync_scan_pairing_code</string>
+    <string name="device_sync_trusted_devices_key" translatable="false">device_sync_trusted_devices</string>
+    <string name="device_sync_clear_devices_key" translatable="false">device_sync_clear_trusted_devices</string>
+    <string name="device_sync_status_title">Current status</string>
+    <string name="device_sync_status_summary">Experimental secure pairing is available. Record synchronization is not enabled yet.</string>
+    <string name="device_sync_identity_title">This device PeerID</string>
+    <string name="device_sync_show_code_title">Show pairing code</string>
+    <string name="device_sync_show_code_summary">Let another WizeStream device scan this one-time QR code</string>
+    <string name="device_sync_scan_code_title">Scan pairing code</string>
+    <string name="device_sync_scan_code_summary">Scan the QR code displayed by another WizeStream device</string>
+    <string name="device_sync_scan_prompt">Scan the WizeStream pairing QR code</string>
+    <string name="device_sync_pairing_in_progress">Establishing an encrypted connection…</string>
+    <string name="device_sync_pairing_succeeded">Paired securely with %1$s</string>
+    <string name="device_sync_pairing_failed">Pairing failed</string>
+    <string name="device_sync_pairing_qr_description">One-time device pairing QR code</string>
+    <string name="device_sync_pairing_peer_id">PeerID: %1$s</string>
+    <string name="device_sync_pairing_code_expiry">Keep this screen open while the other device scans. This code expires after five minutes and can be used only once.</string>
+    <string name="device_sync_trusted_devices_title">Trusted devices</string>
+    <string name="device_sync_no_trusted_devices">No trusted devices</string>
+    <string name="device_sync_trusted_device_summary">%1$s — %2$s</string>
+    <string name="device_sync_clear_devices_title">Clear trusted devices</string>
+    <string name="device_sync_clear_devices_summary">Require every device to pair again</string>
+    <string name="device_sync_clear_devices_confirmation">Remove all trusted devices? This device’s PeerID will not change.</string>
     <string name="background_player_playing_toast">Playing in background</string>
     <string name="popup_playing_toast">Playing in popup mode</string>
     <string name="content">Content</string>
