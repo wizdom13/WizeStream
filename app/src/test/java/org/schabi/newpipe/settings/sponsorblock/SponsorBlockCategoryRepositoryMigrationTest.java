@@ -139,6 +139,57 @@ public class SponsorBlockCategoryRepositoryMigrationTest {
     }
 
     @Test
+    public void integerColorIsReadAndMigratedToLong() {
+        final InMemoryPreferences preferences = new InMemoryPreferences();
+        preferences.edit()
+                .putInt(SponsorBlockCategoryConfig.SPONSOR.colorKey(), 0xFF123456)
+                .apply();
+
+        assertEquals(0xFF123456, SponsorBlockCategoryRepository.getColor(preferences,
+                SponsorBlockCategoryConfig.SPONSOR, 0xFFABCDEF));
+        assertEquals((long) 0xFF123456,
+                preferences.getLong(SponsorBlockCategoryConfig.SPONSOR.colorKey(), 0));
+    }
+
+    @Test
+    public void decimalStringColorIsReadAndMigratedToLong() {
+        final InMemoryPreferences preferences = new InMemoryPreferences();
+        preferences.edit()
+                .putString(SponsorBlockCategoryConfig.SPONSOR.colorKey(), "-15584170")
+                .apply();
+
+        assertEquals(0xFF123456, SponsorBlockCategoryRepository.getColor(preferences,
+                SponsorBlockCategoryConfig.SPONSOR, 0xFFABCDEF));
+        assertEquals(-15584170L,
+                preferences.getLong(SponsorBlockCategoryConfig.SPONSOR.colorKey(), 0));
+    }
+
+    @Test
+    public void hexStringColorIsReadAndMigratedToOpaqueLong() {
+        final InMemoryPreferences preferences = new InMemoryPreferences();
+        preferences.edit()
+                .putString(SponsorBlockCategoryConfig.SPONSOR.colorKey(), "#123456")
+                .apply();
+
+        assertEquals(0xFF123456, SponsorBlockCategoryRepository.getColor(preferences,
+                SponsorBlockCategoryConfig.SPONSOR, 0xFFABCDEF));
+        assertEquals(0xFF123456L,
+                preferences.getLong(SponsorBlockCategoryConfig.SPONSOR.colorKey(), 0));
+    }
+
+    @Test
+    public void malformedColorIsRemovedAndDefaultIsReturned() {
+        final InMemoryPreferences preferences = new InMemoryPreferences();
+        preferences.edit()
+                .putString(SponsorBlockCategoryConfig.SPONSOR.colorKey(), "not-a-color")
+                .apply();
+
+        assertEquals(0xFFABCDEF, SponsorBlockCategoryRepository.getColor(preferences,
+                SponsorBlockCategoryConfig.SPONSOR, 0xFFABCDEF));
+        assertFalse(preferences.contains(SponsorBlockCategoryConfig.SPONSOR.colorKey()));
+    }
+
+    @Test
     public void resetRestoresDefaultBehavior() {
         final InMemoryPreferences preferences = new InMemoryPreferences();
         SponsorBlockCategoryRepository.setBehavior(preferences, SponsorBlockCategoryConfig.SPONSOR,
@@ -207,7 +258,13 @@ public class SponsorBlockCategoryRepositoryMigrationTest {
         @Override
         public long getLong(final String key, final long defValue) {
             final Object value = values.get(key);
-            return value instanceof Long ? (Long) value : defValue;
+            if (value == null) {
+                return defValue;
+            }
+            if (value instanceof Long) {
+                return (Long) value;
+            }
+            throw new ClassCastException(value.getClass().getName() + " cannot be cast to Long");
         }
 
         @Override

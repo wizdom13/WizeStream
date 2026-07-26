@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
@@ -115,7 +116,71 @@ public final class SponsorBlockCategoryRepository {
     static int getColor(@NonNull final SharedPreferences preferences,
                         @NonNull final SponsorBlockCategoryConfig category,
                         @ColorInt final int defaultColor) {
-        return (int) preferences.getLong(category.colorKey(), defaultColor);
+        final String key = category.colorKey();
+        try {
+            return (int) preferences.getLong(key, defaultColor);
+        } catch (final ClassCastException ignored) {
+            // Older imports and releases may have stored color overrides under another type.
+        }
+
+        final Object storedValue = preferences.getAll().get(key);
+        if (storedValue == null) {
+            return defaultColor;
+        }
+
+        final Long color = parseStoredColor(storedValue);
+        if (color == null) {
+            preferences.edit().remove(key).apply();
+            return defaultColor;
+        }
+
+        if (!(storedValue instanceof Long)) {
+            preferences.edit().putLong(key, color).apply();
+        }
+        return color.intValue();
+    }
+
+    @Nullable
+    private static Long parseStoredColor(@NonNull final Object storedValue) {
+        if (storedValue instanceof Long) {
+            return (Long) storedValue;
+        }
+        if (storedValue instanceof Integer) {
+            return ((Integer) storedValue).longValue();
+        }
+        if (!(storedValue instanceof String)) {
+            return null;
+        }
+
+        final String value = ((String) storedValue).trim();
+        if (value.isEmpty()) {
+            return null;
+        }
+
+        try {
+            final long parsed;
+            if (value.startsWith("#")) {
+                parsed = parseHexColor(value.substring(1));
+            } else if (value.startsWith("0x") || value.startsWith("0X")) {
+                parsed = parseHexColor(value.substring(2));
+            } else if (value.matches("[0-9a-fA-F]{6,8}")
+                    && value.matches(".*[a-fA-F].*")) {
+                parsed = parseHexColor(value);
+            } else {
+                parsed = Long.parseLong(value);
+            }
+            return parsed >= Integer.MIN_VALUE && parsed <= 0xFFFFFFFFL ? parsed : null;
+        } catch (final NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static long parseHexColor(@NonNull final String value) {
+        if (!value.matches("[0-9a-fA-F]{6}|[0-9a-fA-F]{8}")) {
+            throw new NumberFormatException("Invalid color");
+        }
+        final long parsed = Long.parseLong(value, 16);
+        return value.length() == 6 ? parsed | 0xFF000000L : parsed;
     }
 
     static void setColor(@NonNull final SharedPreferences preferences,
