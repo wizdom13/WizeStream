@@ -1,6 +1,6 @@
 # WizeStream Privacy Policy
 
-Last updated: July 21, 2026
+Last updated: July 27, 2026
 
 WizeStream is an independently maintained, open-source Android streaming application. It does not require a WizeStream account and does not include advertising, analytics, or tracking SDKs.
 
@@ -9,6 +9,26 @@ WizeStream is an independently maintained, open-source Android streaming applica
 WizeStream connects directly to the media services you choose to use. Those services and your network provider can receive ordinary connection information such as your IP address, request details, and cookies required for the selected service. Their own privacy policies apply to that activity.
 
 When update checks are enabled or manually requested, WizeStream contacts the GitHub Releases API for `wizdom13/WizeStream`. The app does not add a WizeStream account identifier or advertising identifier to those requests.
+
+## Device synchronization
+
+Device synchronization is optional and does not require a WizeStream cloud account. After you pair
+two devices with a one-time QR code, WizeStream can exchange supported records directly through an
+encrypted peer-to-peer connection between those trusted device identities.
+
+Synchronized records can include subscriptions, feed groups, playlists, watch history, playback
+progress, home tabs, content-filter selections, channel playback profiles, allowlisted settings, and
+completed-download metadata. Search history is excluded by default and is exchanged only when the
+option is enabled on both devices.
+
+Downloaded video and audio files are not transferred. Completed-download metadata can include the
+original content URL, media type, filename, MIME type, file size, and completion time so another
+device can identify the item and offer to download it again from the original media service.
+
+Trusted-device identities and synchronization state are stored locally. Automatic synchronization
+periodically attempts to reach paired devices when the device has sufficient battery and is
+connected through Wi-Fi or Ethernet. Clearing trusted devices removes their authorization and
+requires them to pair again.
 
 ## Crash and error reports
 
@@ -22,7 +42,7 @@ Subscriptions, playlists, history, settings, cookies, downloads, and backups are
 
 ## Permissions
 
-WizeStream requests Android permissions only for features you use, such as notifications, background playback, overlay playback, network access, and legacy file access on supported older Android versions. Android settings can be used to revoke optional permissions.
+WizeStream requests Android permissions only for features you use, such as notifications, background playback, overlay playback, network access, camera access for scanning a device-pairing QR code, and legacy file access on supported older Android versions. Android settings can be used to revoke optional permissions.
 
 ## Changes and contact
 

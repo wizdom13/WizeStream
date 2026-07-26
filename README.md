@@ -24,6 +24,7 @@
   <a href="#screenshots">Screenshots</a> •
   <a href="#supported-services">Services</a> •
   <a href="#features">Features</a> •
+  <a href="#device-synchronization">Device sync</a> •
   <a href="#installation">Installation</a> •
   <a href="#building-from-source">Build</a> •
   <a href="#release-signing">Signing</a> •
@@ -86,6 +87,11 @@ Project highlights:
 - Swipe seek, fullscreen swipe, and hold-to-speed-up player gestures
 - Swipe down from the video player to return to the miniplayer
 - Optional keep-video-visible mode while scrolling the details page
+- Secure peer-to-peer synchronization between trusted WizeStream devices
+- Automatic background synchronization on Wi-Fi or Ethernet
+- Search filters and sorting, channel video sorting, and podcast channel tabs
+- Per-channel playback profiles
+- Multi-audio track selection with original, dubbed, and descriptive labels
 - Import/export compatibility with supported NewPipe backup data
 
 Sensitive areas such as playback, downloads, background playback, popup playback, and extractor logic are changed only through focused and tested work.
@@ -158,7 +164,49 @@ WizeStream additions include:
 - SponsorBlock and dislike-count support
 - Enhanced player gestures
 - Optional pinned video while scrolling
+- Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, watch and search
+  history, playback progress, selected settings, channel playback profiles, and completed-download
+  metadata
+- Manual synchronization and automatic background synchronization on Wi-Fi or Ethernet
+- A **Download on this device** action when synchronized download metadata has no matching local
+  media file
+- Search filters and sorting
+- Latest, popular, and oldest sorting for channel videos
+- Podcast tabs on supported channels
+- Per-channel playback profiles
+- Multi-audio track selection with original, dubbed, descriptive, and secondary track labels
+- Playback-speed retention for live streams
 - Independent release signing
+
+---
+
+## Device synchronization
+
+WizeStream can synchronize supported app data directly between trusted WizeStream devices without
+requiring a platform account or a WizeStream cloud account.
+
+Open **Settings > Device synchronization** on both devices. One device displays a one-time QR code
+and the other scans it. The pairing code expires after five minutes and can be used only once.
+After pairing, use **Sync now** for an immediate exchange or leave **Automatic background
+synchronization** enabled. Background synchronization runs approximately once per hour when the
+device has sufficient battery and can reach a trusted device on the same Wi-Fi or Ethernet network.
+
+Supported synchronized data includes:
+
+- Subscriptions and feed groups
+- Local and remote playlists
+- Watch history and playback progress
+- Home tabs, content-filter selections, channel playback profiles, and allowlisted settings
+- Search history when explicitly enabled on both devices
+- Completed-download metadata
+
+Synchronization uses an encrypted peer-to-peer connection between paired devices. Downloaded media
+files are not transferred. If another device reports a completed download but its media file is
+missing locally, the Downloads screen marks it **Not local** and offers **Download on this device**
+using the original source. Existing local and pending copies are deduplicated.
+
+See [Device synchronization](docs/device-synchronization.md) for pairing instructions, synchronized
+data details, background behavior, and privacy notes.
 
 ---
 
@@ -308,6 +356,10 @@ Completed or in-progress areas include:
 - Bottom navigation and main-tab polish
 - About-screen attribution
 - Player gestures and pinned-video behavior
+- Secure device pairing and peer-to-peer synchronization
+- Automatic background synchronization and download-metadata recovery
+- Search filters, channel sorting, podcast tabs, and channel playback profiles
+- Multi-audio selection and clearer audio-track labels
 - Dialog, snackbar, settings, video-detail, and download UI polish
 - Release-signing workflow support
 

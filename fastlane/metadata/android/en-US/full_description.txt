@@ -1,4 +1,4 @@
-WizeStream is an independent Android streaming app based on NewPipe, focused on Material 3 design, dynamic and manual theme colors, enhanced playback controls, and careful visual polish.
+WizeStream is an independent Android streaming app based on NewPipe, focused on Material 3 design, private device synchronization, enhanced discovery and playback controls, and careful visual polish.
 
 WizeStream keeps the lightweight, privacy-friendly approach inherited from NewPipe. It does not require a platform account, does not depend on Google framework libraries, and is designed to work without Google Play Services.
 
@@ -20,11 +20,20 @@ WizeStream includes Material-focused enhancements and additional playback featur
 - Material 3-inspired surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors and manual theme color presets
 - Bottom navigation with a configurable default main tab
+- Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, watch and search history, playback progress, selected settings, channel playback profiles, and completed-download metadata
+- Manual and automatic background synchronization between trusted devices on the same Wi-Fi or Ethernet network
+- "Download on this device" for synchronized download metadata whose media file is missing locally; media files are not transferred between devices
+- Search filters and sorting
+- Latest, popular, and oldest sorting for channel videos
+- Podcast tabs on supported channels
+- Per-channel playback profiles
+- Multi-audio track selection with original, dubbed, descriptive, and secondary labels
 - SponsorBlock integration for skipping configured sponsor and other marked segments
 - YouTube dislike count support
 - Enhanced player gestures: swipe to seek, fullscreen swipe controls, and hold to temporarily speed up playback
 - Swipe down on the video player to return to the miniplayer
 - Optional keep-video-visible mode while scrolling the video details page
+- Playback-speed retention for live streams
 - A separate application ID, allowing side-by-side installation with official NewPipe
 
 WizeStream is independently maintained and uses its own release signing key. Releases are available through GitHub and IzzyOnDroid.
