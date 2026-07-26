@@ -13,10 +13,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.FinishedMission;
+import us.shandian.giga.get.MetadataOnlyFinishedMission;
 import us.shandian.giga.get.Mission;
 import us.shandian.giga.get.sqlite.FinishedMissionStore;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
@@ -601,7 +604,9 @@ public class DownloadManager {
         ArrayList<Mission> hidden;
 
         boolean hasFinished = false;
+        boolean hasLocalFinished = false;
         String searchQuery = "";
+        private final ArrayList<FinishedMission> additionalFinished = new ArrayList<>();
 
         private MissionIterator() {
             hidden = new ArrayList<>(2);
@@ -628,6 +633,14 @@ public class DownloadManager {
                     finished.removeIf(mission -> !matchesSearchQuery(mission));
                 }
 
+                hasLocalFinished = finished.size() > 0;
+                final List<FinishedMission> visibleMetadata =
+                        new ArrayList<>(additionalFinished);
+                if (ContextualSearchHelper.isActive(searchQuery)) {
+                    visibleMetadata.removeIf(mission -> !matchesSearchQuery(mission));
+                }
+                addMissingCompletedDownloadMetadata(pending, finished, visibleMetadata);
+
                 int fakeTotal = pending.size();
                 if (fakeTotal > 0) fakeTotal++;
 
@@ -653,6 +666,18 @@ public class DownloadManager {
         private boolean matchesSearchQuery(@NonNull final Mission mission) {
             return ContextualSearchHelper.matches(searchQuery,
                     mission.storage == null ? null : mission.storage.getName());
+        }
+
+        public void setAdditionalFinishedMissions(
+                @NonNull final List<? extends FinishedMission> missions
+        ) {
+            synchronized (DownloadManager.this) {
+                additionalFinished.clear();
+                additionalFinished.addAll(missions);
+                additionalFinished.sort(
+                        Comparator.comparingLong(Mission::getTimestamp).reversed()
+                );
+            }
         }
 
         public MissionItem getItem(int position) {
@@ -708,6 +733,10 @@ public class DownloadManager {
             return hasFinished;
         }
 
+        public boolean hasLocalFinishedMissions() {
+            return hasLocalFinished;
+        }
+
         /**
          * Check if exists missions running and paused. Corrupted and hidden missions are not counted
          *
@@ -747,7 +776,15 @@ public class DownloadManager {
 
         @Override
         public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-            return snapshot.get(oldItemPosition) == current.get(newItemPosition);
+            final Object oldItem = snapshot.get(oldItemPosition);
+            final Object newItem = current.get(newItemPosition);
+            if (oldItem instanceof MetadataOnlyFinishedMission
+                    && newItem instanceof MetadataOnlyFinishedMission) {
+                return ((MetadataOnlyFinishedMission) oldItem).syncId.equals(
+                        ((MetadataOnlyFinishedMission) newItem).syncId
+                );
+            }
+            return oldItem == newItem;
         }
 
         @Override
@@ -755,12 +792,50 @@ public class DownloadManager {
             Object x = snapshot.get(oldItemPosition);
             Object y = current.get(newItemPosition);
 
+            if (x instanceof MetadataOnlyFinishedMission
+                    && y instanceof MetadataOnlyFinishedMission) {
+                final MetadataOnlyFinishedMission oldMission =
+                        (MetadataOnlyFinishedMission) x;
+                final MetadataOnlyFinishedMission newMission =
+                        (MetadataOnlyFinishedMission) y;
+                return oldMission.source.equals(newMission.source)
+                        && oldMission.displayName.equals(newMission.displayName)
+                        && oldMission.mimeType.equals(newMission.mimeType)
+                        && oldMission.length == newMission.length
+                        && oldMission.timestamp == newMission.timestamp
+                        && oldMission.kind == newMission.kind;
+            }
             if (x instanceof Mission && y instanceof Mission) {
                 return ((Mission) x).storage.equals(((Mission) y).storage);
             }
 
             return false;
         }
+    }
+
+    static void addMissingCompletedDownloadMetadata(
+            @NonNull final List<? extends Mission> pending,
+            @NonNull final List<Mission> finished,
+            @NonNull final List<? extends FinishedMission> metadata
+    ) {
+        final Set<String> localDownloadIdentities = new HashSet<>();
+        pending.forEach(mission ->
+                localDownloadIdentities.add(downloadIdentity(mission)));
+        finished.forEach(mission ->
+                localDownloadIdentities.add(downloadIdentity(mission)));
+
+        final Set<String> addedMetadataIdentities = new HashSet<>();
+        metadata.stream()
+                .filter(mission ->
+                        !localDownloadIdentities.contains(downloadIdentity(mission)))
+                .filter(mission ->
+                        addedMetadataIdentities.add(downloadIdentity(mission)))
+                .forEach(finished::add);
+        finished.sort(Comparator.comparingLong(Mission::getTimestamp).reversed());
+    }
+
+    private static String downloadIdentity(@NonNull final Mission mission) {
+        return mission.source.trim() + '\u0000' + mission.kind;
     }
 
     public static class MissionItem {

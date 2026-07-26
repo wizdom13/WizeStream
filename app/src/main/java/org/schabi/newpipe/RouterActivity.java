@@ -101,6 +101,9 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
  * Get the url from the intent and open it in the chosen preferred player.
  */
 public class RouterActivity extends AppCompatActivity {
+    public static final String EXTRA_FORCE_DOWNLOAD =
+            BuildConfig.APPLICATION_ID + ".router.FORCE_DOWNLOAD";
+
     protected final CompositeDisposable disposables = new CompositeDisposable();
     @State
     protected int currentServiceId = -1;
@@ -297,6 +300,11 @@ public class RouterActivity extends AppCompatActivity {
     }
 
     protected void onSuccess() {
+        if (getIntent().getBooleanExtra(EXTRA_FORCE_DOWNLOAD, false)) {
+            handleChoice(getString(R.string.download_key));
+            return;
+        }
+
         final SharedPreferences preferences = PreferenceManager
                 .getDefaultSharedPreferences(this);
 

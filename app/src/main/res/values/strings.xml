@@ -376,6 +376,8 @@
     <string name="video_streams_empty">No video streams found</string>
     <string name="audio_streams_empty">No audio streams found</string>
     <string name="missing_file">File moved or deleted</string>
+    <string name="download_remote_status">Not local</string>
+    <string name="download_on_this_device">Download on this device</string>
     <string name="invalid_directory">No such folder</string>
     <string name="invalid_source">No such file/content source</string>
     <string name="invalid_file">The file doesn\'t exist or permission to read or write to it is lacking</string>

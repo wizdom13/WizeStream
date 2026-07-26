@@ -214,6 +214,17 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         syncDao.deleteAllPeerStates()
     }
 
+    internal fun getCompletedDownloadMetadata(): List<SyncedCompletedDownload> {
+        return syncDao.getRecordsByType(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS.name,
+            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD.name
+        ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
+            .mapNotNull { record ->
+                decodeRecord(record).completedDownload
+            }
+            .sortedByDescending(SyncedCompletedDownload::completedAtEpochMillis)
+    }
+
     private fun reconcileFeedGroups(bootstrap: Boolean) {
         val groups = feedGroupDao.getAllDirect()
         if (groups.size > MAX_FEED_GROUPS) {

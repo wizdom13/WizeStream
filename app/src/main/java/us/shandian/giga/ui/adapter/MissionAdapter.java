@@ -63,6 +63,7 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.sync.SyncedDownloadMetadataRepository;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -79,10 +80,12 @@ import java.text.DateFormat;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.FinishedMission;
+import us.shandian.giga.get.MetadataOnlyFinishedMission;
 import us.shandian.giga.get.Mission;
 import us.shandian.giga.get.MissionRecoveryInfo;
 import us.shandian.giga.service.DownloadManager;
@@ -219,6 +222,18 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             mPendingDownloadsItems.add(h);
 
             h.date.setText("");
+        } else if (item.mission instanceof MetadataOnlyFinishedMission) {
+            h.progress.setMarquee(false);
+            h.status.setText(R.string.download_remote_status);
+            h.progress.setProgress(0.0f);
+            h.size.setText(Utility.formatBytes(item.mission.length));
+
+            DateFormat dateFormat = DateFormat.getDateInstance(
+                    DateFormat.MEDIUM,
+                    Locale.getDefault()
+            );
+            Date date = new Date(item.mission.timestamp);
+            h.date.setText(dateFormat.format(date));
         } else {
             h.progress.setMarquee(false);
             h.status.setText("100%");
@@ -587,9 +602,12 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
     }
 
     public void clearFinishedDownloads(boolean delete) {
-        if (delete && mIterator.hasFinishedMissions() && mHidden.isEmpty()) {
+        if (delete && mIterator.hasLocalFinishedMissions() && mHidden.isEmpty()) {
             for (int i = 0; i < mIterator.getOldListSize(); i++) {
-                FinishedMission mission = mIterator.getItem(i).mission instanceof FinishedMission ? (FinishedMission) mIterator.getItem(i).mission : null;
+                FinishedMission mission = mIterator.getItem(i).mission instanceof FinishedMission
+                        && !(mIterator.getItem(i).mission
+                        instanceof MetadataOnlyFinishedMission)
+                        ? (FinishedMission) mIterator.getItem(i).mission : null;
                 if (mission != null) {
                     mIterator.hide(mission);
                     mHidden.add(mission);
@@ -637,6 +655,9 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
 
         int id = option.getItemId();
         DownloadMission mission = h.item.mission instanceof DownloadMission ? (DownloadMission) h.item.mission : null;
+        MetadataOnlyFinishedMission metadataMission =
+                h.item.mission instanceof MetadataOnlyFinishedMission
+                        ? (MetadataOnlyFinishedMission) h.item.mission : null;
 
         if (mission != null) {
             if (id == R.id.start) {
@@ -672,7 +693,10 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             }
         }
 
-        if (id == R.id.menu_item_share) {
+        if (id == R.id.download_on_device && metadataMission != null) {
+            downloadOnThisDevice(metadataMission);
+            return true;
+        } else if (id == R.id.menu_item_share) {
             shareFile(h.item.mission);
             return true;
         } else if (id == R.id.delete) {// delete the entry and the file
@@ -730,6 +754,10 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         return false;
     }
 
+    private void downloadOnThisDevice(@NonNull final MetadataOnlyFinishedMission mission) {
+        NavigationHelper.openDownloadDialog(mContext, mission.source);
+    }
+
     public void applyChanges() {
         mIterator.start();
         DiffUtil.calculateDiff(mIterator, true).dispatchUpdatesTo(this);
@@ -738,7 +766,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         checkEmptyMessageVisibility();
         if (mClear != null) {
             mClear.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
-                    && mIterator.hasFinishedMissions());
+                    && mIterator.hasLocalFinishedMissions());
         }
         checkMasterButtonsVisibility();
     }
@@ -755,7 +783,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         checkEmptyMessageVisibility();
         if (mClear != null) {
             mClear.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
-                    && mIterator.hasFinishedMissions());
+                    && mIterator.hasLocalFinishedMissions());
         }
         checkMasterButtonsVisibility();
     }
@@ -773,7 +801,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
     public void setClearButton(MenuItem clearButton) {
         if (mClear == null) {
             clearButton.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
-                    && mIterator.hasFinishedMissions());
+                    && mIterator.hasLocalFinishedMissions());
         }
 
         mClear = clearButton;
@@ -792,7 +820,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         mMenuActionsSuppressed = suppressed;
         if (mClear != null) {
             mClear.setVisible(!mMenuActionsSuppressed && !mIterator.isSearchActive()
-                    && mIterator.hasFinishedMissions());
+                    && mIterator.hasLocalFinishedMissions());
         }
         checkMasterButtonsVisibility();
     }
@@ -837,7 +865,21 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
 
     public void onResume() {
         mDeleter.resume();
+        refreshSyncedDownloadMetadata();
         HandlerCompat.postDelayed(mHandler, this::updater, UPDATER, 0);
+    }
+
+    private void refreshSyncedDownloadMetadata() {
+        compositeDisposable.add(
+                Single.fromCallable(() -> SyncedDownloadMetadataRepository.load(mContext))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(missions -> {
+                            mIterator.setAdditionalFinishedMissions(missions);
+                            applyChanges();
+                        }, error ->
+                                Log.w(TAG, "Could not load synchronized download metadata", error))
+        );
     }
 
     public void onPaused() {
@@ -898,6 +940,8 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         MenuItem queue;
         MenuItem showError;
         MenuItem delete;
+        MenuItem deleteEntry;
+        MenuItem downloadOnDevice;
         MenuItem source;
         MenuItem checksum;
 
@@ -934,14 +978,19 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             queue = menu.findItem(R.id.queue);
             showError = menu.findItem(R.id.error_message_view);
             delete = menu.findItem(R.id.delete);
+            deleteEntry = menu.findItem(R.id.delete_entry);
+            downloadOnDevice = menu.findItem(R.id.download_on_device);
             source = menu.findItem(R.id.source);
             checksum = menu.findItem(R.id.checksum);
 
             itemView.setHapticFeedbackEnabled(true);
 
             itemView.setOnClickListener(v -> {
-                if (item.mission instanceof FinishedMission)
+                if (item.mission instanceof MetadataOnlyFinishedMission) {
+                    downloadOnThisDevice((MetadataOnlyFinishedMission) item.mission);
+                } else if (item.mission instanceof FinishedMission) {
                     viewWithFileProvider(item.mission);
+                }
             });
 
             itemView.setOnLongClickListener(v -> {
@@ -960,12 +1009,15 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             queue.setVisible(false);
             showError.setVisible(false);
             delete.setVisible(false);
+            deleteEntry.setVisible(false);
+            downloadOnDevice.setVisible(false);
             source.setVisible(false);
             checksum.setVisible(false);
 
             DownloadMission mission = item.mission instanceof DownloadMission ? (DownloadMission) item.mission : null;
 
             if (mission != null) {
+                deleteEntry.setVisible(true);
                 if (mission.hasInvalidStorage()) {
                     retry.setVisible(true);
                     delete.setVisible(true);
@@ -996,9 +1048,12 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
                         queue.setVisible(flag);
                     }
                 }
+            } else if (item.mission instanceof MetadataOnlyFinishedMission) {
+                downloadOnDevice.setVisible(true);
             } else {
                 open.setVisible(true);
                 delete.setVisible(true);
+                deleteEntry.setVisible(true);
                 checksum.setVisible(true);
             }
 

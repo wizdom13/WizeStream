@@ -681,6 +681,13 @@ public final class NavigationHelper {
         context.startActivity(mIntent);
     }
 
+    public static void openDownloadDialog(final Context context, final String url) {
+        final Intent intent = new Intent(context, RouterActivity.class);
+        intent.setData(Uri.parse(url));
+        intent.putExtra(RouterActivity.EXTRA_FORCE_DOWNLOAD, true);
+        context.startActivity(intent);
+    }
+
     public static void openAbout(final Context context) {
         final Intent intent = new Intent(context, AboutActivity.class);
         context.startActivity(intent);
