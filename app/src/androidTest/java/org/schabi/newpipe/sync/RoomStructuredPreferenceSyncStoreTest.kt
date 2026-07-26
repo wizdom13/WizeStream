@@ -151,7 +151,6 @@ class RoomStructuredPreferenceSyncStoreTest {
             .putBoolean(searchPrivacyKey, true)
             .commit()
         tabletPreferences.edit()
-            .putString(themeKey, "light_theme")
             .putString(downloadPathKey, "content://tablet/private/downloads")
             .putBoolean(safKey, false)
             .putBoolean(decoderKey, false)
