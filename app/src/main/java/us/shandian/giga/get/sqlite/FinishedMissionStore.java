@@ -13,8 +13,8 @@ import androidx.annotation.NonNull;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.UUID;
 
-import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.FinishedMission;
 import us.shandian.giga.get.Mission;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
@@ -27,7 +27,7 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
     // TODO: use NewPipeSQLiteHelper ('s constants) when playlist branch is merged (?)
     private static final String DATABASE_NAME = "downloads.db";
 
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     /**
      * The table name of download missions (old)
@@ -56,6 +56,12 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
 
     private static final String KEY_PATH = "path";
 
+    private static final String KEY_SYNC_ID = "sync_id";
+
+    private static final String KEY_DISPLAY_NAME = "display_name";
+
+    private static final String KEY_MIME_TYPE = "mime_type";
+
     /**
      * The statement to create the table
      */
@@ -66,6 +72,10 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
                     KEY_DONE + " INTEGER NOT NULL, " +
                     KEY_TIMESTAMP + " INTEGER NOT NULL, " +
                     KEY_KIND + " TEXT NOT NULL, " +
+                    KEY_SYNC_ID + " TEXT NOT NULL DEFAULT '', " +
+                    KEY_DISPLAY_NAME + " TEXT NOT NULL DEFAULT '', " +
+                    KEY_MIME_TYPE + " TEXT NOT NULL DEFAULT '" +
+                    StoredFileHelper.DEFAULT_MIME + "', " +
                     " UNIQUE(" + KEY_TIMESTAMP + ", " + KEY_PATH + "));";
 
 
@@ -130,6 +140,17 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
 
             cursor.close();
             db.execSQL("DROP TABLE " + MISSIONS_TABLE_NAME_v2);
+            return;
+        }
+
+        if (oldVersion == 4) {
+            db.execSQL("ALTER TABLE " + FINISHED_TABLE_NAME + " ADD COLUMN " +
+                    KEY_SYNC_ID + " TEXT NOT NULL DEFAULT '';");
+            db.execSQL("ALTER TABLE " + FINISHED_TABLE_NAME + " ADD COLUMN " +
+                    KEY_DISPLAY_NAME + " TEXT NOT NULL DEFAULT '';");
+            db.execSQL("ALTER TABLE " + FINISHED_TABLE_NAME + " ADD COLUMN " +
+                    KEY_MIME_TYPE + " TEXT NOT NULL DEFAULT '" +
+                    StoredFileHelper.DEFAULT_MIME + "';");
         }
     }
 
@@ -146,6 +167,12 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
         values.put(KEY_DONE, downloadMission.length);
         values.put(KEY_TIMESTAMP, downloadMission.timestamp);
         values.put(KEY_KIND, String.valueOf(downloadMission.kind));
+        if (downloadMission instanceof FinishedMission) {
+            FinishedMission mission = (FinishedMission) downloadMission;
+            values.put(KEY_SYNC_ID, mission.syncId);
+            values.put(KEY_DISPLAY_NAME, mission.displayName);
+            values.put(KEY_MIME_TYPE, mission.mimeType);
+        }
         return values;
     }
 
@@ -162,6 +189,9 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
         mission.length = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_DONE));
         mission.timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_TIMESTAMP));
         mission.kind = kind.charAt(0);
+        mission.syncId = cursor.getString(cursor.getColumnIndexOrThrow(KEY_SYNC_ID));
+        mission.displayName = cursor.getString(cursor.getColumnIndexOrThrow(KEY_DISPLAY_NAME));
+        mission.mimeType = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MIME_TYPE));
 
         try {
             mission.storage = new StoredFileHelper(context,null, Uri.parse(path), "");
@@ -179,23 +209,67 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
     ///////////////////////////////////
 
     public ArrayList<FinishedMission> loadFinishedMissions() {
-        SQLiteDatabase database = getReadableDatabase();
+        SQLiteDatabase database = getWritableDatabase();
+        ensureDescriptiveMetadata(database);
         Cursor cursor = database.query(FINISHED_TABLE_NAME, null, null,
                 null, null, null, KEY_TIMESTAMP + " DESC");
 
         int count = cursor.getCount();
-        if (count == 0) return new ArrayList<>(1);
+        if (count == 0) {
+            cursor.close();
+            return new ArrayList<>(1);
+        }
 
         ArrayList<FinishedMission> result = new ArrayList<>(count);
         while (cursor.moveToNext()) {
             result.add(getMissionFromCursor(cursor));
         }
+        cursor.close();
 
         return result;
     }
 
-    public void addFinishedMission(DownloadMission downloadMission) {
-        ContentValues values = getValuesOfMission(Objects.requireNonNull(downloadMission));
+    public ArrayList<FinishedMission> loadCompletedDownloadMetadata() {
+        SQLiteDatabase database = getWritableDatabase();
+        ensureDescriptiveMetadata(database);
+        String[] columns = {
+                KEY_SYNC_ID,
+                KEY_SOURCE,
+                KEY_DONE,
+                KEY_TIMESTAMP,
+                KEY_KIND,
+                KEY_DISPLAY_NAME,
+                KEY_MIME_TYPE
+        };
+        Cursor cursor = database.query(FINISHED_TABLE_NAME, columns, null,
+                null, null, null, KEY_TIMESTAMP + " DESC");
+        ArrayList<FinishedMission> result = new ArrayList<>(cursor.getCount());
+        while (cursor.moveToNext()) {
+            FinishedMission mission = new FinishedMission();
+            String kind = cursor.getString(cursor.getColumnIndexOrThrow(KEY_KIND));
+            mission.syncId = cursor.getString(cursor.getColumnIndexOrThrow(KEY_SYNC_ID));
+            mission.source = cursor.getString(cursor.getColumnIndexOrThrow(KEY_SOURCE));
+            mission.length = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_DONE));
+            mission.timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_TIMESTAMP));
+            mission.kind = kind == null || kind.isEmpty() ? '?' : kind.charAt(0);
+            mission.displayName = cursor.getString(
+                    cursor.getColumnIndexOrThrow(KEY_DISPLAY_NAME)
+            );
+            mission.mimeType = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MIME_TYPE));
+            mission.storage = new StoredFileHelper(
+                    null,
+                    mission.displayName,
+                    mission.mimeType,
+                    ""
+            );
+            result.add(mission);
+        }
+        cursor.close();
+        return result;
+    }
+
+    public void addFinishedMission(FinishedMission finishedMission) {
+        ContentValues values = getValuesOfMission(Objects.requireNonNull(finishedMission));
         SQLiteDatabase database = getWritableDatabase();
         database.insert(FINISHED_TABLE_NAME, null, values);
     }
@@ -206,7 +280,14 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
         SQLiteDatabase database = getWritableDatabase();
 
         if (mission instanceof FinishedMission) {
-            if (mission.storage.isInvalid()) {
+            FinishedMission finishedMission = (FinishedMission) mission;
+            if (finishedMission.syncId != null && !finishedMission.syncId.isEmpty()) {
+                database.delete(
+                        FINISHED_TABLE_NAME,
+                        KEY_SYNC_ID + " = ?",
+                        new String[]{finishedMission.syncId}
+                );
+            } else if (mission.storage.isInvalid()) {
                 database.delete(FINISHED_TABLE_NAME, KEY_TIMESTAMP + " = ?", new String[]{ts});
             } else {
                 database.delete(FINISHED_TABLE_NAME, KEY_TIMESTAMP + " = ? AND " + KEY_PATH + " = ?", new String[]{
@@ -226,7 +307,15 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
         int rowsAffected;
 
         if (mission instanceof FinishedMission) {
-            if (mission.storage.isInvalid()) {
+            FinishedMission finishedMission = (FinishedMission) mission;
+            if (finishedMission.syncId != null && !finishedMission.syncId.isEmpty()) {
+                rowsAffected = database.update(
+                        FINISHED_TABLE_NAME,
+                        values,
+                        KEY_SYNC_ID + " = ?",
+                        new String[]{finishedMission.syncId}
+                );
+            } else if (mission.storage.isInvalid()) {
                 rowsAffected = database.update(FINISHED_TABLE_NAME, values, KEY_TIMESTAMP + " = ?", new String[]{ts});
             } else {
                 rowsAffected = database.update(FINISHED_TABLE_NAME, values, KEY_PATH + " = ?", new String[]{
@@ -239,6 +328,61 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
 
         if (rowsAffected != 1) {
             Log.e("FinishedMissionStore", "Expected 1 row to be affected by update but got " + rowsAffected);
+        }
+    }
+
+    private void ensureDescriptiveMetadata(SQLiteDatabase database) {
+        String[] columns = {
+                "rowid",
+                KEY_PATH,
+                KEY_SYNC_ID,
+                KEY_DISPLAY_NAME,
+                KEY_MIME_TYPE
+        };
+        try (Cursor cursor = database.query(
+                FINISHED_TABLE_NAME,
+                columns,
+                KEY_SYNC_ID + " = '' OR " + KEY_DISPLAY_NAME + " = '' OR " +
+                        KEY_MIME_TYPE + " = ''",
+                null,
+                null,
+                null,
+                null
+        )) {
+            while (cursor.moveToNext()) {
+                ContentValues values = new ContentValues();
+                String syncId = cursor.getString(cursor.getColumnIndexOrThrow(KEY_SYNC_ID));
+                String displayName = cursor.getString(
+                        cursor.getColumnIndexOrThrow(KEY_DISPLAY_NAME)
+                );
+                String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(KEY_MIME_TYPE));
+                if (syncId == null || syncId.isEmpty()) {
+                    values.put(KEY_SYNC_ID, UUID.randomUUID().toString());
+                }
+                if (displayName == null || displayName.isEmpty()) {
+                    String path = cursor.getString(cursor.getColumnIndexOrThrow(KEY_PATH));
+                    String pathName = Uri.parse(path).getLastPathSegment();
+                    values.put(
+                            KEY_DISPLAY_NAME,
+                            pathName == null || pathName.isEmpty() ? "download" : pathName
+                    );
+                }
+                if (mimeType == null || mimeType.isEmpty()) {
+                    values.put(KEY_MIME_TYPE, StoredFileHelper.DEFAULT_MIME);
+                }
+                if (values.size() > 0) {
+                    database.update(
+                            FINISHED_TABLE_NAME,
+                            values,
+                            "rowid = ?",
+                            new String[]{
+                                    String.valueOf(
+                                            cursor.getLong(cursor.getColumnIndexOrThrow("rowid"))
+                                    )
+                            }
+                    );
+                }
+            }
         }
     }
 }

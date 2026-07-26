@@ -134,6 +134,75 @@ class RoomStructuredPreferenceSyncStoreTest {
         )
     }
 
+    @Test
+    fun portableSettingsUseClosedAllowlistAndKeepLocalOnlyValues() {
+        val themeKey = context.getString(R.string.theme_key)
+        val downloadPathKey = context.getString(R.string.download_path_video_key)
+        val safKey = context.getString(R.string.storage_use_saf)
+        val decoderKey = context.getString(R.string.use_exoplayer_decoder_fallback_key)
+        val notificationKey = context.getString(R.string.enable_streams_notifications)
+        val searchPrivacyKey = context.getString(R.string.device_sync_search_history_key)
+        phonePreferences.edit()
+            .putString(themeKey, "dark_theme")
+            .putString(downloadPathKey, "content://phone/private/downloads")
+            .putBoolean(safKey, true)
+            .putBoolean(decoderKey, true)
+            .putBoolean(notificationKey, true)
+            .putBoolean(searchPrivacyKey, true)
+            .commit()
+        tabletPreferences.edit()
+            .putString(themeKey, "light_theme")
+            .putString(downloadPathKey, "content://tablet/private/downloads")
+            .putBoolean(safKey, false)
+            .putBoolean(decoderKey, false)
+            .putBoolean(notificationKey, false)
+            .putBoolean(searchPrivacyKey, false)
+            .commit()
+        val phoneStore = RoomStructuredPreferenceSyncStore(
+            context,
+            phoneDatabase,
+            newPeerId(),
+            phonePreferences
+        )
+        val tabletStore = RoomStructuredPreferenceSyncStore(
+            context,
+            tabletDatabase,
+            newPeerId(),
+            tabletPreferences
+        )
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+
+        val request = phone.createRequest(
+            tabletStore.localPeerId,
+            StructuredPreferenceCategory.SETTINGS
+        )
+        assertEquals(
+            listOf(PortableSettingId.THEME),
+            request.changes.mapNotNull {
+                it.record?.portableSetting?.settingId
+            }
+        )
+
+        synchronize(
+            StructuredPreferenceCategory.SETTINGS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals("dark_theme", tabletPreferences.getString(themeKey, null))
+        assertEquals(
+            "content://tablet/private/downloads",
+            tabletPreferences.getString(downloadPathKey, null)
+        )
+        assertEquals(false, tabletPreferences.getBoolean(safKey, true))
+        assertEquals(false, tabletPreferences.getBoolean(decoderKey, true))
+        assertEquals(false, tabletPreferences.getBoolean(notificationKey, true))
+        assertEquals(false, tabletPreferences.getBoolean(searchPrivacyKey, true))
+    }
+
     private fun seedFeedGroups(database: AppDatabase, memberUrl: String) {
         val phone = SubscriptionEntity(
             serviceId = SERVICE_ID,

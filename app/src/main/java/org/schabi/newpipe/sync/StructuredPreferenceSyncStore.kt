@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import java.security.MessageDigest
+import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -27,6 +28,8 @@ import org.schabi.newpipe.database.sync.StructuredPreferenceSyncRecordEntity
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
 import org.schabi.newpipe.settings.tabs.Tab
 import org.schabi.newpipe.settings.tabs.TabsJsonHelper
+import org.schabi.newpipe.streams.io.StoredFileHelper
+import us.shandian.giga.get.sqlite.FinishedMissionStore
 
 internal interface StructuredPreferenceSyncStore {
     val localPeerId: String
@@ -60,7 +63,8 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private val database: AppDatabase,
     override val localPeerId: String,
     private val preferences: SharedPreferences =
-        PreferenceManager.getDefaultSharedPreferences(context)
+        PreferenceManager.getDefaultSharedPreferences(context),
+    private val finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context)
 ) : StructuredPreferenceSyncStore {
     private val syncDao = database.structuredPreferenceSyncDAO()
     private val feedGroupDao = database.feedGroupDAO()
@@ -85,6 +89,11 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                     reconcileChannelProfiles()
 
                 StructuredPreferenceCategory.FILTERS -> reconcileFilters()
+
+                StructuredPreferenceCategory.SETTINGS -> reconcileSettings()
+
+                StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
+                    reconcileCompletedDownloads()
             }
             saveSnapshot(category)
         }
@@ -385,6 +394,53 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         }
     }
 
+    private fun reconcileSettings() {
+        val desired = portableSettingSpecs().mapNotNull { spec ->
+            currentPortableSetting(spec)?.let { setting ->
+                StructuredPreferenceRecordId.portableSetting(setting.settingId) to setting
+            }
+        }.toMap()
+        desired.forEach { (recordId, setting) ->
+            saveLocalUpsert(
+                category = StructuredPreferenceCategory.SETTINGS,
+                recordId = recordId,
+                recordType = StructuredPreferenceRecordType.PORTABLE_SETTING,
+                record = SyncedStructuredPreferenceRecord(portableSetting = setting)
+            )
+        }
+        syncDao.getRecordsByType(
+            StructuredPreferenceCategory.SETTINGS.name,
+            StructuredPreferenceRecordType.PORTABLE_SETTING.name
+        ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
+            .filterNot { it.recordId in desired }
+            .forEach(::saveLocalDelete)
+    }
+
+    private fun reconcileCompletedDownloads() {
+        val desired = currentCompletedDownloads().associateBy(
+            SyncedCompletedDownload::syncId
+        )
+        desired.forEach { (recordId, download) ->
+            saveLocalUpsert(
+                category = StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+                recordId = recordId,
+                recordType = StructuredPreferenceRecordType.COMPLETED_DOWNLOAD,
+                record = SyncedStructuredPreferenceRecord(
+                    completedDownload = download
+                )
+            )
+        }
+        syncDao.getRecordsByType(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS.name,
+            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD.name
+        ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
+            .filter { record ->
+                decodeRecord(record).completedDownload?.ownerPeerId == localPeerId
+            }
+            .filterNot { it.recordId in desired }
+            .forEach(::saveLocalDelete)
+    }
+
     private fun saveLocalUpsert(
         category: StructuredPreferenceCategory,
         recordId: String,
@@ -479,6 +535,10 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 materializeChannelProfiles()
 
             StructuredPreferenceCategory.FILTERS -> materializeFilters()
+
+            StructuredPreferenceCategory.SETTINGS -> materializeSettings()
+
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS -> Unit
         }
     }
 
@@ -638,6 +698,48 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 editor.putStringSet(spec.preferenceKey, filter.values.toSet())
             }
         editor.commit()
+    }
+
+    private fun materializeSettings() {
+        val specs = portableSettingSpecs().associateBy(PortableSettingSpec::id)
+        val editor = preferences.edit()
+        syncDao.getRecordsByType(
+            StructuredPreferenceCategory.SETTINGS.name,
+            StructuredPreferenceRecordType.PORTABLE_SETTING.name
+        ).forEach { entity ->
+            val setting = decodeRecord(entity).portableSetting
+                ?: throw StructuredPreferenceSyncException(
+                    "Stored portable setting data is invalid"
+                )
+            val spec = specs[setting.settingId]
+                ?: throw StructuredPreferenceSyncException(
+                    "Stored portable setting is not allowlisted"
+                )
+            if (entity.isDeleted) {
+                editor.remove(spec.preferenceKey)
+            } else {
+                when (setting.settingId.valueType) {
+                    PortableSettingValueType.BOOLEAN ->
+                        editor.putBoolean(
+                            spec.preferenceKey,
+                            requireNotNull(setting.booleanValue)
+                        )
+
+                    PortableSettingValueType.STRING ->
+                        editor.putString(
+                            spec.preferenceKey,
+                            requireNotNull(setting.stringValue)
+                        )
+
+                    PortableSettingValueType.FLOAT ->
+                        editor.putFloat(
+                            spec.preferenceKey,
+                            requireNotNull(setting.floatValue)
+                        )
+                }
+            }
+        }
+        editor.apply()
     }
 
     private fun toSyncedHomeTab(tab: Tab): SyncedHomeTab? {
@@ -896,8 +998,165 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                     FilterSnapshot(spec.id, currentFilterValues(spec).sorted())
                 }
             )
+
+            StructuredPreferenceCategory.SETTINGS -> JSON.encodeToString(
+                portableSettingSpecs().mapNotNull(::currentPortableSetting)
+            )
+
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
+                JSON.encodeToString(currentCompletedDownloads())
         }
         return digest(snapshot)
+    }
+
+    private fun portableSettingSpecs(): List<PortableSettingSpec> = listOf(
+        portableSetting(PortableSettingId.SERVICE, R.string.current_service_key),
+        portableSetting(PortableSettingId.CONTENT_COUNTRY, R.string.content_country_key),
+        portableSetting(PortableSettingId.CONTENT_LANGUAGE, R.string.content_language_key),
+        portableSetting(PortableSettingId.THEME, R.string.theme_key),
+        portableSetting(PortableSettingId.NIGHT_THEME, R.string.night_theme_key),
+        portableSetting(PortableSettingId.THEME_COLOR, R.string.theme_color_key),
+        portableSetting(PortableSettingId.DEFAULT_RESOLUTION, R.string.default_resolution_key),
+        portableSetting(
+            PortableSettingId.DEFAULT_POPUP_RESOLUTION,
+            R.string.default_popup_resolution_key
+        ),
+        portableSetting(
+            PortableSettingId.SHOW_HIGHER_RESOLUTIONS,
+            R.string.show_higher_resolutions_key
+        ),
+        portableSetting(
+            PortableSettingId.DEFAULT_VIDEO_FORMAT,
+            R.string.default_video_format_key
+        ),
+        portableSetting(
+            PortableSettingId.DEFAULT_AUDIO_FORMAT,
+            R.string.default_audio_format_key
+        ),
+        portableSetting(PortableSettingId.AUTOPLAY, R.string.autoplay_key),
+        portableSetting(PortableSettingId.MINIMIZE_ON_EXIT, R.string.minimize_on_exit_key),
+        portableSetting(PortableSettingId.SEEK_DURATION, R.string.seek_duration_key),
+        portableSetting(
+            PortableSettingId.SEEK_PREVIEW_QUALITY,
+            R.string.seekbar_preview_thumbnail_key
+        ),
+        portableSetting(
+            PortableSettingId.PREFER_ORIGINAL_AUDIO,
+            R.string.prefer_original_audio_key
+        ),
+        portableSetting(
+            PortableSettingId.PREFER_DESCRIPTIVE_AUDIO,
+            R.string.prefer_descriptive_audio_key
+        ),
+        portableSetting(
+            PortableSettingId.SHOW_AGE_RESTRICTED_CONTENT,
+            R.string.show_age_restricted_content
+        ),
+        portableSetting(
+            PortableSettingId.YOUTUBE_RESTRICTED_MODE,
+            R.string.youtube_restricted_mode_enabled
+        ),
+        portableSetting(PortableSettingId.SHOW_COMMENTS, R.string.show_comments_key),
+        portableSetting(PortableSettingId.SHOW_DESCRIPTION, R.string.show_description_key),
+        portableSetting(PortableSettingId.SHOW_META_INFO, R.string.show_meta_info_key),
+        portableSetting(PortableSettingId.SHOW_NEXT_VIDEO, R.string.show_next_video_key),
+        portableSetting(PortableSettingId.SHOW_THUMBNAILS, R.string.show_thumbnail_key),
+        portableSetting(PortableSettingId.IMAGE_QUALITY, R.string.image_quality_key),
+        portableSetting(PortableSettingId.LIST_VIEW_MODE, R.string.list_view_mode_key),
+        portableSetting(
+            PortableSettingId.PREFERRED_OPEN_ACTION,
+            R.string.preferred_open_action_key
+        ),
+        portableSetting(
+            PortableSettingId.SHOW_HOLD_TO_APPEND,
+            R.string.show_hold_to_append_key
+        ),
+        portableSetting(
+            PortableSettingId.SHOW_PLAY_WITH_KODI,
+            R.string.show_play_with_kodi_key
+        ),
+        portableSetting(
+            PortableSettingId.START_FULLSCREEN,
+            R.string.start_main_player_fullscreen_key
+        ),
+        portableSetting(PortableSettingId.AUTO_QUEUE, R.string.auto_queue_key),
+        portableSetting(PortableSettingId.INEXACT_SEEK, R.string.use_inexact_seek_key),
+        portableSetting(
+            PortableSettingId.CLEAR_QUEUE_CONFIRMATION,
+            R.string.clear_queue_confirmation_key
+        ),
+        portableSetting(PortableSettingId.PLAYBACK_SPEED, R.string.playback_speed_key),
+        portableSetting(PortableSettingId.PLAYBACK_PITCH, R.string.playback_pitch_key),
+        portableSetting(
+            PortableSettingId.PLAYBACK_SKIP_SILENCE,
+            R.string.playback_skip_silence_key
+        )
+    )
+
+    private fun portableSetting(
+        id: PortableSettingId,
+        preferenceKeyResource: Int
+    ): PortableSettingSpec {
+        return PortableSettingSpec(id, context.getString(preferenceKeyResource))
+    }
+
+    private fun currentPortableSetting(
+        spec: PortableSettingSpec
+    ): SyncedPortableSetting? {
+        val value = preferences.all[spec.preferenceKey] ?: return null
+        return when (spec.id.valueType) {
+            PortableSettingValueType.BOOLEAN -> (value as? Boolean)?.let {
+                SyncedPortableSetting(spec.id, booleanValue = it)
+            }
+
+            PortableSettingValueType.STRING -> (value as? String)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() && it.length <= MAX_PORTABLE_SETTING_VALUE_LENGTH }
+                ?.let {
+                    SyncedPortableSetting(spec.id, stringValue = it)
+                }
+
+            PortableSettingValueType.FLOAT -> (value as? Float)
+                ?.takeIf { it.isFinite() }
+                ?.let {
+                    SyncedPortableSetting(spec.id, floatValue = it)
+                }
+        }
+    }
+
+    private fun currentCompletedDownloads(): List<SyncedCompletedDownload> {
+        return finishedMissionStore.loadCompletedDownloadMetadata().mapNotNull { mission ->
+            val syncId = mission.syncId?.takeIf(::isCanonicalUuid)
+                ?: return@mapNotNull null
+            val sourceUrl = mission.source?.trim()
+                ?.takeIf { it.isNotEmpty() && it.length <= MAX_STRUCTURED_URL_LENGTH }
+                ?: return@mapNotNull null
+            val displayName = mission.displayName?.trim()
+                ?.take(MAX_DOWNLOAD_DISPLAY_NAME_LENGTH)
+                ?.takeIf(String::isNotEmpty)
+                ?: "download"
+            val mimeType = mission.mimeType?.trim()
+                ?.take(MAX_DOWNLOAD_MIME_TYPE_LENGTH)
+                ?.takeIf(String::isNotEmpty)
+                ?: StoredFileHelper.DEFAULT_MIME
+            val mediaKind = mission.kind.toString()
+                .takeIf { it[0] in SUPPORTED_LOCAL_DOWNLOAD_KINDS }
+                ?: "?"
+            SyncedCompletedDownload(
+                syncId = syncId,
+                ownerPeerId = localPeerId,
+                sourceUrl = sourceUrl,
+                displayName = displayName,
+                mimeType = mimeType,
+                sizeBytes = mission.length.coerceAtLeast(0),
+                completedAtEpochMillis = mission.timestamp.coerceAtLeast(1),
+                mediaKind = mediaKind
+            )
+        }.sortedBy(SyncedCompletedDownload::syncId)
+    }
+
+    private fun isCanonicalUuid(value: String): Boolean {
+        return runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false)
     }
 
     private fun saveSnapshot(category: StructuredPreferenceCategory) {
@@ -1041,10 +1300,16 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         val defaultValuesResource: Int
     )
 
+    private data class PortableSettingSpec(
+        val id: PortableSettingId,
+        val preferenceKey: String
+    )
+
     companion object {
         private const val SPEED_SUFFIX = ".speed"
         private const val QUALITY_SUFFIX = ".quality"
         private const val CAPTION_SUFFIX = ".caption"
+        private val SUPPORTED_LOCAL_DOWNLOAD_KINDS = setOf('a', 'v', 's', '?')
         private val JSON = Json {
             encodeDefaults = true
             explicitNulls = false

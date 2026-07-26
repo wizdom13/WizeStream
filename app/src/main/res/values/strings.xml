@@ -241,6 +241,8 @@
     <string name="device_sync_category_home_tabs">Home tabs</string>
     <string name="device_sync_category_channel_profiles">Channel playback profiles</string>
     <string name="device_sync_category_filters">Content filter selections</string>
+    <string name="device_sync_category_settings">Allowlisted settings</string>
+    <string name="device_sync_category_completed_downloads">Completed download metadata</string>
     <string name="device_sync_sync_category_succeeded">%1$s — sent %2$d, received %3$d</string>
     <string name="device_sync_sync_category_failed">%1$s — failed: %2$s</string>
     <string name="device_sync_sync_category_disabled">%1$s — disabled on this device</string>

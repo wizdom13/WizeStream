@@ -332,6 +332,12 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
 
                 StructuredPreferenceCategory.FILTERS ->
                     R.string.device_sync_category_filters
+
+                StructuredPreferenceCategory.SETTINGS ->
+                    R.string.device_sync_category_settings
+
+                StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
+                    R.string.device_sync_category_completed_downloads
             }
         )
     }

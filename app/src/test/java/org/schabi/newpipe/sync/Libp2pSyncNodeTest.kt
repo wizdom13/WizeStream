@@ -305,6 +305,32 @@ class Libp2pSyncNodeTest {
             recordType = StructuredPreferenceRecordType.FILTER_SET,
             record = SyncedStructuredPreferenceRecord(filterSet = filter)
         )
+        val setting = SyncedPortableSetting(
+            PortableSettingId.THEME,
+            stringValue = "dark_theme"
+        )
+        tabletPreferences.upsert(
+            category = StructuredPreferenceCategory.SETTINGS,
+            recordId = StructuredPreferenceRecordId.portableSetting(setting.settingId),
+            recordType = StructuredPreferenceRecordType.PORTABLE_SETTING,
+            record = SyncedStructuredPreferenceRecord(portableSetting = setting)
+        )
+        val download = SyncedCompletedDownload(
+            syncId = DOWNLOAD_SYNC_ID,
+            ownerPeerId = tabletPreferences.localPeerId,
+            sourceUrl = "https://example.com/watch/download",
+            displayName = "download.mp4",
+            mimeType = "video/mp4",
+            sizeBytes = 4_096,
+            completedAtEpochMillis = 1_000,
+            mediaKind = "v"
+        )
+        tabletPreferences.upsert(
+            category = StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            recordId = download.syncId,
+            recordType = StructuredPreferenceRecordType.COMPLETED_DOWNLOAD,
+            record = SyncedStructuredPreferenceRecord(completedDownload = download)
+        )
         val tablet = Libp2pSyncNode(
             stateRepository = tabletState,
             pairingSecurity = PairingSecurity(),
@@ -329,19 +355,45 @@ class Libp2pSyncNodeTest {
             phone.start()
             val trustedTablet = phone.pair(tablet.createPairingCode())
 
-            val result = phone.syncStructuredPreferences(
+            val filterResult = phone.syncStructuredPreferences(
                 trustedTablet,
                 StructuredPreferenceCategory.FILTERS
             )
+            val settingResult = phone.syncStructuredPreferences(
+                trustedTablet,
+                StructuredPreferenceCategory.SETTINGS
+            )
+            val downloadResult = phone.syncStructuredPreferences(
+                trustedTablet,
+                StructuredPreferenceCategory.COMPLETED_DOWNLOADS
+            )
 
-            assertEquals(0, result.sentChanges)
-            assertEquals(1, result.receivedChanges)
+            assertEquals(0, filterResult.sentChanges)
+            assertEquals(1, filterResult.receivedChanges)
             assertEquals(
                 filter,
                 phonePreferences.liveRecords(
                     StructuredPreferenceCategory.FILTERS,
                     StructuredPreferenceRecordType.FILTER_SET
                 ).single().filterSet
+            )
+            assertEquals(0, settingResult.sentChanges)
+            assertEquals(1, settingResult.receivedChanges)
+            assertEquals(
+                setting,
+                phonePreferences.liveRecords(
+                    StructuredPreferenceCategory.SETTINGS,
+                    StructuredPreferenceRecordType.PORTABLE_SETTING
+                ).single().portableSetting
+            )
+            assertEquals(0, downloadResult.sentChanges)
+            assertEquals(1, downloadResult.receivedChanges)
+            assertEquals(
+                download,
+                phonePreferences.liveRecords(
+                    StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+                    StructuredPreferenceRecordType.COMPLETED_DOWNLOAD
+                ).single().completedDownload
             )
         } finally {
             phone.stop()
@@ -368,6 +420,7 @@ class Libp2pSyncNodeTest {
         private const val HISTORY_STREAM_ID = 1L
         private const val HISTORY_STREAM_URL =
             "https://example.com/watch/history"
+        private const val DOWNLOAD_SYNC_ID = "33333333-3333-4333-8333-333333333333"
     }
 
     private class InMemorySyncStateRepository : SyncStateRepository {

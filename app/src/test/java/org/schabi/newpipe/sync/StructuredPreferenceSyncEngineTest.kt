@@ -189,6 +189,112 @@ class StructuredPreferenceSyncEngineTest {
         assertFalse(repeatRequest.hasMore)
     }
 
+    @Test
+    fun `portable settings merge by semantic identity and latest update wins`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+        phoneStore.upsertSetting(
+            SyncedPortableSetting(
+                PortableSettingId.THEME,
+                stringValue = "dark_theme"
+            )
+        )
+        tabletStore.upsertSetting(
+            SyncedPortableSetting(
+                PortableSettingId.DEFAULT_RESOLUTION,
+                stringValue = "1080p"
+            )
+        )
+
+        synchronize(
+            StructuredPreferenceCategory.SETTINGS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            setOf(
+                PortableSettingId.THEME,
+                PortableSettingId.DEFAULT_RESOLUTION
+            ),
+            phoneStore.settingIds()
+        )
+        assertEquals(phoneStore.settingIds(), tabletStore.settingIds())
+
+        tabletStore.upsertSetting(
+            SyncedPortableSetting(
+                PortableSettingId.THEME,
+                stringValue = "black_theme"
+            )
+        )
+        synchronize(
+            StructuredPreferenceCategory.SETTINGS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals("black_theme", phoneStore.setting(PortableSettingId.THEME).stringValue)
+        assertEquals(
+            phoneStore.setting(PortableSettingId.THEME),
+            tabletStore.setting(PortableSettingId.THEME)
+        )
+    }
+
+    @Test
+    fun `completed download metadata unions and deletion tombstones converge`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+        val phoneDownload = completedDownload(
+            PHONE_DOWNLOAD_ID,
+            phoneStore.localPeerId,
+            "phone.mp4"
+        )
+        val tabletDownload = completedDownload(
+            TABLET_DOWNLOAD_ID,
+            tabletStore.localPeerId,
+            "tablet.webm"
+        )
+        phoneStore.upsertDownload(phoneDownload)
+        tabletStore.upsertDownload(tabletDownload)
+
+        synchronize(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            setOf(PHONE_DOWNLOAD_ID, TABLET_DOWNLOAD_ID),
+            phoneStore.downloadIds()
+        )
+        assertEquals(phoneStore.downloadIds(), tabletStore.downloadIds())
+
+        phoneStore.delete(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            PHONE_DOWNLOAD_ID
+        )
+        synchronize(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(setOf(TABLET_DOWNLOAD_ID), phoneStore.downloadIds())
+        assertEquals(phoneStore.downloadIds(), tabletStore.downloadIds())
+    }
+
     private fun TestStructuredPreferenceSyncStore.upsertMembership(
         membership: SyncedFeedGroupMembership
     ) {
@@ -279,6 +385,67 @@ class StructuredPreferenceSyncEngineTest {
         )
     }
 
+    private fun TestStructuredPreferenceSyncStore.upsertSetting(
+        setting: SyncedPortableSetting
+    ) {
+        upsert(
+            category = StructuredPreferenceCategory.SETTINGS,
+            recordId = StructuredPreferenceRecordId.portableSetting(setting.settingId),
+            recordType = StructuredPreferenceRecordType.PORTABLE_SETTING,
+            record = SyncedStructuredPreferenceRecord(portableSetting = setting)
+        )
+    }
+
+    private fun TestStructuredPreferenceSyncStore.settingIds(): Set<PortableSettingId> {
+        return liveRecords(
+            StructuredPreferenceCategory.SETTINGS,
+            StructuredPreferenceRecordType.PORTABLE_SETTING
+        ).mapNotNull { it.portableSetting?.settingId }.toSet()
+    }
+
+    private fun TestStructuredPreferenceSyncStore.setting(
+        id: PortableSettingId
+    ): SyncedPortableSetting {
+        return liveRecords(
+            StructuredPreferenceCategory.SETTINGS,
+            StructuredPreferenceRecordType.PORTABLE_SETTING
+        ).mapNotNull(SyncedStructuredPreferenceRecord::portableSetting)
+            .single { it.settingId == id }
+    }
+
+    private fun TestStructuredPreferenceSyncStore.upsertDownload(
+        download: SyncedCompletedDownload
+    ) {
+        upsert(
+            category = StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            recordId = download.syncId,
+            recordType = StructuredPreferenceRecordType.COMPLETED_DOWNLOAD,
+            record = SyncedStructuredPreferenceRecord(completedDownload = download)
+        )
+    }
+
+    private fun TestStructuredPreferenceSyncStore.downloadIds(): Set<String> {
+        return liveRecords(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD
+        ).mapNotNull { it.completedDownload?.syncId }.toSet()
+    }
+
+    private fun completedDownload(
+        syncId: String,
+        ownerPeerId: String,
+        displayName: String
+    ) = SyncedCompletedDownload(
+        syncId = syncId,
+        ownerPeerId = ownerPeerId,
+        sourceUrl = "https://example.com/watch/$syncId",
+        displayName = displayName,
+        mimeType = "video/mp4",
+        sizeBytes = 1_024,
+        completedAtEpochMillis = 1_000,
+        mediaKind = "v"
+    )
+
     private fun membership(
         groupId: String,
         url: String
@@ -329,6 +496,8 @@ class StructuredPreferenceSyncEngineTest {
         private const val SERVICE_ID = 0
         private const val PHONE_CHANNEL_URL = "https://example.com/channel/phone"
         private const val TABLET_CHANNEL_URL = "https://example.com/channel/tablet"
+        private const val PHONE_DOWNLOAD_ID = "11111111-1111-4111-8111-111111111111"
+        private const val TABLET_DOWNLOAD_ID = "22222222-2222-4222-8222-222222222222"
         private val PROFILE_KEY = CHANNEL_PROFILE_PREFIX + SERVICE_ID + "." + "a".repeat(64)
     }
 }

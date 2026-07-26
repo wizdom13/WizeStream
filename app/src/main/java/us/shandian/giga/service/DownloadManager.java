@@ -442,8 +442,9 @@ public class DownloadManager {
     void setFinished(DownloadMission mission) {
         synchronized (this) {
             mMissionsPending.remove(mission);
-            mMissionsFinished.add(0, new FinishedMission(mission));
-            mFinishedMissionStore.addFinishedMission(mission);
+            FinishedMission finishedMission = new FinishedMission(mission);
+            mMissionsFinished.add(0, finishedMission);
+            mFinishedMissionStore.addFinishedMission(finishedMission);
         }
     }
 

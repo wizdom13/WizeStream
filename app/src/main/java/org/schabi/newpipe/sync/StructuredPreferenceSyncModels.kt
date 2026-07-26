@@ -21,6 +21,9 @@ internal const val MAX_STRUCTURED_NAME_LENGTH = 512
 internal const val MAX_STRUCTURED_URL_LENGTH = 4_096
 internal const val MAX_FILTER_VALUES = 64
 internal const val MAX_FILTER_VALUE_LENGTH = 128
+internal const val MAX_PORTABLE_SETTING_VALUE_LENGTH = 1_024
+internal const val MAX_DOWNLOAD_DISPLAY_NAME_LENGTH = 512
+internal const val MAX_DOWNLOAD_MIME_TYPE_LENGTH = 255
 internal const val CHANNEL_PROFILE_PREFIX = "channel_playback_profile.v1."
 
 @Serializable
@@ -28,7 +31,9 @@ enum class StructuredPreferenceCategory {
     FEED_GROUPS,
     HOME_TABS,
     CHANNEL_PROFILES,
-    FILTERS
+    FILTERS,
+    SETTINGS,
+    COMPLETED_DOWNLOADS
 }
 
 @Serializable
@@ -39,7 +44,9 @@ internal enum class StructuredPreferenceRecordType {
     HOME_TAB,
     HOME_TAB_ORDER,
     CHANNEL_PROFILE_FIELD,
-    FILTER_SET
+    FILTER_SET,
+    PORTABLE_SETTING,
+    COMPLETED_DOWNLOAD
 }
 
 @Serializable
@@ -125,6 +132,98 @@ internal data class SyncedFilterSet(
     val values: List<String>
 )
 
+internal enum class PortableSettingValueType {
+    BOOLEAN,
+    STRING,
+    FLOAT
+}
+
+@Serializable
+internal enum class PortableSettingId {
+    SERVICE,
+    CONTENT_COUNTRY,
+    CONTENT_LANGUAGE,
+    THEME,
+    NIGHT_THEME,
+    THEME_COLOR,
+    DEFAULT_RESOLUTION,
+    DEFAULT_POPUP_RESOLUTION,
+    SHOW_HIGHER_RESOLUTIONS,
+    DEFAULT_VIDEO_FORMAT,
+    DEFAULT_AUDIO_FORMAT,
+    AUTOPLAY,
+    MINIMIZE_ON_EXIT,
+    SEEK_DURATION,
+    SEEK_PREVIEW_QUALITY,
+    PREFER_ORIGINAL_AUDIO,
+    PREFER_DESCRIPTIVE_AUDIO,
+    SHOW_AGE_RESTRICTED_CONTENT,
+    YOUTUBE_RESTRICTED_MODE,
+    SHOW_COMMENTS,
+    SHOW_DESCRIPTION,
+    SHOW_META_INFO,
+    SHOW_NEXT_VIDEO,
+    SHOW_THUMBNAILS,
+    IMAGE_QUALITY,
+    LIST_VIEW_MODE,
+    PREFERRED_OPEN_ACTION,
+    SHOW_HOLD_TO_APPEND,
+    SHOW_PLAY_WITH_KODI,
+    START_FULLSCREEN,
+    AUTO_QUEUE,
+    INEXACT_SEEK,
+    CLEAR_QUEUE_CONFIRMATION,
+    PLAYBACK_SPEED,
+    PLAYBACK_PITCH,
+    PLAYBACK_SKIP_SILENCE;
+
+    val valueType: PortableSettingValueType
+        get() = when (this) {
+            SHOW_HIGHER_RESOLUTIONS,
+            PREFER_ORIGINAL_AUDIO,
+            PREFER_DESCRIPTIVE_AUDIO,
+            SHOW_AGE_RESTRICTED_CONTENT,
+            YOUTUBE_RESTRICTED_MODE,
+            SHOW_COMMENTS,
+            SHOW_DESCRIPTION,
+            SHOW_META_INFO,
+            SHOW_NEXT_VIDEO,
+            SHOW_THUMBNAILS,
+            SHOW_HOLD_TO_APPEND,
+            SHOW_PLAY_WITH_KODI,
+            START_FULLSCREEN,
+            AUTO_QUEUE,
+            INEXACT_SEEK,
+            CLEAR_QUEUE_CONFIRMATION,
+            PLAYBACK_SKIP_SILENCE -> PortableSettingValueType.BOOLEAN
+
+            PLAYBACK_SPEED,
+            PLAYBACK_PITCH -> PortableSettingValueType.FLOAT
+
+            else -> PortableSettingValueType.STRING
+        }
+}
+
+@Serializable
+internal data class SyncedPortableSetting(
+    val settingId: PortableSettingId,
+    val booleanValue: Boolean? = null,
+    val stringValue: String? = null,
+    val floatValue: Float? = null
+)
+
+@Serializable
+internal data class SyncedCompletedDownload(
+    val syncId: String,
+    val ownerPeerId: String,
+    val sourceUrl: String,
+    val displayName: String,
+    val mimeType: String,
+    val sizeBytes: Long,
+    val completedAtEpochMillis: Long,
+    val mediaKind: String
+)
+
 @Serializable
 internal data class SyncedStructuredPreferenceRecord(
     val feedGroup: SyncedFeedGroup? = null,
@@ -133,7 +232,9 @@ internal data class SyncedStructuredPreferenceRecord(
     val homeTab: SyncedHomeTab? = null,
     val homeTabOrder: SyncedHomeTabOrder? = null,
     val channelProfileField: SyncedChannelProfileField? = null,
-    val filterSet: SyncedFilterSet? = null
+    val filterSet: SyncedFilterSet? = null,
+    val portableSetting: SyncedPortableSetting? = null,
+    val completedDownload: SyncedCompletedDownload? = null
 )
 
 @Serializable
@@ -310,7 +411,9 @@ internal object StructuredPreferenceSyncValidation {
             record.homeTab,
             record.homeTabOrder,
             record.channelProfileField,
-            record.filterSet
+            record.filterSet,
+            record.portableSetting,
+            record.completedDownload
         )
         if (populatedRecords.size != 1) {
             throw StructuredPreferenceSyncException(
@@ -428,6 +531,102 @@ internal object StructuredPreferenceSyncValidation {
                     invalidRecord("Filter set data is invalid")
                 }
             }
+
+            StructuredPreferenceRecordType.PORTABLE_SETTING -> {
+                requireCategory(change, StructuredPreferenceCategory.SETTINGS)
+                requireNoParent(change)
+                val setting = record.portableSetting
+                    ?: invalidRecord("Portable setting data is missing")
+                validatePortableSetting(setting)
+                if (
+                    change.recordId !=
+                    StructuredPreferenceRecordId.portableSetting(setting.settingId)
+                ) {
+                    invalidRecord("The portable setting identity is invalid")
+                }
+            }
+
+            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD -> {
+                requireCategory(change, StructuredPreferenceCategory.COMPLETED_DOWNLOADS)
+                requireNoParent(change)
+                val download = record.completedDownload
+                    ?: invalidRecord("Completed download data is missing")
+                validateCompletedDownload(change, download)
+            }
+        }
+    }
+
+    private fun validatePortableSetting(setting: SyncedPortableSetting) {
+        val populatedValues = listOfNotNull(
+            setting.booleanValue,
+            setting.stringValue,
+            setting.floatValue
+        )
+        if (populatedValues.size != 1) {
+            invalidRecord("Portable setting data is ambiguous")
+        }
+        when (setting.settingId.valueType) {
+            PortableSettingValueType.BOOLEAN -> {
+                if (
+                    setting.booleanValue == null ||
+                    setting.stringValue != null ||
+                    setting.floatValue != null
+                ) {
+                    invalidRecord("Portable Boolean setting data is invalid")
+                }
+            }
+
+            PortableSettingValueType.STRING -> {
+                if (
+                    setting.booleanValue != null ||
+                    setting.stringValue.isNullOrBlank() ||
+                    setting.stringValue != setting.stringValue.trim() ||
+                    setting.stringValue.length > MAX_PORTABLE_SETTING_VALUE_LENGTH ||
+                    setting.floatValue != null
+                ) {
+                    invalidRecord("Portable String setting data is invalid")
+                }
+            }
+
+            PortableSettingValueType.FLOAT -> {
+                val value = setting.floatValue
+                if (
+                    setting.booleanValue != null ||
+                    setting.stringValue != null ||
+                    value == null ||
+                    !value.isFinite() ||
+                    value !in MIN_PORTABLE_FLOAT_VALUE..MAX_PORTABLE_FLOAT_VALUE
+                ) {
+                    invalidRecord("Portable Float setting data is invalid")
+                }
+            }
+        }
+    }
+
+    private fun validateCompletedDownload(
+        change: StructuredPreferenceChange,
+        download: SyncedCompletedDownload
+    ) {
+        validateUuid(download.syncId)
+        validatePeerId(download.ownerPeerId)
+        if (
+            change.recordId != download.syncId ||
+            change.originPeerId != download.ownerPeerId ||
+            download.sourceUrl.isBlank() ||
+            download.sourceUrl != download.sourceUrl.trim() ||
+            download.sourceUrl.length > MAX_STRUCTURED_URL_LENGTH ||
+            download.displayName.isBlank() ||
+            download.displayName != download.displayName.trim() ||
+            download.displayName.length > MAX_DOWNLOAD_DISPLAY_NAME_LENGTH ||
+            download.mimeType.isBlank() ||
+            download.mimeType != download.mimeType.trim() ||
+            download.mimeType.length > MAX_DOWNLOAD_MIME_TYPE_LENGTH ||
+            download.sizeBytes < 0 ||
+            download.completedAtEpochMillis <= 0 ||
+            download.mediaKind.length != 1 ||
+            download.mediaKind[0] !in SUPPORTED_DOWNLOAD_KINDS
+        ) {
+            invalidRecord("Completed download data is invalid")
         }
     }
 
@@ -628,7 +827,10 @@ internal object StructuredPreferenceSyncValidation {
     private const val MAX_FEED_GROUP_ICON_ID = 38
     private const val MIN_PROFILE_SPEED = 0.05F
     private const val MAX_PROFILE_SPEED = 10.0F
+    private const val MIN_PORTABLE_FLOAT_VALUE = 0.05F
+    private const val MAX_PORTABLE_FLOAT_VALUE = 10.0F
     private const val MAX_CHANNEL_PROFILE_KEY_LENGTH = 103
+    private val SUPPORTED_DOWNLOAD_KINDS = setOf('a', 'v', 's', '?')
     private val CHANNEL_PROFILE_KEY = Regex(
         "^channel_playback_profile\\.v1\\.\\d+\\.[0-9a-f]{64}$"
     )
@@ -688,6 +890,10 @@ internal object StructuredPreferenceRecordId {
 
     fun filterSet(filterId: StructuredFilterId): String {
         return digest("filter-set\u0000${filterId.name}")
+    }
+
+    fun portableSetting(settingId: PortableSettingId): String {
+        return digest("portable-setting\u0000${settingId.name}")
     }
 
     private fun digest(value: String): String {
