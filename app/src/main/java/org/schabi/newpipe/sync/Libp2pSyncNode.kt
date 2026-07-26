@@ -26,7 +26,8 @@ class Libp2pSyncNode(
     private val listenAddress: String = LISTEN_ADDRESS,
     private val playlistSyncEngine: PlaylistSyncEngine? = null,
     private val onListenPortSelected: (Int) -> Unit = {},
-    private val historySyncEngine: HistorySyncEngine? = null
+    private val historySyncEngine: HistorySyncEngine? = null,
+    private val structuredPreferenceSyncEngine: StructuredPreferenceSyncEngine? = null
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
@@ -38,6 +39,9 @@ class Libp2pSyncNode(
     )
     private val historyProtocol = HistorySyncProtocolBinding(
         ::handleHistorySyncRequest
+    )
+    private val structuredPreferenceProtocol = StructuredPreferenceSyncProtocolBinding(
+        ::handleStructuredPreferenceSyncRequest
     )
     private var preferredListenAddress = listenAddress
 
@@ -59,6 +63,7 @@ class Libp2pSyncNode(
             +subscriptionProtocol
             +playlistProtocol
             +historyProtocol
+            +structuredPreferenceProtocol
         }
         network {
             listen(address)
@@ -488,6 +493,113 @@ class Libp2pSyncNode(
         }
     }
 
+    @Throws(StructuredPreferenceSyncException::class)
+    fun syncStructuredPreferences(
+        peer: TrustedPeer,
+        category: StructuredPreferenceCategory
+    ): StructuredPreferenceSyncResult {
+        val currentHost = requireStartedHost()
+        val engine = structuredPreferenceSyncEngine
+            ?: throw StructuredPreferenceSyncException(
+                "Structured preference synchronization is unavailable"
+            )
+        ensureTrusted(peer.peerId)
+        val remotePeerId = parsePeerId(peer.peerId)
+        val remoteAddresses = parseAddresses(remotePeerId, peer.addresses)
+
+        var sentChanges = 0
+        var receivedChanges = 0
+        var affectedRecords = 0
+        var rounds = 0
+
+        try {
+            while (true) {
+                if (rounds >= MAX_SYNC_ROUNDS) {
+                    throw StructuredPreferenceSyncException(
+                        "Structured preference synchronization needs too many batches; " +
+                            "run it again to continue"
+                    )
+                }
+                rounds += 1
+                val request = engine.createRequest(peer.peerId, category)
+                val streamPromise = structuredPreferenceProtocol.dial(
+                    currentHost,
+                    remotePeerId,
+                    *remoteAddresses
+                )
+                val controller = try {
+                    streamPromise.controller.get(
+                        SYNC_TIMEOUT_SECONDS,
+                        TimeUnit.SECONDS
+                    )
+                } catch (error: Exception) {
+                    throw StructuredPreferenceSyncException(
+                        "Could not reach ${peer.deviceName}",
+                        error
+                    )
+                }
+
+                val response = try {
+                    controller.sendRequest(request)
+                    controller.response.get(SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                } catch (error: Exception) {
+                    throw StructuredPreferenceSyncException(
+                        "Structured preference synchronization with " +
+                            "${peer.deviceName} failed",
+                        error
+                    )
+                } finally {
+                    controller.close()
+                }
+
+                val applied = engine.handleResponse(
+                    peer.peerId,
+                    category,
+                    response
+                )
+                sentChanges += request.changes.size
+                receivedChanges += response.changes.size
+                affectedRecords += applied.affectedRecords
+
+                if (!request.hasMore && !response.hasMore) {
+                    break
+                }
+            }
+
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                System.currentTimeMillis(),
+                null
+            )
+            return StructuredPreferenceSyncResult(
+                peer = peer,
+                category = category,
+                sentChanges = sentChanges,
+                receivedChanges = receivedChanges,
+                affectedRecords = affectedRecords,
+                rounds = rounds
+            )
+        } catch (error: StructuredPreferenceSyncException) {
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                null,
+                error.message ?: "Structured preference synchronization failed"
+            )
+            throw error
+        } catch (error: Exception) {
+            val wrapped = StructuredPreferenceSyncException(
+                "Structured preference synchronization with ${peer.deviceName} failed",
+                error
+            )
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                null,
+                wrapped.message
+            )
+            throw wrapped
+        }
+    }
+
     private fun handlePairingRequest(
         remotePeerId: PeerId,
         request: PairingRequest,
@@ -587,6 +699,37 @@ class Libp2pSyncNode(
                 category = request.category,
                 error = (
                     error.message ?: "The history synchronization request was rejected"
+                    ).take(MAX_SYNC_ERROR_LENGTH)
+            )
+        }
+        controller.sendResponse(response)
+        stateRepository.updateTrustedPeerSyncStatus(
+            peerIdValue,
+            if (response.accepted) System.currentTimeMillis() else null,
+            response.error
+        )
+    }
+
+    private fun handleStructuredPreferenceSyncRequest(
+        remotePeerId: PeerId,
+        request: StructuredPreferenceSyncRequest,
+        controller: StructuredPreferenceSyncProtocolController
+    ) {
+        val peerIdValue = remotePeerId.toBase58()
+        val response = try {
+            ensureTrusted(peerIdValue)
+            val engine = structuredPreferenceSyncEngine
+                ?: throw StructuredPreferenceSyncException(
+                    "Structured preference synchronization is unavailable"
+                )
+            engine.handleRequest(peerIdValue, request)
+        } catch (error: Exception) {
+            StructuredPreferenceSyncResponse(
+                accepted = false,
+                category = request.category,
+                error = (
+                    error.message
+                        ?: "The structured preference request was rejected"
                     ).take(MAX_SYNC_ERROR_LENGTH)
             )
         }

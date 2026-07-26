@@ -285,6 +285,70 @@ class Libp2pSyncNodeTest {
         }
     }
 
+    @Test
+    fun `paired nodes exchange structured preferences over a Noise stream`() {
+        val tabletState = InMemorySyncStateRepository()
+        val phoneState = InMemorySyncStateRepository()
+        val tabletPreferences = TestStructuredPreferenceSyncStore(
+            tabletState.loadOrCreateIdentity().peerId.toBase58()
+        )
+        val phonePreferences = TestStructuredPreferenceSyncStore(
+            phoneState.loadOrCreateIdentity().peerId.toBase58()
+        )
+        val filter = SyncedFilterSet(
+            StructuredFilterId.SEARCH_SUGGESTIONS,
+            listOf("show_local_search_suggestions")
+        )
+        tabletPreferences.upsert(
+            category = StructuredPreferenceCategory.FILTERS,
+            recordId = StructuredPreferenceRecordId.filterSet(filter.filterId),
+            recordType = StructuredPreferenceRecordType.FILTER_SET,
+            record = SyncedStructuredPreferenceRecord(filterSet = filter)
+        )
+        val tablet = Libp2pSyncNode(
+            stateRepository = tabletState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test tablet",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            structuredPreferenceSyncEngine =
+                StructuredPreferenceSyncEngine(tabletPreferences)
+        )
+        val phone = Libp2pSyncNode(
+            stateRepository = phoneState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test phone",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            structuredPreferenceSyncEngine =
+                StructuredPreferenceSyncEngine(phonePreferences)
+        )
+
+        try {
+            tablet.start()
+            phone.start()
+            val trustedTablet = phone.pair(tablet.createPairingCode())
+
+            val result = phone.syncStructuredPreferences(
+                trustedTablet,
+                StructuredPreferenceCategory.FILTERS
+            )
+
+            assertEquals(0, result.sentChanges)
+            assertEquals(1, result.receivedChanges)
+            assertEquals(
+                filter,
+                phonePreferences.liveRecords(
+                    StructuredPreferenceCategory.FILTERS,
+                    StructuredPreferenceRecordType.FILTER_SET
+                ).single().filterSet
+            )
+        } finally {
+            phone.stop()
+            tablet.stop()
+        }
+    }
+
     private fun loopbackAddresses(host: Host): List<String> {
         return host.listenAddresses().map { address ->
             address.toString().replace("/ip4/0.0.0.0/", "/ip4/127.0.0.1/")

@@ -114,7 +114,9 @@ data class DeviceSyncAttempt(
     val watchHistorySkipped: Boolean = false,
     val searchHistoryResult: HistorySyncResult? = null,
     val searchHistoryError: String? = null,
-    val searchHistorySkipped: Boolean = false
+    val searchHistorySkipped: Boolean = false,
+    val structuredPreferenceResults: Map<StructuredPreferenceCategory, StructuredPreferenceSyncResult?> = emptyMap(),
+    val structuredPreferenceErrors: Map<StructuredPreferenceCategory, String?> = emptyMap()
 )
 
 data class DeviceSyncSummary(
@@ -125,7 +127,13 @@ data class DeviceSyncSummary(
             it.result != null &&
                 it.playlistResult != null &&
                 (it.watchHistorySkipped || it.watchHistoryResult != null) &&
-                (it.searchHistorySkipped || it.searchHistoryResult != null)
+                (it.searchHistorySkipped || it.searchHistoryResult != null) &&
+                (
+                    it.structuredPreferenceResults.isEmpty() ||
+                        StructuredPreferenceCategory.entries.all { category ->
+                            it.structuredPreferenceResults[category] != null
+                        }
+                    )
         }
 
     val failed: Int
@@ -136,7 +144,10 @@ data class DeviceSyncSummary(
             (it.result?.sentChanges ?: 0) +
                 (it.playlistResult?.sentChanges ?: 0) +
                 (it.watchHistoryResult?.sentChanges ?: 0) +
-                (it.searchHistoryResult?.sentChanges ?: 0)
+                (it.searchHistoryResult?.sentChanges ?: 0) +
+                it.structuredPreferenceResults.values.sumOf { result ->
+                    result?.sentChanges ?: 0
+                }
         }
 
     val receivedChanges: Int
@@ -144,7 +155,10 @@ data class DeviceSyncSummary(
             (it.result?.receivedChanges ?: 0) +
                 (it.playlistResult?.receivedChanges ?: 0) +
                 (it.watchHistoryResult?.receivedChanges ?: 0) +
-                (it.searchHistoryResult?.receivedChanges ?: 0)
+                (it.searchHistoryResult?.receivedChanges ?: 0) +
+                it.structuredPreferenceResults.values.sumOf { result ->
+                    result?.receivedChanges ?: 0
+                }
         }
 }
 

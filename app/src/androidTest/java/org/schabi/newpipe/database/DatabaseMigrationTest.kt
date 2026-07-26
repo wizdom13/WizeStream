@@ -146,6 +146,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_11_12
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
+        )
 
         val migratedDatabaseV3 = getMigratedDatabase()
         val listFromDB = migratedDatabaseV3.streamDAO().getAll().blockingFirst()
@@ -261,6 +267,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_11_12
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
+        )
 
         val migratedDatabaseV8 = getMigratedDatabase()
         val listFromDB = migratedDatabaseV8.searchHistoryDAO().getAll().blockingFirst()
@@ -352,6 +364,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_11_12
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
+        )
 
         val migratedDatabaseV9 = getMigratedDatabase()
         var localListFromDB = migratedDatabaseV9.playlistDAO().getAll().blockingFirst()
@@ -419,6 +437,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_11_12
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
+        )
     }
 
     @Test
@@ -440,6 +464,12 @@ class DatabaseMigrationTest {
             true,
             Migrations.MIGRATION_11_12
         )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
+        )
     }
 
     @Test
@@ -454,6 +484,27 @@ class DatabaseMigrationTest {
             Migrations.DB_VER_12,
             true,
             Migrations.MIGRATION_11_12
+        )
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
+        )
+    }
+
+    @Test
+    fun migrateDatabaseFrom12to13() {
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_12
+        ).close()
+
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13,
+            true,
+            Migrations.MIGRATION_12_13
         )
     }
 

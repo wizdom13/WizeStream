@@ -26,6 +26,9 @@ class DeviceSyncManager private constructor(context: Context) {
         RoomHistorySyncStore.get(applicationContext),
         ::isHistoryCategoryEnabled
     )
+    private val structuredPreferenceSyncEngine = StructuredPreferenceSyncEngine(
+        RoomStructuredPreferenceSyncStore.get(applicationContext)
+    )
     private val deviceName = listOf(Build.MANUFACTURER, Build.MODEL)
         .map(String::trim)
         .filter(String::isNotEmpty)
@@ -47,7 +50,8 @@ class DeviceSyncManager private constructor(context: Context) {
             listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",
             onListenPortSelected = stateRepository::saveListenPort,
             playlistSyncEngine = playlistSyncEngine,
-            historySyncEngine = historySyncEngine
+            historySyncEngine = historySyncEngine,
+            structuredPreferenceSyncEngine = structuredPreferenceSyncEngine
         )
     }
 
@@ -131,12 +135,19 @@ class DeviceSyncManager private constructor(context: Context) {
             } else {
                 null
             }
+            val structuredPreferences = StructuredPreferenceCategory.entries.associateWith { category ->
+                runCatching {
+                    node.syncStructuredPreferences(peer, category)
+                }
+            }
             val errors = listOfNotNull(
                 subscription.exceptionOrNull()?.message,
                 playlist.exceptionOrNull()?.message,
                 watchHistory?.exceptionOrNull()?.message,
                 searchHistory?.exceptionOrNull()?.message
-            )
+            ) + structuredPreferences.values.mapNotNull { result ->
+                result.exceptionOrNull()?.message
+            }
             stateRepository.updateTrustedPeerSyncStatus(
                 peer.peerId,
                 if (errors.isEmpty()) System.currentTimeMillis() else null,
@@ -157,7 +168,14 @@ class DeviceSyncManager private constructor(context: Context) {
                 searchHistoryResult = searchHistory?.getOrNull(),
                 searchHistoryError = searchHistory?.exceptionOrNull()?.message
                     ?: searchHistory?.exceptionOrNull()?.javaClass?.simpleName,
-                searchHistorySkipped = !searchHistoryEnabled
+                searchHistorySkipped = !searchHistoryEnabled,
+                structuredPreferenceResults = structuredPreferences.mapValues {
+                    it.value.getOrNull()
+                },
+                structuredPreferenceErrors = structuredPreferences.mapValues {
+                    it.value.exceptionOrNull()?.message
+                        ?: it.value.exceptionOrNull()?.javaClass?.simpleName
+                }.filterValues { it != null }
             )
         }
         return DeviceSyncSummary(attempts)
@@ -168,6 +186,7 @@ class DeviceSyncManager private constructor(context: Context) {
         subscriptionSyncEngine.clearPeerKnowledge()
         playlistSyncEngine.clearPeerKnowledge()
         historySyncEngine.clearPeerKnowledge()
+        structuredPreferenceSyncEngine.clearPeerKnowledge()
     }
 
     private fun isHistoryCategoryEnabled(category: HistorySyncCategory): Boolean {

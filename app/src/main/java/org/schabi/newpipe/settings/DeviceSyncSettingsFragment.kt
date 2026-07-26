@@ -23,6 +23,7 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
 import org.schabi.newpipe.sync.DeviceSyncManager
 import org.schabi.newpipe.sync.DeviceSyncSummary
+import org.schabi.newpipe.sync.StructuredPreferenceCategory
 import org.schabi.newpipe.sync.TrustedPeer
 
 class DeviceSyncSettingsFragment : BasePreferenceFragment() {
@@ -259,8 +260,19 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 attempt.searchHistoryError,
                 attempt.searchHistorySkipped
             )
+            val structuredPreferenceDetails =
+                StructuredPreferenceCategory.entries.joinToString("\n") { category ->
+                    val result = attempt.structuredPreferenceResults[category]
+                    categorySyncSummary(
+                        structuredPreferenceCategoryName(category),
+                        result?.sentChanges,
+                        result?.receivedChanges,
+                        attempt.structuredPreferenceErrors[category]
+                    )
+                }
             "${attempt.peer.deviceName}\n$subscriptionDetails\n$playlistDetails" +
-                "\n$watchHistoryDetails\n$searchHistoryDetails"
+                "\n$watchHistoryDetails\n$searchHistoryDetails" +
+                "\n$structuredPreferenceDetails"
         }
         val summaryText = getString(
             R.string.device_sync_sync_complete_summary,
@@ -302,6 +314,26 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 error ?: getString(R.string.general_error)
             )
         }
+    }
+
+    private fun structuredPreferenceCategoryName(
+        category: StructuredPreferenceCategory
+    ): String {
+        return getString(
+            when (category) {
+                StructuredPreferenceCategory.FEED_GROUPS ->
+                    R.string.device_sync_category_feed_groups
+
+                StructuredPreferenceCategory.HOME_TABS ->
+                    R.string.device_sync_category_home_tabs
+
+                StructuredPreferenceCategory.CHANNEL_PROFILES ->
+                    R.string.device_sync_category_channel_profiles
+
+                StructuredPreferenceCategory.FILTERS ->
+                    R.string.device_sync_category_filters
+            }
+        )
     }
 
     private fun statusSummary(peers: List<TrustedPeer>): CharSequence {

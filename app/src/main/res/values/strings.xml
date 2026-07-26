@@ -227,7 +227,7 @@
     <string name="device_sync_status_last_sync">Last successful synchronization: %1$s</string>
     <string name="device_sync_status_errors">Trusted devices needing attention: %1$d</string>
     <string name="device_sync_sync_now_title">Sync now</string>
-    <string name="device_sync_sync_now_summary">Exchange subscriptions, playlists, and enabled histories with trusted devices</string>
+    <string name="device_sync_sync_now_summary">Exchange subscriptions, playlists, histories, and structured preferences with trusted devices</string>
     <string name="device_sync_sync_in_progress">Synchronizing data…</string>
     <string name="device_sync_sync_complete_title">Synchronization complete</string>
     <string name="device_sync_sync_complete_summary">Successful devices: %1$d. Failed devices: %2$d. Changes sent: %3$d; received: %4$d.</string>
@@ -237,6 +237,10 @@
     <string name="device_sync_category_playlists">Playlists</string>
     <string name="device_sync_category_watch_history">Watch history and playback progress</string>
     <string name="device_sync_category_search_history">Search history</string>
+    <string name="device_sync_category_feed_groups">Feed groups</string>
+    <string name="device_sync_category_home_tabs">Home tabs</string>
+    <string name="device_sync_category_channel_profiles">Channel playback profiles</string>
+    <string name="device_sync_category_filters">Content filter selections</string>
     <string name="device_sync_sync_category_succeeded">%1$s — sent %2$d, received %3$d</string>
     <string name="device_sync_sync_category_failed">%1$s — failed: %2$s</string>
     <string name="device_sync_sync_category_disabled">%1$s — disabled on this device</string>

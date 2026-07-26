@@ -32,6 +32,7 @@ object Migrations {
     const val DB_VER_10 = 10
     const val DB_VER_11 = 11
     const val DB_VER_12 = 12
+    const val DB_VER_13 = 13
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -518,6 +519,85 @@ object Migrations {
             "CREATE INDEX IF NOT EXISTS " +
                 "`index_history_sync_peer_state_category_origin_peer_id` " +
                 "ON `history_sync_peer_state` (`category`, `origin_peer_id`)"
+        )
+    }
+
+    val MIGRATION_12_13 = Migration(DB_VER_12, DB_VER_13) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `structured_preference_sync_changes` " +
+                "(`category` TEXT NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`origin_revision` INTEGER NOT NULL, `lamport_version` INTEGER NOT NULL, " +
+                "`record_id` TEXT NOT NULL, `record_type` TEXT NOT NULL, " +
+                "`parent_record_id` TEXT, `change_type` TEXT NOT NULL, " +
+                "`record_json` TEXT NOT NULL, " +
+                "PRIMARY KEY(`category`, `origin_peer_id`, `origin_revision`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_changes_category_record_id` " +
+                "ON `structured_preference_sync_changes` (`category`, `record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_changes_category_parent_record_id` " +
+                "ON `structured_preference_sync_changes` (`category`, `parent_record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_changes_category_lamport_version_" +
+                "origin_peer_id_origin_revision` ON `structured_preference_sync_changes` " +
+                "(`category`, `lamport_version`, `origin_peer_id`, `origin_revision`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `structured_preference_sync_records` " +
+                "(`category` TEXT NOT NULL, `record_id` TEXT NOT NULL, " +
+                "`record_type` TEXT NOT NULL, `parent_record_id` TEXT, " +
+                "`lamport_version` INTEGER NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`origin_revision` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, " +
+                "`record_json` TEXT NOT NULL, PRIMARY KEY(`category`, `record_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_records_category_record_type` " +
+                "ON `structured_preference_sync_records` (`category`, `record_type`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_records_category_parent_record_id` " +
+                "ON `structured_preference_sync_records` (`category`, `parent_record_id`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `structured_preference_sync_origin_state` " +
+                "(`category` TEXT NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`contiguous_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`category`, `origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `structured_preference_sync_peer_state` " +
+                "(`category` TEXT NOT NULL, `peer_id` TEXT NOT NULL, " +
+                "`origin_peer_id` TEXT NOT NULL, `acknowledged_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`category`, `peer_id`, `origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_peer_state_category_origin_peer_id` " +
+                "ON `structured_preference_sync_peer_state` " +
+                "(`category`, `origin_peer_id`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `structured_preference_sync_feed_group_map` " +
+                "(`group_record_id` TEXT NOT NULL, `group_uid` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`group_record_id`))"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_structured_preference_sync_feed_group_map_group_uid` " +
+                "ON `structured_preference_sync_feed_group_map` (`group_uid`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `structured_preference_sync_local_state` " +
+                "(`category` TEXT NOT NULL, `snapshot_hash` TEXT NOT NULL, " +
+                "PRIMARY KEY(`category`))"
         )
     }
 }

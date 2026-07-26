@@ -42,6 +42,13 @@ import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncOriginStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncRecordEntity
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncChangeEntity
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncDAO
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncFeedGroupMapEntity
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncLocalStateEntity
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncOriginStateEntity
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncPeerStateEntity
+import org.schabi.newpipe.database.sync.StructuredPreferenceSyncRecordEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncChangeEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncDAO
 import org.schabi.newpipe.database.sync.SubscriptionSyncOriginStateEntity
@@ -50,7 +57,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_12,
+    version = Migrations.DB_VER_13,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -76,7 +83,13 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
         HistorySyncChangeEntity::class,
         HistorySyncRecordEntity::class,
         HistorySyncOriginStateEntity::class,
-        HistorySyncPeerStateEntity::class
+        HistorySyncPeerStateEntity::class,
+        StructuredPreferenceSyncChangeEntity::class,
+        StructuredPreferenceSyncRecordEntity::class,
+        StructuredPreferenceSyncOriginStateEntity::class,
+        StructuredPreferenceSyncPeerStateEntity::class,
+        StructuredPreferenceSyncFeedGroupMapEntity::class,
+        StructuredPreferenceSyncLocalStateEntity::class
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -93,6 +106,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun subscriptionSyncDAO(): SubscriptionSyncDAO
     abstract fun playlistSyncDAO(): PlaylistSyncDAO
     abstract fun historySyncDAO(): HistorySyncDAO
+    abstract fun structuredPreferenceSyncDAO(): StructuredPreferenceSyncDAO
 
     companion object {
         const val DATABASE_NAME: String = "newpipe.db"
