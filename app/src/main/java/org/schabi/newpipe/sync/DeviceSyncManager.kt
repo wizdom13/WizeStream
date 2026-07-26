@@ -23,12 +23,20 @@ class DeviceSyncManager private constructor(context: Context) {
         .distinct()
         .joinToString(" ")
     private val node by lazy {
+        val listenPort = stateRepository.getListenPort()
+            ?: if (stateRepository.getTrustedPeers().isEmpty()) {
+                DYNAMIC_LISTEN_PORT
+            } else {
+                LEGACY_LISTEN_PORT
+            }
         Libp2pSyncNode(
             stateRepository = stateRepository,
             pairingSecurity = PairingSecurity(),
             deviceName = deviceName,
             advertisedAddressProvider = AndroidNetworkAddressProvider::addresses,
             subscriptionSyncEngine = subscriptionSyncEngine,
+            listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",
+            onListenPortSelected = stateRepository::saveListenPort,
             playlistSyncEngine = playlistSyncEngine
         )
     }
@@ -41,13 +49,13 @@ class DeviceSyncManager private constructor(context: Context) {
 
     @Synchronized
     fun createPairingCode(): String {
-        node.start()
+        node.start(allowEphemeralFallback = true)
         return node.createPairingCode()
     }
 
     @Synchronized
     fun pair(pairingCode: String): TrustedPeer {
-        node.start()
+        node.start(allowEphemeralFallback = true)
         return node.pair(pairingCode)
     }
 
@@ -122,6 +130,9 @@ class DeviceSyncManager private constructor(context: Context) {
     }
 
     companion object {
+        private const val DYNAMIC_LISTEN_PORT = 0
+        private const val LEGACY_LISTEN_PORT = 48_243
+
         @Volatile
         private var instance: DeviceSyncManager? = null
 

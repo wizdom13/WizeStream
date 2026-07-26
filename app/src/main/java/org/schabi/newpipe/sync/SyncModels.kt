@@ -98,6 +98,10 @@ interface SyncStateRepository {
 
     fun getTrustedPeers(): List<TrustedPeer>
 
+    fun getListenPort(): Int? = null
+
+    fun saveListenPort(port: Int) = Unit
+
     fun saveTrustedPeer(peer: TrustedPeer)
 
     fun updateTrustedPeerSyncStatus(

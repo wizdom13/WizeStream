@@ -8,10 +8,73 @@ package org.schabi.newpipe.sync
 import io.libp2p.core.Host
 import io.libp2p.core.crypto.KeyType
 import io.libp2p.core.crypto.generateKeyPair
+import java.net.ServerSocket
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Libp2pSyncNodeTest {
+    @Test
+    fun `default listener advertises and reports its selected dynamic port`() {
+        val state = InMemorySyncStateRepository()
+        val security = PairingSecurity()
+        var selectedPort: Int? = null
+        val node = Libp2pSyncNode(
+            stateRepository = state,
+            pairingSecurity = security,
+            deviceName = "Test phone",
+            advertisedAddressProvider = ::loopbackAddresses,
+            onListenPortSelected = { selectedPort = it }
+        )
+
+        try {
+            node.start()
+
+            val invitation = security.decodeAndVerifyInvitation(node.createPairingCode())
+            assertTrue(requireNotNull(selectedPort) > 0)
+            assertTrue(invitation.addresses.none { "/tcp/0/" in it })
+            assertEquals(node.advertisedAddresses(), invitation.addresses)
+        } finally {
+            node.stop()
+        }
+    }
+
+    @Test
+    fun `pairing can recover from an occupied listener port`() {
+        ServerSocket(0).use { occupiedSocket ->
+            val occupiedPort = occupiedSocket.localPort
+            var selectedPort: Int? = null
+            val node = Libp2pSyncNode(
+                stateRepository = InMemorySyncStateRepository(),
+                pairingSecurity = PairingSecurity(),
+                deviceName = "Test phone",
+                advertisedAddressProvider = ::loopbackAddresses,
+                listenAddress = "/ip4/127.0.0.1/tcp/$occupiedPort",
+                onListenPortSelected = { selectedPort = it }
+            )
+
+            try {
+                val error = assertThrows(PairingException::class.java) {
+                    node.start()
+                }
+                assertTrue(
+                    error.message.orEmpty()
+                        .startsWith("Could not start secure device synchronization:")
+                )
+
+                node.start(allowEphemeralFallback = true)
+
+                assertTrue(requireNotNull(selectedPort) > 0)
+                assertNotEquals(occupiedPort, selectedPort)
+                assertTrue(node.advertisedAddresses().none { "/tcp/0/" in it })
+            } finally {
+                node.stop()
+            }
+        }
+    }
+
     @Test
     fun `two nodes pair over a Noise authenticated stream`() {
         val tabletState = InMemorySyncStateRepository()

@@ -12,6 +12,7 @@ import io.libp2p.core.Host
 import io.libp2p.core.PeerId
 import io.libp2p.core.dsl.host
 import io.libp2p.core.multiformats.Multiaddr
+import java.net.BindException
 import java.util.concurrent.TimeUnit
 
 class Libp2pSyncNode(
@@ -23,7 +24,8 @@ class Libp2pSyncNode(
     },
     private val subscriptionSyncEngine: SubscriptionSyncEngine? = null,
     private val listenAddress: String = LISTEN_ADDRESS,
-    private val playlistSyncEngine: PlaylistSyncEngine? = null
+    private val playlistSyncEngine: PlaylistSyncEngine? = null,
+    private val onListenPortSelected: (Int) -> Unit = {}
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
@@ -33,7 +35,18 @@ class Libp2pSyncNode(
     private val playlistProtocol = PlaylistSyncProtocolBinding(
         ::handlePlaylistSyncRequest
     )
-    private val host: Host = host {
+    private var preferredListenAddress = listenAddress
+
+    @Volatile
+    private var activeHost: Host? = null
+
+    @Volatile
+    private var started = false
+
+    val peerId: PeerId
+        get() = identity.peerId
+
+    private fun createHost(address: String): Host = host {
         identity {
             factory = { this@Libp2pSyncNode.identity.privateKey }
         }
@@ -43,48 +56,78 @@ class Libp2pSyncNode(
             +playlistProtocol
         }
         network {
-            listen(listenAddress)
+            listen(address)
         }
     }
 
-    @Volatile
-    private var started = false
-
-    val peerId: PeerId
-        get() = identity.peerId
-
     @Synchronized
-    fun start() {
+    fun start(allowEphemeralFallback: Boolean = false) {
         if (started) {
             return
         }
-        try {
-            host.start().get(START_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            started = true
-        } catch (error: Exception) {
-            throw PairingException("Could not start secure device synchronization", error)
+
+        val addresses = buildList {
+            add(preferredListenAddress)
+            if (allowEphemeralFallback) {
+                add(ephemeralListenAddress(preferredListenAddress))
+            }
+        }.distinct()
+        var lastError: Exception? = null
+
+        for ((index, address) in addresses.withIndex()) {
+            val candidate = createHost(address)
+            try {
+                candidate.start().get(START_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                val selectedPort = candidate.listenAddresses()
+                    .asSequence()
+                    .mapNotNull(::tcpPortFromMultiaddress)
+                    .firstOrNull { it in MIN_LISTEN_PORT..MAX_LISTEN_PORT }
+                    ?: throw PairingException(
+                        "The synchronization listener has no usable TCP address"
+                    )
+                onListenPortSelected(selectedPort)
+                preferredListenAddress = listenAddressWithPort(address, selectedPort)
+                activeHost = candidate
+                started = true
+                return
+            } catch (error: Exception) {
+                lastError = error
+                runCatching {
+                    candidate.stop().get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                }
+                val canRetry = index == 0 &&
+                    addresses.size > 1 &&
+                    isAddressAlreadyInUse(error)
+                if (!canRetry) {
+                    break
+                }
+            }
         }
+
+        val error = requireNotNull(lastError)
+        throw PairingException(startFailureMessage(error), error)
     }
 
     @Synchronized
     fun stop() {
-        if (!started) {
+        val currentHost = activeHost
+        if (!started || currentHost == null) {
             return
         }
         try {
-            host.stop().get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            currentHost.stop().get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         } finally {
+            activeHost = null
             started = false
         }
     }
 
     fun advertisedAddresses(): List<String> {
-        checkStarted()
-        return advertisedAddressProvider(host)
+        return advertisedAddressProvider(requireStartedHost())
     }
 
     fun createPairingCode(): String {
-        checkStarted()
+        requireStartedHost()
         val invitation = pairingSecurity.createInvitation(
             identity = identity,
             deviceName = deviceName,
@@ -95,7 +138,7 @@ class Libp2pSyncNode(
 
     @Throws(PairingException::class)
     fun pair(pairingCode: String): TrustedPeer {
-        checkStarted()
+        val currentHost = requireStartedHost()
         val invitation = pairingSecurity.decodeAndVerifyInvitation(pairingCode)
         if (invitation.peerId == peerId.toBase58()) {
             throw PairingException("This pairing code belongs to this device")
@@ -112,7 +155,7 @@ class Libp2pSyncNode(
             throw PairingException("The remote network addresses are invalid", error)
         }
 
-        val streamPromise = pairingProtocol.dial(host, remotePeerId, *remoteAddresses)
+        val streamPromise = pairingProtocol.dial(currentHost, remotePeerId, *remoteAddresses)
         val controller = try {
             streamPromise.controller.get(PAIR_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         } catch (error: Exception) {
@@ -146,7 +189,7 @@ class Libp2pSyncNode(
 
     @Throws(SubscriptionSyncException::class)
     fun syncSubscriptions(peer: TrustedPeer): SubscriptionSyncResult {
-        checkStarted()
+        val currentHost = requireStartedHost()
         val engine = subscriptionSyncEngine
             ?: throw SubscriptionSyncException("Subscription synchronization is unavailable")
         ensureTrusted(peer.peerId)
@@ -169,7 +212,7 @@ class Libp2pSyncNode(
                 rounds += 1
                 val request = engine.createRequest(peer.peerId)
                 val streamPromise = subscriptionProtocol.dial(
-                    host,
+                    currentHost,
                     remotePeerId,
                     *remoteAddresses
                 )
@@ -244,7 +287,7 @@ class Libp2pSyncNode(
 
     @Throws(PlaylistSyncException::class)
     fun syncPlaylists(peer: TrustedPeer): PlaylistSyncResult {
-        checkStarted()
+        val currentHost = requireStartedHost()
         val engine = playlistSyncEngine
             ?: throw PlaylistSyncException("Playlist synchronization is unavailable")
         ensureTrusted(peer.peerId)
@@ -266,7 +309,7 @@ class Libp2pSyncNode(
                 rounds += 1
                 val request = engine.createRequest(peer.peerId)
                 val streamPromise = playlistProtocol.dial(
-                    host,
+                    currentHost,
                     remotePeerId,
                     *remoteAddresses
                 )
@@ -456,19 +499,57 @@ class Libp2pSyncNode(
         }
     }
 
-    private fun checkStarted() {
-        if (!started) {
+    private fun requireStartedHost(): Host {
+        if (!started || activeHost == null) {
             throw PairingException("Device synchronization is not running")
+        }
+        return requireNotNull(activeHost)
+    }
+
+    private fun isAddressAlreadyInUse(error: Throwable): Boolean {
+        return error.causes().any { cause ->
+            cause is BindException ||
+                cause.message?.contains("address already in use", ignoreCase = true) == true ||
+                cause.message?.contains("EADDRINUSE", ignoreCase = true) == true
         }
     }
 
+    private fun startFailureMessage(error: Throwable): String {
+        val detail = error.causes()
+            .mapNotNull { it.message?.trim()?.takeIf(String::isNotEmpty) }
+            .lastOrNull()
+            ?.take(MAX_START_ERROR_LENGTH)
+        return if (detail == null) {
+            "Could not start secure device synchronization"
+        } else {
+            "Could not start secure device synchronization: $detail"
+        }
+    }
+
+    private fun Throwable.causes(): Sequence<Throwable> {
+        return generateSequence(this) { it.cause }.take(MAX_CAUSE_DEPTH)
+    }
+
+    private fun ephemeralListenAddress(address: String): String {
+        return listenAddressWithPort(address, 0)
+    }
+
+    private fun listenAddressWithPort(address: String, port: Int): String {
+        return TCP_PORT_VALUE.replace(address, port.toString())
+    }
+
     companion object {
-        private const val LISTEN_ADDRESS = "/ip4/0.0.0.0/tcp/48243"
+        private const val LISTEN_ADDRESS = "/ip4/0.0.0.0/tcp/0"
         private const val START_TIMEOUT_SECONDS = 20L
         private const val STOP_TIMEOUT_SECONDS = 10L
         private const val PAIR_TIMEOUT_SECONDS = 20L
         private const val SYNC_TIMEOUT_SECONDS = 30L
         private const val MAX_SYNC_ROUNDS = 2048
         private const val MAX_SYNC_ERROR_LENGTH = 512
+        private const val MAX_START_ERROR_LENGTH = 256
+        private const val MAX_CAUSE_DEPTH = 16
+        private const val MIN_LISTEN_PORT = 1
+        private const val MAX_LISTEN_PORT = 65_535
+        private val TCP_PORT_VALUE = Regex("(?<=/tcp/)\\d+")
     }
 }

@@ -64,6 +64,26 @@ class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
         }
     }
 
+    override fun getListenPort(): Int? {
+        return synchronized(STATE_LOCK) {
+            loadOrCreateIdentity()
+            requireNotNull(readState()).listenPort
+        }
+    }
+
+    override fun saveListenPort(port: Int) {
+        if (port !in MIN_LISTEN_PORT..MAX_LISTEN_PORT) {
+            throw PairingException("The synchronization listener selected an invalid TCP port")
+        }
+        synchronized(STATE_LOCK) {
+            loadOrCreateIdentity()
+            val state = requireNotNull(readState())
+            if (state.listenPort != port) {
+                writeState(state.copy(listenPort = port))
+            }
+        }
+    }
+
     override fun saveTrustedPeer(peer: TrustedPeer) {
         synchronized(STATE_LOCK) {
             loadOrCreateIdentity()
@@ -159,6 +179,13 @@ class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
                     "Unsupported synchronization state version: ${state.version}"
                 )
             }
+            if (state.listenPort != null &&
+                state.listenPort !in MIN_LISTEN_PORT..MAX_LISTEN_PORT
+            ) {
+                throw PairingException(
+                    "The secure synchronization state has an invalid TCP port"
+                )
+            }
             state
         } catch (error: PairingException) {
             throw error
@@ -219,7 +246,8 @@ class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
     private data class PersistedSyncState(
         val version: Int = SYNC_PROTOCOL_VERSION,
         val privateKey: String,
-        val trustedPeers: List<TrustedPeer> = emptyList()
+        val trustedPeers: List<TrustedPeer> = emptyList(),
+        val listenPort: Int? = null
     )
 
     companion object {
@@ -233,6 +261,8 @@ class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
         private const val MAX_STATE_FILE_BYTES = 1024 * 1024
         private const val MAX_TRUSTED_PEERS = 32
         private const val MAX_SYNC_ERROR_LENGTH = 512
+        private const val MIN_LISTEN_PORT = 1
+        private const val MAX_LISTEN_PORT = 65_535
         private val STATE_LOCK = Any()
         private val JSON = Json {
             encodeDefaults = true

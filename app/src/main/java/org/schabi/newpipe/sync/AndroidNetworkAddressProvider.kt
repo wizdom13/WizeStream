@@ -14,8 +14,8 @@ object AndroidNetworkAddressProvider {
     fun addresses(host: Host): List<String> {
         val port = host.listenAddresses()
             .asSequence()
-            .map(MultiAddressPort::from)
-            .firstOrNull()
+            .mapNotNull(::tcpPortFromMultiaddress)
+            .firstOrNull { it in 1..65_535 }
             ?: throw PairingException("The synchronization listener has no TCP address")
 
         val networkAddresses = NetworkInterface.getNetworkInterfaces()
@@ -39,12 +39,10 @@ object AndroidNetworkAddressProvider {
             listOf("/ip4/127.0.0.1/tcp/$port/p2p/${host.peerId.toBase58()}")
         }
     }
+}
 
-    private object MultiAddressPort {
-        private val tcpPort = Regex("(?:^|/)tcp/(\\d+)(?:/|$)")
+private val TCP_PORT = Regex("(?:^|/)tcp/(\\d+)(?:/|$)")
 
-        fun from(value: Any): Int? {
-            return tcpPort.find(value.toString())?.groupValues?.get(1)?.toIntOrNull()
-        }
-    }
+internal fun tcpPortFromMultiaddress(value: Any): Int? {
+    return TCP_PORT.find(value.toString())?.groupValues?.get(1)?.toIntOrNull()
 }
