@@ -245,7 +245,22 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 attempt.playlistResult?.receivedChanges,
                 attempt.playlistError
             )
-            "${attempt.peer.deviceName}\n$subscriptionDetails\n$playlistDetails"
+            val watchHistoryDetails = categorySyncSummary(
+                getString(R.string.device_sync_category_watch_history),
+                attempt.watchHistoryResult?.sentChanges,
+                attempt.watchHistoryResult?.receivedChanges,
+                attempt.watchHistoryError,
+                attempt.watchHistorySkipped
+            )
+            val searchHistoryDetails = categorySyncSummary(
+                getString(R.string.device_sync_category_search_history),
+                attempt.searchHistoryResult?.sentChanges,
+                attempt.searchHistoryResult?.receivedChanges,
+                attempt.searchHistoryError,
+                attempt.searchHistorySkipped
+            )
+            "${attempt.peer.deviceName}\n$subscriptionDetails\n$playlistDetails" +
+                "\n$watchHistoryDetails\n$searchHistoryDetails"
         }
         val summaryText = getString(
             R.string.device_sync_sync_complete_summary,
@@ -265,9 +280,15 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         category: String,
         sentChanges: Int?,
         receivedChanges: Int?,
-        error: String?
+        error: String?,
+        disabled: Boolean = false
     ): String {
-        return if (sentChanges != null && receivedChanges != null) {
+        return if (disabled) {
+            getString(
+                R.string.device_sync_sync_category_disabled,
+                category
+            )
+        } else if (sentChanges != null && receivedChanges != null) {
             getString(
                 R.string.device_sync_sync_category_succeeded,
                 category,

@@ -31,6 +31,11 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.database.subscription.SubscriptionDAO
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.database.sync.HistorySyncChangeEntity
+import org.schabi.newpipe.database.sync.HistorySyncDAO
+import org.schabi.newpipe.database.sync.HistorySyncOriginStateEntity
+import org.schabi.newpipe.database.sync.HistorySyncPeerStateEntity
+import org.schabi.newpipe.database.sync.HistorySyncRecordEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncChangeEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncDAO
 import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
@@ -45,7 +50,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_11,
+    version = Migrations.DB_VER_12,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -67,7 +72,11 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
         PlaylistSyncRecordEntity::class,
         PlaylistSyncOriginStateEntity::class,
         PlaylistSyncPeerStateEntity::class,
-        PlaylistSyncLocalMapEntity::class
+        PlaylistSyncLocalMapEntity::class,
+        HistorySyncChangeEntity::class,
+        HistorySyncRecordEntity::class,
+        HistorySyncOriginStateEntity::class,
+        HistorySyncPeerStateEntity::class
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -83,6 +92,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun subscriptionDAO(): SubscriptionDAO
     abstract fun subscriptionSyncDAO(): SubscriptionSyncDAO
     abstract fun playlistSyncDAO(): PlaylistSyncDAO
+    abstract fun historySyncDAO(): HistorySyncDAO
 
     companion object {
         const val DATABASE_NAME: String = "newpipe.db"

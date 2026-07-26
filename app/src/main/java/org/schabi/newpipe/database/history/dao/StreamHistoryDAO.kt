@@ -21,6 +21,9 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
     @Query("SELECT * FROM stream_history")
     abstract override fun getAll(): Flowable<List<StreamHistoryEntity>>
 
+    @Query("SELECT * FROM stream_history ORDER BY access_date ASC")
+    abstract fun getAllDirect(): List<StreamHistoryEntity>
+
     @Query("DELETE FROM stream_history")
     abstract override fun deleteAll(): Int
 

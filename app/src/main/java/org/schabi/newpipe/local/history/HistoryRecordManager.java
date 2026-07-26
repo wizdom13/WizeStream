@@ -45,6 +45,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.local.feed.FeedViewModel;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
+import org.schabi.newpipe.sync.HistorySyncRecorder;
 import org.schabi.newpipe.util.ExtractorHelper;
 
 import java.time.OffsetDateTime;
@@ -64,6 +65,7 @@ public class HistoryRecordManager {
     private final StreamHistoryDAO streamHistoryTable;
     private final SearchHistoryDAO searchHistoryTable;
     private final StreamStateDAO streamStateTable;
+    private final HistorySyncRecorder historySyncRecorder;
     private final SharedPreferences sharedPreferences;
     private final String searchHistoryKey;
     private final String streamHistoryKey;
@@ -74,6 +76,7 @@ public class HistoryRecordManager {
         streamHistoryTable = database.streamHistoryDAO();
         searchHistoryTable = database.searchHistoryDAO();
         streamStateTable = database.streamStateDAO();
+        historySyncRecorder = HistorySyncRecorder.get(context);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         searchHistoryKey = context.getString(R.string.enable_search_history_key);
         streamHistoryKey = context.getString(R.string.enable_watch_history_key);
@@ -121,12 +124,22 @@ public class HistoryRecordManager {
                     streamId,
                     duration * 1000
             );
+            historySyncRecorder.recordProgress(
+                    streamId,
+                    entity.getProgressMillis(),
+                    currentTime.toInstant().toEpochMilli()
+            );
             streamStateTable.upsert(entity);
 
             // Add a history entry
             final StreamHistoryEntity latestEntry = streamHistoryTable.getLatestEntry(streamId);
             if (latestEntry == null) {
                 // never actually viewed: add history entry but with 0 views
+                historySyncRecorder.recordWatchEvent(
+                        streamId,
+                        currentTime.toInstant().toEpochMilli(),
+                        0
+                );
                 return streamHistoryTable.insert(new StreamHistoryEntity(streamId, currentTime, 0));
             } else {
                 return 0L;
@@ -142,6 +155,11 @@ public class HistoryRecordManager {
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(info));
+            historySyncRecorder.recordWatchEvent(
+                    streamId,
+                    currentTime.toInstant().toEpochMilli(),
+                    1
+            );
             final StreamHistoryEntity latestEntry = streamHistoryTable.getLatestEntry(streamId);
 
             if (latestEntry != null) {
@@ -157,19 +175,26 @@ public class HistoryRecordManager {
     }
 
     public Completable deleteStreamHistoryAndState(final long streamId) {
-        return Completable.fromAction(() -> {
+        return Completable.fromAction(() -> database.runInTransaction(() -> {
+            historySyncRecorder.recordWatchStreamDelete(streamId);
             streamStateTable.deleteState(streamId);
             streamHistoryTable.deleteStreamHistory(streamId);
-        }).subscribeOn(Schedulers.io());
+        })).subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteWholeStreamHistory() {
-        return Single.fromCallable(streamHistoryTable::deleteAll)
+        return Single.fromCallable(() -> database.runInTransaction(() -> {
+            historySyncRecorder.recordWatchAllDelete();
+            return streamHistoryTable.deleteAll();
+        }))
                 .subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteCompleteStreamStateHistory() {
-        return Single.fromCallable(streamStateTable::deleteAll)
+        return Single.fromCallable(() -> database.runInTransaction(() -> {
+            historySyncRecorder.recordProgressAllDelete();
+            return streamStateTable.deleteAll();
+        }))
                 .subscribeOn(Schedulers.io());
     }
 
@@ -194,27 +219,40 @@ public class HistoryRecordManager {
             return Maybe.empty();
         }
 
+        final String canonicalSearch = search.trim();
+        if (canonicalSearch.isEmpty()) {
+            return Maybe.empty();
+        }
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
-        final SearchHistoryEntry newEntry = new SearchHistoryEntry(currentTime, serviceId, search);
+        final SearchHistoryEntry newEntry = new SearchHistoryEntry(
+                currentTime,
+                serviceId,
+                canonicalSearch
+        );
 
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
-            final SearchHistoryEntry latestEntry = searchHistoryTable.getLatestEntry();
-            if (latestEntry != null && latestEntry.hasEqualValues(newEntry)) {
-                latestEntry.setCreationDate(currentTime);
-                return (long) searchHistoryTable.update(latestEntry);
-            } else {
-                return searchHistoryTable.insert(newEntry);
-            }
+            historySyncRecorder.recordSearch(
+                    serviceId,
+                    canonicalSearch,
+                    currentTime.toInstant().toEpochMilli()
+            );
+            return searchHistoryTable.insert(newEntry);
         })).subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteSearchHistory(final String search) {
-        return Single.fromCallable(() -> searchHistoryTable.deleteAllWhereQuery(search))
+        return Single.fromCallable(() -> database.runInTransaction(() -> {
+            historySyncRecorder.recordSearchDelete(search);
+            return searchHistoryTable.deleteAllWhereQuery(search);
+        }))
                 .subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteCompleteSearchHistory() {
-        return Single.fromCallable(searchHistoryTable::deleteAll)
+        return Single.fromCallable(() -> database.runInTransaction(() -> {
+            historySyncRecorder.recordSearchAllDelete();
+            return searchHistoryTable.deleteAll();
+        }))
                 .subscribeOn(Schedulers.io());
     }
 
@@ -258,6 +296,11 @@ public class HistoryRecordManager {
             final long streamId = streamTable.upsert(new StreamEntity(info));
             final StreamStateEntity state = new StreamStateEntity(streamId, progressMillis);
             if (state.isValid(info.getDuration())) {
+                historySyncRecorder.recordProgress(
+                        streamId,
+                        progressMillis,
+                        System.currentTimeMillis()
+                );
                 streamStateTable.upsert(state);
             }
         })).subscribeOn(Schedulers.io());

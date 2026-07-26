@@ -25,7 +25,8 @@ class Libp2pSyncNode(
     private val subscriptionSyncEngine: SubscriptionSyncEngine? = null,
     private val listenAddress: String = LISTEN_ADDRESS,
     private val playlistSyncEngine: PlaylistSyncEngine? = null,
-    private val onListenPortSelected: (Int) -> Unit = {}
+    private val onListenPortSelected: (Int) -> Unit = {},
+    private val historySyncEngine: HistorySyncEngine? = null
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
@@ -34,6 +35,9 @@ class Libp2pSyncNode(
     )
     private val playlistProtocol = PlaylistSyncProtocolBinding(
         ::handlePlaylistSyncRequest
+    )
+    private val historyProtocol = HistorySyncProtocolBinding(
+        ::handleHistorySyncRequest
     )
     private var preferredListenAddress = listenAddress
 
@@ -54,6 +58,7 @@ class Libp2pSyncNode(
             +pairingProtocol
             +subscriptionProtocol
             +playlistProtocol
+            +historyProtocol
         }
         network {
             listen(address)
@@ -380,6 +385,109 @@ class Libp2pSyncNode(
         }
     }
 
+    @Throws(HistorySyncException::class)
+    fun syncHistory(
+        peer: TrustedPeer,
+        category: HistorySyncCategory
+    ): HistorySyncResult {
+        val currentHost = requireStartedHost()
+        val engine = historySyncEngine
+            ?: throw HistorySyncException("History synchronization is unavailable")
+        ensureTrusted(peer.peerId)
+        val remotePeerId = parsePeerId(peer.peerId)
+        val remoteAddresses = parseAddresses(remotePeerId, peer.addresses)
+
+        var sentChanges = 0
+        var receivedChanges = 0
+        var affectedRecords = 0
+        var rounds = 0
+
+        try {
+            while (true) {
+                if (rounds >= MAX_SYNC_ROUNDS) {
+                    throw HistorySyncException(
+                        "History synchronization needs too many batches; run it again to continue"
+                    )
+                }
+                rounds += 1
+                val request = engine.createRequest(peer.peerId, category)
+                val streamPromise = historyProtocol.dial(
+                    currentHost,
+                    remotePeerId,
+                    *remoteAddresses
+                )
+                val controller = try {
+                    streamPromise.controller.get(
+                        SYNC_TIMEOUT_SECONDS,
+                        TimeUnit.SECONDS
+                    )
+                } catch (error: Exception) {
+                    throw HistorySyncException(
+                        "Could not reach ${peer.deviceName}",
+                        error
+                    )
+                }
+
+                val response = try {
+                    controller.sendRequest(request)
+                    controller.response.get(SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                } catch (error: Exception) {
+                    throw HistorySyncException(
+                        "History synchronization with ${peer.deviceName} failed",
+                        error
+                    )
+                } finally {
+                    controller.close()
+                }
+
+                val applied = engine.handleResponse(
+                    peer.peerId,
+                    category,
+                    response
+                )
+                sentChanges += request.changes.size
+                receivedChanges += response.changes.size
+                affectedRecords += applied.affectedRecords
+
+                if (!request.hasMore && !response.hasMore) {
+                    break
+                }
+            }
+
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                System.currentTimeMillis(),
+                null
+            )
+            return HistorySyncResult(
+                peer = peer,
+                category = category,
+                sentChanges = sentChanges,
+                receivedChanges = receivedChanges,
+                affectedRecords = affectedRecords,
+                rounds = rounds
+            )
+        } catch (error: HistorySyncException) {
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                null,
+                error.message ?: "History synchronization failed"
+            )
+            throw error
+        } catch (error: Exception) {
+            val wrapped = HistorySyncException(
+                "History synchronization with ${peer.deviceName} failed",
+                error
+            )
+            stateRepository.updateTrustedPeerSyncStatus(
+                peer.peerId,
+                null,
+                wrapped.message
+            )
+            throw wrapped
+        }
+    }
+
     private fun handlePairingRequest(
         remotePeerId: PeerId,
         request: PairingRequest,
@@ -449,6 +557,36 @@ class Libp2pSyncNode(
                 accepted = false,
                 error = (
                     error.message ?: "The playlist synchronization request was rejected"
+                    ).take(MAX_SYNC_ERROR_LENGTH)
+            )
+        }
+        controller.sendResponse(response)
+        stateRepository.updateTrustedPeerSyncStatus(
+            peerIdValue,
+            if (response.accepted) System.currentTimeMillis() else null,
+            response.error
+        )
+    }
+
+    private fun handleHistorySyncRequest(
+        remotePeerId: PeerId,
+        request: HistorySyncRequest,
+        controller: HistorySyncProtocolController
+    ) {
+        val peerIdValue = remotePeerId.toBase58()
+        val response = try {
+            ensureTrusted(peerIdValue)
+            val engine = historySyncEngine
+                ?: throw HistorySyncException(
+                    "History synchronization is unavailable"
+                )
+            engine.handleRequest(peerIdValue, request)
+        } catch (error: Exception) {
+            HistorySyncResponse(
+                accepted = false,
+                category = request.category,
+                error = (
+                    error.message ?: "The history synchronization request was rejected"
                     ).take(MAX_SYNC_ERROR_LENGTH)
             )
         }

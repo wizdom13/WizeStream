@@ -27,6 +27,9 @@ interface SearchHistoryDAO : BasicDAO<SearchHistoryEntry> {
     @Query("SELECT * FROM search_history ORDER BY creation_date DESC")
     override fun getAll(): Flowable<List<SearchHistoryEntry>>
 
+    @Query("SELECT * FROM search_history ORDER BY creation_date ASC, id ASC")
+    fun getAllDirect(): List<SearchHistoryEntry>
+
     @Query("SELECT search FROM search_history GROUP BY search ORDER BY MAX(creation_date) DESC LIMIT :limit")
     fun getUniqueEntries(limit: Int): Flowable<MutableList<String>>
 

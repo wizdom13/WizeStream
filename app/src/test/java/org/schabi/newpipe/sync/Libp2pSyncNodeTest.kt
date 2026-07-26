@@ -225,6 +225,66 @@ class Libp2pSyncNodeTest {
         }
     }
 
+    @Test
+    fun `paired nodes exchange watch and search histories over Noise streams`() {
+        val tabletState = InMemorySyncStateRepository()
+        val phoneState = InMemorySyncStateRepository()
+        val tabletHistory = TestHistorySyncStore(
+            tabletState.loadOrCreateIdentity().peerId.toBase58()
+        )
+        val phoneHistory = TestHistorySyncStore(
+            phoneState.loadOrCreateIdentity().peerId.toBase58()
+        )
+        tabletHistory.registerStream(HISTORY_STREAM_ID, HISTORY_STREAM_URL)
+        phoneHistory.registerStream(HISTORY_STREAM_ID, HISTORY_STREAM_URL)
+        tabletHistory.recordSearch(0, "tablet search", 2_000)
+        phoneHistory.recordProgress(HISTORY_STREAM_ID, 42_000, 1_000)
+        val tablet = Libp2pSyncNode(
+            stateRepository = tabletState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test tablet",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            historySyncEngine = HistorySyncEngine(tabletHistory)
+        )
+        val phone = Libp2pSyncNode(
+            stateRepository = phoneState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test phone",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            historySyncEngine = HistorySyncEngine(phoneHistory)
+        )
+
+        try {
+            tablet.start()
+            phone.start()
+            val trustedTablet = phone.pair(tablet.createPairingCode())
+
+            val watchResult = phone.syncHistory(
+                trustedTablet,
+                HistorySyncCategory.WATCH
+            )
+            val searchResult = phone.syncHistory(
+                trustedTablet,
+                HistorySyncCategory.SEARCH
+            )
+
+            assertEquals(1, watchResult.sentChanges)
+            assertEquals(0, watchResult.receivedChanges)
+            assertEquals(
+                42_000L,
+                tabletHistory.progressMillis(HISTORY_STREAM_URL)
+            )
+            assertEquals(0, searchResult.sentChanges)
+            assertEquals(1, searchResult.receivedChanges)
+            assertEquals(listOf("tablet search"), phoneHistory.searchQueries)
+        } finally {
+            phone.stop()
+            tablet.stop()
+        }
+    }
+
     private fun loopbackAddresses(host: Host): List<String> {
         return host.listenAddresses().map { address ->
             address.toString().replace("/ip4/0.0.0.0/", "/ip4/127.0.0.1/")
@@ -241,6 +301,9 @@ class Libp2pSyncNodeTest {
             "https://example.com/watch/tablet"
         private const val PHONE_PLAYLIST_URL =
             "https://example.com/playlist/phone"
+        private const val HISTORY_STREAM_ID = 1L
+        private const val HISTORY_STREAM_URL =
+            "https://example.com/watch/history"
     }
 
     private class InMemorySyncStateRepository : SyncStateRepository {

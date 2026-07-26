@@ -7,15 +7,24 @@ package org.schabi.newpipe.sync
 
 import android.content.Context
 import android.os.Build
+import androidx.preference.PreferenceManager
+import org.schabi.newpipe.R
 
 class DeviceSyncManager private constructor(context: Context) {
     private val applicationContext = context.applicationContext
+    private val defaultPreferences = PreferenceManager.getDefaultSharedPreferences(
+        applicationContext
+    )
     private val stateRepository = AndroidSyncStateRepository(applicationContext)
     private val subscriptionSyncEngine = SubscriptionSyncEngine(
         RoomSubscriptionSyncStore.get(applicationContext)
     )
     private val playlistSyncEngine = PlaylistSyncEngine(
         RoomPlaylistSyncStore.get(applicationContext)
+    )
+    private val historySyncEngine = HistorySyncEngine(
+        RoomHistorySyncStore.get(applicationContext),
+        ::isHistoryCategoryEnabled
     )
     private val deviceName = listOf(Build.MANUFACTURER, Build.MODEL)
         .map(String::trim)
@@ -37,7 +46,8 @@ class DeviceSyncManager private constructor(context: Context) {
             subscriptionSyncEngine = subscriptionSyncEngine,
             listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",
             onListenPortSelected = stateRepository::saveListenPort,
-            playlistSyncEngine = playlistSyncEngine
+            playlistSyncEngine = playlistSyncEngine,
+            historySyncEngine = historySyncEngine
         )
     }
 
@@ -101,9 +111,31 @@ class DeviceSyncManager private constructor(context: Context) {
             val playlist = runCatching {
                 node.syncPlaylists(peer)
             }
+            val watchHistoryEnabled = historySyncEngine.isEnabled(
+                HistorySyncCategory.WATCH
+            )
+            val watchHistory = if (watchHistoryEnabled) {
+                runCatching {
+                    node.syncHistory(peer, HistorySyncCategory.WATCH)
+                }
+            } else {
+                null
+            }
+            val searchHistoryEnabled = historySyncEngine.isEnabled(
+                HistorySyncCategory.SEARCH
+            )
+            val searchHistory = if (searchHistoryEnabled) {
+                runCatching {
+                    node.syncHistory(peer, HistorySyncCategory.SEARCH)
+                }
+            } else {
+                null
+            }
             val errors = listOfNotNull(
                 subscription.exceptionOrNull()?.message,
-                playlist.exceptionOrNull()?.message
+                playlist.exceptionOrNull()?.message,
+                watchHistory?.exceptionOrNull()?.message,
+                searchHistory?.exceptionOrNull()?.message
             )
             stateRepository.updateTrustedPeerSyncStatus(
                 peer.peerId,
@@ -117,7 +149,15 @@ class DeviceSyncManager private constructor(context: Context) {
                     ?: subscription.exceptionOrNull()?.javaClass?.simpleName,
                 playlistResult = playlist.getOrNull(),
                 playlistError = playlist.exceptionOrNull()?.message
-                    ?: playlist.exceptionOrNull()?.javaClass?.simpleName
+                    ?: playlist.exceptionOrNull()?.javaClass?.simpleName,
+                watchHistoryResult = watchHistory?.getOrNull(),
+                watchHistoryError = watchHistory?.exceptionOrNull()?.message
+                    ?: watchHistory?.exceptionOrNull()?.javaClass?.simpleName,
+                watchHistorySkipped = !watchHistoryEnabled,
+                searchHistoryResult = searchHistory?.getOrNull(),
+                searchHistoryError = searchHistory?.exceptionOrNull()?.message
+                    ?: searchHistory?.exceptionOrNull()?.javaClass?.simpleName,
+                searchHistorySkipped = !searchHistoryEnabled
             )
         }
         return DeviceSyncSummary(attempts)
@@ -127,6 +167,24 @@ class DeviceSyncManager private constructor(context: Context) {
         stateRepository.clearTrustedPeers()
         subscriptionSyncEngine.clearPeerKnowledge()
         playlistSyncEngine.clearPeerKnowledge()
+        historySyncEngine.clearPeerKnowledge()
+    }
+
+    private fun isHistoryCategoryEnabled(category: HistorySyncCategory): Boolean {
+        return when (category) {
+            HistorySyncCategory.WATCH -> defaultPreferences.getBoolean(
+                applicationContext.getString(R.string.enable_watch_history_key),
+                false
+            )
+
+            HistorySyncCategory.SEARCH -> defaultPreferences.getBoolean(
+                applicationContext.getString(R.string.enable_search_history_key),
+                false
+            ) && defaultPreferences.getBoolean(
+                applicationContext.getString(R.string.device_sync_search_history_key),
+                false
+            )
+        }
     }
 
     companion object {

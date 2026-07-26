@@ -108,7 +108,13 @@ data class DeviceSyncAttempt(
     val result: SubscriptionSyncResult? = null,
     val error: String? = null,
     val playlistResult: PlaylistSyncResult? = null,
-    val playlistError: String? = null
+    val playlistError: String? = null,
+    val watchHistoryResult: HistorySyncResult? = null,
+    val watchHistoryError: String? = null,
+    val watchHistorySkipped: Boolean = false,
+    val searchHistoryResult: HistorySyncResult? = null,
+    val searchHistoryError: String? = null,
+    val searchHistorySkipped: Boolean = false
 )
 
 data class DeviceSyncSummary(
@@ -116,7 +122,10 @@ data class DeviceSyncSummary(
 ) {
     val succeeded: Int
         get() = attempts.count {
-            it.result != null && it.playlistResult != null
+            it.result != null &&
+                it.playlistResult != null &&
+                (it.watchHistorySkipped || it.watchHistoryResult != null) &&
+                (it.searchHistorySkipped || it.searchHistoryResult != null)
         }
 
     val failed: Int
@@ -125,13 +134,17 @@ data class DeviceSyncSummary(
     val sentChanges: Int
         get() = attempts.sumOf {
             (it.result?.sentChanges ?: 0) +
-                (it.playlistResult?.sentChanges ?: 0)
+                (it.playlistResult?.sentChanges ?: 0) +
+                (it.watchHistoryResult?.sentChanges ?: 0) +
+                (it.searchHistoryResult?.sentChanges ?: 0)
         }
 
     val receivedChanges: Int
         get() = attempts.sumOf {
             (it.result?.receivedChanges ?: 0) +
-                (it.playlistResult?.receivedChanges ?: 0)
+                (it.playlistResult?.receivedChanges ?: 0) +
+                (it.watchHistoryResult?.receivedChanges ?: 0) +
+                (it.searchHistoryResult?.receivedChanges ?: 0)
         }
 }
 

@@ -31,6 +31,7 @@ object Migrations {
     const val DB_VER_9 = 9
     const val DB_VER_10 = 10
     const val DB_VER_11 = 11
+    const val DB_VER_12 = 12
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -465,6 +466,58 @@ object Migrations {
             "CREATE UNIQUE INDEX IF NOT EXISTS " +
                 "`index_playlist_sync_local_map_playlist_uid` " +
                 "ON `playlist_sync_local_map` (`playlist_uid`)"
+        )
+    }
+
+    val MIGRATION_11_12 = Migration(DB_VER_11, DB_VER_12) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `history_sync_changes` " +
+                "(`category` TEXT NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`origin_revision` INTEGER NOT NULL, `lamport_version` INTEGER NOT NULL, " +
+                "`record_id` TEXT NOT NULL, `record_type` TEXT NOT NULL, " +
+                "`change_type` TEXT NOT NULL, `record_json` TEXT, " +
+                "PRIMARY KEY(`category`, `origin_peer_id`, `origin_revision`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_history_sync_changes_category_record_id` " +
+                "ON `history_sync_changes` (`category`, `record_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_history_sync_changes_category_lamport_version_origin_peer_id_" +
+                "origin_revision` ON `history_sync_changes` " +
+                "(`category`, `lamport_version`, `origin_peer_id`, `origin_revision`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `history_sync_records` " +
+                "(`category` TEXT NOT NULL, `record_id` TEXT NOT NULL, " +
+                "`record_type` TEXT NOT NULL, `lamport_version` INTEGER NOT NULL, " +
+                "`origin_peer_id` TEXT NOT NULL, `origin_revision` INTEGER NOT NULL, " +
+                "`is_deleted` INTEGER NOT NULL, `record_json` TEXT, " +
+                "PRIMARY KEY(`category`, `record_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_history_sync_records_category_record_type` " +
+                "ON `history_sync_records` (`category`, `record_type`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `history_sync_origin_state` " +
+                "(`category` TEXT NOT NULL, `origin_peer_id` TEXT NOT NULL, " +
+                "`contiguous_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`category`, `origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `history_sync_peer_state` " +
+                "(`category` TEXT NOT NULL, `peer_id` TEXT NOT NULL, " +
+                "`origin_peer_id` TEXT NOT NULL, `acknowledged_revision` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`category`, `peer_id`, `origin_peer_id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS " +
+                "`index_history_sync_peer_state_category_origin_peer_id` " +
+                "ON `history_sync_peer_state` (`category`, `origin_peer_id`)"
         )
     }
 }
