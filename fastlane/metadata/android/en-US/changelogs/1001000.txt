@@ -1,0 +1,7 @@
+WizeStream 1.1.0
+
+* Added secure peer-to-peer sync for subscriptions, playlists, history, settings and download metadata, including automatic background sync.
+* Added "Download on this device" for synchronized media missing locally.
+* Added search filters, channel sorting, podcast tabs and per-channel playback profiles.
+* Added multi-audio selection with clearer original, dubbed and descriptive labels.
+* Improved live-stream playback and fixed startup, artwork and migration issues.
