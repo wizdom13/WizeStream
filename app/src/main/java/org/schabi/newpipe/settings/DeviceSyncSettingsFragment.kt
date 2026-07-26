@@ -11,6 +11,7 @@ import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
+import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncManager
 import org.schabi.newpipe.sync.DeviceSyncSummary
 import org.schabi.newpipe.sync.StructuredPreferenceCategory
@@ -37,6 +39,7 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     private lateinit var identityPreference: Preference
     private lateinit var statusPreference: Preference
     private lateinit var syncNowPreference: Preference
+    private lateinit var backgroundSyncPreference: SwitchPreferenceCompat
     private lateinit var trustedDevicesPreference: Preference
     private lateinit var showPairingCodePreference: Preference
     private lateinit var scanPairingCodePreference: Preference
@@ -47,12 +50,21 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         identityPreference = requirePreference(R.string.device_sync_identity_key)
         statusPreference = requirePreference(R.string.device_sync_status_key)
         syncNowPreference = requirePreference(R.string.device_sync_sync_now_key)
+        backgroundSyncPreference = requirePreference(R.string.device_sync_background_key)
         trustedDevicesPreference = requirePreference(R.string.device_sync_trusted_devices_key)
         showPairingCodePreference = requirePreference(R.string.device_sync_show_code_key)
         scanPairingCodePreference = requirePreference(R.string.device_sync_scan_code_key)
 
         syncNowPreference.setOnPreferenceClickListener {
             syncData()
+            true
+        }
+        backgroundSyncPreference.setOnPreferenceChangeListener { _, newValue ->
+            DeviceSyncBackgroundScheduler.setEnabled(
+                requireContext(),
+                enabled = newValue as Boolean,
+                hasTrustedPeers = syncManager.trustedPeers.isNotEmpty()
+            )
             true
         }
         showPairingCodePreference.setOnPreferenceClickListener {

@@ -51,7 +51,13 @@ class DeviceSyncManager private constructor(context: Context) {
             onListenPortSelected = stateRepository::saveListenPort,
             playlistSyncEngine = playlistSyncEngine,
             historySyncEngine = historySyncEngine,
-            structuredPreferenceSyncEngine = structuredPreferenceSyncEngine
+            structuredPreferenceSyncEngine = structuredPreferenceSyncEngine,
+            onTrustedPeerSaved = {
+                DeviceSyncBackgroundScheduler.initialize(
+                    applicationContext,
+                    hasTrustedPeers = true
+                )
+            }
         )
     }
 
@@ -103,6 +109,15 @@ class DeviceSyncManager private constructor(context: Context) {
 
     @Synchronized
     fun sync(): DeviceSyncSummary {
+        return syncInternal(background = false)
+    }
+
+    @Synchronized
+    fun syncInBackground(): DeviceSyncSummary {
+        return syncInternal(background = true)
+    }
+
+    private fun syncInternal(background: Boolean): DeviceSyncSummary {
         node.start()
         val peers = trustedPeers
         if (peers.isEmpty()) {
@@ -110,17 +125,26 @@ class DeviceSyncManager private constructor(context: Context) {
         }
         val attempts = peers.map { peer ->
             val subscription = runCatching {
-                node.syncSubscriptions(peer)
+                node.syncSubscriptions(peer, recordStatus = !background)
             }
-            val playlist = runCatching {
-                node.syncPlaylists(peer)
+            val canContinue = !background || subscription.isSuccess
+            val playlist = if (canContinue) {
+                runCatching {
+                    node.syncPlaylists(peer, recordStatus = !background)
+                }
+            } else {
+                null
             }
             val watchHistoryEnabled = historySyncEngine.isEnabled(
                 HistorySyncCategory.WATCH
             )
-            val watchHistory = if (watchHistoryEnabled) {
+            val watchHistory = if (canContinue && watchHistoryEnabled) {
                 runCatching {
-                    node.syncHistory(peer, HistorySyncCategory.WATCH)
+                    node.syncHistory(
+                        peer,
+                        HistorySyncCategory.WATCH,
+                        recordStatus = !background
+                    )
                 }
             } else {
                 null
@@ -128,39 +152,53 @@ class DeviceSyncManager private constructor(context: Context) {
             val searchHistoryEnabled = historySyncEngine.isEnabled(
                 HistorySyncCategory.SEARCH
             )
-            val searchHistory = if (searchHistoryEnabled) {
+            val searchHistory = if (canContinue && searchHistoryEnabled) {
                 runCatching {
-                    node.syncHistory(peer, HistorySyncCategory.SEARCH)
+                    node.syncHistory(
+                        peer,
+                        HistorySyncCategory.SEARCH,
+                        recordStatus = !background
+                    )
                 }
             } else {
                 null
             }
-            val structuredPreferences = StructuredPreferenceCategory.entries.associateWith { category ->
-                runCatching {
-                    node.syncStructuredPreferences(peer, category)
+            val structuredPreferences = if (canContinue) {
+                StructuredPreferenceCategory.entries.associateWith { category ->
+                    runCatching {
+                        node.syncStructuredPreferences(
+                            peer,
+                            category,
+                            recordStatus = !background
+                        )
+                    }
                 }
+            } else {
+                emptyMap()
             }
             val errors = listOfNotNull(
                 subscription.exceptionOrNull()?.message,
-                playlist.exceptionOrNull()?.message,
+                playlist?.exceptionOrNull()?.message,
                 watchHistory?.exceptionOrNull()?.message,
                 searchHistory?.exceptionOrNull()?.message
             ) + structuredPreferences.values.mapNotNull { result ->
                 result.exceptionOrNull()?.message
             }
-            stateRepository.updateTrustedPeerSyncStatus(
-                peer.peerId,
-                if (errors.isEmpty()) System.currentTimeMillis() else null,
-                errors.takeIf { it.isNotEmpty() }?.joinToString("; ")
-            )
+            if (!background || errors.isEmpty()) {
+                stateRepository.updateTrustedPeerSyncStatus(
+                    peer.peerId,
+                    if (errors.isEmpty()) System.currentTimeMillis() else null,
+                    errors.takeIf { it.isNotEmpty() }?.joinToString("; ")
+                )
+            }
             DeviceSyncAttempt(
                 peer = peer,
                 result = subscription.getOrNull(),
                 error = subscription.exceptionOrNull()?.message
                     ?: subscription.exceptionOrNull()?.javaClass?.simpleName,
-                playlistResult = playlist.getOrNull(),
-                playlistError = playlist.exceptionOrNull()?.message
-                    ?: playlist.exceptionOrNull()?.javaClass?.simpleName,
+                playlistResult = playlist?.getOrNull(),
+                playlistError = playlist?.exceptionOrNull()?.message
+                    ?: playlist?.exceptionOrNull()?.javaClass?.simpleName,
                 watchHistoryResult = watchHistory?.getOrNull(),
                 watchHistoryError = watchHistory?.exceptionOrNull()?.message
                     ?: watchHistory?.exceptionOrNull()?.javaClass?.simpleName,
@@ -181,12 +219,14 @@ class DeviceSyncManager private constructor(context: Context) {
         return DeviceSyncSummary(attempts)
     }
 
+    @Synchronized
     fun clearTrustedPeers() {
         stateRepository.clearTrustedPeers()
         subscriptionSyncEngine.clearPeerKnowledge()
         playlistSyncEngine.clearPeerKnowledge()
         historySyncEngine.clearPeerKnowledge()
         structuredPreferenceSyncEngine.clearPeerKnowledge()
+        DeviceSyncBackgroundScheduler.cancel(applicationContext)
     }
 
     private fun isHistoryCategoryEnabled(category: HistorySyncCategory): Boolean {
@@ -217,6 +257,10 @@ class DeviceSyncManager private constructor(context: Context) {
             return instance ?: synchronized(this) {
                 instance ?: DeviceSyncManager(context).also { instance = it }
             }
+        }
+
+        fun hasTrustedPeers(context: Context): Boolean {
+            return AndroidSyncStateRepository(context.applicationContext).hasTrustedPeers()
         }
     }
 }

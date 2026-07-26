@@ -215,6 +215,7 @@
     <string name="settings_category_device_sync_title">Device synchronization</string>
     <string name="device_sync_status_key" translatable="false">device_sync_status</string>
     <string name="device_sync_sync_now_key" translatable="false">device_sync_sync_now</string>
+    <string name="device_sync_background_key" translatable="false">device_sync_background</string>
     <string name="device_sync_identity_key" translatable="false">device_sync_identity</string>
     <string name="device_sync_show_code_key" translatable="false">device_sync_show_pairing_code</string>
     <string name="device_sync_scan_code_key" translatable="false">device_sync_scan_pairing_code</string>
@@ -228,6 +229,8 @@
     <string name="device_sync_status_errors">Trusted devices needing attention: %1$d</string>
     <string name="device_sync_sync_now_title">Sync now</string>
     <string name="device_sync_sync_now_summary">Exchange subscriptions, playlists, histories, and structured preferences with trusted devices</string>
+    <string name="device_sync_background_title">Automatic background synchronization</string>
+    <string name="device_sync_background_summary">About once per hour, when this device has sufficient battery and is connected to the same Wi-Fi or Ethernet network as a trusted device</string>
     <string name="device_sync_sync_in_progress">Synchronizing data…</string>
     <string name="device_sync_sync_complete_title">Synchronization complete</string>
     <string name="device_sync_sync_complete_summary">Successful devices: %1$d. Failed devices: %2$d. Changes sent: %3$d; received: %4$d.</string>

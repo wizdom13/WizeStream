@@ -64,6 +64,12 @@ class AndroidSyncStateRepository(context: Context) : SyncStateRepository {
         }
     }
 
+    fun hasTrustedPeers(): Boolean {
+        return synchronized(STATE_LOCK) {
+            readState()?.trustedPeers?.isNotEmpty() == true
+        }
+    }
+
     override fun getListenPort(): Int? {
         return synchronized(STATE_LOCK) {
             loadOrCreateIdentity()

@@ -27,7 +27,8 @@ class Libp2pSyncNode(
     private val playlistSyncEngine: PlaylistSyncEngine? = null,
     private val onListenPortSelected: (Int) -> Unit = {},
     private val historySyncEngine: HistorySyncEngine? = null,
-    private val structuredPreferenceSyncEngine: StructuredPreferenceSyncEngine? = null
+    private val structuredPreferenceSyncEngine: StructuredPreferenceSyncEngine? = null,
+    private val onTrustedPeerSaved: () -> Unit = {}
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
@@ -187,6 +188,7 @@ class Libp2pSyncNode(
 
             val trustedPeer = pairingSecurity.invitationToTrustedPeer(invitation)
             stateRepository.saveTrustedPeer(trustedPeer)
+            runCatching(onTrustedPeerSaved)
             return trustedPeer
         } catch (error: PairingException) {
             throw error
@@ -198,7 +200,10 @@ class Libp2pSyncNode(
     }
 
     @Throws(SubscriptionSyncException::class)
-    fun syncSubscriptions(peer: TrustedPeer): SubscriptionSyncResult {
+    fun syncSubscriptions(
+        peer: TrustedPeer,
+        recordStatus: Boolean = true
+    ): SubscriptionSyncResult {
         val currentHost = requireStartedHost()
         val engine = subscriptionSyncEngine
             ?: throw SubscriptionSyncException("Subscription synchronization is unavailable")
@@ -261,7 +266,8 @@ class Libp2pSyncNode(
                 }
             }
 
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 System.currentTimeMillis(),
                 null
@@ -275,7 +281,8 @@ class Libp2pSyncNode(
                 rounds = rounds
             )
         } catch (error: SubscriptionSyncException) {
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 error.message ?: "Subscription synchronization failed"
@@ -286,7 +293,8 @@ class Libp2pSyncNode(
                 "Subscription synchronization with ${peer.deviceName} failed",
                 error
             )
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 wrapped.message
@@ -296,7 +304,10 @@ class Libp2pSyncNode(
     }
 
     @Throws(PlaylistSyncException::class)
-    fun syncPlaylists(peer: TrustedPeer): PlaylistSyncResult {
+    fun syncPlaylists(
+        peer: TrustedPeer,
+        recordStatus: Boolean = true
+    ): PlaylistSyncResult {
         val currentHost = requireStartedHost()
         val engine = playlistSyncEngine
             ?: throw PlaylistSyncException("Playlist synchronization is unavailable")
@@ -357,7 +368,8 @@ class Libp2pSyncNode(
                 }
             }
 
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 System.currentTimeMillis(),
                 null
@@ -370,7 +382,8 @@ class Libp2pSyncNode(
                 rounds = rounds
             )
         } catch (error: PlaylistSyncException) {
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 error.message ?: "Playlist synchronization failed"
@@ -381,7 +394,8 @@ class Libp2pSyncNode(
                 "Playlist synchronization with ${peer.deviceName} failed",
                 error
             )
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 wrapped.message
@@ -393,7 +407,8 @@ class Libp2pSyncNode(
     @Throws(HistorySyncException::class)
     fun syncHistory(
         peer: TrustedPeer,
-        category: HistorySyncCategory
+        category: HistorySyncCategory,
+        recordStatus: Boolean = true
     ): HistorySyncResult {
         val currentHost = requireStartedHost()
         val engine = historySyncEngine
@@ -459,7 +474,8 @@ class Libp2pSyncNode(
                 }
             }
 
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 System.currentTimeMillis(),
                 null
@@ -473,7 +489,8 @@ class Libp2pSyncNode(
                 rounds = rounds
             )
         } catch (error: HistorySyncException) {
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 error.message ?: "History synchronization failed"
@@ -484,7 +501,8 @@ class Libp2pSyncNode(
                 "History synchronization with ${peer.deviceName} failed",
                 error
             )
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 wrapped.message
@@ -496,7 +514,8 @@ class Libp2pSyncNode(
     @Throws(StructuredPreferenceSyncException::class)
     fun syncStructuredPreferences(
         peer: TrustedPeer,
-        category: StructuredPreferenceCategory
+        category: StructuredPreferenceCategory,
+        recordStatus: Boolean = true
     ): StructuredPreferenceSyncResult {
         val currentHost = requireStartedHost()
         val engine = structuredPreferenceSyncEngine
@@ -566,7 +585,8 @@ class Libp2pSyncNode(
                 }
             }
 
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 System.currentTimeMillis(),
                 null
@@ -580,7 +600,8 @@ class Libp2pSyncNode(
                 rounds = rounds
             )
         } catch (error: StructuredPreferenceSyncException) {
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 error.message ?: "Structured preference synchronization failed"
@@ -591,12 +612,28 @@ class Libp2pSyncNode(
                 "Structured preference synchronization with ${peer.deviceName} failed",
                 error
             )
-            stateRepository.updateTrustedPeerSyncStatus(
+            recordSyncStatus(
+                recordStatus,
                 peer.peerId,
                 null,
                 wrapped.message
             )
             throw wrapped
+        }
+    }
+
+    private fun recordSyncStatus(
+        enabled: Boolean,
+        peerId: String,
+        syncedAtEpochMillis: Long?,
+        error: String?
+    ) {
+        if (enabled) {
+            stateRepository.updateTrustedPeerSyncStatus(
+                peerId,
+                syncedAtEpochMillis,
+                error
+            )
         }
     }
 
@@ -611,6 +648,7 @@ class Libp2pSyncNode(
                 remotePeerId
             )
             stateRepository.saveTrustedPeer(trustedPeer)
+            runCatching(onTrustedPeerSaved)
             controller.sendPairingResponse(PairingResponse(accepted = true))
         } catch (error: Exception) {
             controller.sendPairingResponse(

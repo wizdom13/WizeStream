@@ -34,6 +34,8 @@ import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.ktx.hasAssignableCause
 import org.schabi.newpipe.settings.NewPipeSettings
+import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
+import org.schabi.newpipe.sync.DeviceSyncManager
 import org.schabi.newpipe.util.BridgeStateSaverInitializer
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ServiceHelper
@@ -124,6 +126,18 @@ open class App :
         )
 
         configureRxJavaErrorHandler()
+        initializeDeviceSyncScheduling()
+    }
+
+    private fun initializeDeviceSyncScheduling() {
+        runCatching {
+            DeviceSyncBackgroundScheduler.initialize(
+                this,
+                hasTrustedPeers = DeviceSyncManager.hasTrustedPeers(this)
+            )
+        }.onFailure { error ->
+            Log.e(TAG, "Could not initialize background device synchronization", error)
+        }
     }
 
     private fun applyDynamicColorsIfAvailable() {
