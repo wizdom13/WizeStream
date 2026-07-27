@@ -67,6 +67,7 @@ import org.schabi.newpipe.databinding.InstanceSpinnerLayoutBinding;
 import org.schabi.newpipe.databinding.ToolbarLayoutBinding;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -138,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_DONATION = 1;
     private static final int ITEM_ID_ABOUT = 2;
     private static final int ITEM_ID_KIOSK_BASE = 100;
+    private static final int ITEM_ID_YOUTUBE_MUSIC = 10_000;
 
     private static final int ORDER = 0;
     public static final String KEY_IS_IN_BACKGROUND = "is_in_background";
@@ -257,10 +259,12 @@ public class MainActivity extends AppCompatActivity {
         mainBinding.getRoot().addDrawerListener(toggle);
         mainBinding.getRoot().addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
             private int lastService;
+            private boolean lastYoutubeMusicMode;
 
             @Override
             public void onDrawerOpened(final View drawerView) {
                 lastService = ServiceHelper.getSelectedServiceId(MainActivity.this);
+                lastYoutubeMusicMode = ServiceHelper.isYoutubeMusicMode(MainActivity.this);
             }
 
             @Override
@@ -268,7 +272,9 @@ public class MainActivity extends AppCompatActivity {
                 if (servicesShown) {
                     toggleServices();
                 }
-                if (lastService != ServiceHelper.getSelectedServiceId(MainActivity.this)) {
+                if (lastService != ServiceHelper.getSelectedServiceId(MainActivity.this)
+                        || lastYoutubeMusicMode
+                        != ServiceHelper.isYoutubeMusicMode(MainActivity.this)) {
                     ActivityCompat.recreate(MainActivity.this);
                 }
             }
@@ -377,13 +383,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void changeService(final MenuItem item) {
-        drawerLayoutBinding.navigation.getMenu()
-                .getItem(ServiceHelper.getSelectedServiceId(this))
-                .setChecked(false);
-        ServiceHelper.setSelectedServiceId(this, item.getItemId());
-        drawerLayoutBinding.navigation.getMenu()
-                .getItem(ServiceHelper.getSelectedServiceId(this))
-                .setChecked(true);
+        final Menu menu = drawerLayoutBinding.navigation.getMenu();
+        final MenuItem oldSelection = menu.findItem(getSelectedServiceMenuItemId());
+        if (oldSelection != null) {
+            oldSelection.setChecked(false);
+        }
+
+        if (item.getItemId() == ITEM_ID_YOUTUBE_MUSIC) {
+            ServiceHelper.setYoutubeMusicMode(this);
+        } else {
+            ServiceHelper.setSelectedServiceId(this, item.getItemId());
+        }
+
+        final MenuItem newSelection = menu.findItem(getSelectedServiceMenuItemId());
+        if (newSelection != null) {
+            newSelection.setChecked(true);
+        }
+    }
+
+    private int getSelectedServiceMenuItemId() {
+        return ServiceHelper.isYoutubeMusicMode(this)
+                ? ITEM_ID_YOUTUBE_MUSIC : ServiceHelper.getSelectedServiceId(this);
     }
 
     private void tabSelected(final MenuItem item) {
@@ -425,6 +445,10 @@ public class MainActivity extends AppCompatActivity {
      */
     private List<String> getDrawerKioskIds(final StreamingService service)
             throws ExtractionException {
+        if (ServiceHelper.isYoutubeMusicMode(this)
+                && service.getServiceId() == ServiceList.YouTube.getServiceId()) {
+            return List.of("trending_music");
+        }
         return new ArrayList<>(service.getKioskList().getAvailableKiosks());
     }
 
@@ -494,10 +518,19 @@ public class MainActivity extends AppCompatActivity {
             if (s.getServiceId() == 3) {
                 enhancePeertubeMenu(menuItem);
             }
+
+            if (s.getServiceId() == ServiceList.YouTube.getServiceId()) {
+                drawerLayoutBinding.navigation.getMenu()
+                        .add(R.id.menu_services_group, ITEM_ID_YOUTUBE_MUSIC, ORDER,
+                                R.string.youtube_music)
+                        .setIcon(R.drawable.ic_music_note);
+            }
         }
-        drawerLayoutBinding.navigation.getMenu()
-                .getItem(ServiceHelper.getSelectedServiceId(this))
-                .setChecked(true);
+        final MenuItem selectedItem = drawerLayoutBinding.navigation.getMenu()
+                .findItem(getSelectedServiceMenuItemId());
+        if (selectedItem != null) {
+            selectedItem.setChecked(true);
+        }
     }
 
     private void enhancePeertubeMenu(final MenuItem menuItem) {
@@ -566,12 +599,10 @@ public class MainActivity extends AppCompatActivity {
         // so it looks like the drawer isn't open when the user returns to MainActivity
         mainBinding.getRoot().closeDrawer(GravityCompat.START, false);
         try {
-            final int selectedServiceId = ServiceHelper.getSelectedServiceId(this);
-            final String selectedServiceName = NewPipe.getService(selectedServiceId)
-                    .getServiceInfo().getName();
+            final String selectedServiceName = ServiceHelper.getSelectedServiceName(this);
             drawerHeaderBinding.drawerHeaderServiceView.setText(selectedServiceName);
-            drawerHeaderBinding.drawerHeaderServiceIcon.setImageResource(ServiceHelper
-                    .getIcon(selectedServiceId));
+            drawerHeaderBinding.drawerHeaderServiceIcon.setImageResource(
+                    ServiceHelper.getSelectedServiceIcon(this));
 
             drawerHeaderBinding.drawerHeaderServiceView.post(() -> drawerHeaderBinding
                     .drawerHeaderServiceView.setSelected(true));

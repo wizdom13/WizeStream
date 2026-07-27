@@ -21,6 +21,10 @@ internal class TestSubscriptionSyncStore(
     val subscriptionUrls: Set<String>
         get() = subscriptions.values.map(SyncedSubscription::url).toSet()
 
+    fun youtubeModeMask(url: String): Int? {
+        return subscriptions.values.firstOrNull { it.url == url }?.youtubeModeMask
+    }
+
     override fun reconcileLocalSubscriptions() = Unit
 
     override fun recordLocalUpsert(subscription: SubscriptionEntity) {
@@ -140,7 +144,8 @@ internal class TestSubscriptionSyncStore(
         if (
             existing != null &&
             existing.type == type &&
-            type == SubscriptionChangeType.UPSERT
+            type == SubscriptionChangeType.UPSERT &&
+            existing.subscription == subscription
         ) {
             return
         }

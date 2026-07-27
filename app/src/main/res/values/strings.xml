@@ -972,6 +972,7 @@
     <string name="georestricted_content">This content is not available in your country.</string>
     <string name="soundcloud_go_plus_content">This is a SoundCloud Go+ track, at least in your country, so it cannot be streamed or downloaded by WizeStream.</string>
     <string name="private_content">This content is private, so it cannot be streamed or downloaded by WizeStream.</string>
+    <string name="youtube_music">YouTube Music</string>
     <string name="youtube_music_premium_content">This video is available only to YouTube Music Premium members, so it cannot be streamed or downloaded by WizeStream.</string>
     <string name="account_terminated">Account terminated</string>
     <string name="account_terminated_service_provides_reason">Account terminated\n\n%1$s provides this reason: %2$s</string>

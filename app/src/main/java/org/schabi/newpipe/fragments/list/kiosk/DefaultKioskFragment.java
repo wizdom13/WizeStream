@@ -2,6 +2,8 @@ package org.schabi.newpipe.fragments.list.kiosk;
 
 import android.os.Bundle;
 
+import com.evernote.android.state.State;
+
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.NewPipe;
@@ -11,6 +13,8 @@ import org.schabi.newpipe.util.KioskTranslator;
 import org.schabi.newpipe.util.ServiceHelper;
 
 public class DefaultKioskFragment extends KioskFragment {
+    @State
+    boolean youtubeMusicMode;
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -25,7 +29,8 @@ public class DefaultKioskFragment extends KioskFragment {
     public void onResume() {
         super.onResume();
 
-        if (serviceId != ServiceHelper.getSelectedServiceId(requireContext())) {
+        if (serviceId != ServiceHelper.getSelectedServiceId(requireContext())
+                || youtubeMusicMode != ServiceHelper.isYoutubeMusicMode(requireContext())) {
             if (currentWorker != null) {
                 currentWorker.dispose();
             }
@@ -37,9 +42,11 @@ public class DefaultKioskFragment extends KioskFragment {
     private void updateSelectedDefaultKiosk() {
         try {
             serviceId = ServiceHelper.getSelectedServiceId(requireContext());
+            youtubeMusicMode = ServiceHelper.isYoutubeMusicMode(requireContext());
 
             final KioskList kioskList = NewPipe.getService(serviceId).getKioskList();
-            kioskId = kioskList.getDefaultKioskId();
+            kioskId = youtubeMusicMode
+                    ? "trending_music" : kioskList.getDefaultKioskId();
             url = kioskList.getListLinkHandlerFactoryByType(kioskId).fromId(kioskId).getUrl();
 
             kioskTranslatedName = KioskTranslator.getTranslatedKioskName(kioskId, requireContext());

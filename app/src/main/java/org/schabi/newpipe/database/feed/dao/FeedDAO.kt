@@ -48,6 +48,9 @@ abstract class FeedDAO {
         INNER JOIN feed f
         ON s.uid = f.stream_id
 
+        INNER JOIN subscriptions sub
+        ON sub.uid = f.subscription_id
+
         LEFT JOIN feed_group_subscription_join fgs
         ON (
             :groupId <> ${FeedGroupEntity.GROUP_ALL_ID}
@@ -57,6 +60,14 @@ abstract class FeedDAO {
         WHERE (
             :groupId = ${FeedGroupEntity.GROUP_ALL_ID}
             OR fgs.group_id = :groupId
+        )
+        AND (
+            :youtubeMusicMode = 0
+            OR sub.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        )
+        AND (
+            sub.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (sub.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         AND (
             :includePlayed
@@ -90,7 +101,9 @@ abstract class FeedDAO {
         groupId: Long,
         includePlayed: Boolean,
         includePartiallyPlayed: Boolean,
-        uploadDateBefore: OffsetDateTime?
+        uploadDateBefore: OffsetDateTime?,
+        youtubeModeMask: Int,
+        youtubeMusicMode: Boolean
     ): Maybe<List<StreamWithState>>
 
     /**
@@ -166,15 +179,66 @@ abstract class FeedDAO {
 
         INNER JOIN feed_group_subscription_join fgs
         ON fgs.subscription_id = lu.subscription_id AND fgs.group_id = :groupId
+
+        INNER JOIN subscriptions s
+        ON s.uid = lu.subscription_id
+
+        WHERE (
+            :youtubeMusicMode = 0
+            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        )
+        AND (
+            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
         """
     )
-    abstract fun oldestSubscriptionUpdate(groupId: Long): Flowable<List<OffsetDateTime?>>
+    abstract fun oldestSubscriptionUpdate(
+        groupId: Long,
+        youtubeModeMask: Int,
+        youtubeMusicMode: Boolean
+    ): Flowable<List<OffsetDateTime?>>
 
-    @Query("SELECT MIN(last_updated) FROM feed_last_updated")
-    abstract fun oldestSubscriptionUpdateFromAll(): Flowable<List<OffsetDateTime?>>
+    @Query(
+        """
+        SELECT MIN(lu.last_updated)
+        FROM feed_last_updated lu
+        INNER JOIN subscriptions s ON s.uid = lu.subscription_id
+        WHERE (
+            :youtubeMusicMode = 0
+            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        )
+        AND (
+            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
+        """
+    )
+    abstract fun oldestSubscriptionUpdateFromAll(
+        youtubeModeMask: Int,
+        youtubeMusicMode: Boolean
+    ): Flowable<List<OffsetDateTime?>>
 
-    @Query("SELECT COUNT(*) FROM feed_last_updated WHERE last_updated IS NULL")
-    abstract fun notLoadedCount(): Flowable<Long>
+    @Query(
+        """
+        SELECT COUNT(*)
+        FROM feed_last_updated lu
+        INNER JOIN subscriptions s ON s.uid = lu.subscription_id
+        WHERE lu.last_updated IS NULL
+        AND (
+            :youtubeMusicMode = 0
+            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        )
+        AND (
+            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
+        """
+    )
+    abstract fun notLoadedCount(
+        youtubeModeMask: Int,
+        youtubeMusicMode: Boolean
+    ): Flowable<Long>
 
     @Query(
         """
@@ -187,9 +251,21 @@ abstract class FeedDAO {
         ON s.uid = lu.subscription_id 
 
         WHERE lu.last_updated IS NULL
+        AND (
+            :youtubeMusicMode = 0
+            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        )
+        AND (
+            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
         """
     )
-    abstract fun notLoadedCountForGroup(groupId: Long): Flowable<Long>
+    abstract fun notLoadedCountForGroup(
+        groupId: Long,
+        youtubeModeMask: Int,
+        youtubeMusicMode: Boolean
+    ): Flowable<Long>
 
     @Query(
         """

@@ -58,7 +58,10 @@ data class SubscriptionSyncChangeEntity(
     val subscriberCount: Long?,
 
     @ColumnInfo(name = DESCRIPTION)
-    val description: String?
+    val description: String?,
+
+    @ColumnInfo(name = YOUTUBE_MODE_MASK)
+    val youtubeModeMask: Int?
 ) {
     companion object {
         const val TABLE_NAME = "subscription_sync_changes"
@@ -73,6 +76,7 @@ data class SubscriptionSyncChangeEntity(
         const val AVATAR_URL = "avatar_url"
         const val SUBSCRIBER_COUNT = "subscriber_count"
         const val DESCRIPTION = "description"
+        const val YOUTUBE_MODE_MASK = "youtube_mode_mask"
     }
 }
 
@@ -109,7 +113,10 @@ data class SubscriptionSyncRecordEntity(
     val originRevision: Long,
 
     @ColumnInfo(name = IS_DELETED)
-    val isDeleted: Boolean
+    val isDeleted: Boolean,
+
+    @ColumnInfo(name = YOUTUBE_MODE_MASK, defaultValue = "1")
+    val youtubeModeMask: Int
 ) {
     companion object {
         const val TABLE_NAME = "subscription_sync_records"
@@ -120,6 +127,7 @@ data class SubscriptionSyncRecordEntity(
         const val ORIGIN_PEER_ID = "origin_peer_id"
         const val ORIGIN_REVISION = "origin_revision"
         const val IS_DELETED = "is_deleted"
+        const val YOUTUBE_MODE_MASK = "youtube_mode_mask"
     }
 }
 

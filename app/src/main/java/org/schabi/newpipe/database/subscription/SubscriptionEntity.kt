@@ -50,7 +50,10 @@ data class SubscriptionEntity(
 
     @get:NotificationMode
     @ColumnInfo(name = SUBSCRIPTION_NOTIFICATION_MODE)
-    var notificationMode: Int = 0
+    var notificationMode: Int = 0,
+
+    @ColumnInfo(name = SUBSCRIPTION_YOUTUBE_MODE_MASK, defaultValue = "1")
+    var youtubeModeMask: Int = YOUTUBE_MODE_REGULAR
 ) {
     @Ignore
     fun toChannelInfoItem(): ChannelInfoItem {
@@ -74,6 +77,12 @@ data class SubscriptionEntity(
         const val SUBSCRIPTION_SUBSCRIBER_COUNT: String = "subscriber_count"
         const val SUBSCRIPTION_DESCRIPTION: String = "description"
         const val SUBSCRIPTION_NOTIFICATION_MODE: String = "notification_mode"
+        const val SUBSCRIPTION_YOUTUBE_MODE_MASK: String = "youtube_mode_mask"
+
+        const val YOUTUBE_SERVICE_ID: Int = 0
+        const val YOUTUBE_MODE_REGULAR: Int = 1
+        const val YOUTUBE_MODE_MUSIC: Int = 1 shl 1
+        const val YOUTUBE_MODE_ALL: Int = YOUTUBE_MODE_REGULAR or YOUTUBE_MODE_MUSIC
 
         @JvmStatic
         @Ignore

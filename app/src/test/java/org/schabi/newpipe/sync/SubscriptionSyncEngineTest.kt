@@ -11,6 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 
 class SubscriptionSyncEngineTest {
     @Test
@@ -67,6 +68,44 @@ class SubscriptionSyncEngineTest {
 
         assertTrue(rounds >= 2)
         assertEquals(phoneStore.subscriptionUrls, tabletStore.subscriptionUrls)
+    }
+
+    @Test
+    fun `youtube mode membership changes synchronize`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = SubscriptionSyncEngine(phoneStore)
+        val tablet = SubscriptionSyncEngine(tabletStore)
+        phoneStore.recordLocalUpsert(
+            SubscriptionEntity(
+                serviceId = SERVICE_ID,
+                url = PHONE_URL,
+                name = "Music channel",
+                youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC
+            )
+        )
+
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(
+            SubscriptionEntity.YOUTUBE_MODE_MUSIC,
+            tabletStore.youtubeModeMask(PHONE_URL)
+        )
+
+        phoneStore.recordLocalUpsert(
+            SubscriptionEntity(
+                serviceId = SERVICE_ID,
+                url = PHONE_URL,
+                name = "Music channel",
+                youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_ALL
+            )
+        )
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(
+            SubscriptionEntity.YOUTUBE_MODE_ALL,
+            tabletStore.youtubeModeMask(PHONE_URL)
+        )
     }
 
     @Test

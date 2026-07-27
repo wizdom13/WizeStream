@@ -203,7 +203,9 @@ internal class SubscriptionSyncProtocolController(
 
 private object SubscriptionSyncCodec {
     private val json = Json {
-        encodeDefaults = true
+        // Keep the additive YouTube-mode field absent for regular-only subscriptions so
+        // older peers can still decode the common case.
+        encodeDefaults = false
         explicitNulls = false
         ignoreUnknownKeys = false
     }

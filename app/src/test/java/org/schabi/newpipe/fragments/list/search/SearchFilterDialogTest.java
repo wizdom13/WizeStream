@@ -54,6 +54,38 @@ public class SearchFilterDialogTest {
         assertEquals(Arrays.asList(1, 11, 21), new ArrayList<>(selected));
     }
 
+    @Test
+    public void youtubeMusicModeKeepsOnlyMusicContentTypes() {
+        final List<FilterItem> allFilters = Arrays.asList(
+                item(1, "all"),
+                item(2, "videos"),
+                item(3, "music_songs"),
+                item(4, "music_videos"),
+                item(5, "music_albums"),
+                item(6, "music_playlists"),
+                item(7, "music_artists"));
+
+        final List<String> names = SearchFilterDialog.filterContentTypes(allFilters, true)
+                .stream()
+                .map(FilterItem::getName)
+                .toList();
+
+        assertEquals(Arrays.asList(
+                "music_songs",
+                "music_videos",
+                "music_albums",
+                "music_playlists",
+                "music_artists"), names);
+    }
+
+    @Test
+    public void regularModeKeepsEveryContentType() {
+        final List<FilterItem> allFilters = Arrays.asList(
+                item(1, "all"), item(2, "music_songs"));
+
+        assertEquals(allFilters, SearchFilterDialog.filterContentTypes(allFilters, false));
+    }
+
     private static List<FilterGroup> videoGroups() {
         return Arrays.asList(
                 exclusive("sortby", item(1, "sort_relevance"), item(2, "sort_rating")),

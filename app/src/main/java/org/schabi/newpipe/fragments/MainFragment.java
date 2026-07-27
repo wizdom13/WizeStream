@@ -480,8 +480,7 @@ public class MainFragment extends BaseFragment
         final String tabName = tabsList.get(position).getTabName(requireContext());
         contextualSearchEditText.setHint(getString(R.string.contextual_search_hint, tabName));
 
-        final int serviceId = ServiceHelper.getSelectedServiceId(requireContext());
-        final String serviceName = ServiceHelper.getNameOfServiceById(serviceId);
+        final String serviceName = ServiceHelper.getSelectedServiceName(requireContext());
         final String globalSearchLabel =
                 getString(R.string.search_with_service_name, serviceName);
         binding.contextualGlobalSearchFab.setText(globalSearchLabel);

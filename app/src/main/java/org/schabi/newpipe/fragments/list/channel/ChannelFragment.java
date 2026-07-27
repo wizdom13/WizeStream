@@ -261,19 +261,23 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 .subscribe(getSubscribeUpdateMonitor(info), onError));
 
         disposables.add(observable
-                .map(List::isEmpty)
+                .map(subscriptions -> subscriptions.isEmpty()
+                        || !subscriptionManager
+                        .isSubscribedInCurrentMode(subscriptions.get(0)))
                 .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(isEmpty -> updateSubscribeButton(!isEmpty), onError));
+                .subscribe(isNotSubscribed -> updateSubscribeButton(!isNotSubscribed), onError));
 
         disposables.add(observable
-                .map(List::isEmpty)
+                .map(subscriptions -> subscriptions.isEmpty()
+                        || !subscriptionManager
+                        .isSubscribedInCurrentMode(subscriptions.get(0)))
                 .distinctUntilChanged()
                 .skip(1) // channel has just been opened
                 .filter(x -> NotificationHelper.areNewStreamsNotificationsEnabled(requireContext()))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(isEmpty -> {
-                    if (!isEmpty) {
+                .subscribe(isNotSubscribed -> {
+                    if (!isNotSubscribed) {
                         showNotifySnackbar();
                     }
                 }, onError));
@@ -343,17 +347,25 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 subscribeButtonMonitor.dispose();
             }
 
-            if (subscriptionEntities.isEmpty()) {
+            final boolean subscribedInCurrentMode = !subscriptionEntities.isEmpty()
+                    && subscriptionManager
+                    .isSubscribedInCurrentMode(subscriptionEntities.get(0));
+            if (!subscribedInCurrentMode) {
                 if (DEBUG) {
                     Log.d(TAG, "No subscription to this channel!");
                 }
-                final SubscriptionEntity channel = new SubscriptionEntity();
-                channel.setServiceId(info.getServiceId());
-                channel.setUrl(info.getUrl());
-                channel.setName(info.getName());
-                channel.setAvatarUrl(ImageStrategy.imageListToDbUrl(info.getAvatars()));
-                channel.setDescription(ExtractorApiCompat.descriptionText(info));
-                channel.setSubscriberCount(info.getSubscriberCount());
+                final SubscriptionEntity channel;
+                if (subscriptionEntities.isEmpty()) {
+                    channel = new SubscriptionEntity();
+                    channel.setServiceId(info.getServiceId());
+                    channel.setUrl(info.getUrl());
+                    channel.setName(info.getName());
+                    channel.setAvatarUrl(ImageStrategy.imageListToDbUrl(info.getAvatars()));
+                    channel.setDescription(ExtractorApiCompat.descriptionText(info));
+                    channel.setSubscriberCount(info.getSubscriberCount());
+                } else {
+                    channel = subscriptionEntities.get(0);
+                }
                 channelSubscription = null;
                 updateNotifyButton(null);
                 subscribeButtonMonitor = monitorSubscribeButton(mapOnSubscribe(channel));

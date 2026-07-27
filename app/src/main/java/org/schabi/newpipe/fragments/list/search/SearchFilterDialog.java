@@ -50,11 +50,13 @@ final class SearchFilterDialog {
                                @NonNull final StreamingService service,
                                @NonNull final String[] currentContentFilters,
                                @NonNull final int[] currentSortFilters,
+                               final boolean musicOnly,
                                @NonNull final Listener listener) {
         this.context = context;
         this.service = service;
         this.listener = listener;
-        contentFilters = flatten(service.getSearchQHFactory().getAvailableContentFilter());
+        contentFilters = filterContentTypes(
+                flatten(service.getSearchQHFactory().getAvailableContentFilter()), musicOnly);
         selectedContentFilter = findByName(contentFilters,
                 currentContentFilters.length == 0 ? null : currentContentFilters[0]);
         if (selectedContentFilter == null && !contentFilters.isEmpty()) {
@@ -76,9 +78,10 @@ final class SearchFilterDialog {
                      @NonNull final StreamingService service,
                      @NonNull final String[] currentContentFilters,
                      @NonNull final int[] currentSortFilters,
+                     final boolean musicOnly,
                      @NonNull final Listener listener) {
         final SearchFilterDialog controller = new SearchFilterDialog(
-                context, service, currentContentFilters, currentSortFilters, listener);
+                context, service, currentContentFilters, currentSortFilters, musicOnly, listener);
         controller.show();
     }
 
@@ -278,6 +281,21 @@ final class SearchFilterDialog {
             items.addAll(Arrays.asList(group.filterItems));
         }
         return items;
+    }
+
+    @NonNull
+    static List<FilterItem> filterContentTypes(@NonNull final List<FilterItem> items,
+                                               final boolean musicOnly) {
+        if (!musicOnly) {
+            return items;
+        }
+        final List<FilterItem> musicItems = new ArrayList<>();
+        for (final FilterItem item : items) {
+            if (item.getName().startsWith("music_")) {
+                musicItems.add(item);
+            }
+        }
+        return musicItems;
     }
 
     @Nullable

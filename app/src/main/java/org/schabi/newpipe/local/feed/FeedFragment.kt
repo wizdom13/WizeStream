@@ -80,9 +80,11 @@ import org.schabi.newpipe.local.feed.service.FeedLoadService
 import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionManager
+import org.schabi.newpipe.player.playqueue.SinglePlayQueue
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.NavigationHelper
+import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.StreamListFilter
 import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountStreams
 import org.schabi.newpipe.util.ThemeHelper.getItemViewMode
@@ -433,6 +435,17 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         override fun onItemClick(item: Item<*>, view: View) {
             if (item is StreamItem && !isRefreshing) {
                 val stream = item.streamWithState.stream
+                if (
+                    ServiceHelper.isYoutubeMusicMode(requireContext()) &&
+                    stream.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID
+                ) {
+                    NavigationHelper.playOnBackgroundPlayer(
+                        requireContext(),
+                        SinglePlayQueue(stream.toStreamInfoItem()),
+                        true
+                    )
+                    return
+                }
                 NavigationHelper.openVideoDetailFragment(
                     requireContext(),
                     fm,

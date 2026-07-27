@@ -33,7 +33,8 @@ internal data class SyncedSubscription(
     val name: String? = null,
     val avatarUrl: String? = null,
     val subscriberCount: Long? = null,
-    val description: String? = null
+    val description: String? = null,
+    val youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR
 ) {
     internal fun toEntity() = SubscriptionEntity(
         serviceId = serviceId,
@@ -41,7 +42,8 @@ internal data class SyncedSubscription(
         name = name,
         avatarUrl = avatarUrl,
         subscriberCount = subscriberCount,
-        description = description
+        description = description,
+        youtubeModeMask = youtubeModeMask
     )
 
     companion object {
@@ -52,7 +54,8 @@ internal data class SyncedSubscription(
                 name = entity.name?.take(MAX_SUBSCRIPTION_NAME_LENGTH),
                 avatarUrl = entity.avatarUrl?.take(MAX_SUBSCRIPTION_AVATAR_URL_LENGTH),
                 subscriberCount = entity.subscriberCount,
-                description = entity.description?.take(MAX_SUBSCRIPTION_DESCRIPTION_LENGTH)
+                description = entity.description?.take(MAX_SUBSCRIPTION_DESCRIPTION_LENGTH),
+                youtubeModeMask = entity.youtubeModeMask
             )
         }
     }
@@ -297,9 +300,11 @@ internal object SubscriptionSyncValidation {
             (subscription.avatarUrl?.length ?: 0) >
             MAX_SUBSCRIPTION_AVATAR_URL_LENGTH ||
             (subscription.description?.length ?: 0) >
-            MAX_SUBSCRIPTION_DESCRIPTION_LENGTH
+            MAX_SUBSCRIPTION_DESCRIPTION_LENGTH ||
+            subscription.youtubeModeMask < SubscriptionEntity.YOUTUBE_MODE_REGULAR ||
+            subscription.youtubeModeMask > SubscriptionEntity.YOUTUBE_MODE_ALL
         ) {
-            throw SubscriptionSyncException("Subscription metadata is too large")
+            throw SubscriptionSyncException("Subscription metadata is invalid")
         }
     }
 

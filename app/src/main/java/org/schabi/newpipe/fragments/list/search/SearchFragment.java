@@ -51,10 +51,12 @@ import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.MetaInfo;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.Page;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.search.SearchInfo;
+import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.BackPressable;
 import org.schabi.newpipe.fragments.list.BaseListFragment;
 import org.schabi.newpipe.ktx.AnimationType;
@@ -86,6 +88,9 @@ import io.reactivex.rxjava3.subjects.PublishSubject;
 
 public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.InfoItemsPage<?>>
         implements BackPressable {
+    private static final String YOUTUBE_MUSIC_SONGS_FILTER = "music_songs";
+    private static final String YOUTUBE_MUSIC_VIDEOS_FILTER = "music_videos";
+
     /*//////////////////////////////////////////////////////////////////////////
     // Search
     //////////////////////////////////////////////////////////////////////////*/
@@ -199,6 +204,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         showLocalSuggestions = NewPipeSettings.showLocalSearchSuggestions(activity, prefs);
         showRemoteSuggestions = NewPipeSettings.showRemoteSearchSuggestions(activity, prefs);
+        if (serviceId == ServiceList.YouTube.getServiceId()
+                && ServiceHelper.isYoutubeMusicMode(context)
+                && (contentFilter.length == 0
+                || !contentFilter[0].startsWith("music_"))) {
+            contentFilter = new String[]{YOUTUBE_MUSIC_SONGS_FILTER};
+        }
 
         suggestionListAdapter = new SuggestionListAdapter();
         historyRecordManager = new HistoryRecordManager(context);
@@ -222,7 +233,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             if (contentFilter.length == 0) {
                 searchEditText.setHint(
                         getString(R.string.search_with_service_name,
-                                service.getServiceInfo().getName()));
+                                getSearchServiceName()));
             } else {
                 updateSearchHint(contentFilter[0]);
             }
@@ -930,6 +941,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             return;
         }
         SearchFilterDialog.show(requireContext(), service, contentFilter, sortFilter,
+                serviceId == ServiceList.YouTube.getServiceId()
+                        && ServiceHelper.isYoutubeMusicMode(requireContext()),
                 (selectedContentFilter, selectedSortFilters) -> {
                     contentFilter = selectedContentFilter.isEmpty()
                             ? new String[0] : new String[]{selectedContentFilter};
@@ -951,13 +964,22 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
         if ("all".equals(selectedContentFilter)) {
             searchEditText.setHint(getString(R.string.search_with_service_name,
-                    service.getServiceInfo().getName()));
+                    getSearchServiceName()));
         } else {
             searchEditText.setHint(getString(R.string.search_with_service_name_and_filter,
-                    service.getServiceInfo().getName(),
+                    getSearchServiceName(),
                     ServiceHelper.getTranslatedFilterString(
                             selectedContentFilter, requireContext())));
         }
+    }
+
+    @NonNull
+    private String getSearchServiceName() {
+        if (serviceId == ServiceList.YouTube.getServiceId()
+                && ServiceHelper.isYoutubeMusicMode(requireContext())) {
+            return ServiceHelper.getSelectedServiceName(requireContext());
+        }
+        return service.getServiceInfo().getName();
     }
 
     private void setQuery(final int theServiceId,
@@ -977,6 +999,13 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     private String getSearchEditString() {
         return searchEditText.getText().toString();
+    }
+
+    @Override
+    protected boolean shouldPlayOnBackground(@NonNull final StreamInfoItem item) {
+        return (contentFilter.length == 0
+                || !YOUTUBE_MUSIC_VIDEOS_FILTER.equals(contentFilter[0]))
+                && super.shouldPlayOnBackground(item);
     }
 
     private boolean isSearchEditBlank() {

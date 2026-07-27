@@ -19,12 +19,19 @@ import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.local.feed.service.FeedUpdateInfo
 import org.schabi.newpipe.sync.RoomSubscriptionSyncStore
 import org.schabi.newpipe.util.ExtractorHelper
+import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.image.ImageStrategy
 
 class SubscriptionManager(context: Context) {
     private val database = NewPipeDatabase.getInstance(context)
     private val subscriptionTable = database.subscriptionDAO()
     private val feedDatabaseManager = FeedDatabaseManager(context)
+    private val youtubeMusicMode = ServiceHelper.isYoutubeMusicMode(context)
+    private val currentYoutubeModeMask = if (youtubeMusicMode) {
+        SubscriptionEntity.YOUTUBE_MODE_MUSIC
+    } else {
+        SubscriptionEntity.YOUTUBE_MODE_REGULAR
+    }
     private val subscriptionSyncStore by lazy {
         RoomSubscriptionSyncStore.get(context)
     }
@@ -39,7 +46,7 @@ class SubscriptionManager(context: Context) {
     ): Flowable<List<SubscriptionEntity>> {
         return when {
             filterQuery.isNotEmpty() -> {
-                return if (showOnlyUngrouped) {
+                if (showOnlyUngrouped) {
                     subscriptionTable.getSubscriptionsOnlyUngroupedFiltered(
                         currentGroupId,
                         filterQuery
@@ -52,11 +59,20 @@ class SubscriptionManager(context: Context) {
             showOnlyUngrouped -> subscriptionTable.getSubscriptionsOnlyUngrouped(currentGroupId)
 
             else -> subscriptionTable.getAll()
-        }
+        }.map { subscriptions -> subscriptions.filter(::isVisibleInCurrentMode) }
     }
 
     fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo>>) {
-        val listEntities = infoList.map { SubscriptionEntity.from(it.first) }
+        val listEntities = infoList.map {
+            val entity = SubscriptionEntity.from(it.first)
+            subscriptionTable.getSubscriptionDirect(entity.serviceId, requireNotNull(entity.url))
+                ?.let { existing ->
+                    entity.notificationMode = existing.notificationMode
+                    entity.youtubeModeMask = existing.youtubeModeMask or
+                        SubscriptionEntity.YOUTUBE_MODE_REGULAR
+                }
+            entity
+        }
         subscriptionTable.upsertAll(listEntities)
         listEntities.forEach(::recordSubscriptionUpsert)
 
@@ -113,8 +129,25 @@ class SubscriptionManager(context: Context) {
 
     fun deleteSubscription(serviceId: Int, url: String): Completable {
         return Completable.fromCallable {
-            val deleted = subscriptionTable.deleteSubscription(serviceId, url)
-            if (deleted > 0) {
+            var updatedSubscription: SubscriptionEntity? = null
+            var deleted = false
+            database.runInTransaction {
+                val existing = subscriptionTable.getSubscriptionDirect(serviceId, url)
+                    ?: return@runInTransaction
+                if (serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                    val remainingModes =
+                        existing.youtubeModeMask and currentYoutubeModeMask.inv()
+                    if (remainingModes != 0) {
+                        existing.youtubeModeMask = remainingModes
+                        subscriptionTable.update(existing)
+                        updatedSubscription = existing
+                        return@runInTransaction
+                    }
+                }
+                deleted = subscriptionTable.deleteSubscription(serviceId, url) > 0
+            }
+            updatedSubscription?.let(::recordSubscriptionUpsert)
+            if (deleted) {
                 recordSubscriptionDelete(serviceId, url)
             }
             deleted
@@ -124,14 +157,51 @@ class SubscriptionManager(context: Context) {
     }
 
     fun insertSubscription(subscriptionEntity: SubscriptionEntity) {
-        subscriptionTable.insert(subscriptionEntity)
-        recordSubscriptionUpsert(subscriptionEntity)
+        val storedEntity = database.runInTransaction<SubscriptionEntity> {
+            val url = requireNotNull(subscriptionEntity.url)
+            val existing = subscriptionTable.getSubscriptionDirect(
+                subscriptionEntity.serviceId,
+                url
+            )
+            if (existing == null) {
+                if (subscriptionEntity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                    subscriptionEntity.youtubeModeMask = currentYoutubeModeMask
+                }
+                subscriptionEntity.uid = subscriptionTable.insert(subscriptionEntity)
+                subscriptionEntity
+            } else {
+                existing.name = subscriptionEntity.name
+                existing.avatarUrl = subscriptionEntity.avatarUrl
+                existing.subscriberCount = subscriptionEntity.subscriberCount
+                existing.description = subscriptionEntity.description
+                if (existing.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                    existing.youtubeModeMask =
+                        existing.youtubeModeMask or currentYoutubeModeMask
+                }
+                subscriptionTable.update(existing)
+                existing
+            }
+        }
+        recordSubscriptionUpsert(storedEntity)
     }
 
     fun deleteSubscription(subscriptionEntity: SubscriptionEntity) {
-        subscriptionTable.delete(subscriptionEntity)
         subscriptionEntity.url?.let { url ->
-            recordSubscriptionDelete(subscriptionEntity.serviceId, url)
+            deleteSubscription(subscriptionEntity.serviceId, url).blockingAwait()
+        }
+    }
+
+    fun isSubscribedInCurrentMode(subscriptionEntity: SubscriptionEntity): Boolean {
+        return subscriptionEntity.serviceId != SubscriptionEntity.YOUTUBE_SERVICE_ID ||
+            subscriptionEntity.youtubeModeMask and currentYoutubeModeMask != 0
+    }
+
+    private fun isVisibleInCurrentMode(subscriptionEntity: SubscriptionEntity): Boolean {
+        return if (youtubeMusicMode) {
+            subscriptionEntity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID &&
+                isSubscribedInCurrentMode(subscriptionEntity)
+        } else {
+            isSubscribedInCurrentMode(subscriptionEntity)
         }
     }
 

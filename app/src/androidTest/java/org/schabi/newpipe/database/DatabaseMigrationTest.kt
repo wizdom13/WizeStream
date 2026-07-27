@@ -508,12 +508,45 @@ class DatabaseMigrationTest {
         )
     }
 
+    @Test
+    fun migrateDatabaseFrom13to14DefaultsSubscriptionsToRegularYoutube() {
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_13
+        ).apply {
+            insert(
+                "subscriptions",
+                SQLiteDatabase.CONFLICT_FAIL,
+                ContentValues().apply {
+                    put("service_id", DEFAULT_SERVICE_ID)
+                    put("url", DEFAULT_URL)
+                    put("name", DEFAULT_NAME)
+                    put("notification_mode", 0)
+                }
+            )
+            close()
+        }
+
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_14,
+            true,
+            Migrations.MIGRATION_13_14
+        )
+
+        val subscription = getMigratedDatabase()
+            .subscriptionDAO()
+            .getSubscriptionDirect(DEFAULT_SERVICE_ID, DEFAULT_URL)!!
+        assertEquals(1, subscription.youtubeModeMask)
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
+            .addMigrations(Migrations.MIGRATION_13_14)
             .build()
         testHelper.closeWhenFinished(database)
         return database

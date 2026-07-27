@@ -75,7 +75,9 @@ class FeedDAOTest {
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
-            null
+            uploadDateBefore = null,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+            youtubeMusicMode = false
         )
             .blockingGet()
         val allowedStreams = listOf(stream3, stream5, stream6, stream7)
@@ -89,11 +91,35 @@ class FeedDAOTest {
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
-            null
+            uploadDateBefore = null,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+            youtubeMusicMode = false
         )
             .blockingGet()
         val allowedStreams = listOf(stream3, stream4, stream5, stream6, stream7)
         assertEqual(streams, allowedStreams)
+    }
+
+    @Test
+    fun youtubeMusicFeedOnlyIncludesMusicMemberships() {
+        clearAndFillTables()
+        val musicChannel = subscriptionDAO.getSubscriptionDirect(
+            serviceId,
+            "https://youtube.com/channel/1"
+        )!!
+        musicChannel.youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC
+        subscriptionDAO.update(musicChannel)
+
+        val streams = feedDAO.getStreams(
+            FeedGroupEntity.GROUP_ALL_ID,
+            includePlayed = true,
+            includePartiallyPlayed = true,
+            uploadDateBefore = null,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC,
+            youtubeMusicMode = true
+        ).blockingGet()
+
+        assertEqual(streams, listOf(stream1, stream2, stream3))
     }
 
     private fun assertEqual(streams: List<StreamWithState>?, allowedStreams: List<StreamEntity>) {

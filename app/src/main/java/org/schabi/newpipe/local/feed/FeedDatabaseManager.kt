@@ -18,6 +18,7 @@ import org.schabi.newpipe.database.feed.model.FeedLastUpdatedEntity
 import org.schabi.newpipe.database.stream.StreamWithState
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.subscription.NotificationMode
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
@@ -44,13 +45,17 @@ class FeedDatabaseManager(context: Context) {
         groupId: Long,
         includePlayedStreams: Boolean,
         includePartiallyPlayedStreams: Boolean,
-        includeFutureStreams: Boolean
+        includeFutureStreams: Boolean,
+        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+        youtubeMusicMode: Boolean = false
     ): Maybe<List<StreamWithState>> {
         return feedTable.getStreams(
             groupId,
             includePlayedStreams,
             includePartiallyPlayedStreams,
-            if (includeFutureStreams) null else OffsetDateTime.now()
+            if (includeFutureStreams) null else OffsetDateTime.now(),
+            youtubeModeMask,
+            youtubeMusicMode
         )
     }
 
@@ -61,10 +66,21 @@ class FeedDatabaseManager(context: Context) {
         @NotificationMode notificationMode: Int
     ) = feedTable.getOutdatedWithNotificationMode(outdatedThreshold, notificationMode)
 
-    fun notLoadedCount(groupId: Long = FeedGroupEntity.GROUP_ALL_ID): Flowable<Long> {
+    fun notLoadedCount(
+        groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
+        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+        youtubeMusicMode: Boolean = false
+    ): Flowable<Long> {
         return when (groupId) {
-            FeedGroupEntity.GROUP_ALL_ID -> feedTable.notLoadedCount()
-            else -> feedTable.notLoadedCountForGroup(groupId)
+            FeedGroupEntity.GROUP_ALL_ID ->
+                feedTable.notLoadedCount(youtubeModeMask, youtubeMusicMode)
+
+            else ->
+                feedTable.notLoadedCountForGroup(
+                    groupId,
+                    youtubeModeMask,
+                    youtubeMusicMode
+                )
         }
     }
 
@@ -176,10 +192,24 @@ class FeedDatabaseManager(context: Context) {
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    fun oldestSubscriptionUpdate(groupId: Long): Flowable<List<OffsetDateTime?>> {
+    fun oldestSubscriptionUpdate(
+        groupId: Long,
+        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+        youtubeMusicMode: Boolean = false
+    ): Flowable<List<OffsetDateTime?>> {
         return when (groupId) {
-            FeedGroupEntity.GROUP_ALL_ID -> feedTable.oldestSubscriptionUpdateFromAll()
-            else -> feedTable.oldestSubscriptionUpdate(groupId)
+            FeedGroupEntity.GROUP_ALL_ID ->
+                feedTable.oldestSubscriptionUpdateFromAll(
+                    youtubeModeMask,
+                    youtubeMusicMode
+                )
+
+            else ->
+                feedTable.oldestSubscriptionUpdate(
+                    groupId,
+                    youtubeModeMask,
+                    youtubeMusicMode
+                )
         }
     }
 }

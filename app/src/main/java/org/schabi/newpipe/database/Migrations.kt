@@ -33,6 +33,7 @@ object Migrations {
     const val DB_VER_11 = 11
     const val DB_VER_12 = 12
     const val DB_VER_13 = 13
+    const val DB_VER_14 = 14
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -598,6 +599,20 @@ object Migrations {
             "CREATE TABLE IF NOT EXISTS `structured_preference_sync_local_state` " +
                 "(`category` TEXT NOT NULL, `snapshot_hash` TEXT NOT NULL, " +
                 "PRIMARY KEY(`category`))"
+        )
+    }
+
+    val MIGRATION_13_14 = Migration(DB_VER_13, DB_VER_14) { db ->
+        db.execSQL(
+            "ALTER TABLE `subscriptions` ADD COLUMN `youtube_mode_mask` " +
+                "INTEGER NOT NULL DEFAULT 1"
+        )
+        db.execSQL(
+            "ALTER TABLE `subscription_sync_changes` ADD COLUMN `youtube_mode_mask` INTEGER"
+        )
+        db.execSQL(
+            "ALTER TABLE `subscription_sync_records` ADD COLUMN `youtube_mode_mask` " +
+                "INTEGER NOT NULL DEFAULT 1"
         )
     }
 }

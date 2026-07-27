@@ -23,6 +23,9 @@ import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryRepository
 
 object ServiceHelper {
+    const val YOUTUBE_MODE = "youtube"
+    const val YOUTUBE_MUSIC_MODE = "youtube_music"
+
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
     private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(5, 6)
 
@@ -130,12 +133,46 @@ object ServiceHelper {
     }
 
     @JvmStatic
+    fun isYoutubeMusicMode(context: Context): Boolean {
+        if (getSelectedServiceId(context) != ServiceList.YouTube.serviceId) {
+            return false
+        }
+        return PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(context.getString(R.string.current_service_key), YOUTUBE_MODE) ==
+            YOUTUBE_MUSIC_MODE
+    }
+
+    @JvmStatic
+    fun getSelectedServiceName(context: Context): String {
+        return if (isYoutubeMusicMode(context)) {
+            context.getString(R.string.youtube_music)
+        } else {
+            getNameOfServiceById(getSelectedServiceId(context))
+        }
+    }
+
+    @JvmStatic
+    @DrawableRes
+    fun getSelectedServiceIcon(context: Context): Int {
+        return if (isYoutubeMusicMode(context)) {
+            R.drawable.ic_music_note
+        } else {
+            getIcon(getSelectedServiceId(context))
+        }
+    }
+
+    @JvmStatic
     fun getSelectedService(context: Context): StreamingService? {
-        val serviceName: String = PreferenceManager.getDefaultSharedPreferences(context)
+        val selectedService: String = PreferenceManager.getDefaultSharedPreferences(context)
             .getStringSafe(
                 context.getString(R.string.current_service_key),
                 context.getString(R.string.default_service_value)
             )
+        val serviceName = if (selectedService == YOUTUBE_MUSIC_MODE) {
+            ServiceList.YouTube.serviceInfo.name
+        } else {
+            selectedService
+        }
 
         return runCatching { NewPipe.getService(serviceName) }
             .getOrNull()
@@ -171,12 +208,19 @@ object ServiceHelper {
             ?.name
             ?: DEFAULT_FALLBACK_SERVICE.serviceInfo.name
 
-        setSelectedServicePreferences(context, serviceName)
+        setSelectedServicePreference(context, serviceName)
     }
 
-    private fun setSelectedServicePreferences(context: Context, serviceName: String?) {
+    @JvmStatic
+    fun setYoutubeMusicMode(context: Context) {
+        setSelectedServicePreference(context, YOUTUBE_MUSIC_MODE)
+    }
+
+    private fun setSelectedServicePreference(context: Context, serviceName: String?) {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        sharedPreferences.edit { putString(context.getString(R.string.current_service_key), serviceName) }
+        sharedPreferences.edit {
+            putString(context.getString(R.string.current_service_key), serviceName)
+        }
     }
 
     @JvmStatic

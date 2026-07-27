@@ -180,10 +180,16 @@ internal class RoomSubscriptionSyncStore private constructor(
 
                     when (change.type) {
                         SubscriptionChangeType.UPSERT -> {
-                            val inserted = subscriptionDao.insertIgnore(
-                                requireNotNull(change.subscription).toEntity()
+                            val incoming = requireNotNull(change.subscription).toEntity()
+                            val existing = subscriptionDao.getSubscriptionDirect(
+                                incoming.serviceId,
+                                requireNotNull(incoming.url)
                             )
-                            if (inserted != -1L) {
+                            if (existing != null) {
+                                incoming.notificationMode = existing.notificationMode
+                            }
+                            subscriptionDao.upsertAll(listOf(incoming))
+                            if (existing == null) {
                                 added += 1
                             }
                         }
@@ -218,7 +224,11 @@ internal class RoomSubscriptionSyncStore private constructor(
             syncedSubscription.url
         )
         val currentRecord = syncDao.getRecord(recordId)
-        if (currentRecord != null && !currentRecord.isDeleted) {
+        if (
+            currentRecord != null &&
+            !currentRecord.isDeleted &&
+            currentRecord.youtubeModeMask == syncedSubscription.youtubeModeMask
+        ) {
             return
         }
         saveLocalChange(
@@ -348,7 +358,9 @@ internal class RoomSubscriptionSyncStore private constructor(
                 name = name,
                 avatarUrl = avatarUrl,
                 subscriberCount = subscriberCount,
-                description = description
+                description = description,
+                youtubeModeMask = youtubeModeMask
+                    ?: SubscriptionEntity.YOUTUBE_MODE_REGULAR
             )
         } else {
             null
@@ -366,7 +378,8 @@ internal class RoomSubscriptionSyncStore private constructor(
         name = subscription?.name,
         avatarUrl = subscription?.avatarUrl,
         subscriberCount = subscription?.subscriberCount,
-        description = subscription?.description
+        description = subscription?.description,
+        youtubeModeMask = subscription?.youtubeModeMask
     )
 
     private fun SubscriptionChange.toRecordEntity() = SubscriptionSyncRecordEntity(
@@ -376,7 +389,9 @@ internal class RoomSubscriptionSyncStore private constructor(
         lamportVersion = lamportVersion,
         originPeerId = originPeerId,
         originRevision = originRevision,
-        isDeleted = type == SubscriptionChangeType.DELETE
+        isDeleted = type == SubscriptionChangeType.DELETE,
+        youtubeModeMask = subscription?.youtubeModeMask
+            ?: SubscriptionEntity.YOUTUBE_MODE_REGULAR
     )
 
     private val SubscriptionSyncRecordEntity.versionStamp: SubscriptionVersionStamp

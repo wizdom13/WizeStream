@@ -2,6 +2,8 @@ package org.schabi.newpipe.local.subscription;
 
 import static org.junit.Assert.assertEquals;
 
+import android.content.Context;
+
 import androidx.test.core.app.ApplicationProvider;
 
 import org.junit.After;
@@ -13,6 +15,7 @@ import org.schabi.newpipe.database.feed.model.FeedGroupEntity;
 import org.schabi.newpipe.database.subscription.SubscriptionEntity;
 import org.schabi.newpipe.testUtil.TestDatabase;
 import org.schabi.newpipe.testUtil.TrampolineSchedulerRule;
+import org.schabi.newpipe.util.ServiceHelper;
 
 import java.util.List;
 
@@ -26,6 +29,7 @@ public class SubscriptionManagerTest {
 
     private AppDatabase database;
     private SubscriptionManager manager;
+    private Context context;
 
     @Rule
     public TrampolineSchedulerRule trampolineScheduler = new TrampolineSchedulerRule();
@@ -54,7 +58,9 @@ public class SubscriptionManagerTest {
     @Before
     public void setup() {
         database = TestDatabase.Companion.createReplacingNewPipeDatabase();
-        manager = new SubscriptionManager(ApplicationProvider.getApplicationContext());
+        context = ApplicationProvider.getApplicationContext();
+        ServiceHelper.setSelectedServiceId(context, SERVICE_ID);
+        manager = new SubscriptionManager(context);
     }
 
     @After
@@ -91,5 +97,29 @@ public class SubscriptionManagerTest {
         assertEquals(0, subscription.getNotificationMode());
         assertEquals(subscription.getUrl(), anotherSubscription.getUrl());
         assertEquals(1, anotherSubscription.getNotificationMode());
+    }
+
+    @Test
+    public void youtubeAndMusicMembershipsShareOneSubscription() {
+        manager.insertSubscription(createSubscriptionEntity());
+
+        ServiceHelper.setYoutubeMusicMode(context);
+        manager = new SubscriptionManager(context);
+        assertEquals(0, manager.getSubscriptions(
+                FeedGroupEntity.GROUP_ALL_ID, "", false).blockingFirst().size());
+
+        manager.insertSubscription(createSubscriptionEntity());
+        SubscriptionEntity stored = database.subscriptionDAO()
+                .getSubscriptionDirect(SERVICE_ID, CHANNEL_URL);
+        assertEquals(SubscriptionEntity.YOUTUBE_MODE_ALL, stored.getYoutubeModeMask());
+
+        manager.deleteSubscription(SERVICE_ID, CHANNEL_URL).blockingAwait();
+        stored = database.subscriptionDAO().getSubscriptionDirect(SERVICE_ID, CHANNEL_URL);
+        assertEquals(SubscriptionEntity.YOUTUBE_MODE_REGULAR, stored.getYoutubeModeMask());
+
+        ServiceHelper.setSelectedServiceId(context, SERVICE_ID);
+        manager = new SubscriptionManager(context);
+        assertEquals(1, manager.getSubscriptions(
+                FeedGroupEntity.GROUP_ALL_ID, "", false).blockingFirst().size());
     }
 }

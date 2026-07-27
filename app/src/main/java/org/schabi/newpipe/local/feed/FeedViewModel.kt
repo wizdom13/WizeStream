@@ -20,6 +20,7 @@ import org.schabi.newpipe.App
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.stream.StreamWithState
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedEventManager
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ErrorResultEvent
@@ -27,6 +28,7 @@ import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.IdleEvent
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ProgressEvent
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.SuccessResultEvent
 import org.schabi.newpipe.util.DEFAULT_THROTTLE_TIMEOUT
+import org.schabi.newpipe.util.ServiceHelper
 
 class FeedViewModel(
     private val application: Application,
@@ -36,6 +38,12 @@ class FeedViewModel(
     initialShowFutureItems: Boolean
 ) : ViewModel() {
     private val feedDatabaseManager = FeedDatabaseManager(application)
+    private val youtubeMusicMode = ServiceHelper.isYoutubeMusicMode(application)
+    private val youtubeModeMask = if (youtubeMusicMode) {
+        SubscriptionEntity.YOUTUBE_MODE_MUSIC
+    } else {
+        SubscriptionEntity.YOUTUBE_MODE_REGULAR
+    }
 
     private val showPlayedItems = BehaviorProcessor.create<Boolean>()
     private val showPlayedItemsFlowable = showPlayedItems
@@ -61,8 +69,16 @@ class FeedViewModel(
             showPlayedItemsFlowable,
             showPartiallyPlayedItemsFlowable,
             showFutureItemsFlowable,
-            feedDatabaseManager.notLoadedCount(groupId),
-            feedDatabaseManager.oldestSubscriptionUpdate(groupId),
+            feedDatabaseManager.notLoadedCount(
+                groupId,
+                youtubeModeMask,
+                youtubeMusicMode
+            ),
+            feedDatabaseManager.oldestSubscriptionUpdate(
+                groupId,
+                youtubeModeMask,
+                youtubeMusicMode
+            ),
 
             Function6 {
                     t1: FeedEventManager.Event,
@@ -81,7 +97,14 @@ class FeedViewModel(
         .map { (event, showPlayedItems, showPartiallyPlayedItems, showFutureItems, notLoadedCount, oldestUpdate) ->
             val streamItems = if (event is SuccessResultEvent || event is IdleEvent) {
                 feedDatabaseManager
-                    .getStreams(groupId, showPlayedItems, showPartiallyPlayedItems, showFutureItems)
+                    .getStreams(
+                        groupId,
+                        showPlayedItems,
+                        showPartiallyPlayedItems,
+                        showFutureItems,
+                        youtubeModeMask,
+                        youtubeMusicMode
+                    )
                     .blockingGet(arrayListOf())
             } else {
                 arrayListOf()
