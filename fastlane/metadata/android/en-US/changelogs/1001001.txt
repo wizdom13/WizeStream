@@ -1,0 +1,7 @@
+WizeStream 1.1.1
+
+* Redesigned local search with a dedicated floating button for searching the selected streaming service.
+* Automatically carries the typed query into the online search.
+* Keeps local and online search actions clearly separated.
+* Improved search-button positioning above bottom navigation and bottom tabs.
+* Pressing Done now dismisses the keyboard without switching search modes.
