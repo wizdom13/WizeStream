@@ -29,37 +29,33 @@ public class ContextualSearchResourcesTest {
         assertEquals("@layout/toolbar_contextual_search_layout",
                 include.getAttribute("layout"));
         assertEquals("gone", include.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
+
     }
 
     @Test
-    public void contextualToolbarExposesQueryCloseAndGlobalSearchControls() throws Exception {
+    public void contextualToolbarExposesOnlyLocalQueryAndCloseControls() throws Exception {
         final Document searchToolbar = parse("layout/toolbar_contextual_search_layout.xml");
 
         assertNotNull(findByAndroidId(searchToolbar, "@+id/contextual_search_edit_text"));
         assertNotNull(findByAndroidId(searchToolbar, "@+id/contextual_search_close"));
-        final Element globalSearch = findByAndroidId(searchToolbar,
-                "@+id/contextual_global_search_button");
-        assertNotNull(globalSearch);
-        assertEquals("48dp", globalSearch.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
-        assertEquals("@string/search",
-                globalSearch.getAttributeNS(ANDROID_NAMESPACE, "contentDescription"));
-        assertNull(findDescendantWithAndroidAttribute(globalSearch, "text"));
-        final Element icon = findDescendantWithAndroidAttribute(globalSearch, "src");
-        assertNotNull(icon);
-        assertEquals("@drawable/ic_search",
-                icon.getAttributeNS(ANDROID_NAMESPACE, "src"));
+        assertNull(findByAndroidId(searchToolbar, "@+id/contextual_global_search_button"));
     }
 
-    private Element findDescendantWithAndroidAttribute(
-            final Element parent, final String attribute) {
-        final NodeList elements = parent.getElementsByTagName("*");
-        for (int i = 0; i < elements.getLength(); i++) {
-            final Element element = (Element) elements.item(i);
-            if (element.hasAttributeNS(ANDROID_NAMESPACE, attribute)) {
-                return element;
-            }
-        }
-        return null;
+    @Test
+    public void contextualSearchUsesSeparateExtendedGlobalSearchFab() throws Exception {
+        final Document main = parse("layout/fragment_main.xml");
+        final Element fab = findByAndroidId(main, "@+id/contextual_global_search_fab");
+
+        assertNotNull(fab);
+        assertEquals("wrap_content",
+                fab.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("true",
+                fab.getAttributeNS(ANDROID_NAMESPACE, "layout_alignParentEnd"));
+        assertEquals("gone",
+                fab.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
+        assertEquals("@string/search",
+                fab.getAttributeNS(ANDROID_NAMESPACE, "text"));
+        assertEquals("@drawable/ic_search", fab.getAttribute("app:icon"));
     }
 
     private Element findByAndroidId(final Document document, final String id) {

@@ -49,26 +49,5 @@
         android:textColorHint="?attr/colorOnSurfaceVariant"
         android:theme="@style/ToolbarSearchInputTheme" />
 
-    <FrameLayout
-        android:id="@+id/contextual_global_search_button"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:contentDescription="@string/search"
-        android:focusable="true">
-
-        <View
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_gravity="center"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_search"
-            app:tint="?attr/colorOnSurfaceVariant" />
-    </FrameLayout>
 
 </LinearLayout>

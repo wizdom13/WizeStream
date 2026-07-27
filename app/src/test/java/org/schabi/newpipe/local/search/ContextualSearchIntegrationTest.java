@@ -65,9 +65,26 @@ public class ContextualSearchIntegrationTest {
         assertSourceContains("org/schabi/newpipe/MainActivity.java",
                 "toggle.syncState()");
         assertSourceContains("org/schabi/newpipe/fragments/MainFragment.java",
-                "setContentDescription(globalSearchDescription)");
+                "binding.contextualGlobalSearchFab.setText(globalSearchLabel)");
         assertSourceContains("org/schabi/newpipe/fragments/MainFragment.java",
-                "TooltipCompat.setTooltipText(contextualGlobalSearchButton");
+                "updateGlobalSearchFabPosition(showBottomNavigation");
+    }
+
+    @Test
+    public void contextualSearchUsesServiceFabAndDoneKeepsSearchLocal() throws Exception {
+        final String mainFragment = read("org/schabi/newpipe/fragments/MainFragment.java");
+        final String toolbar = readResource("layout/toolbar_contextual_search_layout.xml");
+
+        assertTrue(mainFragment.contains(
+                "binding.contextualGlobalSearchFab.setOnClickListener("));
+        assertTrue(mainFragment.contains(
+                "getString(R.string.search_with_service_name, serviceName)"));
+        assertTrue(mainFragment.contains("actionId == EditorInfo.IME_ACTION_DONE"));
+        assertTrue(mainFragment.contains(
+                "KeyboardUtil.hideKeyboard(activity, contextualSearchEditText)"));
+        assertTrue(toolbar.contains(
+                "android:imeOptions=\"actionDone|flagNoFullscreen\""));
+        assertFalse(toolbar.contains("contextual_global_search_button"));
     }
 
     @Test

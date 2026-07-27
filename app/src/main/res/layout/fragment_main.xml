@@ -26,4 +26,17 @@
         android:layout_height="match_parent"
         android:layout_below="@id/main_tab_layout" />
 
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/contextual_global_search_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="@dimen/margin_normal"
+        android:layout_marginBottom="@dimen/margin_normal"
+        android:contentDescription="@string/search"
+        android:text="@string/search"
+        android:visibility="gone"
+        app:icon="@drawable/ic_search" />
+
 </RelativeLayout>

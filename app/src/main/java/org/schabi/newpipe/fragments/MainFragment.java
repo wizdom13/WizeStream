@@ -28,7 +28,6 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.view.MenuItemCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -78,7 +77,6 @@ public class MainFragment extends BaseFragment
     private View contextualSearchContainer;
     private EditText contextualSearchEditText;
     private View contextualSearchClose;
-    private View contextualGlobalSearchButton;
     private TextWatcher contextualSearchTextWatcher;
     private ContextualSearchable contextualSearchTarget;
     private final Handler contextualSearchHandler = new Handler(Looper.getMainLooper());
@@ -245,7 +243,6 @@ public class MainFragment extends BaseFragment
         contextualSearchContainer = null;
         contextualSearchEditText = null;
         contextualSearchClose = null;
-        contextualGlobalSearchButton = null;
         contextualSearchTextWatcher = null;
         contextualSearchTarget = null;
         if (bottomNavigation != null) {
@@ -377,16 +374,13 @@ public class MainFragment extends BaseFragment
         contextualSearchEditText = requireActivity()
                 .findViewById(R.id.contextual_search_edit_text);
         contextualSearchClose = requireActivity().findViewById(R.id.contextual_search_close);
-        contextualGlobalSearchButton = requireActivity()
-                .findViewById(R.id.contextual_global_search_button);
-
         contextualSearchClose.setOnClickListener(view -> closeContextualSearch());
-        contextualGlobalSearchButton.setOnClickListener(view -> openGlobalSearchFromContext());
+        binding.contextualGlobalSearchFab.setOnClickListener(
+                view -> openGlobalSearchFromContext());
         contextualSearchEditText.setOnEditorActionListener((view, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE
-                    || actionId == EditorInfo.IME_ACTION_SEARCH) {
-                dispatchContextualSearchQuery();
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
                 KeyboardUtil.hideKeyboard(activity, contextualSearchEditText);
+                contextualSearchEditText.clearFocus();
                 return true;
             }
             return false;
@@ -466,17 +460,19 @@ public class MainFragment extends BaseFragment
 
     private void updateContextualSearchToolbar(final boolean requestKeyboard) {
         if (contextualSearchContainer == null || contextualSearchEditText == null
-                || contextualGlobalSearchButton == null) {
+                || binding == null) {
             return;
         }
 
         contextualSearchContainer.setVisibility(contextualSearchOpen ? View.VISIBLE : View.GONE);
+        binding.contextualGlobalSearchFab.setVisibility(
+                contextualSearchOpen ? View.VISIBLE : View.GONE);
         final ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayShowTitleEnabled(!contextualSearchOpen);
         }
         setActivityContextualSearchToolbarActive(contextualSearchOpen);
-        if (!contextualSearchOpen || binding == null || tabsList.isEmpty()) {
+        if (!contextualSearchOpen || tabsList.isEmpty()) {
             return;
         }
 
@@ -486,10 +482,10 @@ public class MainFragment extends BaseFragment
 
         final int serviceId = ServiceHelper.getSelectedServiceId(requireContext());
         final String serviceName = ServiceHelper.getNameOfServiceById(serviceId);
-        final String globalSearchDescription =
-                getString(R.string.search_service_instead, serviceName);
-        contextualGlobalSearchButton.setContentDescription(globalSearchDescription);
-        TooltipCompat.setTooltipText(contextualGlobalSearchButton, globalSearchDescription);
+        final String globalSearchLabel =
+                getString(R.string.search_with_service_name, serviceName);
+        binding.contextualGlobalSearchFab.setText(globalSearchLabel);
+        binding.contextualGlobalSearchFab.setContentDescription(globalSearchLabel);
 
         if (requestKeyboard) {
             contextualSearchEditText.requestFocus();
@@ -675,9 +671,34 @@ public class MainFragment extends BaseFragment
                 bottom ? INDICATOR_GRAVITY_TOP : INDICATOR_GRAVITY_BOTTOM);
         tabLayout.setVisibility(showTabLayout ? View.VISIBLE : View.GONE);
         setBottomNavigationRequestedVisibility(showBottomNavigation);
+        updateGlobalSearchFabPosition(showBottomNavigation, showTabLayout && bottom);
 
         tabLayout.setLayoutParams(tabParams);
         viewPager.setLayoutParams(pagerParams);
+    }
+
+    private void updateGlobalSearchFabPosition(final boolean showBottomNavigation,
+                                               final boolean showBottomTabs) {
+        if (binding == null) {
+            return;
+        }
+
+        final var fabParams = (RelativeLayout.LayoutParams)
+                binding.contextualGlobalSearchFab.getLayoutParams();
+        fabParams.removeRule(ABOVE);
+        fabParams.removeRule(ALIGN_PARENT_BOTTOM);
+        fabParams.bottomMargin = getResources()
+                .getDimensionPixelSize(R.dimen.margin_normal);
+        if (showBottomTabs) {
+            fabParams.addRule(ABOVE, R.id.main_tab_layout);
+        } else {
+            fabParams.addRule(ALIGN_PARENT_BOTTOM);
+            if (showBottomNavigation) {
+                fabParams.bottomMargin += getResources()
+                        .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
+            }
+        }
+        binding.contextualGlobalSearchFab.setLayoutParams(fabParams);
     }
 
     private void setBottomNavigationRequestedVisibility(final boolean visible) {
