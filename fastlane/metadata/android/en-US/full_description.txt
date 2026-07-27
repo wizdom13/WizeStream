@@ -42,6 +42,10 @@ Storage permissions:
 
 On Android 6-9, WizeStream can optionally use a legacy storage backend instead of Android's Storage Access Framework. This mode is also used on some Fire TV devices because of a platform-specific SAF issue. In legacy mode, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE allow the app to read existing files and save downloaded video, audio, captions, and exported backups. On Android 10 and newer, SAF is always used, and these storage permissions are not requested.
 
+Camera permission:
+
+WizeStream optionally uses the CAMERA permission only when the user selects Scan pairing code for local device synchronization. It allows one WizeStream device to scan the one-time QR code displayed by another device for secure pairing. The permission is requested only when the QR-code scanner is opened. WizeStream does not capture, store, or upload camera images, and camera hardware is declared optional.
+
 Important project notice:
 
 WizeStream is independently maintained. It is based on NewPipe but is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
