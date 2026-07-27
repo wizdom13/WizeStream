@@ -17,6 +17,7 @@ import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,6 +107,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 withContext(Dispatchers.IO) {
                     syncManager.startListening()
                 }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 statusPreference.summary = error.message ?: getString(R.string.general_error)
             }
@@ -122,13 +125,14 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 }
                 updateState()
                 showSyncSummary(summary)
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 showError(R.string.device_sync_sync_failed, error)
-            } finally {
-                syncNowPreference.setSummary(R.string.device_sync_sync_now_summary)
-                setActionsEnabled(true)
-                updateState()
             }
+            syncNowPreference.setSummary(R.string.device_sync_sync_now_summary)
+            setActionsEnabled(true)
+            updateState()
         }
     }
 
@@ -140,11 +144,12 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     syncManager.createPairingCode()
                 }
                 showPairingCodeDialog(code)
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 showError(R.string.device_sync_pairing_failed, error)
-            } finally {
-                setActionsEnabled(true)
             }
+            setActionsEnabled(true)
         }
     }
 
@@ -172,12 +177,13 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     getString(R.string.device_sync_pairing_succeeded, peer.deviceName),
                     Toast.LENGTH_LONG
                 ).show()
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 showError(R.string.device_sync_pairing_failed, error)
-            } finally {
-                scanPairingCodePreference.setSummary(R.string.device_sync_scan_code_summary)
-                setActionsEnabled(true)
             }
+            scanPairingCodePreference.setSummary(R.string.device_sync_scan_code_summary)
+            setActionsEnabled(true)
         }
     }
 
@@ -235,12 +241,13 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 withContext(Dispatchers.IO) {
                     syncManager.clearTrustedPeers()
                 }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 showError(R.string.device_sync_clear_devices_failed, error)
-            } finally {
-                setActionsEnabled(true)
-                updateState()
             }
+            setActionsEnabled(true)
+            updateState()
         }
     }
 
