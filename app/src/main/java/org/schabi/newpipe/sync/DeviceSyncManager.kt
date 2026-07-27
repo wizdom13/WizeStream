@@ -45,7 +45,9 @@ class DeviceSyncManager private constructor(context: Context) {
             stateRepository = stateRepository,
             pairingSecurity = PairingSecurity(),
             deviceName = deviceName,
-            advertisedAddressProvider = AndroidNetworkAddressProvider::addresses,
+            advertisedAddressProvider = { host ->
+                AndroidNetworkAddressProvider.addresses(applicationContext, host)
+            },
             subscriptionSyncEngine = subscriptionSyncEngine,
             listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",
             onListenPortSelected = stateRepository::saveListenPort,

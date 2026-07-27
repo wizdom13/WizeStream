@@ -70,9 +70,33 @@
 -dontwarn org.slf4j.impl.StaticLoggerBinder
 
 ## Netty probes for optional desktop logging and BlockHound integrations.
+-dontwarn com.aayushatharva.brotli4j.**
+-dontwarn com.github.luben.zstd.**
+-dontwarn com.google.protobuf.nano.**
+-dontwarn com.jcraft.jzlib.**
+-dontwarn com.ning.compress.**
+-dontwarn com.oracle.svm.core.annotate.**
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn lzma.sdk.**
+-dontwarn net.jpountz.**
+-dontwarn org.jboss.marshalling.**
 -dontwarn org.apache.log4j.**
 -dontwarn org.apache.logging.log4j.**
+-dontwarn org.eclipse.jetty.alpn.**
+-dontwarn org.eclipse.jetty.npn.**
+-dontwarn org.osgi.annotation.bundle.**
+-dontwarn reactor.blockhound.**
 -dontwarn reactor.blockhound.integration.BlockHoundIntegration
+-dontwarn sun.security.x509.**
+
+## jvm-libp2p assembles its transport, security, multiplexing, and protocol
+## pipeline dynamically and does not publish Android consumer R8 rules. It also
+## depends on Netty runtime factories, pipeline handlers, and channel types that
+## are selected reflectively. Debug builds work without this, but release R8 can
+## remove members that are only reached by Netty/libp2p at pairing time.
+-keep class io.libp2p.** { *; }
+-keep class com.southernstorm.noise.** { *; }
+-keep class io.netty.** { *; }
 
 ## See https://github.com/TeamNewPipe/NewPipe/pull/1441
 -keepclassmembers class * implements java.io.Serializable {
