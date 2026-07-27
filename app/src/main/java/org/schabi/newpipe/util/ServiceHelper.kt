@@ -27,12 +27,12 @@ object ServiceHelper {
     const val YOUTUBE_MUSIC_MODE = "youtube_music"
 
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
-    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(5, 6)
+    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(6)
 
     @JvmStatic
     fun isServiceVisible(service: StreamingService): Boolean {
-        // TODO: Enable WizeStreamExtractor's BiliBili and NicoNico services after app-side UI
-        // flows are validated for search, detail, playback, subscriptions, and downloads.
+        // TODO: Enable WizeStreamExtractor's NicoNico service after its app-side UI flows
+        // are validated for search, detail, playback, subscriptions, and downloads.
         return service.serviceId !in TEMPORARILY_HIDDEN_SERVICE_IDS
     }
 
@@ -50,6 +50,7 @@ object ServiceHelper {
             2 -> R.drawable.ic_placeholder_media_ccc
             3 -> R.drawable.ic_placeholder_peertube
             4 -> R.drawable.ic_placeholder_bandcamp
+            5 -> R.drawable.ic_bilibili
             else -> R.drawable.ic_circle
         }
     }
@@ -63,6 +64,9 @@ object ServiceHelper {
             "playlists", "music_playlists" -> context.getString(R.string.playlists)
             "tracks" -> context.getString(R.string.tracks)
             "users" -> context.getString(R.string.users)
+            "lives" -> context.getString(R.string.search_filter_live)
+            "anime" -> context.getString(R.string.anime)
+            "movies" -> context.getString(R.string.movies)
             "conferences" -> context.getString(R.string.conferences)
             "events" -> context.getString(R.string.events)
             "music_songs" -> context.getString(R.string.songs)
@@ -75,6 +79,11 @@ object ServiceHelper {
             "sort_relevance" -> context.getString(R.string.search_filter_relevance)
             "sort_rating" -> context.getString(R.string.search_filter_rating)
             "sort_view" -> context.getString(R.string.search_filter_view_count)
+            "sort_overall" -> context.getString(R.string.search_filter_relevance)
+            "sort_publish_time" -> context.getString(R.string.search_filter_upload_date)
+            "sort_bullet_comments" -> context.getString(R.string.bullet_comments)
+            "sort_comments" -> context.getString(R.string.comments_tab_description)
+            "sort_bookmark" -> context.getString(R.string.bottom_navigation_tab_bookmarks)
             "upload_date" -> context.getString(R.string.search_filter_upload_date)
             "past_hour" -> context.getString(R.string.search_filter_past_hour)
             "past_day" -> context.getString(R.string.search_filter_past_day)
@@ -83,7 +92,9 @@ object ServiceHelper {
             "past_year" -> context.getString(R.string.search_filter_past_year)
             "duration" -> context.getString(R.string.duration)
             "short_video" -> context.getString(R.string.search_filter_short)
+            "medium_length" -> context.getString(R.string.medium_length)
             "long_video" -> context.getString(R.string.search_filter_long)
+            "extra_long" -> context.getString(R.string.extra_long)
             "features" -> context.getString(R.string.search_filter_features)
             "Subtitles" -> context.getString(R.string.search_filter_subtitles)
             "Ccommons" -> context.getString(R.string.search_filter_creative_commons)

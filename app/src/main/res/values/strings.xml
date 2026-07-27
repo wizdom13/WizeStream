@@ -31,6 +31,11 @@
     <string name="search_filter_past_year">Past year</string>
     <string name="search_filter_short">Short</string>
     <string name="search_filter_long">Long</string>
+    <string name="medium_length">Medium length</string>
+    <string name="extra_long">Extra long</string>
+    <string name="anime">Anime</string>
+    <string name="movies">Movies</string>
+    <string name="bullet_comments">Bullet comments</string>
     <string name="search_filter_features">Features</string>
     <string name="search_filter_subtitles">Subtitles</string>
     <string name="search_filter_creative_commons">Creative Commons</string>
