@@ -27,12 +27,10 @@ object ServiceHelper {
     const val YOUTUBE_MUSIC_MODE = "youtube_music"
 
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
-    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(6)
+    private val TEMPORARILY_HIDDEN_SERVICE_IDS = emptySet<Int>()
 
     @JvmStatic
     fun isServiceVisible(service: StreamingService): Boolean {
-        // TODO: Enable WizeStreamExtractor's NicoNico service after its app-side UI flows
-        // are validated for search, detail, playback, subscriptions, and downloads.
         return service.serviceId !in TEMPORARILY_HIDDEN_SERVICE_IDS
     }
 
@@ -51,6 +49,7 @@ object ServiceHelper {
             3 -> R.drawable.ic_placeholder_peertube
             4 -> R.drawable.ic_placeholder_bandcamp
             5 -> R.drawable.ic_bilibili
+            6 -> R.drawable.ic_niconico
             else -> R.drawable.ic_circle
         }
     }
@@ -84,6 +83,11 @@ object ServiceHelper {
             "sort_bullet_comments" -> context.getString(R.string.bullet_comments)
             "sort_comments" -> context.getString(R.string.comments_tab_description)
             "sort_bookmark" -> context.getString(R.string.bottom_navigation_tab_bookmarks)
+            "sort_likes" -> context.getString(R.string.channel_tab_likes)
+            "sort_last_comment_time" -> context.getString(R.string.last_comment)
+            "sort_video_count" -> context.getString(R.string.video_count)
+            "sortorder" -> context.getString(R.string.sort_order)
+            "sort_ascending" -> context.getString(R.string.ascending)
             "upload_date" -> context.getString(R.string.search_filter_upload_date)
             "past_hour" -> context.getString(R.string.search_filter_past_hour)
             "past_day" -> context.getString(R.string.search_filter_past_day)
