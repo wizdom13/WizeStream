@@ -3,12 +3,12 @@ package us.shandian.giga.get
 import android.util.Log
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
-import org.schabi.newpipe.BuildConfig
 import java.io.File
 import java.io.IOException
+import org.schabi.newpipe.BuildConfig
 
 internal class SabrFfmpegMuxer(
-    private val mission: DownloadMission,
+    private val mission: DownloadMission
 ) {
     @Throws(IOException::class, InterruptedException::class)
     fun remuxAndCopy(inputs: List<File>, targets: List<SabrDownloadTarget>, workDir: File): Long {
@@ -65,8 +65,8 @@ internal class SabrFfmpegMuxer(
             mission.psState = 0
             throw SabrDownloadException(
                 SabrDownloadException.Reason.MUXING,
-                "SABR download failed: ffmpeg remux failed (${session.returnCode})"
-                    + session.output.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty(),
+                "SABR download failed: ffmpeg remux failed (${session.returnCode})" +
+                    session.output.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()
             )
         }
     }
@@ -95,7 +95,7 @@ internal class SabrFfmpegMuxer(
             throw SabrDownloadException(
                 SabrDownloadException.Reason.STORAGE,
                 "SABR download failed: could not write final file",
-                error,
+                error
             )
         }
         return copied
@@ -123,7 +123,7 @@ internal class SabrFfmpegMuxer(
 
     private fun canCopySingleInputDirectly(
         inputs: List<File>,
-        targets: List<SabrDownloadTarget>,
+        targets: List<SabrDownloadTarget>
     ): Boolean {
         if (inputs.size != 1 || targets.size != 1) {
             return false

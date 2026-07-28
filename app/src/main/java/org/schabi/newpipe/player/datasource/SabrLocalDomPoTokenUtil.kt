@@ -8,7 +8,7 @@ import java.util.Base64
 internal data class SabrAttChallengeData(
     val program: String,
     val globalName: String,
-    val interpreterUrl: String,
+    val interpreterUrl: String
 )
 
 internal fun parseSabrAttChallengeData(rawAttestationData: String): SabrAttChallengeData {
@@ -22,13 +22,13 @@ internal fun parseSabrAttChallengeData(rawAttestationData: String): SabrAttChall
             "https:$interpreterUrl"
         } else {
             interpreterUrl
-        },
+        }
     )
 }
 
 internal fun buildSabrAttChallengeData(
     challengeData: SabrAttChallengeData,
-    interpreterJavascript: String,
+    interpreterJavascript: String
 ): String {
     return JsonWriter.string(
         JsonObject.builder()
@@ -36,12 +36,12 @@ internal fun buildSabrAttChallengeData(
             .value("privateDoNotAccessOrElseSafeScriptWrappedValue", interpreterJavascript)
             .value(
                 "privateDoNotAccessOrElseTrustedResourceUrlWrappedValue",
-                challengeData.interpreterUrl,
+                challengeData.interpreterUrl
             )
             .end()
             .value("program", challengeData.program)
             .value("globalName", challengeData.globalName)
-            .done(),
+            .done()
     )
 }
 

@@ -4,7 +4,7 @@ import java.io.Serializable
 
 data class SabrDownloadCheckpoint(
     val version: Int = VERSION,
-    val resources: List<SabrResourceCheckpoint> = emptyList(),
+    val resources: List<SabrResourceCheckpoint> = emptyList()
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 1L
@@ -18,7 +18,7 @@ data class SabrResourceCheckpoint(
     val tempFilePath: String,
     val nextWriteSequence: Int,
     val bytesWritten: Long,
-    val initializationBytes: Int,
+    val initializationBytes: Int
 ) : Serializable {
     companion object {
         private const val serialVersionUID = 1L

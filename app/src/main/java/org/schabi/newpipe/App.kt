@@ -111,8 +111,7 @@ open class App :
         )
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val sessionPoTokenProvider = LocalDomPoTokenProvider.shared(this)
-        NewPipe.setYoutubeSessionPoTokenProvider {
-            clientName, localization, contentCountry, loggedIn ->
+        NewPipe.setYoutubeSessionPoTokenProvider { clientName, localization, contentCountry, loggedIn ->
             val visitorDataEnabled = prefs.getBoolean(
                 getString(R.string.youtube_session_visitor_data_key),
                 false

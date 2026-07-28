@@ -3,20 +3,22 @@ package org.schabi.newpipe.player.datasource
 import android.util.Base64
 import com.grack.nanojson.JsonArray
 import com.grack.nanojson.JsonObject
-import org.schabi.newpipe.extractor.services.youtube.sabr.SabrMediaHeader
-import org.schabi.newpipe.extractor.services.youtube.sabr.SabrMediaProtocol
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrContextSendingPolicy
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrContextUpdate
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrFormatInitializationMetadata
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrLiveMetadata
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrMediaHeader
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrMediaProtocol
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrNextRequestPolicy
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrResponseStatePatch
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrScriptPolicy
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrSessionPolicy
 
-class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor(
-    script: SabrScriptPolicy,
+class QuickJsSabrSessionPolicy
+@Throws(SabrProtocolException::class)
+constructor(
+    script: SabrScriptPolicy
 ) : SabrSessionPolicy {
     private var sessionId = -1
     private val mediaProtocol: SabrMediaProtocol
@@ -34,7 +36,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                 media.getInt("headerType"),
                 media.getInt("mediaType"),
                 media.getInt("endType"),
-                media.getString("headerDecoder") == "builtin",
+                media.getString("headerDecoder") == "builtin"
             )
         } catch (error: SabrProtocolException) {
             closeCreatedSession()
@@ -49,14 +51,14 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
 
     @Synchronized
     override fun evaluateDemandRoute(
-        event: SabrSessionPolicy.DemandRouteEvent,
+        event: SabrSessionPolicy.DemandRouteEvent
     ): SabrSessionPolicy.DemandRoute {
         if (!scriptedDemand) return super<SabrSessionPolicy>.evaluateDemandRoute(event)
         val output = invokeObject("demandRoute", demandInput(event))
         return try {
             SabrSessionPolicy.DemandRoute.valueOf(
                 output.getString("route")
-                    ?: throw SabrProtocolException("QuickJS demand policy returned no route"),
+                    ?: throw SabrProtocolException("QuickJS demand policy returned no route")
             )
         } catch (error: IllegalArgumentException) {
             throw SabrProtocolException("QuickJS demand policy returned unknown route", error)
@@ -65,7 +67,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
 
     @Synchronized
     override fun evaluateDemandResponse(
-        event: SabrSessionPolicy.DemandResponseEvent,
+        event: SabrSessionPolicy.DemandResponseEvent
     ): SabrSessionPolicy.DemandResponseDecision {
         if (!scriptedDemand) return super<SabrSessionPolicy>.evaluateDemandResponse(event)
         val input = demandInput(event)
@@ -74,19 +76,21 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
         input["returnedSegmentsTruncated"] = event.areReturnedSegmentsTruncated()
         val returned = JsonArray()
         for (segment in event.returnedSegments) {
-            returned.add(JsonObject().apply {
-                this["itag"] = segment.itag
-                this["sequenceNumber"] = segment.sequenceNumber
-                this["startMs"] = segment.startMs
-                this["durationMs"] = segment.durationMs
-            })
+            returned.add(
+                JsonObject().apply {
+                    this["itag"] = segment.itag
+                    this["sequenceNumber"] = segment.sequenceNumber
+                    this["startMs"] = segment.startMs
+                    this["durationMs"] = segment.durationMs
+                }
+            )
         }
         input["returnedSegments"] = returned
         val output = invokeObject("demandResponse", input)
         val outcome = try {
             SabrSessionPolicy.DemandOutcome.valueOf(
                 output.getString("outcome")
-                    ?: throw SabrProtocolException("QuickJS demand policy returned no outcome"),
+                    ?: throw SabrProtocolException("QuickJS demand policy returned no outcome")
             )
         } catch (error: IllegalArgumentException) {
             throw SabrProtocolException("QuickJS demand policy returned unknown outcome", error)
@@ -99,14 +103,14 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
         }
         return SabrSessionPolicy.DemandResponseDecision(
             outcome,
-            retryDelayMs,
+            retryDelayMs
         )
     }
 
     @Synchronized
     override fun evaluate(
         state: SabrSessionPolicy.State,
-        event: SabrSessionPolicy.Event,
+        event: SabrSessionPolicy.Event
     ): SabrSessionPolicy.Result {
         ensureOpen()
         if (event is SabrSessionPolicy.RequestEvent) {
@@ -118,7 +122,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
             input["fallbackBody"] = Base64.encodeToString(event.proposedBody, Base64.NO_WRAP)
             val output = invokeObject(
                 if (state.requestNumber == 0) "initialRequest" else "followUpRequest",
-                input,
+                input
             )
             val body = output.getString("body")
                 ?: throw SabrProtocolException("QuickJS policy returned no request body")
@@ -134,7 +138,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                 } else {
                     SabrSessionPolicy.ActionType.SEND_FOLLOW_UP_REQUEST
                 },
-                bytes,
+                bytes
             )
         }
         return control(state, event as SabrSessionPolicy.ControlResponseEvent)
@@ -142,7 +146,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
 
     private fun control(
         state: SabrSessionPolicy.State,
-        event: SabrSessionPolicy.ControlResponseEvent,
+        event: SabrSessionPolicy.ControlResponseEvent
     ): SabrSessionPolicy.Result {
         val input = stateJson(state)
         input["segmentCount"] = event.segmentCount
@@ -175,39 +179,43 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
             try {
                 actions.add(
                     SabrSessionPolicy.Action(
-                        SabrSessionPolicy.ActionType.valueOf(outputActions.getString(index)),
-                    ),
+                        SabrSessionPolicy.ActionType.valueOf(outputActions.getString(index))
+                    )
                 )
             } catch (error: RuntimeException) {
                 throw SabrProtocolException("QuickJS policy returned unknown action", error)
             }
         }
         val next = output.getObject("state")
-        val nextState = if (next == null) state else SabrSessionPolicy.State(
-            state.requestNumber,
-            next.getInt("redirectCount", state.redirectCount),
-            next.getInt("poTokenRefreshes", state.poTokenRefreshes),
-            state.reloads,
-        )
+        val nextState = if (next == null) {
+            state
+        } else {
+            SabrSessionPolicy.State(
+                state.requestNumber,
+                next.getInt("redirectCount", state.redirectCount),
+                next.getInt("poTokenRefreshes", state.poTokenRefreshes),
+                state.reloads
+            )
+        }
         return SabrSessionPolicy.Result.control(
             nextState,
             actions,
             SabrSessionPolicy.ControlDecision(
                 output.getInt("backoffMs", 0),
                 output.getString("redirectUrl"),
-                output.getString("errorDetails"),
+                output.getString("errorDetails")
             ),
             if (output.has("statePatch")) {
                 parseStatePatch(output.getObject("statePatch"), event)
             } else {
                 null
-            },
+            }
         )
     }
 
     private fun parseStatePatch(
         value: JsonObject?,
-        event: SabrSessionPolicy.ControlResponseEvent,
+        event: SabrSessionPolicy.ControlResponseEvent
     ): SabrResponseStatePatch? {
         if (value == null) return null
         val builder = SabrResponseStatePatch.builder()
@@ -222,8 +230,8 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                     next.getInt("minAudioReadaheadMs", -1),
                     next.getInt("minVideoReadaheadMs", -1),
                     decodeOptional(next.getString("playbackCookie")),
-                    next.getString("videoId"),
-                ),
+                    next.getString("videoId")
+                )
             )
         }
         val live = value.getArray("live")
@@ -242,8 +250,8 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                         item.getLong("minSeekableTimeTicks", -1),
                         item.getInt("minSeekableTimescale", -1),
                         item.getLong("maxSeekableTimeTicks", -1),
-                        item.getInt("maxSeekableTimescale", -1),
-                    ),
+                        item.getInt("maxSeekableTimescale", -1)
+                    )
                 )
             }
         }
@@ -266,8 +274,8 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                         item.getLong("indexRangeEnd", -1),
                         item.getLong("field8", -1),
                         item.getLong("durationUnits", -1),
-                        item.getLong("durationTimescale", -1),
-                    ),
+                        item.getLong("durationTimescale", -1)
+                    )
                 )
             }
         }
@@ -281,8 +289,8 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                         item.getInt("scope", -1),
                         decodeRequired(item.getString("value"), "context value"),
                         item.getBoolean("sendByDefault", false),
-                        item.getInt("writePolicy", -1),
-                    ),
+                        item.getInt("writePolicy", -1)
+                    )
                 )
             }
         }
@@ -292,8 +300,8 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                 SabrContextSendingPolicy.normalized(
                     intList(contextPolicy.getArray("start")),
                     intList(contextPolicy.getArray("stop")),
-                    intList(contextPolicy.getArray("discard")),
-                ),
+                    intList(contextPolicy.getArray("discard"))
+                )
             )
         }
         for (header in event.response.mediaHeaders) builder.addMediaHeader(header)
@@ -305,8 +313,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
         return values.indices.map { values.getInt(it) }
     }
 
-    private fun decodeOptional(value: String?): ByteArray? =
-        value?.let { decodeRequired(it, "optional bytes") }
+    private fun decodeOptional(value: String?): ByteArray? = value?.let { decodeRequired(it, "optional bytes") }
 
     private fun decodeRequired(value: String?, name: String): ByteArray {
         if (value == null) throw SabrProtocolException("QuickJS policy returned no $name")
@@ -366,7 +373,7 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
         private val headerType: Int,
         private val mediaType: Int,
         private val endType: Int,
-        private val builtinHeaderDecoder: Boolean,
+        private val builtinHeaderDecoder: Boolean
     ) : SabrMediaProtocol {
         init {
             if (headerType < 0 || mediaType < 0 || endType < 0 ||
@@ -407,9 +414,8 @@ class QuickJsSabrSessionPolicy @Throws(SabrProtocolException::class) constructor
                 value.getLong("timeRangeStartTicks", -1),
                 value.getLong("timeRangeDurationTicks", -1),
                 value.getInt("timeRangeTimescale", -1),
-                value.getLong("sequenceLastModified", -1),
+                value.getLong("sequenceLastModified", -1)
             )
         }
     }
-
 }

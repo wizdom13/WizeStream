@@ -5,11 +5,11 @@ import com.dokar.quickjs.binding.function
 import com.grack.nanojson.JsonObject
 import com.grack.nanojson.JsonParser
 import com.grack.nanojson.JsonWriter
+import java.util.WeakHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrScriptPolicy
-import java.util.WeakHashMap
 
 internal object QuickJsSabrRuntime {
     private const val MAX_RESULT_CHARS = 512 * 1024
@@ -38,7 +38,7 @@ internal object QuickJsSabrRuntime {
             "(function(){var p=__sabrPolicies[__hostSession()];" +
                 "if(!p)throw Error('closed SABR policy');var m=__hostMethod(),f=p[m];" +
                 "if(typeof f!=='function')throw Error('missing method '+m);" +
-                "return JSON.stringify(f.call(p,JSON.parse(__hostInput())))})()",
+                "return JSON.stringify(f.call(p,JSON.parse(__hostInput())))})()"
         )
         closeBytecode = quickJs.compile("delete __sabrPolicies[__hostSession()]")
     }
@@ -55,7 +55,7 @@ internal object QuickJsSabrRuntime {
                     "throw Error('missing createSabrPolicy');" +
                     "var p=createSabrPolicy(sabr);" +
                     "if(!p)throw Error('createSabrPolicy returned no policy');" +
-                    "__sabrPolicies[id]=p;})(__hostSession())",
+                    "__sabrPolicies[id]=p;})(__hostSession())"
             ).also { compiledPolicies[script] = it }
             runBlocking { quickJs.evaluate<Any?>(bootstrap) }
             return sessionId

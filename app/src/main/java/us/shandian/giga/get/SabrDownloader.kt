@@ -1,6 +1,13 @@
 package us.shandian.giga.get
 
 import android.util.Log
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.RandomAccessFile
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException
@@ -10,16 +17,9 @@ import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrInfo
 import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrSession
 import org.schabi.newpipe.player.datasource.LocalDomPoTokenProvider
 import org.schabi.newpipe.player.datasource.SabrPolicyRuntime
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.RandomAccessFile
-import java.net.ConnectException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 internal class SabrDownloader(
-    private val mission: DownloadMission,
+    private val mission: DownloadMission
 ) : Runnable {
     override fun run() {
         try {
@@ -54,7 +54,7 @@ internal class SabrDownloader(
                         throw SabrDownloadException(
                             SabrDownloadException.Reason.INITIALIZATION,
                             "SABR download failed: cold start did not provide initialization",
-                            error,
+                            error
                         )
                     }
                     logDebug("retry cold start attempt=$coldStartAttempts")
@@ -67,7 +67,7 @@ internal class SabrDownloader(
                         throw SabrDownloadException(
                             SabrDownloadException.Reason.NETWORK,
                             "SABR download failed: network error after retries",
-                            error,
+                            error
                         )
                     }
                     transientAttempts++
@@ -89,7 +89,7 @@ internal class SabrDownloader(
     private fun runSessionAttempt(
         info: YoutubeSabrInfo,
         recoveries: Array<MissionRecoveryInfo>,
-        coldStartAttempt: Int,
+        coldStartAttempt: Int
     ) {
         val session = YoutubeSabrSession(
             info,
@@ -97,7 +97,7 @@ internal class SabrDownloader(
             SabrDownloadFormatResolver.selectedVideoFormat(info, recoveries),
             LocalDomPoTokenProvider(mission.context),
             null,
-            SabrPolicyRuntime.createSessionHost(),
+            SabrPolicyRuntime.createSessionHost()
         )
         val workDir = prepareWorkDirectory()
         val targets = SabrDownloadFormatResolver.buildTargets(info, recoveries, workDir)
@@ -125,7 +125,7 @@ internal class SabrDownloader(
             downloadSegments(
                 session,
                 targets,
-                SabrSegmentWriter(session, targets, outputs, ::reportBytesWritten),
+                SabrSegmentWriter(session, targets, outputs, ::reportBytesWritten)
             )
         } finally {
             outputs.values.forEach { output ->
@@ -142,7 +142,7 @@ internal class SabrDownloader(
         val finalBytes = SabrFfmpegMuxer(mission).remuxAndCopy(
             targets.map { it.file },
             targets,
-            workDir,
+            workDir
         )
         completeMission(finalBytes)
     }
@@ -153,7 +153,7 @@ internal class SabrDownloader(
         if (recoveries.size != mission.urls.size || recoveries.any { !it.isSabr }) {
             throw SabrDownloadException(
                 SabrDownloadException.Reason.FORMAT,
-                "SABR download failed: mixed SABR/non-SABR resources are not supported",
+                "SABR download failed: mixed SABR/non-SABR resources are not supported"
             )
         }
         return recoveries
@@ -194,7 +194,7 @@ internal class SabrDownloader(
     private fun configureRequestMode(
         session: YoutubeSabrSession,
         targets: List<SabrDownloadTarget>,
-        coldStartAttempt: Int,
+        coldStartAttempt: Int
     ) {
         val useCompanionWarmup = targets.size == 1 && coldStartAttempt % 2 == 1
         if (useCompanionWarmup) {
@@ -258,7 +258,7 @@ internal class SabrDownloader(
         return SabrDownloadException(
             SabrDownloadException.Reason.STORAGE,
             "SABR download failed: $message",
-            cause,
+            cause
         )
     }
 
@@ -281,7 +281,7 @@ internal class SabrDownloader(
                 target.initializationData?.size ?: 0
             } else {
                 previousInitializationBytes
-            },
+            }
         )
         mission.sabrCheckpoint = current.copy(resources = resources.sortedBy { it.resourceIndex })
     }
@@ -299,7 +299,7 @@ internal class SabrDownloader(
     private fun downloadSegments(
         session: YoutubeSabrSession,
         targets: List<SabrDownloadTarget>,
-        writer: SabrSegmentWriter,
+        writer: SabrSegmentWriter
     ) {
         val localization = Localization("en", "US")
         writer.observeWrittenInitializations()
@@ -350,7 +350,7 @@ internal class SabrDownloader(
                 if (emptyResponses > MAX_EMPTY_RESPONSES) {
                     throw SabrDownloadException(
                         SabrDownloadException.Reason.STALLED,
-                        "SABR download stalled: no media received after $MAX_EMPTY_RESPONSES rounds",
+                        "SABR download stalled: no media received after $MAX_EMPTY_RESPONSES rounds"
                     )
                 }
                 Thread.sleep(IDLE_POLL_MS)
@@ -361,7 +361,7 @@ internal class SabrDownloader(
     @Throws(IOException::class)
     private fun fetchInitializationsOrRetry(
         writer: SabrSegmentWriter,
-        localization: Localization,
+        localization: Localization
     ) {
         try {
             writer.fetchUnwrittenInitializations(localization)
@@ -376,7 +376,7 @@ internal class SabrDownloader(
     @Throws(IOException::class)
     private fun fetchMissingInitializationsOrRetry(
         writer: SabrSegmentWriter,
-        localization: Localization,
+        localization: Localization
     ) {
         try {
             writer.fetchMissingInitializations(localization)
@@ -391,7 +391,7 @@ internal class SabrDownloader(
     @Throws(IOException::class)
     private fun enforceSessionCacheLimit(
         session: YoutubeSabrSession,
-        writer: SabrSegmentWriter,
+        writer: SabrSegmentWriter
     ) {
         if (session.cachedBytes <= MAX_SESSION_CACHE_BYTES) {
             return
@@ -402,13 +402,13 @@ internal class SabrDownloader(
         }
         throw SabrDownloadException(
             SabrDownloadException.Reason.STALLED,
-            "SABR download stalled: cached media grew to ${session.cachedBytes} bytes",
+            "SABR download stalled: cached media grew to ${session.cachedBytes} bytes"
         )
     }
 
     private fun configureInitializedSingleTargetMode(
         session: YoutubeSabrSession,
-        targets: List<SabrDownloadTarget>,
+        targets: List<SabrDownloadTarget>
     ) {
         if (targets.size != 1 || !targets.first().initializationWritten) {
             return
@@ -426,7 +426,7 @@ internal class SabrDownloader(
 
     private fun downloadPlayerTimeMs(
         session: YoutubeSabrSession,
-        targets: List<SabrDownloadTarget>,
+        targets: List<SabrDownloadTarget>
     ): Long {
         if (targets.size == 1) {
             return session.streamState.getBufferedEndMs(targets.first().format)
@@ -436,12 +436,14 @@ internal class SabrDownloader(
 
     private fun isDownloadComplete(
         session: YoutubeSabrSession,
-        targets: List<SabrDownloadTarget>,
+        targets: List<SabrDownloadTarget>
     ): Boolean {
         return targets.all { target ->
             target.pending.isEmpty() &&
-                (session.streamState.isComplete(target.format) ||
-                    session.isBeyondEnd(SabrSegmentRequest.media(target.format, target.nextWriteSequence)))
+                (
+                    session.streamState.isComplete(target.format) ||
+                        session.isBeyondEnd(SabrSegmentRequest.media(target.format, target.nextWriteSequence))
+                    )
         }
     }
 
@@ -498,17 +500,19 @@ internal class SabrDownloader(
                 message.contains("PO token", ignoreCase = true) -> {
                 SabrDownloadException.Reason.PROTECTED
             }
+
             message.contains("policy-only", ignoreCase = true) ||
                 message.contains("not returned", ignoreCase = true) ||
                 message.contains("integrity", ignoreCase = true) -> {
                 SabrDownloadException.Reason.STALLED
             }
+
             else -> SabrDownloadException.Reason.PROTOCOL
         }
         return SabrDownloadException(
             reason,
             "SABR download failed: ${message.ifBlank { "protocol error" }}",
-            error,
+            error
         )
     }
 

@@ -1,8 +1,8 @@
 package us.shandian.giga.get
 
-import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrFormat
 import java.io.File
 import java.util.TreeMap
+import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrFormat
 
 internal data class SabrDownloadTarget(
     val resourceIndex: Int,
@@ -14,5 +14,5 @@ internal data class SabrDownloadTarget(
     var initializationObserved: Boolean = false,
     var initializationData: ByteArray? = null,
     val pending: TreeMap<Int, ByteArray> = TreeMap(),
-    var pendingBytes: Long = 0,
+    var pendingBytes: Long = 0
 )

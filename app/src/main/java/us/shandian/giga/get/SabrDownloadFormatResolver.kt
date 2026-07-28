@@ -1,9 +1,9 @@
 package us.shandian.giga.get
 
-import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrFormat
-import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrInfo
 import java.io.File
 import java.io.IOException
+import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrFormat
+import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrInfo
 
 internal object SabrDownloadFormatResolver {
     @Throws(IOException::class)
@@ -16,7 +16,7 @@ internal object SabrDownloadFormatResolver {
     @Throws(IOException::class)
     fun selectedAudioFormat(
         info: YoutubeSabrInfo,
-        recoveries: Array<MissionRecoveryInfo>,
+        recoveries: Array<MissionRecoveryInfo>
     ): YoutubeSabrFormat {
         val audioRecovery = recoveries.firstOrNull { it.kind == 'a' }
         return audioRecovery?.let { findAudioFormat(info, it) }
@@ -28,14 +28,14 @@ internal object SabrDownloadFormatResolver {
             ?: info.findBestAudioFormat()
             ?: throw SabrDownloadException(
                 SabrDownloadException.Reason.FORMAT,
-                "SABR download failed: missing audio format",
+                "SABR download failed: missing audio format"
             )
     }
 
     @Throws(IOException::class)
     fun selectedVideoFormat(
         info: YoutubeSabrInfo,
-        recoveries: Array<MissionRecoveryInfo>,
+        recoveries: Array<MissionRecoveryInfo>
     ): YoutubeSabrFormat {
         val videoRecovery = recoveries.firstOrNull { it.kind == 'v' }
         return videoRecovery?.let { findVideoFormat(info, it) }
@@ -47,7 +47,7 @@ internal object SabrDownloadFormatResolver {
             ?: info.findLowestVideoFormat()
             ?: throw SabrDownloadException(
                 SabrDownloadException.Reason.FORMAT,
-                "SABR download failed: missing video format",
+                "SABR download failed: missing video format"
             )
     }
 
@@ -55,15 +55,17 @@ internal object SabrDownloadFormatResolver {
     fun buildTargets(
         info: YoutubeSabrInfo,
         recoveries: Array<MissionRecoveryInfo>,
-        workDir: File,
+        workDir: File
     ): List<SabrDownloadTarget> {
         return recoveries.mapIndexed { index, recovery ->
             val format = when (recovery.kind) {
                 'a' -> findAudioFormat(info, recovery)
+
                 'v' -> findVideoFormat(info, recovery)
+
                 else -> throw SabrDownloadException(
                     SabrDownloadException.Reason.FORMAT,
-                    "SABR download failed: unsupported resource kind ${recovery.kind}",
+                    "SABR download failed: unsupported resource kind ${recovery.kind}"
                 )
             }
             SabrDownloadTarget(index, recovery, format, File(workDir, "input-$index.media"))
@@ -73,7 +75,7 @@ internal object SabrDownloadFormatResolver {
     @Throws(IOException::class)
     private fun findAudioFormat(
         info: YoutubeSabrInfo,
-        recovery: MissionRecoveryInfo,
+        recovery: MissionRecoveryInfo
     ): YoutubeSabrFormat {
         return info.formats.firstOrNull { format ->
             format.isAudio &&
@@ -81,20 +83,20 @@ internal object SabrDownloadFormatResolver {
                 (recovery.audioTrackId == null || recovery.audioTrackId == format.audioTrackId)
         } ?: throw SabrDownloadException(
             SabrDownloadException.Reason.FORMAT,
-            "SABR download failed: could not resolve audio itag ${recovery.itag}",
+            "SABR download failed: could not resolve audio itag ${recovery.itag}"
         )
     }
 
     @Throws(IOException::class)
     private fun findVideoFormat(
         info: YoutubeSabrInfo,
-        recovery: MissionRecoveryInfo,
+        recovery: MissionRecoveryInfo
     ): YoutubeSabrFormat {
         return info.formats.firstOrNull { format ->
             format.isVideo && (recovery.itag <= 0 || format.itag == recovery.itag)
         } ?: throw SabrDownloadException(
             SabrDownloadException.Reason.FORMAT,
-            "SABR download failed: could not resolve video itag ${recovery.itag}",
+            "SABR download failed: could not resolve video itag ${recovery.itag}"
         )
     }
 
@@ -104,7 +106,7 @@ internal object SabrDownloadFormatResolver {
             .sortedWith(
                 compareBy<YoutubeSabrFormat> { !it.isOriginalAudio }
                     .thenBy { it.isDrc }
-                    .thenBy { normalizedBitrate(it) },
+                    .thenBy { normalizedBitrate(it) }
             )
             .firstOrNull()
     }
@@ -114,7 +116,7 @@ internal object SabrDownloadFormatResolver {
             .filter { it.isVideo }
             .sortedWith(
                 compareBy<YoutubeSabrFormat> { normalizedHeight(it) }
-                    .thenBy { normalizedBitrate(it) },
+                    .thenBy { normalizedBitrate(it) }
             )
             .firstOrNull()
     }

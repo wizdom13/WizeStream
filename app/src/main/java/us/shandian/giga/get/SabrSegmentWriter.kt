@@ -1,17 +1,17 @@
 package us.shandian.giga.get
 
+import java.io.IOException
+import java.io.OutputStream
 import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrMediaSegment
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrSegmentRequest
 import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrSession
-import java.io.IOException
-import java.io.OutputStream
 
 internal class SabrSegmentWriter(
     private val session: YoutubeSabrSession,
     private val targets: List<SabrDownloadTarget>,
     private val outputs: Map<Int, OutputStream>,
-    private val onBytesWritten: (SabrDownloadTarget, Long) -> Unit,
+    private val onBytesWritten: (SabrDownloadTarget, Long) -> Unit
 ) {
     fun observeWrittenInitializations() {
         for (target in targets) {
@@ -71,7 +71,7 @@ internal class SabrSegmentWriter(
     @Throws(IOException::class)
     private fun fetchInitializations(
         localization: Localization,
-        onlyWhenMediaIsPending: Boolean,
+        onlyWhenMediaIsPending: Boolean
     ): Boolean {
         var wroteInitialization = false
         for (target in targets) {
@@ -94,7 +94,7 @@ internal class SabrSegmentWriter(
     private fun writeInitializationSegment(
         target: SabrDownloadTarget,
         output: OutputStream,
-        data: ByteArray,
+        data: ByteArray
     ): Boolean {
         if (target.initializationWritten) {
             return false
@@ -111,7 +111,7 @@ internal class SabrSegmentWriter(
     private fun writeMediaSegment(
         target: SabrDownloadTarget,
         output: OutputStream,
-        segment: SabrMediaSegment,
+        segment: SabrMediaSegment
     ) {
         val sequence = segment.header.sequenceNumber
         if (sequence < target.nextWriteSequence) {
@@ -141,20 +141,20 @@ internal class SabrSegmentWriter(
         target: SabrDownloadTarget,
         sequence: Int,
         data: ByteArray,
-        reason: String,
+        reason: String
     ) {
         val previous = target.pending.put(sequence, data)
         if (previous != null) {
             target.pendingBytes -= previous.size.toLong()
         }
         target.pendingBytes += data.size.toLong()
-        if (target.pending.size > MAX_PENDING_SEGMENTS
-            || target.pendingBytes > MAX_PENDING_BYTES
+        if (target.pending.size > MAX_PENDING_SEGMENTS ||
+            target.pendingBytes > MAX_PENDING_BYTES
         ) {
             throw SabrDownloadException(
                 SabrDownloadException.Reason.STALLED,
-                "SABR download stalled while writing itag ${target.format.itag}: $reason"
-                    + " (${target.pending.size} pending segments, ${target.pendingBytes} bytes)",
+                "SABR download stalled while writing itag ${target.format.itag}: $reason" +
+                    " (${target.pending.size} pending segments, ${target.pendingBytes} bytes)"
             )
         }
     }
@@ -168,7 +168,7 @@ internal class SabrSegmentWriter(
     private fun writeMediaSegmentBytes(
         target: SabrDownloadTarget,
         output: OutputStream,
-        segment: SabrMediaSegment,
+        segment: SabrMediaSegment
     ) {
         try {
             segment.openStream().use { input ->
@@ -178,7 +178,7 @@ internal class SabrSegmentWriter(
             throw SabrDownloadException(
                 SabrDownloadException.Reason.STORAGE,
                 "SABR download failed: could not write temporary media",
-                error,
+                error
             )
         }
         target.nextWriteSequence++
@@ -192,7 +192,7 @@ internal class SabrSegmentWriter(
             throw SabrDownloadException(
                 SabrDownloadException.Reason.STORAGE,
                 "SABR download failed: could not write temporary media",
-                error,
+                error
             )
         }
     }

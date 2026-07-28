@@ -11,14 +11,14 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import org.schabi.newpipe.BuildConfig
-import org.schabi.newpipe.DownloaderImpl
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import org.schabi.newpipe.BuildConfig
+import org.schabi.newpipe.DownloaderImpl
 
 class SabrPolicyUpdateWorker(
     context: Context,
-    params: WorkerParameters,
+    params: WorkerParameters
 ) : Worker(context, params) {
     override fun doWork(): Result {
         val url = BuildConfig.SABR_POLICY_URL
@@ -34,8 +34,11 @@ class SabrPolicyUpdateWorker(
                     SabrPolicyRuntime.installDocument(body, System.currentTimeMillis())
                     Result.success()
                 }
+
                 204, 304 -> Result.success()
+
                 in 500..599 -> Result.retry()
+
                 else -> {
                     Log.w(TAG, "SABR policy update failed with HTTP ${response.responseCode()}")
                     Result.failure()
@@ -59,7 +62,9 @@ class SabrPolicyUpdateWorker(
         fun initialize(context: Context) {
             if (BuildConfig.SABR_POLICY_URL.isEmpty() ||
                 BuildConfig.SABR_POLICY_PUBLIC_KEY_BASE64.isEmpty()
-            ) return
+            ) {
+                return
+            }
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
@@ -73,12 +78,12 @@ class SabrPolicyUpdateWorker(
             workManager.enqueueUniqueWork(
                 IMMEDIATE_WORK,
                 ExistingWorkPolicy.KEEP,
-                immediate,
+                immediate
             )
             workManager.enqueueUniquePeriodicWork(
                 PERIODIC_WORK,
                 ExistingPeriodicWorkPolicy.KEEP,
-                periodic,
+                periodic
             )
         }
     }
