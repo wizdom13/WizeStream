@@ -218,6 +218,7 @@ public class DownloadManager {
             mis.metadata = sub;
             mis.maxRetry = mPrefMaxRetry;
             mis.mHandler = mHandler;
+            mis.context = ctx.getApplicationContext();
 
             mMissionsPending.add(mis);
         }

@@ -99,6 +99,7 @@ import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior;
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryRepository;
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockPlaybackDecision;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.DeliveryMethod;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -106,6 +107,7 @@ import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
+import org.schabi.newpipe.player.datasource.SabrSessionStore;
 import org.schabi.newpipe.player.helper.AudioReactor;
 import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager;
 import org.schabi.newpipe.player.helper.CustomRenderersFactory;
@@ -1086,6 +1088,10 @@ public final class Player implements PlaybackListener, Listener {
                                   final int duration,
                                   final int bufferPercent) {
         if (isPrepared) {
+            getCurrentStreamInfo().ifPresent(info -> {
+                SabrSessionStore.updatePlayerTime(info.getId(), currentProgress);
+                SabrSessionStore.updatePlaybackRate(info.getId(), getPlaybackSpeed());
+            });
             UIs.call(ui -> ui.onUpdateProgress(currentProgress, duration, bufferPercent));
             notifyProgressUpdateToListeners(currentProgress, duration, bufferPercent);
         }
@@ -3077,7 +3083,9 @@ public final class Player implements PlaybackListener, Listener {
                 setRecovery();
             }
 
-            if (playQueueManagerReloadingNeeded(sourceType, info, getVideoRendererIndex())) {
+            if (!isCurrentStreamSabr()
+                    && playQueueManagerReloadingNeeded(
+                            sourceType, info, getVideoRendererIndex())) {
                 reloadPlayQueueManager();
             }
         }, () -> {
@@ -3100,6 +3108,27 @@ public final class Player implements PlaybackListener, Listener {
         trackSelector.setParameters(trackSelector.buildUponParameters()
                 .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !videoAndSubtitlesEnabled)
                 .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, !videoAndSubtitlesEnabled));
+    }
+
+    private boolean isCurrentStreamSabr() {
+        return getCurrentStreamInfo().map(info -> {
+            for (final VideoStream stream : info.getVideoOnlyStreams()) {
+                if (stream.getDeliveryMethod() == DeliveryMethod.SABR) {
+                    return true;
+                }
+            }
+            for (final VideoStream stream : info.getVideoStreams()) {
+                if (stream.getDeliveryMethod() == DeliveryMethod.SABR) {
+                    return true;
+                }
+            }
+            for (final AudioStream stream : info.getAudioStreams()) {
+                if (stream.getDeliveryMethod() == DeliveryMethod.SABR) {
+                    return true;
+                }
+            }
+            return false;
+        }).orElse(false);
     }
 
     /**

@@ -20,7 +20,10 @@ import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.downloader.Response;
+import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrFormat;
+import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrInfo;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.DeliveryMethod;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.SubtitlesStream;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -264,6 +267,13 @@ public class StreamItemAdapter<T extends Stream, U extends Stream> extends BaseA
                     if (!changeSize && !changeFormat) {
                         continue;
                     }
+                    if (stream.getDeliveryMethod() == DeliveryMethod.SABR) {
+                        if (changeSize) {
+                            streamsWrapper.setSize(stream, getSabrContentLength(stream));
+                            hasChanged = true;
+                        }
+                        continue;
+                    }
                     final Response response = DownloaderImpl.getInstance()
                             .head(stream.getContent());
                     if (changeSize) {
@@ -285,6 +295,24 @@ public class StreamItemAdapter<T extends Stream, U extends Stream> extends BaseA
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .onErrorReturnItem(true);
+        }
+
+        private static long getSabrContentLength(final Stream stream) {
+            if (!(stream.getDeliveryMethodInfo() instanceof YoutubeSabrInfo)) {
+                return SIZE_UNSET;
+            }
+            final int itag;
+            if (stream instanceof AudioStream) {
+                itag = ((AudioStream) stream).getItag();
+            } else if (stream instanceof VideoStream) {
+                itag = ((VideoStream) stream).getItag();
+            } else {
+                return SIZE_UNSET;
+            }
+            final YoutubeSabrFormat format =
+                    ((YoutubeSabrInfo) stream.getDeliveryMethodInfo()).findFormatByItag(itag);
+            return format != null && format.getContentLength() > 0
+                    ? format.getContentLength() : SIZE_UNSET;
         }
 
         /**

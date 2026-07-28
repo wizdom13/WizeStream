@@ -270,6 +270,26 @@ object ServiceHelper {
                 jsonObject.getString("url"),
                 jsonObject.getString("name")
             )
+        } else if (serviceId == ServiceList.YouTube.serviceId) {
+            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+            ServiceList.YouTube.setShowAutoTranslatedSubtitles(
+                sharedPreferences.getBoolean(
+                    context.getString(R.string.show_auto_translated_subtitles_key),
+                    true
+                )
+            )
+            ServiceList.YouTube.setAutoTranslatedSubtitlesLanguage(
+                sharedPreferences.getString(
+                    context.getString(R.string.auto_translated_subtitles_language_key),
+                    "en"
+                ) ?: "en"
+            )
+            NewPipe.setYoutubePlayerClient(
+                sharedPreferences.getString(
+                    context.getString(R.string.youtube_player_client_key),
+                    "mweb"
+                ) ?: "mweb"
+            )
         }
     }
 

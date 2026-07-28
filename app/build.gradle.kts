@@ -55,6 +55,8 @@ configure<ApplicationExtension> {
     defaultConfig {
         applicationId = WIZESTREAM_APPLICATION_ID
         resValue("string", "app_name", "WizeStream")
+        buildConfigField("String", "SABR_POLICY_PUBLIC_KEY_BASE64", "\"\"")
+        buildConfigField("String", "SABR_POLICY_URL", "\"\"")
         minSdk {
             version = release(ANDROID_MIN_SDK)
         }
@@ -139,6 +141,8 @@ configure<ApplicationExtension> {
                 "META-INF/CHANGES",
                 "META-INF/COPYRIGHT", // "COPYRIGHT" belongs to RxJava...
                 "META-INF/INDEX.LIST",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE.md",
                 "META-INF/io.netty.versions.properties"
             )
         }
@@ -257,6 +261,9 @@ dependencies {
     // Third-party libraries
     implementation(libs.livefront.bridge)
     implementation(libs.evernote.statesaver.core)
+    implementation("io.github.dokar3:quickjs-kt:1.0.5")
+    implementation(project(":ffmpeg"))
+    implementation("com.arthenica:smart-exception-java:0.2.1")
     kapt(libs.evernote.statesaver.compiler)
 
     // HTML parser
@@ -266,6 +273,11 @@ dependencies {
     implementation(libs.jvm.libp2p) {
         exclude(group = "io.netty", module = "netty-codec-native-quic")
         exclude(group = "io.netty", module = "netty-tcnative-boringssl-static")
+    }
+    constraints {
+        implementation("org.bouncycastle:bcpkix-jdk18on:1.85")
+        implementation("org.bouncycastle:bcprov-jdk18on:1.85")
+        implementation("org.bouncycastle:bcutil-jdk18on:1.85")
     }
 
     // HTTP client
