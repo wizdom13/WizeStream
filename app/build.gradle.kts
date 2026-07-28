@@ -271,6 +271,11 @@ dependencies {
         exclude(group = "io.netty", module = "netty-codec-native-quic")
         exclude(group = "io.netty", module = "netty-tcnative-boringssl-static")
     }
+    constraints {
+        implementation("org.bouncycastle:bcpkix-jdk18on:1.85")
+        implementation("org.bouncycastle:bcprov-jdk18on:1.85")
+        implementation("org.bouncycastle:bcutil-jdk18on:1.85")
+    }
 
     // HTTP client
     implementation(libs.squareup.okhttp)
