@@ -21,6 +21,9 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
 
     private final Rect globalRect = new Rect();
     private boolean skippingInterception = false;
+    private int playerPeekHeight;
+    @Nullable
+    private FrameLayout bottomSheetView;
     private final List<Integer> skipInterceptionOfElements = List.of(
             R.id.detail_content_root_layout, R.id.relatedItemsLayout,
             R.id.itemsListPanel, R.id.view_pager, R.id.tab_layout, R.id.bottomControls,
@@ -51,9 +54,28 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     public boolean onLayoutChild(@NonNull final CoordinatorLayout parent,
                                  @NonNull final FrameLayout child,
                                  final int layoutDirection) {
+        bottomSheetView = child;
+        applyPlayerPeekHeight(child, isBottomNavigationRequested(child));
         final boolean handled = super.onLayoutChild(parent, child, layoutDirection);
         updateBottomNavigation(child, getState(), null);
         return handled;
+    }
+
+    @Override
+    public void setPeekHeight(final int peekHeight) {
+        playerPeekHeight = peekHeight;
+        if (bottomSheetView == null) {
+            super.setPeekHeight(peekHeight);
+        } else {
+            applyPlayerPeekHeight(
+                    bottomSheetView, isBottomNavigationRequested(bottomSheetView));
+        }
+    }
+
+    public void onBottomNavigationVisibilityChanged() {
+        if (bottomSheetView != null) {
+            updateBottomNavigation(bottomSheetView, getState(), null);
+        }
     }
 
     @Override
@@ -112,44 +134,72 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         final View bottomNavigation = bottomSheet.getRootView()
                 .findViewById(R.id.main_bottom_navigation);
         if (bottomNavigation == null || !Boolean.TRUE.equals(bottomNavigation.getTag())) {
-            bottomSheet.setTranslationY(0.0f);
+            applyPlayerPeekHeight(bottomSheet, false);
             return;
         }
 
         bottomNavigation.bringToFront();
+        applyPlayerPeekHeight(bottomSheet, true);
 
         if (state == STATE_HIDDEN) {
-            bottomSheet.setTranslationY(0.0f);
-            showBottomNavigation(bottomNavigation, 1.0f);
+            updateBottomNavigationAppearance(bottomNavigation, 0.0f);
             return;
         }
 
-        final int navigationHeight = bottomNavigation.getHeight() > 0
-                ? bottomNavigation.getHeight()
-                : bottomSheet.getResources()
-                .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
-
         final float expandedFraction;
         if (slideOffset != null) {
-            expandedFraction = Math.max(0.0f, Math.min(1.0f, slideOffset));
+            expandedFraction = PlayerSheetTransitionCalculator
+                    .clampExpandedFraction(slideOffset);
         } else {
             expandedFraction = state == STATE_EXPANDED ? 1.0f : 0.0f;
         }
 
-        final float collapsedFraction = 1.0f - expandedFraction;
-        bottomSheet.setTranslationY(-navigationHeight * collapsedFraction);
-        showBottomNavigation(bottomNavigation, collapsedFraction);
+        updateBottomNavigationAppearance(bottomNavigation, expandedFraction);
     }
 
-    private static void showBottomNavigation(@NonNull final View bottomNavigation,
-                                             final float visibleFraction) {
-        if (visibleFraction <= 0.0f) {
+    private void applyPlayerPeekHeight(@NonNull final FrameLayout bottomSheet,
+                                       final boolean bottomNavigationVisible) {
+        final View bottomNavigation = bottomSheet.getRootView()
+                .findViewById(R.id.main_bottom_navigation);
+        final int navigationHeight = bottomNavigation == null
+                ? bottomSheet.getResources()
+                .getDimensionPixelSize(R.dimen.main_bottom_navigation_height)
+                : getBottomNavigationHeight(bottomNavigation);
+        final int adjustedPeekHeight = PlayerSheetTransitionCalculator.adjustedPeekHeight(
+                playerPeekHeight, navigationHeight, bottomNavigationVisible);
+        if (super.getPeekHeight() != adjustedPeekHeight) {
+            super.setPeekHeight(adjustedPeekHeight);
+        }
+    }
+
+    private void updateBottomNavigationAppearance(@NonNull final View bottomNavigation,
+                                                  final float expandedFraction) {
+        final float clampedFraction = PlayerSheetTransitionCalculator
+                .clampExpandedFraction(expandedFraction);
+        if (clampedFraction >= 1.0f) {
             bottomNavigation.setAlpha(0.0f);
+            bottomNavigation.setTranslationY(getBottomNavigationHeight(bottomNavigation));
             bottomNavigation.setVisibility(View.INVISIBLE);
             return;
         }
 
         bottomNavigation.setVisibility(View.VISIBLE);
-        bottomNavigation.setAlpha(visibleFraction);
+        bottomNavigation.setAlpha(1.0f - clampedFraction);
+        bottomNavigation.setTranslationY(
+                PlayerSheetTransitionCalculator.bottomNavigationTranslation(
+                        getBottomNavigationHeight(bottomNavigation), clampedFraction));
+    }
+
+    private static int getBottomNavigationHeight(@NonNull final View view) {
+        return view.getHeight() > 0
+                ? view.getHeight()
+                : view.getResources()
+                .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
+    }
+
+    private static boolean isBottomNavigationRequested(@NonNull final View bottomSheet) {
+        final View bottomNavigation = bottomSheet.getRootView()
+                .findViewById(R.id.main_bottom_navigation);
+        return bottomNavigation != null && Boolean.TRUE.equals(bottomNavigation.getTag());
     }
 }
