@@ -1190,5 +1190,25 @@
     <string name="sponsor_block_skip_sponsor">Skip sponsor</string>
     <string name="sponsor_block_skip_segment">Skip segment</string>
     <string name="sponsor_block_skip_button_content_description">Skip SponsorBlock segment</string>
+    <string name="sabr_backoff_notification_channel_id" translatable="false">sabr_backoff</string>
+    <string name="sabr_backoff_notification_channel_name">YouTube playback waiting</string>
+    <string name="sabr_backoff_notification_channel_description">Notifications when YouTube requires a playback request to wait</string>
+    <string name="sabr_backoff_notification_title">Waiting for YouTube</string>
+    <string name="sabr_backoff_notification_content">YouTube requires a %1$d-second wait before playback can continue</string>
+    <string name="error_sabr_download_failed">SABR download failed</string>
+    <string name="error_sabr_download_format">This SABR format cannot be downloaded</string>
+    <string name="error_sabr_download_initialization">SABR initialization failed</string>
+    <string name="error_sabr_download_protected">This SABR stream needs attestation</string>
+    <string name="error_sabr_download_stalled">SABR stopped returning media</string>
+    <string name="error_sabr_download_network">SABR download failed because of the network</string>
+    <string name="error_sabr_download_muxing">Could not mux SABR media</string>
+    <string name="error_sabr_download_storage">Could not write the SABR download</string>
+    <string name="error_sabr_download_protocol">SABR protocol error</string>
+    <string name="show_auto_translated_subtitles_title">Show auto-translated subtitles</string>
+    <string name="show_auto_translated_subtitles_summary">Show subtitles translated automatically by YouTube</string>
+    <string name="auto_translated_subtitles_language_title">Auto-translate subtitles to</string>
+    <string name="youtube_player_client_title">YouTube extraction endpoint</string>
+    <string name="youtube_session_visitor_data_title">Send YouTube session visitor data</string>
+    <string name="youtube_session_visitor_data_summary">May reduce temporary IP blocks, but can increase forced playback waits</string>
 
 </resources>

@@ -24,6 +24,7 @@ dependencyResolutionManagement {
     }
 }
 include(":app") // androidApp
+include(":ffmpeg")
 
 val wizeStreamExtractorDir = file("external/WizeStreamExtractor")
 if (!wizeStreamExtractorDir.isDirectory) {

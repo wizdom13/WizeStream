@@ -95,6 +95,7 @@ import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerIntentType;
 import org.schabi.newpipe.player.PlayerService;
 import org.schabi.newpipe.player.PlayerType;
+import org.schabi.newpipe.player.datasource.SabrSessionStore;
 import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.event.PlayerServiceExtendedEventListener;
 import org.schabi.newpipe.player.helper.PlayerHelper;
@@ -1674,6 +1675,15 @@ public final class VideoDetailFragment
 
         currentInfo = info;
         setInitialData(info.getServiceId(), info.getOriginalUrl(), info.getName(), playQueue);
+        final List<VideoStream> sortedVideoStreams = ListHelper.getSortedStreamVideosList(
+                activity, info.getVideoStreams(), info.getVideoOnlyStreams(), false, false);
+        final int selectedVideoStreamIndex =
+                ListHelper.getDefaultResolutionIndex(activity, sortedVideoStreams);
+        if (selectedVideoStreamIndex >= 0
+                && selectedVideoStreamIndex < sortedVideoStreams.size()) {
+            SabrSessionStore.prewarm(
+                    requireContext(), info, sortedVideoStreams.get(selectedVideoStreamIndex));
+        }
 
         updateTabs(info);
 

@@ -14,9 +14,11 @@ import com.google.android.exoplayer2.source.MergingMediaSource;
 
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.DeliveryMethod;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.SubtitlesStream;
 import org.schabi.newpipe.extractor.stream.VideoStream;
+import org.schabi.newpipe.player.datasource.SabrSessionStore;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
@@ -84,6 +86,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
             return liveSource;
         }
 
+        SabrSessionStore.setPreferredAudioTrack(info.getId(), audioTrack);
+
         final List<MediaSource> mediaSources = new ArrayList<>();
 
         // Create video stream source
@@ -120,6 +124,10 @@ public class VideoPlaybackResolver implements PlaybackResolver {
                         dataSource, video, info, PlaybackResolver.cacheKeyOf(info, video), tag);
                 mediaSources.add(streamSource);
             } catch (final ResolverException e) {
+                if (video.getDeliveryMethod() == DeliveryMethod.SABR) {
+                    throw new IllegalStateException(
+                            "Unable to create SABR video source for " + info.getUrl(), e);
+                }
                 Log.e(TAG, "Unable to create video source", e);
                 return null;
             }
@@ -127,7 +135,11 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
         // Use the audio stream if there is no video stream, or
         // merge with audio stream in case if video does not contain audio
-        if (audio != null && (video == null || video.isVideoOnly() || audioTrack != null)) {
+        // SABR carries audio and video in a single MediaSource.
+        final boolean videoIsSabr =
+                video != null && video.getDeliveryMethod() == DeliveryMethod.SABR;
+        if (audio != null && !videoIsSabr
+                && (video == null || video.isVideoOnly() || audioTrack != null)) {
             try {
                 final MediaSource audioSource = PlaybackResolver.buildMediaSource(
                         dataSource, audio, info, PlaybackResolver.cacheKeyOf(info, audio), tag);

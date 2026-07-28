@@ -10,6 +10,10 @@ import org.schabi.newpipe.extractor.downloader.Downloader
 class DebugApp : App() {
     override fun onCreate() {
         super.onCreate()
+        if (!isFullAppInitializationEnabled) {
+            return
+        }
+
         initStetho()
 
         LeakCanary.config = LeakCanary.config.copy(
