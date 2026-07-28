@@ -32,7 +32,11 @@ import org.acra.config.CoreConfigurationBuilder
 import org.schabi.newpipe.error.ReCaptchaActivity
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
+import org.schabi.newpipe.extractor.services.youtube.YoutubeApiDecoder
 import org.schabi.newpipe.ktx.hasAssignableCause
+import org.schabi.newpipe.player.datasource.LocalDomPoTokenProvider
+import org.schabi.newpipe.player.datasource.SabrPolicyRuntime
+import org.schabi.newpipe.player.datasource.SabrPolicyUpdateWorker
 import org.schabi.newpipe.settings.NewPipeSettings
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncManager
@@ -105,6 +109,35 @@ open class App :
             Localization.getPreferredLocalization(this),
             Localization.getPreferredContentCountry(this)
         )
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val sessionPoTokenProvider = LocalDomPoTokenProvider.shared(this)
+        NewPipe.setYoutubeSessionPoTokenProvider {
+            clientName, localization, contentCountry, loggedIn ->
+            val visitorDataEnabled = prefs.getBoolean(
+                getString(R.string.youtube_session_visitor_data_key),
+                false
+            )
+            if (visitorDataEnabled || clientName == "ANDROID_VR") {
+                sessionPoTokenProvider.getSessionPoToken(
+                    clientName,
+                    localization,
+                    contentCountry,
+                    loggedIn
+                )
+            } else {
+                null
+            }
+        }
+        runCatching {
+            SabrPolicyRuntime.initialize(this, BuildConfig.SABR_POLICY_PUBLIC_KEY_BASE64, 0)
+            SabrPolicyUpdateWorker.initialize(this)
+        }.onFailure { error ->
+            Log.e(TAG, "Could not initialize SABR cloud policy; using builtin", error)
+        }
+        val webViewAvailabilityChecker = AndroidWebViewAvailabilityChecker(this)
+        NewPipe.setWebViewAvailabilityChecker(webViewAvailabilityChecker)
+        webViewAvailabilityChecker.warmUp()
+        YoutubeApiDecoder.setLocalDecoder(WebViewJavaScriptDecoder(this))
         Localization.initPrettyTime(Localization.resolvePrettyTime())
 
         BridgeStateSaverInitializer.init(this)
@@ -112,9 +145,16 @@ open class App :
         initNotificationChannels()
 
         ServiceHelper.initServices(this)
+        sessionPoTokenProvider.prewarmSessionPoToken(
+            Localization.getPreferredLocalization(this),
+            Localization.getPreferredContentCountry(this),
+            org.schabi.newpipe.extractor.ServiceList.YouTube.hasTokens()
+        )
 
         // Initialize image loader
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        NewPipe.setYoutubePlayerClient(
+            prefs.getString(getString(R.string.youtube_player_client_key), "mweb") ?: "mweb"
+        )
         ImageStrategy.setPreferredImageQuality(
             PreferredImageQuality.fromPreferenceKey(
                 this,
@@ -295,8 +335,28 @@ open class App :
                 ).setName(getString(R.string.streams_notification_channel_name))
                 .setDescription(getString(R.string.streams_notification_channel_description))
                 .build()
+        val sabrBackoffChannel =
+            NotificationChannelCompat
+                .Builder(
+                    getString(R.string.sabr_backoff_notification_channel_id),
+                    NotificationManagerCompat.IMPORTANCE_DEFAULT
+                ).setName(getString(R.string.sabr_backoff_notification_channel_name))
+                .setDescription(
+                    getString(R.string.sabr_backoff_notification_channel_description)
+                ).setSound(null, null)
+                .setVibrationEnabled(false)
+                .setShowBadge(false)
+                .build()
 
-        val channels = listOf(mainChannel, appUpdateChannel, hashChannel, errorReportChannel, newStreamChannel)
+        val channels =
+            listOf(
+                mainChannel,
+                appUpdateChannel,
+                hashChannel,
+                errorReportChannel,
+                newStreamChannel,
+                sabrBackoffChannel
+            )
 
         NotificationManagerCompat.from(this).createNotificationChannelsCompat(channels)
     }

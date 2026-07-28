@@ -1,6 +1,7 @@
 package org.schabi.newpipe.download;
 
 import static org.schabi.newpipe.extractor.stream.DeliveryMethod.PROGRESSIVE_HTTP;
+import static org.schabi.newpipe.extractor.stream.DeliveryMethod.SABR;
 import static org.schabi.newpipe.util.ListHelper.getStreamsOfSpecifiedDelivery;
 
 import android.app.Activity;
@@ -82,6 +83,7 @@ import java.util.Optional;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import us.shandian.giga.get.MissionRecoveryInfo;
+import us.shandian.giga.get.SabrDownloadStreamHelper;
 import us.shandian.giga.postprocessing.Postprocessing;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
@@ -258,9 +260,12 @@ public class DownloadDialog extends DialogFragment
                 continue;
             }
             final AudioStream audioStream = SecondaryStreamHelper.getAudioStreamFor(
-                    context, audioStreams.getStreamsList(), videoStreams.get(i));
+                    context, SabrDownloadStreamHelper.audioStreamsForVideo(
+                            audioStreams.getStreamsList(), videoStreams.get(i)),
+                    videoStreams.get(i));
 
-            if (audioStream != null) {
+            if (audioStream != null && SabrDownloadStreamHelper
+                    .isCompatibleSecondaryStream(videoStreams.get(i), audioStream)) {
                 secondaryStreams.append(i, new SecondaryStreamHelper<>(audioStreams, audioStream));
             } else if (DEBUG) {
                 final MediaFormat mediaFormat = videoStreams.get(i).getFormat();
@@ -1102,7 +1107,9 @@ public class DownloadDialog extends DialogFragment
             };
             recoveryInfo = List.of(new MissionRecoveryInfo(selectedStream));
         } else {
-            if (secondaryStream.getDeliveryMethod() != PROGRESSIVE_HTTP) {
+            if (secondaryStream.getDeliveryMethod() != PROGRESSIVE_HTTP
+                    && (selectedStream.getDeliveryMethod() != SABR
+                    || secondaryStream.getDeliveryMethod() != SABR)) {
                 throw new IllegalArgumentException("Unsupported stream delivery format"
                         + secondaryStream.getDeliveryMethod());
             }
@@ -1114,6 +1121,11 @@ public class DownloadDialog extends DialogFragment
                     new MissionRecoveryInfo(selectedStream),
                     new MissionRecoveryInfo(secondaryStream)
             );
+        }
+
+        if (SabrDownloadStreamHelper.containsSabrStream(selectedStream, secondaryStream)) {
+            psName = null;
+            psArgs = null;
         }
 
         DownloadManagerService.startMission(context, urls, storage, kind, threads,

@@ -55,6 +55,8 @@ configure<ApplicationExtension> {
     defaultConfig {
         applicationId = WIZESTREAM_APPLICATION_ID
         resValue("string", "app_name", "WizeStream")
+        buildConfigField("String", "SABR_POLICY_PUBLIC_KEY_BASE64", "\"\"")
+        buildConfigField("String", "SABR_POLICY_URL", "\"\"")
         minSdk {
             version = release(ANDROID_MIN_SDK)
         }
@@ -257,6 +259,8 @@ dependencies {
     // Third-party libraries
     implementation(libs.livefront.bridge)
     implementation(libs.evernote.statesaver.core)
+    implementation("io.github.dokar3:quickjs-kt:1.0.5")
+    implementation(project(":ffmpeg"))
     kapt(libs.evernote.statesaver.compiler)
 
     // HTML parser

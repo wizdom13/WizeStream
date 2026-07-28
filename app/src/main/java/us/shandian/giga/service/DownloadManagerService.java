@@ -409,7 +409,8 @@ public class DownloadManagerService extends Service {
         else
             ps = Postprocessing.getAlgorithm(psName, psArgs, streamInfo);
 
-        final DownloadMission mission = new DownloadMission(urls, storage, kind, ps);
+        final DownloadMission mission = new DownloadMission(
+                urls, storage, kind, ps, getApplicationContext());
         mission.threadCount = threads;
         mission.source = streamInfo.getUrl();
         mission.nearLength = nearLength;
