@@ -141,6 +141,8 @@ configure<ApplicationExtension> {
                 "META-INF/CHANGES",
                 "META-INF/COPYRIGHT", // "COPYRIGHT" belongs to RxJava...
                 "META-INF/INDEX.LIST",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE.md",
                 "META-INF/io.netty.versions.properties"
             )
         }
