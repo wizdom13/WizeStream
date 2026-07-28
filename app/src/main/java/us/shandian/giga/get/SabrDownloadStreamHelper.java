@@ -36,6 +36,29 @@ public final class SabrDownloadStreamHelper {
         return isSabr(selectedStream) || isSabr(secondaryStream);
     }
 
+    /**
+     * Keep media streams supported by the download engine.
+     *
+     * @param streams source streams
+     * @param <S> stream type
+     * @return progressive HTTP and SABR streams, preserving their original order
+     */
+    public static <S extends Stream> List<S> getDownloadableMediaStreams(
+            final List<S> streams) {
+        final List<S> result = new ArrayList<>();
+        if (streams == null) {
+            return result;
+        }
+
+        for (final S stream : streams) {
+            if (stream.getDeliveryMethod() == DeliveryMethod.PROGRESSIVE_HTTP
+                    || isSabr(stream)) {
+                result.add(stream);
+            }
+        }
+        return result;
+    }
+
     public static List<AudioStream> audioStreamsForVideo(final List<AudioStream> audioStreams,
                                                          final VideoStream videoStream) {
         if (audioStreams == null || audioStreams.isEmpty()) {

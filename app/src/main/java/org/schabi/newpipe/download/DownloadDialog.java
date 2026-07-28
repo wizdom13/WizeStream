@@ -166,18 +166,19 @@ public class DownloadDialog extends DialogFragment
         this.currentInfo = info;
 
         final List<AudioStream> audioStreams =
-                getStreamsOfSpecifiedDelivery(info.getAudioStreams(), PROGRESSIVE_HTTP);
+                SabrDownloadStreamHelper.getDownloadableMediaStreams(info.getAudioStreams());
         final List<List<AudioStream>> groupedAudioStreams =
                 ListHelper.getGroupedAudioStreams(context, audioStreams);
         this.wrappedAudioTracks = new AudioTracksWrapper(groupedAudioStreams, context);
         this.selectedAudioTrackIndex =
                 ListHelper.getDefaultAudioTrackGroup(context, groupedAudioStreams);
 
-        // TODO: Adapt this code when the downloader support other types of stream deliveries
+        // Keep only media deliveries supported by the download engine.
         final List<VideoStream> videoStreams = ListHelper.getSortedStreamVideosList(
                 context,
-                getStreamsOfSpecifiedDelivery(info.getVideoStreams(), PROGRESSIVE_HTTP),
-                getStreamsOfSpecifiedDelivery(info.getVideoOnlyStreams(), PROGRESSIVE_HTTP),
+                SabrDownloadStreamHelper.getDownloadableMediaStreams(info.getVideoStreams()),
+                SabrDownloadStreamHelper.getDownloadableMediaStreams(
+                        info.getVideoOnlyStreams()),
                 false,
                 // If there are multiple languages available, prefer streams without audio
                 // to allow language selection
