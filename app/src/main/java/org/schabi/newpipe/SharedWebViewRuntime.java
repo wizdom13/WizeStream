@@ -323,7 +323,8 @@ public final class SharedWebViewRuntime {
                 public void onReceivedError(final WebView view, final WebResourceRequest request,
                                             final WebResourceError webError) {
                     super.onReceivedError(view, request, webError);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && request.isForMainFrame()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                            && request.isForMainFrame()) {
                         retryOrFail(attempt, new IllegalStateException(
                                 "WebView runtime main frame error " + webError.getErrorCode()
                                         + ": " + webError.getDescription()));

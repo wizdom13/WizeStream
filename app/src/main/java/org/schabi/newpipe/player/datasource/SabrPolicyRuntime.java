@@ -85,7 +85,13 @@ public final class SabrPolicyRuntime {
                 new SabrSessionPolicyTranscript(SESSION_TRANSCRIPT_CAPACITY));
     }
 
-    /** Configures cloud policy verification and restores the last verified cached envelope. */
+    /**
+     * Configures cloud policy verification and restores the last verified cached envelope.
+     *
+     * @param context the application context
+     * @param publicKey the policy-signing public key
+     * @param minimumRevision the minimum accepted policy revision
+     */
     public static synchronized void initialize(@NonNull final Context context,
                                                @NonNull final PublicKey publicKey,
                                                final long minimumRevision) {
@@ -114,7 +120,13 @@ public final class SabrPolicyRuntime {
         revisionCache = revisions;
     }
 
-    /** Initializes from a deployment-provided raw 32-byte Ed25519 key. Empty means builtin only. */
+    /**
+     * Initializes from a deployment-provided raw 32-byte Ed25519 key.
+     *
+     * @param context the application context
+     * @param publicKeyBase64 the encoded key, or empty to use the built-in policy only
+     * @param minimumRevision the minimum accepted policy revision
+     */
     public static synchronized void initialize(@NonNull final Context context,
                                                @Nullable final String publicKeyBase64,
                                                final long minimumRevision) {
@@ -134,7 +146,13 @@ public final class SabrPolicyRuntime {
         }
     }
 
-    /** Verifies, activates, and atomically persists a downloaded policy envelope. */
+    /**
+     * Verifies, activates, and atomically persists a downloaded policy envelope.
+     *
+     * @param payload the policy payload
+     * @param signature the payload signature
+     * @param nowMs the verification time in milliseconds
+     */
     public static synchronized void install(@NonNull final byte[] payload,
                                             @NonNull final byte[] signature,
                                             final long nowMs) throws IOException {
@@ -160,7 +178,12 @@ public final class SabrPolicyRuntime {
         manager.activate(verified);
     }
 
-    /** Installs a signed, human-readable JSON policy document received from remote delivery. */
+    /**
+     * Installs a signed, human-readable JSON policy document received from remote delivery.
+     *
+     * @param encoded the encoded policy document
+     * @param nowMs the verification time in milliseconds
+     */
     public static void installDocument(@NonNull final byte[] encoded, final long nowMs)
             throws IOException {
         final SabrScriptPolicyDocument.Parsed document;
@@ -180,9 +203,13 @@ public final class SabrPolicyRuntime {
 
     private static synchronized void disable(@NonNull final SabrScriptPolicy script) {
         final SabrScriptPolicyManager manager = cloudPolicies;
-        if (manager != null) manager.deactivate(script);
+        if (manager != null) {
+            manager.deactivate(script);
+        }
         final AtomicFile cache = policyCache;
-        if (cache != null) cache.delete();
+        if (cache != null) {
+            cache.delete();
+        }
     }
 
     private static final class FailoverPolicy implements SabrSessionPolicy {
@@ -206,9 +233,13 @@ public final class SabrPolicyRuntime {
                 @Override public int getEndPartType() {
                     return currentMediaProtocol(primaryMedia).getEndPartType();
                 }
-                @NonNull @Override public SabrMediaHeader decodeHeader(@NonNull final byte[] payload)
+                @NonNull
+                @Override
+                public SabrMediaHeader decodeHeader(@NonNull final byte[] payload)
                         throws SabrProtocolException {
-                    if (failed) return SabrMediaProtocol.builtin().decodeHeader(payload);
+                    if (failed) {
+                        return SabrMediaProtocol.builtin().decodeHeader(payload);
+                    }
                     try {
                         return primaryMedia.decodeHeader(payload);
                     } catch (final RuntimeException | SabrProtocolException error) {
@@ -229,7 +260,9 @@ public final class SabrPolicyRuntime {
         @Override
         public Result evaluate(@NonNull final State state, @NonNull final Event event)
                 throws SabrProtocolException {
-            if (failed) return FALLBACK.evaluate(state, event);
+            if (failed) {
+                return FALLBACK.evaluate(state, event);
+            }
             try {
                 return primary.evaluate(state, event);
             } catch (final RuntimeException | SabrProtocolException error) {
@@ -242,7 +275,9 @@ public final class SabrPolicyRuntime {
         @Override
         public DemandRoute evaluateDemandRoute(@NonNull final DemandRouteEvent event)
                 throws SabrProtocolException {
-            if (failed) return FALLBACK.evaluateDemandRoute(event);
+            if (failed) {
+                return FALLBACK.evaluateDemandRoute(event);
+            }
             try {
                 return primary.evaluateDemandRoute(event);
             } catch (final RuntimeException | SabrProtocolException error) {
@@ -255,7 +290,9 @@ public final class SabrPolicyRuntime {
         @Override
         public DemandResponseDecision evaluateDemandResponse(
                 @NonNull final DemandResponseEvent event) throws SabrProtocolException {
-            if (failed) return FALLBACK.evaluateDemandResponse(event);
+            if (failed) {
+                return FALLBACK.evaluateDemandResponse(event);
+            }
             try {
                 return primary.evaluateDemandResponse(event);
             } catch (final RuntimeException | SabrProtocolException error) {
@@ -265,7 +302,8 @@ public final class SabrPolicyRuntime {
         }
 
         @NonNull
-        private SabrMediaProtocol currentMediaProtocol(@NonNull final SabrMediaProtocol primaryMedia) {
+        private SabrMediaProtocol currentMediaProtocol(
+                @NonNull final SabrMediaProtocol primaryMedia) {
             return failed ? SabrMediaProtocol.builtin() : primaryMedia;
         }
 
@@ -319,7 +357,9 @@ public final class SabrPolicyRuntime {
         final byte[] signature = new byte[signatureLength];
         input.readFully(payload);
         input.readFully(signature);
-        if (input.available() != 0) throw new IOException("Trailing SABR policy cache bytes");
+        if (input.available() != 0) {
+            throw new IOException("Trailing SABR policy cache bytes");
+        }
         return new Envelope(payload, signature);
     }
 
@@ -339,7 +379,9 @@ public final class SabrPolicyRuntime {
             output.flush();
             cache.finishWrite(output);
         } catch (final IOException error) {
-            if (output != null) cache.failWrite(output);
+            if (output != null) {
+                cache.failWrite(output);
+            }
             throw error;
         }
     }

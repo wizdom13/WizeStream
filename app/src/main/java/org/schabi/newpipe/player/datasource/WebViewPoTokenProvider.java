@@ -28,7 +28,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +41,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * Legacy YouTube-page WebPoClient SABR PO-token provider.
  *
  * <p>The app no longer calls this provider. Normal playback and download use
- * {@link LocalDomPoTokenProvider}, which avoids loading the YouTube page and reuses the shared local
- * JavaScript runtime. This class is kept only as a legacy fallback/debug reference for the old
- * page-loaded WebPoClient pipeline.</p>
+ * {@link LocalDomPoTokenProvider}, which avoids loading the YouTube page and reuses the
+ * shared local JavaScript runtime. This class is kept only as a legacy fallback/debug
+ * reference for the old page-loaded WebPoClient pipeline.</p>
  */
 @Deprecated
 public final class WebViewPoTokenProvider implements SabrPoTokenProvider {
@@ -154,9 +153,12 @@ public final class WebViewPoTokenProvider implements SabrPoTokenProvider {
     }
 
     /**
-     * True if a non-expired PO token for this video is already in memory or on disk, WITHOUT minting.
-     * Lets a caller pre-load metadata cheaply when we've recently played this video (cold-restore /
-     * re-resolve) while NOT blocking the first-ever play on the ~45s mint.
+     * True if a non-expired PO token for this video is already in memory or on disk,
+     * without minting. Lets a caller pre-load metadata cheaply when this video was
+     * recently played, without blocking the first play on token minting.
+     *
+     * @param videoId the YouTube video ID
+     * @return whether a non-expired token is cached
      */
     public boolean hasCachedToken(final String videoId) {
         final CachedToken mem = cache.get(videoId);
@@ -189,8 +191,8 @@ public final class WebViewPoTokenProvider implements SabrPoTokenProvider {
     }
 
     private void diskSave(final String videoId, final String tokenB64, final long mintedAt) {
-        // commit() (sync) not apply(): the token must hit disk before a fast force-stop/process kill,
-        // else an app cold-start re-mints (~45s) even though a valid token was just minted.
+        // commit() (sync) not apply(): the token must reach disk before a fast process kill,
+        // or a cold start re-mints even though a valid token was just minted.
         prefs.edit().putString(videoId, mintedAt + "|" + tokenB64).commit();
     }
 

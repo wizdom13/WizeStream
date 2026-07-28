@@ -50,10 +50,12 @@ final class SabrStreamPump {
     private static final long SEEK_READAHEAD_CUSHION_MS = 5_000;
     private static final long SEEK_MODE_MS = 8_000;
     private static final long MIN_SERVER_READAHEAD_CUSHION_MS = 3_000;
-    // Use the session's cache ceiling as the single source of truth. A lower pump threshold leaves a
-    // byte range where the pump is throttled but the session cannot evict, forcing demand-time fetches.
+    // Use the session's cache ceiling as the single source of truth. A lower pump threshold
+    // leaves a byte range where the pump is throttled but the session cannot evict, forcing
+    // demand-time fetches.
     private static final long MAX_AHEAD_BYTES = YoutubeSabrSession.getMaxCacheBytes();
-    // Keep a short rewind cushion in cache; deeper rewinds are refetched by repositioning the session.
+    // Keep a short rewind cushion in cache; deeper rewinds are refetched by repositioning
+    // the session.
     private static final long BACK_BUFFER_MS = 12_000;
     // Shrink the back-buffer when over budget so eviction can free enough data to keep fetching.
     private static final long MIN_BACK_BUFFER_MS = 2_000;

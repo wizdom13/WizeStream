@@ -19,8 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
-import java.util.List;
-import java.util.Map;
 
 public final class SabrSegmentDataSource implements DataSource {
     private static final String TAG = "SabrSegmentDataSource";
@@ -113,7 +111,7 @@ public final class SabrSegmentDataSource implements DataSource {
         this.progressiveReaderGeneration = -1;
         this.progressiveDataEndPosition = -1;
         this.pos = (int) Math.max(0, dataSpec.position);
-        SabrSegmentRequest request = requestFromUri(dataSpec.uri);
+        final SabrSegmentRequest request = requestFromUri(dataSpec.uri);
         final YoutubeSabrFormat format = request.getFormat();
         final long availableRemaining;
         final int openedBytes;
@@ -188,9 +186,9 @@ public final class SabrSegmentDataSource implements DataSource {
         final SabrMediaSegment segment =
                 holder.session.getCachedSegment(SabrSegmentRequest.initialization(format));
         if (segment != null) {
-            final byte[] data = segment.getData();
-            holder.setInitializationData(itag, data);
-            return data;
+            final byte[] segmentData = segment.getData();
+            holder.setInitializationData(itag, segmentData);
+            return segmentData;
         }
         final SabrMediaSegment loadedSegment =
                 awaitSegment(SabrSegmentRequest.initialization(format));
@@ -423,7 +421,7 @@ public final class SabrSegmentDataSource implements DataSource {
                             || now - lastRecoveryAtMs > RECOVERY_RETRY_MS)
                     && pump.canRecover()
                     && (request.isInitializationSegment() || readerGeneration >= 0)) {
-                String recovery;
+                final String recovery;
                 if (request.isInitializationSegment()) {
                     recovery = "init";
                     pump.requestInitialization(format);
@@ -497,7 +495,8 @@ public final class SabrSegmentDataSource implements DataSource {
                 + ", itag=" + format.getItag() + ", " + holder.getInvalidationDetails());
     }
 
-    private static long skipFully(final InputStream input, final long requested) throws IOException {
+    private static long skipFully(final InputStream input, final long requested)
+            throws IOException {
         long remaining = requested;
         final byte[] buffer = new byte[8192];
         while (remaining > 0) {

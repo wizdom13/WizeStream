@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
@@ -22,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public final class WebViewJavaScriptDecoder implements YoutubeJavaScriptDecoder {
     private static final String TAG = "WebViewJsDecoder";
@@ -76,9 +76,9 @@ public final class WebViewJavaScriptDecoder implements YoutubeJavaScriptDecoder 
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public synchronized PlayerData getPlayerData(@Nonnull final String videoId)
+    public synchronized PlayerData getPlayerData(@NonNull final String videoId)
             throws ParsingException {
         final long start = SystemClock.elapsedRealtime();
         try {
@@ -138,10 +138,10 @@ public final class WebViewJavaScriptDecoder implements YoutubeJavaScriptDecoder 
                 + " source=" + source + " player=" + playerId + " chars=" + length);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public synchronized YoutubeApiDecoder.BatchDecodeResult decodeBatch(
-            @Nonnull final String playerId,
+            @NonNull final String playerId,
             @Nullable final List<String> signatures,
             @Nullable final List<String> throttlingParameters) throws ParsingException {
         ensureReady();

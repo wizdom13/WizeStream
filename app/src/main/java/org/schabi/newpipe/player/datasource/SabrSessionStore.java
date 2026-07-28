@@ -276,8 +276,9 @@ public final class SabrSessionStore {
         private final Map<Object, Integer> activeTrackModes = new IdentityHashMap<>();
         private final Map<Integer, byte[]> initializationData = new ConcurrentHashMap<>();
         private final Map<Integer, byte[]> bootstrapInitializationData = new ConcurrentHashMap<>();
-        // Tracks currently selected by ExoPlayer. Background/audio-only playback disables the video
-        // renderer, so requiring a video reader position there pins the SABR cache at the beginning.
+        // Tracks currently selected by ExoPlayer. Background/audio-only playback disables
+        // the video renderer, so requiring a video reader position there pins the SABR cache
+        // at the beginning.
         private final Set<Integer> activeReaderItags =
                 Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
         private final AtomicInteger leaseReferences = new AtomicInteger();
@@ -353,7 +354,14 @@ public final class SabrSessionStore {
             this.playerTimeMs = playerTimeMs;
         }
 
-        /** A data source reports how far it has read (last served segment end, ms). */
+        /**
+         * A data source reports how far it has read (last served segment end, ms).
+         *
+         * @param owner the data-source owner
+         * @param generation the active reader generation
+         * @param itag the stream format identifier
+         * @param ms the last served segment end in milliseconds
+         */
         public synchronized void setReaderPositionMs(@NonNull final Object owner,
                                                      final long generation,
                                                      final int itag,
@@ -531,7 +539,11 @@ public final class SabrSessionStore {
             return head;
         }
 
-        /** Zero until every selected track has read something, otherwise eviction can drop unread data. */
+        /**
+         * Returns zero until every selected track has read something.
+         *
+         * @return the earliest active reader position, or zero while a track remains unread
+         */
         public long getReaderTailMs() {
             if (activeReaderItags.isEmpty()) {
                 return 0;
@@ -676,7 +688,7 @@ public final class SabrSessionStore {
         final ContentCountry contentCountry = new ContentCountry("US");
         final YoutubeSabrInfo info = isUsableExtractorInfo(extractorInfo, videoId)
                 ? extractorInfo
-                : YoutubeSabrProbeFetch(videoId, localization, contentCountry);
+                : youtubeSabrProbeFetch(videoId, localization, contentCountry);
         final YoutubeSabrFormat audioFormat = pickAudioFormat(info, preferredAudioTrackId);
         final YoutubeSabrFormat videoFormat = pickVideoFormat(info, preferredVideoItag);
         if (audioFormat == null || videoFormat == null) {
@@ -695,7 +707,13 @@ public final class SabrSessionStore {
                 bootstrap.takePreparedSession());
     }
 
-    /** Starts expensive first-play work while the user is still reading the detail page. */
+    /**
+     * Starts expensive first-play work while the user is still reading the detail page.
+     *
+     * @param context the application context
+     * @param streamInfo the selected stream metadata
+     * @param selectedStream the selected SABR stream
+     */
     public static void prewarm(@NonNull final Context context, @NonNull final StreamInfo streamInfo,
                                @NonNull final VideoStream selectedStream) {
         if (selectedStream.getDeliveryMethod() != DeliveryMethod.SABR
@@ -721,11 +739,12 @@ public final class SabrSessionStore {
     }
 
     @NonNull
-    private static Future<BootstrapResult> startBootstrap(@NonNull final Context context,
-                                                           @NonNull final YoutubeSabrInfo info,
-                                                           @NonNull final YoutubeSabrFormat audioFormat,
-                                                           @NonNull final YoutubeSabrFormat videoFormat,
-                                                           @NonNull final Localization localization) {
+    private static Future<BootstrapResult> startBootstrap(
+            @NonNull final Context context,
+            @NonNull final YoutubeSabrInfo info,
+            @NonNull final YoutubeSabrFormat audioFormat,
+            @NonNull final YoutubeSabrFormat videoFormat,
+            @NonNull final Localization localization) {
         final String key = bootstrapKey(info, audioFormat, videoFormat);
         final BootstrapResult cached = BOOTSTRAP_CACHE.get(key);
         if (cached != null) {
@@ -757,12 +776,13 @@ public final class SabrSessionStore {
     }
 
     @NonNull
-    private static BootstrapResult createBootstrap(@NonNull final Context context,
-                                                   @NonNull final YoutubeSabrInfo info,
-                                                   @NonNull final YoutubeSabrFormat audioFormat,
-                                                   @NonNull final YoutubeSabrFormat videoFormat,
-                                                   @NonNull final Localization localization,
-                                                   @NonNull final BootstrapBackoffState backoffState)
+    private static BootstrapResult createBootstrap(
+            @NonNull final Context context,
+            @NonNull final YoutubeSabrInfo info,
+            @NonNull final YoutubeSabrFormat audioFormat,
+            @NonNull final YoutubeSabrFormat videoFormat,
+            @NonNull final Localization localization,
+            @NonNull final BootstrapBackoffState backoffState)
             throws IOException, ExtractionException {
         final LocalDomPoTokenProvider sessionProvider = provider(context);
         final File spoolDirectory = new File(context.getApplicationContext().getCacheDir(),
@@ -798,12 +818,13 @@ public final class SabrSessionStore {
     }
 
     @NonNull
-    private static BootstrapResult createPreparation(@NonNull final Context context,
-                                                     @NonNull final YoutubeSabrInfo info,
-                                                     @NonNull final YoutubeSabrFormat audioFormat,
-                                                     @NonNull final YoutubeSabrFormat videoFormat,
-                                                     @NonNull final Localization localization,
-                                                     @NonNull final BootstrapBackoffState backoffState)
+    private static BootstrapResult createPreparation(
+            @NonNull final Context context,
+            @NonNull final YoutubeSabrInfo info,
+            @NonNull final YoutubeSabrFormat audioFormat,
+            @NonNull final YoutubeSabrFormat videoFormat,
+            @NonNull final Localization localization,
+            @NonNull final BootstrapBackoffState backoffState)
             throws IOException, ExtractionException {
         final LocalDomPoTokenProvider tokenProvider = provider(context);
         final byte[] poToken = awaitWarmedToken(info.getVideoId(), info, tokenProvider,
@@ -915,8 +936,9 @@ public final class SabrSessionStore {
                                          @NonNull final YoutubeSabrFormat audioFormat,
                                          @NonNull final YoutubeSabrFormat videoFormat) {
         final String videoId = info.getVideoId();
-        final FutureTask<byte[]> created = new FutureTask<byte[]>(() -> provider(context).getPoToken(
-                info, new YoutubeSabrStreamState(audioFormat, videoFormat))) {
+        final FutureTask<byte[]> created = new FutureTask<byte[]>(
+                () -> provider(context).getPoToken(
+                        info, new YoutubeSabrStreamState(audioFormat, videoFormat))) {
             @Override
             protected void done() {
                 TOKEN_IN_FLIGHT.remove(videoId, this);
@@ -1061,9 +1083,10 @@ public final class SabrSessionStore {
     }
 
     @NonNull
-    private static YoutubeSabrInfo YoutubeSabrProbeFetch(@NonNull final String videoId,
-                                                        @NonNull final Localization localization,
-                                                        @NonNull final ContentCountry contentCountry)
+    private static YoutubeSabrInfo youtubeSabrProbeFetch(
+            @NonNull final String videoId,
+            @NonNull final Localization localization,
+            @NonNull final ContentCountry contentCountry)
             throws IOException, ExtractionException {
         return org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrProbe.fetchSabrInfo(
                 videoId, YoutubeSabrClientProfile.WEB, localization, contentCountry);
@@ -1120,7 +1143,12 @@ public final class SabrSessionStore {
         }
     }
 
-    /** Reset SABR-only caches before a cold benchmark trial. Not used by playback code. */
+    /**
+     * Resets SABR-only caches before a cold benchmark trial.
+     *
+     * @param context the application context
+     * @param videoId the video whose cached state should be cleared
+     */
     public static void clearBenchmarkCaches(@NonNull final Context context,
                                             @NonNull final String videoId) {
         evict(videoId);
