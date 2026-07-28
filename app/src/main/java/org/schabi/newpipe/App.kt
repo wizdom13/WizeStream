@@ -73,6 +73,9 @@ open class App :
     var notificationsRequested = false
         private set
 
+    protected var isFullAppInitializationEnabled = false
+        private set
+
     fun setNotificationsRequested() {
         notificationsRequested = true
     }
@@ -87,8 +90,17 @@ open class App :
 
         instance = this
 
-        if (ProcessPhoenix.isPhoenixProcess(this)) {
-            Log.i(TAG, "This is a phoenix process! Aborting initialization of App[onCreate]")
+        val isAcraProcess = isACRASenderServiceProcess()
+        val isPhoenixProcess = ProcessPhoenix.isPhoenixProcess(this)
+        isFullAppInitializationEnabled =
+            shouldInitializeFullApp(isAcraProcess, isPhoenixProcess)
+        if (!isFullAppInitializationEnabled) {
+            val skippedProcess =
+                if (isAcraProcess) "the ACRA sender process" else "a phoenix process"
+            Log.i(
+                TAG,
+                "Skipping full application initialization in $skippedProcess"
+            )
             return
         }
 
@@ -365,6 +377,12 @@ open class App :
     companion object {
         const val PACKAGE_NAME: String = BuildConfig.APPLICATION_ID
         private val TAG = App::class.java.toString()
+
+        @JvmStatic
+        internal fun shouldInitializeFullApp(
+            isAcraSenderServiceProcess: Boolean,
+            isPhoenixProcess: Boolean
+        ): Boolean = !isAcraSenderServiceProcess && !isPhoenixProcess
 
         @JvmStatic
         lateinit var instance: App
