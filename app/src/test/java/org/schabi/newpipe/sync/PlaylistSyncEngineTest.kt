@@ -9,10 +9,30 @@ import io.libp2p.core.crypto.KeyType
 import io.libp2p.core.crypto.generateKeyPair
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
 
 class PlaylistSyncEngineTest {
+    @Test
+    fun `legacy remote playlist counters are normalized before synchronization`() {
+        val synchronized = SyncedRemotePlaylist.from(
+            PlaylistRemoteEntity(
+                serviceId = 0,
+                orderingName = "Legacy remote",
+                url = REMOTE_URL,
+                thumbnailUrl = null,
+                uploader = "Uploader",
+                displayIndex = -2,
+                streamCount = -2
+            )
+        )
+
+        assertEquals(-1, synchronized.displayIndex)
+        assertNull(synchronized.streamCount)
+    }
+
     @Test
     fun `local and remote playlists synchronize with duplicate occurrences`() {
         val phoneStore = newStore()

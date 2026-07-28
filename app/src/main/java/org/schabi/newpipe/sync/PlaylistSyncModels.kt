@@ -21,6 +21,8 @@ internal const val MAX_PLAYLIST_NAME_LENGTH = 512
 internal const val MAX_PLAYLIST_URL_LENGTH = 4_096
 internal const val MAX_PLAYLIST_TITLE_LENGTH = 1_024
 internal const val MAX_PLAYLIST_UPLOADER_LENGTH = 512
+internal const val MIN_PLAYLIST_DISPLAY_INDEX = -1L
+internal const val MIN_PLAYLIST_STREAM_COUNT = -1L
 
 @Serializable
 internal enum class PlaylistRecordType {
@@ -124,8 +126,8 @@ internal data class SyncedRemotePlaylist(
             name = entity.orderingName?.take(MAX_PLAYLIST_NAME_LENGTH),
             thumbnailUrl = entity.thumbnailUrl?.take(MAX_PLAYLIST_URL_LENGTH),
             uploader = entity.uploader?.take(MAX_PLAYLIST_UPLOADER_LENGTH),
-            displayIndex = entity.displayIndex,
-            streamCount = entity.streamCount
+            displayIndex = entity.displayIndex.coerceAtLeast(MIN_PLAYLIST_DISPLAY_INDEX),
+            streamCount = entity.streamCount?.takeIf { it >= MIN_PLAYLIST_STREAM_COUNT }
         )
     }
 }
@@ -417,8 +419,8 @@ internal object PlaylistSyncValidation {
             (playlist.name?.length ?: 0) > MAX_PLAYLIST_NAME_LENGTH ||
             (playlist.thumbnailUrl?.length ?: 0) > MAX_PLAYLIST_URL_LENGTH ||
             (playlist.uploader?.length ?: 0) > MAX_PLAYLIST_UPLOADER_LENGTH ||
-            playlist.displayIndex < -1 ||
-            (playlist.streamCount ?: 0) < -1 ||
+            playlist.displayIndex < MIN_PLAYLIST_DISPLAY_INDEX ||
+            (playlist.streamCount ?: 0) < MIN_PLAYLIST_STREAM_COUNT ||
             change.recordId != PlaylistRecordId.remote(
                 playlist.serviceId,
                 playlist.url

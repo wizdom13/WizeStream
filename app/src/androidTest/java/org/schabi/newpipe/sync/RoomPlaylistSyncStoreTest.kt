@@ -12,6 +12,7 @@ import io.libp2p.core.crypto.KeyType
 import io.libp2p.core.crypto.generateKeyPair
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -98,6 +99,31 @@ class RoomPlaylistSyncStoreTest {
 
         assertTrue(phoneDatabase.playlistDAO().getAllDirect().isEmpty())
         assertTrue(tabletDatabase.playlistDAO().getAllDirect().isEmpty())
+    }
+
+    @Test
+    fun invalidLegacyRemotePlaylistCountersAreNormalized() {
+        val phoneStore = RoomPlaylistSyncStore(phoneDatabase, newPeerId())
+        val tabletStore = RoomPlaylistSyncStore(tabletDatabase, newPeerId())
+        val phone = PlaylistSyncEngine(phoneStore)
+        val tablet = PlaylistSyncEngine(tabletStore)
+        phoneDatabase.playlistRemoteDAO().insert(
+            PlaylistRemoteEntity(
+                serviceId = 0,
+                orderingName = "Legacy remote",
+                url = REMOTE_URL,
+                thumbnailUrl = null,
+                uploader = "Uploader",
+                displayIndex = -2,
+                streamCount = -2
+            )
+        )
+
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        val synchronized = tabletDatabase.playlistRemoteDAO().getAllDirect().single()
+        assertEquals(-1, synchronized.displayIndex)
+        assertNull(synchronized.streamCount)
     }
 
     private fun synchronize(

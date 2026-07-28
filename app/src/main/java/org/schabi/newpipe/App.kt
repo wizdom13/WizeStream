@@ -26,6 +26,7 @@ import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketException
+import java.util.concurrent.Executors
 import org.acra.ACRA.init
 import org.acra.ACRA.isACRASenderServiceProcess
 import org.acra.config.CoreConfigurationBuilder
@@ -178,6 +179,7 @@ open class App :
 
         configureRxJavaErrorHandler()
         initializeDeviceSyncScheduling()
+        initializeDeviceSyncListener()
     }
 
     private fun initializeDeviceSyncScheduling() {
@@ -188,6 +190,19 @@ open class App :
             )
         }.onFailure { error ->
             Log.e(TAG, "Could not initialize background device synchronization", error)
+        }
+    }
+
+    private fun initializeDeviceSyncListener() {
+        if (!DeviceSyncManager.hasTrustedPeers(this)) {
+            return
+        }
+        DEVICE_SYNC_EXECUTOR.execute {
+            runCatching {
+                DeviceSyncManager.get(this).startListening()
+            }.onFailure { error ->
+                Log.e(TAG, "Could not start the paired-device synchronization listener", error)
+            }
         }
     }
 
@@ -375,6 +390,12 @@ open class App :
     protected open fun isDisposedRxExceptionsReported(): Boolean = false
 
     companion object {
+        private val DEVICE_SYNC_EXECUTOR = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "DeviceSyncStartup").apply {
+                isDaemon = true
+            }
+        }
+
         const val PACKAGE_NAME: String = BuildConfig.APPLICATION_ID
         private val TAG = App::class.java.toString()
 
