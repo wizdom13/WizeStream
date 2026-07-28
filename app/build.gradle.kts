@@ -263,6 +263,7 @@ dependencies {
     implementation(libs.evernote.statesaver.core)
     implementation("io.github.dokar3:quickjs-kt:1.0.5")
     implementation(project(":ffmpeg"))
+    implementation("com.arthenica:smart-exception-java:0.2.1")
     kapt(libs.evernote.statesaver.compiler)
 
     // HTML parser
