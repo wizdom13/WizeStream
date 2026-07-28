@@ -5,7 +5,7 @@ import java.io.IOException
 internal class SabrDownloadException(
     val reason: Reason,
     message: String,
-    cause: Throwable? = null,
+    cause: Throwable? = null
 ) : IOException(message, cause) {
     enum class Reason {
         FORMAT,
@@ -15,6 +15,6 @@ internal class SabrDownloadException(
         NETWORK,
         MUXING,
         STORAGE,
-        PROTOCOL,
+        PROTOCOL
     }
 }
