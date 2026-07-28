@@ -49,6 +49,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
+import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 import org.schabi.newpipe.settings.tabs.HomeNavigationMode;
 import org.schabi.newpipe.settings.tabs.HomeNavigationModeResolver;
 import org.schabi.newpipe.settings.tabs.Tab;
@@ -707,8 +708,10 @@ public class MainFragment extends BaseFragment
 
         bottomNavigation.setTag(visible);
         bottomNavigation.setAlpha(1.0f);
+        bottomNavigation.setTranslationY(0.0f);
         if (!visible) {
             bottomNavigation.setVisibility(View.GONE);
+            notifyBottomNavigationVisibilityChanged();
             return;
         }
 
@@ -721,8 +724,29 @@ public class MainFragment extends BaseFragment
                 || playerState == BottomSheetBehavior.STATE_SETTLING
                 || playerState == BottomSheetBehavior.STATE_HALF_EXPANDED;
 
-        bottomNavigation.setVisibility(playerCoversNavigation ? View.INVISIBLE : View.VISIBLE);
+        if (playerCoversNavigation) {
+            bottomNavigation.setAlpha(0.0f);
+            bottomNavigation.setTranslationY(bottomNavigation.getHeight() > 0
+                    ? bottomNavigation.getHeight()
+                    : getResources()
+                    .getDimensionPixelSize(R.dimen.main_bottom_navigation_height));
+            bottomNavigation.setVisibility(View.INVISIBLE);
+        } else {
+            bottomNavigation.setVisibility(View.VISIBLE);
+        }
         bottomNavigation.bringToFront();
+        notifyBottomNavigationVisibilityChanged();
+    }
+
+    private void notifyBottomNavigationVisibilityChanged() {
+        final View playerSheet = requireActivity().findViewById(R.id.fragment_player_holder);
+        if (playerSheet == null) {
+            return;
+        }
+        final BottomSheetBehavior<?> behavior = BottomSheetBehavior.from(playerSheet);
+        if (behavior instanceof CustomBottomSheetBehavior customBehavior) {
+            customBehavior.onBottomNavigationVisibilityChanged();
+        }
     }
 
     @Override
