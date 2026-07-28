@@ -28,6 +28,7 @@ object KioskTranslator {
             "trending_music" -> context.getString(R.string.trending_music)
             "trending_movies_and_shows" -> context.getString(R.string.trending_movies)
             "trending_podcasts_episodes" -> context.getString(R.string.trending_podcasts)
+            "youtube_shorts" -> context.getString(R.string.youtube_shorts)
             else -> kioskId
         }
     }
@@ -46,6 +47,7 @@ object KioskTranslator {
             "trending_music" -> R.drawable.ic_music_note
             "trending_movies_and_shows" -> R.drawable.ic_movie
             "trending_podcasts_episodes" -> R.drawable.ic_podcasts
+            "youtube_shorts" -> R.drawable.ic_smart_display
             else -> 0
         }
     }
