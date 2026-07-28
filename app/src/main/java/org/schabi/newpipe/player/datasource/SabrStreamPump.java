@@ -241,6 +241,7 @@ final class SabrStreamPump {
         wake();
     }
 
+    @SuppressWarnings("MethodLength")
     private void loop() {
         int consecutiveIoErrors = 0;
         state = State.IDLE;

@@ -364,6 +364,7 @@ public final class WebViewPoTokenProvider implements SabrPoTokenProvider {
         return webView;
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void waitForReadyThenInject(final WebView view, final String contentBinding,
                                         final int attempt,
                                         final AtomicBoolean canceled,

@@ -284,6 +284,7 @@ public final class SabrSegmentDataSource implements DataSource {
     }
 
     @Nullable
+    @SuppressWarnings("MethodLength")
     private SabrMediaSegment awaitSegment(final SabrSegmentRequest request) throws IOException {
         final YoutubeSabrFormat format = request.getFormat();
         holder.throwIfTerminal();

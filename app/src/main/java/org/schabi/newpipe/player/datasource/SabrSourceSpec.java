@@ -37,6 +37,7 @@ public final class SabrSourceSpec {
                 audioInitializationData, videoInitializationData, null);
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     SabrSourceSpec(@NonNull final String videoId,
                    @NonNull final YoutubeSabrInfo info,
                    @NonNull final YoutubeSabrFormat audioFormat,
