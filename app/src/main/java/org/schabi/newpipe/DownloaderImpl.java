@@ -167,8 +167,11 @@ public final class DownloaderImpl extends Downloader {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull final Call call, @NonNull final IOException e) {
-                cancellableCall.setFinished();
-                callback.onError(e);
+                try {
+                    callback.onError(e);
+                } finally {
+                    cancellableCall.setFinished();
+                }
             }
 
             @Override
@@ -177,11 +180,11 @@ public final class DownloaderImpl extends Downloader {
                 try (response) {
                     final Response extractorResponse = buildExtractorResponse(
                             response, request.url());
-                    cancellableCall.setFinished();
                     callback.onSuccess(extractorResponse);
                 } catch (final IOException | ExtractionException e) {
-                    cancellableCall.setFinished();
                     callback.onError(e);
+                } finally {
+                    cancellableCall.setFinished();
                 }
             }
         });
