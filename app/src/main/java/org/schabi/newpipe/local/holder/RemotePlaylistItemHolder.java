@@ -1,6 +1,7 @@
 package org.schabi.newpipe.local.holder;
 
 import android.text.TextUtils;
+import android.view.View;
 import android.view.ViewGroup;
 
 import org.schabi.newpipe.database.LocalItem;
@@ -34,8 +35,15 @@ public class RemotePlaylistItemHolder extends PlaylistItemHolder {
         }
 
         itemTitleView.setText(item.getOrderingName());
-        itemStreamCountView.setText(Localization.localizeStreamCountMini(
-                itemStreamCountView.getContext(), item.getStreamCount()));
+        final Long streamCount = item.getStreamCount();
+        if (streamCount == null) {
+            itemStreamCountView.setText(null);
+            itemStreamCountView.setVisibility(View.GONE);
+        } else {
+            itemStreamCountView.setText(Localization.localizeStreamCountMini(
+                    itemStreamCountView.getContext(), streamCount));
+            itemStreamCountView.setVisibility(View.VISIBLE);
+        }
         // Here is where the uploader name is set in the bookmarked playlists library
         if (!TextUtils.isEmpty(item.getUploader())) {
             itemUploaderView.setText(Localization.concatenateStrings(item.getUploader(),
