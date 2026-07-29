@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 
 import com.evernote.android.state.State;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.shape.ShapeAppearanceModel;
 
@@ -101,6 +102,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     private long playlistOverallDurationSeconds;
     @State
     protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
+    @State
+    protected PlaylistSortOrder selectedPlaylistSort = PlaylistSortOrder.PLAYLIST_ORDER;
     private final List<StreamInfoItem> unfilteredItems = new ArrayList<>();
     private final Map<String, StreamStateEntity> streamStates = new HashMap<>();
     private HistoryRecordManager historyRecordManager;
@@ -164,6 +167,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                             checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
                     applyStreamFilter();
                 });
+        updatePlaylistSortButton();
+        binding.playlistSortButton.setOnClickListener(ignored -> showPlaylistSortDialog());
 
         // Is mini variant still relevant?
         // Only the remote playlist screen uses it now
@@ -314,6 +319,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         unfilteredItems.addAll(result.getItems());
         refreshStreamStates();
         setStreamCountAndOverallDuration(result.getItems(), !result.hasNextPage());
+        continueLoadingPlaylistForSorting();
     }
 
     @Override
@@ -365,6 +371,13 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         streamCount = result.getStreamCount();
         setStreamCountAndOverallDuration(result.getRelatedItems(), !result.hasNextPage());
+        final boolean isSortableYoutubePlaylist =
+                result.getServiceId() == ServiceList.YouTube.getServiceId()
+                        && !YoutubeParsingHelper.isYoutubeMixId(result.getId())
+                        && !YoutubeParsingHelper.isYoutubeMusicMixId(result.getId());
+        binding.playlistSortButton.setVisibility(
+                isSortableYoutubePlaylist ? View.VISIBLE : View.GONE);
+        updatePlaylistSortButton();
 
         final Description description = Description.EMPTY_DESCRIPTION;
         if (description != null && description != Description.EMPTY_DESCRIPTION
@@ -403,6 +416,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
         refreshStreamStates();
+        continueLoadingPlaylistForSorting();
     }
 
     private void refreshStreamStates() {
@@ -426,10 +440,12 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         if (infoListAdapter == null) {
             return;
         }
-        final List<StreamInfoItem> displayedItems = unfilteredItems.stream()
+        final List<StreamInfoItem> filteredItems = unfilteredItems.stream()
                 .filter(item -> StreamListFilter.matches(
                         selectedStreamFilter, item, streamStates.get(item.getUrl())))
                 .collect(Collectors.toList());
+        final List<StreamInfoItem> displayedItems =
+                PlaylistSortHelper.sortedCopy(filteredItems, selectedPlaylistSort);
         infoListAdapter.clearStreamItemList();
         infoListAdapter.addInfoItemList(displayedItems);
         showListFooter(hasMoreItems());
@@ -439,6 +455,59 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
             showEmptyState();
         } else {
             hideLoading();
+        }
+    }
+
+    private void showPlaylistSortDialog() {
+        final PlaylistSortOrder[] sortOrders = PlaylistSortOrder.values();
+        final String[] labels = new String[sortOrders.length];
+        for (int i = 0; i < sortOrders.length; i++) {
+            labels[i] = getString(sortOrders[i].getLabel());
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.sort)
+                .setSingleChoiceItems(labels, selectedPlaylistSort.ordinal(), (dialog, which) -> {
+                    dialog.dismiss();
+                    applyPlaylistSort(sortOrders[which]);
+                })
+                .show();
+    }
+
+    private void applyPlaylistSort(final PlaylistSortOrder sortOrder) {
+        if (sortOrder == selectedPlaylistSort) {
+            return;
+        }
+
+        selectedPlaylistSort = sortOrder;
+        updatePlaylistSortButton();
+        itemsList.scrollToPosition(0);
+        applyStreamFilter();
+        continueLoadingPlaylistForSorting();
+    }
+
+    private void updatePlaylistSortButton() {
+        if (binding == null) {
+            return;
+        }
+        final String label = getString(selectedPlaylistSort.getLabel());
+        binding.playlistSortButton.setText(label);
+        binding.playlistSortButton.setContentDescription(
+                getString(R.string.playlist_sort_content_description, label));
+    }
+
+    private void continueLoadingPlaylistForSorting() {
+        if (binding == null || selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER) {
+            return;
+        }
+
+        if (hasMoreItems()) {
+            binding.playlistSortButton.setEnabled(false);
+            if (!isLoading.get()) {
+                loadMoreItems();
+            }
+        } else {
+            binding.playlistSortButton.setEnabled(true);
         }
     }
 
@@ -456,7 +525,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         return new PlaylistPlayQueue(
                 currentInfo.getServiceId(),
                 currentInfo.getUrl(),
-                currentInfo.getNextPage(),
+                selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER
+                        ? currentInfo.getNextPage() : null,
                 infoItems,
                 index
         );

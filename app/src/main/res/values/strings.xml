@@ -1036,6 +1036,8 @@
     <string name="channel_video_sort_latest">Latest</string>
     <string name="channel_video_sort_popular">Popular</string>
     <string name="channel_video_sort_oldest">Oldest</string>
+    <string name="playlist_sort_order">Playlist order</string>
+    <string name="playlist_sort_content_description">Sort playlist: %1$s</string>
     <string name="channel_video_sort_content_description">Sort channel videos: %1$s</string>
     <string name="settings_category_exoplayer_title">ExoPlayer settings</string>
     <string name="settings_category_exoplayer_summary">Manage some ExoPlayer settings. These changes require a player restart to take effect</string>
