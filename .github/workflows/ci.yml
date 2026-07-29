@@ -33,6 +33,10 @@ on:
       - '.github/FUNDING.yml'
       - '.github/ISSUE_TEMPLATE/**'
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test-jvm:
     runs-on: ubuntu-latest
@@ -40,8 +44,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-
-      - uses: gradle/actions/wrapper-validation@v6
 
       - name: Create and checkout branch
         if: github.event_name == 'pull_request'
@@ -54,14 +56,15 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-          cache: gradle
 
-      - name: Build debug APK and run JVM tests
-        run: scripts/build.sh debug
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
 
-      - name: Build release resource smoke APK
+      - name: Build APKs and run JVM tests
+        run: ./gradlew assembleDebug lintDebug testDebugUnitTest assembleRelease --stacktrace -DskipFormatKtlint
+
+      - name: Verify release packaged resources
         run: |
-          ./gradlew assembleRelease --stacktrace -DskipFormatKtlint
           APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
           test -s "$APK_PATH"
           AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
@@ -86,7 +89,7 @@ jobs:
 
   test-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       matrix:
         include:
@@ -106,7 +109,9 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Enable KVM
         run: |
@@ -114,12 +119,35 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Cache Android emulator
+        id: avd-cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ runner.os }}-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}-v1
+
+      - name: Generate Android emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
       - name: Run Android tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: scripts/build.sh connected
 
       - name: Upload test report when tests fail
