@@ -21,6 +21,7 @@ data class FeedUpdateInfo(
     val avatarUrl: String?,
     val url: String,
     val serviceId: Int,
+    val youtubeModeMask: Int,
     // description and subscriberCount are null if the constructor info is from the fast feed method
     val description: String?,
     val subscriberCount: Long?,
@@ -42,6 +43,7 @@ data class FeedUpdateInfo(
         } ?: subscription.avatarUrl,
         url = info.url,
         serviceId = info.serviceId,
+        youtubeModeMask = subscription.youtubeModeMask,
         // there is no description and subscriberCount in the fast feed
         description = (info as? ChannelInfo)?.description,
         subscriberCount = (info as? ChannelInfo)?.subscriberCount,

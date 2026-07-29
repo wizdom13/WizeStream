@@ -34,6 +34,7 @@ object Migrations {
     const val DB_VER_12 = 12
     const val DB_VER_13 = 13
     const val DB_VER_14 = 14
+    const val DB_VER_15 = 15
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -613,6 +614,66 @@ object Migrations {
         db.execSQL(
             "ALTER TABLE `subscription_sync_records` ADD COLUMN `youtube_mode_mask` " +
                 "INTEGER NOT NULL DEFAULT 1"
+        )
+    }
+
+    val MIGRATION_14_15 = Migration(DB_VER_14, DB_VER_15) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `feed_new` " +
+                "(`stream_id` INTEGER NOT NULL, `subscription_id` INTEGER NOT NULL, " +
+                "`youtube_mode_mask` INTEGER NOT NULL DEFAULT 1, " +
+                "PRIMARY KEY(`stream_id`, `subscription_id`, `youtube_mode_mask`), " +
+                "FOREIGN KEY(`stream_id`) REFERENCES `streams`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED, " +
+                "FOREIGN KEY(`subscription_id`) REFERENCES `subscriptions`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED)"
+        )
+        db.execSQL(
+            "INSERT INTO `feed_new` (`stream_id`, `subscription_id`, `youtube_mode_mask`) " +
+                "SELECT f.`stream_id`, f.`subscription_id`, 1 FROM `feed` f " +
+                "INNER JOIN `subscriptions` s ON s.`uid` = f.`subscription_id` " +
+                "WHERE s.`service_id` <> 0 OR (s.`youtube_mode_mask` & 1) <> 0"
+        )
+        db.execSQL(
+            "INSERT INTO `feed_new` (`stream_id`, `subscription_id`, `youtube_mode_mask`) " +
+                "SELECT f.`stream_id`, f.`subscription_id`, 2 FROM `feed` f " +
+                "INNER JOIN `subscriptions` s ON s.`uid` = f.`subscription_id` " +
+                "WHERE s.`service_id` = 0 AND (s.`youtube_mode_mask` & 2) <> 0"
+        )
+        db.execSQL("DROP TABLE `feed`")
+        db.execSQL("ALTER TABLE `feed_new` RENAME TO `feed`")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_feed_subscription_id` " +
+                "ON `feed` (`subscription_id`)"
+        )
+
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `feed_last_updated_new` " +
+                "(`subscription_id` INTEGER NOT NULL, " +
+                "`youtube_mode_mask` INTEGER NOT NULL DEFAULT 1, `last_updated` INTEGER, " +
+                "PRIMARY KEY(`subscription_id`, `youtube_mode_mask`), " +
+                "FOREIGN KEY(`subscription_id`) REFERENCES `subscriptions`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED)"
+        )
+        db.execSQL(
+            "INSERT INTO `feed_last_updated_new` " +
+                "(`subscription_id`, `youtube_mode_mask`, `last_updated`) " +
+                "SELECT lu.`subscription_id`, 1, lu.`last_updated` " +
+                "FROM `feed_last_updated` lu " +
+                "INNER JOIN `subscriptions` s ON s.`uid` = lu.`subscription_id` " +
+                "WHERE s.`service_id` <> 0 OR (s.`youtube_mode_mask` & 1) <> 0"
+        )
+        db.execSQL(
+            "INSERT INTO `feed_last_updated_new` " +
+                "(`subscription_id`, `youtube_mode_mask`, `last_updated`) " +
+                "SELECT lu.`subscription_id`, 2, lu.`last_updated` " +
+                "FROM `feed_last_updated` lu " +
+                "INNER JOIN `subscriptions` s ON s.`uid` = lu.`subscription_id` " +
+                "WHERE s.`service_id` = 0 AND (s.`youtube_mode_mask` & 2) <> 0"
+        )
+        db.execSQL("DROP TABLE `feed_last_updated`")
+        db.execSQL(
+            "ALTER TABLE `feed_last_updated_new` RENAME TO `feed_last_updated`"
         )
     }
 }

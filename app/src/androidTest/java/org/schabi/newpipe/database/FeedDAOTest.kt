@@ -14,6 +14,7 @@ import org.junit.Test
 import org.schabi.newpipe.database.feed.dao.FeedDAO
 import org.schabi.newpipe.database.feed.model.FeedEntity
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.feed.model.FeedLastUpdatedEntity
 import org.schabi.newpipe.database.stream.StreamWithState
 import org.schabi.newpipe.database.stream.dao.StreamDAO
 import org.schabi.newpipe.database.stream.model.StreamEntity
@@ -76,8 +77,8 @@ class FeedDAOTest {
             includePlayed = true,
             includePartiallyPlayed = true,
             uploadDateBefore = null,
-            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
-            youtubeMusicMode = false
+            serviceId = serviceId,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR
         )
             .blockingGet()
         val allowedStreams = listOf(stream3, stream5, stream6, stream7)
@@ -92,8 +93,8 @@ class FeedDAOTest {
             includePlayed = true,
             includePartiallyPlayed = true,
             uploadDateBefore = null,
-            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
-            youtubeMusicMode = false
+            serviceId = serviceId,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR
         )
             .blockingGet()
         val allowedStreams = listOf(stream3, stream4, stream5, stream6, stream7)
@@ -109,17 +110,122 @@ class FeedDAOTest {
         )!!
         musicChannel.youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC
         subscriptionDAO.update(musicChannel)
+        feedDAO.deleteAll()
+        feedDAO.insertAll(
+            listOf(
+                FeedEntity(1, 1, SubscriptionEntity.YOUTUBE_MODE_MUSIC),
+                FeedEntity(2, 1, SubscriptionEntity.YOUTUBE_MODE_MUSIC),
+                FeedEntity(3, 1, SubscriptionEntity.YOUTUBE_MODE_MUSIC)
+            )
+        )
 
         val streams = feedDAO.getStreams(
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
             uploadDateBefore = null,
-            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC,
-            youtubeMusicMode = true
+            serviceId = serviceId,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC
         ).blockingGet()
 
         assertEqual(streams, listOf(stream1, stream2, stream3))
+    }
+
+    @Test
+    fun youtubeAndYoutubeMusicHaveIndependentRefreshTimes() {
+        clearAndFillTables()
+        val sharedChannel = subscriptionDAO.getSubscriptionDirect(
+            serviceId,
+            "https://youtube.com/channel/1"
+        )!!
+        sharedChannel.youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_ALL
+        subscriptionDAO.update(sharedChannel)
+        val regularUpdate = OffsetDateTime.parse("2023-09-01T00:00:00Z")
+        val musicUpdate = OffsetDateTime.parse("2023-09-02T00:00:00Z")
+        feedDAO.setLastUpdatedForSubscription(
+            FeedLastUpdatedEntity(
+                sharedChannel.uid,
+                SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+                regularUpdate
+            )
+        )
+        feedDAO.setLastUpdatedForSubscription(
+            FeedLastUpdatedEntity(
+                sharedChannel.uid,
+                SubscriptionEntity.YOUTUBE_MODE_MUSIC,
+                musicUpdate
+            )
+        )
+
+        assertEquals(
+            regularUpdate,
+            feedDAO.oldestSubscriptionUpdateFromAll(
+                serviceId,
+                SubscriptionEntity.YOUTUBE_MODE_REGULAR
+            ).blockingFirst().first()
+        )
+        assertEquals(
+            musicUpdate,
+            feedDAO.oldestSubscriptionUpdateFromAll(
+                serviceId,
+                SubscriptionEntity.YOUTUBE_MODE_MUSIC
+            ).blockingFirst().first()
+        )
+    }
+
+    @Test
+    fun feedOnlyIncludesSelectedService() {
+        db.clearAllTables()
+        val otherServiceId = ServiceList.SoundCloud.serviceId
+        val youtubeSubscription = SubscriptionEntity(
+            uid = 1,
+            serviceId = serviceId,
+            url = "https://youtube.com/channel/1",
+            name = "YouTube channel"
+        )
+        val soundCloudSubscription = SubscriptionEntity(
+            uid = 2,
+            serviceId = otherServiceId,
+            url = "https://soundcloud.com/channel-2",
+            name = "SoundCloud channel"
+        )
+        val soundCloudStream = StreamEntity(
+            8,
+            otherServiceId,
+            "https://soundcloud.com/channel-2/stream",
+            "SoundCloud stream",
+            StreamType.AUDIO_STREAM,
+            1000,
+            "SoundCloud channel",
+            "https://soundcloud.com/channel-2",
+            "",
+            100,
+            "2023-09-02",
+            OffsetDateTime.parse("2023-09-02T00:00:00Z")
+        )
+        subscriptionDAO.insertAll(listOf(youtubeSubscription, soundCloudSubscription))
+        streamDAO.insertAll(listOf(stream1, soundCloudStream))
+        feedDAO.insertAll(listOf(FeedEntity(1, 1), FeedEntity(8, 2)))
+
+        val youtubeStreams = feedDAO.getStreams(
+            FeedGroupEntity.GROUP_ALL_ID,
+            includePlayed = true,
+            includePartiallyPlayed = true,
+            uploadDateBefore = null,
+            serviceId = serviceId,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR
+        ).blockingGet()
+        val soundCloudStreams = feedDAO.getStreams(
+            FeedGroupEntity.GROUP_ALL_ID,
+            includePlayed = true,
+            includePartiallyPlayed = true,
+            uploadDateBefore = null,
+            serviceId = otherServiceId,
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR
+        ).blockingGet()
+
+        assertEqual(youtubeStreams, listOf(stream1))
+        assertEqual(soundCloudStreams, listOf(soundCloudStream))
     }
 
     private fun assertEqual(streams: List<StreamWithState>?, allowedStreams: List<StreamEntity>) {

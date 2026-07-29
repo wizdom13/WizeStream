@@ -61,13 +61,14 @@ abstract class FeedDAO {
             :groupId = ${FeedGroupEntity.GROUP_ALL_ID}
             OR fgs.group_id = :groupId
         )
+        AND sub.service_id = :serviceId
         AND (
-            :youtubeMusicMode = 0
-            OR sub.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (sub.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         AND (
-            sub.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
-            OR (sub.youtube_mode_mask & :youtubeModeMask) <> 0
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (f.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         AND (
             :includePlayed
@@ -102,8 +103,8 @@ abstract class FeedDAO {
         includePlayed: Boolean,
         includePartiallyPlayed: Boolean,
         uploadDateBefore: OffsetDateTime?,
-        youtubeModeMask: Int,
-        youtubeMusicMode: Boolean
+        serviceId: Int,
+        youtubeModeMask: Int
     ): Maybe<List<StreamWithState>>
 
     /**
@@ -139,6 +140,7 @@ abstract class FeedDAO {
         DELETE FROM feed
         
         WHERE feed.subscription_id = :subscriptionId
+        AND (feed.youtube_mode_mask & :youtubeModeMask) <> 0
 
         AND feed.stream_id IN (
             SELECT s.uid FROM streams s
@@ -150,7 +152,7 @@ abstract class FeedDAO {
         )
         """
     )
-    abstract fun unlinkOldLivestreams(subscriptionId: Long)
+    abstract fun unlinkOldLivestreams(subscriptionId: Long, youtubeModeMask: Int)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract fun insert(feedEntity: FeedEntity)
@@ -183,20 +185,21 @@ abstract class FeedDAO {
         INNER JOIN subscriptions s
         ON s.uid = lu.subscription_id
 
-        WHERE (
-            :youtubeMusicMode = 0
-            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        WHERE s.service_id = :serviceId
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         AND (
-            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
-            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         """
     )
     abstract fun oldestSubscriptionUpdate(
         groupId: Long,
-        youtubeModeMask: Int,
-        youtubeMusicMode: Boolean
+        serviceId: Int,
+        youtubeModeMask: Int
     ): Flowable<List<OffsetDateTime?>>
 
     @Query(
@@ -204,40 +207,43 @@ abstract class FeedDAO {
         SELECT MIN(lu.last_updated)
         FROM feed_last_updated lu
         INNER JOIN subscriptions s ON s.uid = lu.subscription_id
-        WHERE (
-            :youtubeMusicMode = 0
-            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+        WHERE s.service_id = :serviceId
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         AND (
-            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
-            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         """
     )
     abstract fun oldestSubscriptionUpdateFromAll(
-        youtubeModeMask: Int,
-        youtubeMusicMode: Boolean
+        serviceId: Int,
+        youtubeModeMask: Int
     ): Flowable<List<OffsetDateTime?>>
 
     @Query(
         """
         SELECT COUNT(*)
-        FROM feed_last_updated lu
-        INNER JOIN subscriptions s ON s.uid = lu.subscription_id
-        WHERE lu.last_updated IS NULL
+        FROM subscriptions s
+        LEFT JOIN feed_last_updated lu
+        ON s.uid = lu.subscription_id
         AND (
-            :youtubeMusicMode = 0
-            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
+        WHERE s.service_id = :serviceId
+        AND lu.last_updated IS NULL
         AND (
-            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         """
     )
     abstract fun notLoadedCount(
-        youtubeModeMask: Int,
-        youtubeMusicMode: Boolean
+        serviceId: Int,
+        youtubeModeMask: Int
     ): Flowable<Long>
 
     @Query(
@@ -248,28 +254,29 @@ abstract class FeedDAO {
         ON s.uid = fgs.subscription_id AND fgs.group_id = :groupId
 
         LEFT JOIN feed_last_updated lu
-        ON s.uid = lu.subscription_id 
+        ON s.uid = lu.subscription_id
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
 
         WHERE lu.last_updated IS NULL
+        AND s.service_id = :serviceId
         AND (
-            :youtubeMusicMode = 0
-            OR s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
-        )
-        AND (
-            s.service_id <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         """
     )
     abstract fun notLoadedCountForGroup(
         groupId: Long,
-        youtubeModeMask: Int,
-        youtubeMusicMode: Boolean
+        serviceId: Int,
+        youtubeModeMask: Int
     ): Flowable<Long>
 
     @Query(
         """
-        SELECT s.* FROM subscriptions s
+        SELECT DISTINCT s.* FROM subscriptions s
 
         LEFT JOIN feed_last_updated lu
         ON s.uid = lu.subscription_id 
@@ -281,7 +288,32 @@ abstract class FeedDAO {
 
     @Query(
         """
-        SELECT s.* FROM subscriptions s
+        SELECT DISTINCT s.* FROM subscriptions s
+
+        LEFT JOIN feed_last_updated lu
+        ON s.uid = lu.subscription_id
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
+
+        WHERE (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
+        AND s.service_id = :serviceId
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
+        """
+    )
+    abstract fun getAllOutdatedForScope(
+        serviceId: Int,
+        youtubeModeMask: Int,
+        outdatedThreshold: OffsetDateTime
+    ): Flowable<List<SubscriptionEntity>>
+
+    @Query(
+        """
+        SELECT DISTINCT s.* FROM subscriptions s
 
         INNER JOIN feed_group_subscription_join fgs
         ON s.uid = fgs.subscription_id AND fgs.group_id = :groupId
@@ -296,7 +328,36 @@ abstract class FeedDAO {
 
     @Query(
         """
-        SELECT s.* FROM subscriptions s
+        SELECT DISTINCT s.* FROM subscriptions s
+
+        INNER JOIN feed_group_subscription_join fgs
+        ON s.uid = fgs.subscription_id AND fgs.group_id = :groupId
+
+        LEFT JOIN feed_last_updated lu
+        ON s.uid = lu.subscription_id
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
+
+        WHERE (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
+        AND s.service_id = :serviceId
+        AND (
+            :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+            OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
+        )
+        """
+    )
+    abstract fun getAllOutdatedForGroupAndScope(
+        groupId: Long,
+        serviceId: Int,
+        youtubeModeMask: Int,
+        outdatedThreshold: OffsetDateTime
+    ): Flowable<List<SubscriptionEntity>>
+
+    @Query(
+        """
+        SELECT DISTINCT s.* FROM subscriptions s
 
         LEFT JOIN feed_last_updated lu
         ON s.uid = lu.subscription_id

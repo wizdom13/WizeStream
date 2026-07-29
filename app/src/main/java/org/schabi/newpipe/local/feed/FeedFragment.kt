@@ -774,10 +774,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun reloadContent() {
         hideNewItemsLoaded(false)
+        val feedScope = FeedScope.from(requireContext())
 
         getActivity()?.startService(
             Intent(requireContext(), FeedLoadService::class.java).apply {
                 putExtra(FeedLoadService.EXTRA_GROUP_ID, groupId)
+                putExtra(FeedLoadService.EXTRA_SERVICE_ID, feedScope.serviceId)
+                putExtra(
+                    FeedLoadService.EXTRA_YOUTUBE_MODE_MASK,
+                    feedScope.youtubeModeMask
+                )
             }
         )
         listState = null

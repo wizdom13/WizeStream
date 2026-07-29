@@ -26,6 +26,7 @@ import org.schabi.newpipe.extractor.feed.FeedInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.ktx.getStringSafe
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.util.ChannelTabHelper
 import org.schabi.newpipe.util.ExtractorHelper.getChannelInfo
@@ -42,6 +43,7 @@ class FeedLoadManager(private val context: Context) {
     private val maxProgress = AtomicInteger(-1)
     private val cancelSignal = AtomicBoolean()
     private val feedResultsHolder = FeedResultsHolder()
+    private var feedScope: FeedScope? = null
 
     val notification: Flowable<FeedLoadState> = notificationUpdater.map { description ->
         FeedLoadState(description, maxProgress.get(), currentProgress.get())
@@ -60,8 +62,10 @@ class FeedLoadManager(private val context: Context) {
      */
     fun startLoading(
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
-        ignoreOutdatedThreshold: Boolean = false
+        ignoreOutdatedThreshold: Boolean = false,
+        scope: FeedScope? = null
     ): Single<List<Notification<FeedUpdateInfo>>> {
+        feedScope = scope
         val defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val useFeedExtractor = defaultSharedPreferences.getBoolean(
             context.getString(R.string.feed_use_dedicated_fetch_method_key),
@@ -81,17 +85,28 @@ class FeedLoadManager(private val context: Context) {
         /**
          * subscriptions which have not been updated within the feed updated threshold
          */
-        val outdatedSubscriptions = when (groupId) {
-            FeedGroupEntity.GROUP_ALL_ID -> feedDatabaseManager.outdatedSubscriptions(
-                outdatedThreshold
-            )
+        val outdatedSubscriptions = when {
+            groupId == GROUP_NOTIFICATION_ENABLED ->
+                feedDatabaseManager.outdatedSubscriptionsWithNotificationMode(
+                    outdatedThreshold,
+                    NotificationMode.ENABLED
+                )
 
-            GROUP_NOTIFICATION_ENABLED -> feedDatabaseManager.outdatedSubscriptionsWithNotificationMode(
-                outdatedThreshold,
-                NotificationMode.ENABLED
-            )
+            scope == null && groupId == FeedGroupEntity.GROUP_ALL_ID ->
+                feedDatabaseManager.outdatedSubscriptions(outdatedThreshold)
 
-            else -> feedDatabaseManager.outdatedSubscriptionsForGroup(groupId, outdatedThreshold)
+            scope == null ->
+                feedDatabaseManager.outdatedSubscriptionsForGroup(groupId, outdatedThreshold)
+
+            groupId == FeedGroupEntity.GROUP_ALL_ID ->
+                feedDatabaseManager.outdatedSubscriptionsForScope(scope, outdatedThreshold)
+
+            else ->
+                feedDatabaseManager.outdatedSubscriptionsForGroupAndScope(
+                    groupId,
+                    scope,
+                    outdatedThreshold
+                )
         }
 
         // like `currentProgress`, but counts the number of YouTube extractions that have begun, so
@@ -145,7 +160,7 @@ class FeedLoadManager(private val context: Context) {
     }
 
     private fun broadcastProgress() {
-        FeedEventManager.postEvent(
+        postEvent(
             FeedEventManager.Event.ProgressEvent(
                 currentProgress.get(),
                 maxProgress.get()
@@ -263,17 +278,21 @@ class FeedLoadManager(private val context: Context) {
      * Remove streams from the database which are not linked / used by any table.
      */
     private fun postProcessFeed() = Completable.fromRunnable {
-        FeedEventManager.postEvent(FeedEventManager.Event.ProgressEvent(R.string.feed_processing_message))
+        postEvent(FeedEventManager.Event.ProgressEvent(R.string.feed_processing_message))
         feedDatabaseManager.removeOrphansOrOlderStreams()
 
-        FeedEventManager.postEvent(FeedEventManager.Event.SuccessResultEvent(feedResultsHolder.itemsErrors))
+        postEvent(FeedEventManager.Event.SuccessResultEvent(feedResultsHolder.itemsErrors))
     }.doOnSubscribe {
         currentProgress.set(-1)
         maxProgress.set(-1)
 
         notificationUpdater.onNext(context.getString(R.string.feed_processing_message))
-        FeedEventManager.postEvent(FeedEventManager.Event.ProgressEvent(R.string.feed_processing_message))
+        postEvent(FeedEventManager.Event.ProgressEvent(R.string.feed_processing_message))
     }.subscribeOn(Schedulers.io())
+
+    private fun postEvent(event: FeedEventManager.Event) {
+        feedScope?.let { FeedEventManager.postEvent(it, event) }
+    }
 
     private inner class NotificationConsumer : Consumer<Notification<FeedUpdateInfo>> {
         override fun accept(item: Notification<FeedUpdateInfo>) {
@@ -292,10 +311,16 @@ class FeedLoadManager(private val context: Context) {
                     when {
                         notification.isOnNext -> {
                             val info = notification.value!!
+                            val updateModeMask = feedScope?.youtubeModeMask
+                                ?: info.youtubeModeMask
 
                             notification.value!!.newStreams = filterNewStreams(info.streams)
 
-                            feedDatabaseManager.upsertAll(info.uid, info.streams)
+                            feedDatabaseManager.upsertAll(
+                                info.uid,
+                                info.streams,
+                                updateModeMask
+                            )
                             subscriptionManager.updateFromInfo(info)
 
                             if (info.errors.isNotEmpty()) {
@@ -308,7 +333,7 @@ class FeedLoadManager(private val context: Context) {
                                         )
                                     }
                                 )
-                                feedDatabaseManager.markAsOutdated(info.uid)
+                                feedDatabaseManager.markAsOutdated(info.uid, updateModeMask)
                             }
                         }
 
@@ -317,7 +342,14 @@ class FeedLoadManager(private val context: Context) {
                             feedResultsHolder.addError(error!!)
 
                             if (error is FeedLoadService.RequestException) {
-                                feedDatabaseManager.markAsOutdated(error.subscriptionId)
+                                val subscription = subscriptionManager.subscriptionTable()
+                                    .getSubscription(error.subscriptionId)
+                                val updateModeMask = feedScope?.youtubeModeMask
+                                    ?: subscription.youtubeModeMask
+                                feedDatabaseManager.markAsOutdated(
+                                    error.subscriptionId,
+                                    updateModeMask
+                                )
                             }
                         }
                     }

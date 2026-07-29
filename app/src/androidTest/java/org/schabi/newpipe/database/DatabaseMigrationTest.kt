@@ -540,13 +540,92 @@ class DatabaseMigrationTest {
         assertEquals(1, subscription.youtubeModeMask)
     }
 
+    @Test
+    fun migrateDatabaseFrom14to15SeparatesYoutubeFeedModes() {
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_14
+        ).apply {
+            insert(
+                "subscriptions",
+                SQLiteDatabase.CONFLICT_FAIL,
+                ContentValues().apply {
+                    put("uid", 1)
+                    put("service_id", DEFAULT_SERVICE_ID)
+                    put("url", DEFAULT_URL)
+                    put("name", DEFAULT_NAME)
+                    put("notification_mode", 0)
+                    put("youtube_mode_mask", 3)
+                }
+            )
+            insert(
+                "streams",
+                SQLiteDatabase.CONFLICT_FAIL,
+                ContentValues().apply {
+                    put("uid", 1)
+                    put("service_id", DEFAULT_SERVICE_ID)
+                    put("url", DEFAULT_URL)
+                    put("title", DEFAULT_TITLE)
+                    put("stream_type", DEFAULT_TYPE.name)
+                    put("duration", DEFAULT_DURATION)
+                    put("uploader", DEFAULT_UPLOADER_NAME)
+                }
+            )
+            insert(
+                "feed",
+                SQLiteDatabase.CONFLICT_FAIL,
+                ContentValues().apply {
+                    put("stream_id", 1)
+                    put("subscription_id", 1)
+                }
+            )
+            insert(
+                "feed_last_updated",
+                SQLiteDatabase.CONFLICT_FAIL,
+                ContentValues().apply {
+                    put("subscription_id", 1)
+                    put("last_updated", 1234)
+                }
+            )
+            close()
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_15,
+            true,
+            Migrations.MIGRATION_14_15
+        )
+        migrated.query(
+            "SELECT youtube_mode_mask FROM feed ORDER BY youtube_mode_mask"
+        ).use { cursor ->
+            assertEquals(2, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(1, cursor.getInt(0))
+            cursor.moveToNext()
+            assertEquals(2, cursor.getInt(0))
+        }
+        migrated.query(
+            "SELECT youtube_mode_mask FROM feed_last_updated ORDER BY youtube_mode_mask"
+        ).use { cursor ->
+            assertEquals(2, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(1, cursor.getInt(0))
+            cursor.moveToNext()
+            assertEquals(2, cursor.getInt(0))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(Migrations.MIGRATION_13_14)
+            .addMigrations(
+                Migrations.MIGRATION_13_14,
+                Migrations.MIGRATION_14_15
+            )
             .build()
         testHelper.closeWhenFinished(database)
         return database

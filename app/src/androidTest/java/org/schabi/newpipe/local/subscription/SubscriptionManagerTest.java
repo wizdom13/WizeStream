@@ -122,4 +122,25 @@ public class SubscriptionManagerTest {
         assertEquals(1, manager.getSubscriptions(
                 FeedGroupEntity.GROUP_ALL_ID, "", false).blockingFirst().size());
     }
+
+    @Test
+    public void subscriptionsOnlyIncludeSelectedService() {
+        manager.insertSubscription(createSubscriptionEntity());
+
+        final SubscriptionEntity otherServiceSubscription = createSubscriptionEntity();
+        otherServiceSubscription.setServiceId(1);
+        otherServiceSubscription.setUrl("https://example.com/other-service/channel");
+        database.subscriptionDAO().insert(otherServiceSubscription);
+
+        assertEquals(1, manager.getSubscriptions(
+                FeedGroupEntity.GROUP_ALL_ID, "", false).blockingFirst().size());
+
+        ServiceHelper.setSelectedServiceId(context, 1);
+        manager = new SubscriptionManager(context);
+        assertEquals(1, manager.getSubscriptions(
+                FeedGroupEntity.GROUP_ALL_ID, "", false).blockingFirst().size());
+        assertEquals(1, manager.getSubscriptions(
+                FeedGroupEntity.GROUP_ALL_ID, "", false)
+                .blockingFirst().get(0).getServiceId());
+    }
 }

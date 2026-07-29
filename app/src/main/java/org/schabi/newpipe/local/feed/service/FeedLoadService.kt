@@ -41,8 +41,8 @@ import org.schabi.newpipe.App
 import org.schabi.newpipe.MainActivity.DEBUG
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ErrorResultEvent
-import org.schabi.newpipe.local.feed.service.FeedEventManager.postEvent
 
 class FeedLoadService : Service() {
     companion object {
@@ -56,12 +56,16 @@ class FeedLoadService : Service() {
         private const val NOTIFICATION_SAMPLING_PERIOD = 1500
 
         const val EXTRA_GROUP_ID: String = "FeedLoadService.EXTRA_GROUP_ID"
+        const val EXTRA_SERVICE_ID: String = "FeedLoadService.EXTRA_SERVICE_ID"
+        const val EXTRA_YOUTUBE_MODE_MASK: String =
+            "FeedLoadService.EXTRA_YOUTUBE_MODE_MASK"
     }
 
     private var loadingDisposable: Disposable? = null
     private var notificationDisposable: Disposable? = null
 
     private lateinit var feedLoadManager: FeedLoadManager
+    private lateinit var feedScope: FeedScope
 
     // /////////////////////////////////////////////////////////////////////////
     // Lifecycle
@@ -89,7 +93,15 @@ class FeedLoadService : Service() {
         setupBroadcastReceiver()
 
         val groupId = intent.getLongExtra(EXTRA_GROUP_ID, FeedGroupEntity.GROUP_ALL_ID)
-        loadingDisposable = feedLoadManager.startLoading(groupId)
+        val selectedScope = FeedScope.from(this)
+        feedScope = FeedScope(
+            intent.getIntExtra(EXTRA_SERVICE_ID, selectedScope.serviceId),
+            intent.getIntExtra(
+                EXTRA_YOUTUBE_MODE_MASK,
+                selectedScope.youtubeModeMask
+            )
+        )
+        loadingDisposable = feedLoadManager.startLoading(groupId, scope = feedScope)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSubscribe {
                 startForeground(NOTIFICATION_ID, notificationBuilder.build())
@@ -212,7 +224,7 @@ class FeedLoadService : Service() {
     // /////////////////////////////////////////////////////////////////////////
 
     private fun handleError(error: Throwable) {
-        postEvent(ErrorResultEvent(error))
+        FeedEventManager.postEvent(feedScope, ErrorResultEvent(error))
         stopService()
     }
 }

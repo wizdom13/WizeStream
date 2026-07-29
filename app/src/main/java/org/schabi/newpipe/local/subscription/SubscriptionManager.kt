@@ -16,6 +16,7 @@ import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.feed.service.FeedUpdateInfo
 import org.schabi.newpipe.sync.RoomSubscriptionSyncStore
 import org.schabi.newpipe.util.ExtractorHelper
@@ -26,12 +27,8 @@ class SubscriptionManager(context: Context) {
     private val database = NewPipeDatabase.getInstance(context)
     private val subscriptionTable = database.subscriptionDAO()
     private val feedDatabaseManager = FeedDatabaseManager(context)
-    private val youtubeMusicMode = ServiceHelper.isYoutubeMusicMode(context)
-    private val currentYoutubeModeMask = if (youtubeMusicMode) {
-        SubscriptionEntity.YOUTUBE_MODE_MUSIC
-    } else {
-        SubscriptionEntity.YOUTUBE_MODE_REGULAR
-    }
+    private val currentScope = FeedScope.from(context)
+    private val currentYoutubeModeMask = currentScope.youtubeModeMask
     private val subscriptionSyncStore by lazy {
         RoomSubscriptionSyncStore.get(context)
     }
@@ -59,17 +56,20 @@ class SubscriptionManager(context: Context) {
             showOnlyUngrouped -> subscriptionTable.getSubscriptionsOnlyUngrouped(currentGroupId)
 
             else -> subscriptionTable.getAll()
-        }.map { subscriptions -> subscriptions.filter(::isVisibleInCurrentMode) }
+        }.map { subscriptions -> subscriptions.filter(currentScope::includes) }
     }
 
     fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo>>) {
         val listEntities = infoList.map {
             val entity = SubscriptionEntity.from(it.first)
+            if (entity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                entity.youtubeModeMask = currentYoutubeModeMask
+            }
             subscriptionTable.getSubscriptionDirect(entity.serviceId, requireNotNull(entity.url))
                 ?.let { existing ->
                     entity.notificationMode = existing.notificationMode
                     entity.youtubeModeMask = existing.youtubeModeMask or
-                        SubscriptionEntity.YOUTUBE_MODE_REGULAR
+                        currentYoutubeModeMask
                 }
             entity
         }
@@ -79,7 +79,15 @@ class SubscriptionManager(context: Context) {
         database.runInTransaction {
             infoList.forEachIndexed { index, info ->
                 val streams = info.second.relatedItems.filterIsInstance<StreamInfoItem>()
-                feedDatabaseManager.upsertAll(listEntities[index].uid, streams)
+                feedDatabaseManager.upsertAll(
+                    listEntities[index].uid,
+                    streams,
+                    if (listEntities[index].serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                        currentYoutubeModeMask
+                    } else {
+                        SubscriptionEntity.YOUTUBE_MODE_REGULAR
+                    }
+                )
             }
         }
     }
@@ -194,15 +202,6 @@ class SubscriptionManager(context: Context) {
     fun isSubscribedInCurrentMode(subscriptionEntity: SubscriptionEntity): Boolean {
         return subscriptionEntity.serviceId != SubscriptionEntity.YOUTUBE_SERVICE_ID ||
             subscriptionEntity.youtubeModeMask and currentYoutubeModeMask != 0
-    }
-
-    private fun isVisibleInCurrentMode(subscriptionEntity: SubscriptionEntity): Boolean {
-        return if (youtubeMusicMode) {
-            subscriptionEntity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID &&
-                isSubscribedInCurrentMode(subscriptionEntity)
-        } else {
-            isSubscribedInCurrentMode(subscriptionEntity)
-        }
     }
 
     /**

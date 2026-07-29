@@ -46,20 +46,28 @@ class FeedDatabaseManager(context: Context) {
         includePlayedStreams: Boolean,
         includePartiallyPlayedStreams: Boolean,
         includeFutureStreams: Boolean,
-        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
-        youtubeMusicMode: Boolean = false
+        scope: FeedScope
     ): Maybe<List<StreamWithState>> {
         return feedTable.getStreams(
             groupId,
             includePlayedStreams,
             includePartiallyPlayedStreams,
             if (includeFutureStreams) null else OffsetDateTime.now(),
-            youtubeModeMask,
-            youtubeMusicMode
+            scope.serviceId,
+            scope.youtubeModeMask
         )
     }
 
     fun outdatedSubscriptions(outdatedThreshold: OffsetDateTime) = feedTable.getAllOutdated(outdatedThreshold)
+
+    fun outdatedSubscriptionsForScope(
+        scope: FeedScope,
+        outdatedThreshold: OffsetDateTime
+    ) = feedTable.getAllOutdatedForScope(
+        scope.serviceId,
+        scope.youtubeModeMask,
+        outdatedThreshold
+    )
 
     fun outdatedSubscriptionsWithNotificationMode(
         outdatedThreshold: OffsetDateTime,
@@ -68,18 +76,17 @@ class FeedDatabaseManager(context: Context) {
 
     fun notLoadedCount(
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
-        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
-        youtubeMusicMode: Boolean = false
+        scope: FeedScope
     ): Flowable<Long> {
         return when (groupId) {
             FeedGroupEntity.GROUP_ALL_ID ->
-                feedTable.notLoadedCount(youtubeModeMask, youtubeMusicMode)
+                feedTable.notLoadedCount(scope.serviceId, scope.youtubeModeMask)
 
             else ->
                 feedTable.notLoadedCountForGroup(
                     groupId,
-                    youtubeModeMask,
-                    youtubeMusicMode
+                    scope.serviceId,
+                    scope.youtubeModeMask
                 )
         }
     }
@@ -89,8 +96,24 @@ class FeedDatabaseManager(context: Context) {
         outdatedThreshold: OffsetDateTime
     ) = feedTable.getAllOutdatedForGroup(groupId, outdatedThreshold)
 
-    fun markAsOutdated(subscriptionId: Long) = feedTable
-        .setLastUpdatedForSubscription(FeedLastUpdatedEntity(subscriptionId, null))
+    fun outdatedSubscriptionsForGroupAndScope(
+        groupId: Long,
+        scope: FeedScope,
+        outdatedThreshold: OffsetDateTime
+    ) = feedTable.getAllOutdatedForGroupAndScope(
+        groupId,
+        scope.serviceId,
+        scope.youtubeModeMask,
+        outdatedThreshold
+    )
+
+    fun markAsOutdated(subscriptionId: Long, youtubeModeMask: Int) {
+        youtubeModeMasks(youtubeModeMask).forEach { modeMask ->
+            feedTable.setLastUpdatedForSubscription(
+                FeedLastUpdatedEntity(subscriptionId, modeMask, null)
+            )
+        }
+    }
 
     fun doesStreamExist(stream: StreamInfoItem): Boolean {
         return streamTable.exists(stream.serviceId, stream.url)
@@ -99,6 +122,7 @@ class FeedDatabaseManager(context: Context) {
     fun upsertAll(
         subscriptionId: Long,
         items: List<StreamInfoItem>,
+        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
         oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE
     ) {
         val itemsToInsert = items.mapNotNull { stream ->
@@ -111,19 +135,27 @@ class FeedDatabaseManager(context: Context) {
             }
         }
 
-        feedTable.unlinkOldLivestreams(subscriptionId)
+        val modeMasks = youtubeModeMasks(youtubeModeMask)
+        modeMasks.forEach { feedTable.unlinkOldLivestreams(subscriptionId, it) }
 
         if (itemsToInsert.isNotEmpty()) {
             val streamEntities = itemsToInsert.map { StreamEntity(it) }
             val streamIds = streamTable.upsertAll(streamEntities)
-            val feedEntities = streamIds.map { FeedEntity(it, subscriptionId) }
+            val feedEntities = streamIds.flatMap { streamId ->
+                modeMasks.map { modeMask ->
+                    FeedEntity(streamId, subscriptionId, modeMask)
+                }
+            }
 
             feedTable.insertAll(feedEntities)
         }
 
-        feedTable.setLastUpdatedForSubscription(
-            FeedLastUpdatedEntity(subscriptionId, OffsetDateTime.now(ZoneOffset.UTC))
-        )
+        val updatedAt = OffsetDateTime.now(ZoneOffset.UTC)
+        modeMasks.forEach { modeMask ->
+            feedTable.setLastUpdatedForSubscription(
+                FeedLastUpdatedEntity(subscriptionId, modeMask, updatedAt)
+            )
+        }
     }
 
     fun removeOrphansOrOlderStreams(oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE) {
@@ -194,22 +226,29 @@ class FeedDatabaseManager(context: Context) {
 
     fun oldestSubscriptionUpdate(
         groupId: Long,
-        youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
-        youtubeMusicMode: Boolean = false
+        scope: FeedScope
     ): Flowable<List<OffsetDateTime?>> {
         return when (groupId) {
             FeedGroupEntity.GROUP_ALL_ID ->
                 feedTable.oldestSubscriptionUpdateFromAll(
-                    youtubeModeMask,
-                    youtubeMusicMode
+                    scope.serviceId,
+                    scope.youtubeModeMask
                 )
 
             else ->
                 feedTable.oldestSubscriptionUpdate(
                     groupId,
-                    youtubeModeMask,
-                    youtubeMusicMode
+                    scope.serviceId,
+                    scope.youtubeModeMask
                 )
         }
+    }
+
+    private fun youtubeModeMasks(mask: Int): List<Int> {
+        return listOf(
+            SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+            SubscriptionEntity.YOUTUBE_MODE_MUSIC
+        ).filter { modeMask -> mask and modeMask != 0 }
+            .ifEmpty { listOf(SubscriptionEntity.YOUTUBE_MODE_REGULAR) }
     }
 }
