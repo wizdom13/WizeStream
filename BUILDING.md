@@ -1,10 +1,13 @@
 # Building WizeStream
 
-WizeStream uses a pinned `WizeStreamExtractor` Git submodule at `external/WizeStreamExtractor`. The submodule commit recorded by each WizeStream commit or tag is part of the source definition and must not be replaced with the latest extractor branch tip.
+WizeStream includes the complete extractor and timeago-parser sources directly in the `app`
+module. Java sources live under `app/src/main/java`, protocol definitions under
+`app/src/main/proto`, and their unit tests under `app/src/test/java`. Every WizeStream commit and
+release tag therefore records and builds the application and service extraction logic together.
 
 ## Requirements
 
-- Git with submodule support
+- Git
 - JDK 21
 - Android SDK with the required platform and build tools
 - Accepted Android SDK licenses
@@ -12,28 +15,15 @@ WizeStream uses a pinned `WizeStreamExtractor` Git submodule at `external/WizeSt
 ## Clone the exact source
 
 ```bash
-git clone --recurse-submodules https://github.com/wizdom13/WizeStream.git
+git clone https://github.com/wizdom13/WizeStream.git
 cd WizeStream
 ```
 
-For an existing checkout or after switching tags:
-
-```bash
-git submodule sync --recursive
-git submodule update --init --recursive
-```
-
-Do not use `git submodule update --remote` for release or reproducible builds. It moves the extractor away from the commit pinned by the app repository.
+No submodule initialization, separate extractor checkout, or separate extractor build is required.
 
 ## Shared build entry points
 
 The same committed scripts are used locally and in GitHub Actions.
-
-Prepare and verify the pinned extractor checkout:
-
-```bash
-scripts/prepare-extractor.sh
-```
 
 Build the debug APK and run JVM checks:
 
@@ -93,4 +83,6 @@ The resulting APK is written under `app/build/outputs/apk/release/`.
 
 ## Reproducible release rule
 
-Every published WizeStream APK must be built from the exact commit referenced by its release tag, including the submodule commit recorded by that tag. An APK must not be replaced with one built from a newer untagged commit; publish a new version and tag instead.
+Every published WizeStream APK must be built from the exact commit referenced by its release tag.
+That commit includes the integrated extractor source under `app/src/main/java`. An APK must not be
+replaced with one built from a newer untagged commit; publish a new version and tag instead.

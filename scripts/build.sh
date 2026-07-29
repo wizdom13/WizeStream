@@ -4,8 +4,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-"$ROOT_DIR/scripts/prepare-extractor.sh"
-
 MODE="${1:-debug}"
 shift || true
 
@@ -30,12 +28,8 @@ case "$MODE" in
     connected)
         exec ./gradlew connectedCheck --stacktrace "$@"
         ;;
-    extractor-bytecode)
-        ./gradlew -p external/WizeStreamExtractor :extractor:clean :extractor:compileJava --stacktrace "$@"
-        exec javap -verbose -classpath external/WizeStreamExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe
-        ;;
     *)
-        echo "Usage: $0 {debug|release|nightly|checkstyle|connected|extractor-bytecode} [extra Gradle arguments]" >&2
+        echo "Usage: $0 {debug|release|nightly|checkstyle|connected} [extra Gradle arguments]" >&2
         exit 2
         ;;
 esac

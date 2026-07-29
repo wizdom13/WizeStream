@@ -128,8 +128,7 @@ Sensitive areas such as playback, downloads, background playback, popup playback
 
 ## Supported services
 
-WizeStream supports these services through its pinned
-[`WizeStreamExtractor`](https://github.com/wizdom13/WizeStreamExtractor) submodule:
+WizeStream supports these services through extractor source integrated directly into the app:
 
 - YouTube and YouTube Music
 - PeerTube
@@ -138,7 +137,7 @@ WizeStream supports these services through its pinned
 - media.ccc.de
 
 YouTube playback and downloads include support for SABR streams. Service support depends on the
-pinned extractor revision.
+bundled extractor source.
 
 ---
 
@@ -277,23 +276,16 @@ Do not publish WizeStream or forks of NewPipe to Google Play without first revie
 
 ## Building from source
 
-WizeStream uses a pinned `WizeStreamExtractor` Git submodule. Clone the repository together with its pinned submodule:
+WizeStream includes its extractor source directly in the `app` module:
 
 ```bash
-git clone --recurse-submodules https://github.com/wizdom13/WizeStream.git
+git clone https://github.com/wizdom13/WizeStream.git
 cd WizeStream
-```
-
-For an existing checkout or after switching commits or tags:
-
-```bash
-git submodule sync --recursive
-git submodule update --init --recursive
 ```
 
 Requirements:
 
-- Git with submodule support
+- Git
 - JDK 21
 - Android SDK with the required platform and build tools
 - Accepted Android SDK licenses
@@ -312,9 +304,7 @@ scripts/build.sh connected
 scripts/build.sh checkstyle
 ```
 
-Do not use `git submodule update --remote` for release builds. Every release must use the extractor commit recorded by the app commit or tag.
-
-See [BUILDING.md](BUILDING.md) for complete build, signing, submodule, and reproducible-release instructions.
+See [BUILDING.md](BUILDING.md) for complete build, signing, and reproducible-release instructions.
 
 The debug APK uses the app label **WizeStream Debug** and package `org.wisso.newpipematerial.debug`.
 
@@ -345,7 +335,8 @@ The release APK is generated under `app/build/outputs/apk/release/`. Verify it w
 apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 ```
 
-A published APK must be built from the exact commit referenced by its release tag, including the pinned extractor submodule commit.
+A published APK must be built from the exact commit referenced by its release tag, including the
+extractor source stored in that commit.
 
 ---
 
@@ -379,16 +370,12 @@ Contributions are welcome, especially focused Material 3 polish, bug fixes, QA f
 
 Please keep changes focused and testable. For UI work, include before-and-after screenshots where possible and verify Light, Dark, Black, Follow system, and at least one manual theme color preset.
 
-### WizeStreamExtractor submodule
+### Integrated extractor source
 
-WizeStream builds against the [`wizdom13/WizeStreamExtractor`](https://github.com/wizdom13/WizeStreamExtractor) fork through the pinned submodule at `external/WizeStreamExtractor`.
-
-```bash
-git submodule sync --recursive
-git submodule update --init --recursive
-```
-
-The recorded submodule commit is part of the source definition. Do not replace it with the latest branch tip when preparing a release or reproducible build.
+Extractor and timeago-parser sources are stored directly under `app/src/main/java`, with protocol
+definitions under `app/src/main/proto` and tests under `app/src/test/java`. They are compiled and
+tested as part of the application module, so app and service changes are committed and built
+together in one repository.
 
 ---
 

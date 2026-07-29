@@ -25,18 +25,3 @@ dependencyResolutionManagement {
 }
 include(":app") // androidApp
 include(":ffmpeg")
-
-val wizeStreamExtractorDir = file("external/WizeStreamExtractor")
-if (!wizeStreamExtractorDir.isDirectory) {
-    throw GradleException(
-        "WizeStreamExtractor submodule checkout not found. " +
-            "Run git submodule update --init --recursive or scripts/prepare-extractor.sh."
-    )
-}
-
-includeBuild(wizeStreamExtractorDir) {
-    dependencySubstitution {
-        substitute(module("com.github.TeamNewPipe:NewPipeExtractor"))
-            .using(project(":extractor"))
-    }
-}

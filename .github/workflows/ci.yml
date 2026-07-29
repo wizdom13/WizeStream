@@ -40,8 +40,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
 
       - uses: gradle/actions/wrapper-validation@v6
 
@@ -57,10 +55,6 @@ jobs:
           java-version: 21
           distribution: temurin
           cache: gradle
-
-      - name: Verify pinned WizeStreamExtractor bytecode
-        run: |
-          scripts/build.sh extractor-bytecode | grep "major version: 65"
 
       - name: Build debug APK and run JVM tests
         run: scripts/build.sh debug
@@ -106,8 +100,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
 
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -115,9 +107,6 @@ jobs:
           java-version: 21
           distribution: temurin
           cache: gradle
-
-      - name: Prepare pinned WizeStreamExtractor
-        run: scripts/prepare-extractor.sh
 
       - name: Enable KVM
         run: |

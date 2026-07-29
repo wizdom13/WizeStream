@@ -4,6 +4,7 @@
  */
 
 import com.android.build.api.dsl.ApplicationExtension
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     alias(libs.plugins.android.application)
@@ -11,6 +12,7 @@ plugins {
     alias(libs.plugins.google.ksp)
     alias(libs.plugins.jetbrains.kotlin.parcelize)
     alias(libs.plugins.jetbrains.kotlinx.serialization)
+    alias(libs.plugins.squareup.wire)
     checkstyle
 }
 
@@ -153,6 +155,14 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+wire {
+    java {
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
 
 // Custom dependency configuration for ktlint
 val ktlint by configurations.creating
@@ -170,6 +180,8 @@ tasks.register<Checkstyle>("runCheckstyle") {
     exclude("**/gen/**")
     exclude("**/R.java")
     exclude("**/BuildConfig.java")
+    exclude("main/java/org/schabi/newpipe/extractor/**")
+    exclude("test/java/org/schabi/newpipe/extractor/**")
     exclude("main/java/us/shandian/giga/**")
 
     classpath = configurations.getByName("checkstyle")
@@ -222,8 +234,18 @@ dependencies {
 
     // NewPipe libraries
     implementation(libs.newpipe.nanojson)
-    implementation(libs.newpipe.extractor)
     implementation(libs.newpipe.filepicker)
+
+    // Integrated extractor sources
+    implementation("org.apache.commons:commons-lang3:3.8.1")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.85")
+    implementation("org.brotli:dec:0.1.1")
+    implementation("org.java-websocket:Java-WebSocket:1.4.1")
+    implementation("org.mozilla:rhino:1.7.13")
+    implementation("org.nibor.autolink:autolink:0.10.0")
+    implementation("com.google.protobuf:protobuf-java:3.11.0")
+    implementation("com.github.spotbugs:spotbugs-annotations:4.8.3")
+    compileOnly("org.json:json:20231013")
 
     // Checkstyle
     checkstyle(libs.puppycrawl.checkstyle)
@@ -337,6 +359,9 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.13.4")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.4")
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.runner)

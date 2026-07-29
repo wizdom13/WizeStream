@@ -28,7 +28,6 @@ jobs:
         with:
           ref: pipe
           fetch-depth: 0
-          submodules: recursive
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v6
@@ -53,7 +52,6 @@ jobs:
           nightly_tag="nightly-${build_date}-${short_sha}"
           version_suffix="-nightly.${build_date}.${short_sha}"
           apk_name="WizeStream-nightly-${build_date}-${short_sha}.apk"
-          extractor_sha="$(git -C external/WizeStreamExtractor rev-parse HEAD)"
 
           {
             echo "source_sha=$source_sha"
@@ -63,7 +61,6 @@ jobs:
             echo "nightly_tag=$nightly_tag"
             echo "version_suffix=$version_suffix"
             echo "apk_name=$apk_name"
-            echo "extractor_sha=$extractor_sha"
           } >> "$GITHUB_OUTPUT"
 
       - name: Skip unchanged source commit
@@ -193,7 +190,6 @@ jobs:
           VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
           VERSION_SUFFIX: ${{ steps.metadata.outputs.version_suffix }}
           SOURCE_SHA: ${{ steps.metadata.outputs.source_sha }}
-          EXTRACTOR_SHA: ${{ steps.metadata.outputs.extractor_sha }}
           APK_PATH: ${{ steps.assets.outputs.apk_path }}
           CHECKSUM_PATH: ${{ steps.assets.outputs.checksum_path }}
         shell: bash
@@ -206,7 +202,6 @@ jobs:
           - Version suffix: \`${VERSION_SUFFIX}\`
           - Version code: \`${VERSION_CODE}\`
           - Source commit: \`${SOURCE_SHA}\`
-          - WizeStreamExtractor commit: \`${EXTRACTOR_SHA}\`
           - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
 
           This is an unstable testing build. It uses the application ID

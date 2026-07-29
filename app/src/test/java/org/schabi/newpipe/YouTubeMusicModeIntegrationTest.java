@@ -10,9 +10,6 @@ import java.nio.file.Path;
 public class YouTubeMusicModeIntegrationTest {
     private final Path appSource = Files.exists(Path.of("src/main/java"))
             ? Path.of("src/main/java") : Path.of("app/src/main/java");
-    private final Path extractorSource = Files.exists(Path.of("../external/WizeStreamExtractor"))
-            ? Path.of("../external/WizeStreamExtractor/extractor/src/main/java")
-            : Path.of("external/WizeStreamExtractor/extractor/src/main/java");
 
     @Test
     public void drawerModeRetainsYoutubeServiceIdentity() throws Exception {
@@ -33,7 +30,7 @@ public class YouTubeMusicModeIntegrationTest {
                 "org/schabi/newpipe/fragments/list/search/SearchFragment.java");
         final String list = readApp(
                 "org/schabi/newpipe/fragments/list/BaseListFragment.java");
-        final String musicExtractor = readExtractor(
+        final String musicExtractor = readApp(
                 "org/schabi/newpipe/extractor/services/youtube/extractors/"
                         + "YoutubeMusicSongOrVideoInfoItemExtractor.java");
 
@@ -66,9 +63,5 @@ public class YouTubeMusicModeIntegrationTest {
 
     private String readApp(final String relativePath) throws Exception {
         return Files.readString(appSource.resolve(relativePath));
-    }
-
-    private String readExtractor(final String relativePath) throws Exception {
-        return Files.readString(extractorSource.resolve(relativePath));
     }
 }

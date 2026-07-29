@@ -16,4 +16,5 @@ plugins {
     alias(libs.plugins.google.ksp) apply false
     alias(libs.plugins.jetbrains.kotlin.parcelize) apply false
     alias(libs.plugins.jetbrains.kotlinx.serialization) apply false
+    alias(libs.plugins.squareup.wire) apply false
 }

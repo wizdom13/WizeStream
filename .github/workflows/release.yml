@@ -26,11 +26,6 @@ jobs:
     steps:
       - name: Check out release source
         uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Prepare pinned WizeStreamExtractor source
-        run: scripts/prepare-extractor.sh
 
       - uses: gradle/actions/wrapper-validation@v6
 
@@ -40,12 +35,6 @@ jobs:
           java-version: 21
           distribution: temurin
           cache: gradle
-
-      - name: Verify WizeStreamExtractor Java bytecode
-        run: |
-          set -euo pipefail
-          ./gradlew -p external/WizeStreamExtractor :extractor:clean :extractor:compileJava --stacktrace
-          javap -verbose -classpath external/WizeStreamExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe | grep "major version: 65"
 
       - name: Write release keystore
         env:

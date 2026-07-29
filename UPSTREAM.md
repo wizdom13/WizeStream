@@ -11,9 +11,8 @@ must not be used as WizeStream version names or as inputs to WizeStream Android 
 
 ## Extractor source
 
-WizeStream builds against the `wizdom13/WizeStreamExtractor` fork through the pinned Git submodule at
-`external/WizeStreamExtractor`. The recorded submodule commit, rather than a moving branch, defines
-the extractor source for each WizeStream commit and release.
+WizeStream includes its extractor source directly in the `app` module. Each
+WizeStream commit and release therefore records the exact extractor source together with the app.
 
 ## Maintenance rule
 
