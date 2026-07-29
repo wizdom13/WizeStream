@@ -1,6 +1,5 @@
 WizeStream 1.2.0
 
-- Added support for Bilibili, Niconico, BitChute, and Rumble.
 - Added YouTube SABR playback and downloading.
 - Added dedicated YouTube Music and YouTube Shorts destinations.
 - Separated Subscriptions and What's New by service, including independent refresh states.

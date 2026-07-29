@@ -62,7 +62,7 @@ WizeStream remains based on NewPipe and continues to preserve upstream attributi
 
 WizeStream has its own release cycle and follows semantic versioning:
 
-- `MAJOR.MINOR.PATCH`, such as `1.0.0`, `1.1.0`, and `1.1.1`
+- `MAJOR.MINOR.PATCH`, such as `1.0.0`, `1.1.0`, and `1.2.0`
 - Git tags use the corresponding `vMAJOR.MINOR.PATCH` form
 - WizeStream version numbers do not contain or follow NewPipe version numbers
 
@@ -128,7 +128,8 @@ Sensitive areas such as playback, downloads, background playback, popup playback
 
 ## Supported services
 
-WizeStream inherits support for these services from the NewPipe and NewPipe Extractor codebase:
+WizeStream supports these services through its pinned
+[`WizeStreamExtractor`](https://github.com/wizdom13/WizeStreamExtractor) submodule:
 
 - YouTube and YouTube Music
 - PeerTube
@@ -136,7 +137,8 @@ WizeStream inherits support for these services from the NewPipe and NewPipe Extr
 - SoundCloud
 - media.ccc.de
 
-Service support depends on the pinned upstream-derived extractor code.
+YouTube playback and downloads include support for SABR streams. Service support depends on the
+pinned extractor revision.
 
 ---
 
@@ -149,7 +151,8 @@ Core features include:
 - Popup player
 - Local playlists
 - Subscriptions without signing in to a platform account
-- Channel groups and feeds
+- Service-specific subscriptions, channel groups, and **What's New** feeds with independent refresh
+  state, including separate scopes for YouTube and YouTube Music
 - Search and browse supported services
 - View video details, related videos, and comments where supported
 - Download video, audio, and captions where supported
@@ -162,6 +165,9 @@ WizeStream additions include:
 - Configurable default main tab
 - Dynamic and manual theme color support
 - SponsorBlock and dislike-count support
+- YouTube SABR playback and downloading
+- Independent Subscriptions and **What's New** content for each service, including separate YouTube
+  and YouTube Music scopes
 - Enhanced player gestures
 - Optional pinned video while scrolling
 - Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, watch and search

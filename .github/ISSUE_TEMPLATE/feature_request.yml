@@ -18,7 +18,7 @@ body:
           required: true
         - label: "This issue contains only one feature request."
           required: true
-        - label: "I understand that requests for new supported services usually belong in the upstream NewPipe Extractor project."
+        - label: "I understand that requests for new supported services usually belong in the [WizeStreamExtractor](https://github.com/wizdom13/WizeStreamExtractor/issues) repository."
           required: true
 
   - type: textarea
