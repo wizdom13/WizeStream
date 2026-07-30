@@ -17,6 +17,7 @@ class DeviceSyncManager private constructor(context: Context) {
     )
     private val stateRepository = AndroidSyncStateRepository(applicationContext)
     private val syncLogRepository = DeviceSyncLogRepository(applicationContext)
+    private val peerDiscovery = AndroidPeerDiscovery(applicationContext)
     private val subscriptionSyncEngine = SubscriptionSyncEngine(
         RoomSubscriptionSyncStore.get(applicationContext)
     )
@@ -49,9 +50,15 @@ class DeviceSyncManager private constructor(context: Context) {
             advertisedAddressProvider = { host ->
                 AndroidNetworkAddressProvider.addresses(applicationContext, host)
             },
+            peerAddressResolver = { peer ->
+                peerDiscovery.addressesFor(peer.peerId)
+            },
             subscriptionSyncEngine = subscriptionSyncEngine,
             listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",
-            onListenPortSelected = stateRepository::saveListenPort,
+            onListenPortSelected = { port ->
+                stateRepository.saveListenPort(port)
+                peerDiscovery.start(peerId, port)
+            },
             playlistSyncEngine = playlistSyncEngine,
             historySyncEngine = historySyncEngine,
             structuredPreferenceSyncEngine = structuredPreferenceSyncEngine,
@@ -87,28 +94,43 @@ class DeviceSyncManager private constructor(context: Context) {
 
     @Synchronized
     fun startListening() {
-        node.start()
+        node.start(allowEphemeralFallback = true)
     }
 
     @Synchronized
     fun syncSubscriptions(): DeviceSyncSummary {
-        node.start()
+        node.start(allowEphemeralFallback = true)
         val peers = trustedPeers
         if (peers.isEmpty()) {
             throw SubscriptionSyncException("Pair a trusted device before synchronizing")
         }
         val attempts = peers.map { peer ->
-            try {
-                DeviceSyncAttempt(
-                    peer = peer,
-                    result = node.syncSubscriptions(peer)
-                )
-            } catch (error: Exception) {
-                DeviceSyncAttempt(
-                    peer = peer,
-                    error = error.message ?: "Subscription synchronization failed"
-                )
+            var activePeer = peer
+            var result = runCatching {
+                node.syncSubscriptions(peer)
             }
+            if (result.exceptionOrNull().isReachabilityFailure()) {
+                node.refreshPeerAddresses(peer)?.let { refreshedPeer ->
+                    activePeer = refreshedPeer
+                    result = runCatching {
+                        node.syncSubscriptions(refreshedPeer)
+                    }
+                }
+            }
+            result.fold(
+                onSuccess = {
+                    DeviceSyncAttempt(
+                        peer = activePeer,
+                        result = it
+                    )
+                },
+                onFailure = { error ->
+                    DeviceSyncAttempt(
+                        peer = activePeer,
+                        error = error.message ?: "Subscription synchronization failed"
+                    )
+                }
+            )
         }
         return DeviceSyncSummary(attempts)
     }
@@ -140,19 +162,29 @@ class DeviceSyncManager private constructor(context: Context) {
     }
 
     private fun syncInternal(background: Boolean): DeviceSyncSummary {
-        node.start()
+        node.start(allowEphemeralFallback = true)
         val peers = trustedPeers
         if (peers.isEmpty()) {
             throw SubscriptionSyncException("Pair a trusted device before synchronizing")
         }
         val attempts = peers.map { peer ->
-            val subscription = runCatching {
+            var activePeer = peer
+            var subscription = runCatching {
                 node.syncSubscriptions(peer, recordStatus = !background)
             }
-            val canContinue = !background || subscription.isSuccess
+            if (subscription.exceptionOrNull().isReachabilityFailure()) {
+                node.refreshPeerAddresses(peer)?.let { refreshedPeer ->
+                    activePeer = refreshedPeer
+                    subscription = runCatching {
+                        node.syncSubscriptions(refreshedPeer, recordStatus = !background)
+                    }
+                }
+            }
+            val canContinue = subscription.isSuccess ||
+                (!background && !subscription.exceptionOrNull().isReachabilityFailure())
             val playlist = if (canContinue) {
                 runCatching {
-                    node.syncPlaylists(peer, recordStatus = !background)
+                    node.syncPlaylists(activePeer, recordStatus = !background)
                 }
             } else {
                 null
@@ -163,7 +195,7 @@ class DeviceSyncManager private constructor(context: Context) {
             val watchHistory = if (canContinue && watchHistoryEnabled) {
                 runCatching {
                     node.syncHistory(
-                        peer,
+                        activePeer,
                         HistorySyncCategory.WATCH,
                         recordStatus = !background
                     )
@@ -177,7 +209,7 @@ class DeviceSyncManager private constructor(context: Context) {
             val searchHistory = if (canContinue && searchHistoryEnabled) {
                 runCatching {
                     node.syncHistory(
-                        peer,
+                        activePeer,
                         HistorySyncCategory.SEARCH,
                         recordStatus = !background
                     )
@@ -189,7 +221,7 @@ class DeviceSyncManager private constructor(context: Context) {
                 StructuredPreferenceCategory.entries.associateWith { category ->
                     runCatching {
                         node.syncStructuredPreferences(
-                            peer,
+                            activePeer,
                             category,
                             recordStatus = !background
                         )
@@ -208,13 +240,13 @@ class DeviceSyncManager private constructor(context: Context) {
             }
             if (!background || errors.isEmpty()) {
                 stateRepository.updateTrustedPeerSyncStatus(
-                    peer.peerId,
+                    activePeer.peerId,
                     if (errors.isEmpty()) System.currentTimeMillis() else null,
                     errors.takeIf { it.isNotEmpty() }?.joinToString("; ")
                 )
             }
             DeviceSyncAttempt(
-                peer = peer,
+                peer = activePeer,
                 result = subscription.getOrNull(),
                 error = subscription.exceptionOrNull().diagnosticMessage(),
                 playlistResult = playlist?.getOrNull(),
@@ -247,6 +279,13 @@ class DeviceSyncManager private constructor(context: Context) {
                 cause.message?.takeIf(String::isNotBlank)?.let { "$name: $it" } ?: name
             }
             .take(MAX_LOG_ERROR_LENGTH)
+    }
+
+    private fun Throwable?.isReachabilityFailure(): Boolean {
+        return this != null && generateSequence(this) { it.cause }
+            .take(MAX_LOG_CAUSE_DEPTH)
+            .mapNotNull(Throwable::message)
+            .any { it.startsWith(REACHABILITY_ERROR_PREFIX) }
     }
 
     @Synchronized
@@ -287,6 +326,7 @@ class DeviceSyncManager private constructor(context: Context) {
         private const val MAX_LOG_CAUSE_DEPTH = 4
         private const val MAX_LOG_ERROR_LENGTH = 2_048
         private const val LOG_CAUSE_SEPARATOR = " → "
+        private const val REACHABILITY_ERROR_PREFIX = "Could not reach "
 
         @Volatile
         private var instance: DeviceSyncManager? = null

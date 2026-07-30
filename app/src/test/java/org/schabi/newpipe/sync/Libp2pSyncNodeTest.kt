@@ -76,6 +76,29 @@ class Libp2pSyncNodeTest {
     }
 
     @Test
+    fun `discovered trusted peer addresses are preferred and validated`() {
+        val identity = DeviceIdentity(generateKeyPair(KeyType.ED25519).first)
+        val peerId = identity.peerId.toBase58()
+        val stored = "/ip4/192.168.1.10/tcp/48243/p2p/$peerId"
+        val discovered = "/ip4/192.168.1.20/tcp/48243/p2p/$peerId"
+        val attackerPeerId = DeviceIdentity(generateKeyPair(KeyType.ED25519).first)
+            .peerId
+            .toBase58()
+
+        val addresses = mergeTrustedPeerAddresses(
+            peerId,
+            listOf(
+                discovered,
+                "/ip4/192.168.1.99/tcp/48243/p2p/$attackerPeerId",
+                "not-a-multiaddress"
+            ),
+            listOf(stored)
+        )
+
+        assertEquals(listOf(discovered, stored), addresses)
+    }
+
+    @Test
     fun `two nodes pair over a Noise authenticated stream`() {
         val tabletState = InMemorySyncStateRepository()
         val phoneState = InMemorySyncStateRepository()

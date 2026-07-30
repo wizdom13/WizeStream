@@ -28,7 +28,8 @@ class Libp2pSyncNode(
     private val onListenPortSelected: (Int) -> Unit = {},
     private val historySyncEngine: HistorySyncEngine? = null,
     private val structuredPreferenceSyncEngine: StructuredPreferenceSyncEngine? = null,
-    private val onTrustedPeerSaved: () -> Unit = {}
+    private val onTrustedPeerSaved: () -> Unit = {},
+    private val peerAddressResolver: (TrustedPeer) -> List<String> = { emptyList() }
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
@@ -135,6 +136,22 @@ class Libp2pSyncNode(
 
     fun advertisedAddresses(): List<String> {
         return advertisedAddressProvider(requireStartedHost())
+    }
+
+    fun refreshPeerAddresses(peer: TrustedPeer): TrustedPeer? {
+        ensureTrusted(peer.peerId)
+        val discoveredAddresses = runCatching {
+            peerAddressResolver(peer)
+        }.getOrDefault(emptyList())
+        if (discoveredAddresses.isEmpty()) {
+            return null
+        }
+        val addresses = mergeTrustedPeerAddresses(
+            peer.peerId,
+            discoveredAddresses,
+            peer.addresses
+        )
+        return peer.copy(addresses = addresses)
     }
 
     fun createPairingCode(): String {
@@ -272,6 +289,7 @@ class Libp2pSyncNode(
                 System.currentTimeMillis(),
                 null
             )
+            rememberPeerAddresses(peer)
             return SubscriptionSyncResult(
                 peer = peer,
                 sentChanges = sentChanges,
@@ -374,6 +392,7 @@ class Libp2pSyncNode(
                 System.currentTimeMillis(),
                 null
             )
+            rememberPeerAddresses(peer)
             return PlaylistSyncResult(
                 peer = peer,
                 sentChanges = sentChanges,
@@ -480,6 +499,7 @@ class Libp2pSyncNode(
                 System.currentTimeMillis(),
                 null
             )
+            rememberPeerAddresses(peer)
             return HistorySyncResult(
                 peer = peer,
                 category = category,
@@ -591,6 +611,7 @@ class Libp2pSyncNode(
                 System.currentTimeMillis(),
                 null
             )
+            rememberPeerAddresses(peer)
             return StructuredPreferenceSyncResult(
                 peer = peer,
                 category = category,
@@ -635,6 +656,10 @@ class Libp2pSyncNode(
                 error
             )
         }
+    }
+
+    private fun rememberPeerAddresses(peer: TrustedPeer) {
+        stateRepository.saveTrustedPeer(peer)
     }
 
     private fun handlePairingRequest(
@@ -871,4 +896,22 @@ class Libp2pSyncNode(
         private const val MAX_LISTEN_PORT = 65_535
         private val TCP_PORT_VALUE = Regex("(?<=/tcp/)\\d+")
     }
+}
+
+internal fun mergeTrustedPeerAddresses(
+    peerIdValue: String,
+    discoveredAddresses: List<String>,
+    storedAddresses: List<String>
+): List<String> {
+    val peerId = runCatching { PeerId.fromBase58(peerIdValue) }.getOrNull()
+        ?: return storedAddresses
+    return (discoveredAddresses + storedAddresses)
+        .asSequence()
+        .filter { it.length <= MAX_MULTIADDRESS_LENGTH }
+        .filter { value ->
+            runCatching { Multiaddr(value).getPeerId() == peerId }.getOrDefault(false)
+        }
+        .distinct()
+        .take(MAX_PAIRING_ADDRESSES)
+        .toList()
 }
