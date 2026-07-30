@@ -17,6 +17,13 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <Preference
+        android:key="@string/device_sync_log_key"
+        android:summary="@string/device_sync_log_empty"
+        android:title="@string/device_sync_log_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="@string/device_sync_background_key"
@@ -55,21 +62,14 @@
         app:singleLineTitle="false" />
 
     <PreferenceCategory
+        android:key="@string/device_sync_trusted_devices_category_key"
         android:layout="@layout/settings_category_header_layout"
-        android:title="@string/device_sync_trusted_devices_title">
+        android:title="@string/device_sync_trusted_devices_title" />
 
-        <Preference
-            android:key="@string/device_sync_trusted_devices_key"
-            android:selectable="false"
-            android:title="@string/device_sync_trusted_devices_title"
-            app:iconSpaceReserved="false"
-            app:singleLineTitle="false" />
-
-        <Preference
-            android:key="@string/device_sync_clear_devices_key"
-            android:summary="@string/device_sync_clear_devices_summary"
-            android:title="@string/device_sync_clear_devices_title"
-            app:iconSpaceReserved="false"
-            app:singleLineTitle="false" />
-    </PreferenceCategory>
+    <Preference
+        android:key="@string/device_sync_clear_devices_key"
+        android:summary="@string/device_sync_clear_devices_summary"
+        android:title="@string/device_sync_clear_devices_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
 </PreferenceScreen>

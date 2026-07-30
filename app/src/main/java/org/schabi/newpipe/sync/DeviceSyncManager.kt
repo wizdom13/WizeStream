@@ -16,6 +16,7 @@ class DeviceSyncManager private constructor(context: Context) {
         applicationContext
     )
     private val stateRepository = AndroidSyncStateRepository(applicationContext)
+    private val syncLogRepository = DeviceSyncLogRepository(applicationContext)
     private val subscriptionSyncEngine = SubscriptionSyncEngine(
         RoomSubscriptionSyncStore.get(applicationContext)
     )
@@ -69,6 +70,9 @@ class DeviceSyncManager private constructor(context: Context) {
     val trustedPeers: List<TrustedPeer>
         get() = stateRepository.getTrustedPeers()
 
+    val syncLogEntries: List<DeviceSyncLogEntry>
+        get() = syncLogRepository.entries()
+
     @Synchronized
     fun createPairingCode(): String {
         node.start(allowEphemeralFallback = true)
@@ -111,12 +115,28 @@ class DeviceSyncManager private constructor(context: Context) {
 
     @Synchronized
     fun sync(): DeviceSyncSummary {
-        return syncInternal(background = false)
+        return syncAndRecord(background = false)
     }
 
     @Synchronized
     fun syncInBackground(): DeviceSyncSummary {
-        return syncInternal(background = true)
+        return syncAndRecord(background = true)
+    }
+
+    private fun syncAndRecord(background: Boolean): DeviceSyncSummary {
+        return try {
+            syncInternal(background).also { summary ->
+                syncLogRepository.record(
+                    summary = summary,
+                    background = background,
+                    localAddresses = runCatching(node::advertisedAddresses)
+                        .getOrDefault(emptyList())
+                )
+            }
+        } catch (error: Exception) {
+            syncLogRepository.recordFailure(background, error)
+            throw error
+        }
     }
 
     private fun syncInternal(background: Boolean): DeviceSyncSummary {
@@ -196,29 +216,37 @@ class DeviceSyncManager private constructor(context: Context) {
             DeviceSyncAttempt(
                 peer = peer,
                 result = subscription.getOrNull(),
-                error = subscription.exceptionOrNull()?.message
-                    ?: subscription.exceptionOrNull()?.javaClass?.simpleName,
+                error = subscription.exceptionOrNull().diagnosticMessage(),
                 playlistResult = playlist?.getOrNull(),
-                playlistError = playlist?.exceptionOrNull()?.message
-                    ?: playlist?.exceptionOrNull()?.javaClass?.simpleName,
+                playlistError = playlist?.exceptionOrNull().diagnosticMessage(),
                 watchHistoryResult = watchHistory?.getOrNull(),
-                watchHistoryError = watchHistory?.exceptionOrNull()?.message
-                    ?: watchHistory?.exceptionOrNull()?.javaClass?.simpleName,
+                watchHistoryError = watchHistory?.exceptionOrNull().diagnosticMessage(),
                 watchHistorySkipped = !watchHistoryEnabled,
                 searchHistoryResult = searchHistory?.getOrNull(),
-                searchHistoryError = searchHistory?.exceptionOrNull()?.message
-                    ?: searchHistory?.exceptionOrNull()?.javaClass?.simpleName,
+                searchHistoryError = searchHistory?.exceptionOrNull().diagnosticMessage(),
                 searchHistorySkipped = !searchHistoryEnabled,
                 structuredPreferenceResults = structuredPreferences.mapValues {
                     it.value.getOrNull()
                 },
                 structuredPreferenceErrors = structuredPreferences.mapValues {
-                    it.value.exceptionOrNull()?.message
-                        ?: it.value.exceptionOrNull()?.javaClass?.simpleName
+                    it.value.exceptionOrNull().diagnosticMessage()
                 }.filterValues { it != null }
             )
         }
         return DeviceSyncSummary(attempts)
+    }
+
+    private fun Throwable?.diagnosticMessage(): String? {
+        if (this == null) {
+            return null
+        }
+        return generateSequence(this) { it.cause }
+            .take(MAX_LOG_CAUSE_DEPTH)
+            .joinToString(LOG_CAUSE_SEPARATOR) { cause ->
+                val name = cause.javaClass.simpleName
+                cause.message?.takeIf(String::isNotBlank)?.let { "$name: $it" } ?: name
+            }
+            .take(MAX_LOG_ERROR_LENGTH)
     }
 
     @Synchronized
@@ -229,6 +257,11 @@ class DeviceSyncManager private constructor(context: Context) {
         historySyncEngine.clearPeerKnowledge()
         structuredPreferenceSyncEngine.clearPeerKnowledge()
         DeviceSyncBackgroundScheduler.cancel(applicationContext)
+    }
+
+    @Synchronized
+    fun clearSyncLog() {
+        syncLogRepository.clear()
     }
 
     private fun isHistoryCategoryEnabled(category: HistorySyncCategory): Boolean {
@@ -251,6 +284,9 @@ class DeviceSyncManager private constructor(context: Context) {
     companion object {
         private const val DYNAMIC_LISTEN_PORT = 0
         private const val LEGACY_LISTEN_PORT = 48_243
+        private const val MAX_LOG_CAUSE_DEPTH = 4
+        private const val MAX_LOG_ERROR_LENGTH = 2_048
+        private const val LOG_CAUSE_SEPARATOR = " → "
 
         @Volatile
         private var instance: DeviceSyncManager? = null

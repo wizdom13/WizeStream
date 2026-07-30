@@ -5,18 +5,30 @@
 
 package org.schabi.newpipe.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.format.DateUtils
+import android.text.style.StyleSpan
+import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.getSystemService
+import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import java.text.DateFormat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,6 +36,11 @@ import kotlinx.coroutines.withContext
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
+import org.schabi.newpipe.sync.DeviceSyncAttempt
+import org.schabi.newpipe.sync.DeviceSyncLogCategory
+import org.schabi.newpipe.sync.DeviceSyncLogCategoryResult
+import org.schabi.newpipe.sync.DeviceSyncLogEntry
+import org.schabi.newpipe.sync.DeviceSyncLogStatus
 import org.schabi.newpipe.sync.DeviceSyncManager
 import org.schabi.newpipe.sync.DeviceSyncSummary
 import org.schabi.newpipe.sync.StructuredPreferenceCategory
@@ -40,10 +57,12 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     private lateinit var identityPreference: Preference
     private lateinit var statusPreference: Preference
     private lateinit var syncNowPreference: Preference
+    private lateinit var syncLogPreference: Preference
     private lateinit var backgroundSyncPreference: SwitchPreferenceCompat
-    private lateinit var trustedDevicesPreference: Preference
+    private lateinit var trustedDevicesCategory: PreferenceCategory
     private lateinit var showPairingCodePreference: Preference
     private lateinit var scanPairingCodePreference: Preference
+    private val trustedDevicePreferences = mutableListOf<Preference>()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResourceRegistry()
@@ -51,13 +70,19 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         identityPreference = requirePreference(R.string.device_sync_identity_key)
         statusPreference = requirePreference(R.string.device_sync_status_key)
         syncNowPreference = requirePreference(R.string.device_sync_sync_now_key)
+        syncLogPreference = requirePreference(R.string.device_sync_log_key)
         backgroundSyncPreference = requirePreference(R.string.device_sync_background_key)
-        trustedDevicesPreference = requirePreference(R.string.device_sync_trusted_devices_key)
+        trustedDevicesCategory =
+            requirePreference(R.string.device_sync_trusted_devices_category_key)
         showPairingCodePreference = requirePreference(R.string.device_sync_show_code_key)
         scanPairingCodePreference = requirePreference(R.string.device_sync_scan_code_key)
 
         syncNowPreference.setOnPreferenceClickListener {
             syncData()
+            true
+        }
+        syncLogPreference.setOnPreferenceClickListener {
+            showSyncLog()
             true
         }
         backgroundSyncPreference.setOnPreferenceChangeListener { _, newValue ->
@@ -94,10 +119,46 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         val peers = syncManager.trustedPeers
         syncNowPreference.isEnabled = peers.isNotEmpty()
         statusPreference.summary = statusSummary(peers)
-        trustedDevicesPreference.summary = if (peers.isEmpty()) {
-            getString(R.string.device_sync_no_trusted_devices)
+        val logEntries = syncManager.syncLogEntries
+        syncLogPreference.summary = if (logEntries.isEmpty()) {
+            getString(R.string.device_sync_log_empty)
         } else {
-            peers.joinToString(separator = "\n\n", transform = ::trustedPeerSummary)
+            getString(
+                R.string.device_sync_log_summary,
+                logEntries.size,
+                relativeTime(logEntries.first().timestampEpochMillis)
+            )
+        }
+        updateTrustedDevices(peers)
+    }
+
+    private fun updateTrustedDevices(peers: List<TrustedPeer>) {
+        trustedDevicePreferences.forEach(trustedDevicesCategory::removePreference)
+        trustedDevicePreferences.clear()
+        val displayedPeers = if (peers.isEmpty()) {
+            listOf(
+                Preference(requireContext()).apply {
+                    title = getString(R.string.device_sync_no_trusted_devices)
+                    order = 0
+                    isSelectable = false
+                    isIconSpaceReserved = false
+                }
+            )
+        } else {
+            peers.mapIndexed { index, peer ->
+                Preference(requireContext()).apply {
+                    title = peer.deviceName
+                    summary = abbreviatePeerId(peer.peerId)
+                    order = index
+                    isSelectable = false
+                    isIconSpaceReserved = false
+                    isSingleLineTitle = false
+                }
+            }
+        }
+        displayedPeers.forEach { preference ->
+            trustedDevicesCategory.addPreference(preference)
+            trustedDevicePreferences.add(preference)
         }
     }
 
@@ -252,87 +313,335 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     }
 
     private fun showSyncSummary(summary: DeviceSyncSummary) {
-        val details = summary.attempts.joinToString(separator = "\n") { attempt ->
-            val subscriptionDetails = categorySyncSummary(
-                getString(R.string.device_sync_category_subscriptions),
-                attempt.result?.sentChanges,
-                attempt.result?.receivedChanges,
-                attempt.error
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.device_sync_sync_complete_title)
+            .setView(scrollableTextView(buildSyncReport(summary)))
+            .setPositiveButton(R.string.ok, null)
+            .show()
+    }
+
+    private fun buildSyncReport(summary: DeviceSyncSummary): CharSequence {
+        return SpannableStringBuilder().apply {
+            appendBold(getString(R.string.device_sync_report_overview))
+            append("\n")
+            append(
+                getString(
+                    R.string.device_sync_report_devices,
+                    summary.succeeded,
+                    summary.failed
+                )
             )
-            val playlistDetails = categorySyncSummary(
-                getString(R.string.device_sync_category_playlists),
-                attempt.playlistResult?.sentChanges,
-                attempt.playlistResult?.receivedChanges,
-                attempt.playlistError
+            append("\n")
+            append(
+                getString(
+                    R.string.device_sync_report_changes,
+                    summary.sentChanges,
+                    summary.receivedChanges
+                )
             )
-            val watchHistoryDetails = categorySyncSummary(
-                getString(R.string.device_sync_category_watch_history),
-                attempt.watchHistoryResult?.sentChanges,
-                attempt.watchHistoryResult?.receivedChanges,
-                attempt.watchHistoryError,
-                attempt.watchHistorySkipped
+            summary.attempts.forEach { attempt ->
+                append("\n\n")
+                appendBold(attempt.peer.deviceName)
+                syncCategories(attempt).forEach { category ->
+                    append("\n")
+                    append(category.status.symbol)
+                    append(" ")
+                    appendBold(category.title)
+                    append("\n   ")
+                    append(category.detail)
+                }
+            }
+        }
+    }
+
+    private fun syncCategories(attempt: DeviceSyncAttempt): List<SyncCategoryDisplay> {
+        return buildList {
+            add(
+                syncCategory(
+                    getString(R.string.device_sync_category_subscriptions),
+                    attempt.result?.sentChanges,
+                    attempt.result?.receivedChanges,
+                    attempt.error
+                )
             )
-            val searchHistoryDetails = categorySyncSummary(
-                getString(R.string.device_sync_category_search_history),
-                attempt.searchHistoryResult?.sentChanges,
-                attempt.searchHistoryResult?.receivedChanges,
-                attempt.searchHistoryError,
-                attempt.searchHistorySkipped
+            add(
+                syncCategory(
+                    getString(R.string.device_sync_category_playlists),
+                    attempt.playlistResult?.sentChanges,
+                    attempt.playlistResult?.receivedChanges,
+                    attempt.playlistError
+                )
             )
-            val structuredPreferenceDetails =
-                StructuredPreferenceCategory.entries.joinToString("\n") { category ->
-                    val result = attempt.structuredPreferenceResults[category]
-                    categorySyncSummary(
+            add(
+                syncCategory(
+                    getString(R.string.device_sync_category_watch_history),
+                    attempt.watchHistoryResult?.sentChanges,
+                    attempt.watchHistoryResult?.receivedChanges,
+                    attempt.watchHistoryError,
+                    attempt.watchHistorySkipped
+                )
+            )
+            add(
+                syncCategory(
+                    getString(R.string.device_sync_category_search_history),
+                    attempt.searchHistoryResult?.sentChanges,
+                    attempt.searchHistoryResult?.receivedChanges,
+                    attempt.searchHistoryError,
+                    attempt.searchHistorySkipped
+                )
+            )
+            StructuredPreferenceCategory.entries.forEach { category ->
+                val result = attempt.structuredPreferenceResults[category]
+                add(
+                    syncCategory(
                         structuredPreferenceCategoryName(category),
                         result?.sentChanges,
                         result?.receivedChanges,
                         attempt.structuredPreferenceErrors[category]
                     )
-                }
-            "${attempt.peer.deviceName}\n$subscriptionDetails\n$playlistDetails" +
-                "\n$watchHistoryDetails\n$searchHistoryDetails" +
-                "\n$structuredPreferenceDetails"
+                )
+            }
         }
-        val summaryText = getString(
-            R.string.device_sync_sync_complete_summary,
-            summary.succeeded,
-            summary.failed,
-            summary.sentChanges,
-            summary.receivedChanges
-        )
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.device_sync_sync_complete_title)
-            .setMessage("$summaryText\n\n$details")
-            .setPositiveButton(R.string.ok, null)
-            .show()
     }
 
-    private fun categorySyncSummary(
+    private fun syncCategory(
         category: String,
         sentChanges: Int?,
         receivedChanges: Int?,
         error: String?,
         disabled: Boolean = false
-    ): String {
-        return if (disabled) {
-            getString(
-                R.string.device_sync_sync_category_disabled,
-                category
-            )
-        } else if (sentChanges != null && receivedChanges != null) {
-            getString(
-                R.string.device_sync_sync_category_succeeded,
+    ): SyncCategoryDisplay {
+        return when {
+            disabled -> SyncCategoryDisplay(
                 category,
-                sentChanges,
-                receivedChanges
+                SyncDisplayStatus.DISABLED,
+                getString(R.string.device_sync_report_disabled)
             )
-        } else {
-            getString(
-                R.string.device_sync_sync_category_failed,
+
+            sentChanges != null && receivedChanges != null -> SyncCategoryDisplay(
                 category,
-                error ?: getString(R.string.general_error)
+                SyncDisplayStatus.SUCCEEDED,
+                getString(
+                    R.string.device_sync_report_sent_received,
+                    sentChanges,
+                    receivedChanges
+                )
+            )
+
+            else -> SyncCategoryDisplay(
+                category,
+                SyncDisplayStatus.FAILED,
+                getString(
+                    R.string.device_sync_report_failed,
+                    error ?: getString(R.string.general_error)
+                )
             )
         }
+    }
+
+    private fun showSyncLog() {
+        val entries = syncManager.syncLogEntries
+        if (entries.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.device_sync_log_empty, Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
+        val logText = buildSyncLog(entries)
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.device_sync_log_title)
+            .setView(scrollableTextView(logText))
+            .setNegativeButton(R.string.device_sync_log_copy) { _, _ ->
+                requireContext().getSystemService<ClipboardManager>()?.setPrimaryClip(
+                    ClipData.newPlainText(
+                        getString(R.string.device_sync_log_title),
+                        logText.toString()
+                    )
+                )
+                Toast.makeText(
+                    requireContext(),
+                    R.string.device_sync_log_copied,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNeutralButton(R.string.device_sync_log_clear) { _, _ ->
+                syncManager.clearSyncLog()
+                updateState()
+            }
+            .setPositiveButton(R.string.close, null)
+            .show()
+    }
+
+    private fun buildSyncLog(entries: List<DeviceSyncLogEntry>): CharSequence {
+        val dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
+        return SpannableStringBuilder().apply {
+            entries.forEachIndexed { index, entry ->
+                if (index > 0) {
+                    append("\n\n")
+                }
+                appendBold(dateFormat.format(entry.timestampEpochMillis))
+                append(" · ")
+                append(
+                    getString(
+                        if (entry.background) {
+                            R.string.device_sync_log_background
+                        } else {
+                            R.string.device_sync_log_manual
+                        }
+                    )
+                )
+                append("\n")
+                append(
+                    getString(
+                        R.string.device_sync_report_devices,
+                        entry.succeededDevices,
+                        entry.failedDevices
+                    )
+                )
+                append("\n")
+                append(
+                    getString(
+                        R.string.device_sync_report_changes,
+                        entry.sentChanges,
+                        entry.receivedChanges
+                    )
+                )
+                append("\n")
+                append(
+                    if (entry.localAddresses.isEmpty()) {
+                        getString(R.string.device_sync_log_no_local_addresses)
+                    } else {
+                        getString(
+                            R.string.device_sync_log_local_addresses,
+                            entry.localAddresses.joinToString()
+                        )
+                    }
+                )
+                entry.fatalError?.let { error ->
+                    append("\n")
+                    append(getString(R.string.device_sync_log_fatal_error, error))
+                }
+                entry.attempts.forEach { attempt ->
+                    append("\n\n")
+                    appendBold(attempt.deviceName)
+                    append(" — ")
+                    append(abbreviatePeerId(attempt.peerId))
+                    append("\n")
+                    append(
+                        if (attempt.addresses.isEmpty()) {
+                            getString(R.string.device_sync_log_no_addresses)
+                        } else {
+                            getString(
+                                R.string.device_sync_log_addresses,
+                                attempt.addresses.joinToString()
+                            )
+                        }
+                    )
+                    attempt.categories.forEach { category ->
+                        append("\n")
+                        val display = category.toDisplay()
+                        append(display.status.symbol)
+                        append(" ")
+                        append(display.title)
+                        append(" — ")
+                        append(display.detail)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun DeviceSyncLogCategoryResult.toDisplay(): SyncCategoryDisplay {
+        val title = deviceSyncLogCategoryName(category)
+        return when (status) {
+            DeviceSyncLogStatus.SUCCEEDED -> SyncCategoryDisplay(
+                title,
+                SyncDisplayStatus.SUCCEEDED,
+                getString(
+                    R.string.device_sync_report_sent_received,
+                    sentChanges,
+                    receivedChanges
+                )
+            )
+
+            DeviceSyncLogStatus.FAILED -> SyncCategoryDisplay(
+                title,
+                SyncDisplayStatus.FAILED,
+                getString(
+                    R.string.device_sync_report_failed,
+                    error ?: getString(R.string.general_error)
+                )
+            )
+
+            DeviceSyncLogStatus.DISABLED -> SyncCategoryDisplay(
+                title,
+                SyncDisplayStatus.DISABLED,
+                getString(R.string.device_sync_report_disabled)
+            )
+        }
+    }
+
+    private fun deviceSyncLogCategoryName(category: DeviceSyncLogCategory): String {
+        return getString(
+            when (category) {
+                DeviceSyncLogCategory.SUBSCRIPTIONS ->
+                    R.string.device_sync_category_subscriptions
+
+                DeviceSyncLogCategory.PLAYLISTS -> R.string.device_sync_category_playlists
+                DeviceSyncLogCategory.WATCH_HISTORY ->
+                    R.string.device_sync_category_watch_history
+
+                DeviceSyncLogCategory.SEARCH_HISTORY ->
+                    R.string.device_sync_category_search_history
+
+                DeviceSyncLogCategory.FEED_GROUPS -> R.string.device_sync_category_feed_groups
+                DeviceSyncLogCategory.HOME_TABS -> R.string.device_sync_category_home_tabs
+                DeviceSyncLogCategory.CHANNEL_PROFILES ->
+                    R.string.device_sync_category_channel_profiles
+
+                DeviceSyncLogCategory.FILTERS -> R.string.device_sync_category_filters
+                DeviceSyncLogCategory.SETTINGS -> R.string.device_sync_category_settings
+                DeviceSyncLogCategory.COMPLETED_DOWNLOADS ->
+                    R.string.device_sync_category_completed_downloads
+            }
+        )
+    }
+
+    private fun scrollableTextView(text: CharSequence): NestedScrollView {
+        val textView = TextView(requireContext()).apply {
+            this.text = text
+            setTextIsSelectable(true)
+            setTextAppearance(
+                com.google.android.material.R.style.TextAppearance_Material3_BodyMedium
+            )
+            setLineSpacing(0f, REPORT_LINE_SPACING)
+        }
+        return NestedScrollView(requireContext()).apply {
+            isFillViewport = true
+            clipToPadding = false
+            setPadding(
+                REPORT_HORIZONTAL_PADDING_DP.dp,
+                0,
+                REPORT_HORIZONTAL_PADDING_DP.dp,
+                REPORT_BOTTOM_PADDING_DP.dp
+            )
+            addView(
+                textView,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (resources.displayMetrics.heightPixels * REPORT_MAX_HEIGHT_RATIO).toInt()
+            )
+        }
+    }
+
+    private fun SpannableStringBuilder.appendBold(value: CharSequence) {
+        val start = length
+        append(value)
+        setSpan(StyleSpan(Typeface.BOLD), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
 
     private fun structuredPreferenceCategoryName(
@@ -380,32 +689,6 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         }
     }
 
-    private fun trustedPeerSummary(peer: TrustedPeer): String {
-        val identity = getString(
-            R.string.device_sync_trusted_device_summary,
-            peer.deviceName,
-            abbreviatePeerId(peer.peerId)
-        )
-        return when {
-            peer.lastSyncError != null -> getString(
-                R.string.device_sync_trusted_device_error,
-                identity,
-                peer.lastSyncError
-            )
-
-            peer.lastSyncAtEpochMillis != null -> getString(
-                R.string.device_sync_trusted_device_last_sync,
-                identity,
-                relativeTime(peer.lastSyncAtEpochMillis)
-            )
-
-            else -> getString(
-                R.string.device_sync_trusted_device_never_synced,
-                identity
-            )
-        }
-    }
-
     private fun relativeTime(epochMillis: Long): CharSequence {
         return DateUtils.getRelativeTimeSpanString(
             epochMillis,
@@ -440,5 +723,24 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         private const val PAIRING_DIALOG_HORIZONTAL_MARGIN_DP = 64
         private const val PEER_ID_EDGE_LENGTH = 8
         private const val ABBREVIATED_PEER_ID_LENGTH = PEER_ID_EDGE_LENGTH * 2
+        private const val REPORT_HORIZONTAL_PADDING_DP = 24
+        private const val REPORT_BOTTOM_PADDING_DP = 16
+        private const val REPORT_MAX_HEIGHT_RATIO = 0.58f
+        private const val REPORT_LINE_SPACING = 1.08f
+    }
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).toInt()
+
+    private data class SyncCategoryDisplay(
+        val title: String,
+        val status: SyncDisplayStatus,
+        val detail: String
+    )
+
+    private enum class SyncDisplayStatus(val symbol: String) {
+        SUCCEEDED("✓"),
+        FAILED("✕"),
+        DISABLED("–")
     }
 }
