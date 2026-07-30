@@ -51,7 +51,7 @@ class DeviceSyncManager private constructor(context: Context) {
                 AndroidNetworkAddressProvider.addresses(applicationContext, host)
             },
             peerAddressResolver = { peer ->
-                peerDiscovery.addressesFor(peer.peerId)
+                peerDiscovery.addressesFor(peer)
             },
             subscriptionSyncEngine = subscriptionSyncEngine,
             listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",

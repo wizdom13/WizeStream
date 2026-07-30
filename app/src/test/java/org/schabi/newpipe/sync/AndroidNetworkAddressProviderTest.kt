@@ -5,8 +5,11 @@
 
 package org.schabi.newpipe.sync
 
+import java.net.Inet4Address
 import java.net.InetAddress
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidNetworkAddressProviderTest {
@@ -43,6 +46,41 @@ class AndroidNetworkAddressProviderTest {
         )
     }
 
+    @Test
+    fun `subnet scan candidates stay inside the active private subnet`() {
+        val addresses = subnetHostAddresses(
+            ipv4("10.54.175.20"),
+            24
+        ).map(InetAddress::getHostAddress)
+
+        assertEquals(253, addresses.size)
+        assertEquals("10.54.175.1", addresses.first())
+        assertEquals("10.54.175.254", addresses.last())
+        assertFalse("10.54.175.20" in addresses)
+        assertTrue("10.54.175.38" in addresses)
+    }
+
+    @Test
+    fun `broad private networks are bounded to the local slash 24`() {
+        val addresses = subnetHostAddresses(
+            ipv4("10.54.175.20"),
+            16
+        ).map(InetAddress::getHostAddress)
+
+        assertEquals(253, addresses.size)
+        assertTrue(addresses.all { it.startsWith("10.54.175.") })
+    }
+
+    @Test
+    fun `public addresses are not scanned`() {
+        assertTrue(
+            subnetHostAddresses(
+                ipv4("8.8.8.8"),
+                24
+            ).isEmpty()
+        )
+    }
+
     private fun candidate(
         address: String,
         wifiOrEthernet: Boolean,
@@ -53,5 +91,9 @@ class AndroidNetworkAddressProviderTest {
             isWifiOrEthernet = wifiOrEthernet,
             isActiveNetwork = activeNetwork
         )
+    }
+
+    private fun ipv4(address: String): Inet4Address {
+        return InetAddress.getByName(address) as Inet4Address
     }
 }

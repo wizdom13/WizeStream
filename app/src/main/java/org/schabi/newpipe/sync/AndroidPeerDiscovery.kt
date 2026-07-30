@@ -6,11 +6,22 @@
 package org.schabi.newpipe.sync
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.LinkAddress
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkCapabilities.TRANSPORT_ETHERNET
+import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.util.Log
 import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.util.ArrayDeque
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Advertises and discovers running WizeStream synchronization listeners on the local network.
@@ -19,6 +30,8 @@ import java.util.ArrayDeque
  * trusted PeerID, which is authenticated by the libp2p Noise connection before it is saved.
  */
 internal class AndroidPeerDiscovery(context: Context) {
+    private val connectivityManager = context.applicationContext
+        .getSystemService(ConnectivityManager::class.java)
     private val nsdManager = context.applicationContext
         .getSystemService(NsdManager::class.java)
     private val lock = Object()
@@ -129,7 +142,16 @@ internal class AndroidPeerDiscovery(context: Context) {
         }
     }
 
-    fun addressesFor(peerId: String): List<String> {
+    fun addressesFor(peer: TrustedPeer): List<String> {
+        val peerId = peer.peerId
+        val discoveredAddresses = mdnsAddressesFor(peerId)
+        if (discoveredAddresses.isNotEmpty()) {
+            return discoveredAddresses
+        }
+        return subnetAddressesFor(peer)
+    }
+
+    private fun mdnsAddressesFor(peerId: String): List<String> {
         var requestResolution = false
         val now = System.currentTimeMillis()
         synchronized(lock) {
@@ -158,6 +180,94 @@ internal class AndroidPeerDiscovery(context: Context) {
             }
             return addressesByPeerId[peerId]?.toList().orEmpty()
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun subnetAddressesFor(peer: TrustedPeer): List<String> {
+        val ports = peer.addresses.asSequence()
+            .mapNotNull(::tcpPortFromMultiaddress)
+            .filter { it in MIN_PORT..MAX_PORT }
+            .distinct()
+            .take(MAX_SCAN_PORTS)
+            .toList()
+        if (ports.isEmpty()) {
+            return emptyList()
+        }
+
+        val targets = connectivityManager.allNetworks
+            .asSequence()
+            .filter(::isLocalNetwork)
+            .flatMap { network ->
+                connectivityManager.getLinkProperties(network)
+                    ?.linkAddresses
+                    .orEmpty()
+                    .asSequence()
+                    .filter { it.address is Inet4Address }
+                    .filter { it.address.isSiteLocalAddress }
+                    .map { SubnetScanTarget(network, it) }
+            }
+            .distinctBy { target ->
+                "${target.network}:${target.linkAddress.address.hostAddress}"
+            }
+            .toList()
+        if (targets.isEmpty()) {
+            return emptyList()
+        }
+
+        Log.i(TAG, "mDNS did not find the trusted peer; scanning its saved sync port")
+        val probes = targets.flatMap { target ->
+            subnetHostAddresses(target.linkAddress).flatMap { address ->
+                ports.map { port -> SubnetProbe(target.network, address, port) }
+            }
+        }.take(MAX_SUBNET_PROBES)
+        if (probes.isEmpty()) {
+            return emptyList()
+        }
+
+        val executor = Executors.newFixedThreadPool(
+            minOf(MAX_CONCURRENT_PROBES, probes.size)
+        )
+        return try {
+            executor.invokeAll(
+                probes.map { probe ->
+                    Callable {
+                        if (isTcpPortOpen(probe)) {
+                            "/ip4/${probe.address.hostAddress}/tcp/${probe.port}" +
+                                "/p2p/${peer.peerId}"
+                        } else {
+                            null
+                        }
+                    }
+                },
+                SUBNET_SCAN_TIMEOUT_MILLIS,
+                TimeUnit.MILLISECONDS
+            ).asSequence()
+                .filterNot { it.isCancelled }
+                .mapNotNull { future -> runCatching(future::get).getOrNull() }
+                .distinct()
+                .take(MAX_PAIRING_ADDRESSES)
+                .toList()
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    private fun isLocalNetwork(network: Network): Boolean {
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasTransport(TRANSPORT_WIFI) ||
+            capabilities.hasTransport(TRANSPORT_ETHERNET)
+    }
+
+    private fun isTcpPortOpen(probe: SubnetProbe): Boolean {
+        return runCatching {
+            probe.network.socketFactory.createSocket().use { socket ->
+                socket.connect(
+                    InetSocketAddress(probe.address, probe.port),
+                    TCP_PROBE_TIMEOUT_MILLIS
+                )
+            }
+            true
+        }.getOrDefault(false)
     }
 
     @Suppress("DEPRECATION")
@@ -232,7 +342,75 @@ internal class AndroidPeerDiscovery(context: Context) {
         private const val SERVICE_PEER_ID_SUFFIX_LENGTH = 16
         private const val DISCOVERY_WAIT_MILLIS = 4_000L
         private const val EMPTY_RESULT_COOLDOWN_MILLIS = 30_000L
+        private const val TCP_PROBE_TIMEOUT_MILLIS = 180
+        private const val SUBNET_SCAN_TIMEOUT_MILLIS = 3_000L
+        private const val MAX_CONCURRENT_PROBES = 32
+        private const val MAX_SUBNET_PROBES = 512
+        private const val MAX_SCAN_PORTS = 2
         private const val MIN_PORT = 1
         private const val MAX_PORT = 65_535
     }
 }
+
+private data class SubnetScanTarget(
+    val network: Network,
+    val linkAddress: LinkAddress
+)
+
+private data class SubnetProbe(
+    val network: Network,
+    val address: Inet4Address,
+    val port: Int
+)
+
+internal fun subnetHostAddresses(linkAddress: LinkAddress): List<Inet4Address> {
+    val localAddress = linkAddress.address as? Inet4Address ?: return emptyList()
+    return subnetHostAddresses(localAddress, linkAddress.prefixLength)
+}
+
+internal fun subnetHostAddresses(
+    localAddress: Inet4Address,
+    configuredPrefixLength: Int
+): List<Inet4Address> {
+    if (!localAddress.isSiteLocalAddress) {
+        return emptyList()
+    }
+
+    // Never scan more than the local /24, even when the configured LAN is broader.
+    val prefixLength = maxOf(configuredPrefixLength, MIN_SCAN_PREFIX_LENGTH)
+        .coerceIn(MIN_SCAN_PREFIX_LENGTH, IPV4_ADDRESS_BITS)
+    val localValue = ipv4ToLong(localAddress)
+    val hostBits = IPV4_ADDRESS_BITS - prefixLength
+    val hostMask = if (hostBits == IPV4_ADDRESS_BITS) {
+        IPV4_MAX_VALUE
+    } else {
+        (1L shl hostBits) - 1L
+    }
+    val networkValue = localValue and hostMask.inv() and IPV4_MAX_VALUE
+    val broadcastValue = networkValue or hostMask
+
+    return ((networkValue + 1) until broadcastValue)
+        .asSequence()
+        .filter { it != localValue }
+        .map(::longToIpv4)
+        .take(MAX_HOSTS_PER_SUBNET)
+        .toList()
+}
+
+private fun ipv4ToLong(address: Inet4Address): Long {
+    return address.address.fold(0L) { value, byte ->
+        (value shl Byte.SIZE_BITS) or (byte.toLong() and 0xffL)
+    }
+}
+
+private fun longToIpv4(value: Long): Inet4Address {
+    val bytes = ByteArray(IPV4_ADDRESS_BITS / Byte.SIZE_BITS) { index ->
+        (value shr ((3 - index) * Byte.SIZE_BITS)).toByte()
+    }
+    return InetAddress.getByAddress(bytes) as Inet4Address
+}
+
+private const val IPV4_ADDRESS_BITS = 32
+private const val IPV4_MAX_VALUE = 0xffff_ffffL
+private const val MIN_SCAN_PREFIX_LENGTH = 24
+private const val MAX_HOSTS_PER_SUBNET = 254
