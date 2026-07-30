@@ -85,4 +85,14 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <ListPreference
+        android:defaultValue="@string/bottom_navigation_labels_default_value"
+        android:entries="@array/bottom_navigation_labels_description"
+        android:entryValues="@array/bottom_navigation_labels_values"
+        android:key="@string/bottom_navigation_labels_key"
+        android:title="@string/bottom_navigation_labels_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
 </PreferenceScreen>

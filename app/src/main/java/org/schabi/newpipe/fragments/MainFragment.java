@@ -37,6 +37,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.material.tabs.TabLayout;
 
 import org.schabi.newpipe.BaseFragment;
@@ -96,6 +97,8 @@ public class MainFragment extends BaseFragment
     private String youtubeRestrictedModeEnabledKey;
     private boolean mainTabsPositionBottom;
     private String mainTabsPositionKey;
+    private String bottomNavigationLabelsKey;
+    private String bottomNavigationLabelsValue;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Fragment's LifeCycle
@@ -131,6 +134,8 @@ public class MainFragment extends BaseFragment
         youtubeRestrictedModeEnabled = prefs.getBoolean(youtubeRestrictedModeEnabledKey, false);
         mainTabsPositionKey = getString(R.string.main_tabs_position_key);
         mainTabsPositionBottom = prefs.getBoolean(mainTabsPositionKey, true);
+        bottomNavigationLabelsKey = getString(R.string.bottom_navigation_labels_key);
+        bottomNavigationLabelsValue = getBottomNavigationLabelsValue();
     }
 
     @Override
@@ -146,6 +151,7 @@ public class MainFragment extends BaseFragment
 
         binding = FragmentMainBinding.bind(rootView);
         bottomNavigation = requireActivity().findViewById(R.id.main_bottom_navigation);
+        updateBottomNavigationLabelVisibility();
 
         binding.mainTabLayout.setupWithViewPager(binding.pager);
         binding.mainTabLayout.addOnTabSelectedListener(this);
@@ -200,6 +206,11 @@ public class MainFragment extends BaseFragment
         final boolean newMainTabsPosition = prefs.getBoolean(mainTabsPositionKey, true);
         if (mainTabsPositionBottom != newMainTabsPosition) {
             mainTabsPositionBottom = newMainTabsPosition;
+        }
+        final String newBottomNavigationLabelsValue = getBottomNavigationLabelsValue();
+        if (!bottomNavigationLabelsValue.equals(newBottomNavigationLabelsValue)) {
+            bottomNavigationLabelsValue = newBottomNavigationLabelsValue;
+            updateBottomNavigationLabelVisibility();
         }
         updateMainNavigationMode();
     }
@@ -634,6 +645,30 @@ public class MainFragment extends BaseFragment
 
     private int getBottomNavigationItemPosition(final int itemId) {
         return itemId - BOTTOM_NAVIGATION_ITEM_ID_BASE;
+    }
+
+    private String getBottomNavigationLabelsValue() {
+        final String defaultValue = getString(R.string.bottom_navigation_labels_default_value);
+        final String value = prefs.getString(bottomNavigationLabelsKey, defaultValue);
+        return value == null ? defaultValue : value;
+    }
+
+    private void updateBottomNavigationLabelVisibility() {
+        if (bottomNavigation == null) {
+            return;
+        }
+
+        final int labelVisibilityMode;
+        if (getString(R.string.bottom_navigation_labels_always_value)
+                .equals(bottomNavigationLabelsValue)) {
+            labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED;
+        } else if (getString(R.string.bottom_navigation_labels_hidden_value)
+                .equals(bottomNavigationLabelsValue)) {
+            labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_UNLABELED;
+        } else {
+            labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_SELECTED;
+        }
+        bottomNavigation.setLabelVisibilityMode(labelVisibilityMode);
     }
 
     private void updateMainNavigationMode() {

@@ -347,6 +347,23 @@
 
     <!-- Main-Tabs Position -->
     <string name="main_tabs_position_key">main_tabs_position</string>
+    <string name="bottom_navigation_labels_key">bottom_navigation_labels</string>
+    <string name="bottom_navigation_labels_always_value">always</string>
+    <string name="bottom_navigation_labels_active_value">active</string>
+    <string name="bottom_navigation_labels_hidden_value">hidden</string>
+    <string name="bottom_navigation_labels_default_value">@string/bottom_navigation_labels_active_value</string>
+
+    <string-array name="bottom_navigation_labels_description">
+        <item>@string/bottom_navigation_labels_always</item>
+        <item>@string/bottom_navigation_labels_active</item>
+        <item>@string/bottom_navigation_labels_hidden</item>
+    </string-array>
+
+    <string-array name="bottom_navigation_labels_values">
+        <item>@string/bottom_navigation_labels_always_value</item>
+        <item>@string/bottom_navigation_labels_active_value</item>
+        <item>@string/bottom_navigation_labels_hidden_value</item>
+    </string-array>
 
     <!-- Content & History -->
     <string name="show_channel_tabs_key">channel_tabs</string>

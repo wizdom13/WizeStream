@@ -371,6 +371,10 @@
     <string name="fast_mode">Fast mode</string>
     <string name="main_tabs_position_summary">Move main tab selector to the bottom</string>
     <string name="main_tabs_position_title">Main tabs position</string>
+    <string name="bottom_navigation_labels_title">Bottom navigation labels</string>
+    <string name="bottom_navigation_labels_always">Always visible</string>
+    <string name="bottom_navigation_labels_active">Active only</string>
+    <string name="bottom_navigation_labels_hidden">Hidden</string>
     <!-- error strings -->
     <string name="general_error">Error</string>
     <string name="download_to_sdcard_error_title">External storage unavailable</string>
