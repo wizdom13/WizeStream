@@ -88,7 +88,7 @@ class DeviceSyncLogRepository(context: Context) {
                 sentChanges = summary.sentChanges,
                 receivedChanges = summary.receivedChanges,
                 localAddresses = localAddresses,
-                attempts = summary.attempts.map(DeviceSyncAttempt::toLogAttempt)
+                attempts = summary.attempts.map { it.toLogAttempt() }
             )
         )
     }
@@ -205,12 +205,16 @@ class DeviceSyncLogRepository(context: Context) {
     private fun StructuredPreferenceCategory.toLogCategory(): DeviceSyncLogCategory {
         return when (this) {
             StructuredPreferenceCategory.FEED_GROUPS -> DeviceSyncLogCategory.FEED_GROUPS
+
             StructuredPreferenceCategory.HOME_TABS -> DeviceSyncLogCategory.HOME_TABS
+
             StructuredPreferenceCategory.CHANNEL_PROFILES ->
                 DeviceSyncLogCategory.CHANNEL_PROFILES
 
             StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
+
             StructuredPreferenceCategory.SETTINGS -> DeviceSyncLogCategory.SETTINGS
+
             StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
                 DeviceSyncLogCategory.COMPLETED_DOWNLOADS
         }

@@ -35,8 +35,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
-import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncAttempt
+import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncLogCategory
 import org.schabi.newpipe.sync.DeviceSyncLogCategoryResult
 import org.schabi.newpipe.sync.DeviceSyncLogEntry
@@ -587,6 +587,7 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     R.string.device_sync_category_subscriptions
 
                 DeviceSyncLogCategory.PLAYLISTS -> R.string.device_sync_category_playlists
+
                 DeviceSyncLogCategory.WATCH_HISTORY ->
                     R.string.device_sync_category_watch_history
 
@@ -594,12 +595,16 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     R.string.device_sync_category_search_history
 
                 DeviceSyncLogCategory.FEED_GROUPS -> R.string.device_sync_category_feed_groups
+
                 DeviceSyncLogCategory.HOME_TABS -> R.string.device_sync_category_home_tabs
+
                 DeviceSyncLogCategory.CHANNEL_PROFILES ->
                     R.string.device_sync_category_channel_profiles
 
                 DeviceSyncLogCategory.FILTERS -> R.string.device_sync_category_filters
+
                 DeviceSyncLogCategory.SETTINGS -> R.string.device_sync_category_settings
+
                 DeviceSyncLogCategory.COMPLETED_DOWNLOADS ->
                     R.string.device_sync_category_completed_downloads
             }

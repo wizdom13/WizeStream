@@ -101,7 +101,7 @@ internal class AndroidPeerDiscovery(context: Context) {
                 serviceName = serviceName(peerId)
                 serviceType = SERVICE_TYPE
                 setPort(port)
-                setAttribute(PEER_ID_ATTRIBUTE, peerId.toByteArray(Charsets.UTF_8))
+                setAttribute(PEER_ID_ATTRIBUTE, peerId)
             }
             runCatching {
                 nsdManager.registerService(
