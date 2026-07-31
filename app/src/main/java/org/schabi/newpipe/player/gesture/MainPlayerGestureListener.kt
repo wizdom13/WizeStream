@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player.gesture
 
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
@@ -10,6 +11,8 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import androidx.preference.PreferenceManager
 import kotlin.math.abs
+import kotlin.math.hypot
+import kotlin.math.round
 import kotlin.math.sign
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
@@ -44,7 +47,19 @@ class MainPlayerGestureListener(
     private var initialTouchY = 0f
     private var isDelegatingToBottomSheet = false
 
+    private var twoFingerGestureState = TwoFingerGestureState.IDLE
+    private var suppressSingleTouchUntilUp = false
+    private var twoFingerInitialCenterX = 0f
+    private var twoFingerInitialCenterY = 0f
+    private var twoFingerInitialSpan = 0f
+    private var twoFingerStartSpeed = 1f
+    private var lastGestureSpeed = 1f
+
     override fun onTouch(v: View, event: MotionEvent): Boolean {
+        if (handleTwoFingerSpeedGesture(v, event)) {
+            return true
+        }
+
         if (isDelegatingToBottomSheet) {
             if (event.actionMasked == MotionEvent.ACTION_UP ||
                 event.actionMasked == MotionEvent.ACTION_CANCEL
@@ -105,6 +120,134 @@ class MainPlayerGestureListener(
             else -> true
         }
     }
+
+    private fun handleTwoFingerSpeedGesture(v: View, event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN &&
+            event.pointerCount == 2 &&
+            PlayerHelper.isTwoFingerSpeedGestureEnabled(player.context) &&
+            !player.exoPlayerIsNull() &&
+            player.currentState != Player.STATE_COMPLETED
+        ) {
+            cancelSingleFingerGesture(event)
+            restoreHoldToSpeed()
+            isMoving = false
+            isSwipeSeeking = false
+            isPendingFullscreenSwipe = false
+            isDelegatingToBottomSheet = false
+            binding.swipeSeekDisplay.isVisible = false
+            binding.volumeRelativeLayout.isVisible = false
+            binding.brightnessRelativeLayout.isVisible = false
+
+            twoFingerInitialCenterX = centerX(event)
+            twoFingerInitialCenterY = centerY(event)
+            twoFingerInitialSpan = pointerSpan(event)
+            twoFingerStartSpeed = player.playbackSpeed
+            lastGestureSpeed = twoFingerStartSpeed
+            twoFingerGestureState = TwoFingerGestureState.PENDING
+            suppressSingleTouchUntilUp = true
+            v.parent?.requestDisallowInterceptTouchEvent(true)
+            return true
+        }
+
+        if (!suppressSingleTouchUntilUp) {
+            return false
+        }
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_MOVE -> {
+                if (event.pointerCount >= 2) {
+                    updateTwoFingerSpeedGesture(v, event)
+                }
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> finishTwoFingerSpeedGesture()
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                finishTwoFingerSpeedGesture()
+                suppressSingleTouchUntilUp = false
+                v.parent?.requestDisallowInterceptTouchEvent(false)
+            }
+        }
+        return true
+    }
+
+    private fun cancelSingleFingerGesture(event: MotionEvent) {
+        val cancelEvent = MotionEvent.obtain(event)
+        cancelEvent.action = MotionEvent.ACTION_CANCEL
+        playerUi.gestureDetector.onTouchEvent(cancelEvent)
+        cancelEvent.recycle()
+    }
+
+    private fun updateTwoFingerSpeedGesture(v: View, event: MotionEvent) {
+        val verticalMovement = twoFingerInitialCenterY - centerY(event)
+        val horizontalMovement = centerX(event) - twoFingerInitialCenterX
+        val spanChange = abs(pointerSpan(event) - twoFingerInitialSpan)
+        val lockThreshold = TWO_FINGER_LOCK_THRESHOLD_DP *
+            player.context.resources.displayMetrics.density
+
+        if (twoFingerGestureState == TwoFingerGestureState.PENDING) {
+            twoFingerGestureState = classifyTwoFingerGesture(
+                verticalMovement,
+                horizontalMovement,
+                spanChange,
+                lockThreshold
+            )
+            if (twoFingerGestureState == TwoFingerGestureState.SPEED) {
+                binding.speedGestureDisplay.text =
+                    PlayerHelper.formatSpeed(twoFingerStartSpeed.toDouble())
+                binding.speedGestureDisplay.animate(
+                    true,
+                    150,
+                    AnimationType.SCALE_AND_ALPHA
+                )
+            }
+        }
+
+        if (twoFingerGestureState != TwoFingerGestureState.SPEED) {
+            return
+        }
+
+        val pixelsPerStep = TWO_FINGER_SPEED_STEP_DP *
+            player.context.resources.displayMetrics.density
+        val newSpeed = calculatePlaybackSpeed(
+            twoFingerStartSpeed,
+            verticalMovement,
+            pixelsPerStep
+        )
+        if (newSpeed == lastGestureSpeed) {
+            return
+        }
+
+        player.setPlaybackSpeed(newSpeed)
+        binding.speedGestureDisplay.text = PlayerHelper.formatSpeed(newSpeed.toDouble())
+        if (newSpeed == NORMAL_PLAYBACK_SPEED && lastGestureSpeed != NORMAL_PLAYBACK_SPEED) {
+            v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+        lastGestureSpeed = newSpeed
+    }
+
+    private fun finishTwoFingerSpeedGesture() {
+        if (twoFingerGestureState == TwoFingerGestureState.SPEED &&
+            binding.speedGestureDisplay.isVisible
+        ) {
+            binding.speedGestureDisplay.animate(
+                false,
+                200,
+                AnimationType.SCALE_AND_ALPHA,
+                200
+            )
+        }
+        twoFingerGestureState = TwoFingerGestureState.IDLE
+    }
+
+    private fun centerX(event: MotionEvent): Float = (event.getX(0) + event.getX(1)) / 2f
+
+    private fun centerY(event: MotionEvent): Float = (event.getY(0) + event.getY(1)) / 2f
+
+    private fun pointerSpan(event: MotionEvent): Float = hypot(
+        event.getX(0) - event.getX(1),
+        event.getY(0) - event.getY(1)
+    )
 
     private fun isSwipeDownToMiniplayerEnabled(): Boolean {
         return PreferenceManager.getDefaultSharedPreferences(player.context)
@@ -374,6 +517,46 @@ class MainPlayerGestureListener(
         private const val SEEK_SWIPE_FACTOR = 100f // ms per pixel
         private const val SEEK_SWIPE_FAST_MULTIPLIER = 10f
         private const val SEEK_SWIPE_FAST_THRESHOLD_MS = 60_000L
+        private const val TWO_FINGER_LOCK_THRESHOLD_DP = 12f
+        private const val TWO_FINGER_SPEED_STEP_DP = 24f
+        private const val PLAYBACK_SPEED_STEP = 0.05f
+        private const val MIN_PLAYBACK_SPEED = 0.10f
+        private const val MAX_PLAYBACK_SPEED = 3.00f
+        private const val NORMAL_PLAYBACK_SPEED = 1.00f
+
+        @JvmStatic
+        fun classifyTwoFingerGesture(
+            verticalMovement: Float,
+            horizontalMovement: Float,
+            spanChange: Float,
+            threshold: Float
+        ): TwoFingerGestureState {
+            val vertical = abs(verticalMovement)
+            val horizontal = abs(horizontalMovement)
+            if (vertical < threshold && horizontal < threshold && spanChange < threshold) {
+                return TwoFingerGestureState.PENDING
+            }
+            return if (vertical > horizontal * 1.25f && vertical > spanChange * 1.25f) {
+                TwoFingerGestureState.SPEED
+            } else {
+                TwoFingerGestureState.IGNORED
+            }
+        }
+
+        @JvmStatic
+        fun calculatePlaybackSpeed(
+            startSpeed: Float,
+            verticalMovement: Float,
+            pixelsPerStep: Float
+        ): Float {
+            if (pixelsPerStep <= 0f) {
+                return startSpeed.coerceIn(MIN_PLAYBACK_SPEED, MAX_PLAYBACK_SPEED)
+            }
+            val rawSpeed = startSpeed +
+                verticalMovement / pixelsPerStep * PLAYBACK_SPEED_STEP
+            return (round(rawSpeed / PLAYBACK_SPEED_STEP) * PLAYBACK_SPEED_STEP)
+                .coerceIn(MIN_PLAYBACK_SPEED, MAX_PLAYBACK_SPEED)
+        }
 
         @JvmStatic
         fun shouldDelegateDownwardSwipeToBottomSheet(
@@ -387,5 +570,12 @@ class MainPlayerGestureListener(
                 deltaY > MOVEMENT_THRESHOLD &&
                 abs(deltaY) > abs(deltaX)
         }
+    }
+
+    enum class TwoFingerGestureState {
+        IDLE,
+        PENDING,
+        SPEED,
+        IGNORED
     }
 }

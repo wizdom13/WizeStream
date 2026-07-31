@@ -139,7 +139,7 @@ abstract class BasePlayerGestureListener(
         isHoldToSpeedActive = true
     }
 
-    private fun restoreHoldToSpeed() {
+    protected fun restoreHoldToSpeed() {
         if (!isHoldToSpeedActive) {
             return
         }

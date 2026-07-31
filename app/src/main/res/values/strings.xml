@@ -152,6 +152,8 @@
     <string name="left_gesture_control_title">Left gesture action</string>
     <string name="right_gesture_control_summary">Choose gesture for right half of player screen</string>
     <string name="right_gesture_control_title">Right gesture action</string>
+    <string name="two_finger_speed_gesture_title">Two-finger speed gesture</string>
+    <string name="two_finger_speed_gesture_summary">Swipe vertically with two fingers to change playback speed</string>
     <string name="brightness">Brightness</string>
     <string name="volume">Volume</string>
     <string name="none">None</string>

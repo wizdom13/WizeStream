@@ -230,6 +230,11 @@ public final class PlayerHelper {
                 .getBoolean(context.getString(R.string.fullscreen_gesture_control_key), true);
     }
 
+    public static boolean isTwoFingerSpeedGestureEnabled(@NonNull final Context context) {
+        return getPreferences(context).getBoolean(
+                context.getString(R.string.two_finger_speed_gesture_control_key), false);
+    }
+
     public static boolean isHoldToSpeedEnabled(@NonNull final Context context) {
         return !context.getString(R.string.hold_to_speed_off_value)
                 .equals(getPreferences(context).getString(

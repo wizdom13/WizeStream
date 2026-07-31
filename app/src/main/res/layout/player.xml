@@ -840,6 +840,24 @@
                 tools:text="+00:15 (03:12)"
                 tools:visibility="visible" />
 
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/speedGestureDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:accessibilityLiveRegion="polite"
+                android:background="@drawable/background_oval_black_transparent"
+                android:paddingStart="18dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="12dp"
+                android:textColor="@android:color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="1.25×"
+                tools:visibility="visible" />
+
         </RelativeLayout>
         <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/sponsorBlockSkipButton"

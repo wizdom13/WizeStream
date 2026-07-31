@@ -235,6 +235,7 @@
 
     <string name="swipe_seek_gesture_control_key">swipe_seek_gesture_control</string>
     <string name="fullscreen_gesture_control_key">fullscreen_gesture_control</string>
+    <string name="two_finger_speed_gesture_control_key">two_finger_speed_gesture_control</string>
     <string name="hold_to_speed_key">hold_to_speed</string>
     <string name="hold_to_speed_default_value">2.0</string>
     <string name="hold_to_speed_off_value">off</string>
