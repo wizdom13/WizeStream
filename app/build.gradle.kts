@@ -94,6 +94,9 @@ configure<ApplicationExtension> {
         }
 
         release {
+            ndk {
+                abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+            }
             if (hasReleaseSigningConfig) {
                 signingConfig = signingConfigs.getByName("release")
             }
