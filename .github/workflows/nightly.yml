@@ -221,6 +221,7 @@ jobs:
         if: steps.existing.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.NIGHTLY_REPO_TOKEN }}
+          CURRENT_NIGHTLY_TAG: ${{ steps.metadata.outputs.nightly_tag }}
         shell: bash
         run: |
           set -euo pipefail
@@ -235,8 +236,14 @@ jobs:
             gh api -X DELETE "repos/${NIGHTLY_REPOSITORY}/git/refs/tags/${tag_name}" || true
           done < <(
             jq -s -r \
+              --arg current_tag "$CURRENT_NIGHTLY_TAG" \
               --argjson keep "$NIGHTLY_RETENTION_COUNT" \
-              'add | sort_by(.created_at) | reverse | .[$keep:][] | [.id, .tag_name] | @tsv' \
+              'add
+              | sort_by(.published_at // .created_at) | reverse
+              | (map(select(.tag_name == $current_tag))
+                 + map(select(.tag_name != $current_tag)))
+              | .[$keep:][]
+              | [.id, .tag_name] | @tsv' \
               "$releases_file"
           )
 
