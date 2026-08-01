@@ -3,16 +3,17 @@ package org.schabi.newpipe.extractor.services.youtube.extractors.kiosk;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
-import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeTrendingExtractor;
 
 import javax.annotation.Nonnull;
 
-public class YoutubeTrendingMoviesAndShowsTrailersExtractor extends YoutubeTrendingExtractor {
+public class YoutubeTrendingMoviesAndShowsTrailersExtractor
+        extends YoutubeChartsBaseKioskExtractor {
+    static final String CHART_TYPE = "TRENDING_MOVIES";
 
     public YoutubeTrendingMoviesAndShowsTrailersExtractor(final StreamingService streamingService,
                                                           final ListLinkHandler linkHandler,
                                                           final String kioskId) {
-        super(streamingService, linkHandler, kioskId);
+        super(streamingService, linkHandler, kioskId, CHART_TYPE);
     }
 
     @Nonnull
