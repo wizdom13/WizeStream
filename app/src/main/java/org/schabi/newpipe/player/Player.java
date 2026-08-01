@@ -2246,7 +2246,7 @@ public final class Player implements PlaybackListener, Listener {
         saveStreamProgressState();
         boolean isCatchableException = false;
 
-        if (tryRecoverFromStaleYouTubeMediaUrl(error)) {
+        if (tryRecoverFromYouTubeMediaUrlFailure(error)) {
             return;
         }
 
@@ -2299,8 +2299,8 @@ public final class Player implements PlaybackListener, Listener {
     }
 
 
-    private boolean tryRecoverFromStaleYouTubeMediaUrl(@NonNull final PlaybackException error) {
-        if (error.errorCode != ERROR_CODE_IO_BAD_HTTP_STATUS || playQueue == null) {
+    private boolean tryRecoverFromYouTubeMediaUrlFailure(@NonNull final PlaybackException error) {
+        if (playQueue == null) {
             return false;
         }
 
@@ -2314,7 +2314,7 @@ public final class Player implements PlaybackListener, Listener {
             return false;
         }
         if (DEBUG) {
-            Log.w(TAG, "Refreshing YouTube StreamInfo after stale media URL response");
+            Log.w(TAG, "Refreshing YouTube StreamInfo after a recoverable media URL failure");
         }
 
         setRecovery();

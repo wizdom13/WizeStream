@@ -9,9 +9,10 @@ import com.google.android.exoplayer2.upstream.HttpDataSource;
 
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
-/** Utility methods for deciding whether a player HTTP media failure can be retried safely. */
+/** Utility methods for deciding whether a player media URL failure can be retried safely. */
 final class PlayerHttpErrorRecovery {
     private PlayerHttpErrorRecovery() {
     }
@@ -54,7 +55,12 @@ final class PlayerHttpErrorRecovery {
                                                        @Nullable final PlayQueueItem item) {
         return item != null
                 && isYouTubeService(item.getServiceId())
-                && isRecoverableStatusCode(findInvalidResponseCode(error));
+                && isRecoverableMediaUrlFailure(error);
+    }
+
+    static boolean isRecoverableMediaUrlFailure(@NonNull final Throwable error) {
+        return isRecoverableStatusCode(findInvalidResponseCode(error))
+                || hasUnknownHostCause(error);
     }
 
     static boolean isYouTubeService(final int serviceId) {
@@ -78,5 +84,16 @@ final class PlayerHttpErrorRecovery {
             current = current.getCause();
         }
         return null;
+    }
+
+    static boolean hasUnknownHostCause(@NonNull final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof UnknownHostException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

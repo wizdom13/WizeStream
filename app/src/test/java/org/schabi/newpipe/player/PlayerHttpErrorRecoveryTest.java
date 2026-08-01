@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.schabi.newpipe.extractor.ServiceList;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 
 public class PlayerHttpErrorRecoveryTest {
@@ -30,6 +31,19 @@ public class PlayerHttpErrorRecoveryTest {
         assertFalse(PlayerHttpErrorRecovery.isRecoverableStatusCode(400));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableStatusCode(500));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableStatusCode(null));
+    }
+
+    @Test
+    public void findsUnknownHostExceptionInsideCauseChain() {
+        final Throwable error = new RuntimeException("source", new IOException("network",
+                new UnknownHostException("media.example.com")));
+
+        assertTrue(PlayerHttpErrorRecovery.hasUnknownHostCause(error));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(error));
+        assertFalse(PlayerHttpErrorRecovery.hasUnknownHostCause(
+                new RuntimeException("source", new IOException("network"))));
+        assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(
+                new RuntimeException("source", new IOException("network"))));
     }
 
     @Test
