@@ -99,7 +99,7 @@ class WizeStreamDefaultPreferencesTest {
         verify(editor).putString("theme", "auto_device_theme")
         verify(editor).putString("night_theme", "dark_theme")
         verify(editor).putString("list_view_mode", "card")
-        verify(editor).putFloat("playback_speed_key", 1.2f)
+        verify(editor).putFloat("playback_speed_key", 1.0f)
         verify(editor).putString(
             "saved_tabs_key",
             "{\"tabs\":[{\"tab_id\":2},{\"tab_id\":1},{\"tab_id\":7},{\"tab_id\":3},{\"tab_id\":4}]}"

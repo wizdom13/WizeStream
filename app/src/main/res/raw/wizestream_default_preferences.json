@@ -90,7 +90,7 @@
   "show_description": true,
   "adjustment_step_key": 0.1,
   "default_audio_format": "audio_m4a",
-  "playback_speed_key": 1.2,
+  "playback_speed_key": 1.0,
   "seekbar_preview_thumbnail_key": "seekbar_preview_thumbnail_high_quality",
   "left_gesture_control": "brightness_control",
   "show_play_with_kodi": false,
