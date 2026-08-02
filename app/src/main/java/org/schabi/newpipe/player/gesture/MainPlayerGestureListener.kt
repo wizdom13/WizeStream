@@ -46,6 +46,8 @@ class MainPlayerGestureListener(
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var isDelegatingToBottomSheet = false
+    private val singleFingerGestureClassifier =
+        SingleFingerGestureClassifier(MOVEMENT_THRESHOLD.toFloat())
 
     private var twoFingerGestureState = TwoFingerGestureState.IDLE
     private var suppressSingleTouchUntilUp = false
@@ -74,6 +76,7 @@ class MainPlayerGestureListener(
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             initialTouchX = event.x
             initialTouchY = event.y
+            singleFingerGestureClassifier.reset()
         }
 
         val fullscreenGestureEnabled = PlayerHelper.isFullscreenGestureEnabled(player.context)
@@ -92,6 +95,7 @@ class MainPlayerGestureListener(
             isDelegatingToBottomSheet = true
             isMoving = false
             isPendingFullscreenSwipe = false
+            singleFingerGestureClassifier.reset()
             v.parent?.requestDisallowInterceptTouchEvent(false)
             return false
         }
@@ -101,6 +105,9 @@ class MainPlayerGestureListener(
         if (gestureEnded && isMoving) {
             isMoving = false
             onScrollEnd(event)
+        }
+        if (gestureEnded) {
+            singleFingerGestureClassifier.reset()
         }
         return when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
@@ -134,6 +141,7 @@ class MainPlayerGestureListener(
             isSwipeSeeking = false
             isPendingFullscreenSwipe = false
             isDelegatingToBottomSheet = false
+            singleFingerGestureClassifier.reset()
             binding.swipeSeekDisplay.isVisible = false
             binding.volumeRelativeLayout.isVisible = false
             binding.brightnessRelativeLayout.isVisible = false
@@ -437,62 +445,78 @@ class MainPlayerGestureListener(
             return false
         }
 
-        val isHorizontal = abs(distanceX) > abs(distanceY)
-        val insideThreshold = abs(movingEvent.y - initialEvent.y) <= MOVEMENT_THRESHOLD &&
-            abs(movingEvent.x - initialEvent.x) <= MOVEMENT_THRESHOLD
-        if (
-            !isMoving && insideThreshold ||
-            player.currentState == Player.STATE_COMPLETED
-        ) {
+        if (player.currentState == Player.STATE_COMPLETED) {
+            return false
+        }
+
+        val totalDeltaX = movingEvent.x - initialEvent.x
+        val totalDeltaY = movingEvent.y - initialEvent.y
+        val gestureState = singleFingerGestureClassifier.update(
+            totalDeltaX,
+            totalDeltaY,
+            isFullscreenSwipeEligible(initialEvent, totalDeltaY)
+        )
+        if (gestureState == SingleFingerGestureClassifier.State.PENDING) {
             return false
         }
 
         isMoving = true
 
-        if (isSwipeSeeking) {
-            onScrollSeek(distanceX)
-            return true
-        }
+        when (gestureState) {
+            SingleFingerGestureClassifier.State.HORIZONTAL_SEEK -> {
+                if (!playerUi.isFullscreen) {
+                    return false
+                }
+                if (PlayerHelper.isSwipeSeekGestureEnabled(player.context)) {
+                    onScrollSeek(distanceX)
+                }
+                return true
+            }
 
-        if (PlayerHelper.isFullscreenGestureEnabled(player.context) && !isHorizontal) {
-            val portion = getDisplayPortion(initialEvent)
-            if ((playerUi.isFullscreen && distanceY < 0 && portion == DisplayPortion.MIDDLE) ||
-                (!playerUi.isFullscreen && distanceY > 0)
-            ) {
+            SingleFingerGestureClassifier.State.FULLSCREEN_SWIPE -> {
                 isPendingFullscreenSwipe = true
                 return true
             }
-        }
 
-        if (!playerUi.isFullscreen) {
+            SingleFingerGestureClassifier.State.VERTICAL_ADJUSTMENT -> {
+                if (!playerUi.isFullscreen) {
+                    return false
+                }
+
+                // -- Brightness and Volume control --
+                if (getDisplayHalfPortion(initialEvent) == DisplayPortion.RIGHT_HALF) {
+                    when (PlayerHelper.getActionForRightGestureSide(player.context)) {
+                        player.context.getString(R.string.volume_control_key) ->
+                            onScrollVolume(distanceY)
+
+                        player.context.getString(R.string.brightness_control_key) ->
+                            onScrollBrightness(distanceY)
+                    }
+                } else {
+                    when (PlayerHelper.getActionForLeftGestureSide(player.context)) {
+                        player.context.getString(R.string.volume_control_key) ->
+                            onScrollVolume(distanceY)
+
+                        player.context.getString(R.string.brightness_control_key) ->
+                            onScrollBrightness(distanceY)
+                    }
+                }
+                return true
+            }
+
+            SingleFingerGestureClassifier.State.PENDING -> return false
+        }
+    }
+
+    private fun isFullscreenSwipeEligible(initialEvent: MotionEvent, totalDeltaY: Float): Boolean {
+        if (!PlayerHelper.isFullscreenGestureEnabled(player.context)) {
             return false
         }
-
-        if (PlayerHelper.isSwipeSeekGestureEnabled(player.context) && isHorizontal) {
-            onScrollSeek(distanceX)
-            return true
-        }
-
-        // -- Brightness and Volume control --
-        if (getDisplayHalfPortion(initialEvent) == DisplayPortion.RIGHT_HALF) {
-            when (PlayerHelper.getActionForRightGestureSide(player.context)) {
-                player.context.getString(R.string.volume_control_key) ->
-                    onScrollVolume(distanceY)
-
-                player.context.getString(R.string.brightness_control_key) ->
-                    onScrollBrightness(distanceY)
-            }
+        return if (playerUi.isFullscreen) {
+            totalDeltaY > 0 && getDisplayPortion(initialEvent) == DisplayPortion.MIDDLE
         } else {
-            when (PlayerHelper.getActionForLeftGestureSide(player.context)) {
-                player.context.getString(R.string.volume_control_key) ->
-                    onScrollVolume(distanceY)
-
-                player.context.getString(R.string.brightness_control_key) ->
-                    onScrollBrightness(distanceY)
-            }
+            totalDeltaY < 0
         }
-
-        return true
     }
 
     override fun getDisplayPortion(e: MotionEvent): DisplayPortion {
