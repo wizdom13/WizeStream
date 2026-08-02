@@ -1,0 +1,10 @@
+WizeStream 1.3.0
+
+- Added configurable bottom-navigation labels.
+- Added optional two-finger swipe playback-speed control.
+- Improved YouTube Music and Movies/Shows Trending charts.
+- Improved recovery from YouTube DNS failures and SABR redirects.
+- Fixed player gestures changing direction during a swipe.
+- Changed the default playback speed to 1.0x for new installations.
+- Fixed Nightly release retention.
+- Reduced release APK size; official APKs now support ARM64 and ARMv7.
