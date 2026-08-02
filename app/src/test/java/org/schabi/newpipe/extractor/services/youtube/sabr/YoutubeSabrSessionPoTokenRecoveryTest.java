@@ -38,6 +38,7 @@ class YoutubeSabrSessionPoTokenRecoveryTest {
             throws Exception {
         final QueueDownloader downloader = new QueueDownloader(
                 protectedNoMediaResponse(),
+                protectedNoMediaResponse(),
                 protectedNoMediaResponse());
         final AtomicInteger tokenMints = new AtomicInteger();
         final YoutubeSabrSession session = createSession(downloader, new SabrPoTokenProvider() {
@@ -47,7 +48,7 @@ class YoutubeSabrSessionPoTokenRecoveryTest {
                                      @Nonnull final YoutubeSabrStreamState streamState,
                                      final boolean forceRefresh) {
                 tokenMints.incrementAndGet();
-                return new byte[]{7};
+                return new byte[]{(byte) (7 + tokenMints.get())};
             }
 
             @Nullable
@@ -61,13 +62,15 @@ class YoutubeSabrSessionPoTokenRecoveryTest {
         session.getStreamState().setPoToken(new byte[]{7});
 
         assertEquals(0, session.pumpOnceStreaming(Localization.DEFAULT));
+        assertEquals(0, session.pumpOnceStreaming(Localization.DEFAULT));
 
         final SabrPoTokenRefreshException failure = assertThrows(
                 SabrPoTokenRefreshException.class,
                 () -> session.pumpOnceStreaming(Localization.DEFAULT));
 
         assertEquals(2, tokenMints.get());
-        assertArrayEquals(new byte[]{7}, session.getStreamState().getRawPoToken());
+        assertArrayEquals(new byte[]{9}, session.getStreamState().getRawPoToken());
+        assertEquals("video", failure.getVideoId());
         assertTrue(failure.getMessage().contains("after 2 forced PO-token refreshes"));
     }
 

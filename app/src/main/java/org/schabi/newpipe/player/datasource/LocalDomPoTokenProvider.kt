@@ -204,11 +204,12 @@ class LocalDomPoTokenProvider(context: Context) :
         val visitorData = info.visitorData ?: synchronized(visitorDataLock) {
             fetchedVisitorData
         } ?: throw SabrProtocolException("Missing visitorData for Local DOM PO token")
-        if (forceRefresh) {
-            cache.remove(videoId)
-            prefs.edit().remove(videoId).apply()
-        }
         synchronized(mintLocks.computeIfAbsent(videoId) { Any() }) {
+            if (forceRefresh) {
+                clearCachedTokenLocked(videoId)
+                cancelSessionPoTokenPrewarm()
+                retireGenerator("server rejected video token for $videoId")
+            }
             val now = System.currentTimeMillis()
             val cached = cache[videoId]
                 ?: diskLoad(videoId)?.also { cache[videoId] = it }
@@ -219,8 +220,7 @@ class LocalDomPoTokenProvider(context: Context) :
                 Log.i(TAG, "cache hit video=$videoId bytes=${cached.token.size}")
                 return cached.token
             }
-            val token = ensureGenerator(visitorData, credentialIdentity)
-                .generateRawPoToken(videoId)
+            val token = generateRawPoToken(visitorData, credentialIdentity, videoId)
             cache[videoId] = CachedToken(token, now, visitorData, credentialIdentity)
             diskSave(videoId, token, now, visitorData, credentialIdentity)
             Log.i(TAG, "mint complete video=$videoId bytes=${token.size}")
@@ -242,8 +242,57 @@ class LocalDomPoTokenProvider(context: Context) :
 
     fun clearCachedToken(videoId: String) {
         synchronized(mintLocks.computeIfAbsent(videoId) { Any() }) {
-            cache.remove(videoId)
-            prefs.edit().remove(videoId).commit()
+            clearCachedTokenLocked(videoId)
+        }
+    }
+
+    /**
+     * Discards all generator-bound state after YouTube rejects a video PO token. The next request
+     * must initialize a new BotGuard minter; merely deleting the per-video token can reproduce the
+     * same rejected bytes from the old minter.
+     */
+    fun invalidateRejectedPoToken(videoId: String) {
+        synchronized(mintLocks.computeIfAbsent(videoId) { Any() }) {
+            clearCachedTokenLocked(videoId)
+            cancelSessionPoTokenPrewarm()
+            retireGenerator("exhausted refresh recovery for $videoId")
+        }
+    }
+
+    private fun clearCachedTokenLocked(videoId: String) {
+        cache.remove(videoId)
+        prefs.edit().remove(videoId).commit()
+    }
+
+    private fun cancelSessionPoTokenPrewarm() {
+        synchronized(prewarmLock) {
+            prewarmTask?.cancel(true)
+            prewarmTask = null
+            prewarmCredentialIdentity = null
+        }
+    }
+
+    private fun retireGenerator(reason: String) {
+        val retired = synchronized(generatorLock) {
+            val current = generator
+            generator = null
+            generatorVisitorData = null
+            generatorCredentialIdentity = null
+            rawSessionPoToken = null
+            current
+        }
+        retired?.let { mainHandler.post { it.close() } }
+        Log.i(TAG, "retired PO token generator: $reason")
+    }
+
+    private fun generateRawPoToken(
+        visitorData: String,
+        credentialIdentity: String,
+        identifier: String
+    ): ByteArray {
+        synchronized(generatorLock) {
+            return ensureGenerator(visitorData, credentialIdentity)
+                .generateRawPoToken(identifier)
         }
     }
 
@@ -267,7 +316,12 @@ class LocalDomPoTokenProvider(context: Context) :
             }
             current?.let { mainHandler.post { it.close() } }
             val fresh = LocalDomPoTokenGenerator.create(appContext)
-            val freshSessionPoToken = fresh.generateRawPoToken(visitorData)
+            val freshSessionPoToken = try {
+                fresh.generateRawPoToken(visitorData)
+            } catch (error: Throwable) {
+                mainHandler.post { fresh.close() }
+                throw error
+            }
             if (!credentialsStillMatch(credentialIdentity)) {
                 mainHandler.post { fresh.close() }
                 throw SabrProtocolException(

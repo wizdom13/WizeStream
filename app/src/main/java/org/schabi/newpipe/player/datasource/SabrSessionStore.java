@@ -1151,6 +1151,25 @@ public final class SabrSessionStore {
      */
     public static void clearBenchmarkCaches(@NonNull final Context context,
                                             @NonNull final String videoId) {
+        clearSessionCaches(videoId);
+        provider(context).clearCachedToken(videoId);
+    }
+
+    /**
+     * Drops every SABR object that could retain a server-rejected PO token before the player
+     * performs its one bounded StreamInfo reload.
+     *
+     * @param context the application context
+     * @param videoId the video whose rejected token state should be cleared
+     */
+    public static void invalidateRejectedPoToken(@NonNull final Context context,
+                                                 @NonNull final String videoId) {
+        clearSessionCaches(videoId);
+        provider(context).invalidateRejectedPoToken(videoId);
+        Log.i(TAG, "invalidated rejected PO-token state video=" + videoId);
+    }
+
+    private static void clearSessionCaches(@NonNull final String videoId) {
         evict(videoId);
         for (final Map.Entry<String, Future<BootstrapResult>> entry
                 : BOOTSTRAP_IN_FLIGHT.entrySet()) {
@@ -1179,7 +1198,6 @@ public final class SabrSessionStore {
         if (tokenFuture != null) {
             tokenFuture.cancel(true);
         }
-        provider(context).clearCachedToken(videoId);
     }
 
     private static void trimSessions(@Nullable final SessionKey protectedKey) {

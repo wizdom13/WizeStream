@@ -68,12 +68,17 @@ public class PlayerHttpErrorRecoveryTest {
 
     @Test
     public void acceptsOnlyExhaustedSabrPoTokenRefreshFailures() {
+        final SabrPoTokenRefreshException refreshFailure =
+                new SabrPoTokenRefreshException(
+                        "video-id", "SABR protected response after token refreshes");
         final Throwable tokenFailure = new RuntimeException("source",
-                new IOException("SABR logic failure",
-                        new SabrPoTokenRefreshException(
-                                "SABR protected response after token refreshes")));
+                new IOException("SABR logic failure", refreshFailure));
 
         assertTrue(PlayerHttpErrorRecovery.hasSabrPoTokenRefreshCause(tokenFailure));
+        assertEquals(refreshFailure,
+                PlayerHttpErrorRecovery.findSabrPoTokenRefreshCause(tokenFailure));
+        assertEquals("video-id",
+                PlayerHttpErrorRecovery.findSabrPoTokenRefreshCause(tokenFailure).getVideoId());
         assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(tokenFailure));
 
         final Throwable unrelatedProtocolFailure = new RuntimeException("source",
@@ -81,6 +86,8 @@ public class PlayerHttpErrorRecoveryTest {
                         new SabrProtocolException("SABR malformed protection response")));
         assertFalse(PlayerHttpErrorRecovery.hasSabrPoTokenRefreshCause(
                 unrelatedProtocolFailure));
+        assertEquals(null,
+                PlayerHttpErrorRecovery.findSabrPoTokenRefreshCause(unrelatedProtocolFailure));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(
                 unrelatedProtocolFailure));
     }

@@ -113,13 +113,19 @@ final class PlayerHttpErrorRecovery {
     }
 
     static boolean hasSabrPoTokenRefreshCause(@NonNull final Throwable error) {
+        return findSabrPoTokenRefreshCause(error) != null;
+    }
+
+    @Nullable
+    static SabrPoTokenRefreshException findSabrPoTokenRefreshCause(
+            @NonNull final Throwable error) {
         Throwable current = error;
         while (current != null) {
             if (current instanceof SabrPoTokenRefreshException) {
-                return true;
+                return (SabrPoTokenRefreshException) current;
             }
             current = current.getCause();
         }
-        return false;
+        return null;
     }
 }

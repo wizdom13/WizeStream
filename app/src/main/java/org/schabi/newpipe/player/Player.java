@@ -92,6 +92,7 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.Image;
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrPoTokenRefreshException;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockAction;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockCategory;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
@@ -2315,6 +2316,13 @@ public final class Player implements PlaybackListener, Listener {
         }
         if (DEBUG) {
             Log.w(TAG, "Refreshing YouTube StreamInfo after a recoverable media URL failure");
+        }
+
+        final SabrPoTokenRefreshException rejectedPoToken =
+                PlayerHttpErrorRecovery.findSabrPoTokenRefreshCause(error);
+        if (rejectedPoToken != null) {
+            SabrSessionStore.invalidateRejectedPoToken(
+                    context, rejectedPoToken.getVideoId());
         }
 
         setRecovery();

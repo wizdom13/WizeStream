@@ -1797,7 +1797,8 @@ public final class YoutubeSabrSession {
     private SabrPoTokenRefreshException poTokenRefreshException(
             @Nullable final SabrSegmentRequest request,
             @Nonnull final SabrDecodedResponse decoded) {
-        return new SabrPoTokenRefreshException("SABR protected no-media response"
+        return new SabrPoTokenRefreshException(info.getVideoId(),
+                "SABR protected no-media response"
                 + (request == null ? "" : " while fetching " + describeRequest(request))
                 + " after " + poTokenRefreshes + " forced PO-token refreshes: "
                 + decoded.summarizeNoMediaResponse());
