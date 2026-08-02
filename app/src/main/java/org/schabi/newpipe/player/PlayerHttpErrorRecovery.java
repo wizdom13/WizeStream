@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrPoTokenRefreshException;
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrRedirectException;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
@@ -62,7 +63,8 @@ final class PlayerHttpErrorRecovery {
     static boolean isRecoverableMediaUrlFailure(@NonNull final Throwable error) {
         return isRecoverableStatusCode(findInvalidResponseCode(error))
                 || hasUnknownHostCause(error)
-                || hasSabrRedirectCause(error);
+                || hasSabrRedirectCause(error)
+                || hasSabrPoTokenRefreshCause(error);
     }
 
     static boolean isYouTubeService(final int serviceId) {
@@ -103,6 +105,17 @@ final class PlayerHttpErrorRecovery {
         Throwable current = error;
         while (current != null) {
             if (current instanceof SabrRedirectException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    static boolean hasSabrPoTokenRefreshCause(@NonNull final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof SabrPoTokenRefreshException) {
                 return true;
             }
             current = current.getCause();

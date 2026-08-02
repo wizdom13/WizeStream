@@ -8,6 +8,7 @@ import com.google.android.exoplayer2.upstream.HttpDataSource;
 
 import org.junit.Test;
 import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrPoTokenRefreshException;
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException;
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrRedirectException;
 
@@ -61,6 +62,25 @@ public class PlayerHttpErrorRecoveryTest {
                 new IOException("SABR logic failure",
                         new SabrProtocolException("SABR malformed media")));
         assertFalse(PlayerHttpErrorRecovery.hasSabrRedirectCause(unrelatedProtocolFailure));
+        assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(
+                unrelatedProtocolFailure));
+    }
+
+    @Test
+    public void acceptsOnlyExhaustedSabrPoTokenRefreshFailures() {
+        final Throwable tokenFailure = new RuntimeException("source",
+                new IOException("SABR logic failure",
+                        new SabrPoTokenRefreshException(
+                                "SABR protected response after token refreshes")));
+
+        assertTrue(PlayerHttpErrorRecovery.hasSabrPoTokenRefreshCause(tokenFailure));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(tokenFailure));
+
+        final Throwable unrelatedProtocolFailure = new RuntimeException("source",
+                new IOException("SABR logic failure",
+                        new SabrProtocolException("SABR malformed protection response")));
+        assertFalse(PlayerHttpErrorRecovery.hasSabrPoTokenRefreshCause(
+                unrelatedProtocolFailure));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(
                 unrelatedProtocolFailure));
     }

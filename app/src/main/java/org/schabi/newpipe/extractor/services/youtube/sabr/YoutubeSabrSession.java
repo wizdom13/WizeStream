@@ -808,14 +808,15 @@ public final class YoutubeSabrSession {
                                 + describeRequest(request) + " (reload budget spent): "
                                 + decoded.summarizeNoMediaResponse());
                     case REFRESH_PO_TOKEN:
-                        applyPoTokenForProtectedResponse();
+                        if (!applyPoTokenForProtectedResponse()
+                                && poTokenRefreshes >= MAX_PO_TOKEN_REFRESHES) {
+                            throw poTokenRefreshException(request, decoded);
+                        }
                         break;
                     case REQUIRE_PO_TOKEN:
-                        if (!applyPoTokenForProtectedResponse()) {
-                            throw new SabrProtocolException("SABR protected no-media response"
-                                    + (request == null ? "" : " while fetching "
-                                    + describeRequest(request)) + ": "
-                                    + decoded.summarizeNoMediaResponse());
+                        if (!applyPoTokenForProtectedResponse()
+                                && poTokenRefreshes >= MAX_PO_TOKEN_REFRESHES) {
+                            throw poTokenRefreshException(request, decoded);
                         }
                         break;
                     case RESET_RECOVERY_BUDGETS:
@@ -1776,8 +1777,8 @@ public final class YoutubeSabrSession {
 
     /**
      * Handle a status=3 / no-media response: mint a token, or force a bounded re-mint if we already
-     * have one but the server still rejects it (expired mid-playback). Returns false if none could
-     * be applied (caller treats that as fatal).
+     * have one but the server still rejects it (expired mid-playback). Returns false if no different
+     * token could be applied; callers fail once the bounded refresh budget is exhausted.
      */
     private boolean applyPoTokenForProtectedResponse() throws IOException, ExtractionException {
         if (maybeApplyPoToken(false)) {
@@ -1790,6 +1791,16 @@ public final class YoutubeSabrSession {
             return maybeApplyPoToken(true);
         }
         return false;
+    }
+
+    @Nonnull
+    private SabrPoTokenRefreshException poTokenRefreshException(
+            @Nullable final SabrSegmentRequest request,
+            @Nonnull final SabrDecodedResponse decoded) {
+        return new SabrPoTokenRefreshException("SABR protected no-media response"
+                + (request == null ? "" : " while fetching " + describeRequest(request))
+                + " after " + poTokenRefreshes + " forced PO-token refreshes: "
+                + decoded.summarizeNoMediaResponse());
     }
 
     @Nonnull
