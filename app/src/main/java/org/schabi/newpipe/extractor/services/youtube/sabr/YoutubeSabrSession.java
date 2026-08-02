@@ -34,7 +34,7 @@ public final class YoutubeSabrSession {
 
     private static final int MAX_REQUESTS_PER_SEGMENT = 16;
     private static final int MAX_POLICY_ONLY_RESPONSES_PER_SEGMENT = 3;
-    private static final int MAX_REDIRECTS_PER_SESSION = 3;
+    private static final int MAX_REDIRECTS_PER_CHAIN = 8;
     // server can ask us to reload the player response (URLs/config expired on a long watch). re-probe
     // and resume in place instead of killing the session. bounded so a reload loop can't run forever.
     private static final int MAX_RELOADS_PER_SESSION = 2;
@@ -70,6 +70,8 @@ public final class YoutubeSabrSession {
     private final File segmentSpoolDirectory;
     @Nonnull
     private final SabrSessionPolicyHost sessionPolicyHost;
+    @Nonnull
+    private final SabrRedirectTracker redirectTracker;
     private final Map<String, SabrMediaSegment> segmentCache = new ConcurrentHashMap<>();
     private final Map<String, SabrMediaSegment> inFlightSegments = new ConcurrentHashMap<>();
     private final Object segmentAvailable = new Object();
@@ -184,6 +186,8 @@ public final class YoutubeSabrSession {
         this.segmentSpoolDirectory = segmentSpoolDirectory;
         this.sessionPolicyHost = sessionPolicyHost;
         this.serverAbrStreamingUrl = info.getServerAbrStreamingUrl();
+        this.redirectTracker = new SabrRedirectTracker(
+                serverAbrStreamingUrl, MAX_REDIRECTS_PER_CHAIN);
     }
 
     @Nonnull
@@ -459,6 +463,7 @@ public final class YoutubeSabrSession {
         info = fresh;
         serverAbrStreamingUrl = fresh.getServerAbrStreamingUrl();
         redirectCount = 0;
+        redirectTracker.reset(serverAbrStreamingUrl);
         // keep requestNumber > 0 so the next request is a follow-up carrying the current player time
         // and buffered ranges: the new streaming URL resumes in place, not from the start.
         return true;
@@ -759,7 +764,6 @@ public final class YoutubeSabrSession {
                         result.getSegmentCount(), honorBackoff, mode, decoded));
         final SabrSessionPolicy.ControlDecision decision = Objects.requireNonNull(
                 policyResult.getControlDecision());
-        final int redirectCountBeforePolicy = redirectCount;
         redirectCount = policyResult.getNextState().getRedirectCount();
         poTokenRefreshes = policyResult.getNextState().getPoTokenRefreshes();
         final List<SabrSessionPolicy.ActionType> executedActions = new ArrayList<>();
@@ -775,17 +779,13 @@ public final class YoutubeSabrSession {
                         streamState.ingest(Objects.requireNonNull(policyResult.getStatePatch()));
                         break;
                     case APPLY_REDIRECT:
-                        if (redirectCountBeforePolicy + 1 > MAX_REDIRECTS_PER_SESSION) {
-                            throw new SabrProtocolException(
-                                    "SABR redirect limit exceeded: redirects="
-                                            + (redirectCountBeforePolicy + 1));
-                        }
                         final String redirectUrl = decision.getRedirectUrl();
                         if (redirectUrl == null || redirectUrl.isEmpty()) {
                             throw new SabrProtocolException(
                                     "SABR policy requested redirect without Host URL capability");
                         }
                         validateRedirectUrl(redirectUrl);
+                        redirectTracker.follow(redirectUrl);
                         serverAbrStreamingUrl = redirectUrl;
                         break;
                     case FAIL_SABR_ERROR:
@@ -819,6 +819,7 @@ public final class YoutubeSabrSession {
                         }
                         break;
                     case RESET_RECOVERY_BUDGETS:
+                        redirectTracker.reset(serverAbrStreamingUrl);
                         break;
                     case SLEEP_BACKOFF:
                         final boolean bootstrapReady = skipBackoffWhenBootstrapReady
