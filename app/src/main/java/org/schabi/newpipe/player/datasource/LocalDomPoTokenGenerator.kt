@@ -309,6 +309,9 @@ internal class LocalDomPoTokenGenerator private constructor(
             attestationContext: LocalDomPoTokenContext,
             credentialHeaders: Map<String, List<String>>
         ): LocalDomPoTokenGenerator {
+            botGuardBuildCredentialsError()?.let { error ->
+                throw SabrProtocolException(error)
+            }
             val init = InitWaiter()
             val generator = LocalDomPoTokenGenerator(
                 context,

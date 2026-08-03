@@ -19,6 +19,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import java.time.Instant
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.DownloaderImpl
+import org.schabi.newpipe.player.datasource.botGuardBuildCredentialsError
 
 class PoTokenWebView private constructor(
     context: Context,
@@ -363,11 +364,17 @@ class PoTokenWebView private constructor(
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.3"
         private const val JS_INTERFACE = "PoTokenWebView"
 
-        override fun newPoTokenGenerator(context: Context): Single<PoTokenGenerator> = Single.create { emitter ->
-            runOnMainThread(emitter) {
-                val potWv = PoTokenWebView(context, emitter)
-                potWv.loadHtmlAndObtainBotguard(context)
-                emitter.setDisposable(potWv.disposables)
+        override fun newPoTokenGenerator(context: Context): Single<PoTokenGenerator> {
+            botGuardBuildCredentialsError()?.let { error ->
+                return Single.error(PoTokenException(error))
+            }
+
+            return Single.create { emitter ->
+                runOnMainThread(emitter) {
+                    val potWv = PoTokenWebView(context, emitter)
+                    potWv.loadHtmlAndObtainBotguard(context)
+                    emitter.setDisposable(potWv.disposables)
+                }
             }
         }
 
