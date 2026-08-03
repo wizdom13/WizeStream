@@ -1,15 +1,16 @@
 package org.schabi.newpipe.player.datasource
 
-import org.schabi.newpipe.SharedWebViewRuntime
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.Base64
+import org.schabi.newpipe.BuildConfig
+import org.schabi.newpipe.SharedWebViewRuntime
 
 internal data class LocalDomPoTokenContext(
     val visitorData: String,
     val clientName: String,
     val clientVersion: String,
-    val userAgent: String,
+    val userAgent: String
 ) {
     val clientId: String
         get() = when (clientName) {
@@ -40,13 +41,13 @@ internal data class LocalDomPoTokenContext(
 
 internal fun localDomAttestationContext(
     visitorData: String,
-    clientVersion: String,
+    clientVersion: String
 ): LocalDomPoTokenContext {
     return LocalDomPoTokenContext(
         visitorData,
         "WEB",
         clientVersion,
-        SharedWebViewRuntime.USER_AGENT,
+        SharedWebViewRuntime.USER_AGENT
     )
 }
 
@@ -56,7 +57,7 @@ internal fun buildLocalDomAttestationBody(context: LocalDomPoTokenContext): Stri
 
 internal fun buildLocalDomAttestationHeaders(
     context: LocalDomPoTokenContext,
-    credentialHeaders: Map<String, List<String>>,
+    credentialHeaders: Map<String, List<String>>
 ): Map<String, List<String>> {
     return HashMap(credentialHeaders).apply {
         put("User-Agent", listOf(context.userAgent))
@@ -67,13 +68,10 @@ internal fun buildLocalDomAttestationHeaders(
         put("X-Goog-Visitor-Id", listOf(context.visitorData))
         put("X-YouTube-Client-Name", listOf(context.clientId))
         put("X-YouTube-Client-Version", listOf(context.clientVersion))
-        put("x-goog-api-key", listOf(LOCAL_DOM_GOOGLE_API_KEY))
+        put("x-goog-api-key", listOf(BuildConfig.BOTGUARD_GOOGLE_API_KEY))
         put("x-user-agent", listOf("grpc-web-javascript/0.1"))
     }
 }
-
-internal const val LOCAL_DOM_GOOGLE_API_KEY =
-    "AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw"
 
 private fun jsonString(value: String): String {
     return buildString(value.length + 2) {

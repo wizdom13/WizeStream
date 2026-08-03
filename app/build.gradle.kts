@@ -24,12 +24,21 @@ val releaseKeyAlias = System.getenv("WIZESTREAM_RELEASE_KEY_ALIAS")
     ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("WIZESTREAM_RELEASE_KEY_PASSWORD")
     ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD")
+val botGuardGoogleApiKey = providers.environmentVariable("WIZESTREAM_BOTGUARD_GOOGLE_API_KEY")
+    .orElse(providers.gradleProperty("WIZESTREAM_BOTGUARD_GOOGLE_API_KEY"))
+    .getOrElse("")
+val botGuardRequestKey = providers.environmentVariable("WIZESTREAM_BOTGUARD_REQUEST_KEY")
+    .orElse(providers.gradleProperty("WIZESTREAM_BOTGUARD_REQUEST_KEY"))
+    .getOrElse("")
 val hasReleaseSigningConfig = listOf(
     releaseStoreFile,
     releaseStorePassword,
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
+
+fun String.asBuildConfigString(): String =
+    "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 kotlin {
     jvmToolchain(21)
@@ -59,6 +68,16 @@ configure<ApplicationExtension> {
         resValue("string", "app_name", "WizeStream")
         buildConfigField("String", "SABR_POLICY_PUBLIC_KEY_BASE64", "\"\"")
         buildConfigField("String", "SABR_POLICY_URL", "\"\"")
+        buildConfigField(
+            "String",
+            "BOTGUARD_GOOGLE_API_KEY",
+            botGuardGoogleApiKey.asBuildConfigString()
+        )
+        buildConfigField(
+            "String",
+            "BOTGUARD_REQUEST_KEY",
+            botGuardRequestKey.asBuildConfigString()
+        )
         minSdk {
             version = release(ANDROID_MIN_SDK)
         }

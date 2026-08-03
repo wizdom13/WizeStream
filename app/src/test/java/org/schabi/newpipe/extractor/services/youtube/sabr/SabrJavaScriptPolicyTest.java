@@ -117,7 +117,7 @@ class SabrJavaScriptPolicyTest {
         final SabrSessionPolicy.ControlResponseEvent event =
                 new SabrSessionPolicy.ControlResponseEvent(0, true,
                         SabrSessionPolicy.ControlMode.PUMP, decoded);
-        final SabrSessionPolicy.State state = new SabrSessionPolicy.State(1, 0, 0, 0);
+        final SabrSessionPolicy.State state = new SabrSessionPolicy.State(1, 0, 0);
 
         assertThrows(IllegalStateException.class, () -> hostReturning(
                 SabrSessionPolicy.Result.control(state, Arrays.asList(
@@ -140,7 +140,7 @@ class SabrJavaScriptPolicyTest {
                         SabrResponseStatePatch.builder().build()))
                 .evaluate(state, event));
         assertThrows(IllegalStateException.class, () -> hostReturning(
-                SabrSessionPolicy.Result.control(new SabrSessionPolicy.State(1, 2, 0, 0),
+                SabrSessionPolicy.Result.control(new SabrSessionPolicy.State(1, 2, 0),
                         Collections.singletonList(new SabrSessionPolicy.Action(
                                 SabrSessionPolicy.ActionType.CONTINUE)),
                         new SabrSessionPolicy.ControlDecision(0, null, null)))
@@ -183,7 +183,7 @@ class SabrJavaScriptPolicyTest {
 
     @Test
     void hostRejectsInvalidDemandEventsAndDecisions() {
-        final SabrSessionPolicy.State state = new SabrSessionPolicy.State(1, 0, 0, 0);
+        final SabrSessionPolicy.State state = new SabrSessionPolicy.State(1, 0, 0);
         final SabrSessionPolicy policy = new SabrSessionPolicy() {
             @Nonnull
             @Override

@@ -37,6 +37,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  WIZESTREAM_BOTGUARD_GOOGLE_API_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_GOOGLE_API_KEY }}
+  WIZESTREAM_BOTGUARD_REQUEST_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_REQUEST_KEY }}
+
 jobs:
   build-and-test-jvm:
     runs-on: ubuntu-latest

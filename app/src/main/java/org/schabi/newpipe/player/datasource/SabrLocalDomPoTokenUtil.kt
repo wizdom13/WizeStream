@@ -9,7 +9,7 @@ internal data class SabrAttChallengeData(
     val program: String,
     val globalName: String,
     val interpreterJavascript: String?,
-    val interpreterUrl: String?,
+    val interpreterUrl: String?
 )
 
 internal fun parseSabrAttChallengeData(rawAttestationData: String): SabrAttChallengeData {
@@ -30,25 +30,25 @@ internal fun parseSabrAttChallengeData(rawAttestationData: String): SabrAttChall
         program = challenge.getString("program"),
         globalName = challenge.getString("globalName"),
         interpreterJavascript = interpreterJavascript,
-        interpreterUrl = interpreterUrl,
+        interpreterUrl = interpreterUrl
     )
 }
 
 internal fun buildSabrAttChallengeData(
     challengeData: SabrAttChallengeData,
-    interpreterJavascript: String,
+    interpreterJavascript: String
 ): String {
     return JsonWriter.string(
         JsonObject.builder()
             .`object`("interpreterJavascript")
             .value(
                 "privateDoNotAccessOrElseSafeScriptWrappedValue",
-                interpreterJavascript,
+                interpreterJavascript
             )
             .end()
             .value("program", challengeData.program)
             .value("globalName", challengeData.globalName)
-            .done(),
+            .done()
     )
 }
 

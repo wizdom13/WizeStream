@@ -195,11 +195,13 @@ open class App :
             Callable { YoutubeParsingHelper.getClientVersion() },
             YoutubeParsingHelper.MWEB_USER_AGENT
         )
+
         "web" -> YoutubePoTokenClientContext(
             "WEB",
             Callable { YoutubeParsingHelper.getClientVersion() },
             YoutubeParsingHelper.WEB_USER_AGENT
         )
+
         "web_safari" -> YoutubePoTokenClientContext(
             "WEB",
             Callable { "2.20260114.08.00" },
@@ -207,22 +209,26 @@ open class App :
                 "AppleWebKit/605.1.15 (KHTML, like Gecko) " +
                 "Version/15.5 Safari/605.1.15,gzip(gfe)"
         )
+
         "android_vr" -> YoutubePoTokenClientContext(
             "ANDROID_VR",
             Callable { "1.65.10" },
             "com.google.android.apps.youtube.vr.oculus/1.65.10 " +
                 "(Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip"
         )
+
         "tv_simply" -> YoutubePoTokenClientContext(
             "TVHTML5_SIMPLY",
             Callable { "1.0" },
             YoutubeParsingHelper.WEB_USER_AGENT
         )
+
         "tv_downgraded" -> YoutubePoTokenClientContext(
             "TVHTML5",
             Callable { "5.20260114" },
             "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version"
         )
+
         else -> null
     }
 

@@ -113,7 +113,7 @@ class PoTokenWebView private constructor(
 
         makeBotguardServiceRequest(
             "https://www.youtube.com/api/jnn/v1/Create",
-            "[ \"$REQUEST_KEY\" ]"
+            "[ \"${BuildConfig.BOTGUARD_REQUEST_KEY}\" ]"
         ) { responseBody ->
             val parsedChallengeData = parseChallengeData(responseBody)
             webView.evaluateJavascript(
@@ -156,7 +156,7 @@ class PoTokenWebView private constructor(
         }
         makeBotguardServiceRequest(
             "https://www.youtube.com/api/jnn/v1/GenerateIT",
-            "[ \"$REQUEST_KEY\", \"$botguardResponse\" ]"
+            "[ \"${BuildConfig.BOTGUARD_REQUEST_KEY}\", \"$botguardResponse\" ]"
         ) { responseBody ->
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, "GenerateIT response: $responseBody")
@@ -300,7 +300,7 @@ class PoTokenWebView private constructor(
                         "User-Agent" to listOf(USER_AGENT),
                         "Accept" to listOf("application/json"),
                         "Content-Type" to listOf("application/json+protobuf"),
-                        "x-goog-api-key" to listOf(GOOGLE_API_KEY),
+                        "x-goog-api-key" to listOf(BuildConfig.BOTGUARD_GOOGLE_API_KEY),
                         "x-user-agent" to listOf("grpc-web-javascript/0.1")
                     ),
                     data.toByteArray()
@@ -359,9 +359,6 @@ class PoTokenWebView private constructor(
     companion object : PoTokenGenerator.Factory {
         private val TAG = PoTokenWebView::class.simpleName
 
-        // Public API key used by BotGuard, which has been got by looking at BotGuard requests
-        private const val GOOGLE_API_KEY = "AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw" // NOSONAR
-        private const val REQUEST_KEY = "O43z0dpjhgX20SCx4KAo"
         private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.3"
         private const val JS_INTERFACE = "PoTokenWebView"

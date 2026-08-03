@@ -10,7 +10,7 @@ class LocalDomPoTokenRequestTest {
         visitorData = "visitor-test",
         clientName = "WEB",
         clientVersion = "2.test",
-        userAgent = "test-user-agent",
+        userAgent = "test-user-agent"
     )
 
     @Test
@@ -19,7 +19,7 @@ class LocalDomPoTokenRequestTest {
 
         assertEquals(
             SabrAttChallengeData("program", "global", "script", null),
-            parseSabrAttChallengeData(response),
+            parseSabrAttChallengeData(response)
         )
     }
 
@@ -32,9 +32,9 @@ class LocalDomPoTokenRequestTest {
                 "program",
                 "global",
                 null,
-                "https://example.test/interpreter.js",
+                "https://example.test/interpreter.js"
             ),
-            parseSabrAttChallengeData(response),
+            parseSabrAttChallengeData(response)
         )
     }
 
@@ -42,19 +42,19 @@ class LocalDomPoTokenRequestTest {
     fun cacheIdentityDoesNotCrossClientContexts() {
         assertNotEquals(
             context.cacheIdentity,
-            context.copy(clientName = "MWEB").cacheIdentity,
+            context.copy(clientName = "MWEB").cacheIdentity
         )
         assertNotEquals(
             context.cacheIdentity,
-            context.copy(clientVersion = "3.test").cacheIdentity,
+            context.copy(clientVersion = "3.test").cacheIdentity
         )
         assertNotEquals(
             context.cacheIdentity,
-            context.copy(visitorData = "other-visitor").cacheIdentity,
+            context.copy(visitorData = "other-visitor").cacheIdentity
         )
         assertNotEquals(
             context.cacheIdentity,
-            context.copy(userAgent = "different-user-agent").cacheIdentity,
+            context.copy(userAgent = "different-user-agent").cacheIdentity
         )
     }
 }

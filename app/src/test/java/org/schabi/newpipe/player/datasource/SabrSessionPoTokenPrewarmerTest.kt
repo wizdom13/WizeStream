@@ -1,5 +1,9 @@
 package org.schabi.newpipe.player.datasource
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -9,10 +13,6 @@ import org.junit.Test
 import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.services.youtube.YoutubeSessionPoToken
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 class SabrSessionPoTokenPrewarmerTest {
     @Test(timeout = 5_000)
@@ -23,19 +23,23 @@ class SabrSessionPoTokenPrewarmerTest {
         val release = CountDownLatch(1)
         val calls = AtomicInteger()
         try {
-            assertTrue(prewarmer.start("context") {
-                calls.incrementAndGet()
-                started.countDown()
-                release.await()
-                "token"
-            })
+            assertTrue(
+                prewarmer.start("context") {
+                    calls.incrementAndGet()
+                    started.countDown()
+                    release.await()
+                    "token"
+                }
+            )
             assertTrue(started.await(2, TimeUnit.SECONDS))
             val shared = prewarmer.inFlight("context")
 
-            assertFalse(prewarmer.start("context") {
-                calls.incrementAndGet()
-                "duplicate"
-            })
+            assertFalse(
+                prewarmer.start("context") {
+                    calls.incrementAndGet()
+                    "duplicate"
+                }
+            )
             release.countDown()
 
             assertEquals("token", shared?.get(2, TimeUnit.SECONDS))
@@ -54,19 +58,23 @@ class SabrSessionPoTokenPrewarmerTest {
         val replacementStarted = CountDownLatch(1)
         val replacementRelease = CountDownLatch(1)
         try {
-            assertTrue(prewarmer.start("old") {
-                started.countDown()
-                CountDownLatch(1).await()
-                "old-token"
-            })
+            assertTrue(
+                prewarmer.start("old") {
+                    started.countDown()
+                    CountDownLatch(1).await()
+                    "old-token"
+                }
+            )
             assertTrue(started.await(2, TimeUnit.SECONDS))
             val old = prewarmer.inFlight("old")
 
-            assertTrue(prewarmer.start("new") {
-                replacementStarted.countDown()
-                replacementRelease.await()
-                "new-token"
-            })
+            assertTrue(
+                prewarmer.start("new") {
+                    replacementStarted.countDown()
+                    replacementRelease.await()
+                    "new-token"
+                }
+            )
             assertTrue(replacementStarted.await(2, TimeUnit.SECONDS))
             val replacement = prewarmer.inFlight("new")
 
@@ -87,7 +95,7 @@ class SabrSessionPoTokenPrewarmerTest {
         val prewarmer = ContextBoundSingleFlight<
             YoutubeSessionPoTokenPrewarmContext,
             PreparedYoutubeSessionPoToken
-        >(prewarmExecutor)
+            >(prewarmExecutor)
         val requestContext = YoutubeSessionPoTokenContext(
             "MWEB",
             "2.test",
@@ -95,7 +103,7 @@ class SabrSessionPoTokenPrewarmerTest {
             Localization("en", "US"),
             ContentCountry("US"),
             false,
-            "credential-a",
+            "credential-a"
         )
         val versionResolutionStarted = CountDownLatch(1)
         val versionResolutionRelease = CountDownLatch(1)
@@ -103,15 +111,17 @@ class SabrSessionPoTokenPrewarmerTest {
         val initializations = AtomicInteger()
         val synchronousInitializations = AtomicInteger()
         try {
-            assertTrue(prewarmer.start(requestContext.prewarmContext()) {
-                versionResolutionStarted.countDown()
-                versionResolutionRelease.await()
-                initializations.incrementAndGet()
-                PreparedYoutubeSessionPoToken(
-                    requestContext,
-                    YoutubeSessionPoToken("visitor-data", "prewarmed-token"),
-                )
-            })
+            assertTrue(
+                prewarmer.start(requestContext.prewarmContext()) {
+                    versionResolutionStarted.countDown()
+                    versionResolutionRelease.await()
+                    initializations.incrementAndGet()
+                    PreparedYoutubeSessionPoToken(
+                        requestContext,
+                        YoutubeSessionPoToken("visitor-data", "prewarmed-token")
+                    )
+                }
+            )
             assertTrue(versionResolutionStarted.await(2, TimeUnit.SECONDS))
 
             val foreground = foregroundExecutor.submit<YoutubeSessionPoToken> {
@@ -133,7 +143,7 @@ class SabrSessionPoTokenPrewarmerTest {
 
             assertEquals(
                 "prewarmed-token",
-                foreground.get(2, TimeUnit.SECONDS).poToken,
+                foreground.get(2, TimeUnit.SECONDS).poToken
             )
             assertEquals(1, initializations.get())
             assertEquals(0, synchronousInitializations.get())
@@ -153,14 +163,14 @@ class SabrSessionPoTokenPrewarmerTest {
             Localization("en", "US"),
             ContentCountry("US"),
             false,
-            "credential-a",
+            "credential-a"
         )
 
         assertNotEquals(context, context.copy(clientName = "WEB"))
         assertNotEquals(context, context.copy(clientVersion = "3.test"))
         assertEquals(
             context.prewarmContext(),
-            context.copy(clientVersion = "3.test").prewarmContext(),
+            context.copy(clientVersion = "3.test").prewarmContext()
         )
         assertNotEquals(context, context.copy(userAgent = "other-user-agent"))
         assertNotEquals(context, context.copy(localization = Localization("zh", "CN")))

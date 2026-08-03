@@ -3,6 +3,7 @@ package org.schabi.newpipe.player.datasource
 import android.util.Base64
 import com.grack.nanojson.JsonArray
 import com.grack.nanojson.JsonObject
+import org.schabi.newpipe.extractor.services.youtube.sabr.BuiltinSabrSessionPolicy
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrContextSendingPolicy
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrContextUpdate
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrFormatInitializationMetadata
@@ -14,6 +15,7 @@ import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrResponseStatePatch
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrScriptPolicy
 import org.schabi.newpipe.extractor.services.youtube.sabr.SabrSessionPolicy
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrStreamProtectionStatus
 
 class QuickJsSabrSessionPolicy
 @Throws(SabrProtocolException::class)
@@ -23,6 +25,7 @@ constructor(
     private var sessionId = -1
     private val mediaProtocol: SabrMediaProtocol
     private val scriptedDemand: Boolean
+    private val builtinPolicy = BuiltinSabrSessionPolicy()
     private var closed = false
 
     init {
@@ -148,7 +151,13 @@ constructor(
         state: SabrSessionPolicy.State,
         event: SabrSessionPolicy.ControlResponseEvent
     ): SabrSessionPolicy.Result {
-        val input = stateJson(state)
+        if (QuickJsSabrPolicyCompatibility.requiresBuiltinPolicy(
+                event.response.streamProtectionStatus
+            )
+        ) {
+            return builtinPolicy.evaluate(state, event)
+        }
+        val input = QuickJsSabrPolicyCompatibility.stateJson(state)
         input["segmentCount"] = event.segmentCount
         input["honorBackoff"] = event.shouldHonorBackoff()
         input["mode"] = event.mode.name
@@ -164,7 +173,11 @@ constructor(
         val builtin = JsonObject()
         builtin["error"] = event.response.sabrErrorDetails != null
         builtin["reload"] = event.response.isReloadRequested
-        builtin["protection"] = event.response.isProtectionBoundaryNoMediaResponse
+        builtin["protection"] = false
+        builtin["protectionStatus"] = event.response.streamProtectionStatus
+        builtin["protectionMaxRetries"] = event.response.streamProtectionMaxRetries
+        builtin["attestationPending"] = event.response.isAttestationPending
+        builtin["attestationRequired"] = event.response.isAttestationRequired
         builtin["redirectUrl"] = event.response.redirectUrl
         builtin["backoffMs"] = maxOf(0, event.response.backoffTimeMs)
         input["builtin"] = builtin
@@ -190,12 +203,7 @@ constructor(
         val nextState = if (next == null) {
             state
         } else {
-            SabrSessionPolicy.State(
-                state.requestNumber,
-                next.getInt("redirectCount", state.redirectCount),
-                next.getInt("poTokenRefreshes", state.poTokenRefreshes),
-                state.reloads
-            )
+            QuickJsSabrPolicyCompatibility.nextState(state, next)
         }
         return SabrSessionPolicy.Result.control(
             nextState,
@@ -330,13 +338,6 @@ constructor(
         return QuickJsSabrRuntime.invoke(sessionId, method, input)
     }
 
-    private fun stateJson(state: SabrSessionPolicy.State) = JsonObject().apply {
-        this["requestNumber"] = state.requestNumber
-        this["redirectCount"] = state.redirectCount
-        this["poTokenRefreshes"] = state.poTokenRefreshes
-        this["reloads"] = state.reloads
-    }
-
     private fun demandInput(event: SabrSessionPolicy.DemandEvent) = JsonObject().apply {
         this["targetItag"] = event.targetItag
         this["targetSequenceNumber"] = event.targetSequenceNumber
@@ -418,4 +419,21 @@ constructor(
             )
         }
     }
+}
+
+internal object QuickJsSabrPolicyCompatibility {
+    fun requiresBuiltinPolicy(status: Int): Boolean = status == SabrStreamProtectionStatus.ATTESTATION_PENDING ||
+        status == SabrStreamProtectionStatus.ATTESTATION_REQUIRED
+
+    fun stateJson(state: SabrSessionPolicy.State) = JsonObject().apply {
+        this["requestNumber"] = state.requestNumber
+        this["redirectCount"] = state.redirectCount
+        this["reloads"] = state.reloads
+    }
+
+    fun nextState(state: SabrSessionPolicy.State, scripted: JsonObject) = SabrSessionPolicy.State(
+        state.requestNumber,
+        scripted.getInt("redirectCount", state.redirectCount),
+        state.reloads
+    )
 }
