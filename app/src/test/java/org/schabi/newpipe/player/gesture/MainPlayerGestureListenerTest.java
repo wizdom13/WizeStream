@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import org.schabi.newpipe.player.helper.PlaybackParameterPreferences;
 
 public class MainPlayerGestureListenerTest {
     private static final float FLOAT_TOLERANCE = 0.001f;
@@ -64,26 +65,48 @@ public class MainPlayerGestureListenerTest {
     }
 
     @Test
-    public void upwardTwoFingerMovementIncreasesSpeedInFineSteps() {
-        assertEquals(1.10f,
-                MainPlayerGestureListener.calculatePlaybackSpeed(1.0f, 48f, 24f),
-                FLOAT_TOLERANCE);
+    public void twoFingerMovementUsesEverySupportedAdjustmentStep() {
+        final float[] adjustmentSteps = {
+                PlaybackParameterPreferences.STEP_1_PERCENT,
+                PlaybackParameterPreferences.STEP_5_PERCENT,
+                PlaybackParameterPreferences.STEP_10_PERCENT,
+                PlaybackParameterPreferences.STEP_25_PERCENT,
+                PlaybackParameterPreferences.STEP_100_PERCENT
+        };
+
+        for (final float adjustmentStep : adjustmentSteps) {
+            assertEquals(1.0f + adjustmentStep,
+                    MainPlayerGestureListener.calculatePlaybackSpeed(
+                            1.0f, 24f, 24f, adjustmentStep),
+                    FLOAT_TOLERANCE);
+        }
     }
 
     @Test
     public void downwardTwoFingerMovementCanLandExactlyOnNormalSpeed() {
         assertEquals(1.0f,
-                MainPlayerGestureListener.calculatePlaybackSpeed(1.13f, -72f, 24f),
+                MainPlayerGestureListener.calculatePlaybackSpeed(
+                        1.13f, -72f, 24f, 0.05f),
+                FLOAT_TOLERANCE);
+    }
+
+    @Test
+    public void twoFingerMovementRoundsToSelectedStep() {
+        assertEquals(1.25f,
+                MainPlayerGestureListener.calculatePlaybackSpeed(
+                        1.0f, 20f, 24f, 0.25f),
                 FLOAT_TOLERANCE);
     }
 
     @Test
     public void twoFingerSpeedIsClampedToPlayerLimits() {
         assertEquals(3.0f,
-                MainPlayerGestureListener.calculatePlaybackSpeed(2.95f, 240f, 24f),
+                MainPlayerGestureListener.calculatePlaybackSpeed(
+                        2.95f, 240f, 24f, 0.25f),
                 FLOAT_TOLERANCE);
         assertEquals(0.10f,
-                MainPlayerGestureListener.calculatePlaybackSpeed(0.15f, -240f, 24f),
+                MainPlayerGestureListener.calculatePlaybackSpeed(
+                        0.15f, -240f, 24f, 0.25f),
                 FLOAT_TOLERANCE);
     }
 }

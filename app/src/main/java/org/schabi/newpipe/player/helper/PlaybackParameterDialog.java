@@ -49,15 +49,8 @@ public class PlaybackParameterDialog extends DialogFragment {
     private static final boolean PITCH_CTRL_MODE_PERCENT = false;
     private static final boolean PITCH_CTRL_MODE_SEMITONE = true;
 
-    private static final double STEP_1_PERCENT_VALUE = 0.01f;
-    private static final double STEP_5_PERCENT_VALUE = 0.05f;
-    private static final double STEP_10_PERCENT_VALUE = 0.10f;
-    private static final double STEP_25_PERCENT_VALUE = 0.25f;
-    private static final double STEP_100_PERCENT_VALUE = 1.00f;
-
     private static final double DEFAULT_TEMPO = 1.00f;
     private static final double DEFAULT_PITCH_PERCENT = 1.00f;
-    private static final double DEFAULT_STEP = STEP_25_PERCENT_VALUE;
     private static final boolean DEFAULT_SKIP_SILENCE = false;
 
     private static final SliderStrategy QUADRATIC_STRATEGY = new SliderStrategy.Quadratic(
@@ -387,31 +380,36 @@ public class PlaybackParameterDialog extends DialogFragment {
     // -- Steps (Set) --
 
     private void setupStepTextView(
-            final double stepSizeValue,
+            final float stepSizeValue,
             final TextView textView
     ) {
         setText(textView, PlaybackParameterDialog::getPercentString, stepSizeValue);
         textView.setOnClickListener(view -> {
             PreferenceManager.getDefaultSharedPreferences(requireContext())
                     .edit()
-                    .putFloat(getString(R.string.adjustment_step_key), (float) stepSizeValue)
+                    .putFloat(getString(R.string.adjustment_step_key), stepSizeValue)
                     .apply();
 
             setStepSizeToUI(stepSizeValue);
         });
     }
 
-    private Map<Double, TextView> getStepSizeComponentMappings() {
-        return Map.of(STEP_1_PERCENT_VALUE, binding.stepSizeOnePercent,
-                STEP_5_PERCENT_VALUE, binding.stepSizeFivePercent,
-                STEP_10_PERCENT_VALUE, binding.stepSizeTenPercent,
-                STEP_25_PERCENT_VALUE, binding.stepSizeTwentyFivePercent,
-                STEP_100_PERCENT_VALUE, binding.stepSizeOneHundredPercent);
+    private Map<Float, TextView> getStepSizeComponentMappings() {
+        return Map.of(PlaybackParameterPreferences.STEP_1_PERCENT,
+                binding.stepSizeOnePercent,
+                PlaybackParameterPreferences.STEP_5_PERCENT,
+                binding.stepSizeFivePercent,
+                PlaybackParameterPreferences.STEP_10_PERCENT,
+                binding.stepSizeTenPercent,
+                PlaybackParameterPreferences.STEP_25_PERCENT,
+                binding.stepSizeTwentyFivePercent,
+                PlaybackParameterPreferences.STEP_100_PERCENT,
+                binding.stepSizeOneHundredPercent);
     }
 
-    private void setStepSizeToUI(final double newStepSize) {
+    private void setStepSizeToUI(final float newStepSize) {
         // Bring all textviews into a normal state
-        final Map<Double, TextView> stepSiteComponentMapping = getStepSizeComponentMappings();
+        final Map<Float, TextView> stepSiteComponentMapping = getStepSizeComponentMappings();
         stepSiteComponentMapping.forEach((v, textView) -> textView.setBackground(
                 resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)));
 
@@ -432,9 +430,8 @@ public class PlaybackParameterDialog extends DialogFragment {
         binding.pitchPercentStepDown.setText(getStepDownPercentString(newStepSize));
     }
 
-    private double getCurrentStepSize() {
-        return PreferenceManager.getDefaultSharedPreferences(requireContext())
-                .getFloat(getString(R.string.adjustment_step_key), (float) DEFAULT_STEP);
+    private float getCurrentStepSize() {
+        return PlaybackParameterPreferences.getAdjustmentStep(requireContext());
     }
 
     // -- Additional options --

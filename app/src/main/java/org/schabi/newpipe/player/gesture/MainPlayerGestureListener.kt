@@ -20,6 +20,7 @@ import org.schabi.newpipe.ktx.AnimationType
 import org.schabi.newpipe.ktx.animate
 import org.schabi.newpipe.player.Player
 import org.schabi.newpipe.player.helper.AudioReactor
+import org.schabi.newpipe.player.helper.PlaybackParameterPreferences
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.ui.MainPlayerUi
 import org.schabi.newpipe.util.Localization
@@ -55,6 +56,7 @@ class MainPlayerGestureListener(
     private var twoFingerInitialCenterY = 0f
     private var twoFingerInitialSpan = 0f
     private var twoFingerStartSpeed = 1f
+    private var twoFingerSpeedStep = PlaybackParameterPreferences.DEFAULT_ADJUSTMENT_STEP
     private var lastGestureSpeed = 1f
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -150,6 +152,7 @@ class MainPlayerGestureListener(
             twoFingerInitialCenterY = centerY(event)
             twoFingerInitialSpan = pointerSpan(event)
             twoFingerStartSpeed = player.playbackSpeed
+            twoFingerSpeedStep = PlaybackParameterPreferences.getAdjustmentStep(player.context)
             lastGestureSpeed = twoFingerStartSpeed
             twoFingerGestureState = TwoFingerGestureState.PENDING
             suppressSingleTouchUntilUp = true
@@ -220,7 +223,8 @@ class MainPlayerGestureListener(
         val newSpeed = calculatePlaybackSpeed(
             twoFingerStartSpeed,
             verticalMovement,
-            pixelsPerStep
+            pixelsPerStep,
+            twoFingerSpeedStep
         )
         if (newSpeed == lastGestureSpeed) {
             return
@@ -543,7 +547,6 @@ class MainPlayerGestureListener(
         private const val SEEK_SWIPE_FAST_THRESHOLD_MS = 60_000L
         private const val TWO_FINGER_LOCK_THRESHOLD_DP = 12f
         private const val TWO_FINGER_SPEED_STEP_DP = 24f
-        private const val PLAYBACK_SPEED_STEP = 0.05f
         private const val MIN_PLAYBACK_SPEED = 0.10f
         private const val MAX_PLAYBACK_SPEED = 3.00f
         private const val NORMAL_PLAYBACK_SPEED = 1.00f
@@ -571,14 +574,17 @@ class MainPlayerGestureListener(
         fun calculatePlaybackSpeed(
             startSpeed: Float,
             verticalMovement: Float,
-            pixelsPerStep: Float
+            pixelsPerStep: Float,
+            adjustmentStep: Float
         ): Float {
             if (pixelsPerStep <= 0f) {
                 return startSpeed.coerceIn(MIN_PLAYBACK_SPEED, MAX_PLAYBACK_SPEED)
             }
+            val sanitizedStep =
+                PlaybackParameterPreferences.sanitizeAdjustmentStep(adjustmentStep)
             val rawSpeed = startSpeed +
-                verticalMovement / pixelsPerStep * PLAYBACK_SPEED_STEP
-            return (round(rawSpeed / PLAYBACK_SPEED_STEP) * PLAYBACK_SPEED_STEP)
+                verticalMovement / pixelsPerStep * sanitizedStep
+            return (round(rawSpeed / sanitizedStep) * sanitizedStep)
                 .coerceIn(MIN_PLAYBACK_SPEED, MAX_PLAYBACK_SPEED)
         }
 
