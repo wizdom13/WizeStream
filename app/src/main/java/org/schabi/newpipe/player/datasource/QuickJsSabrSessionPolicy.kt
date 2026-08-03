@@ -117,7 +117,7 @@ constructor(
     ): SabrSessionPolicy.Result {
         ensureOpen()
         if (event is SabrSessionPolicy.RequestEvent) {
-            val input = stateJson(state)
+            val input = QuickJsSabrPolicyCompatibility.stateJson(state)
             input["playerTimeMs"] = event.playerTimeMs
             input["bufferedEdgeMs"] = event.bufferedEdgeMs
             input["poTokenBytes"] = event.poTokenBytes
