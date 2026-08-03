@@ -18,6 +18,23 @@
   <a href="https://shields.rbtlog.dev/org.wisso.newpipematerial"><img src="https://shields.rbtlog.dev/simple/org.wisso.newpipematerial" alt="Reproducible build status"></a>
 </p>
 
+<hr>
+
+<div align="center">
+  <h3>🧪 Help test WizeFiles Beta</h3>
+  <p>
+    We’re looking for testers for <strong>WizeFiles</strong>, a new Android file manager
+    from the developer of WizeStream.
+  </p>
+  <p>
+    <a href="https://github.com/wizdom13/WizeFiles-Beta">
+      <strong>View the beta, download it, and share your feedback →</strong>
+    </a>
+  </p>
+</div>
+
+<hr>
+
 <p align="center">
   <a href="#important-project-notice">Project notice</a> •
   <a href="#what-is-wizestream">About</a> •
