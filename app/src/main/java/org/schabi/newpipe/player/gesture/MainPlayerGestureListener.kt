@@ -367,7 +367,7 @@ class MainPlayerGestureListener(
     override fun onScrollEnd(event: MotionEvent) {
         super.onScrollEnd(event)
         if (isPendingFullscreenSwipe) {
-            playerUi.toggleFullscreen()
+            playerUi.toggleFullscreenWithOrientation()
             isPendingFullscreenSwipe = false
             return
         }

@@ -750,9 +750,6 @@ public final class VideoDetailFragment
 
         // If we are in fullscreen mode just exit from it via first back press
         if (isFullscreen()) {
-            if (!DeviceUtils.isTablet(activity)) {
-                player.pause();
-            }
             restoreDefaultOrientation();
             setAutoPlay(false);
             return true;
@@ -1616,8 +1613,7 @@ public final class VideoDetailFragment
             toggleFullscreenIfInFullscreenMode();
         }
 
-        // This will show systemUI and pause the player.
-        // User can tap on Play button and video will be in fullscreen mode again
+        // This will show the system UI and exit fullscreen without changing playback state.
         // Note for tablet: trying to avoid orientation changes since it's not easy
         // to physically rotate the tablet every time
         if (activity != null && !DeviceUtils.isTablet(activity)) {

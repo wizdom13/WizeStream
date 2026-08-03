@@ -160,16 +160,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     protected void initListeners() {
         super.initListeners();
 
-        binding.screenRotationButton.setOnClickListener(makeOnClickListener(() -> {
-            // Only if it's not a vertical video or vertical video but in landscape with locked
-            // orientation a screen orientation can be changed automatically
-            if (!isVerticalVideo || (isLandscape() && globalScreenOrientationLocked(context))) {
-                player.getFragmentListener()
-                        .ifPresent(PlayerServiceEventListener::onScreenRotationButtonClicked);
-            } else {
-                toggleFullscreen();
-            }
-        }));
+        binding.screenRotationButton.setOnClickListener(
+                makeOnClickListener(this::toggleFullscreenWithOrientation));
         binding.queueButton.setOnClickListener(v -> onQueueClicked());
         binding.segmentsButton.setOnClickListener(v -> onSegmentsClicked());
         binding.sleepTimerButton.setOnClickListener(v ->
@@ -1011,6 +1003,26 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.metadataView.setVisibility(isFullscreen ? View.VISIBLE : View.GONE);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         setupScreenRotationButton();
+    }
+
+    /**
+     * Toggles fullscreen through the same orientation-aware path as the screen rotation button.
+     * Player gestures must use this instead of changing only the fullscreen UI state.
+     */
+    public void toggleFullscreenWithOrientation() {
+        if (shouldUseScreenRotationAction(isVerticalVideo, isLandscape(),
+                globalScreenOrientationLocked(context))) {
+            player.getFragmentListener()
+                    .ifPresent(PlayerServiceEventListener::onScreenRotationButtonClicked);
+        } else {
+            toggleFullscreen();
+        }
+    }
+
+    static boolean shouldUseScreenRotationAction(final boolean verticalVideo,
+                                                 final boolean landscape,
+                                                 final boolean screenOrientationLocked) {
+        return !verticalVideo || landscape && screenOrientationLocked;
     }
 
     public void checkLandscape() {
