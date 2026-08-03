@@ -7,7 +7,6 @@ import org.schabi.newpipe.extractor.localization.Localization;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -100,29 +99,6 @@ public abstract class Downloader {
                 .build(), callback);
     }
 
-    public StreamingResponse getStreaming(final String url,
-                                          @Nullable final Map<String, List<String>> headers,
-                                          @Nullable final Localization localization)
-            throws IOException, ReCaptchaException {
-        final Response response = get(url, headers, localization);
-        final byte[] raw = response.rawResponseBody() == null
-                ? new byte[0] : response.rawResponseBody();
-        return new StreamingResponse(response.responseCode(), response.responseHeaders(),
-                new ByteArrayInputStream(raw));
-    }
-
-    /**
-     * Streaming GET with a caller-supplied deadline. Implementations that support per-call
-     * timeouts should override this; the compatibility default preserves the regular behavior.
-     */
-    public StreamingResponse getStreaming(final String url,
-                                          @Nullable final Map<String, List<String>> headers,
-                                          @Nullable final Localization localization,
-                                          final long timeoutMs)
-            throws IOException, ReCaptchaException {
-        return getStreaming(url, headers, localization);
-    }
-
     /**
      * Do a HEAD request.
      *
@@ -187,24 +163,6 @@ public abstract class Downloader {
                 .headers(headers)
                 .localization(localization)
                 .build());
-    }
-
-    /**
-     * Like {@link #post(String, Map, byte[], Localization)} but returns the body as a stream instead
-     * of a buffered {@code byte[]}, so a large response (e.g. a SABR media batch, 50-150MB at 4K) is
-     * not held whole in memory. The default falls back to the buffered {@code post()} and wraps its
-     * body; an implementation that can stream (e.g. over okhttp) should override this. Caller closes.
-     */
-    public StreamingResponse postStreaming(final String url,
-                                           @Nullable final Map<String, List<String>> headers,
-                                           @Nullable final byte[] dataToSend,
-                                           @Nullable final Localization localization)
-            throws IOException, ReCaptchaException {
-        final Response response = post(url, headers, dataToSend, localization);
-        final byte[] raw = response.rawResponseBody() == null
-                ? new byte[0] : response.rawResponseBody();
-        return new StreamingResponse(response.responseCode(), response.responseHeaders(),
-                new ByteArrayInputStream(raw));
     }
 
     public CancellableCall postAsync(final String url,

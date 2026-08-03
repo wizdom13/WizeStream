@@ -37,10 +37,6 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  WIZESTREAM_BOTGUARD_GOOGLE_API_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_GOOGLE_API_KEY }}
-  WIZESTREAM_BOTGUARD_REQUEST_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_REQUEST_KEY }}
-
 jobs:
   build-and-test-jvm:
     runs-on: ubuntu-latest
@@ -64,22 +60,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Validate BotGuard credentials for APK artifacts
-        id: botguard-credentials
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -n "${WIZESTREAM_BOTGUARD_GOOGLE_API_KEY}" && \
-                -n "${WIZESTREAM_BOTGUARD_REQUEST_KEY}" ]]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::BotGuard secrets are unavailable; APK artifact upload is disabled."
-          else
-            echo "::error::Missing WIZESTREAM_BOTGUARD_GOOGLE_API_KEY or WIZESTREAM_BOTGUARD_REQUEST_KEY."
-            exit 1
-          fi
-
       - name: Build APKs and run JVM tests
         run: ./gradlew assembleDebug lintDebug testDebugUnitTest assembleRelease --stacktrace -DskipFormatKtlint
 
@@ -102,7 +82,6 @@ jobs:
           grep -q "application-label:'WizeStream Debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
 
       - name: Upload APK
-        if: steps.botguard-credentials.outputs.configured == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: wizestream-debug-apk

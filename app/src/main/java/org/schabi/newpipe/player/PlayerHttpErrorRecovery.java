@@ -7,8 +7,6 @@ import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 
-import org.schabi.newpipe.extractor.services.youtube.sabr.SabrPoTokenRefreshException;
-import org.schabi.newpipe.extractor.services.youtube.sabr.SabrRedirectException;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
 import java.net.UnknownHostException;
@@ -62,9 +60,7 @@ final class PlayerHttpErrorRecovery {
 
     static boolean isRecoverableMediaUrlFailure(@NonNull final Throwable error) {
         return isRecoverableStatusCode(findInvalidResponseCode(error))
-                || hasUnknownHostCause(error)
-                || hasSabrRedirectCause(error)
-                || hasSabrPoTokenRefreshCause(error);
+                || hasUnknownHostCause(error);
     }
 
     static boolean isYouTubeService(final int serviceId) {
@@ -99,33 +95,5 @@ final class PlayerHttpErrorRecovery {
             current = current.getCause();
         }
         return false;
-    }
-
-    static boolean hasSabrRedirectCause(@NonNull final Throwable error) {
-        Throwable current = error;
-        while (current != null) {
-            if (current instanceof SabrRedirectException) {
-                return true;
-            }
-            current = current.getCause();
-        }
-        return false;
-    }
-
-    static boolean hasSabrPoTokenRefreshCause(@NonNull final Throwable error) {
-        return findSabrPoTokenRefreshCause(error) != null;
-    }
-
-    @Nullable
-    static SabrPoTokenRefreshException findSabrPoTokenRefreshCause(
-            @NonNull final Throwable error) {
-        Throwable current = error;
-        while (current != null) {
-            if (current instanceof SabrPoTokenRefreshException) {
-                return (SabrPoTokenRefreshException) current;
-            }
-            current = current.getCause();
-        }
-        return null;
     }
 }

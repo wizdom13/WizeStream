@@ -17,8 +17,7 @@ not the unmodified official NewPipeExtractor and is no longer consumed as an ext
 PipePipeExtractor or WizeStreamExtractor dependency.
 
 Each WizeStream commit and release records the exact extractor source together with the app. This
-allows application, player, and service changes—including YouTube SABR support—to be developed and
-tested together.
+allows application, player, and service compatibility changes to be developed and tested together.
 
 ## Issue responsibility
 

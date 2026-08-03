@@ -24,21 +24,12 @@ val releaseKeyAlias = System.getenv("WIZESTREAM_RELEASE_KEY_ALIAS")
     ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("WIZESTREAM_RELEASE_KEY_PASSWORD")
     ?: System.getenv("NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD")
-val botGuardGoogleApiKey = providers.environmentVariable("WIZESTREAM_BOTGUARD_GOOGLE_API_KEY")
-    .orElse(providers.gradleProperty("WIZESTREAM_BOTGUARD_GOOGLE_API_KEY"))
-    .getOrElse("")
-val botGuardRequestKey = providers.environmentVariable("WIZESTREAM_BOTGUARD_REQUEST_KEY")
-    .orElse(providers.gradleProperty("WIZESTREAM_BOTGUARD_REQUEST_KEY"))
-    .getOrElse("")
 val hasReleaseSigningConfig = listOf(
     releaseStoreFile,
     releaseStorePassword,
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
-
-fun String.asBuildConfigString(): String =
-    "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 kotlin {
     jvmToolchain(21)
@@ -66,18 +57,6 @@ configure<ApplicationExtension> {
     defaultConfig {
         applicationId = WIZESTREAM_APPLICATION_ID
         resValue("string", "app_name", "WizeStream")
-        buildConfigField("String", "SABR_POLICY_PUBLIC_KEY_BASE64", "\"\"")
-        buildConfigField("String", "SABR_POLICY_URL", "\"\"")
-        buildConfigField(
-            "String",
-            "BOTGUARD_GOOGLE_API_KEY",
-            botGuardGoogleApiKey.asBuildConfigString()
-        )
-        buildConfigField(
-            "String",
-            "BOTGUARD_REQUEST_KEY",
-            botGuardRequestKey.asBuildConfigString()
-        )
         minSdk {
             version = release(ANDROID_MIN_SDK)
         }
@@ -163,10 +142,9 @@ configure<ApplicationExtension> {
             excludes += setOf(
                 "META-INF/README.md",
                 "META-INF/CHANGES",
-                "META-INF/COPYRIGHT", // "COPYRIGHT" belongs to RxJava...
+                // "COPYRIGHT" belongs to RxJava...
+                "META-INF/COPYRIGHT",
                 "META-INF/INDEX.LIST",
-                "META-INF/LICENSE.md",
-                "META-INF/NOTICE.md",
                 "META-INF/io.netty.versions.properties"
             )
         }
@@ -305,9 +283,6 @@ dependencies {
     // Third-party libraries
     implementation(libs.livefront.bridge)
     implementation(libs.evernote.statesaver.core)
-    implementation("io.github.dokar3:quickjs-kt:1.0.5")
-    implementation(project(":ffmpeg"))
-    implementation("com.arthenica:smart-exception-java:0.2.1")
     kapt(libs.evernote.statesaver.compiler)
 
     // HTML parser
@@ -317,11 +292,6 @@ dependencies {
     implementation(libs.jvm.libp2p) {
         exclude(group = "io.netty", module = "netty-codec-native-quic")
         exclude(group = "io.netty", module = "netty-tcnative-boringssl-static")
-    }
-    constraints {
-        implementation("org.bouncycastle:bcpkix-jdk18on:1.85")
-        implementation("org.bouncycastle:bcprov-jdk18on:1.85")
-        implementation("org.bouncycastle:bcutil-jdk18on:1.85")
     }
 
     // HTTP client

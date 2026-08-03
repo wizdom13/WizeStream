@@ -49,20 +49,6 @@ Run style checks:
 scripts/build.sh checkstyle
 ```
 
-## BotGuard build credentials
-
-BotGuard PO-token generation requires these values at build time:
-
-```text
-WIZESTREAM_BOTGUARD_GOOGLE_API_KEY
-WIZESTREAM_BOTGUARD_REQUEST_KEY
-```
-
-Provide them as environment variables or Gradle properties. Builds without them still compile for
-contributor and fork CI, but protected YouTube playback that requires a PO token will be
-unavailable. The release and nightly workflows require GitHub Actions secrets with the same names
-and stop before publishing when either value is missing.
-
 ## Versioning and release tags
 
 Stable WizeStream releases use semantic versions in `MAJOR.MINOR.PATCH` form. Update the three

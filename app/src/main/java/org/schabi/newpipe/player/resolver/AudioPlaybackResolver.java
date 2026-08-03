@@ -15,7 +15,6 @@ import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.VideoStream;
-import org.schabi.newpipe.player.datasource.SabrSessionStore;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
@@ -53,8 +52,6 @@ public class AudioPlaybackResolver implements PlaybackResolver {
         if (liveSource != null) {
             return liveSource;
         }
-
-        SabrSessionStore.setPreferredAudioTrack(info.getId(), audioTrack);
 
         final List<AudioStream> audioStreams =
                 getFilteredAudioStreams(context, info.getAudioStreams());

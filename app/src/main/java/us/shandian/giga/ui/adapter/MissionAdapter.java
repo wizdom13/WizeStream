@@ -16,7 +16,6 @@ import static us.shandian.giga.get.DownloadMission.ERROR_POSTPROCESSING_HOLD;
 import static us.shandian.giga.get.DownloadMission.ERROR_POSTPROCESSING_STOPPED;
 import static us.shandian.giga.get.DownloadMission.ERROR_PROGRESS_LOST;
 import static us.shandian.giga.get.DownloadMission.ERROR_RESOURCE_GONE;
-import static us.shandian.giga.get.DownloadMission.ERROR_SABR_DOWNLOAD;
 import static us.shandian.giga.get.DownloadMission.ERROR_SSL_EXCEPTION;
 import static us.shandian.giga.get.DownloadMission.ERROR_TIMEOUT;
 import static us.shandian.giga.get.DownloadMission.ERROR_UNKNOWN_EXCEPTION;
@@ -89,7 +88,6 @@ import us.shandian.giga.get.FinishedMission;
 import us.shandian.giga.get.MetadataOnlyFinishedMission;
 import us.shandian.giga.get.Mission;
 import us.shandian.giga.get.MissionRecoveryInfo;
-import us.shandian.giga.get.SabrDownloadException;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
 import us.shandian.giga.ui.common.Deleter;
@@ -546,9 +544,6 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             case ERROR_RESOURCE_GONE:
                 msg = R.string.error_download_resource_gone;
                 break;
-            case ERROR_SABR_DOWNLOAD:
-                msg = sabrErrorMessage(mission.errObject);
-                break;
             default:
                 if (mission.errCode >= 100 && mission.errCode < 600) {
                     msgEx = "HTTP " + mission.errCode;
@@ -579,32 +574,6 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         builder.setNegativeButton(R.string.ok, (dialog, which) -> dialog.cancel())
                 .setTitle(mission.storage.getName())
                 .show();
-    }
-
-    @StringRes
-    private int sabrErrorMessage(final Exception error) {
-        if (!(error instanceof SabrDownloadException)) {
-            return R.string.error_sabr_download_failed;
-        }
-        switch (((SabrDownloadException) error).getReason()) {
-            case FORMAT:
-                return R.string.error_sabr_download_format;
-            case INITIALIZATION:
-                return R.string.error_sabr_download_initialization;
-            case PROTECTED:
-                return R.string.error_sabr_download_protected;
-            case STALLED:
-                return R.string.error_sabr_download_stalled;
-            case NETWORK:
-                return R.string.error_sabr_download_network;
-            case MUXING:
-                return R.string.error_sabr_download_muxing;
-            case STORAGE:
-                return R.string.error_sabr_download_storage;
-            case PROTOCOL:
-            default:
-                return R.string.error_sabr_download_protocol;
-        }
     }
 
     private void showError(DownloadMission mission, UserAction action, @StringRes int reason) {

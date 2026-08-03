@@ -49,10 +49,6 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
                 updateSeekOptions();
             } else if (getString(R.string.show_higher_resolutions_key).equals(key)) {
                 updateResolutionOptions();
-            } else if (getString(R.string.show_auto_translated_subtitles_key).equals(key)
-                    || getString(R.string.auto_translated_subtitles_language_key).equals(key)
-                    || getString(R.string.youtube_player_client_key).equals(key)) {
-                org.schabi.newpipe.util.ServiceHelper.initServices(requireContext());
             }
         };
     }

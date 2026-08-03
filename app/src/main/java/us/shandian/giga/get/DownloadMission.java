@@ -1,6 +1,5 @@
 package us.shandian.giga.get;
 
-import android.content.Context;
 import android.os.Handler;
 import android.system.ErrnoException;
 import android.system.OsConstants;
@@ -56,7 +55,6 @@ public class DownloadMission extends Mission {
     public static final int ERROR_PROGRESS_LOST = 1011;
     public static final int ERROR_TIMEOUT = 1012;
     public static final int ERROR_RESOURCE_GONE = 1013;
-    public static final int ERROR_SABR_DOWNLOAD = 1014;
     public static final int ERROR_HTTP_NO_CONTENT = 204;
     static final int ERROR_HTTP_FORBIDDEN = 403;
 
@@ -135,8 +133,6 @@ public class DownloadMission extends Mission {
      * information required to recover a download
      */
     public MissionRecoveryInfo[] recoveryInfo;
-    public SabrDownloadCheckpoint sabrCheckpoint;
-    public boolean sabrStarted;
 
     private transient int finishCount;
     public transient volatile boolean running;
@@ -156,10 +152,8 @@ public class DownloadMission extends Mission {
     @NonNull
     public transient Thread[] threads = new Thread[0];
     public transient Thread init = null;
-    public transient Context context;
 
-    public DownloadMission(String[] urls, StoredFileHelper storage, char kind,
-                           Postprocessing psInstance, Context context) {
+    public DownloadMission(String[] urls, StoredFileHelper storage, char kind, Postprocessing psInstance) {
         if (Objects.requireNonNull(urls).length < 1)
             throw new IllegalArgumentException("urls array is empty");
         this.urls = urls;
@@ -169,7 +163,6 @@ public class DownloadMission extends Mission {
         this.maxRetry = 3;
         this.storage = storage;
         this.psAlgorithm = psInstance;
-        this.context = context.getApplicationContext();
 
         if (DEBUG && psInstance == null && urls.length > 1) {
             Log.w(TAG, "mission created with multiple urls ¿missing post-processing algorithm?");
@@ -315,8 +308,6 @@ public class DownloadMission extends Mission {
             notifyError(ERROR_UNKNOWN_HOST, null);
         } else if (err instanceof SocketTimeoutException) {
             notifyError(ERROR_TIMEOUT, null);
-        } else if (err instanceof SabrDownloadException) {
-            notifyError(ERROR_SABR_DOWNLOAD, err);
         } else {
             notifyError(ERROR_UNKNOWN_EXCEPTION, err);
         }
@@ -456,11 +447,6 @@ public class DownloadMission extends Mission {
 
         notify(DownloadManagerService.MESSAGE_RUNNING);
 
-        if (hasSabrResource()) {
-            init = runAsync(DownloadInitializer.mId, new SabrDownloader(this));
-            return;
-        }
-
         if (urls[current] == null) {
             doRecover(ERROR_RESOURCE_GONE);
             return;
@@ -539,7 +525,6 @@ public class DownloadMission extends Mission {
     @Override
     public boolean delete() {
         if (psAlgorithm != null) psAlgorithm.cleanupTemporalDir();
-        SabrDownloader.cleanup(this);
 
         notify(DownloadManagerService.MESSAGE_DELETED);
 
@@ -565,10 +550,6 @@ public class DownloadMission extends Mission {
         fallbackResumeOffset = 0;
         blocks = null;
         blockAcquired = null;
-        if (rollback) {
-            sabrCheckpoint = null;
-            sabrStarted = false;
-        }
 
         if (rollback) current = 0;
         if (persistChanges) writeThisToFile();
@@ -633,11 +614,7 @@ public class DownloadMission extends Mission {
      * @return true, otherwise, false
      */
     public boolean isInitialized() {
-        return blocks != null || sabrStarted;
-    }
-
-    boolean hasSabrResource() {
-        return SabrDownloadStreamHelper.containsSabrResource(null, recoveryInfo);
+        return blocks != null; // DownloadMissionInitializer was executed
     }
 
     /**

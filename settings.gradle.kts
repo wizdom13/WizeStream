@@ -24,4 +24,3 @@ dependencyResolutionManagement {
     }
 }
 include(":app") // androidApp
-include(":ffmpeg")

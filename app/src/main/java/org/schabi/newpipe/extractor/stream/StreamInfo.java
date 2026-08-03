@@ -20,9 +20,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import javax.annotation.Nonnull;
 
@@ -58,8 +58,8 @@ public class StreamInfo extends Info {
     }
 
     public static class StreamExtractException extends ExtractionException {
-        StreamExtractException(final String message, final Throwable cause) {
-            super(message, cause);
+        StreamExtractException(final String message) {
+            super(message);
         }
     }
 
@@ -90,56 +90,33 @@ public class StreamInfo extends Info {
 
     public static StreamInfo getInfo(@Nonnull final StreamExtractor extractor)
             throws ExtractionException, IOException {
-        final String performanceId = extractor.getId();
-        final long totalStartedAt = System.nanoTime();
-        final SponsorBlockApiSettings sponsorBlockApiSettings = extractor.getService()
-                .getSponsorBlockApiSettings();
-        final AtomicReference<SponsorBlockSegment[]> sponsorBlockSegments =
-                new AtomicReference<>();
-        final CountDownLatch sponsorBlockFinished = new CountDownLatch(1);
+        extractor.fetchPage();
+        final StreamInfo streamInfo;
+        SponsorBlockApiSettings sponsorBlockApiSettings = extractor.getService().getSponsorBlockApiSettings();
+        AtomicReference<SponsorBlockSegment[]> sponsorBlockSegments = new AtomicReference<>();
         if (sponsorBlockApiSettings != null) {
             new Thread(() -> {
-                final long sponsorBlockStartedAt = System.nanoTime();
                 try {
-                    sponsorBlockSegments.set(SponsorBlockExtractorHelper.getSegments(
-                            extractor, sponsorBlockApiSettings));
+                    sponsorBlockSegments.set(SponsorBlockExtractorHelper.getSegments(extractor, sponsorBlockApiSettings));
                 } catch (UnsupportedEncodingException | ParsingException e) {
                     e.printStackTrace();
-                } finally {
-                    logPerformance(performanceId, "sponsorBlock.request", sponsorBlockStartedAt);
-                    sponsorBlockFinished.countDown();
                 }
-            }, "SponsorBlock-" + performanceId).start();
-        }
+            }).start();
 
-        long stageStartedAt = System.nanoTime();
-        extractor.fetchPage();
-        logPerformance(performanceId, "streamInfo.fetchPage", stageStartedAt);
-        final StreamInfo streamInfo;
+        }
         try {
-            stageStartedAt = System.nanoTime();
             streamInfo = extractImportantData(extractor);
-            logPerformance(performanceId, "streamInfo.important", stageStartedAt);
-            stageStartedAt = System.nanoTime();
             extractStreams(streamInfo, extractor);
-            logPerformance(performanceId, "streamInfo.streams", stageStartedAt);
-            stageStartedAt = System.nanoTime();
             extractOptionalData(streamInfo, extractor);
-            logPerformance(performanceId, "streamInfo.optional", stageStartedAt);
             if (sponsorBlockApiSettings != null) {
-                final long startTime = System.nanoTime();
-                try {
-                    sponsorBlockFinished.await(3, TimeUnit.SECONDS);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                final SponsorBlockSegment[] segments = sponsorBlockSegments.get();
-                if (segments != null) {
-                    streamInfo.setSponsorBlockSegments(segments);
-                }
-                logPerformance(performanceId, "sponsorBlock.wait", startTime);
+                long startTime = System.nanoTime();
+                do {
+                    if (sponsorBlockSegments.get() != null) {
+                        streamInfo.setSponsorBlockSegments(sponsorBlockSegments.get());
+                        break;
+                    }
+                } while (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime) <= 3);
             }
-            logPerformance(performanceId, "streamInfo.total", totalStartedAt);
             return streamInfo;
 
         } catch (final ExtractionException e) {
@@ -197,24 +174,19 @@ public class StreamInfo extends Info {
         // At least one type of stream has to be available, otherwise an exception will be thrown
         // directly into the frontend.
 
-        long stageStartedAt = System.nanoTime();
         try {
             streamInfo.setDashMpdUrl(extractor.getDashMpdUrl());
         } catch (final Exception e) {
             streamInfo.addError(new ExtractionException("Couldn't get DASH manifest", e));
         }
-        logPerformance(streamInfo.getId(), "streams.dash", stageStartedAt);
 
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setHlsUrl(extractor.getHlsUrl());
         } catch (final Exception e) {
             streamInfo.addError(new ExtractionException("Couldn't get HLS manifest", e));
         }
-        logPerformance(streamInfo.getId(), "streams.hls", stageStartedAt);
 
         /* Load and extract audio */
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setAudioStreams(extractor.getAudioStreams());
         } catch (final ContentNotSupportedException e) {
@@ -222,25 +194,20 @@ public class StreamInfo extends Info {
         } catch (final Exception e) {
             streamInfo.addError(new ExtractionException("Couldn't get audio streams", e));
         }
-        logPerformance(streamInfo.getId(), "streams.audio", stageStartedAt);
 
         /* Extract video stream url */
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setVideoStreams(extractor.getVideoStreams());
         } catch (final Exception e) {
             streamInfo.addError(new ExtractionException("Couldn't get video streams", e));
         }
-        logPerformance(streamInfo.getId(), "streams.video", stageStartedAt);
 
         /* Extract video only stream url */
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setVideoOnlyStreams(extractor.getVideoOnlyStreams());
         } catch (final Exception e) {
             streamInfo.addError(new ExtractionException("Couldn't get video only streams", e));
         }
-        logPerformance(streamInfo.getId(), "streams.videoOnly", stageStartedAt);
 
         // Lists can be null if an exception was thrown during extraction
         if (streamInfo.getVideoStreams() == null) {
@@ -253,25 +220,12 @@ public class StreamInfo extends Info {
             streamInfo.setAudioStreams(Collections.emptyList());
         }
 
-        // Either audio, video or a manifest has to be available (videoOnly streams are optional).
-        if (streamInfo.videoStreams.isEmpty() && streamInfo.audioStreams.isEmpty()
-                && streamInfo.dashMpdUrl.isEmpty() && streamInfo.hlsUrl.isEmpty()) {
-            final List<Throwable> errors = streamInfo.getErrors();
-            final StreamExtractException exception = new StreamExtractException(
-                    "Could not get any stream", errors.isEmpty() ? null : errors.get(0));
-            for (int i = 1; i < errors.size(); i++) {
-                exception.addSuppressed(errors.get(i));
-            }
-            throw exception;
+        // Either audio or video has to be available, otherwise we didn't get a stream (since
+        // videoOnly are optional, they don't count).
+        if ((streamInfo.videoStreams.isEmpty()) && (streamInfo.audioStreams.isEmpty())) {
+            throw new StreamExtractException(
+                    "Could not get any stream. See error variable to get further details.");
         }
-    }
-
-    private static void logPerformance(@Nonnull final String id,
-                                       @Nonnull final String stage,
-                                       final long startedAtNanos) {
-        System.out.println("YT_PERF videoId=" + id + " stage=" + stage
-                + " durationMs="
-                + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos));
     }
 
     @SuppressWarnings("MethodLength")
@@ -282,7 +236,6 @@ public class StreamInfo extends Info {
         // Exceptions are therefore not thrown into the frontend, but stored into the error list,
         // so the frontend can afterwards check where errors happened.
 
-        long stageStartedAt = System.nanoTime();
         try {
             streamInfo.setThumbnailUrl(extractor.getThumbnailUrl());
         } catch (final Exception e) {
@@ -338,9 +291,7 @@ public class StreamInfo extends Info {
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.author", stageStartedAt);
 
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setSubChannelName(extractor.getSubChannelName());
         } catch (final Exception e) {
@@ -361,9 +312,7 @@ public class StreamInfo extends Info {
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.subChannel", stageStartedAt);
 
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setDescription(extractor.getDescription());
         } catch (final Exception e) {
@@ -394,26 +343,18 @@ public class StreamInfo extends Info {
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.contentCore", stageStartedAt);
-
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setDislikeCount(extractor.getDislikeCount());
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.dislike", stageStartedAt);
-
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setSubtitles(extractor.getSubtitlesDefault());
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.subtitles", stageStartedAt);
 
         // Additional info
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setHost(extractor.getHost());
         } catch (final Exception e) {
@@ -489,9 +430,6 @@ public class StreamInfo extends Info {
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.metadata", stageStartedAt);
-
-        stageStartedAt = System.nanoTime();
         try {
             streamInfo.setPartitions(ExtractorHelper.getPartitionsOrLogError(streamInfo,
                     extractor));
@@ -503,16 +441,13 @@ public class StreamInfo extends Info {
         } catch (final Exception e) {
             streamInfo.addError(e);
         }
-        logPerformance(streamInfo.getId(), "optional.partitions", stageStartedAt);
 
-        stageStartedAt = System.nanoTime();
         if(streamInfo.isSupportRelatedItems() || streamInfo.isRoundPlayStream()){
             streamInfo.setRelatedItems(ExtractorHelper.getRelatedItemsOrLogError(streamInfo,
                     extractor));
         } else {
             streamInfo.setRelatedItems(Collections.emptyList());
         }
-        logPerformance(streamInfo.getId(), "optional.related", stageStartedAt);
     }
 
     private StreamType streamType;

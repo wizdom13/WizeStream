@@ -17,9 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeDescriptionHelper.attributedDescriptionToHtml;
-import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.fixThumbnailUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getImagesFromThumbnailsArray;
-import static org.schabi.newpipe.extractor.utils.Utils.EMPTY_STRING;
 import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 
 /**
@@ -165,13 +163,7 @@ class YoutubeCommentsEUVMInfoItemExtractor implements CommentsInfoItemExtractor 
                 commentEntityPayload.getObject("avatar")
                 .getObject("image")
                 .getArray("sources"));
-        if (!uploaderAvatars.isEmpty()) {
-            return uploaderAvatars.get(0).getUrl();
-        }
-
-        final String avatarThumbnailUrl = commentEntityPayload.getObject(AUTHOR)
-                .getString("avatarThumbnailUrl");
-        return isNullOrEmpty(avatarThumbnailUrl) ? "" : avatarThumbnailUrl;
+        return uploaderAvatars.isEmpty() ? "" : uploaderAvatars.get(0).getUrl();
     }
 
     @Override

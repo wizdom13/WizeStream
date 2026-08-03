@@ -49,8 +49,6 @@ jobs:
 
       - name: Build signed release APK
         env:
-          WIZESTREAM_BOTGUARD_GOOGLE_API_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_GOOGLE_API_KEY }}
-          WIZESTREAM_BOTGUARD_REQUEST_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_REQUEST_KEY }}
           WIZESTREAM_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
           WIZESTREAM_RELEASE_STORE_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_STORE_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
           WIZESTREAM_RELEASE_KEY_ALIAS: ${{ secrets.WIZESTREAM_RELEASE_KEY_ALIAS || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS }}
@@ -61,11 +59,6 @@ jobs:
              [ -z "${WIZESTREAM_RELEASE_KEY_ALIAS}" ] || \
              [ -z "${WIZESTREAM_RELEASE_KEY_PASSWORD}" ]; then
             echo "Missing one or more WizeStream release signing secrets" >&2
-            exit 1
-          fi
-          if [ -z "${WIZESTREAM_BOTGUARD_GOOGLE_API_KEY}" ] || \
-             [ -z "${WIZESTREAM_BOTGUARD_REQUEST_KEY}" ]; then
-            echo "Missing one or more WizeStream BotGuard build secrets" >&2
             exit 1
           fi
           ./gradlew clean assembleRelease --stacktrace

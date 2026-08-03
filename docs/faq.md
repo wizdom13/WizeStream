@@ -59,7 +59,7 @@ is therefore neither the unmodified official NewPipeExtractor nor an external Pi
 dependency. The exact extractor source is versioned and released together with each WizeStream
 build.
 
-This integrated source supports WizeStream's services and features such as YouTube SABR playback.
+This integrated source supports WizeStream's services and conventional YouTube playback.
 WizeStream maintains these changes and accepts responsibility for defects caused by them.
 
 ## Where should I report a problem?

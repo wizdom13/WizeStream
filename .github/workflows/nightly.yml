@@ -15,8 +15,6 @@ permissions:
 env:
   NIGHTLY_REPOSITORY: wizdom13/WizeStream_Nightly
   NIGHTLY_RETENTION_COUNT: "14"
-  WIZESTREAM_BOTGUARD_GOOGLE_API_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_GOOGLE_API_KEY }}
-  WIZESTREAM_BOTGUARD_REQUEST_KEY: ${{ secrets.WIZESTREAM_BOTGUARD_REQUEST_KEY }}
 
 jobs:
   build-and-publish:
@@ -98,14 +96,7 @@ jobs:
 
       - name: Build debug APK and run JVM checks
         if: steps.existing.outputs.skip != 'true'
-        run: |
-          set -euo pipefail
-          if [ -z "${WIZESTREAM_BOTGUARD_GOOGLE_API_KEY}" ] || \
-             [ -z "${WIZESTREAM_BOTGUARD_REQUEST_KEY}" ]; then
-            echo "Missing one or more WizeStream BotGuard build secrets" >&2
-            exit 1
-          fi
-          scripts/build.sh debug
+        run: scripts/build.sh debug
 
       - name: Restore release signing key
         if: steps.existing.outputs.skip != 'true'
