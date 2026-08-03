@@ -2,7 +2,7 @@
 
 <h1 align="center">WizeStream</h1>
 
-<p align="center"><b>A Material 3-focused streaming app based on NewPipe.</b></p>
+<p align="center"><b>An independent, privacy-friendly NewPipe-based streaming client for Android.</b></p>
 
 <p align="center">
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a>
@@ -41,9 +41,12 @@
 
 ## Important project notice
 
-WizeStream is an independently maintained Android streaming app based on NewPipe, focused on Material 3 design, app theming, playback enhancements, and product polish.
+WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern
+Material 3 Expressive interface with privacy-friendly playback, useful local-first features, and
+support for multiple streaming platforms.
 
-It is **not affiliated with, sponsored by, or endorsed by** the official NewPipe project, TeamNewPipe, or NewPipe e.V.
+WizeStream maintains its own application and integrated extractor changes. It is **not affiliated
+with, sponsored by, or endorsed by** the official NewPipe project, TeamNewPipe, or NewPipe e.V.
 
 WizeStream preserves the NewPipe libre software license, upstream credits, and third-party license notices.
 
@@ -74,7 +77,10 @@ baseline is recorded in [UPSTREAM.md](UPSTREAM.md).
 
 ## What is WizeStream?
 
-WizeStream keeps the lightweight, privacy-friendly NewPipe experience while modernizing the interface and adding playback-focused features.
+WizeStream keeps the lightweight, privacy-friendly NewPipe experience while developing its own
+interface, playback, discovery, synchronization, and service-support features. Material 3
+Expressive design remains an important project goal, but it is one part of a broader independent
+client rather than the project's only purpose.
 
 Project highlights:
 
@@ -82,6 +88,7 @@ Project highlights:
 - Dynamic Material You color support where available
 - Manual theme color presets
 - Bottom navigation with a configurable default main tab
+- Support for multiple streaming platforms through an integrated extractor
 - SponsorBlock integration
 - YouTube dislike count support
 - Swipe seek, fullscreen swipe, and hold-to-speed-up player gestures
@@ -131,6 +138,8 @@ Sensitive areas such as playback, downloads, background playback, popup playback
 WizeStream supports these services through extractor source integrated directly into the app:
 
 - YouTube and YouTube Music
+- Bilibili
+- Niconico
 - PeerTube
 - Bandcamp
 - SoundCloud
@@ -138,6 +147,18 @@ WizeStream supports these services through extractor source integrated directly 
 
 YouTube playback and downloads include support for SABR streams. Service support depends on the
 bundled extractor source.
+
+### Integrated extractor lineage and responsibility
+
+The bundled extractor is derived from NewPipeExtractor and later incorporated PipePipeExtractor
+and WizeStream-specific changes. It is maintained as source inside WizeStream and is therefore
+neither the unmodified official NewPipeExtractor nor an external PipePipeExtractor dependency.
+
+Extractor work is part of WizeStream's current scope because service compatibility and features
+such as YouTube SABR playback require coordinated application, player, and extractor changes.
+Problems encountered in WizeStream—including service and extractor failures—should be reported to
+WizeStream first. Comparing a problem with official NewPipe can help determine whether the cause is
+shared upstream, but WizeStream remains responsible for defects caused by its bundled changes.
 
 ---
 
@@ -342,7 +363,9 @@ extractor source stored in that commit.
 
 ## Development status
 
-WizeStream is under active development for Material 3 polish, playback improvements, and release readiness.
+WizeStream is under active development as an independent NewPipe-based client. Current priorities
+include Material 3 Expressive polish, playback reliability, local-first features, service
+compatibility, and release readiness.
 
 Completed or in-progress areas include:
 
@@ -366,7 +389,8 @@ High-risk areas receive dedicated QA before broad behavior changes.
 
 ## Contributing
 
-Contributions are welcome, especially focused Material 3 polish, bug fixes, QA findings, documentation, and release-readiness work.
+Contributions are welcome, especially focused Material 3 polish, playback and service fixes,
+local-first improvements, QA findings, documentation, and release-readiness work.
 
 Please keep changes focused and testable. For UI work, include before-and-after screenshots where possible and verify Light, Dark, Black, Follow system, and at least one manual theme color preset.
 
@@ -395,8 +419,12 @@ Upstream resources:
 
 Please report issues carefully:
 
-- WizeStream-specific design, identity, release, and feature issues belong in this repository.
-- Upstream extractor or service breakages may also need to be checked against official NewPipe.
+- Report all problems observed in WizeStream—including integrated extractor and service failures—in
+  this repository first.
+- Maintainers may ask whether the problem is reproducible in official NewPipe to distinguish a
+  shared upstream issue from WizeStream-specific behavior.
+- Report a problem to an upstream project only when it is reproducible there and follows that
+  project's reporting requirements.
 
 ---
 

@@ -11,8 +11,22 @@ must not be used as WizeStream version names or as inputs to WizeStream Android 
 
 ## Extractor source
 
-WizeStream includes its extractor source directly in the `app` module. Each
-WizeStream commit and release therefore records the exact extractor source together with the app.
+WizeStream includes its extractor source directly in the `app` module. The source is derived from
+NewPipeExtractor and later incorporated PipePipeExtractor and WizeStream-specific changes. It is
+not the unmodified official NewPipeExtractor and is no longer consumed as an external
+PipePipeExtractor or WizeStreamExtractor dependency.
+
+Each WizeStream commit and release records the exact extractor source together with the app. This
+allows application, player, and service changes—including YouTube SABR support—to be developed and
+tested together.
+
+## Issue responsibility
+
+Problems observed in WizeStream, including extractor and service failures, belong in the
+WizeStream issue tracker first. Reproduction in official NewPipe can be requested to determine
+whether a defect is shared with upstream, but WizeStream is responsible for failures caused by its
+integrated changes. An issue should be reported to an upstream project only when it is reproducible
+there and complies with that project's reporting rules.
 
 ## Maintenance rule
 

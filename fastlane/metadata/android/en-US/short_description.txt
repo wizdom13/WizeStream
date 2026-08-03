@@ -1,1 +1,1 @@
-A Material 3-focused streaming app based on NewPipe.
+Independent, privacy-friendly NewPipe-based streaming client.

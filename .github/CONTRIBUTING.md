@@ -2,7 +2,10 @@
 
 Thank you for your interest in contributing to WizeStream.
 
-WizeStream is an independent fork of NewPipe focused on Material 3 design, app identity, release readiness, and careful product polish while preserving the core NewPipe experience.
+WizeStream is an independent, NewPipe-based streaming client for Android. It combines Material 3
+Expressive design with privacy-friendly playback, local-first features, multiple streaming
+platforms, and its own integrated extractor changes while preserving the strengths of the core
+NewPipe experience.
 
 This project welcomes focused contributions, but changes must respect the project direction and avoid unnecessary behavior changes.
 
@@ -15,9 +18,13 @@ WizeStream focuses on:
 * Material 3 visual polish
 * Dynamic and manual theme colors
 * WizeStream app identity
+* Privacy-friendly playback and downloads
+* Useful local-first features
+* Reliable support for multiple streaming platforms
+* Maintained, integrated extractor and service compatibility
 * Release-ready signed builds
 * Clear fork attribution
-* Preserving NewPipe behavior and compatibility
+* Preserving compatible NewPipe behavior and data migration where practical
 * Safe, reviewable, well-scoped changes
 
 WizeStream is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
@@ -40,6 +47,8 @@ Good contribution types include:
 
 * Focused Material 3 UI polish
 * Bug fixes
+* Playback, download, and service-compatibility fixes
+* Focused local-first feature improvements
 * Documentation improvements
 * Translation improvements
 * Release-readiness fixes
@@ -121,11 +130,13 @@ Player overlays, queue overlays, notification templates, and file-picker surface
 
 ---
 
-## Behavior-preservation rule
+## Behavior-change rule
 
-Most WizeStream work should be visual or identity polish only.
+WizeStream is broader than a visual or identity redesign, but every behavior change must solve a
+clear, approved problem and remain focused, testable, and maintainable.
 
-Do not change behavior unless the pull request is specifically about that behavior.
+Do not change behavior incidentally. A pull request that changes behavior must identify that
+behavior explicitly and explain the intended user impact.
 
 Behavior-sensitive areas include:
 
@@ -213,7 +224,9 @@ When opening an issue, include:
 * Actual behavior
 * Screenshots or logs if relevant
 
-For service breakages, please check whether the issue also affects upstream NewPipe. Some service problems may come from upstream extractor changes rather than WizeStream-specific code.
+Report service and extractor breakages observed in WizeStream to WizeStream first. Reproducing the
+problem in official NewPipe is useful for identifying shared upstream defects, but is not a reason
+to reject a WizeStream report. WizeStream owns defects caused by its integrated extractor changes.
 
 ---
 
@@ -221,7 +234,10 @@ For service breakages, please check whether the issue also affects upstream NewP
 
 WizeStream is based on NewPipe and preserves upstream credits and license notices.
 
-Please respect upstream NewPipe, TeamNewPipe, NewPipe e.V., and the NewPipe community. Fork-specific issues belong in this repository. Upstream issues should be reported upstream only when they are not caused by this fork.
+Please respect upstream NewPipe, TeamNewPipe, NewPipe e.V., and the NewPipe community. Problems
+observed in WizeStream belong in this repository first. Upstream issues should be reported upstream
+only when they are reproducible in the official upstream project, are not caused by WizeStream's
+changes, and follow the upstream project's reporting rules.
 
 ---
 

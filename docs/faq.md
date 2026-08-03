@@ -2,7 +2,10 @@
 
 ## What is WizeStream?
 
-WizeStream is an independently maintained Android streaming app based on NewPipe. It adds a distinct WizeStream identity, Material 3 design, playback enhancements, and its own update channel.
+WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern
+Material 3 Expressive interface with privacy-friendly playback, useful local-first features, and
+support for multiple streaming platforms. Material 3 is an important design goal, not the
+project's only purpose.
 
 ## Is WizeStream an official NewPipe release?
 
@@ -48,6 +51,22 @@ Use the same source from which you installed it whenever possible. IzzyOnDroid u
 Service support comes from the extractor source integrated into each WizeStream build. See the
 main [README](../README.md#supported-services) for the current list.
 
+## Does WizeStream use NewPipeExtractor or PipePipeExtractor?
+
+WizeStream uses extractor source integrated directly into its app module. That source is derived
+from NewPipeExtractor and later incorporated PipePipeExtractor and WizeStream-specific changes. It
+is therefore neither the unmodified official NewPipeExtractor nor an external PipePipeExtractor
+dependency. The exact extractor source is versioned and released together with each WizeStream
+build.
+
+This integrated source supports WizeStream's services and features such as YouTube SABR playback.
+WizeStream maintains these changes and accepts responsibility for defects caused by them.
+
 ## Where should I report a problem?
 
-Use the WizeStream repository's issue form for WizeStream-specific problems. Check whether a service or extractor failure also affects upstream NewPipe before reporting it. Do not include private URLs, cookies, passwords, or other sensitive data in a public report.
+Use the WizeStream repository's issue form for every problem observed in WizeStream, including
+service or extractor failures. Maintainers may ask whether the same problem occurs in official
+NewPipe to identify a shared upstream defect, but that comparison is not a reason to reject a
+WizeStream report. Report upstream only when the problem is reproducible there and follows the
+upstream project's reporting rules. Do not include private URLs, cookies, passwords, or other
+sensitive data in a public report.

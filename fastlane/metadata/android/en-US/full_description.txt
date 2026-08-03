@@ -1,8 +1,8 @@
-WizeStream is an independent Android streaming app based on NewPipe, with Material 3 design, private device synchronization, and enhanced discovery and playback controls.
+WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern Material 3 Expressive interface with privacy-friendly playback, useful local-first features, and support for multiple streaming platforms.
 
 WizeStream retains NewPipe's lightweight, privacy-friendly approach. It requires no platform account, Google framework libraries, or Google Play Services.
 
-Supported services include YouTube, YouTube Music, Bilibili, Niconico, BitChute, Rumble, PeerTube, Bandcamp, SoundCloud, and media.ccc.de.
+Supported services include YouTube, YouTube Music, Bilibili, Niconico, PeerTube, Bandcamp, SoundCloud, and media.ccc.de.
 
 Core features include:
 
@@ -39,7 +39,7 @@ Additional WizeStream features:
 - Playback-speed retention for live streams
 - A separate application ID, allowing side-by-side installation with official NewPipe
 
-WizeStream is independently maintained and uses its own release signing key. Releases are available through GitHub and IzzyOnDroid.
+WizeStream is independently maintained and uses its own release signing key. It maintains both its application and its integrated extractor changes. Problems encountered in WizeStream, including service and extractor failures, should be reported to WizeStream first. Releases are available through GitHub and IzzyOnDroid.
 
 Storage permissions:
 

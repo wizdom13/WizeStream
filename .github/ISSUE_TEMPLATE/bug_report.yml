@@ -20,7 +20,7 @@ body:
           required: true
         - label: "This issue contains only one bug."
           required: true
-        - label: "I understand that upstream NewPipe or extractor problems may need to be verified against the official upstream projects."
+        - label: "I understand that WizeStream maintains its integrated extractor changes and may ask whether this problem is also reproducible in official NewPipe."
           required: true
 
   - type: input
