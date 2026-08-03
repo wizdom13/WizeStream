@@ -79,6 +79,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     public JsonObject playerResponse;
     @Nullable
     private String playerResponseVisitorData;
+    @Nullable
+    private String playerResponseClientVersion;
     private JsonObject nextResponse;
 
     private JsonObject webStreamingData;
@@ -1078,7 +1080,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         try {
             final YoutubeSabrClientProfile profile = getSabrClientProfile();
             return buildSabrInfoFromPlayerResponse(videoId, profile,
-                    getSabrCpn(), playerResponse, playerResponseVisitorData);
+                    getSabrCpn(), playerResponse, playerResponseVisitorData,
+                    playerResponseClientVersion);
         } catch (final Exception e) {
             addError(e);
             return null;
@@ -1094,6 +1097,22 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             @Nullable final String requestVisitorData) throws ExtractionException {
         return YoutubeSabrProbe.fromPlayerResponse(videoId, profile, cpn, response,
                 requestVisitorData);
+    }
+
+    @Nonnull
+    static YoutubeSabrInfo buildSabrInfoFromPlayerResponse(
+            @Nonnull final String videoId,
+            @Nonnull final YoutubeSabrClientProfile profile,
+            @Nonnull final String cpn,
+            @Nonnull final JsonObject response,
+            @Nullable final String requestVisitorData,
+            @Nullable final String requestClientVersion) throws ExtractionException {
+        if (requestClientVersion == null || requestClientVersion.isEmpty()) {
+            return YoutubeSabrProbe.fromPlayerResponse(videoId, profile, cpn, response,
+                    requestVisitorData);
+        }
+        return YoutubeSabrProbe.fromPlayerResponse(videoId, profile, cpn, response,
+                requestVisitorData, requestClientVersion);
     }
 
     @Nonnull
@@ -1727,13 +1746,14 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         NewPipe.checkWebViewAvailable();
 
         final String videoId = getId();
-        final Localization localization = new Localization("en");
+        final Localization localization = YoutubeParsingHelper.getPlayerRequestLocalization();
         final ContentCountry contentCountry = getExtractorContentCountry();
 
         synchronized (errors) {
             errors.clear();
         }
         playerResponseVisitorData = null;
+        playerResponseClientVersion = null;
 
         long stageStartedAt = System.nanoTime();
         final CancellableCall webPageCall = YoutubeParsingHelper.getWebPlayerResponse(
@@ -2021,6 +2041,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     }
 
                     playerResponseVisitorData = playerRequest.getVisitorData();
+                    playerResponseClientVersion = playerRequest.getClientVersion();
                     YoutubeStreamExtractor.this.playerResponse = webPlayerResponse;
                     updateAvailableAt(webPlayerResponse);
 
@@ -2075,6 +2096,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     }
 
                     playerResponseVisitorData = playerRequest.getVisitorData();
+                    playerResponseClientVersion = playerRequest.getClientVersion();
                     YoutubeStreamExtractor.this.playerResponse = mwebPlayerResponse;
                     updateAvailableAt(mwebPlayerResponse);
 
@@ -2188,6 +2210,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                         throw new ExtractionException(selectedClient + " player response is not valid");
                     }
                     playerResponseVisitorData = playerRequest.getVisitorData();
+                    playerResponseClientVersion = playerRequest.getClientVersion();
                     playerResponse = configuredResponse;
                     updateAvailableAt(configuredResponse);
                     final JsonObject streamingData = configuredResponse.getObject(STREAMING_DATA);

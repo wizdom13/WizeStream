@@ -88,14 +88,6 @@
         app:useSimpleSummaryProvider="true" />
 
     <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="@string/youtube_session_visitor_data_key"
-        android:summary="@string/youtube_session_visitor_data_summary"
-        android:title="@string/youtube_session_visitor_data_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false" />
-
-    <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="@string/show_auto_translated_subtitles_key"
         android:summary="@string/show_auto_translated_subtitles_summary"

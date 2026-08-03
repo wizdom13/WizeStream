@@ -22,8 +22,8 @@ class YoutubeStreamExtractorSessionPoTokenTest {
     @Test
     void sabrInfoUsesRequestVisitorWithoutCallingProviderAgain() throws Exception {
         final AtomicInteger providerCalls = new AtomicInteger();
-        NewPipe.setYoutubeSessionPoTokenProvider((clientName, localization, contentCountry,
-                                                  loggedIn) -> {
+        NewPipe.setYoutubeSessionPoTokenProvider((clientName, clientVersion, userAgent,
+                                                  localization, contentCountry, loggedIn) -> {
             final int call = providerCalls.incrementAndGet();
             return new YoutubeSessionPoToken("later-visitor-" + call, "later-token-" + call);
         });
@@ -32,9 +32,11 @@ class YoutubeStreamExtractorSessionPoTokenTest {
                 + "\"adaptiveFormats\":[]}}");
 
         final YoutubeSabrInfo info = YoutubeStreamExtractor.buildSabrInfoFromPlayerResponse(
-                "video", YoutubeSabrClientProfile.MWEB, "cpn", response, "request-visitor");
+                "video", YoutubeSabrClientProfile.MWEB, "cpn", response, "request-visitor",
+                "2.test");
 
         assertEquals("request-visitor", info.getVisitorData());
+        assertEquals("2.test", info.getClientVersion());
         assertEquals(0, providerCalls.get());
     }
 }

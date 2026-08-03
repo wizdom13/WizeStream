@@ -22,8 +22,6 @@ public interface SabrSessionPolicy extends AutoCloseable {
         APPLY_REDIRECT,
         FAIL_SABR_ERROR,
         TRY_RELOAD,
-        REFRESH_PO_TOKEN,
-        REQUIRE_PO_TOKEN,
         RESET_RECOVERY_BUDGETS,
         SLEEP_BACKOFF,
         DEFER_BACKOFF,
@@ -53,25 +51,21 @@ public interface SabrSessionPolicy extends AutoCloseable {
     final class State {
         private final int requestNumber;
         private final int redirectCount;
-        private final int poTokenRefreshes;
         private final int reloads;
 
-        public State(final int requestNumber, final int redirectCount,
-                     final int poTokenRefreshes, final int reloads) {
+        public State(final int requestNumber, final int redirectCount, final int reloads) {
             this.requestNumber = requestNumber;
             this.redirectCount = redirectCount;
-            this.poTokenRefreshes = poTokenRefreshes;
             this.reloads = reloads;
         }
 
         public int getRequestNumber() { return requestNumber; }
         public int getRedirectCount() { return redirectCount; }
-        public int getPoTokenRefreshes() { return poTokenRefreshes; }
         public int getReloads() { return reloads; }
 
         @Nonnull
         public State resetRecoveryBudgets() {
-            return new State(requestNumber, 0, 0, reloads);
+            return new State(requestNumber, 0, reloads);
         }
 
         @Override
@@ -79,13 +73,12 @@ public interface SabrSessionPolicy extends AutoCloseable {
             return this == other || other instanceof State
                     && requestNumber == ((State) other).requestNumber
                     && redirectCount == ((State) other).redirectCount
-                    && poTokenRefreshes == ((State) other).poTokenRefreshes
                     && reloads == ((State) other).reloads;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(requestNumber, redirectCount, poTokenRefreshes, reloads);
+            return Objects.hash(requestNumber, redirectCount, reloads);
         }
     }
 

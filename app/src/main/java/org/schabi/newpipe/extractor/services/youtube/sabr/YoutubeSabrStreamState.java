@@ -93,7 +93,7 @@ public final class YoutubeSabrStreamState {
     }
 
     public boolean ingest(@Nonnull final SabrResponseStatePatch patch) {
-        boolean progressed = false;
+        final boolean progressed = ingestLocalProgress(patch);
         final SabrNextRequestPolicy nextRequestPolicy = patch.getNextRequestPolicy();
         if (nextRequestPolicy != null) {
             this.nextRequestPolicy = nextRequestPolicy;
@@ -101,6 +101,17 @@ public final class YoutubeSabrStreamState {
         if (nextRequestPolicy != null && nextRequestPolicy.getRawPlaybackCookie() != null) {
             playbackCookie = nextRequestPolicy.getRawPlaybackCookie().clone();
         }
+        for (final SabrContextUpdate contextUpdate : patch.getContextUpdates()) {
+            ingestContextUpdate(contextUpdate);
+        }
+        if (patch.getContextSendingPolicy() != null) {
+            ingestContextSendingPolicy(patch.getContextSendingPolicy());
+        }
+        return progressed;
+    }
+
+    boolean ingestLocalProgress(@Nonnull final SabrResponseStatePatch patch) {
+        boolean progressed = false;
         for (final SabrLiveMetadata meta : patch.getLiveMetadata()) {
             live = true;
             postLiveDvr = meta.isPostLiveDvr();
@@ -123,12 +134,6 @@ public final class YoutubeSabrStreamState {
             if (progress != null) {
                 progressed |= progress.observeHeader(header);
             }
-        }
-        for (final SabrContextUpdate contextUpdate : patch.getContextUpdates()) {
-            ingestContextUpdate(contextUpdate);
-        }
-        if (patch.getContextSendingPolicy() != null) {
-            ingestContextSendingPolicy(patch.getContextSendingPolicy());
         }
         return progressed;
     }
@@ -270,6 +275,13 @@ public final class YoutubeSabrStreamState {
 
     void clearPlaybackCookie() {
         playbackCookie = null;
+    }
+
+    void resetServerSessionState() {
+        playbackCookie = null;
+        nextRequestPolicy = null;
+        sabrContexts.clear();
+        activeSabrContextTypes.clear();
     }
 
     boolean isInitialized(@Nonnull final YoutubeSabrFormat format) {

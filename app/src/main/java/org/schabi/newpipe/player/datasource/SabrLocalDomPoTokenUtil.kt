@@ -8,40 +8,47 @@ import java.util.Base64
 internal data class SabrAttChallengeData(
     val program: String,
     val globalName: String,
-    val interpreterUrl: String
+    val interpreterJavascript: String?,
+    val interpreterUrl: String?,
 )
 
 internal fun parseSabrAttChallengeData(rawAttestationData: String): SabrAttChallengeData {
     val challenge = JsonParser.`object`().from(rawAttestationData).getObject("bgChallenge")
-    val interpreterUrl = challenge.getObject("interpreterUrl")
-        .getString("privateDoNotAccessOrElseTrustedResourceUrlWrappedValue")
+    val interpreterJavascript = challenge.getObject("interpreterJavascript")
+        ?.getString("privateDoNotAccessOrElseSafeScriptWrappedValue")
+        ?.takeIf { it.isNotEmpty() }
+    val rawInterpreterUrl = challenge.getObject("interpreterUrl")
+        ?.getString("privateDoNotAccessOrElseTrustedResourceUrlWrappedValue")
+        ?.takeIf { it.isNotEmpty() }
+    val interpreterUrl = rawInterpreterUrl?.let {
+        if (it.startsWith("//")) "https:$it" else it
+    }
+    require(interpreterJavascript != null || interpreterUrl != null) {
+        "Attestation challenge has no interpreter script or URL"
+    }
     return SabrAttChallengeData(
         program = challenge.getString("program"),
         globalName = challenge.getString("globalName"),
-        interpreterUrl = if (interpreterUrl.startsWith("//")) {
-            "https:$interpreterUrl"
-        } else {
-            interpreterUrl
-        }
+        interpreterJavascript = interpreterJavascript,
+        interpreterUrl = interpreterUrl,
     )
 }
 
 internal fun buildSabrAttChallengeData(
     challengeData: SabrAttChallengeData,
-    interpreterJavascript: String
+    interpreterJavascript: String,
 ): String {
     return JsonWriter.string(
         JsonObject.builder()
             .`object`("interpreterJavascript")
-            .value("privateDoNotAccessOrElseSafeScriptWrappedValue", interpreterJavascript)
             .value(
-                "privateDoNotAccessOrElseTrustedResourceUrlWrappedValue",
-                challengeData.interpreterUrl
+                "privateDoNotAccessOrElseSafeScriptWrappedValue",
+                interpreterJavascript,
             )
             .end()
             .value("program", challengeData.program)
             .value("globalName", challengeData.globalName)
-            .done()
+            .done(),
     )
 }
 

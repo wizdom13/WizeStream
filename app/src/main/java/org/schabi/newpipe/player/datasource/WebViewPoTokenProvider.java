@@ -91,7 +91,6 @@ public final class WebViewPoTokenProvider implements SabrPoTokenProvider {
     }
 
     @Nullable
-    @Override
     public byte[] getPoToken(final YoutubeSabrInfo info, final YoutubeSabrStreamState streamState,
                              final boolean forceRefresh) throws SabrProtocolException {
         final String videoId = info.getVideoId();

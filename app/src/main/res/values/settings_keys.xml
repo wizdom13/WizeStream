@@ -1630,7 +1630,6 @@
     <string name="show_auto_translated_subtitles_key">show_auto_translated_subtitles</string>
     <string name="auto_translated_subtitles_language_key">auto_translated_subtitles_language</string>
     <string name="youtube_player_client_key">youtube_player_client</string>
-    <string name="youtube_session_visitor_data_key">youtube_session_visitor_data</string>
     <string-array name="auto_translated_subtitles_language_names">
         <item>English</item>
         <item>Français</item>

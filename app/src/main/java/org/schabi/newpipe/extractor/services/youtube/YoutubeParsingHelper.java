@@ -689,10 +689,17 @@ YoutubeParsingHelper {
                 .orElse(null);
     }
 
+    /** Returns the localization used by YouTube player requests. */
+    @Nonnull
+    public static Localization getPlayerRequestLocalization() {
+        return new Localization("en");
+    }
+
     /**
      * Get the client version used by YouTube website on InnerTube requests.
      */
-    public static String getClientVersion() throws IOException, ExtractionException {
+    public static synchronized String getClientVersion()
+            throws IOException, ExtractionException {
         if (!isNullOrEmpty(clientVersion)) {
             return clientVersion;
         }
@@ -734,7 +741,7 @@ YoutubeParsingHelper {
      * tests with mocks will fail, because the mock is missing.
      * </p>
      */
-    public static void resetClientVersion() {
+    public static synchronized void resetClientVersion() {
         clientVersion = null;
         clientVersionExtracted = false;
     }
@@ -1622,9 +1629,9 @@ YoutubeParsingHelper {
     }
 
     /**
-     * Decorate a player request and retain the exact visitor identity sent with that request.
-     * Callers which consume the player response later must carry this value forward instead of
-     * asking the provider for a potentially different current identity.
+     * Decorate a player request and retain the exact visitor identity and client version sent
+     * with that request. SABR callers carry them forward so the video-bound media token is minted
+     * in the same client context after {@code /player} returns.
      */
     @Nonnull
     public static YoutubePlayerRequest prepareSessionPoTokenPlayerRequest(
@@ -1637,21 +1644,28 @@ YoutubeParsingHelper {
             final JsonObject context = request.getObject("context");
             final JsonObject client = context == null ? null : context.getObject("client");
             if (client == null) {
-                return new YoutubePlayerRequest(body, null);
+                return new YoutubePlayerRequest(body, null, null);
             }
             final String originalVisitorData = client.getString("visitorData");
+            final String clientName = client.getString("clientName", "");
+            final String clientVersion = client.getString("clientVersion", "");
+            final String userAgent = client.getString("userAgent");
             final JsonObject existingIntegrity = request.getObject("serviceIntegrityDimensions");
+            final String existingPoToken = existingIntegrity == null
+                    ? null : existingIntegrity.getString("poToken");
             if (existingIntegrity != null
-                    && !isNullOrEmpty(existingIntegrity.getString("poToken"))) {
-                return new YoutubePlayerRequest(body, originalVisitorData);
+                    && !isNullOrEmpty(existingPoToken)) {
+                return new YoutubePlayerRequest(body, originalVisitorData, clientVersion);
             }
 
-            final String clientName = client.getString("clientName", "");
-            final YoutubeSessionPoToken result = getSessionPoToken(clientName, localization,
-                    contentCountry);
+            if (isNullOrEmpty(clientName) || isNullOrEmpty(clientVersion)) {
+                return new YoutubePlayerRequest(body, originalVisitorData, clientVersion);
+            }
+            final YoutubeSessionPoToken result = getSessionPoToken(clientName, clientVersion,
+                    userAgent, localization, contentCountry);
             if (result == null || isNullOrEmpty(result.getVisitorData())
                     || isNullOrEmpty(result.getPoToken())) {
-                return new YoutubePlayerRequest(body, originalVisitorData);
+                return new YoutubePlayerRequest(body, originalVisitorData, clientVersion);
             }
 
             client.put("visitorData", result.getVisitorData());
@@ -1661,17 +1675,19 @@ YoutubeParsingHelper {
             request.put("serviceIntegrityDimensions", integrity);
             return new YoutubePlayerRequest(
                     JsonWriter.string(request).getBytes(StandardCharsets.UTF_8),
-                    result.getVisitorData());
+                    result.getVisitorData(), clientVersion);
         } catch (final Exception error) {
-            System.err.println("Could not add session-bound YouTube PO token: "
+            System.err.println("Could not add visitor-bound YouTube PO token: "
                     + error.getClass().getSimpleName() + ": " + error.getMessage());
-            return new YoutubePlayerRequest(body, null);
+            return new YoutubePlayerRequest(body, null, null);
         }
     }
 
     @Nullable
     public static YoutubeSessionPoToken getSessionPoToken(
             @Nonnull final String clientName,
+            @Nonnull final String clientVersion,
+            @Nullable final String userAgent,
             @Nonnull final Localization localization,
             @Nonnull final ContentCountry contentCountry) {
         final YoutubeSessionPoTokenProvider provider =
@@ -1680,10 +1696,10 @@ YoutubeParsingHelper {
             return null;
         }
         try {
-            return provider.getSessionPoToken(clientName, localization, contentCountry,
-                    ServiceList.YouTube.hasTokens());
+            return provider.getSessionPoToken(clientName, clientVersion, userAgent,
+                    localization, contentCountry, ServiceList.YouTube.hasTokens());
         } catch (final Exception error) {
-            System.err.println("Could not obtain session-bound YouTube PO token: "
+            System.err.println("Could not obtain visitor-bound YouTube PO token: "
                     + error.getClass().getSimpleName() + ": " + error.getMessage());
             return null;
         }
@@ -1708,6 +1724,10 @@ YoutubeParsingHelper {
             final String userAgent,
             final Downloader.AsyncCallback callback)
             throws IOException, ExtractionException {
+        if (request.getClientVersion() != null && !request.getClientVersion().isEmpty()) {
+            return getJsonPlayerResponseAsyncInternal(endpoint, request.getBody(), localization,
+                    clientId, request.getClientVersion(), userAgent, callback, true);
+        }
         return getJsonPlayerResponseAsyncInternal(endpoint, request.getBody(), localization,
                 clientId, userAgent, callback, true);
     }

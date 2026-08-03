@@ -1,25 +1,26 @@
 package org.schabi.newpipe.player.datasource
 
 import android.content.Context
+import org.schabi.newpipe.DownloaderImpl
+import org.schabi.newpipe.SharedWebViewRuntime
+import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException
 import java.io.Closeable
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import org.schabi.newpipe.DownloaderImpl
-import org.schabi.newpipe.SharedWebViewRuntime
-import org.schabi.newpipe.extractor.services.youtube.sabr.SabrProtocolException
 
 internal class LocalDomPoTokenGenerator private constructor(
     context: Context,
-    private val initialization: InitWaiter
+    private val initialization: InitWaiter,
+    private val attestationContext: LocalDomPoTokenContext,
+    private val credentialHeaders: Map<String, List<String>>,
 ) : Closeable {
     private val appContext = context.applicationContext
     private val runtime = SharedWebViewRuntime.get(appContext)
     private val sessionId = runtime.registerSabrLocalDomCallbacks(Callbacks())
     private val tokenWaiters = mutableMapOf<String, TokenWaiter>()
     private lateinit var expirationInstant: Instant
-
     @Volatile
     private var closed = false
 
@@ -29,7 +30,7 @@ internal class LocalDomPoTokenGenerator private constructor(
             runtime.evaluateJavascriptBlocking(
                 runtime.loadAsset(ASSET) + "\ntrue",
                 INIT_TIMEOUT_MS,
-                "Local DOM BotGuard helper injection"
+                "Local DOM BotGuard helper injection",
             )
             downloadAndRunBotguard()
         } catch (error: Throwable) {
@@ -49,9 +50,9 @@ internal class LocalDomPoTokenGenerator private constructor(
         }
         val u8Identifier = stringToSabrU8(identifier)
         val posted = runtime.evaluateJavascript(
-            "pipepipeSabrObtainPoToken(" + jsString(sessionId) + ", " +
-                jsString(identifier) + ", " + u8Identifier + ");",
-            null
+            "pipepipeSabrObtainPoToken(" + jsString(sessionId) + ", "
+                + jsString(identifier) + ", " + u8Identifier + ");",
+            null,
         ) { error -> onTokenError(identifier, error) }
         if (!posted) {
             synchronized(tokenWaiters) {
@@ -100,7 +101,7 @@ internal class LocalDomPoTokenGenerator private constructor(
         runtime.evaluateJavascript(
             "pipepipeSabrDeleteSession(" + jsString(sessionId) + ");",
             null,
-            null
+            null,
         )
     }
 
@@ -108,8 +109,9 @@ internal class LocalDomPoTokenGenerator private constructor(
         url: String,
         data: String,
         contentType: String = "application/json+protobuf",
+        extraHeaders: Map<String, List<String>> = emptyMap(),
         onSuccess: (String) -> Unit,
-        onError: (Throwable) -> Unit
+        onError: (Throwable) -> Unit,
     ) {
         Thread({
             try {
@@ -118,17 +120,17 @@ internal class LocalDomPoTokenGenerator private constructor(
                 val response = downloader.post(
                     url,
                     mapOf(
-                        "User-Agent" to listOf(USER_AGENT),
+                        "User-Agent" to listOf(SharedWebViewRuntime.USER_AGENT),
                         "Accept" to listOf("application/json"),
                         "Content-Type" to listOf(contentType),
-                        "x-goog-api-key" to listOf(GOOGLE_API_KEY),
-                        "x-user-agent" to listOf("grpc-web-javascript/0.1")
-                    ),
-                    data.toByteArray()
+                        "x-goog-api-key" to listOf(LOCAL_DOM_GOOGLE_API_KEY),
+                        "x-user-agent" to listOf("grpc-web-javascript/0.1"),
+                    ) + extraHeaders,
+                    data.toByteArray(),
                 )
                 if (response.responseCode() != 200) {
                     throw SabrProtocolException(
-                        "Local DOM BotGuard request failed: ${response.responseCode()}"
+                        "Local DOM BotGuard request failed: ${response.responseCode()}",
                     )
                 }
                 onSuccess(response.responseBody())
@@ -141,7 +143,7 @@ internal class LocalDomPoTokenGenerator private constructor(
     private fun makeBotguardGetRequest(
         url: String,
         onSuccess: (String) -> Unit,
-        onError: (Throwable) -> Unit
+        onError: (Throwable) -> Unit,
     ) {
         Thread({
             try {
@@ -150,13 +152,13 @@ internal class LocalDomPoTokenGenerator private constructor(
                 val response = downloader.get(
                     url,
                     mapOf(
-                        "User-Agent" to listOf(USER_AGENT),
-                        "Accept" to listOf("*/*")
-                    )
+                        "User-Agent" to listOf(SharedWebViewRuntime.USER_AGENT),
+                        "Accept" to listOf("*/*"),
+                    ),
                 )
                 if (response.responseCode() != 200) {
                     throw SabrProtocolException(
-                        "Local DOM BotGuard GET failed: ${response.responseCode()}"
+                        "Local DOM BotGuard GET failed: ${response.responseCode()}",
                     )
                 }
                 onSuccess(response.responseBody())
@@ -201,33 +203,42 @@ internal class LocalDomPoTokenGenerator private constructor(
     private fun downloadAndRunBotguard() {
         makeBotguardServiceRequest(
             "https://www.youtube.com/youtubei/v1/att/get?prettyPrint=false",
-            "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"" +
-                "$ATT_CLIENT_VERSION\"}},\"engagementType\":\"ENGAGEMENT_TYPE_UNBOUND\"}",
+            buildLocalDomAttestationBody(attestationContext),
             contentType = "application/json",
+            extraHeaders = buildLocalDomAttestationHeaders(
+                attestationContext,
+                credentialHeaders,
+            ),
             onSuccess = { body ->
                 try {
                     val challenge = parseSabrAttChallengeData(body)
-                    makeBotguardGetRequest(
-                        challenge.interpreterUrl,
-                        onSuccess = { interpreterJavascript ->
-                            val challengeData = buildSabrAttChallengeData(
-                                challenge,
-                                interpreterJavascript
-                            )
-                            runtime.evaluateJavascript(
-                                "pipepipeSabrRunBotguard(" + jsString(sessionId) +
-                                    ", " + challengeData + ");",
-                                null
-                            ) { error -> failInitialization(error) }
-                        },
-                        onError = ::failInitialization
-                    )
+                    val inlineInterpreter = challenge.interpreterJavascript
+                    if (inlineInterpreter != null) {
+                        runBotguard(challenge, inlineInterpreter)
+                    } else {
+                        makeBotguardGetRequest(
+                            requireNotNull(challenge.interpreterUrl),
+                            onSuccess = { runBotguard(challenge, it) },
+                            onError = ::failInitialization,
+                        )
+                    }
                 } catch (error: Throwable) {
                     failInitialization(error)
                 }
             },
-            onError = ::failInitialization
+            onError = ::failInitialization,
         )
+    }
+
+    private fun runBotguard(
+        challenge: SabrAttChallengeData,
+        interpreterJavascript: String,
+    ) {
+        runtime.evaluateJavascript(
+            "pipepipeSabrRunBotguard(" + jsString(sessionId) + ", "
+                + buildSabrAttChallengeData(challenge, interpreterJavascript) + ");",
+            null,
+        ) { error -> failInitialization(error) }
     }
 
     private fun onRunBotguardResult(botguardResponse: String) {
@@ -239,15 +250,15 @@ internal class LocalDomPoTokenGenerator private constructor(
                     val (integrityToken, expirationSeconds) = parseSabrIntegrityTokenData(body)
                     expirationInstant = Instant.now().plusSeconds(expirationSeconds - 600)
                     runtime.evaluateJavascript(
-                        "pipepipeSabrCreateMinter(" + jsString(sessionId) + ", " +
-                            integrityToken + ");",
-                        null
+                        "pipepipeSabrCreateMinter(" + jsString(sessionId) + ", "
+                            + integrityToken + ");",
+                        null,
                     ) { error -> failInitialization(error) }
                 } catch (error: Throwable) {
                     failInitialization(error)
                 }
             },
-            onError = ::failInitialization
+            onError = ::failInitialization,
         )
     }
 
@@ -289,16 +300,21 @@ internal class LocalDomPoTokenGenerator private constructor(
         private const val ASSET = "sabr_po_token.js"
         private const val TOKEN_TIMEOUT_MS = 30_000L
         private const val INIT_TIMEOUT_MS = 60_000L
-        private const val GOOGLE_API_KEY = "AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw"
         private const val REQUEST_KEY = "O43z0dpjhgX20SCx4KAo"
-        private const val ATT_CLIENT_VERSION = "2.20260227.01.00"
-        private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.3"
 
         @Throws(SabrProtocolException::class)
-        fun create(context: Context): LocalDomPoTokenGenerator {
+        fun create(
+            context: Context,
+            attestationContext: LocalDomPoTokenContext,
+            credentialHeaders: Map<String, List<String>>,
+        ): LocalDomPoTokenGenerator {
             val init = InitWaiter()
-            val generator = LocalDomPoTokenGenerator(context, init)
+            val generator = LocalDomPoTokenGenerator(
+                context,
+                init,
+                attestationContext,
+                credentialHeaders,
+            )
             generator.loadScriptAndInitialize()
             try {
                 if (!init.latch.await(INIT_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
@@ -313,7 +329,7 @@ internal class LocalDomPoTokenGenerator private constructor(
             init.error.get()?.let {
                 throw SabrProtocolException(
                     "Local DOM PO token initialization failed: ${it.message}",
-                    it
+                    it,
                 )
             }
             return init.generator.get()

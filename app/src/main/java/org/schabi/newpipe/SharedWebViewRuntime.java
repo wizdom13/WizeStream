@@ -62,7 +62,7 @@ public final class SharedWebViewRuntime {
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
     private static final long READY_CALLBACK_ATTEMPT_TIMEOUT_MS = 5_000L;
     private static final int MAX_READY_CALLBACK_ATTEMPTS = 2;
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.3";
     private static volatile SharedWebViewRuntime instance;
 

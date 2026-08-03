@@ -19,6 +19,8 @@ import javax.annotation.Nullable;
 public interface YoutubeSessionPoTokenProvider {
     @Nullable
     YoutubeSessionPoToken getSessionPoToken(@Nonnull final String clientName,
+                                            @Nonnull final String clientVersion,
+                                            @Nullable final String userAgent,
                                             @Nonnull final Localization localization,
                                             @Nonnull final ContentCountry contentCountry,
                                             final boolean loggedIn)

@@ -5,7 +5,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 /**
- * A session-bound proof-of-origin token and the visitor data it is bound to.
+ * A visitor-bound proof-of-origin token and the visitor identity used to mint it.
  */
 public final class YoutubeSessionPoToken {
     @Nonnull

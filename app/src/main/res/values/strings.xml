@@ -1230,7 +1230,5 @@
     <string name="show_auto_translated_subtitles_summary">Show subtitles translated automatically by YouTube</string>
     <string name="auto_translated_subtitles_language_title">Auto-translate subtitles to</string>
     <string name="youtube_player_client_title">YouTube extraction endpoint</string>
-    <string name="youtube_session_visitor_data_title">Send YouTube session visitor data</string>
-    <string name="youtube_session_visitor_data_summary">May reduce temporary IP blocks, but can increase forced playback waits</string>
 
 </resources>

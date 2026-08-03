@@ -46,13 +46,19 @@ function loadBotGuard(root, challengeData, onReady, onError) {
       };
     };
 
+    var noOp = function () {};
+    var loggerFunctions = [noOp, noOp, noOp, noOp, noOp];
+
     root.syncSnapshotFunction = root.vm.a(
       root.program,
       vmFunctionsCallback,
       true,
       root.userInteractionElement,
-      function () {},
-      [[], []]
+      noOp,
+      [[], []],
+      undefined,
+      false,
+      loggerFunctions
     )[0];
 
     root._botGuardPolls = 0;

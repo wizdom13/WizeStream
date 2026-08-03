@@ -23,7 +23,7 @@ public final class BuiltinSabrSessionPolicy implements SabrSessionPolicy {
         if (redirectUrl != null && !redirectUrl.isEmpty()) {
             actions.add(new Action(ActionType.APPLY_REDIRECT));
             next = new State(state.getRequestNumber(), state.getRedirectCount() + 1,
-                    state.getPoTokenRefreshes(), state.getReloads());
+                    state.getReloads());
         }
         if (response.getSabrErrorDetails() != null) {
             actions.add(new Action(ActionType.FAIL_SABR_ERROR));
@@ -31,14 +31,16 @@ public final class BuiltinSabrSessionPolicy implements SabrSessionPolicy {
                     response.getSabrErrorDetails().summarize()),
                     SabrResponseStatePatch.builtin(response));
         }
+        if (response.isAttestationRequired()) {
+            actions.add(new Action(ActionType.FAIL_SABR_ERROR));
+            return Result.control(next, actions, new ControlDecision(0, redirectUrl,
+                    "SABR attestation required: " + response.summarizeNoMediaResponse()),
+                    SabrResponseStatePatch.builtin(response));
+        }
         if (response.isReloadRequested()) {
             actions.add(new Action(ActionType.TRY_RELOAD));
             return Result.control(next, actions, new ControlDecision(0, redirectUrl, null),
                     SabrResponseStatePatch.builtin(response));
-        }
-        if (response.isProtectionBoundaryNoMediaResponse()) {
-            actions.add(new Action(control.getMode() == ControlMode.FETCH_SEGMENT
-                    ? ActionType.REQUIRE_PO_TOKEN : ActionType.REFRESH_PO_TOKEN));
         }
         if (control.getMode() == ControlMode.PUMP && control.getSegmentCount() > 0) {
             next = state.resetRecoveryBudgets();
@@ -51,9 +53,7 @@ public final class BuiltinSabrSessionPolicy implements SabrSessionPolicy {
         } else if (!control.shouldHonorBackoff()) {
             actions.add(new Action(ActionType.CLEAR_DEMAND_BACKOFF));
         }
-        actions.add(new Action(control.getMode() == ControlMode.FETCH_SEGMENT
-                && response.isProtectionBoundaryNoMediaResponse()
-                ? ActionType.RETRY : ActionType.CONTINUE));
+        actions.add(new Action(ActionType.CONTINUE));
         return Result.control(next, actions, new ControlDecision(backoff, redirectUrl, null),
                 SabrResponseStatePatch.builtin(response));
     }

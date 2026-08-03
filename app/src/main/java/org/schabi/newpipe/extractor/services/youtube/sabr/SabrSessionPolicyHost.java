@@ -102,7 +102,7 @@ public final class SabrSessionPolicyHost implements AutoCloseable {
 
     private static void validateState(@Nonnull final SabrSessionPolicy.State state) {
         if (state.getRequestNumber() < 0 || state.getRedirectCount() < 0
-                || state.getPoTokenRefreshes() < 0 || state.getReloads() < 0) {
+                || state.getReloads() < 0) {
             throw new IllegalStateException("Invalid SABR policy state");
         }
     }
@@ -177,12 +177,10 @@ public final class SabrSessionPolicyHost implements AutoCloseable {
         final boolean redirect = seen.contains(SabrSessionPolicy.ActionType.APPLY_REDIRECT);
         final int expectedRedirects = reset ? 0
                 : state.getRedirectCount() + (redirect ? 1 : 0);
-        final int expectedRefreshes = reset ? 0 : state.getPoTokenRefreshes();
         final SabrSessionPolicy.State next = result.getNextState();
         if (next.getRequestNumber() != state.getRequestNumber()
                 || next.getReloads() != state.getReloads()
                 || next.getRedirectCount() != expectedRedirects
-                || next.getPoTokenRefreshes() != expectedRefreshes
                 || reset && (control.getMode() != SabrSessionPolicy.ControlMode.PUMP
                 || control.getSegmentCount() <= 0)) {
             throw new IllegalStateException("Invalid SABR recovery state transition");
@@ -192,11 +190,7 @@ public final class SabrSessionPolicyHost implements AutoCloseable {
                 || seen.contains(SabrSessionPolicy.ActionType.DEFER_BACKOFF)
                 != (decision.getBackoffTimeMs() > 0 && !control.shouldHonorBackoff())
                 || seen.contains(SabrSessionPolicy.ActionType.CLEAR_DEMAND_BACKOFF)
-                && (decision.getBackoffTimeMs() > 0 || control.shouldHonorBackoff())
-                || seen.contains(SabrSessionPolicy.ActionType.REQUIRE_PO_TOKEN)
-                && control.getMode() != SabrSessionPolicy.ControlMode.FETCH_SEGMENT
-                || seen.contains(SabrSessionPolicy.ActionType.REFRESH_PO_TOKEN)
-                && control.getMode() != SabrSessionPolicy.ControlMode.PUMP) {
+                && (decision.getBackoffTimeMs() > 0 || control.shouldHonorBackoff())) {
             throw new IllegalStateException("SABR Host action/event mismatch");
         }
     }

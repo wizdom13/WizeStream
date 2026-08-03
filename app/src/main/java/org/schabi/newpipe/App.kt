@@ -26,14 +26,17 @@ import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketException
+import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import org.acra.ACRA.init
 import org.acra.ACRA.isACRASenderServiceProcess
 import org.acra.config.CoreConfigurationBuilder
 import org.schabi.newpipe.error.ReCaptchaActivity
 import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.services.youtube.YoutubeApiDecoder
+import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper
 import org.schabi.newpipe.ktx.hasAssignableCause
 import org.schabi.newpipe.player.datasource.LocalDomPoTokenProvider
 import org.schabi.newpipe.player.datasource.SabrPolicyRuntime
@@ -124,22 +127,7 @@ open class App :
         )
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val sessionPoTokenProvider = LocalDomPoTokenProvider.shared(this)
-        NewPipe.setYoutubeSessionPoTokenProvider { clientName, localization, contentCountry, loggedIn ->
-            val visitorDataEnabled = prefs.getBoolean(
-                getString(R.string.youtube_session_visitor_data_key),
-                false
-            )
-            if (visitorDataEnabled || clientName == "ANDROID_VR") {
-                sessionPoTokenProvider.getSessionPoToken(
-                    clientName,
-                    localization,
-                    contentCountry,
-                    loggedIn
-                )
-            } else {
-                null
-            }
-        }
+        NewPipe.setYoutubeSessionPoTokenProvider(sessionPoTokenProvider)
         runCatching {
             SabrPolicyRuntime.initialize(this, BuildConfig.SABR_POLICY_PUBLIC_KEY_BASE64, 0)
             SabrPolicyUpdateWorker.initialize(this)
@@ -157,16 +145,12 @@ open class App :
         initNotificationChannels()
 
         ServiceHelper.initServices(this)
-        sessionPoTokenProvider.prewarmSessionPoToken(
-            Localization.getPreferredLocalization(this),
-            Localization.getPreferredContentCountry(this),
-            org.schabi.newpipe.extractor.ServiceList.YouTube.hasTokens()
-        )
 
         // Initialize image loader
         NewPipe.setYoutubePlayerClient(
             prefs.getString(getString(R.string.youtube_player_client_key), "mweb") ?: "mweb"
         )
+        prewarmYoutubeSessionPoToken(sessionPoTokenProvider)
         ImageStrategy.setPreferredImageQuality(
             PreferredImageQuality.fromPreferenceKey(
                 this,
@@ -181,6 +165,72 @@ open class App :
         initializeDeviceSyncScheduling()
         initializeDeviceSyncListener()
     }
+
+    private fun prewarmYoutubeSessionPoToken(provider: LocalDomPoTokenProvider) {
+        provider.cancelSessionPoTokenPrewarm()
+        runCatching {
+            resolveYoutubePoTokenClientContext(NewPipe.getYoutubePlayerClient())
+        }.onSuccess { client ->
+            if (client == null) {
+                return@onSuccess
+            }
+            provider.prewarmSessionPoToken(
+                client.clientName,
+                client.userAgent,
+                YoutubeParsingHelper.getPlayerRequestLocalization(),
+                ServiceList.YouTube.contentCountry,
+                ServiceList.YouTube.hasTokens(),
+                client.clientVersionResolver
+            )
+        }.onFailure { error ->
+            Log.w(TAG, "Could not schedule YouTube session PO token prewarm", error)
+        }
+    }
+
+    private fun resolveYoutubePoTokenClientContext(
+        selectedClient: String
+    ): YoutubePoTokenClientContext? = when (selectedClient) {
+        "mweb" -> YoutubePoTokenClientContext(
+            "MWEB",
+            Callable { YoutubeParsingHelper.getClientVersion() },
+            YoutubeParsingHelper.MWEB_USER_AGENT
+        )
+        "web" -> YoutubePoTokenClientContext(
+            "WEB",
+            Callable { YoutubeParsingHelper.getClientVersion() },
+            YoutubeParsingHelper.WEB_USER_AGENT
+        )
+        "web_safari" -> YoutubePoTokenClientContext(
+            "WEB",
+            Callable { "2.20260114.08.00" },
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) " +
+                "Version/15.5 Safari/605.1.15,gzip(gfe)"
+        )
+        "android_vr" -> YoutubePoTokenClientContext(
+            "ANDROID_VR",
+            Callable { "1.65.10" },
+            "com.google.android.apps.youtube.vr.oculus/1.65.10 " +
+                "(Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip"
+        )
+        "tv_simply" -> YoutubePoTokenClientContext(
+            "TVHTML5_SIMPLY",
+            Callable { "1.0" },
+            YoutubeParsingHelper.WEB_USER_AGENT
+        )
+        "tv_downgraded" -> YoutubePoTokenClientContext(
+            "TVHTML5",
+            Callable { "5.20260114" },
+            "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version"
+        )
+        else -> null
+    }
+
+    private data class YoutubePoTokenClientContext(
+        val clientName: String,
+        val clientVersionResolver: Callable<String>,
+        val userAgent: String
+    )
 
     private fun initializeDeviceSyncScheduling() {
         runCatching {

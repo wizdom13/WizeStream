@@ -87,7 +87,7 @@ public final class SabrSessionPolicyTranscript {
 
     private static String state(@Nonnull final SabrSessionPolicy.State state) {
         return state.getRequestNumber() + "," + state.getRedirectCount() + ","
-                + state.getPoTokenRefreshes() + "," + state.getReloads();
+                + state.getReloads();
     }
 
     private static final class Entry {
