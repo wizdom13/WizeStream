@@ -63,7 +63,10 @@ data class StreamEntity(
     var uploadDate: OffsetDateTime? = null,
 
     @ColumnInfo(name = STREAM_IS_UPLOAD_DATE_APPROXIMATION)
-    var isUploadDateApproximation: Boolean? = null
+    var isUploadDateApproximation: Boolean? = null,
+
+    @ColumnInfo(name = STREAM_UPLOADER_AVATAR_URL)
+    var uploaderAvatarUrl: String? = null
 ) : Serializable {
     @Ignore
     constructor(item: StreamInfoItem) : this(
@@ -72,7 +75,10 @@ data class StreamEntity(
         uploaderUrl = item.uploaderUrl,
         thumbnailUrl = ImageStrategy.imageListToDbUrl(ExtractorImageCompat.thumbnailImages(item)), viewCount = item.viewCount,
         textualUploadDate = item.textualUploadDate, uploadDate = item.uploadDate?.offsetDateTime(),
-        isUploadDateApproximation = item.uploadDate?.isApproximation
+        isUploadDateApproximation = item.uploadDate?.isApproximation,
+        uploaderAvatarUrl = ImageStrategy.imageListToDbUrl(
+            ExtractorImageCompat.uploaderAvatarImages(item)
+        )
     )
 
     @Ignore
@@ -82,7 +88,10 @@ data class StreamEntity(
         uploaderUrl = info.uploaderUrl,
         thumbnailUrl = ImageStrategy.imageListToDbUrl(ExtractorImageCompat.thumbnailImages(info)), viewCount = info.viewCount,
         textualUploadDate = info.textualUploadDate, uploadDate = info.uploadDate?.offsetDateTime(),
-        isUploadDateApproximation = info.uploadDate?.isApproximation
+        isUploadDateApproximation = info.uploadDate?.isApproximation,
+        uploaderAvatarUrl = ImageStrategy.imageListToDbUrl(
+            ExtractorImageCompat.uploaderAvatarImages(info)
+        )
     )
 
     @Ignore
@@ -103,6 +112,10 @@ data class StreamEntity(
         item.uploaderName = uploader
         item.uploaderUrl = uploaderUrl
         ExtractorImageCompat.setThumbnailImages(item, ImageStrategy.dbUrlToImageList(thumbnailUrl))
+        ExtractorImageCompat.setUploaderAvatarImages(
+            item,
+            ImageStrategy.dbUrlToImageList(uploaderAvatarUrl)
+        )
 
         if (viewCount != null) item.viewCount = viewCount as Long
         item.textualUploadDate = textualUploadDate
@@ -123,6 +136,7 @@ data class StreamEntity(
         const val STREAM_DURATION = "duration"
         const val STREAM_UPLOADER = "uploader"
         const val STREAM_UPLOADER_URL = "uploader_url"
+        const val STREAM_UPLOADER_AVATAR_URL = "uploader_avatar_url"
         const val STREAM_THUMBNAIL_URL = "thumbnail_url"
 
         const val STREAM_VIEWS = "view_count"

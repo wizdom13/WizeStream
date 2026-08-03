@@ -35,6 +35,7 @@ object Migrations {
     const val DB_VER_13 = 13
     const val DB_VER_14 = 14
     const val DB_VER_15 = 15
+    const val DB_VER_16 = 16
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -675,5 +676,9 @@ object Migrations {
         db.execSQL(
             "ALTER TABLE `feed_last_updated_new` RENAME TO `feed_last_updated`"
         )
+    }
+
+    val MIGRATION_15_16 = Migration(DB_VER_15, DB_VER_16) { db ->
+        db.execSQL("ALTER TABLE `streams` ADD COLUMN `uploader_avatar_url` TEXT")
     }
 }

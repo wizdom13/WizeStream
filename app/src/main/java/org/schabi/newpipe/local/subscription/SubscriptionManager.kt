@@ -86,7 +86,8 @@ class SubscriptionManager(context: Context) {
                         currentYoutubeModeMask
                     } else {
                         SubscriptionEntity.YOUTUBE_MODE_REGULAR
-                    }
+                    },
+                    uploaderAvatarUrl = listEntities[index].avatarUrl
                 )
             }
         }

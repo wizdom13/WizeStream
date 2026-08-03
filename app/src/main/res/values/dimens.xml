@@ -49,6 +49,7 @@
     <dimen name="stream_thumbnail_progress_horizontal_inset">2dp</dimen>
     <dimen name="stream_thumbnail_duration_margin_with_progress">20dp</dimen>
     <dimen name="stream_card_horizontal_margin">12dp</dimen>
+    <dimen name="stream_item_uploader_touch_target">48dp</dimen>
 
     <dimen name="channel_item_card_thumbnail_image_size">100dp</dimen>
     <dimen name="channel_item_grid_thumbnail_image_size">92dp</dimen>

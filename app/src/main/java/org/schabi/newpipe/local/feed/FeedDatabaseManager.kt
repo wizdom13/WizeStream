@@ -123,7 +123,8 @@ class FeedDatabaseManager(context: Context) {
         subscriptionId: Long,
         items: List<StreamInfoItem>,
         youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
-        oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE
+        oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE,
+        uploaderAvatarUrl: String? = null
     ) {
         val itemsToInsert = items.mapNotNull { stream ->
             val uploadDate = stream.uploadDate
@@ -139,7 +140,13 @@ class FeedDatabaseManager(context: Context) {
         modeMasks.forEach { feedTable.unlinkOldLivestreams(subscriptionId, it) }
 
         if (itemsToInsert.isNotEmpty()) {
-            val streamEntities = itemsToInsert.map { StreamEntity(it) }
+            val streamEntities = itemsToInsert.map { item ->
+                StreamEntity(item).apply {
+                    if (this.uploaderAvatarUrl.isNullOrBlank()) {
+                        this.uploaderAvatarUrl = uploaderAvatarUrl
+                    }
+                }
+            }
             val streamIds = streamTable.upsertAll(streamEntities)
             val feedEntities = streamIds.flatMap { streamId ->
                 modeMasks.map { modeMask ->

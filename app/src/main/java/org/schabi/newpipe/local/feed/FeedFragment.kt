@@ -65,6 +65,7 @@ import org.schabi.newpipe.databinding.FragmentFeedBinding
 import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.extractor.exceptions.AccountTerminatedException
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
@@ -467,6 +468,19 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
     }
 
+    private fun openUploaderChannel(channel: ChannelInfoItem) {
+        try {
+            NavigationHelper.openChannelFragment(
+                fm,
+                channel.serviceId,
+                channel.url,
+                channel.name
+            )
+        } catch (error: Exception) {
+            ErrorUtil.showUiErrorSnackbar(this, "Opening channel fragment", error)
+        }
+    }
+
     @SuppressLint("StringFormatMatches")
     private fun handleLoadedState(loadedState: FeedState.LoadedState) {
         latestLoadedState = loadedState
@@ -515,7 +529,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             val stream = item.streamWithState.stream
             arrayOf(stream.title, stream.uploader)
         }
-        displayedItems.forEach { it.itemVersion = itemVersion }
+        displayedItems.forEach {
+            it.itemVersion = itemVersion
+            it.onUploaderSelected = ::openUploaderChannel
+        }
 
         // This need to be saved in a variable as the update occurs async
         val oldOldestSubscriptionUpdate = oldestSubscriptionUpdate

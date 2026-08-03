@@ -14,12 +14,14 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.database.stream.StreamWithState
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.databinding.ListStreamItemBinding
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType.AUDIO_LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.AUDIO_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_AUDIO_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.VIDEO_STREAM
+import org.schabi.newpipe.info_list.StreamUploaderNavigation
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.StreamTypeUtil
 import org.schabi.newpipe.util.image.CoilHelper
@@ -40,6 +42,9 @@ data class StreamItem(
      * Can be used e.g. for highlighting a item.
      */
     var execBindEnd: Consumer<ListStreamItemBinding>? = null
+
+    /** Opens the uploader without changing the click behavior of the rest of the stream card. */
+    var onUploaderSelected: ((ChannelInfoItem) -> Unit)? = null
 
     override fun getId(): Long = stream.uid
 
@@ -69,6 +74,7 @@ data class StreamItem(
     override fun bind(viewBinding: ListStreamItemBinding, position: Int) {
         viewBinding.itemVideoTitleView.text = stream.title
         viewBinding.itemUploaderView.text = stream.uploader
+        bindUploader(viewBinding)
 
         if (stream.duration > 0) {
             viewBinding.itemDurationView.text = Localization.getDurationString(stream.duration)
@@ -113,6 +119,32 @@ data class StreamItem(
         }
 
         execBindEnd?.accept(viewBinding)
+    }
+
+    private fun bindUploader(viewBinding: ListStreamItemBinding) {
+        CoilHelper.loadAvatar(viewBinding.itemUploaderAvatarView, stream.uploaderAvatarUrl)
+
+        val channel = StreamUploaderNavigation.create(
+            stream.serviceId,
+            stream.uploaderUrl,
+            stream.uploader,
+            stream.uploaderAvatarUrl
+        )
+        val listener = onUploaderSelected
+        viewBinding.itemUploaderRoot.apply {
+            if (channel != null && listener != null) {
+                isClickable = true
+                isFocusable = true
+                contentDescription = context.getString(R.string.open_channel, stream.uploader)
+                setOnClickListener { listener(channel) }
+            } else {
+                // Clear every interactive property because Groupie reuses item views.
+                setOnClickListener(null)
+                isClickable = false
+                isFocusable = false
+                contentDescription = null
+            }
+        }
     }
 
     private fun updateDurationMarginForProgress(viewBinding: ListStreamItemBinding) {

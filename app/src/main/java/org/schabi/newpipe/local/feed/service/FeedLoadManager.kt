@@ -319,7 +319,8 @@ class FeedLoadManager(private val context: Context) {
                             feedDatabaseManager.upsertAll(
                                 info.uid,
                                 info.streams,
-                                updateModeMask
+                                updateModeMask,
+                                uploaderAvatarUrl = info.avatarUrl
                             )
                             subscriptionManager.updateFromInfo(info)
 

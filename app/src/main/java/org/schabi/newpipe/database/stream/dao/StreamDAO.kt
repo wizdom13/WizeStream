@@ -49,7 +49,8 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
 
     @Query(
         """
-        SELECT uid, stream_type, textual_upload_date, upload_date, is_upload_date_approximation, duration 
+        SELECT uid, stream_type, textual_upload_date, upload_date,
+        is_upload_date_approximation, duration, uploader_avatar_url
         FROM streams WHERE url = :url AND service_id = :serviceId
         """
     )
@@ -111,6 +112,10 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
                 newerStream.duration = existentMinimalStream.duration
             }
         }
+
+        if (newerStream.uploaderAvatarUrl.isNullOrBlank()) {
+            newerStream.uploaderAvatarUrl = existentMinimalStream.uploaderAvatarUrl
+        }
     }
 
     @Query(
@@ -149,6 +154,9 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
         var isUploadDateApproximation: Boolean? = null,
 
         @ColumnInfo(name = StreamEntity.STREAM_DURATION)
-        var duration: Long
+        var duration: Long,
+
+        @ColumnInfo(name = StreamEntity.STREAM_UPLOADER_AVATAR_URL)
+        var uploaderAvatarUrl: String? = null
     )
 }

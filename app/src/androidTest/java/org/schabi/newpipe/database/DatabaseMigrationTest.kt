@@ -28,6 +28,7 @@ class DatabaseMigrationTest {
         private val DEFAULT_TYPE = StreamType.VIDEO_STREAM
         private const val DEFAULT_DURATION = 480L
         private const val DEFAULT_UPLOADER_NAME = "Uploader Test"
+        private const val DEFAULT_UPLOADER_AVATAR = "https://example.com/avatar.jpg"
         private const val DEFAULT_THUMBNAIL = "https://example.com/example.jpg"
 
         private const val DEFAULT_SECOND_SERVICE_ID = 1
@@ -616,6 +617,53 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom15to16AddsUploaderAvatar() {
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_15
+        ).apply {
+            insert(
+                "streams",
+                SQLiteDatabase.CONFLICT_FAIL,
+                ContentValues().apply {
+                    put("uid", 1)
+                    put("service_id", DEFAULT_SERVICE_ID)
+                    put("url", DEFAULT_URL)
+                    put("title", DEFAULT_TITLE)
+                    put("stream_type", DEFAULT_TYPE.name)
+                    put("duration", DEFAULT_DURATION)
+                    put("uploader", DEFAULT_UPLOADER_NAME)
+                }
+            )
+            close()
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_16,
+            true,
+            Migrations.MIGRATION_15_16
+        )
+        migrated.query(
+            "SELECT uploader_avatar_url FROM streams WHERE uid = 1"
+        ).use { cursor ->
+            cursor.moveToFirst()
+            assertNull(cursor.getString(0))
+        }
+
+        migrated.execSQL(
+            "UPDATE streams SET uploader_avatar_url = ? WHERE uid = 1",
+            arrayOf(DEFAULT_UPLOADER_AVATAR)
+        )
+        migrated.query(
+            "SELECT uploader_avatar_url FROM streams WHERE uid = 1"
+        ).use { cursor ->
+            cursor.moveToFirst()
+            assertEquals(DEFAULT_UPLOADER_AVATAR, cursor.getString(0))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -624,7 +672,8 @@ class DatabaseMigrationTest {
         )
             .addMigrations(
                 Migrations.MIGRATION_13_14,
-                Migrations.MIGRATION_14_15
+                Migrations.MIGRATION_14_15,
+                Migrations.MIGRATION_15_16
             )
             .build()
         testHelper.closeWhenFinished(database)

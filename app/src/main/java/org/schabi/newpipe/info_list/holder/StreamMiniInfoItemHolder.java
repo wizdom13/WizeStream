@@ -10,16 +10,19 @@ import androidx.core.content.ContextCompat;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.extractor.InfoItem;
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
+import org.schabi.newpipe.info_list.StreamUploaderNavigation;
 import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
+import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
-import org.schabi.newpipe.views.AnimatedProgressBar;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
+import org.schabi.newpipe.views.AnimatedProgressBar;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +31,8 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
     public final TextView itemVideoTitleView;
     public final TextView itemUploaderView;
     public final TextView itemDurationView;
+    private final View itemUploaderRoot;
+    private final ImageView itemUploaderAvatarView;
     private final AnimatedProgressBar itemProgressView;
 
     StreamMiniInfoItemHolder(final InfoItemBuilder infoItemBuilder, final int layoutId,
@@ -38,6 +43,8 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         itemVideoTitleView = itemView.findViewById(R.id.itemVideoTitleView);
         itemUploaderView = itemView.findViewById(R.id.itemUploaderView);
         itemDurationView = itemView.findViewById(R.id.itemDurationView);
+        itemUploaderRoot = itemView.findViewById(R.id.itemUploaderRoot);
+        itemUploaderAvatarView = itemView.findViewById(R.id.itemUploaderAvatarView);
         itemProgressView = itemView.findViewById(R.id.itemProgressView);
     }
 
@@ -84,6 +91,8 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
 
         itemVideoTitleView.setText(item.getName());
         itemUploaderView.setText(item.getUploaderName());
+
+        bindUploader(item);
 
         if (item.getDuration() > 0) {
             itemDurationView.setText(Localization.getDurationString(item.getDuration()));
@@ -140,6 +149,33 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
             default:
                 disableLongClick();
                 break;
+        }
+    }
+
+    private void bindUploader(final StreamInfoItem item) {
+        // The mini layout deliberately keeps its existing compact text-only presentation.
+        if (itemUploaderRoot == null || itemUploaderAvatarView == null) {
+            return;
+        }
+
+        CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatarView,
+                ExtractorImageCompat.uploaderAvatarImages(item));
+
+        final ChannelInfoItem channel = StreamUploaderNavigation.fromStream(item);
+        final OnClickGesture<ChannelInfoItem> listener =
+                itemBuilder.getOnChannelSelectedListener();
+        if (channel != null && listener != null) {
+            itemUploaderRoot.setClickable(true);
+            itemUploaderRoot.setFocusable(true);
+            itemUploaderRoot.setContentDescription(itemBuilder.getContext().getString(
+                    R.string.open_channel, item.getUploaderName()));
+            itemUploaderRoot.setOnClickListener(view -> listener.selected(channel));
+        } else {
+            // Clear every interactive property because holders are recycled between items.
+            itemUploaderRoot.setOnClickListener(null);
+            itemUploaderRoot.setClickable(false);
+            itemUploaderRoot.setFocusable(false);
+            itemUploaderRoot.setContentDescription(null);
         }
     }
 
