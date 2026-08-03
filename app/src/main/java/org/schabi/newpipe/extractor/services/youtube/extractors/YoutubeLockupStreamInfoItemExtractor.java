@@ -461,7 +461,7 @@ public class YoutubeLockupStreamInfoItemExtractor implements StreamInfoItemExtra
         }
 
         final String lowerCaseText = text.toLowerCase(Locale.ROOT);
-        return lowerCaseText.matches(".*\\bviews?\\b.*")
+        return lowerCaseText.contains("view")
                 || lowerCaseText.contains("ukubukwa")
                 || lowerCaseText.contains("no views")
                 || lowerCaseText.contains("akukho ukubukwa")

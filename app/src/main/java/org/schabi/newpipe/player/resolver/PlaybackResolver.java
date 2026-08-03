@@ -7,7 +7,6 @@ import static org.schabi.newpipe.player.helper.PlayerDataSource.LIVE_STREAM_EDGE
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.C;
@@ -22,14 +21,9 @@ import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.manifest.SsManifest;
 import com.google.android.exoplayer2.source.smoothstreaming.manifest.SsManifestParser;
 
-import org.schabi.newpipe.App;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.ServiceList;
-import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.services.youtube.ItagItem;
-import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper;
-import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrFormat;
-import org.schabi.newpipe.extractor.services.youtube.sabr.YoutubeSabrInfo;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.CreationException;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeOtfDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubePostLiveStreamDvrDashManifestCreator;
@@ -41,9 +35,6 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.player.datasource.NonUriHlsDataSourceFactory;
-import org.schabi.newpipe.player.datasource.SabrDashMediaSource;
-import org.schabi.newpipe.player.datasource.SabrSessionStore;
-import org.schabi.newpipe.player.datasource.SabrSourceSpec;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
@@ -52,12 +43,8 @@ import org.schabi.newpipe.util.StreamTypeUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * This interface is just a shorthand for {@link Resolver} with {@link StreamInfo} as source and
@@ -515,77 +502,9 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                                 .setUri(Uri.parse(stream.getContent()))
                                 .setCustomCacheKey(cacheKey)
                                 .build());
-            case SABR:
-                return buildSabrMediaSource(stream, streamInfo, cacheKey, metadata);
             default:
                 throw new ResolverException("Unsupported delivery method for YouTube contents: "
                         + deliveryMethod);
-        }
-    }
-
-    @NonNull
-    private static MediaSource buildSabrMediaSource(@NonNull final Stream stream,
-                                                    @NonNull final StreamInfo streamInfo,
-                                                    @NonNull final String cacheKey,
-                                                    @NonNull final MediaItemTag metadata)
-            throws ResolverException {
-        final String videoId = streamInfo.getId();
-        final int preferredVideoItag =
-                stream instanceof VideoStream ? ((VideoStream) stream).getItag() : 0;
-        final SabrSourceSpec spec;
-        try {
-            spec = SabrSessionStore.createSourceSpec(
-                    videoId, preferredVideoItag, getSabrInfo(stream));
-            enrichSabrAudioTracks(streamInfo, spec.getInfo());
-            final MediaItem mediaItem = new MediaItem.Builder()
-                    .setTag(metadata)
-                    .setUri(Uri.parse("sabr://" + videoId))
-                    .setCustomCacheKey(cacheKey)
-                    .build();
-            return new SabrDashMediaSource(App.getInstance(), mediaItem, spec);
-        } catch (final ExtractionException | IOException e) {
-            throw new ResolverException("Could not create SABR source for " + videoId, e);
-        }
-    }
-
-    @Nullable
-    private static YoutubeSabrInfo getSabrInfo(@NonNull final Stream stream) {
-        final Serializable info = stream.getDeliveryMethodInfo();
-        return info instanceof YoutubeSabrInfo ? (YoutubeSabrInfo) info : null;
-    }
-
-    private static void enrichSabrAudioTracks(@NonNull final StreamInfo streamInfo,
-                                              @NonNull final YoutubeSabrInfo info) {
-        final List<AudioStream> audioStreams = streamInfo.getAudioStreams();
-        if (audioStreams.isEmpty()) {
-            return;
-        }
-        final AudioStream template = audioStreams.get(0);
-        final Set<String> present = new HashSet<>();
-        for (final AudioStream audioStream : audioStreams) {
-            present.add(Objects.toString(audioStream.getAudioTrackId(), ""));
-        }
-        for (final YoutubeSabrFormat format : info.getFormats()) {
-            final String trackId = format.getAudioTrackId();
-            if (!format.isAudio() || trackId == null || !present.add(trackId)) {
-                continue;
-            }
-            final String language = trackId.split("\\.")[0];
-            final String displayName = format.getAudioTrackDisplayName();
-            audioStreams.add(new AudioStream.Builder()
-                    .setId(template.getId() + "-" + trackId)
-                    .setContent(template.getContent(), template.isUrl())
-                    .setMediaFormat(template.getFormat())
-                    .setAverageBitrate(format.getBitrate())
-                    .setItagItem(template.getItagItem())
-                    .setDeliveryMethod(DeliveryMethod.SABR)
-                    .setDeliveryMethodInfo(info)
-                    .setAudioTrackId(trackId)
-                    .setAudioTrackName(displayName != null ? displayName : language)
-                    .setAudioLocale(language.split("-")[0])
-                    .setAudioTrackType(YoutubeParsingHelper.extractAudioTrackType(
-                            format.getXtags()))
-                    .build());
         }
     }
 

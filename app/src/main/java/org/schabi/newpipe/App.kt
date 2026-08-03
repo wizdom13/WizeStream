@@ -33,11 +33,7 @@ import org.acra.config.CoreConfigurationBuilder
 import org.schabi.newpipe.error.ReCaptchaActivity
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
-import org.schabi.newpipe.extractor.services.youtube.YoutubeApiDecoder
 import org.schabi.newpipe.ktx.hasAssignableCause
-import org.schabi.newpipe.player.datasource.LocalDomPoTokenProvider
-import org.schabi.newpipe.player.datasource.SabrPolicyRuntime
-import org.schabi.newpipe.player.datasource.SabrPolicyUpdateWorker
 import org.schabi.newpipe.settings.NewPipeSettings
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncManager
@@ -74,9 +70,6 @@ open class App :
     var notificationsRequested = false
         private set
 
-    protected var isFullAppInitializationEnabled = false
-        private set
-
     fun setNotificationsRequested() {
         notificationsRequested = true
     }
@@ -91,17 +84,8 @@ open class App :
 
         instance = this
 
-        val isAcraProcess = isACRASenderServiceProcess()
-        val isPhoenixProcess = ProcessPhoenix.isPhoenixProcess(this)
-        isFullAppInitializationEnabled =
-            shouldInitializeFullApp(isAcraProcess, isPhoenixProcess)
-        if (!isFullAppInitializationEnabled) {
-            val skippedProcess =
-                if (isAcraProcess) "the ACRA sender process" else "a phoenix process"
-            Log.i(
-                TAG,
-                "Skipping full application initialization in $skippedProcess"
-            )
+        if (ProcessPhoenix.isPhoenixProcess(this)) {
+            Log.i(TAG, "This is a phoenix process! Aborting initialization of App[onCreate]")
             return
         }
 
@@ -122,34 +106,6 @@ open class App :
             Localization.getPreferredLocalization(this),
             Localization.getPreferredContentCountry(this)
         )
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val sessionPoTokenProvider = LocalDomPoTokenProvider.shared(this)
-        NewPipe.setYoutubeSessionPoTokenProvider { clientName, localization, contentCountry, loggedIn ->
-            val visitorDataEnabled = prefs.getBoolean(
-                getString(R.string.youtube_session_visitor_data_key),
-                false
-            )
-            if (visitorDataEnabled || clientName == "ANDROID_VR") {
-                sessionPoTokenProvider.getSessionPoToken(
-                    clientName,
-                    localization,
-                    contentCountry,
-                    loggedIn
-                )
-            } else {
-                null
-            }
-        }
-        runCatching {
-            SabrPolicyRuntime.initialize(this, BuildConfig.SABR_POLICY_PUBLIC_KEY_BASE64, 0)
-            SabrPolicyUpdateWorker.initialize(this)
-        }.onFailure { error ->
-            Log.e(TAG, "Could not initialize SABR cloud policy; using builtin", error)
-        }
-        val webViewAvailabilityChecker = AndroidWebViewAvailabilityChecker(this)
-        NewPipe.setWebViewAvailabilityChecker(webViewAvailabilityChecker)
-        webViewAvailabilityChecker.warmUp()
-        YoutubeApiDecoder.setLocalDecoder(WebViewJavaScriptDecoder(this))
         Localization.initPrettyTime(Localization.resolvePrettyTime())
 
         BridgeStateSaverInitializer.init(this)
@@ -157,16 +113,9 @@ open class App :
         initNotificationChannels()
 
         ServiceHelper.initServices(this)
-        sessionPoTokenProvider.prewarmSessionPoToken(
-            Localization.getPreferredLocalization(this),
-            Localization.getPreferredContentCountry(this),
-            org.schabi.newpipe.extractor.ServiceList.YouTube.hasTokens()
-        )
 
         // Initialize image loader
-        NewPipe.setYoutubePlayerClient(
-            prefs.getString(getString(R.string.youtube_player_client_key), "mweb") ?: "mweb"
-        )
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         ImageStrategy.setPreferredImageQuality(
             PreferredImageQuality.fromPreferenceKey(
                 this,
@@ -240,7 +189,10 @@ open class App :
         RxJavaPlugins.setErrorHandler(
             object : Consumer<Throwable> {
                 override fun accept(throwable: Throwable) {
-                    Log.e(TAG, "RxJavaPlugins.ErrorHandler called with -> : throwable = [${throwable.javaClass.getName()}]")
+                    Log.e(
+                        TAG,
+                        "RxJavaPlugins.ErrorHandler called with -> : throwable = [${throwable.javaClass.getName()}]"
+                    )
 
                     // As UndeliverableException is a wrapper,
                     // get the cause of it to get the "real" exception
@@ -263,16 +215,22 @@ open class App :
                     if (isDisposedRxExceptionsReported()) {
                         reportException(actualThrowable)
                     } else {
-                        Log.e(TAG, "RxJavaPlugin: Undeliverable Exception received: ", actualThrowable)
+                        Log.e(
+                            TAG,
+                            "RxJavaPlugin: Undeliverable Exception received: ",
+                            actualThrowable
+                        )
                     }
                 }
 
                 fun isThrowableIgnored(throwable: Throwable): Boolean {
                     // Don't crash the application over a simple network problem
-                    return throwable // network api cancellation
+                    // Network API cancellation
+                    return throwable
                         .hasAssignableCause(
                             IOException::class.java,
-                            SocketException::class.java, // blocking code disposed
+                            // Blocking code disposed
+                            SocketException::class.java,
                             InterruptedException::class.java,
                             InterruptedIOException::class.java
                         )
@@ -361,28 +319,9 @@ open class App :
                 ).setName(getString(R.string.streams_notification_channel_name))
                 .setDescription(getString(R.string.streams_notification_channel_description))
                 .build()
-        val sabrBackoffChannel =
-            NotificationChannelCompat
-                .Builder(
-                    getString(R.string.sabr_backoff_notification_channel_id),
-                    NotificationManagerCompat.IMPORTANCE_DEFAULT
-                ).setName(getString(R.string.sabr_backoff_notification_channel_name))
-                .setDescription(
-                    getString(R.string.sabr_backoff_notification_channel_description)
-                ).setSound(null, null)
-                .setVibrationEnabled(false)
-                .setShowBadge(false)
-                .build()
 
         val channels =
-            listOf(
-                mainChannel,
-                appUpdateChannel,
-                hashChannel,
-                errorReportChannel,
-                newStreamChannel,
-                sabrBackoffChannel
-            )
+            listOf(mainChannel, appUpdateChannel, hashChannel, errorReportChannel, newStreamChannel)
 
         NotificationManagerCompat.from(this).createNotificationChannelsCompat(channels)
     }
@@ -398,12 +337,6 @@ open class App :
 
         const val PACKAGE_NAME: String = BuildConfig.APPLICATION_ID
         private val TAG = App::class.java.toString()
-
-        @JvmStatic
-        internal fun shouldInitializeFullApp(
-            isAcraSenderServiceProcess: Boolean,
-            isPhoenixProcess: Boolean
-        ): Boolean = !isAcraSenderServiceProcess && !isPhoenixProcess
 
         @JvmStatic
         lateinit var instance: App

@@ -444,8 +444,7 @@ public class MediaSourceManager {
                         })
                 )
                 .onErrorReturn(throwable -> {
-                    if (throwable instanceof ExtractionException
-                            || throwable instanceof IllegalStateException) {
+                    if (throwable instanceof ExtractionException) {
                         return FailedMediaSource.of(stream, new StreamInfoLoadException(throwable));
                     }
                     // Non-source related error expected here (e.g. network),

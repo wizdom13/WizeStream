@@ -11,15 +11,11 @@ import org.schabi.newpipe.extractor.downloader.CancellableCall;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.downloader.Request;
 import org.schabi.newpipe.extractor.downloader.Response;
-import org.schabi.newpipe.extractor.downloader.StreamingResponse;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
-import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.util.InfoCache;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -167,11 +163,8 @@ public final class DownloaderImpl extends Downloader {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull final Call call, @NonNull final IOException e) {
-                try {
-                    callback.onError(e);
-                } finally {
-                    cancellableCall.setFinished();
-                }
+                cancellableCall.setFinished();
+                callback.onError(e);
             }
 
             @Override
@@ -180,51 +173,15 @@ public final class DownloaderImpl extends Downloader {
                 try (response) {
                     final Response extractorResponse = buildExtractorResponse(
                             response, request.url());
+                    cancellableCall.setFinished();
                     callback.onSuccess(extractorResponse);
                 } catch (final IOException | ExtractionException e) {
-                    callback.onError(e);
-                } finally {
                     cancellableCall.setFinished();
+                    callback.onError(e);
                 }
             }
         });
         return cancellableCall;
-    }
-
-    @Override
-    public StreamingResponse postStreaming(final String url,
-                                           @Nullable final Map<String, List<String>> headers,
-                                           @Nullable final byte[] dataToSend,
-                                           @Nullable final Localization localization)
-            throws IOException, ReCaptchaException {
-        final Map<String, List<String>> requestHeaders =
-                headers == null ? java.util.Collections.emptyMap() : headers;
-        final RequestBody requestBody = RequestBody.create(
-                dataToSend == null ? new byte[0] : dataToSend);
-        final okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
-                .method("POST", requestBody)
-                .url(url);
-        if (!requestHeaders.containsKey("User-Agent")) {
-            requestBuilder.header("User-Agent", USER_AGENT);
-        }
-        final String cookies = getCookies(url);
-        if (!requestHeaders.containsKey("Cookie") && !cookies.isEmpty()) {
-            requestBuilder.header("Cookie", cookies);
-        }
-        requestHeaders.forEach((name, values) -> {
-            requestBuilder.removeHeader(name);
-            values.forEach(value -> requestBuilder.addHeader(name, value));
-        });
-
-        final okhttp3.Response response = client.newCall(requestBuilder.build()).execute();
-        if (response.code() == 429) {
-            response.close();
-            throw new ReCaptchaException("reCaptcha Challenge requested", url);
-        }
-        final ResponseBody body = response.body();
-        final InputStream stream =
-                body == null ? new ByteArrayInputStream(new byte[0]) : body.byteStream();
-        return new StreamingResponse(response.code(), response.headers().toMultimap(), stream);
     }
 
     @NonNull

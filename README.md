@@ -162,8 +162,8 @@ WizeStream supports these services through extractor source integrated directly 
 - SoundCloud
 - media.ccc.de
 
-YouTube playback and downloads include support for SABR streams. Service support depends on the
-bundled extractor source.
+YouTube playback and downloads use conventional progressive, DASH, and HLS stream URLs exposed by
+the bundled extractor source.
 
 ### Integrated extractor lineage and responsibility
 
@@ -171,8 +171,8 @@ The bundled extractor is derived from NewPipeExtractor and later incorporated Pi
 and WizeStream-specific changes. It is maintained as source inside WizeStream and is therefore
 neither the unmodified official NewPipeExtractor nor an external PipePipeExtractor dependency.
 
-Extractor work is part of WizeStream's current scope because service compatibility and features
-such as YouTube SABR playback require coordinated application, player, and extractor changes.
+Extractor work is part of WizeStream's current scope because service compatibility and playback
+fixes can require coordinated application, player, and extractor changes.
 Problems encountered in WizeStream—including service and extractor failures—should be reported to
 WizeStream first. Comparing a problem with official NewPipe can help determine whether the cause is
 shared upstream, but WizeStream remains responsible for defects caused by its bundled changes.
@@ -202,7 +202,6 @@ WizeStream additions include:
 - Configurable default main tab
 - Dynamic and manual theme color support
 - SponsorBlock and dislike-count support
-- YouTube SABR playback and downloading
 - Independent Subscriptions and **What's New** content for each service, including separate YouTube
   and YouTube Music scopes
 - Enhanced player gestures

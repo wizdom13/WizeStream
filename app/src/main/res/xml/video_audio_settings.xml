@@ -77,43 +77,6 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false"/>
 
-    <ListPreference
-        android:defaultValue="mweb"
-        android:entries="@array/youtube_player_client_entries"
-        android:entryValues="@array/youtube_player_client_values"
-        android:key="@string/youtube_player_client_key"
-        android:title="@string/youtube_player_client_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:useSimpleSummaryProvider="true" />
-
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="@string/youtube_session_visitor_data_key"
-        android:summary="@string/youtube_session_visitor_data_summary"
-        android:title="@string/youtube_session_visitor_data_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false" />
-
-    <SwitchPreferenceCompat
-        android:defaultValue="true"
-        android:key="@string/show_auto_translated_subtitles_key"
-        android:summary="@string/show_auto_translated_subtitles_summary"
-        android:title="@string/show_auto_translated_subtitles_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false" />
-
-    <ListPreference
-        android:defaultValue="en"
-        android:dependency="@string/show_auto_translated_subtitles_key"
-        android:entries="@array/auto_translated_subtitles_language_names"
-        android:entryValues="@array/auto_translated_subtitles_language_values"
-        android:key="@string/auto_translated_subtitles_language_key"
-        android:title="@string/auto_translated_subtitles_language_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false"
-        app:useSimpleSummaryProvider="true" />
-
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.ExoPlayerSettingsFragment"
         android:key="@string/exoplayer_settings_key"

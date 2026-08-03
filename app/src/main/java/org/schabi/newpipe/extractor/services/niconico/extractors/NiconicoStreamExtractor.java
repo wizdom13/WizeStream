@@ -109,15 +109,6 @@ public class NiconicoStreamExtractor extends StreamExtractor {
     }
 
     @Override
-    public long getTimeStamp() throws ParsingException {
-        final Matcher timestamp = Pattern.compile("(?:#|&|\\?)from=(\\d+)").matcher(getOriginalUrl());
-        if (!timestamp.find()) {
-            return 0;
-        }
-        return Long.parseLong(timestamp.group(1));
-    }
-
-    @Override
     public long getLikeCount() throws ParsingException {
         if (getStreamType() == StreamType.LIVE_STREAM) {
             return -1;

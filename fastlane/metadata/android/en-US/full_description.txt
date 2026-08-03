@@ -7,7 +7,6 @@ Supported services include YouTube, YouTube Music, Bilibili, Niconico, PeerTube,
 Core features include:
 
 - Watch videos and live streams from supported services
-- YouTube SABR playback and downloading
 - Background playback
 - Popup playback
 - Local playlists

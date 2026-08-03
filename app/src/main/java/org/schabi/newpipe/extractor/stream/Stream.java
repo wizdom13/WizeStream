@@ -16,7 +16,6 @@ import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 public abstract class Stream implements Serializable {
     public static final int FORMAT_ID_UNKNOWN = -1;
     public static final String ID_UNKNOWN = " ";
-    public static final long AVAILABLE_AT_UNKNOWN = -1;
 
     /**
      * An integer to represent that the itag ID returned is not available (only for YouTube; this
@@ -34,8 +33,6 @@ public abstract class Stream implements Serializable {
     private final boolean isUrl;
     private final DeliveryMethod deliveryMethod;
     @Nullable private final String manifestUrl;
-    private final long availableAt;
-    @Nullable private final Serializable deliveryMethodInfo;
 
     /**
      * Instantiates a new {@code Stream} object.
@@ -56,35 +53,12 @@ public abstract class Stream implements Serializable {
                   @Nullable final MediaFormat format,
                   final DeliveryMethod deliveryMethod,
                   @Nullable final String manifestUrl) {
-        this(id, content, isUrl, format, deliveryMethod, manifestUrl, AVAILABLE_AT_UNKNOWN, null);
-    }
-
-    protected Stream(final String id,
-                     final String content,
-                     final boolean isUrl,
-                     @Nullable final MediaFormat format,
-                     final DeliveryMethod deliveryMethod,
-                     @Nullable final String manifestUrl,
-                     final long availableAt) {
-        this(id, content, isUrl, format, deliveryMethod, manifestUrl, availableAt, null);
-    }
-
-    protected Stream(final String id,
-                     final String content,
-                     final boolean isUrl,
-                     @Nullable final MediaFormat format,
-                     final DeliveryMethod deliveryMethod,
-                     @Nullable final String manifestUrl,
-                     final long availableAt,
-                     @Nullable final Serializable deliveryMethodInfo) {
         this.id = id;
         this.content = content;
         this.isUrl = isUrl;
         this.mediaFormat = format;
         this.deliveryMethod = deliveryMethod;
         this.manifestUrl = manifestUrl;
-        this.availableAt = availableAt;
-        this.deliveryMethodInfo = deliveryMethodInfo;
     }
 
     /**
@@ -218,18 +192,6 @@ public abstract class Stream implements Serializable {
     @Nullable
     public String getManifestUrl() {
         return manifestUrl;
-    }
-
-    public long getAvailableAt() {
-        return availableAt;
-    }
-
-    /**
-     * Optional protocol-specific metadata needed to consume non-URL delivery methods.
-     */
-    @Nullable
-    public Serializable getDeliveryMethodInfo() {
-        return deliveryMethodInfo;
     }
 
     /**

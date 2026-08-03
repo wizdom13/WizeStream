@@ -205,42 +205,6 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
             throw new ParsingException("YouTube channel tab sort filter is not available");
         }
 
-        // Some channels expose the sort options as a single "Sort by" dropdown chip
-        // (displayType = CHIP_VIEW_MODEL_DISPLAY_TYPE_DROP_DOWN). The actual Latest/Popular/Oldest
-        // tokens then live inside that chip's sheet listItems, not in the chipBar directly.
-        // Reading chips[sortIndex] in that case picked filter chips (e.g. "Members only", "Public")
-        // and returned their continuation tokens, so the sort never applied.
-        if (!chips.isEmpty()) {
-            final JsonObject firstChip = chips.getObject(0).getObject("chipViewModel");
-            if ("CHIP_VIEW_MODEL_DISPLAY_TYPE_DROP_DOWN".equals(firstChip.getString("displayType"))) {
-                final JsonArray listItems = firstChip
-                        .getObject("tapCommand")
-                        .getObject("innertubeCommand")
-                        .getObject("showSheetCommand")
-                        .getObject("panelLoadingStrategy")
-                        .getObject("inlineContent")
-                        .getObject("sheetViewModel")
-                        .getObject("content")
-                        .getObject("listViewModel")
-                        .getArray("listItems");
-                if (listItems.size() <= sortIndex) {
-                    throw new ParsingException("YouTube channel tab sort filter is not available");
-                }
-                final String token = extractContinuationTokenFromListItem(
-                        listItems.getObject(sortIndex).getObject("listItemViewModel"));
-                if (isNullOrEmpty(token)) {
-                    throw new ParsingException(
-                            "Could not get YouTube channel tab sort continuation");
-                }
-                return token;
-            }
-        }
-
-        // Flat format: chips[sortIndex] is itself the sort chip.
-        if (chips.size() <= sortIndex) {
-            throw new ParsingException("YouTube channel tab sort filter is not available");
-        }
-
         final String token = chips.getObject(sortIndex)
                 .getObject("chipViewModel")
                 .getObject("tapCommand")
@@ -253,39 +217,6 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
         }
 
         return token;
-    }
-
-    /**
-     * Walks a sort-dropdown listItem to find its continuationCommand token.
-     * The token lives inside {@code commandExecutorCommand.commands[]} (typically alongside an
-     * entityUpdateCommand for the chip state). We scan the commands array instead of guessing
-     * an index because other commands can sit before the continuationCommand.
-     */
-    @Nullable
-    private static String extractContinuationTokenFromListItem(
-            @Nonnull final JsonObject listItemViewModel) {
-        final JsonObject innertube = listItemViewModel
-                .getObject("rendererContext")
-                .getObject("commandContext")
-                .getObject("onTap")
-                .getObject("innertubeCommand");
-        final JsonObject executor = innertube.getObject("commandExecutorCommand");
-        if (executor == null) {
-            return null;
-        }
-        final JsonArray commands = executor.getArray("commands");
-        for (final Object o : commands) {
-            final JsonObject command = (JsonObject) o;
-            if (command.has("continuationCommand")) {
-                final String token = command
-                        .getObject("continuationCommand")
-                        .getString("token");
-                if (!isNullOrEmpty(token)) {
-                    return token;
-                }
-            }
-        }
-        return null;
     }
 
     private int getSelectedSortFilterIndex() throws ParsingException {

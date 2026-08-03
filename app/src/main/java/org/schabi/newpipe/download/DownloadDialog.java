@@ -1,7 +1,6 @@
 package org.schabi.newpipe.download;
 
 import static org.schabi.newpipe.extractor.stream.DeliveryMethod.PROGRESSIVE_HTTP;
-import static org.schabi.newpipe.extractor.stream.DeliveryMethod.SABR;
 import static org.schabi.newpipe.util.ListHelper.getStreamsOfSpecifiedDelivery;
 
 import android.app.Activity;
@@ -83,7 +82,6 @@ import java.util.Optional;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import us.shandian.giga.get.MissionRecoveryInfo;
-import us.shandian.giga.get.SabrDownloadStreamHelper;
 import us.shandian.giga.postprocessing.Postprocessing;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
@@ -166,19 +164,18 @@ public class DownloadDialog extends DialogFragment
         this.currentInfo = info;
 
         final List<AudioStream> audioStreams =
-                SabrDownloadStreamHelper.getDownloadableMediaStreams(info.getAudioStreams());
+                getStreamsOfSpecifiedDelivery(info.getAudioStreams(), PROGRESSIVE_HTTP);
         final List<List<AudioStream>> groupedAudioStreams =
                 ListHelper.getGroupedAudioStreams(context, audioStreams);
         this.wrappedAudioTracks = new AudioTracksWrapper(groupedAudioStreams, context);
         this.selectedAudioTrackIndex =
                 ListHelper.getDefaultAudioTrackGroup(context, groupedAudioStreams);
 
-        // Keep only media deliveries supported by the download engine.
+        // TODO: Adapt this code when the downloader support other types of stream deliveries
         final List<VideoStream> videoStreams = ListHelper.getSortedStreamVideosList(
                 context,
-                SabrDownloadStreamHelper.getDownloadableMediaStreams(info.getVideoStreams()),
-                SabrDownloadStreamHelper.getDownloadableMediaStreams(
-                        info.getVideoOnlyStreams()),
+                getStreamsOfSpecifiedDelivery(info.getVideoStreams(), PROGRESSIVE_HTTP),
+                getStreamsOfSpecifiedDelivery(info.getVideoOnlyStreams(), PROGRESSIVE_HTTP),
                 false,
                 // If there are multiple languages available, prefer streams without audio
                 // to allow language selection
@@ -261,12 +258,9 @@ public class DownloadDialog extends DialogFragment
                 continue;
             }
             final AudioStream audioStream = SecondaryStreamHelper.getAudioStreamFor(
-                    context, SabrDownloadStreamHelper.audioStreamsForVideo(
-                            audioStreams.getStreamsList(), videoStreams.get(i)),
-                    videoStreams.get(i));
+                    context, audioStreams.getStreamsList(), videoStreams.get(i));
 
-            if (audioStream != null && SabrDownloadStreamHelper
-                    .isCompatibleSecondaryStream(videoStreams.get(i), audioStream)) {
+            if (audioStream != null) {
                 secondaryStreams.append(i, new SecondaryStreamHelper<>(audioStreams, audioStream));
             } else if (DEBUG) {
                 final MediaFormat mediaFormat = videoStreams.get(i).getFormat();
@@ -1108,9 +1102,7 @@ public class DownloadDialog extends DialogFragment
             };
             recoveryInfo = List.of(new MissionRecoveryInfo(selectedStream));
         } else {
-            if (secondaryStream.getDeliveryMethod() != PROGRESSIVE_HTTP
-                    && (selectedStream.getDeliveryMethod() != SABR
-                    || secondaryStream.getDeliveryMethod() != SABR)) {
+            if (secondaryStream.getDeliveryMethod() != PROGRESSIVE_HTTP) {
                 throw new IllegalArgumentException("Unsupported stream delivery format"
                         + secondaryStream.getDeliveryMethod());
             }
@@ -1122,11 +1114,6 @@ public class DownloadDialog extends DialogFragment
                     new MissionRecoveryInfo(selectedStream),
                     new MissionRecoveryInfo(secondaryStream)
             );
-        }
-
-        if (SabrDownloadStreamHelper.containsSabrStream(selectedStream, secondaryStream)) {
-            psName = null;
-            psArgs = null;
         }
 
         DownloadManagerService.startMission(context, urls, storage, kind, threads,

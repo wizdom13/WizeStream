@@ -35,6 +35,7 @@ import androidx.core.app.NotificationCompat.Builder;
 import androidx.core.app.PendingIntentCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.IntentCompat;
 import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
@@ -47,10 +48,9 @@ import org.schabi.newpipe.util.Localization;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.MissionRecoveryInfo;
@@ -70,8 +70,17 @@ public class DownloadManagerService extends Service {
     private static final int FOREGROUND_NOTIFICATION_ID = 1000;
     private static final int DOWNLOADS_NOTIFICATION_ID = 1001;
 
-    private static final String EXTRA_REQUEST_TOKEN =
-            "DownloadManagerService.extra.requestToken";
+    private static final String EXTRA_URLS = "DownloadManagerService.extra.urls";
+    private static final String EXTRA_KIND = "DownloadManagerService.extra.kind";
+    private static final String EXTRA_THREADS = "DownloadManagerService.extra.threads";
+    private static final String EXTRA_POSTPROCESSING_NAME = "DownloadManagerService.extra.postprocessingName";
+    private static final String EXTRA_POSTPROCESSING_ARGS = "DownloadManagerService.extra.postprocessingArgs";
+    private static final String EXTRA_NEAR_LENGTH = "DownloadManagerService.extra.nearLength";
+    private static final String EXTRA_PATH = "DownloadManagerService.extra.storagePath";
+    private static final String EXTRA_PARENT_PATH = "DownloadManagerService.extra.storageParentPath";
+    private static final String EXTRA_STORAGE_TAG = "DownloadManagerService.extra.storageTag";
+    private static final String EXTRA_RECOVERY_INFO = "DownloadManagerService.extra.recoveryInfo";
+    private static final String EXTRA_STREAM_INFO = "DownloadManagerService.extra.streamInfo";
 
     private static final String ACTION_RESET_DOWNLOAD_FINISHED = APPLICATION_ID + ".reset_download_finished";
     private static final String ACTION_OPEN_DOWNLOADS_FINISHED = APPLICATION_ID + ".open_downloads_finished";
@@ -355,80 +364,56 @@ public class DownloadManagerService extends Service {
                                     char kind, int threads, StreamInfo streamInfo, String psName,
                                     String[] psArgs, long nearLength,
                                     ArrayList<MissionRecoveryInfo> recoveryInfo) {
-        final PendingDownloadRequest request = new PendingDownloadRequest(
-                urls,
-                storage.getParentUri() == null ? null : storage.getParentUri().toString(),
-                storage.getUri().toString(),
-                storage.getTag(),
-                kind,
-                threads,
-                streamInfo,
-                psName,
-                psArgs,
-                nearLength,
-                recoveryInfo
-        );
-        final String requestToken;
-        try {
-            requestToken = PendingDownloadRequestStore.write(context.getFilesDir(), request);
-        } catch (final IOException error) {
-            throw new IllegalStateException("Unable to persist pending download request", error);
-        }
-
         final Intent intent = new Intent(context, DownloadManagerService.class)
                 .setAction(Intent.ACTION_RUN)
-                .putExtra(EXTRA_REQUEST_TOKEN, requestToken);
+                .putExtra(EXTRA_URLS, urls)
+                .putExtra(EXTRA_KIND, kind)
+                .putExtra(EXTRA_THREADS, threads)
+                .putExtra(EXTRA_POSTPROCESSING_NAME, psName)
+                .putExtra(EXTRA_POSTPROCESSING_ARGS, psArgs)
+                .putExtra(EXTRA_NEAR_LENGTH, nearLength)
+                .putExtra(EXTRA_RECOVERY_INFO, recoveryInfo)
+                .putExtra(EXTRA_PARENT_PATH, storage.getParentUri())
+                .putExtra(EXTRA_PATH, storage.getUri())
+                .putExtra(EXTRA_STORAGE_TAG, storage.getTag())
+                .putExtra(EXTRA_STREAM_INFO, streamInfo);
 
-        try {
-            context.startService(intent);
-        } catch (final RuntimeException error) {
-            PendingDownloadRequestStore.delete(context.getFilesDir(), requestToken);
-            throw error;
-        }
+        context.startService(intent);
     }
 
     private void startMission(Intent intent) {
-        final String requestToken = intent.getStringExtra(EXTRA_REQUEST_TOKEN);
-        if (requestToken == null) {
-            Log.e(TAG, "Ignoring download mission without a pending request token");
-            return;
-        }
-
-        final PendingDownloadRequest request;
-        try {
-            request = PendingDownloadRequestStore.take(
-                    getFilesDir(), requestToken, PendingDownloadRequest.class);
-        } catch (final IOException | IllegalArgumentException error) {
-            Log.e(TAG, "Unable to load pending download request", error);
-            return;
-        }
-
-        final Uri path = Uri.parse(request.path);
-        final Uri parentPath = request.parentPath == null ? null : Uri.parse(request.parentPath);
+        String[] urls = intent.getStringArrayExtra(EXTRA_URLS);
+        Uri path = IntentCompat.getParcelableExtra(intent, EXTRA_PATH, Uri.class);
+        Uri parentPath = IntentCompat.getParcelableExtra(intent, EXTRA_PARENT_PATH, Uri.class);
+        int threads = intent.getIntExtra(EXTRA_THREADS, 1);
+        char kind = intent.getCharExtra(EXTRA_KIND, '?');
+        String psName = intent.getStringExtra(EXTRA_POSTPROCESSING_NAME);
+        String[] psArgs = intent.getStringArrayExtra(EXTRA_POSTPROCESSING_ARGS);
+        long nearLength = intent.getLongExtra(EXTRA_NEAR_LENGTH, 0);
+        String tag = intent.getStringExtra(EXTRA_STORAGE_TAG);
+        StreamInfo streamInfo = (StreamInfo)intent.getSerializableExtra(EXTRA_STREAM_INFO);
+        final var recovery = IntentCompat.getParcelableArrayListExtra(intent, EXTRA_RECOVERY_INFO,
+                MissionRecoveryInfo.class);
+        Objects.requireNonNull(recovery);
 
         StoredFileHelper storage;
         try {
-            storage = new StoredFileHelper(this, parentPath, path, request.storageTag);
+            storage = new StoredFileHelper(this, parentPath, path, tag);
         } catch (IOException e) {
             throw new RuntimeException(e);// this never should happen
         }
 
         Postprocessing ps;
-        if (request.postprocessingName == null)
+        if (psName == null)
             ps = null;
         else
-            ps = Postprocessing.getAlgorithm(
-                    request.postprocessingName,
-                    request.postprocessingArgs,
-                    request.streamInfo
-            );
+            ps = Postprocessing.getAlgorithm(psName, psArgs, streamInfo);
 
-        final DownloadMission mission = new DownloadMission(
-                request.urls, storage, request.kind, ps, getApplicationContext());
-        mission.threadCount = request.threads;
-        mission.source = request.streamInfo.getUrl();
-        mission.nearLength = request.nearLength;
-        mission.recoveryInfo = request.recoveryInfo.toArray(new MissionRecoveryInfo[0]);
+        final DownloadMission mission = new DownloadMission(urls, storage, kind, ps);
+        mission.threadCount = threads;
+        mission.source = streamInfo.getUrl();
+        mission.nearLength = nearLength;
+        mission.recoveryInfo = recovery.toArray(new MissionRecoveryInfo[0]);
 
         if (ps != null)
             ps.setTemporalDir(DownloadManager.pickAvailableTemporalDir(this));
@@ -436,49 +421,6 @@ public class DownloadManagerService extends Service {
         handleConnectivityState(true);// first check the actual network status
 
         mManager.startMission(mission);
-    }
-
-    private static final class PendingDownloadRequest implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private final String[] urls;
-        private final String parentPath;
-        private final String path;
-        private final String storageTag;
-        private final char kind;
-        private final int threads;
-        private final StreamInfo streamInfo;
-        private final String postprocessingName;
-        private final String[] postprocessingArgs;
-        private final long nearLength;
-        private final ArrayList<MissionRecoveryInfo> recoveryInfo;
-
-        private PendingDownloadRequest(
-                final String[] urls,
-                final String parentPath,
-                final String path,
-                final String storageTag,
-                final char kind,
-                final int threads,
-                final StreamInfo streamInfo,
-                final String postprocessingName,
-                final String[] postprocessingArgs,
-                final long nearLength,
-                final ArrayList<MissionRecoveryInfo> recoveryInfo
-        ) {
-            this.urls = urls;
-            this.parentPath = parentPath;
-            this.path = path;
-            this.storageTag = storageTag;
-            this.kind = kind;
-            this.threads = threads;
-            this.streamInfo = streamInfo;
-            this.postprocessingName = postprocessingName;
-            this.postprocessingArgs = postprocessingArgs;
-            this.nearLength = nearLength;
-            this.recoveryInfo = recoveryInfo;
-        }
     }
 
     public void notifyFinishedDownload(String name) {
