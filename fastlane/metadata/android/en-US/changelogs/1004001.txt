@@ -1,0 +1,4 @@
+WizeStream 1.4.1
+
+- Fixed a crash when displaying feed cards in landscape mode.
+- Improved consistency between the main and video-detail navigation bars.

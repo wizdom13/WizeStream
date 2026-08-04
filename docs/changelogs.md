@@ -2,6 +2,18 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## WizeStream 1.4.1 (`1004001`)
+
+### Improvements
+
+- Improved consistency between the main and video-detail navigation bars.
+
+### Fixes
+
+- Fixed a crash when displaying feed cards in landscape mode.
+
+[View the complete changes since v1.4.0](https://github.com/wizdom13/WizeStream/compare/v1.4.0...pipe)
+
 ## WizeStream 1.4.0 (`1004000`)
 
 ### New features
