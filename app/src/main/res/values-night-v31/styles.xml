@@ -2,8 +2,8 @@
 <resources>
 
     <!-- Android 12+ creates this system-owned splash before the app can read
-         the selected theme-color preference. Keep the first frame neutral and
-         monochrome, then crossfade into the app-owned themed splash. -->
+         the selected theme-color preference. Use the static brand icon first,
+         then crossfade into the app-owned themed splash. -->
     <style name="OpeningTheme" parent="Base.OpeningTheme">
         <item name="android:windowDisablePreview">false</item>
         <item name="android:windowSplashScreenBackground">?attr/colorSurface</item>

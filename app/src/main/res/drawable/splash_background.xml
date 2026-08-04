@@ -2,8 +2,8 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- The platform starting window is created before the app can read the
-         runtime theme-color preference. Keep that frame neutral and monochrome;
-         the app-owned themed splash takes over immediately afterwards. -->
+         runtime theme-color preference. Show the static brand icon first; the
+         app-owned themed splash takes over immediately afterwards. -->
     <item android:drawable="?attr/colorSurface" />
 
     <item

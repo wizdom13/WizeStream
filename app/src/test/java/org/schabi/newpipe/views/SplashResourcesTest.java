@@ -28,9 +28,9 @@ public class SplashResourcesTest {
     }
 
     @Test
-    public void api27OemFallbacksAreNeutralAndMonochrome() throws Exception {
-        assertNeutralFallback("drawable-v23/splash_background.xml");
-        assertNeutralFallback("drawable-night-v23/splash_background.xml");
+    public void api27OemFallbacksUseTheStaticBrandIcon() throws Exception {
+        assertBrandedFallback("drawable-v23/splash_background.xml");
+        assertBrandedFallback("drawable-night-v23/splash_background.xml");
     }
 
     @Test
@@ -39,7 +39,7 @@ public class SplashResourcesTest {
         assertSystemSplash("values-night-v31/styles.xml");
     }
 
-    private void assertNeutralFallback(final String relativePath) throws Exception {
+    private void assertBrandedFallback(final String relativePath) throws Exception {
         final NodeList items = parse(relativePath).getElementsByTagName("item");
 
         assertEquals(2, items.getLength());
