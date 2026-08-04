@@ -19,12 +19,13 @@ public class StreamUploaderIntegrationTest {
 
     @Test
     public void standardLayoutsExposeAccessibleUploaderTargetAndAvatar() throws Exception {
-        for (final String layout : new String[] {
-                "list_stream_item.xml",
-                "list_stream_grid_item.xml",
-                "list_stream_card_item.xml"
+        for (final String layoutPath : new String[] {
+                "src/main/res/layout/list_stream_item.xml",
+                "src/main/res/layout/list_stream_grid_item.xml",
+                "src/main/res/layout/list_stream_card_item.xml",
+                "src/main/res/layout-land/list_stream_card_item.xml"
         }) {
-            final String source = read("src/main/res/layout/" + layout);
+            final String source = read(layoutPath);
             assertTrue(source.contains("@+id/itemUploaderRoot"));
             assertTrue(source.contains("@+id/itemUploaderAvatarView"));
             assertTrue(source.contains("@dimen/stream_item_uploader_touch_target"));
