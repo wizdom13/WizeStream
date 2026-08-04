@@ -1,4 +1,4 @@
-<p align="center"><a href="https://github.com/wizdom13/WizeStream"><img src="assets/wizestream_logo.png" width="150" alt="WizeStream icon"></a></p>
+<p align="center"><a href="https://github.com/wizdom13/WizeStream"><img src="assets/wizestream_logo_round.svg" width="150" alt="WizeStream icon"></a></p>
 
 <h1 align="center">WizeStream</h1>
 
