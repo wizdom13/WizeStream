@@ -1,0 +1,9 @@
+WizeStream 1.4.0
+
+- Restored conventional YouTube playback/downloads and removed SABR.
+- Added new branding across launcher, splash, notification, updater, and TV graphics.
+- Added channel avatars and channel navigation to stream lists.
+- Made subscription feeds faster and removed long Fast Mode pauses.
+- Fixed fullscreen exit orientation.
+- Made two-finger speed gestures follow the configured step.
+- Improved launcher icon scale and release build reliability.

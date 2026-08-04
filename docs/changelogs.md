@@ -2,6 +2,29 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## WizeStream 1.4.0 (`1004000`)
+
+### New features
+
+- Introduced the new WizeStream visual identity across the launcher, splash screen, notifications, updater, and Android TV.
+- Added channel avatars to stream lists and made channel identity areas open their channels.
+
+### Improvements
+
+- Restored conventional YouTube playback and downloading, removing SABR and its bundled runtime to reduce complexity and APK size.
+- Optimized subscription feed refreshes by increasing lightweight RSS concurrency and replacing long blocking pauses with short, cancellable rate-limit delays only for full YouTube extraction batches.
+- Made the two-finger playback-speed gesture respect the configured speed increment.
+- Improved launcher-logo scale and themed-icon consistency.
+
+### Fixes
+
+- Fixed exiting fullscreen sometimes leaving the device locked in landscape orientation.
+- Fixed release builds failing on duplicate Bouncy Castle license and notice metadata.
+
+**Compatibility note:** YouTube playback and downloads now use conventional stream extraction. SABR support introduced in WizeStream 1.2.0 has been removed.
+
+[View the complete changes since v1.3.0](https://github.com/wizdom13/WizeStream/compare/v1.3.0...pipe)
+
 ## WizeStream 1.3.0 (`1003000`)
 
 ### New features
