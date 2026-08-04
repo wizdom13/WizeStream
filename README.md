@@ -410,6 +410,8 @@ local-first improvements, QA findings, documentation, and release-readiness work
 
 Please keep changes focused and testable. For UI work, include before-and-after screenshots where possible and verify Light, Dark, Black, Follow system, and at least one manual theme color preset.
 
+Special thanks to [@FabianOvrWrt](https://github.com/FabianOvrWrt) (Fabián PS) for designing and contributing WizeStream's logo graphics in [PR #97](https://github.com/wizdom13/WizeStream/pull/97).
+
 ### Integrated extractor source
 
 Extractor and timeago-parser sources are stored directly under `app/src/main/java`, with protocol
