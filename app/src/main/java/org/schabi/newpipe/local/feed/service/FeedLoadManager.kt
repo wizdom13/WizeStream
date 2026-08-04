@@ -9,6 +9,7 @@ import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Notification
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.functions.Consumer
+import io.reactivex.rxjava3.processors.BehaviorProcessor
 import io.reactivex.rxjava3.processors.PublishProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.time.OffsetDateTime
@@ -22,6 +23,7 @@ import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.Info
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.feed.FeedExtractor
 import org.schabi.newpipe.extractor.feed.FeedInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.ktx.getStringSafe
@@ -42,6 +44,7 @@ class FeedLoadManager(private val context: Context) {
     private val currentProgress = AtomicInteger(-1)
     private val maxProgress = AtomicInteger(-1)
     private val cancelSignal = AtomicBoolean()
+    private val cancelNotifier = BehaviorProcessor.createDefault(false)
     private val feedResultsHolder = FeedResultsHolder()
     private var feedScope: FeedScope? = null
 
@@ -109,10 +112,6 @@ class FeedLoadManager(private val context: Context) {
                 )
         }
 
-        // like `currentProgress`, but counts the number of YouTube extractions that have begun, so
-        // they can be properly throttled every once in a while (see doOnNext below)
-        val youtubeExtractionCount = AtomicInteger()
-
         return outdatedSubscriptions
             .take(1)
             .doOnNext {
@@ -127,24 +126,27 @@ class FeedLoadManager(private val context: Context) {
             }
             .observeOn(Schedulers.io())
             // Randomize user subscription ordering to attempt to resist fingerprinting
-            .flatMap { Flowable.fromIterable(it.shuffled()) }
-            .takeWhile { !cancelSignal.get() }
-            .doOnNext { subscriptionEntity ->
-                // throttle YouTube extractions once every BATCH_SIZE to avoid being rate limited
-                if (subscriptionEntity.serviceId == ServiceList.YouTube.serviceId) {
-                    val previousCount = youtubeExtractionCount.getAndIncrement()
-                    if (previousCount != 0 && previousCount % BATCH_SIZE == 0) {
-                        Thread.sleep(DELAY_BETWEEN_BATCHES_MILLIS.random())
-                    }
+            .flatMap { subscriptions ->
+                val requests = subscriptions.shuffled().map { subscription ->
+                    createFeedLoadRequest(subscription, useFeedExtractor)
                 }
+                val (dedicatedFeedRequests, fullExtractionRequests) = requests.partition {
+                    it.feedExtractor != null || it.feedExtractorError != null
+                }
+
+                Flowable.merge(
+                    loadRequests(
+                        dedicatedFeedRequests,
+                        FeedExtractionPlanner.DEDICATED_FEED_PARALLELISM,
+                        defaultSharedPreferences
+                    ),
+                    loadFullExtractionRequests(
+                        fullExtractionRequests,
+                        defaultSharedPreferences
+                    )
+                )
             }
-            .parallel(PARALLEL_EXTRACTIONS, PARALLEL_EXTRACTIONS * 2)
-            .runOn(Schedulers.io(), PARALLEL_EXTRACTIONS * 2)
             .filter { !cancelSignal.get() }
-            .map { subscriptionEntity ->
-                loadStreams(subscriptionEntity, useFeedExtractor, defaultSharedPreferences)
-            }
-            .sequential()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext(NotificationConsumer())
             .observeOn(Schedulers.io())
@@ -157,7 +159,74 @@ class FeedLoadManager(private val context: Context) {
 
     fun cancel() {
         cancelSignal.set(true)
+        cancelNotifier.onNext(true)
     }
+
+    private fun createFeedLoadRequest(
+        subscriptionEntity: SubscriptionEntity,
+        useFeedExtractor: Boolean
+    ): FeedLoadRequest {
+        if (!useFeedExtractor) {
+            return FeedLoadRequest(subscriptionEntity)
+        }
+
+        return try {
+            FeedLoadRequest(
+                subscriptionEntity,
+                feedExtractor = NewPipe.getService(subscriptionEntity.serviceId)
+                    .getFeedExtractor(subscriptionEntity.url)
+            )
+        } catch (error: Throwable) {
+            FeedLoadRequest(subscriptionEntity, feedExtractorError = error)
+        }
+    }
+
+    private fun loadFullExtractionRequests(
+        requests: List<FeedLoadRequest>,
+        defaultSharedPreferences: SharedPreferences
+    ): Flowable<Notification<FeedUpdateInfo>> {
+        val batches = FeedExtractionPlanner.batchFullExtractions(requests) { request ->
+            request.isFullYouTubeExtraction
+        }
+
+        return Flowable.fromIterable(batches.withIndex())
+            .takeWhile { !cancelSignal.get() }
+            .concatMap { (index, batch) ->
+                val loadedBatch = loadRequests(
+                    batch,
+                    FeedExtractionPlanner.FULL_CHANNEL_PARALLELISM,
+                    defaultSharedPreferences
+                )
+
+                if (index < batches.lastIndex) {
+                    loadedBatch.concatWith(cancellableBatchDelay().toFlowable())
+                } else {
+                    loadedBatch
+                }
+            }
+    }
+
+    private fun loadRequests(
+        requests: List<FeedLoadRequest>,
+        parallelism: Int,
+        defaultSharedPreferences: SharedPreferences
+    ): Flowable<Notification<FeedUpdateInfo>> = Flowable.fromIterable(requests)
+        .takeWhile { !cancelSignal.get() }
+        .flatMapSingle(
+            { request ->
+                Single.fromCallable { loadStreams(request, defaultSharedPreferences) }
+                    .subscribeOn(Schedulers.io())
+            },
+            false,
+            parallelism
+        )
+
+    private fun cancellableBatchDelay(): Completable = FeedExtractionPlanner.cancellableDelay(
+        DELAY_BETWEEN_BATCHES_MILLIS.random(),
+        cancelNotifier,
+        Schedulers.computation(),
+        cancelSignal::get
+    )
 
     private fun broadcastProgress() {
         postEvent(
@@ -169,10 +238,10 @@ class FeedLoadManager(private val context: Context) {
     }
 
     private fun loadStreams(
-        subscriptionEntity: SubscriptionEntity,
-        useFeedExtractor: Boolean,
+        request: FeedLoadRequest,
         defaultSharedPreferences: SharedPreferences
     ): Notification<FeedUpdateInfo> {
+        val subscriptionEntity = request.subscriptionEntity
         var error: Throwable? = null
         val storeOriginalErrorAndRethrow = { e: Throwable ->
             // keep original to prevent blockingGet() from wrapping it into RuntimeException
@@ -187,16 +256,13 @@ class FeedLoadManager(private val context: Context) {
             var streams: List<StreamInfoItem>? = null
             val errors = ArrayList<Throwable>()
 
-            if (useFeedExtractor) {
-                NewPipe.getService(subscriptionEntity.serviceId)
-                    .getFeedExtractor(subscriptionEntity.url)
-                    ?.also { feedExtractor ->
-                        // the user wants to use a feed extractor and there is one, use it
-                        val feedInfo = FeedInfo.getInfo(feedExtractor)
-                        errors.addAll(feedInfo.errors)
-                        originalInfo = feedInfo
-                        streams = feedInfo.relatedItems
-                    }
+            request.feedExtractorError?.let { throw it }
+            request.feedExtractor?.also { feedExtractor ->
+                // the user wants to use a feed extractor and there is one, use it
+                val feedInfo = FeedInfo.getInfo(feedExtractor)
+                errors.addAll(feedInfo.errors)
+                originalInfo = feedInfo
+                streams = feedInfo.relatedItems
             }
 
             if (originalInfo == null) {
@@ -380,25 +446,27 @@ class FeedLoadManager(private val context: Context) {
         const val GROUP_NOTIFICATION_ENABLED = -2L
 
         /**
-         * How many extractions will be running in parallel.
+         * Wait a short random delay between full YouTube channel batches to avoid being rate
+         * limited. Dedicated RSS feeds are not delayed.
          */
-        private const val PARALLEL_EXTRACTIONS = 3
-
-        /**
-         * How many YouTube extractions to perform before waiting [DELAY_BETWEEN_BATCHES_MILLIS]
-         * to avoid being rate limited
-         */
-        private const val BATCH_SIZE = 50
-
-        /**
-         * Wait a random delay in this range once every [BATCH_SIZE] YouTube extractions to avoid
-         * being rate limited
-         */
-        private val DELAY_BETWEEN_BATCHES_MILLIS = (6000L..12000L)
+        private val DELAY_BETWEEN_BATCHES_MILLIS = (500L..1500L)
 
         /**
          * Number of items to buffer to mass-insert in the database.
          */
         private const val BUFFER_COUNT_BEFORE_INSERT = 20
     }
+}
+
+private data class FeedLoadRequest(
+    val subscriptionEntity: SubscriptionEntity,
+    val feedExtractor: FeedExtractor? = null,
+    val feedExtractorError: Throwable? = null
+) {
+    val isFullYouTubeExtraction: Boolean
+        get() = FeedExtractionPlanner.isFullYouTubeExtraction(
+            isYouTube = subscriptionEntity.serviceId == ServiceList.YouTube.serviceId,
+            hasDedicatedFeedExtractor = feedExtractor != null,
+            feedExtractorLookupFailed = feedExtractorError != null
+        )
 }
