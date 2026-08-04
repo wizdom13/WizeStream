@@ -157,7 +157,5 @@
     <!-- Video detail Material bottom navigation -->
     <dimen name="video_detail_navigation_height">64dp</dimen>
     <dimen name="video_detail_navigation_item_padding">6dp</dimen>
-    <dimen name="video_detail_navigation_active_indicator_width">56dp</dimen>
-    <dimen name="video_detail_navigation_active_indicator_height">32dp</dimen>
 
 </resources>

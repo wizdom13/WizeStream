@@ -52,11 +52,17 @@ public class VideoDetailNavigationResourcesTest {
 
         final var navigation = (Element) navigationViews.item(0);
         assertEquals("@+id/detail_navigation", navigation.getAttribute("android:id"));
-        assertEquals("labeled", navigation.getAttribute("app:labelVisibilityMode"));
+        assertEquals("selected", navigation.getAttribute("app:labelVisibilityMode"));
         assertEquals("@menu/video_detail_navigation", navigation.getAttribute("app:menu"));
+        assertEquals("?attr/colorSurface", navigation.getAttribute("android:background"));
+        assertEquals("8dp", navigation.getAttribute("android:elevation"));
         assertEquals(
-                "@style/Widget.WizeStream.VideoDetailNavigation.ActiveIndicator",
+                "@style/wizestreamBottomNavigationActiveIndicator",
                 navigation.getAttribute("app:itemActiveIndicatorStyle"));
+        assertEquals("@color/tab_layout_material_item_color",
+                navigation.getAttribute("app:itemIconTint"));
+        assertEquals("@color/tab_layout_material_item_color",
+                navigation.getAttribute("app:itemTextColor"));
 
         final var viewPagers = document.getElementsByTagName(
                 "androidx.viewpager.widget.ViewPager");
