@@ -664,6 +664,44 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom16to17AddsLearningNotes() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_16
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_17,
+            true,
+            Migrations.MIGRATION_16_17
+        )
+        migrated.query("PRAGMA table_info(`learning_notes`)").use { cursor ->
+            assertEquals(6, cursor.count)
+        }
+    }
+
+    @Test
+    fun migrateDatabaseFrom17to18AddsLearningSessions() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_17
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_18,
+            true,
+            Migrations.MIGRATION_17_18
+        )
+        migrated.query("PRAGMA table_info(`learning_sessions`)").use { cursor ->
+            assertEquals(7, cursor.count)
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -673,7 +711,9 @@ class DatabaseMigrationTest {
             .addMigrations(
                 Migrations.MIGRATION_13_14,
                 Migrations.MIGRATION_14_15,
-                Migrations.MIGRATION_15_16
+                Migrations.MIGRATION_15_16,
+                Migrations.MIGRATION_16_17,
+                Migrations.MIGRATION_17_18
             )
             .build()
         testHelper.closeWhenFinished(database)

@@ -142,6 +142,8 @@ class RoomStructuredPreferenceSyncStoreTest {
         val decoderKey = context.getString(R.string.use_exoplayer_decoder_fallback_key)
         val notificationKey = context.getString(R.string.enable_streams_notifications)
         val searchPrivacyKey = context.getString(R.string.device_sync_search_history_key)
+        val learningModeKey = context.getString(R.string.learning_mode_key)
+        val learningBackgroundKey = context.getString(R.string.learning_count_background_key)
         phonePreferences.edit()
             .putString(themeKey, "dark_theme")
             .putString(downloadPathKey, "content://phone/private/downloads")
@@ -149,6 +151,8 @@ class RoomStructuredPreferenceSyncStoreTest {
             .putBoolean(decoderKey, true)
             .putBoolean(notificationKey, true)
             .putBoolean(searchPrivacyKey, true)
+            .putBoolean(learningModeKey, true)
+            .putBoolean(learningBackgroundKey, false)
             .commit()
         tabletPreferences.edit()
             .putString(downloadPathKey, "content://tablet/private/downloads")
@@ -156,6 +160,8 @@ class RoomStructuredPreferenceSyncStoreTest {
             .putBoolean(decoderKey, false)
             .putBoolean(notificationKey, false)
             .putBoolean(searchPrivacyKey, false)
+            .putBoolean(learningModeKey, false)
+            .putBoolean(learningBackgroundKey, true)
             .commit()
         val phoneStore = RoomStructuredPreferenceSyncStore(
             context,
@@ -177,7 +183,11 @@ class RoomStructuredPreferenceSyncStoreTest {
             StructuredPreferenceCategory.SETTINGS
         )
         assertEquals(
-            listOf(PortableSettingId.THEME),
+            listOf(
+                PortableSettingId.THEME,
+                PortableSettingId.LEARNING_MODE,
+                PortableSettingId.LEARNING_COUNT_BACKGROUND
+            ),
             request.changes.mapNotNull {
                 it.record?.portableSetting?.settingId
             }
@@ -200,6 +210,8 @@ class RoomStructuredPreferenceSyncStoreTest {
         assertEquals(false, tabletPreferences.getBoolean(decoderKey, true))
         assertEquals(false, tabletPreferences.getBoolean(notificationKey, true))
         assertEquals(false, tabletPreferences.getBoolean(searchPrivacyKey, true))
+        assertEquals(true, tabletPreferences.getBoolean(learningModeKey, false))
+        assertEquals(false, tabletPreferences.getBoolean(learningBackgroundKey, true))
     }
 
     private fun seedFeedGroups(database: AppDatabase, memberUrl: String) {

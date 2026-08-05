@@ -174,6 +174,21 @@ public class HistoryRecordManager {
         })).subscribeOn(Schedulers.io());
     }
 
+    /**
+     * Clears the watched marker and saved playback position for one stream.
+     *
+     * @param info the stream to mark as unwatched
+     * @return an operation that completes after the stream history and state are removed
+     */
+    public Completable markAsUnwatched(final StreamInfoItem info) {
+        return Completable.fromAction(() -> database.runInTransaction(() -> {
+            final long streamId = streamTable.upsert(new StreamEntity(info));
+            historySyncRecorder.recordWatchStreamDelete(streamId);
+            streamStateTable.deleteState(streamId);
+            streamHistoryTable.deleteStreamHistory(streamId);
+        })).subscribeOn(Schedulers.io());
+    }
+
     public Completable deleteStreamHistoryAndState(final long streamId) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
             historySyncRecorder.recordWatchStreamDelete(streamId);

@@ -130,6 +130,12 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
 
         AND NOT EXISTS (SELECT 1 FROM feed f
         WHERE f.stream_id = streams.uid)
+
+        AND NOT EXISTS (SELECT 1 FROM learning_notes ln
+        WHERE ln.stream_id = streams.uid)
+
+        AND NOT EXISTS (SELECT 1 FROM learning_sessions ls
+        WHERE ls.stream_id = streams.uid)
         """
     )
     abstract fun deleteOrphans(): Int

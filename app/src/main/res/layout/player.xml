@@ -367,6 +367,21 @@
                         tools:ignore="RtlHardcoded" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/learningNoteButton"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/learning_note_add"
+                        android:focusable="true"
+                        android:padding="@dimen/player_main_buttons_padding"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_edit"
+                        android:visibility="gone"
+                        app:tint="@color/white" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/sleepTimerButton"
                         android:layout_width="35dp"
                         android:layout_height="35dp"

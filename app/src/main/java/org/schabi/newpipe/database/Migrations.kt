@@ -36,6 +36,8 @@ object Migrations {
     const val DB_VER_14 = 14
     const val DB_VER_15 = 15
     const val DB_VER_16 = 16
+    const val DB_VER_17 = 17
+    const val DB_VER_18 = 18
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -680,5 +682,41 @@ object Migrations {
 
     val MIGRATION_15_16 = Migration(DB_VER_15, DB_VER_16) { db ->
         db.execSQL("ALTER TABLE `streams` ADD COLUMN `uploader_avatar_url` TEXT")
+    }
+
+    val MIGRATION_16_17 = Migration(DB_VER_16, DB_VER_17) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `learning_notes` (" +
+                "`note_id` TEXT NOT NULL, `stream_id` INTEGER NOT NULL, " +
+                "`timestamp_ms` INTEGER NOT NULL, `note_text` TEXT NOT NULL, " +
+                "`created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`note_id`), " +
+                "FOREIGN KEY(`stream_id`) REFERENCES `streams`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_notes_stream_id_timestamp_ms` " +
+                "ON `learning_notes` (`stream_id`, `timestamp_ms`)"
+        )
+    }
+
+    val MIGRATION_17_18 = Migration(DB_VER_17, DB_VER_18) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `learning_sessions` (" +
+                "`session_id` TEXT NOT NULL, `stream_id` INTEGER NOT NULL, " +
+                "`started_at` INTEGER NOT NULL, `ended_at` INTEGER NOT NULL, " +
+                "`watched_duration_ms` INTEGER NOT NULL, `local_date` TEXT NOT NULL, " +
+                "`background_playback` INTEGER NOT NULL, PRIMARY KEY(`session_id`), " +
+                "FOREIGN KEY(`stream_id`) REFERENCES `streams`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_sessions_stream_id_started_at` " +
+                "ON `learning_sessions` (`stream_id`, `started_at`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_sessions_local_date` " +
+                "ON `learning_sessions` (`local_date`)"
+        )
     }
 }

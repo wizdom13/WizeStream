@@ -23,6 +23,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamType;
+import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
@@ -288,6 +289,9 @@ public final class InfoItemDialog {
                     .getBoolean(context.getString(R.string.enable_watch_history_key), false);
             if (isWatchHistoryEnabled && !StreamTypeUtil.isLiveStream(infoItem.getStreamType())) {
                 addEntry(StreamDialogDefaultEntry.MARK_AS_WATCHED);
+                if (LearningMode.isPlaylistProgressEnabled(context)) {
+                    addEntry(StreamDialogDefaultEntry.MARK_AS_UNWATCHED);
+                }
             }
             return this;
         }

@@ -12,4 +12,8 @@
         android:id="@+id/video_detail_navigation_description"
         android:icon="@drawable/video_detail_navigation_description_icon"
         android:title="@string/description_tab_description" />
+    <item
+        android:id="@+id/video_detail_navigation_notes"
+        android:icon="@drawable/ic_menu_book"
+        android:title="@string/learning_notes_tab_description" />
 </menu>

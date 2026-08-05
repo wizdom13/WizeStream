@@ -16,6 +16,7 @@ enum class DeviceSyncLogCategory {
     PLAYLISTS,
     WATCH_HISTORY,
     SEARCH_HISTORY,
+    LEARNING_NOTES,
     FEED_GROUPS,
     HOME_TABS,
     CHANNEL_PROFILES,
@@ -158,6 +159,15 @@ class DeviceSyncLogRepository(context: Context) {
                     searchHistoryResult?.receivedChanges,
                     searchHistoryError,
                     searchHistorySkipped
+                )
+            )
+            add(
+                categoryResult(
+                    DeviceSyncLogCategory.LEARNING_NOTES,
+                    learningNotesResult?.sentChanges,
+                    learningNotesResult?.receivedChanges,
+                    learningNotesError,
+                    learningNotesSkipped
                 )
             )
             StructuredPreferenceCategory.entries.forEach { category ->

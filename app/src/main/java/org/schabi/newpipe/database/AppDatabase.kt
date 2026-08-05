@@ -19,6 +19,11 @@ import org.schabi.newpipe.database.history.dao.SearchHistoryDAO
 import org.schabi.newpipe.database.history.dao.StreamHistoryDAO
 import org.schabi.newpipe.database.history.model.SearchHistoryEntry
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
+import org.schabi.newpipe.database.learning.dao.LearningDashboardDAO
+import org.schabi.newpipe.database.learning.dao.LearningNoteDAO
+import org.schabi.newpipe.database.learning.dao.LearningSessionDAO
+import org.schabi.newpipe.database.learning.model.LearningNoteEntity
+import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.playlist.dao.PlaylistDAO
 import org.schabi.newpipe.database.playlist.dao.PlaylistRemoteDAO
 import org.schabi.newpipe.database.playlist.dao.PlaylistStreamDAO
@@ -57,7 +62,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_16,
+    version = Migrations.DB_VER_18,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -89,7 +94,9 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
         StructuredPreferenceSyncOriginStateEntity::class,
         StructuredPreferenceSyncPeerStateEntity::class,
         StructuredPreferenceSyncFeedGroupMapEntity::class,
-        StructuredPreferenceSyncLocalStateEntity::class
+        StructuredPreferenceSyncLocalStateEntity::class,
+        LearningNoteEntity::class,
+        LearningSessionEntity::class
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -107,6 +114,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistSyncDAO(): PlaylistSyncDAO
     abstract fun historySyncDAO(): HistorySyncDAO
     abstract fun structuredPreferenceSyncDAO(): StructuredPreferenceSyncDAO
+    abstract fun learningDashboardDAO(): LearningDashboardDAO
+    abstract fun learningNoteDAO(): LearningNoteDAO
+    abstract fun learningSessionDAO(): LearningSessionDAO
 
     companion object {
         const val DATABASE_NAME: String = "newpipe.db"

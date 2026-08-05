@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/learning_dashboard_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/learning_statistics_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/learning_statistics_title"
+                        android:textAppearance="@android:style/TextAppearance.Medium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/learning_statistics_today"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="Today&#10;1:25:00" />
+
+                        <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/learning_statistics_week"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="This week&#10;4:10:00" />
+
+                        <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/learning_statistics_all_time"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="All time&#10;12:45:00" />
+                    </LinearLayout>
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/learning_statistics_streak"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="Current streak: 3 days · Longest: 8 days" />
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/learning_activity_calendar"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="12sp" />
+
+                    <GridLayout
+                        android:id="@+id/learning_activity_calendar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:alignmentMode="alignMargins"
+                        android:columnCount="7"
+                        android:useDefaultMargins="true" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/learning_dashboard_summary_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/learning_dashboard_summary_title"
+                        android:textAppearance="@android:style/TextAppearance.Medium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/learning_dashboard_summary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="?attr/colorOnSurface"
+                        tools:text="15 of 30 videos completed · 50%" />
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/learning_dashboard_overall_progress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:max="100"
+                        tools:progress="50" />
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/learning_dashboard_playlist_summary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="12sp"
+                        tools:text="2 active · 1 completed playlists" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/learning_dashboard_continue_title"
+                android:textAppearance="@android:style/TextAppearance.Medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/learning_dashboard_continue" />
+
+            <LinearLayout
+                android:id="@+id/learning_dashboard_continue_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/learning_dashboard_active_title"
+                android:textAppearance="@android:style/TextAppearance.Medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/learning_dashboard_active_playlists" />
+
+            <LinearLayout
+                android:id="@+id/learning_dashboard_active_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/learning_dashboard_completed_title"
+                android:textAppearance="@android:style/TextAppearance.Medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/learning_dashboard_completed_playlists" />
+
+            <LinearLayout
+                android:id="@+id/learning_dashboard_completed_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/learning_dashboard_notes_title"
+                android:textAppearance="@android:style/TextAppearance.Medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/learning_dashboard_recent_notes" />
+
+            <LinearLayout
+                android:id="@+id/learning_dashboard_notes_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <include
+        android:id="@+id/empty_state_view"
+        layout="@layout/list_empty_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/loading_progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/error_panel"
+        layout="@layout/error_panel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        tools:visibility="gone" />
+</FrameLayout>

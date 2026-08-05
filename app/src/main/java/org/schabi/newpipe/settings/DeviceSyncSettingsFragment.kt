@@ -390,6 +390,15 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     attempt.searchHistorySkipped
                 )
             )
+            add(
+                syncCategory(
+                    getString(R.string.device_sync_category_learning_notes),
+                    attempt.learningNotesResult?.sentChanges,
+                    attempt.learningNotesResult?.receivedChanges,
+                    attempt.learningNotesError,
+                    attempt.learningNotesSkipped
+                )
+            )
             StructuredPreferenceCategory.entries.forEach { category ->
                 val result = attempt.structuredPreferenceResults[category]
                 add(
@@ -593,6 +602,9 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
 
                 DeviceSyncLogCategory.SEARCH_HISTORY ->
                     R.string.device_sync_category_search_history
+
+                DeviceSyncLogCategory.LEARNING_NOTES ->
+                    R.string.device_sync_category_learning_notes
 
                 DeviceSyncLogCategory.FEED_GROUPS -> R.string.device_sync_category_feed_groups
 

@@ -103,6 +103,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
+import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
@@ -316,6 +317,8 @@ public final class Player implements PlaybackListener, Listener {
     private final SharedPreferences prefs;
     @NonNull
     private final HistoryRecordManager recordManager;
+    @NonNull
+    private final LearningSessionTracker learningSessionTracker;
 
     private boolean screenOn = true;
 
@@ -338,6 +341,7 @@ public final class Player implements PlaybackListener, Listener {
         context = service;
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         recordManager = new HistoryRecordManager(context);
+        learningSessionTracker = new LearningSessionTracker(context);
 
         setupBroadcastReceiver();
 
@@ -407,6 +411,8 @@ public final class Player implements PlaybackListener, Listener {
         // can move the initUIs stuff without breaking the setup for edge cases somehow.
         // when playing from a timestamp, keep the current player as-is.
         if (playerIntentType != PlayerIntentType.TimestampChange) {
+            learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
+                    audioPlayerSelected());
             @Nullable final PlayerType requestedPlayerType = IntentCompat.getSerializableExtra(
                     intent, PLAYER_TYPE, PlayerType.class);
             if (playerType == PlayerType.MAIN && requestedPlayerType == PlayerType.POPUP
@@ -416,6 +422,8 @@ public final class Player implements PlaybackListener, Listener {
                         .orElse(false));
             }
             playerType = requestedPlayerType;
+            learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
+                    audioPlayerSelected());
         }
         initUIsForCurrentPlayerType();
         isAudioOnly = audioPlayerSelected();
@@ -721,6 +729,7 @@ public final class Player implements PlaybackListener, Listener {
         if (DEBUG) {
             Log.d(TAG, "destroyPlayer() called");
         }
+        learningSessionTracker.stop();
         UIs.call(PlayerUi::destroyPlayer);
 
         if (!exoPlayerIsNull()) {
@@ -1118,6 +1127,8 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
+        learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
+                audioPlayerSelected());
         maybeSkipSponsorBlockSegment();
         onUpdateProgress(Math.max((int) simpleExoPlayer.getCurrentPosition(), 0),
                 (int) simpleExoPlayer.getDuration(), simpleExoPlayer.getBufferedPercentage());
@@ -1518,6 +1529,8 @@ public final class Player implements PlaybackListener, Listener {
             Log.d(TAG, "changeState() called with: state = [" + state + "]");
         }
         currentState = state;
+        learningSessionTracker.update(currentItem, state == STATE_PLAYING,
+                audioPlayerSelected());
         switch (state) {
             case STATE_BLOCKED:
                 onBlocked();
@@ -2405,7 +2418,10 @@ public final class Player implements PlaybackListener, Listener {
                 || currentItem.getServiceId() != item.getServiceId()
                 || !currentItem.getUrl().equals(item.getUrl());
 
+        learningSessionTracker.stop();
         currentItem = item;
+        learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
+                audioPlayerSelected());
         applyPlaybackSpeedProfile(item);
 
         if (playQueueIndex != playQueue.getIndex()) {

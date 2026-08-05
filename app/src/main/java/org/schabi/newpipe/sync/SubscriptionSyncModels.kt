@@ -118,6 +118,9 @@ data class DeviceSyncAttempt(
     val searchHistoryResult: HistorySyncResult? = null,
     val searchHistoryError: String? = null,
     val searchHistorySkipped: Boolean = false,
+    val learningNotesResult: HistorySyncResult? = null,
+    val learningNotesError: String? = null,
+    val learningNotesSkipped: Boolean = false,
     val structuredPreferenceResults: Map<StructuredPreferenceCategory, StructuredPreferenceSyncResult?> = emptyMap(),
     val structuredPreferenceErrors: Map<StructuredPreferenceCategory, String?> = emptyMap()
 )
@@ -131,6 +134,7 @@ data class DeviceSyncSummary(
                 it.playlistResult != null &&
                 (it.watchHistorySkipped || it.watchHistoryResult != null) &&
                 (it.searchHistorySkipped || it.searchHistoryResult != null) &&
+                (it.learningNotesSkipped || it.learningNotesResult != null) &&
                 (
                     it.structuredPreferenceResults.isEmpty() ||
                         StructuredPreferenceCategory.entries.all { category ->
@@ -148,6 +152,7 @@ data class DeviceSyncSummary(
                 (it.playlistResult?.sentChanges ?: 0) +
                 (it.watchHistoryResult?.sentChanges ?: 0) +
                 (it.searchHistoryResult?.sentChanges ?: 0) +
+                (it.learningNotesResult?.sentChanges ?: 0) +
                 it.structuredPreferenceResults.values.sumOf { result ->
                     result?.sentChanges ?: 0
                 }
@@ -159,6 +164,7 @@ data class DeviceSyncSummary(
                 (it.playlistResult?.receivedChanges ?: 0) +
                 (it.watchHistoryResult?.receivedChanges ?: 0) +
                 (it.searchHistoryResult?.receivedChanges ?: 0) +
+                (it.learningNotesResult?.receivedChanges ?: 0) +
                 it.structuredPreferenceResults.values.sumOf { result ->
                     result?.receivedChanges ?: 0
                 }

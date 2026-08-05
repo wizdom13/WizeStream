@@ -5,6 +5,7 @@
 
 package org.schabi.newpipe.sync
 
+import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.stream.StreamType
 
@@ -187,6 +188,10 @@ internal class TestHistorySyncStore(
             record = null
         )
     }
+
+    override fun recordLearningNoteUpsert(noteId: String) = Unit
+
+    override fun recordLearningNoteDelete(note: LearningNoteEntity) = Unit
 
     override fun getKnownRevisions(
         category: HistorySyncCategory

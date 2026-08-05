@@ -11,6 +11,7 @@ final class VideoDetailNavigationMapper {
     static final String COMMENTS_TAB_TAG = "COMMENTS";
     static final String RELATED_TAB_TAG = "NEXT VIDEO";
     static final String DESCRIPTION_TAB_TAG = "DESCRIPTION TAB";
+    static final String NOTES_TAB_TAG = "LEARNING NOTES";
 
     private VideoDetailNavigationMapper() { }
 
@@ -22,6 +23,8 @@ final class VideoDetailNavigationMapper {
             return R.id.video_detail_navigation_related;
         } else if (DESCRIPTION_TAB_TAG.equals(tabTag)) {
             return R.id.video_detail_navigation_description;
+        } else if (NOTES_TAB_TAG.equals(tabTag)) {
+            return R.id.video_detail_navigation_notes;
         }
         return NO_NAVIGATION_ITEM_ID;
     }
@@ -34,6 +37,8 @@ final class VideoDetailNavigationMapper {
             return RELATED_TAB_TAG;
         } else if (navigationItemId == R.id.video_detail_navigation_description) {
             return DESCRIPTION_TAB_TAG;
+        } else if (navigationItemId == R.id.video_detail_navigation_notes) {
+            return NOTES_TAB_TAG;
         }
         return null;
     }

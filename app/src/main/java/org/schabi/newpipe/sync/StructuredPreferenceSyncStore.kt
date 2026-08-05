@@ -1101,6 +1101,16 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         portableSetting(
             PortableSettingId.PLAYBACK_SKIP_SILENCE,
             R.string.playback_skip_silence_key
+        ),
+        portableSetting(PortableSettingId.LEARNING_MODE, R.string.learning_mode_key),
+        portableSetting(PortableSettingId.LEARNING_NOTES, R.string.learning_notes_key),
+        portableSetting(
+            PortableSettingId.LEARNING_PLAYLIST_PROGRESS,
+            R.string.learning_playlist_progress_key
+        ),
+        portableSetting(
+            PortableSettingId.LEARNING_COUNT_BACKGROUND,
+            R.string.learning_count_background_key
         )
     )
 

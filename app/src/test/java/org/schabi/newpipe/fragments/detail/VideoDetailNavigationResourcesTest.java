@@ -31,7 +31,7 @@ public class VideoDetailNavigationResourcesTest {
         final Document document = parse("menu/video_detail_navigation.xml");
         final var items = document.getElementsByTagName("item");
 
-        assertEquals(3, items.getLength());
+        assertEquals(4, items.getLength());
         assertMenuItem((Element) items.item(0),
                 "@+id/video_detail_navigation_comments",
                 "@string/comments_tab_description");
@@ -41,6 +41,9 @@ public class VideoDetailNavigationResourcesTest {
         assertMenuItem((Element) items.item(2),
                 "@+id/video_detail_navigation_description",
                 "@string/description_tab_description");
+        assertMenuItem((Element) items.item(3),
+                "@+id/video_detail_navigation_notes",
+                "@string/learning_notes_tab_description");
     }
 
     private void assertExpressiveNavigation(final String layoutPath) throws Exception {

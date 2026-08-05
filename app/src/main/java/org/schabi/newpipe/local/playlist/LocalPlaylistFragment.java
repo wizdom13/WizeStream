@@ -56,6 +56,8 @@ import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.BaseLocalListFragment;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningPlaylistProgress;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -75,6 +77,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -277,6 +280,14 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     }
 
     @Override
+    public void onPrepareOptionsMenu(@NonNull final Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext());
+        menu.findItem(R.id.menu_item_mark_all_watched).setVisible(enabled);
+        menu.findItem(R.id.menu_item_reset_learning_progress).setVisible(enabled);
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
 
@@ -376,6 +387,10 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             if (!isRewritingPlaylist) {
                 openRemoveDuplicatesDialog();
             }
+        } else if (item.getItemId() == R.id.menu_item_mark_all_watched) {
+            confirmBulkProgressChange(true);
+        } else if (item.getItemId() == R.id.menu_item_reset_learning_progress) {
+            confirmBulkProgressChange(false);
         } else {
             return super.onOptionsItemSelected(item);
         }
@@ -505,6 +520,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
 
         itemListAdapter.clearStreamItemList();
+        updateLearningProgress(result);
 
         if (result.isEmpty()) {
             showEmptyState();
@@ -847,6 +863,71 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
     }
 
+    private void updateLearningProgress(final List<PlaylistStreamEntry> streams) {
+        if (headerBinding == null) {
+            return;
+        }
+        final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext());
+        headerBinding.playlistLearningProgressContainer.getRoot().setVisibility(
+                enabled ? View.VISIBLE : View.GONE);
+        if (!enabled) {
+            return;
+        }
+
+        final var progress = LearningPlaylistProgress.calculate(streams);
+        final int eligible = progress.getEligible();
+        final int completed = progress.getCompleted();
+        final int percentage = progress.getPercentage();
+        headerBinding.playlistLearningProgressContainer.playlistLearningProgressText.setText(
+                eligible == 0
+                        ? getString(R.string.learning_progress_unavailable)
+                        : completed == eligible
+                                ? getString(R.string.learning_progress_completed)
+                                : getString(R.string.learning_progress_format, completed, eligible,
+                                        percentage));
+        headerBinding.playlistLearningProgressContainer.playlistLearningProgressBar
+                .setProgressCompat(percentage, true);
+    }
+
+    private void confirmBulkProgressChange(final boolean markWatched) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(markWatched
+                        ? R.string.learning_mark_all_watched
+                        : R.string.learning_reset_progress)
+                .setMessage(markWatched
+                        ? R.string.learning_mark_all_watched_confirm
+                        : R.string.learning_reset_progress_confirm)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.ok, (dialog, which) ->
+                        applyBulkProgressChange(markWatched))
+                .show();
+    }
+
+    private void applyBulkProgressChange(final boolean markWatched) {
+        if (itemListAdapter == null) {
+            return;
+        }
+        final HistoryRecordManager manager = new HistoryRecordManager(requireContext());
+        final List<Completable> operations = itemListAdapter.getItemsList().stream()
+                .filter(PlaylistStreamEntry.class::isInstance)
+                .map(PlaylistStreamEntry.class::cast)
+                .map(entry -> markWatched
+                        ? manager.markAsWatched(entry.toStreamInfoItem()).ignoreElement()
+                        : manager.deleteStreamHistoryAndState(entry.getStreamId()))
+                .collect(Collectors.toList());
+        disposables.add(Completable.concat(operations)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> Toast.makeText(requireContext(),
+                                markWatched
+                                        ? R.string.learning_mark_all_watched_done
+                                        : R.string.learning_reset_progress_done,
+                                Toast.LENGTH_SHORT).show(),
+                        throwable -> showUiErrorSnackbar(
+                                this, "Updating learning progress", throwable)
+                ));
+    }
+
     @Override
     public PlayQueue getPlayQueue() {
         return getPlayQueue(0);
@@ -922,4 +1003,3 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         this.tabsPagerAdapter = tabsPagerAdapter;
     }
 }
-

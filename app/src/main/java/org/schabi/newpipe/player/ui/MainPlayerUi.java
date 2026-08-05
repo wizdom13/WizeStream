@@ -33,6 +33,7 @@ import android.view.ViewParent;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -55,6 +56,9 @@ import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.info_list.StreamSegmentAdapter;
 import org.schabi.newpipe.info_list.StreamSegmentItem;
 import org.schabi.newpipe.ktx.AnimationType;
+import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningNoteDialog;
+import org.schabi.newpipe.learning.LearningNoteManager;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
@@ -84,6 +88,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutChangeListener {
     private static final String TAG = MainPlayerUi.class.getSimpleName();
 
@@ -105,6 +112,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     // fullscreen player
     private ItemTouchHelper itemTouchHelper;
+    private final CompositeDisposable learningNoteDisposables = new CompositeDisposable();
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -166,6 +174,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.segmentsButton.setOnClickListener(v -> onSegmentsClicked());
         binding.sleepTimerButton.setOnClickListener(v ->
                 getParentActivity().ifPresent(activity -> SleepTimerDialog.show(activity, player)));
+        binding.learningNoteButton.setOnClickListener(v -> showLearningNoteDialog());
 
         binding.addToPlaylistButton.setOnClickListener(v ->
                 getParentActivity().map(FragmentActivity::getSupportFragmentManager)
@@ -283,6 +292,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     public void destroyPlayer() {
         super.destroyPlayer();
 
+        learningNoteDisposables.clear();
+
         if (playQueueAdapter != null) {
             playQueueAdapter.unsetSelectedListener();
             playQueueAdapter.dispose();
@@ -323,6 +334,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.share.setVisibility(View.VISIBLE);
         binding.openInBrowser.setVisibility(View.VISIBLE);
         binding.sleepTimerButton.setVisibility(View.VISIBLE);
+        binding.learningNoteButton.setVisibility(
+                LearningMode.areNotesEnabled(context)
+                        && player.getCurrentStreamInfo()
+                                .map(info -> !org.schabi.newpipe.util.StreamTypeUtil
+                                        .isLiveStream(info.getStreamType()))
+                                .orElse(false)
+                        ? View.VISIBLE : View.GONE);
         binding.switchMute.setVisibility(View.VISIBLE);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         // Top controls have a large minHeight which is allows to drag the player
@@ -1063,6 +1081,39 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         // DisplayMetrics from activity context knows about MultiWindow feature
         // while DisplayMetrics from app context doesn't
         return DeviceUtils.isLandscape(getParentContext().orElse(player.getService()));
+    }
+
+    private void showLearningNoteDialog() {
+        player.getCurrentStreamInfo().ifPresent(info -> {
+            if (org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(info.getStreamType())) {
+                Toast.makeText(context, R.string.learning_note_live_unavailable,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            final long timestampMillis = player.getExoPlayer() == null
+                    ? 0L : player.getExoPlayer().getCurrentPosition();
+            getParentActivity().ifPresent(activity -> LearningNoteDialog.show(
+                    activity,
+                    timestampMillis,
+                    null,
+                    (timestamp, text) -> learningNoteDisposables.add(
+                            new LearningNoteManager(context).create(info, timestamp, text)
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(
+                                            note -> Toast.makeText(
+                                                    context,
+                                                    R.string.learning_note_saved,
+                                                    Toast.LENGTH_SHORT
+                                            ).show(),
+                                            error -> Toast.makeText(
+                                                    context,
+                                                    R.string.learning_note_save_error,
+                                                    Toast.LENGTH_SHORT
+                                            ).show()
+                                    )
+                    )
+            ));
+        });
     }
     //endregion
 }

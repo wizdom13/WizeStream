@@ -16,6 +16,7 @@ import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.history.model.SearchHistoryEntry
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
+import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.database.sync.HistorySyncChangeEntity
@@ -56,6 +57,10 @@ internal interface HistorySyncStore {
 
     fun recordSearchAllDelete()
 
+    fun recordLearningNoteUpsert(noteId: String)
+
+    fun recordLearningNoteDelete(note: LearningNoteEntity)
+
     fun getKnownRevisions(category: HistorySyncCategory): Map<String, Long>
 
     fun getPendingChanges(
@@ -87,6 +92,7 @@ internal class RoomHistorySyncStore internal constructor(
     private val streamDao = database.streamDAO()
     private val streamHistoryDao = database.streamHistoryDAO()
     private val streamStateDao = database.streamStateDAO()
+    private val learningNoteDao = database.learningNoteDAO()
 
     override fun reconcileLocal(category: HistorySyncCategory) {
         database.runInTransaction {
@@ -257,6 +263,34 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
+    override fun recordLearningNoteUpsert(noteId: String) {
+        database.runInTransaction {
+            ensureInitialized(HistorySyncCategory.LEARNING_NOTES)
+            val note = learningNoteDao.getNote(noteId)
+                ?: throw HistorySyncException("The learning note no longer exists")
+            saveLocalChange(
+                category = HistorySyncCategory.LEARNING_NOTES,
+                recordId = note.noteId,
+                recordType = HistoryRecordType.LEARNING_NOTE,
+                type = HistoryChangeType.UPSERT,
+                record = SyncedHistoryRecord(learningNote = note.toSyncedLearningNote())
+            )
+        }
+    }
+
+    override fun recordLearningNoteDelete(note: LearningNoteEntity) {
+        database.runInTransaction {
+            ensureInitialized(HistorySyncCategory.LEARNING_NOTES)
+            saveLocalChange(
+                category = HistorySyncCategory.LEARNING_NOTES,
+                recordId = note.noteId,
+                recordType = HistoryRecordType.LEARNING_NOTE,
+                type = HistoryChangeType.DELETE,
+                record = SyncedHistoryRecord(learningNote = note.toSyncedLearningNote())
+            )
+        }
+    }
+
     override fun getKnownRevisions(
         category: HistorySyncCategory
     ): Map<String, Long> {
@@ -347,6 +381,7 @@ internal class RoomHistorySyncStore internal constructor(
                 val affectedStreams = linkedSetOf<HistoryStreamIdentity>()
                 var materializeAllWatchStreams = false
                 var materializeSearch = false
+                val affectedLearningNotes = linkedSetOf<String>()
 
                 changes.forEach { change ->
                     if (syncDao.insertChange(change.toEntity()) == -1L) {
@@ -386,6 +421,9 @@ internal class RoomHistorySyncStore internal constructor(
                         HistoryRecordType.SEARCH_QUERY_TOMBSTONE,
                         HistoryRecordType.SEARCH_ALL_TOMBSTONE ->
                             materializeSearch = true
+
+                        HistoryRecordType.LEARNING_NOTE ->
+                            affectedLearningNotes += change.recordId
                     }
                 }
 
@@ -396,6 +434,7 @@ internal class RoomHistorySyncStore internal constructor(
                 if (materializeSearch) {
                     materializeSearchHistory()
                 }
+                affectedLearningNotes.forEach(::materializeLearningNote)
                 HistoryApplyResult(
                     acceptedChanges = accepted,
                     affectedRecords = affected
@@ -419,6 +458,7 @@ internal class RoomHistorySyncStore internal constructor(
         when (category) {
             HistorySyncCategory.WATCH -> initializeWatchHistory()
             HistorySyncCategory.SEARCH -> initializeSearchHistory()
+            HistorySyncCategory.LEARNING_NOTES -> initializeLearningNotes()
         }
         if (syncDao.getOriginState(category.name, localPeerId) == null) {
             syncDao.upsertOriginState(
@@ -487,6 +527,18 @@ internal class RoomHistorySyncStore internal constructor(
                         searchedAtEpochMillis = searchedAt.toInstant().toEpochMilli()
                     )
                 )
+            )
+        }
+    }
+
+    private fun initializeLearningNotes() {
+        learningNoteDao.getAllDirect().forEach { note ->
+            saveLocalChange(
+                category = HistorySyncCategory.LEARNING_NOTES,
+                recordId = note.noteId,
+                recordType = HistoryRecordType.LEARNING_NOTE,
+                type = HistoryChangeType.UPSERT,
+                record = SyncedHistoryRecord(learningNote = note.toSyncedLearningNote())
             )
         }
     }
@@ -641,6 +693,39 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
+    private fun materializeLearningNote(noteId: String) {
+        val record = syncDao.getRecord(HistorySyncCategory.LEARNING_NOTES.name, noteId)
+            ?: return
+        if (record.isDeleted) {
+            learningNoteDao.delete(noteId)
+            return
+        }
+        val note = decodeRecord(record)?.learningNote
+            ?: throw HistorySyncException("Stored learning note data is invalid")
+        val streamId = streamDao.upsert(note.stream.toEntity())
+        learningNoteDao.upsert(
+            LearningNoteEntity(
+                noteId = note.noteId,
+                streamId = streamId,
+                timestampMillis = note.timestampMillis,
+                noteText = note.noteText,
+                createdAtEpochMillis = note.createdAtEpochMillis,
+                updatedAtEpochMillis = note.updatedAtEpochMillis
+            )
+        )
+    }
+
+    private fun LearningNoteEntity.toSyncedLearningNote(): SyncedLearningNote {
+        return SyncedLearningNote(
+            noteId = noteId,
+            stream = SyncedHistoryStream.from(requireStream(streamId)),
+            timestampMillis = timestampMillis,
+            noteText = noteText,
+            createdAtEpochMillis = createdAtEpochMillis,
+            updatedAtEpochMillis = updatedAtEpochMillis
+        )
+    }
+
     private fun getAllWatchStreamIdentities(): Set<HistoryStreamIdentity> {
         return syncDao.getRecords(HistorySyncCategory.WATCH.name)
             .mapNotNull { decodeRecord(it)?.streamIdentity }
@@ -770,6 +855,7 @@ internal class RoomHistorySyncStore internal constructor(
         get() = watchEvent?.stream
             ?: playbackProgress?.stream
             ?: watchStreamTombstone?.stream
+            ?: learningNote?.stream
 
     private fun epochMillisToOffsetDateTime(epochMillis: Long): OffsetDateTime {
         return OffsetDateTime.ofInstant(
@@ -830,6 +916,10 @@ class HistorySyncRecorder private constructor(context: Context) {
     fun recordSearchDelete(query: String) = store.recordSearchDelete(query)
 
     fun recordSearchAllDelete() = store.recordSearchAllDelete()
+
+    fun recordLearningNoteUpsert(noteId: String) = store.recordLearningNoteUpsert(noteId)
+
+    fun recordLearningNoteDelete(note: LearningNoteEntity) = store.recordLearningNoteDelete(note)
 
     companion object {
         @JvmStatic

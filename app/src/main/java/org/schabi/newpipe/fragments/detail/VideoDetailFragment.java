@@ -169,6 +169,7 @@ public final class VideoDetailFragment
     private static final String RELATED_TAB_TAG = VideoDetailNavigationMapper.RELATED_TAB_TAG;
     private static final String DESCRIPTION_TAB_TAG =
             VideoDetailNavigationMapper.DESCRIPTION_TAB_TAG;
+    private static final String NOTES_TAB_TAG = VideoDetailNavigationMapper.NOTES_TAB_TAG;
     private static final String EMPTY_TAB_TAG = "EMPTY TAB";
 
     // tabs
@@ -948,6 +949,10 @@ public final class VideoDetailFragment
             pageAdapter.addFragment(EmptyFragment.newInstance(false), DESCRIPTION_TAB_TAG);
         }
 
+        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())) {
+            pageAdapter.addFragment(EmptyFragment.newInstance(false), NOTES_TAB_TAG);
+        }
+
         if (pageAdapter.getCount() == 0) {
             pageAdapter.addFragment(EmptyFragment.newInstance(true), EMPTY_TAB_TAG);
         }
@@ -969,6 +974,7 @@ public final class VideoDetailFragment
         setDetailNavigationItemVisible(R.id.video_detail_navigation_related, RELATED_TAB_TAG);
         setDetailNavigationItemVisible(
                 R.id.video_detail_navigation_description, DESCRIPTION_TAB_TAG);
+        setDetailNavigationItemVisible(R.id.video_detail_navigation_notes, NOTES_TAB_TAG);
     }
 
     private void setDetailNavigationItemVisible(final int itemId, final String tabTag) {
@@ -1001,6 +1007,12 @@ public final class VideoDetailFragment
 
         if (showDescription) {
             pageAdapter.updateItem(DESCRIPTION_TAB_TAG, new DescriptionFragment(info));
+        }
+
+        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())) {
+            pageAdapter.updateItem(
+                    NOTES_TAB_TAG,
+                    LearningNotesFragment.getInstance(info.getServiceId(), info.getUrl()));
         }
 
         binding.viewPager.setVisibility(View.VISIBLE);

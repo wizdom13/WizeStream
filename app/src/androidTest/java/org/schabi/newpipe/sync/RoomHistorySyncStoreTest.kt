@@ -22,6 +22,7 @@ import org.junit.runner.RunWith
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.history.model.SearchHistoryEntry
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
+import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.extractor.stream.StreamType
@@ -218,6 +219,81 @@ class RoomHistorySyncStoreTest {
 
         assertTrue(phoneDatabase.searchHistoryDAO().getAllDirect().isEmpty())
         assertTrue(tabletDatabase.searchHistoryDAO().getAllDirect().isEmpty())
+    }
+
+    @Test
+    fun learningNoteEditsAndDeletionTombstonesConvergeThroughRoomStores() {
+        val phoneStore = RoomHistorySyncStore(phoneDatabase, newPeerId())
+        val tabletStore = RoomHistorySyncStore(tabletDatabase, newPeerId())
+        val phone = HistorySyncEngine(phoneStore)
+        val tablet = HistorySyncEngine(tabletStore)
+        val phoneStreamId = phoneDatabase.streamDAO().upsert(testStream())
+        val original = LearningNoteEntity(
+            noteId = "99de68c3-22d6-4186-8056-c4e559006fc5",
+            streamId = phoneStreamId,
+            timestampMillis = 12_000,
+            noteText = "Original note",
+            createdAtEpochMillis = 1_000,
+            updatedAtEpochMillis = 1_000
+        )
+        phoneDatabase.learningNoteDAO().upsert(original)
+        phoneStore.recordLearningNoteUpsert(original.noteId)
+
+        synchronize(
+            HistorySyncCategory.LEARNING_NOTES,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        val tabletCopy = requireNotNull(tabletDatabase.learningNoteDAO().getNote(original.noteId))
+        assertEquals(original.timestampMillis, tabletCopy.timestampMillis)
+        assertEquals(original.noteText, tabletCopy.noteText)
+
+        val phoneEdit = requireNotNull(phoneDatabase.learningNoteDAO().getNote(original.noteId))
+            .copy(noteText = "Phone edit", updatedAtEpochMillis = 2_000)
+        phoneDatabase.learningNoteDAO().upsert(phoneEdit)
+        phoneStore.recordLearningNoteUpsert(phoneEdit.noteId)
+        val tabletEdit = tabletCopy.copy(noteText = "Tablet edit", updatedAtEpochMillis = 2_000)
+        tabletDatabase.learningNoteDAO().upsert(tabletEdit)
+        tabletStore.recordLearningNoteUpsert(tabletEdit.noteId)
+
+        synchronize(
+            HistorySyncCategory.LEARNING_NOTES,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+        synchronize(
+            HistorySyncCategory.LEARNING_NOTES,
+            tablet,
+            tabletStore,
+            phone,
+            phoneStore
+        )
+
+        val convergedPhone = requireNotNull(
+            phoneDatabase.learningNoteDAO().getNote(original.noteId)
+        )
+        val convergedTablet = requireNotNull(
+            tabletDatabase.learningNoteDAO().getNote(original.noteId)
+        )
+        assertEquals(convergedPhone.noteText, convergedTablet.noteText)
+
+        tabletStore.recordLearningNoteDelete(convergedTablet)
+        tabletDatabase.learningNoteDAO().delete(convergedTablet.noteId)
+        synchronize(
+            HistorySyncCategory.LEARNING_NOTES,
+            tablet,
+            tabletStore,
+            phone,
+            phoneStore
+        )
+
+        assertTrue(phoneDatabase.learningNoteDAO().getAllDirect().isEmpty())
+        assertTrue(tabletDatabase.learningNoteDAO().getAllDirect().isEmpty())
     }
 
     private fun synchronize(

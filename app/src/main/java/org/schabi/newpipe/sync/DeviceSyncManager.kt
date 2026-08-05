@@ -217,6 +217,20 @@ class DeviceSyncManager private constructor(context: Context) {
             } else {
                 null
             }
+            val learningNotesEnabled = historySyncEngine.isEnabled(
+                HistorySyncCategory.LEARNING_NOTES
+            )
+            val learningNotes = if (canContinue && learningNotesEnabled) {
+                runCatching {
+                    node.syncHistory(
+                        activePeer,
+                        HistorySyncCategory.LEARNING_NOTES,
+                        recordStatus = !background
+                    )
+                }
+            } else {
+                null
+            }
             val structuredPreferences = if (canContinue) {
                 StructuredPreferenceCategory.entries.associateWith { category ->
                     runCatching {
@@ -234,7 +248,8 @@ class DeviceSyncManager private constructor(context: Context) {
                 subscription.exceptionOrNull()?.message,
                 playlist?.exceptionOrNull()?.message,
                 watchHistory?.exceptionOrNull()?.message,
-                searchHistory?.exceptionOrNull()?.message
+                searchHistory?.exceptionOrNull()?.message,
+                learningNotes?.exceptionOrNull()?.message
             ) + structuredPreferences.values.mapNotNull { result ->
                 result.exceptionOrNull()?.message
             }
@@ -257,6 +272,9 @@ class DeviceSyncManager private constructor(context: Context) {
                 searchHistoryResult = searchHistory?.getOrNull(),
                 searchHistoryError = searchHistory?.exceptionOrNull().diagnosticMessage(),
                 searchHistorySkipped = !searchHistoryEnabled,
+                learningNotesResult = learningNotes?.getOrNull(),
+                learningNotesError = learningNotes?.exceptionOrNull().diagnosticMessage(),
+                learningNotesSkipped = !learningNotesEnabled,
                 structuredPreferenceResults = structuredPreferences.mapValues {
                     it.value.getOrNull()
                 },
@@ -317,6 +335,9 @@ class DeviceSyncManager private constructor(context: Context) {
                 applicationContext.getString(R.string.device_sync_search_history_key),
                 false
             )
+
+            HistorySyncCategory.LEARNING_NOTES ->
+                org.schabi.newpipe.learning.LearningMode.isNotesSyncEnabled(applicationContext)
         }
     }
 

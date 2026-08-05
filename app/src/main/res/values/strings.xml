@@ -12,6 +12,70 @@
     <string name="open_in_browser">Open in browser</string>
     <string name="open_channel">Open channel %1$s</string>
     <string name="mark_as_watched">Mark as watched</string>
+    <string name="mark_as_unwatched">Mark as unwatched</string>
+    <string name="settings_category_learning_title">Learning Mode</string>
+    <string name="settings_category_learning_summary">Optional notes, progress, dashboard, and study statistics</string>
+    <string name="learning_mode_key" translatable="false">learning_mode_enabled</string>
+    <string name="learning_notes_key" translatable="false">learning_notes_enabled</string>
+    <string name="learning_playlist_progress_key" translatable="false">learning_playlist_progress_enabled</string>
+    <string name="learning_count_background_key" translatable="false">learning_count_background_playback</string>
+    <string name="learning_mode_title">Enable Learning Mode</string>
+    <string name="learning_mode_summary">Show optional learning tools without changing the normal WizeStream experience</string>
+    <string name="learning_notes_title">Timestamped notes</string>
+    <string name="learning_notes_summary">Create notes linked to exact positions in videos</string>
+    <string name="learning_playlist_progress_title">Playlist progress</string>
+    <string name="learning_playlist_progress_summary">Show completion progress and learning controls in local playlists</string>
+    <string name="learning_count_background_title">Count background playback</string>
+    <string name="learning_count_background_summary">Include time listened to in the background in study statistics</string>
+    <string name="learning_note_add">Add timestamped note</string>
+    <string name="learning_note_edit">Edit note</string>
+    <string name="learning_note_timestamp">Timestamp</string>
+    <string name="learning_note_text">Note</string>
+    <string name="learning_note_timestamp_error">Use M:SS or H:MM:SS</string>
+    <string name="learning_note_empty_error">Enter a note</string>
+    <string name="learning_note_too_long_error">Notes can contain up to %1$d characters</string>
+    <string name="learning_notes_tab_description">Notes</string>
+    <string name="learning_notes_empty">No notes yet. Add one from the player controls.</string>
+    <string name="learning_note_delete_confirm">Delete this note?</string>
+    <string name="learning_note_saved">Note saved</string>
+    <string name="learning_note_deleted">Note deleted</string>
+    <string name="learning_note_save_error">Could not save the note</string>
+    <string name="learning_note_live_unavailable">Timestamped notes are not available for live streams</string>
+    <string name="save">Save</string>
+    <string name="device_sync_learning_notes_key" translatable="false">device_sync_learning_notes</string>
+    <string name="device_sync_learning_notes_title">Synchronize learning notes</string>
+    <string name="device_sync_learning_notes_summary">Private by default. Enable on both trusted devices to exchange timestamped notes.</string>
+    <string name="learning_progress_format">%1$d of %2$d completed · %3$d%%</string>
+    <string name="learning_progress_completed">Completed</string>
+    <string name="learning_progress_unavailable">Progress unavailable for streams with unknown duration</string>
+    <string name="learning_mark_all_watched">Mark all as watched</string>
+    <string name="learning_mark_all_watched_confirm">Mark every video in this playlist as completed?</string>
+    <string name="learning_mark_all_watched_done">Playlist marked as watched</string>
+    <string name="learning_reset_progress">Reset learning progress</string>
+    <string name="learning_reset_progress_confirm">Reset watch history and playback progress for the videos in this playlist?</string>
+    <string name="learning_reset_progress_done">Playlist progress reset</string>
+    <string name="learning_dashboard_title">Learning</string>
+    <string name="learning_dashboard_summary_title">Learning progress</string>
+    <string name="learning_dashboard_summary_format">%1$d of %2$d videos completed · %3$d%%</string>
+    <string name="learning_dashboard_playlists_format">%1$d active · %2$d completed</string>
+    <string name="learning_dashboard_continue">Continue learning</string>
+    <string name="learning_dashboard_active_playlists">Active playlists</string>
+    <string name="learning_dashboard_completed_playlists">Completed playlists</string>
+    <string name="learning_dashboard_recent_notes">Recently annotated</string>
+    <string name="learning_dashboard_untitled_playlist">Untitled playlist</string>
+    <string name="learning_dashboard_empty">Start watching a local playlist or add a timestamped note to build your learning dashboard.</string>
+    <string name="learning_dashboard_video_progress">%1$s of %2$s · %3$d%%</string>
+    <string name="learning_statistics_title">Study activity</string>
+    <string name="learning_statistics_today">Today\n%1$s</string>
+    <string name="learning_statistics_week">This week\n%1$s</string>
+    <string name="learning_statistics_all_time">All time\n%1$s</string>
+    <string name="learning_statistics_streak">Current streak: %1$d days · Longest: %2$d days</string>
+    <string name="learning_activity_calendar">Last 28 days</string>
+    <string name="learning_activity_day_description">%1$s: %2$s study time</string>
+    <plurals name="learning_dashboard_note_count">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
     <string name="open_in_popup_mode">Open in popup mode</string>
     <string name="open_with">Open with</string>
     <string name="share">Share</string>
@@ -262,6 +326,7 @@
     <string name="device_sync_category_playlists">Playlists</string>
     <string name="device_sync_category_watch_history">Watch history and playback progress</string>
     <string name="device_sync_category_search_history">Search history</string>
+    <string name="device_sync_category_learning_notes">Learning notes</string>
     <string name="device_sync_category_feed_groups">Feed groups</string>
     <string name="device_sync_category_home_tabs">Home tabs</string>
     <string name="device_sync_category_channel_profiles">Channel playback profiles</string>

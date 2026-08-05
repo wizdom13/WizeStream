@@ -155,6 +155,22 @@ public enum StreamDialogDefaultEntry {
                 .onErrorComplete()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe()
+    ),
+
+    MARK_AS_UNWATCHED(R.string.mark_as_unwatched, (fragment, item) ->
+        new HistoryRecordManager(fragment.getContext())
+                .markAsUnwatched(item)
+                .doOnError(error -> ErrorUtil.showSnackbar(
+                        fragment.requireContext(),
+                        new ErrorInfo(
+                                error,
+                                UserAction.OPEN_INFO_ITEM_DIALOG,
+                                "Got an error when trying to mark as unwatched"
+                        )
+                ))
+                .onErrorComplete()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe()
     );
 
 

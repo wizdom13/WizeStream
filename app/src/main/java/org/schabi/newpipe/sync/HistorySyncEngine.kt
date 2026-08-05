@@ -94,6 +94,7 @@ class HistorySyncEngine internal constructor(
             val label = when (category) {
                 HistorySyncCategory.WATCH -> "Watch history"
                 HistorySyncCategory.SEARCH -> "Search history"
+                HistorySyncCategory.LEARNING_NOTES -> "Learning notes"
             }
             throw HistorySyncException("$label synchronization is disabled on this device")
         }

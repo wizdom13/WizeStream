@@ -175,7 +175,11 @@ internal enum class PortableSettingId {
     CLEAR_QUEUE_CONFIRMATION,
     PLAYBACK_SPEED,
     PLAYBACK_PITCH,
-    PLAYBACK_SKIP_SILENCE;
+    PLAYBACK_SKIP_SILENCE,
+    LEARNING_MODE,
+    LEARNING_NOTES,
+    LEARNING_PLAYLIST_PROGRESS,
+    LEARNING_COUNT_BACKGROUND;
 
     val valueType: PortableSettingValueType
         get() = when (this) {
@@ -195,7 +199,11 @@ internal enum class PortableSettingId {
             AUTO_QUEUE,
             INEXACT_SEEK,
             CLEAR_QUEUE_CONFIRMATION,
-            PLAYBACK_SKIP_SILENCE -> PortableSettingValueType.BOOLEAN
+            PLAYBACK_SKIP_SILENCE,
+            LEARNING_MODE,
+            LEARNING_NOTES,
+            LEARNING_PLAYLIST_PROGRESS,
+            LEARNING_COUNT_BACKGROUND -> PortableSettingValueType.BOOLEAN
 
             PLAYBACK_SPEED,
             PLAYBACK_PITCH -> PortableSettingValueType.FLOAT

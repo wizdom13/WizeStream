@@ -22,4 +22,16 @@
         android:id="@+id/menu_item_remove_duplicates"
         android:title="@string/remove_duplicates"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_item_mark_all_watched"
+        android:title="@string/learning_mark_all_watched"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_item_reset_learning_progress"
+        android:title="@string/learning_reset_progress"
+        android:visible="false"
+        app:showAsAction="never" />
 </menu>
