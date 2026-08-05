@@ -159,6 +159,46 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
+    /**
+     * Converts an adapter position to the corresponding item index.
+     *
+     * @param adapterPosition position reported by the RecyclerView
+     * @return the item index, or {@code -1} when the position is a header, footer, or invalid
+     */
+    public int getItemIndex(final int adapterPosition) {
+        final int itemIndex = adapterOffsetWithoutHeader(adapterPosition);
+        return itemIndex >= 0 && itemIndex < localItems.size() ? itemIndex : -1;
+    }
+
+    /**
+     * Removes the item at an exact index, preserving duplicate playlist entries correctly.
+     *
+     * @param itemIndex index within {@link #getItemsList()}
+     * @return the removed item, or {@code null} when the index is invalid
+     */
+    @Nullable
+    public LocalItem removeItemAt(final int itemIndex) {
+        if (itemIndex < 0 || itemIndex >= localItems.size()) {
+            return null;
+        }
+
+        final LocalItem removedItem = localItems.remove(itemIndex);
+        notifyItemRemoved(itemIndex + (hasHeader() ? 1 : 0));
+        return removedItem;
+    }
+
+    /**
+     * Inserts an item at the requested index.
+     *
+     * @param itemIndex index within {@link #getItemsList()}
+     * @param item item to insert
+     */
+    public void insertItemAt(final int itemIndex, @NonNull final LocalItem item) {
+        final int insertionIndex = Math.max(0, Math.min(itemIndex, localItems.size()));
+        localItems.add(insertionIndex, item);
+        notifyItemInserted(insertionIndex + (hasHeader() ? 1 : 0));
+    }
+
     public boolean swapItems(final int fromAdapterPosition, final int toAdapterPosition) {
         final int actualFrom = adapterOffsetWithoutHeader(fromAdapterPosition);
         final int actualTo = adapterOffsetWithoutHeader(toAdapterPosition);

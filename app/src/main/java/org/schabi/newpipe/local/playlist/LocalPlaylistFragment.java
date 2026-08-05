@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.evernote.android.state.State;
+import com.google.android.material.snackbar.Snackbar;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.schabi.newpipe.NewPipeDatabase;
@@ -98,6 +99,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private PlaylistControlBinding playlistControlBinding;
 
     private ItemTouchHelper itemTouchHelper;
+    private Snackbar swipeRemovalSnackbar;
 
     private LocalPlaylistManager playlistManager;
     private Subscription databaseSubscription;
@@ -289,6 +291,10 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     @Override
     public void onDestroyView() {
+        if (swipeRemovalSnackbar != null) {
+            swipeRemovalSnackbar.dismiss();
+            swipeRemovalSnackbar = null;
+        }
         super.onDestroyView();
 
         if (itemListAdapter != null) {
@@ -740,7 +746,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             directions |= ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
         }
         return new ItemTouchHelper.SimpleCallback(directions,
-                ItemTouchHelper.ACTION_STATE_IDLE) {
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
             public int interpolateOutOfBoundsScroll(@NonNull final RecyclerView recyclerView,
                                                     final int viewSize,
@@ -786,14 +792,87 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
             @Override
             public boolean isItemViewSwipeEnabled() {
-                return false;
+                return true;
+            }
+
+            @Override
+            public int getSwipeDirs(@NonNull final RecyclerView recyclerView,
+                                    @NonNull final RecyclerView.ViewHolder viewHolder) {
+                if (itemListAdapter == null) {
+                    return ItemTouchHelper.ACTION_STATE_IDLE;
+                }
+
+                final int itemIndex = itemListAdapter.getItemIndex(
+                        viewHolder.getBindingAdapterPosition());
+                if (itemIndex < 0 || !(itemListAdapter.getItemsList().get(itemIndex)
+                        instanceof PlaylistStreamEntry)) {
+                    return ItemTouchHelper.ACTION_STATE_IDLE;
+                }
+                return super.getSwipeDirs(recyclerView, viewHolder);
             }
 
             @Override
             public void onSwiped(@NonNull final RecyclerView.ViewHolder viewHolder,
                                  final int swipeDir) {
+                removeItemBySwipe(viewHolder.getBindingAdapterPosition());
             }
         };
+    }
+
+    private void removeItemBySwipe(final int adapterPosition) {
+        if (itemListAdapter == null) {
+            return;
+        }
+
+        final int itemIndex = itemListAdapter.getItemIndex(adapterPosition);
+        if (itemIndex < 0 || !(itemListAdapter.getItemsList().get(itemIndex)
+                instanceof PlaylistStreamEntry)) {
+            if (adapterPosition != RecyclerView.NO_POSITION) {
+                itemListAdapter.notifyItemChanged(adapterPosition);
+            }
+            return;
+        }
+
+        if (swipeRemovalSnackbar != null) {
+            swipeRemovalSnackbar.dismiss();
+        }
+
+        final LocalItem removedItem = itemListAdapter.removeItemAt(itemIndex);
+        if (!(removedItem instanceof PlaylistStreamEntry removedEntry)) {
+            if (adapterPosition != RecyclerView.NO_POSITION) {
+                itemListAdapter.notifyItemChanged(adapterPosition);
+            }
+            return;
+        }
+
+        persistSwipeChange();
+
+        final Snackbar snackbar = Snackbar.make(requireView(),
+                R.string.playlist_item_removed, Snackbar.LENGTH_LONG);
+        snackbar.setAction(R.string.undo, view -> {
+            if (itemListAdapter == null) {
+                return;
+            }
+            itemListAdapter.insertItemAt(itemIndex, removedEntry);
+            persistSwipeChange();
+        });
+        snackbar.addCallback(new Snackbar.Callback() {
+            @Override
+            public void onDismissed(final Snackbar transientBottomBar, final int event) {
+                if (swipeRemovalSnackbar == transientBottomBar) {
+                    swipeRemovalSnackbar = null;
+                }
+            }
+        });
+        swipeRemovalSnackbar = snackbar;
+        snackbar.show();
+    }
+
+    private void persistSwipeChange() {
+        updateThumbnailUrl();
+        setStreamCountAndOverallDuration(itemListAdapter.getItemsList());
+        debounceSaver.setHasChangesToSave();
+        saveImmediate();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
