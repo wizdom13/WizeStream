@@ -2,14 +2,18 @@ package org.schabi.newpipe.fragments.list.playlist;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 import org.junit.Test;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamType;
+import org.schabi.newpipe.util.StreamListFilter;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,6 +66,23 @@ public class PlaylistSortHelperTest {
                 List.of("first", "second"),
                 names(PlaylistSortHelper.sortedCopy(
                         List.of(first, second), PlaylistSortOrder.POPULAR)));
+    }
+
+    @Test
+    public void largeDefaultPlaylistReusesCanonicalList() {
+        final List<StreamInfoItem> source = new ArrayList<>(50_000);
+        for (int i = 0; i < 50_000; i++) {
+            source.add(newest);
+        }
+
+        final List<StreamInfoItem> displayed = PlaylistSortHelper.itemsForDisplay(
+                source,
+                StreamListFilter.NONE,
+                new HashMap<>(),
+                PlaylistSortOrder.PLAYLIST_ORDER);
+
+        assertSame(source, displayed);
+        assertEquals(50_000, displayed.size());
     }
 
     private static StreamInfoItem item(final String name,

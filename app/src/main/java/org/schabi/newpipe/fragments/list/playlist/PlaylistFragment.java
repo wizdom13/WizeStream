@@ -84,6 +84,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     private CompositeDisposable disposables;
     private Subscription bookmarkReactor;
     private AtomicBoolean isBookmarkButtonReady;
+    private final BookmarkActionGuard bookmarkActionGuard = new BookmarkActionGuard();
+    private Disposable streamStateWorker;
 
     private RemotePlaylistManager remotePlaylistManager;
     private PlaylistRemoteEntity playlistEntity;
@@ -165,7 +167,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                 .setOnCheckedStateChangeListener((group, checkedIds) -> {
                     selectedStreamFilter = StreamListFilter.fromChipId(
                             checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
-                    applyStreamFilter();
+                    refreshStreamStates();
                 });
         updatePlaylistSortButton();
         binding.playlistSortButton.setOnClickListener(ignored -> showPlaylistSortDialog());
@@ -217,6 +219,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         binding = null;
         headerBinding = null;
         playlistControlBinding = null;
+        playlistBookmarkButton = null;
 
         super.onDestroyView();
         if (isBookmarkButtonReady != null) {
@@ -229,14 +232,23 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         if (bookmarkReactor != null) {
             bookmarkReactor.cancel();
         }
+        if (streamStateWorker != null) {
+            streamStateWorker.dispose();
+        }
 
         bookmarkReactor = null;
+        streamStateWorker = null;
+        bookmarkActionGuard.finish();
     }
 
     @Override
     public void startLoading(final boolean forceLoad) {
         unfilteredItems.clear();
         streamStates.clear();
+        if (streamStateWorker != null) {
+            streamStateWorker.dispose();
+            streamStateWorker = null;
+        }
         super.startLoading(forceLoad);
     }
 
@@ -317,7 +329,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     public void handleNextItems(final ListExtractor.InfoItemsPage<StreamInfoItem> result) {
         super.handleNextItems(result);
         unfilteredItems.addAll(result.getItems());
-        refreshStreamStates();
+        refreshStreamStatesAfterPageLoad();
         setStreamCountAndOverallDuration(result.getItems(), !result.hasNextPage());
         continueLoadingPlaylistForSorting();
     }
@@ -415,14 +427,34 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                 .subscribe(getPlaylistBookmarkSubscriber());
 
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
-        refreshStreamStates();
+        refreshStreamStatesAfterPageLoad();
         continueLoadingPlaylistForSorting();
     }
 
+    private void refreshStreamStatesAfterPageLoad() {
+        if (selectedStreamFilter == StreamListFilter.NONE
+                && selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER) {
+            return;
+        }
+        refreshStreamStates();
+    }
+
     private void refreshStreamStates() {
-        final List<StreamInfoItem> snapshot = new ArrayList<>(unfilteredItems);
         applyStreamFilter();
-        disposables.add(historyRecordManager.loadStreamStateBatch(snapshot)
+        if (!filterNeedsStreamStates()) {
+            streamStates.clear();
+            if (streamStateWorker != null) {
+                streamStateWorker.dispose();
+                streamStateWorker = null;
+            }
+            return;
+        }
+
+        final List<StreamInfoItem> snapshot = new ArrayList<>(unfilteredItems);
+        if (streamStateWorker != null) {
+            streamStateWorker.dispose();
+        }
+        streamStateWorker = historyRecordManager.loadStreamStateBatch(snapshot)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(states -> {
                     if (!unfilteredItems.equals(snapshot)) {
@@ -433,19 +465,20 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                         streamStates.put(snapshot.get(i).getUrl(), states.get(i));
                     }
                     applyStreamFilter();
-                }, throwable -> Log.w(TAG, "Unable to load playlist stream states", throwable)));
+                }, throwable -> Log.w(TAG, "Unable to load playlist stream states", throwable));
+    }
+
+    private boolean filterNeedsStreamStates() {
+        return selectedStreamFilter == StreamListFilter.UNWATCHED
+                || selectedStreamFilter == StreamListFilter.PARTIALLY_WATCHED;
     }
 
     private void applyStreamFilter() {
         if (infoListAdapter == null) {
             return;
         }
-        final List<StreamInfoItem> filteredItems = unfilteredItems.stream()
-                .filter(item -> StreamListFilter.matches(
-                        selectedStreamFilter, item, streamStates.get(item.getUrl())))
-                .collect(Collectors.toList());
-        final List<StreamInfoItem> displayedItems =
-                PlaylistSortHelper.sortedCopy(filteredItems, selectedPlaylistSort);
+        final List<StreamInfoItem> displayedItems = PlaylistSortHelper.itemsForDisplay(
+                unfilteredItems, selectedStreamFilter, streamStates, selectedPlaylistSort);
         infoListAdapter.clearStreamItemList();
         infoListAdapter.addInfoItemList(displayedItems);
         showListFooter(hasMoreItems());
@@ -596,30 +629,41 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
     private void onBookmarkClicked() {
         if (isBookmarkButtonReady == null || !isBookmarkButtonReady.get()
-                || remotePlaylistManager == null) {
+                || remotePlaylistManager == null || !bookmarkActionGuard.tryStart()) {
             return;
         }
 
+        updateBookmarkButtons();
         final Disposable action;
 
         if (currentInfo != null && playlistEntity == null) {
             action = remotePlaylistManager.onBookmark(currentInfo)
                     .observeOn(AndroidSchedulers.mainThread())
+                    .doFinally(this::finishBookmarkAction)
                     .subscribe(ignored -> { /* Do nothing */ }, throwable ->
                             showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                                     "Adding playlist bookmark")));
         } else if (playlistEntity != null) {
             action = remotePlaylistManager.deletePlaylist(playlistEntity.getUid())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .doFinally(() -> playlistEntity = null)
-                    .subscribe(ignored -> { /* Do nothing */ }, throwable ->
+                    .doFinally(this::finishBookmarkAction)
+                    .subscribe(ignored -> {
+                        playlistEntity = null;
+                        updateBookmarkButtons();
+                    }, throwable ->
                             showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                                     "Deleting playlist bookmark")));
         } else {
+            bookmarkActionGuard.finish();
             action = Disposable.empty();
         }
 
         disposables.add(action);
+    }
+
+    private void finishBookmarkAction() {
+        bookmarkActionGuard.finish();
+        updateBookmarkButtons();
     }
 
     private void updateBookmarkButtons() {
@@ -635,6 +679,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         playlistBookmarkButton.setIcon(drawable);
         playlistBookmarkButton.setTitle(titleRes);
+        playlistBookmarkButton.setEnabled(isBookmarkButtonReady != null
+                && isBookmarkButtonReady.get() && !bookmarkActionGuard.isRunning());
     }
 
     private void setStreamCountAndOverallDuration(final List<StreamInfoItem> list,
