@@ -74,6 +74,17 @@ public final class PlayerHolder {
         return getPlayer().map(Player::isPlaying).orElse(false);
     }
 
+    public void rememberMainPlayerFullscreenBeforePopup(final boolean fullscreen) {
+        getPlayer().ifPresent(player ->
+                player.rememberMainPlayerFullscreenBeforePopup(fullscreen));
+    }
+
+    public boolean consumeMainPlayerFullscreenBeforePopup(final boolean fallback) {
+        return getPlayer()
+                .map(player -> player.consumeMainPlayerFullscreenBeforePopup(fallback))
+                .orElse(fallback);
+    }
+
     public boolean isPlayerOpen() {
         return getPlayer().isPresent();
     }

@@ -1126,14 +1126,18 @@ public final class VideoDetailFragment
             player.setRecovery();
         }
 
-        toggleFullscreenIfInFullscreenMode();
-
+        final boolean wasFullscreen = isFullscreen();
         final PlayQueue queue = setupPlayQueueForIntent(append);
         if (append) { //resumePlayback: false
+            playerHolder.rememberMainPlayerFullscreenBeforePopup(wasFullscreen);
+            toggleFullscreenIfInFullscreenMode();
             NavigationHelper.enqueueOnPlayer(activity, queue, PlayerType.POPUP);
         } else {
-            replaceQueueIfUserConfirms(() -> NavigationHelper
-                    .playOnPopupPlayer(activity, queue, true));
+            replaceQueueIfUserConfirms(() -> {
+                playerHolder.rememberMainPlayerFullscreenBeforePopup(wasFullscreen);
+                toggleFullscreenIfInFullscreenMode();
+                NavigationHelper.playOnPopupPlayer(activity, queue, true);
+            });
         }
     }
 

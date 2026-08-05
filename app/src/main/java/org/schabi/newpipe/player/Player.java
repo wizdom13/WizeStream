@@ -263,6 +263,8 @@ public final class Player implements PlaybackListener, Listener {
 
     private PlayerType playerType = PlayerType.MAIN;
     private int currentState = STATE_PREFLIGHT;
+    private final PopupPlayerReturnState popupPlayerReturnState =
+            new PopupPlayerReturnState();
 
     @NonNull
     private final SleepTimer sleepTimer = new SleepTimer();
@@ -405,7 +407,15 @@ public final class Player implements PlaybackListener, Listener {
         // can move the initUIs stuff without breaking the setup for edge cases somehow.
         // when playing from a timestamp, keep the current player as-is.
         if (playerIntentType != PlayerIntentType.TimestampChange) {
-            playerType = IntentCompat.getSerializableExtra(intent, PLAYER_TYPE, PlayerType.class);
+            @Nullable final PlayerType requestedPlayerType = IntentCompat.getSerializableExtra(
+                    intent, PLAYER_TYPE, PlayerType.class);
+            if (playerType == PlayerType.MAIN && requestedPlayerType == PlayerType.POPUP
+                    && !popupPlayerReturnState.isRemembered()) {
+                popupPlayerReturnState.remember(UIs.get(MainPlayerUi.class)
+                        .map(MainPlayerUi::isFullscreen)
+                        .orElse(false));
+            }
+            playerType = requestedPlayerType;
         }
         initUIsForCurrentPlayerType();
         isAudioOnly = audioPlayerSelected();
@@ -3249,6 +3259,14 @@ public final class Player implements PlaybackListener, Listener {
 
     public PlayerType getPlayerType() {
         return playerType;
+    }
+
+    public void rememberMainPlayerFullscreenBeforePopup(final boolean fullscreen) {
+        popupPlayerReturnState.remember(fullscreen);
+    }
+
+    public boolean consumeMainPlayerFullscreenBeforePopup(final boolean fallback) {
+        return popupPlayerReturnState.consume(fallback);
     }
 
     public boolean audioPlayerSelected() {

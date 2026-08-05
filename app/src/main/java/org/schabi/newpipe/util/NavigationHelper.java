@@ -428,18 +428,26 @@ public final class NavigationHelper {
             autoPlay = false;
         }
 
+        final boolean openMainPlayerFullscreen;
+        if (switchingPlayers && playerType == PlayerType.POPUP) {
+            openMainPlayerFullscreen = PlayerHolder.getInstance()
+                    .consumeMainPlayerFullscreenBeforePopup(
+                            PlayerHelper.isStartMainPlayerFullscreenEnabled(context));
+        } else {
+            openMainPlayerFullscreen =
+                    PlayerHelper.isStartMainPlayerFullscreenEnabled(context);
+        }
+
         final RunnableWithVideoDetailFragment onVideoDetailFragmentReady = detailFragment -> {
             expandMainPlayer(detailFragment.requireActivity());
             detailFragment.setAutoPlay(autoPlay);
             if (switchingPlayers && TextUtils.equals(detailFragment.getUrl(), url)) {
                 // Situation when user switches from players to main player. All needed data is
                 // here, we can start watching (assuming newQueue equals playQueue).
-                // Starting directly in fullscreen if the previous player type was popup.
-                detailFragment.openVideoPlayer(playerType == PlayerType.POPUP
-                        || PlayerHelper.isStartMainPlayerFullscreenEnabled(context));
+                detailFragment.openVideoPlayer(openMainPlayerFullscreen);
             } else {
                 if (switchingPlayers && playerType == PlayerType.POPUP) {
-                    detailFragment.setForceFullscreen(true);
+                    detailFragment.setForceFullscreen(openMainPlayerFullscreen);
                 }
                 detailFragment.selectAndLoadVideo(serviceId, url, title, playQueue);
             }
