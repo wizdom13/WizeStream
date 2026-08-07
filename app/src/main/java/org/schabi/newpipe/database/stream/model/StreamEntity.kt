@@ -66,7 +66,10 @@ data class StreamEntity(
     var isUploadDateApproximation: Boolean? = null,
 
     @ColumnInfo(name = STREAM_UPLOADER_AVATAR_URL)
-    var uploaderAvatarUrl: String? = null
+    var uploaderAvatarUrl: String? = null,
+
+    @ColumnInfo(name = STREAM_REQUIRES_MEMBERSHIP, defaultValue = "0")
+    var requiresMembership: Boolean = false
 ) : Serializable {
     @Ignore
     constructor(item: StreamInfoItem) : this(
@@ -78,7 +81,8 @@ data class StreamEntity(
         isUploadDateApproximation = item.uploadDate?.isApproximation,
         uploaderAvatarUrl = ImageStrategy.imageListToDbUrl(
             ExtractorImageCompat.uploaderAvatarImages(item)
-        )
+        ),
+        requiresMembership = item.requiresMembership()
     )
 
     @Ignore
@@ -91,7 +95,8 @@ data class StreamEntity(
         isUploadDateApproximation = info.uploadDate?.isApproximation,
         uploaderAvatarUrl = ImageStrategy.imageListToDbUrl(
             ExtractorImageCompat.uploaderAvatarImages(info)
-        )
+        ),
+        requiresMembership = info.requiresMembership()
     )
 
     @Ignore
@@ -122,6 +127,7 @@ data class StreamEntity(
         item.uploadDate = uploadDate?.let {
             DateWrapper(it, isUploadDateApproximation ?: false)
         }
+        item.setRequiresMembership(requiresMembership)
 
         return item
     }
@@ -137,6 +143,7 @@ data class StreamEntity(
         const val STREAM_UPLOADER = "uploader"
         const val STREAM_UPLOADER_URL = "uploader_url"
         const val STREAM_UPLOADER_AVATAR_URL = "uploader_avatar_url"
+        const val STREAM_REQUIRES_MEMBERSHIP = "requires_membership"
         const val STREAM_THUMBNAIL_URL = "thumbnail_url"
 
         const val STREAM_VIEWS = "view_count"

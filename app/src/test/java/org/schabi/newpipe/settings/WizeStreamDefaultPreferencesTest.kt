@@ -99,6 +99,7 @@ class WizeStreamDefaultPreferencesTest {
         verify(editor).putString("theme", "auto_device_theme")
         verify(editor).putString("night_theme", "dark_theme")
         verify(editor).putString("list_view_mode", "card")
+        verify(editor).putBoolean("hide_members_only_videos", false)
         verify(editor).putFloat("playback_speed_key", 1.0f)
         verify(editor).putString(
             "saved_tabs_key",

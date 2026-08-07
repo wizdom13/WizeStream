@@ -482,9 +482,10 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         infoListAdapter.clearStreamItemList();
         infoListAdapter.addInfoItemList(displayedItems);
         showListFooter(hasMoreItems());
+        final boolean isEmpty = infoListAdapter.getItemsList().isEmpty();
         playlistControlBinding.getRoot().setVisibility(
-                displayedItems.isEmpty() ? View.GONE : View.VISIBLE);
-        if (displayedItems.isEmpty()) {
+                isEmpty ? View.GONE : View.VISIBLE);
+        if (isEmpty) {
             showEmptyState();
         } else {
             hideLoading();

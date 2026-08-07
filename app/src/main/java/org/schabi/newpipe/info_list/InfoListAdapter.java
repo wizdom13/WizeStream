@@ -33,6 +33,7 @@ import org.schabi.newpipe.info_list.holder.StreamInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamMiniInfoItemHolder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.FallbackViewHolder;
+import org.schabi.newpipe.util.MembersOnlyContentHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 
 import java.util.ArrayList;
@@ -133,7 +134,16 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
 
         final int offsetStart = sizeConsideringHeaderOffset();
-        infoItemList.addAll(data);
+        final List<InfoItem> visibleData = new ArrayList<>(data.size());
+        final boolean hideMembersOnly = MembersOnlyContentHelper.shouldHide(
+                infoItemBuilder.getContext());
+        for (final InfoItem item : data) {
+            if (!hideMembersOnly || !(item instanceof StreamInfoItem)
+                    || !((StreamInfoItem) item).requiresMembership()) {
+                visibleData.add(item);
+            }
+        }
+        infoItemList.addAll(visibleData);
 
         if (DEBUG) {
             Log.d(TAG, "addInfoItemList() after > offsetStart = " + offsetStart + ", "
@@ -141,9 +151,11 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     + "hasHeader = " + hasHeader() + ", "
                     + "showFooter = " + showFooter);
         }
-        notifyItemRangeInserted(offsetStart, data.size());
+        if (!visibleData.isEmpty()) {
+            notifyItemRangeInserted(offsetStart, visibleData.size());
+        }
 
-        if (showFooter) {
+        if (showFooter && !visibleData.isEmpty()) {
             final int footerNow = sizeConsideringHeaderOffset();
             notifyItemMoved(offsetStart, footerNow);
 

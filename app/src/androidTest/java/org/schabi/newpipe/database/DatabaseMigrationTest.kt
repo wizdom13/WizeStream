@@ -10,6 +10,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -702,6 +703,31 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom18to19AddsMembershipRestriction() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_18
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_19,
+            true,
+            Migrations.MIGRATION_18_19
+        )
+        migrated.query("PRAGMA table_info(streams)").use { cursor ->
+            val columnNameIndex = cursor.getColumnIndex("name")
+            var foundMembershipColumn = false
+            while (cursor.moveToNext()) {
+                foundMembershipColumn = foundMembershipColumn ||
+                    cursor.getString(columnNameIndex) == "requires_membership"
+            }
+            assertTrue(foundMembershipColumn)
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -713,7 +739,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_14_15,
                 Migrations.MIGRATION_15_16,
                 Migrations.MIGRATION_16_17,
-                Migrations.MIGRATION_17_18
+                Migrations.MIGRATION_17_18,
+                Migrations.MIGRATION_18_19
             )
             .build()
         testHelper.closeWhenFinished(database)

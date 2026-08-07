@@ -84,6 +84,7 @@ import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.Localization
+import org.schabi.newpipe.util.MembersOnlyContentHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.StreamListFilter
@@ -436,6 +437,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         override fun onItemClick(item: Item<*>, view: View) {
             if (item is StreamItem && !isRefreshing) {
                 val stream = item.streamWithState.stream
+                if (stream.requiresMembership) {
+                    MembersOnlyContentHelper.showExplanation(requireContext())
+                    return
+                }
                 if (
                     ServiceHelper.isYoutubeMusicMode(requireContext()) &&
                     stream.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID
@@ -514,8 +519,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             else -> StreamItem.ItemVersion.NORMAL
         }
 
+        val hideMembersOnly = MembersOnlyContentHelper.shouldHide(requireContext())
         val streamFilteredItems = loadedState.items.filter { item ->
             val streamWithState = item.streamWithState
+            if (hideMembersOnly && streamWithState.stream.requiresMembership) {
+                return@filter false
+            }
             val stream = streamWithState.stream.toStreamInfoItem()
             val state = streamWithState.stateProgressMillis?.let {
                 StreamStateEntity(streamWithState.stream.uid, it)

@@ -1075,7 +1075,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (infoListAdapter.getItemsList().isEmpty()) {
             if (!result.getRelatedItems().isEmpty()) {
                 infoListAdapter.addInfoItemList(result.getRelatedItems());
-            } else {
+            }
+            if (infoListAdapter.getItemsList().isEmpty()) {
                 infoListAdapter.clearStreamItemList();
                 showEmptyState();
                 return;

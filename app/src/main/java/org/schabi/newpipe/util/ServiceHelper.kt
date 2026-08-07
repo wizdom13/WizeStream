@@ -13,6 +13,7 @@ import androidx.preference.PreferenceManager
 import com.grack.nanojson.JsonParser
 import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.InfoItemsCollector
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.StreamingService
@@ -269,6 +270,23 @@ object ServiceHelper {
         }
         ServiceList.YouTube.setFetchDislike(fetchDislike)
         ServiceList.YouTube.setSponsorBlockApiSettings(sponsorBlockApiSettings)
+        configureMembersOnlyFilter(context)
+    }
+
+    @JvmStatic
+    fun configureMembersOnlyFilter(context: Context) {
+        setHideMembersOnlyVideos(MembersOnlyContentHelper.shouldHide(context))
+    }
+
+    @JvmStatic
+    fun setHideMembersOnlyVideos(hideMembersOnlyVideos: Boolean) {
+        val existing = ServiceList.YouTube.filterConfig
+        ServiceList.YouTube.filterConfig = InfoItemsCollector.FilterConfig(
+            ArrayList(existing?.keywords ?: emptyList()),
+            ArrayList(existing?.channels ?: emptyList()),
+            existing?.isBlockShorts ?: false,
+            hideMembersOnlyVideos
+        )
     }
 
     private fun buildSponsorBlockApiSettings(context: Context): SponsorBlockApiSettings? {

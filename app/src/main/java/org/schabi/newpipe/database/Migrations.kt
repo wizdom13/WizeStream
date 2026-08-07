@@ -38,6 +38,7 @@ object Migrations {
     const val DB_VER_16 = 16
     const val DB_VER_17 = 17
     const val DB_VER_18 = 18
+    const val DB_VER_19 = 19
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -717,6 +718,13 @@ object Migrations {
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_learning_sessions_local_date` " +
                 "ON `learning_sessions` (`local_date`)"
+        )
+    }
+
+    val MIGRATION_18_19 = Migration(DB_VER_18, DB_VER_19) { db ->
+        db.execSQL(
+            "ALTER TABLE streams ADD COLUMN requires_membership " +
+                "INTEGER NOT NULL DEFAULT 0"
         )
     }
 }

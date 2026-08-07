@@ -18,6 +18,7 @@ import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
+import org.schabi.newpipe.util.MembersOnlyContentHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
@@ -31,6 +32,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
     public final TextView itemVideoTitleView;
     public final TextView itemUploaderView;
     public final TextView itemDurationView;
+    public final TextView itemMembersOnlyView;
     private final View itemUploaderRoot;
     private final ImageView itemUploaderAvatarView;
     private final AnimatedProgressBar itemProgressView;
@@ -43,6 +45,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         itemVideoTitleView = itemView.findViewById(R.id.itemVideoTitleView);
         itemUploaderView = itemView.findViewById(R.id.itemUploaderView);
         itemDurationView = itemView.findViewById(R.id.itemDurationView);
+        itemMembersOnlyView = itemView.findViewById(R.id.itemMembersOnlyView);
         itemUploaderRoot = itemView.findViewById(R.id.itemUploaderRoot);
         itemUploaderAvatarView = itemView.findViewById(R.id.itemUploaderAvatarView);
         itemProgressView = itemView.findViewById(R.id.itemProgressView);
@@ -91,6 +94,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
 
         itemVideoTitleView.setText(item.getName());
         itemUploaderView.setText(item.getUploaderName());
+        itemMembersOnlyView.setVisibility(item.requiresMembership() ? View.VISIBLE : View.GONE);
 
         bindUploader(item);
 
@@ -131,7 +135,9 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
                 ExtractorImageCompat.thumbnailImages(item));
 
         itemView.setOnClickListener(view -> {
-            if (itemBuilder.getOnStreamSelectedListener() != null) {
+            if (item.requiresMembership()) {
+                MembersOnlyContentHelper.showExplanation(itemBuilder.getContext());
+            } else if (itemBuilder.getOnStreamSelectedListener() != null) {
                 itemBuilder.getOnStreamSelectedListener().selected(item);
             }
         });

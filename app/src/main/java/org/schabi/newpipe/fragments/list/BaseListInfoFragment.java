@@ -233,6 +233,8 @@ public abstract class BaseListInfoFragment<I extends InfoItem, L extends ListInf
         if (infoListAdapter.getItemsList().isEmpty()) {
             if (!result.getRelatedItems().isEmpty()) {
                 infoListAdapter.addInfoItemList(result.getRelatedItems());
+            }
+            if (!infoListAdapter.getItemsList().isEmpty()) {
                 showListFooter(hasMoreItems());
             } else if (hasMoreItems()) {
                 loadMoreItems();

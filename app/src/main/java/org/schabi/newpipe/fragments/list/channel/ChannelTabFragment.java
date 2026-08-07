@@ -351,14 +351,15 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
         infoListAdapter.clearStreamItemList();
         infoListAdapter.addInfoItemList(displayedItems);
         showListFooter(hasMoreItems());
-        if (displayedItems.isEmpty()) {
+        final boolean isEmpty = infoListAdapter.getItemsList().isEmpty();
+        if (isEmpty) {
             showEmptyState();
         } else {
             hideLoading();
         }
         if (playlistControlBinding != null) {
             playlistControlBinding.getRoot().setVisibility(
-                    displayedItems.isEmpty() ? View.GONE : View.VISIBLE);
+                    isEmpty ? View.GONE : View.VISIBLE);
         }
     }
 

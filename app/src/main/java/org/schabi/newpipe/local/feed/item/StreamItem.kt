@@ -74,6 +74,11 @@ data class StreamItem(
     override fun bind(viewBinding: ListStreamItemBinding, position: Int) {
         viewBinding.itemVideoTitleView.text = stream.title
         viewBinding.itemUploaderView.text = stream.uploader
+        viewBinding.itemMembersOnlyView.visibility = if (stream.requiresMembership) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
         bindUploader(viewBinding)
 
         if (stream.duration > 0) {

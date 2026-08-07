@@ -18,6 +18,7 @@ import org.schabi.newpipe.database.Migrations.MIGRATION_14_15
 import org.schabi.newpipe.database.Migrations.MIGRATION_15_16
 import org.schabi.newpipe.database.Migrations.MIGRATION_16_17
 import org.schabi.newpipe.database.Migrations.MIGRATION_17_18
+import org.schabi.newpipe.database.Migrations.MIGRATION_18_19
 import org.schabi.newpipe.database.Migrations.MIGRATION_1_2
 import org.schabi.newpipe.database.Migrations.MIGRATION_2_3
 import org.schabi.newpipe.database.Migrations.MIGRATION_3_4
@@ -55,7 +56,8 @@ object NewPipeDatabase {
             MIGRATION_14_15,
             MIGRATION_15_16,
             MIGRATION_16_17,
-            MIGRATION_17_18
+            MIGRATION_17_18,
+            MIGRATION_18_19
         ).build()
     }
 

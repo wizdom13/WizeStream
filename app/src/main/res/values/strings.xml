@@ -361,6 +361,10 @@
     <string name="show_age_restricted_content_summary">Show content possibly unsuitable for children because it has an age limit (like 18+)</string>
     <string name="youtube_restricted_mode_enabled_title">Turn on YouTube\'s \"Restricted Mode\"</string>
     <string name="youtube_restricted_mode_enabled_summary">YouTube provides a \"Restricted Mode\" which hides potentially mature content</string>
+    <string name="members_only">Members only</string>
+    <string name="members_only_explanation">WizeStream uses anonymous native playback and cannot verify your YouTube channel membership. Members-only videos cannot be played in WizeStream.</string>
+    <string name="hide_members_only_videos_title">Hide members-only videos</string>
+    <string name="hide_members_only_videos_summary">Hide videos that require a paid YouTube channel membership</string>
     <string name="restricted_video">This video is age restricted.\n\nTurn on \"%1$s\" in the settings if you want to see it.</string>
     <string name="restricted_video_no_stream">This video is age-restricted.
 \nDue to new YouTube policies with age-restricted videos, WizeStream cannot access any of its video streams and thus is unable to play it.</string>

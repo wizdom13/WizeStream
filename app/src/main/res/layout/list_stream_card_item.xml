@@ -42,6 +42,24 @@
         tools:text="1:09:10" />
 
     <org.schabi.newpipe.views.NewPipeTextView
+        android:id="@+id/itemMembersOnlyView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/video_item_search_duration_margin"
+        android:layout_marginTop="@dimen/video_item_search_duration_margin"
+        android:background="@drawable/members_only_badge_background"
+        android:paddingHorizontal="@dimen/video_item_search_duration_horizontal_padding"
+        android:paddingVertical="@dimen/video_item_search_duration_vertical_padding"
+        android:text="@string/members_only"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/info_list_thumbnail_badge_text_color"
+        android:textSize="@dimen/video_item_search_duration_text_size"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/itemThumbnailView"
+        app:layout_constraintTop_toTopOf="@id/itemThumbnailView"
+        tools:visibility="visible" />
+
+    <org.schabi.newpipe.views.NewPipeTextView
         android:id="@+id/itemVideoTitleView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
