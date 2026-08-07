@@ -1,0 +1,7 @@
+WizeStream 1.5.0
+
+- Added optional Learning Mode with notes, study sessions, playlist progress, and a dashboard.
+- Added Members only badges and an option to hide restricted videos.
+- Added swipe-to-remove with Undo in local playlists.
+- Restored main-player state after returning from popup playback.
+- Fixed repeated bookmark removal and reduced memory use for large playlists.

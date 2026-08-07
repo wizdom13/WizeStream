@@ -2,6 +2,24 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## WizeStream 1.5.0 (`1005000`)
+
+### New features
+
+- Added optional Learning Mode with timestamped notes, study sessions, playlist progress, and a learning dashboard.
+- Added **Members only** badges for membership-restricted videos, an explanation when they are opened, and an option to hide them from content lists.
+- Added swipe-to-remove with an Undo action for videos in local playlists.
+
+### Improvements
+
+- Restored the main-player position and playback state after returning from popup playback.
+
+### Fixes
+
+- Fixed repeated bookmark-removal actions and reduced memory usage when removing very large playlists.
+
+[View the complete changes since v1.4.1](https://github.com/wizdom13/WizeStream/compare/v1.4.1...pipe)
+
 ## WizeStream 1.4.1 (`1004001`)
 
 ### Improvements
