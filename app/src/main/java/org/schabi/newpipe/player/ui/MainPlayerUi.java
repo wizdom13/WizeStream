@@ -334,13 +334,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.share.setVisibility(View.VISIBLE);
         binding.openInBrowser.setVisibility(View.VISIBLE);
         binding.sleepTimerButton.setVisibility(View.VISIBLE);
-        binding.learningNoteButton.setVisibility(
-                LearningMode.areNotesEnabled(context)
-                        && player.getCurrentStreamInfo()
-                                .map(info -> !org.schabi.newpipe.util.StreamTypeUtil
-                                        .isLiveStream(info.getStreamType()))
-                                .orElse(false)
-                        ? View.VISIBLE : View.GONE);
+        updateLearningNoteButtonVisibility(player.getCurrentStreamInfo().orElse(null));
         binding.switchMute.setVisibility(View.VISIBLE);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         // Top controls have a large minHeight which is allows to drag the player
@@ -671,6 +665,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
         showHideKodiButton();
+        updateLearningNoteButtonVisibility(info);
         if (areSegmentsVisible) {
             if (segmentAdapter.setItems(info)) {
                 final int adapterPosition = getNearestStreamSegmentPosition(
@@ -1114,6 +1109,17 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                     )
             ));
         });
+    }
+
+    private void updateLearningNoteButtonVisibility(@Nullable final StreamInfo info) {
+        binding.learningNoteButton.setVisibility(shouldShowLearningNoteButton(
+                LearningMode.areNotesEnabled(context), info) ? View.VISIBLE : View.GONE);
+    }
+
+    static boolean shouldShowLearningNoteButton(final boolean notesEnabled,
+                                                @Nullable final StreamInfo info) {
+        return notesEnabled && info != null
+                && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(info.getStreamType());
     }
     //endregion
 }
