@@ -101,22 +101,17 @@ client rather than the project's only purpose.
 
 Project highlights:
 
-- Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
-- Dynamic Material You color support where available
-- Manual theme color presets
-- Bottom navigation with a configurable default main tab
-- Support for multiple streaming platforms through an integrated extractor
-- SponsorBlock integration
-- YouTube dislike count support
-- Swipe seek, fullscreen swipe, and hold-to-speed-up player gestures
-- Swipe down from the video player to return to the miniplayer
-- Optional keep-video-visible mode while scrolling the details page
-- Secure peer-to-peer synchronization between trusted WizeStream devices
-- Automatic background synchronization on Wi-Fi or Ethernet
-- Search filters and sorting, channel video sorting, and podcast channel tabs
-- Per-channel playback profiles
-- Multi-audio track selection with original, dubbed, and descriptive labels
-- Import/export compatibility with supported NewPipe backup data
+- Material 3-inspired design with Material You colors, manual color presets, and customizable navigation
+- Account-free playback, subscriptions, feeds, playlists, downloads, and history across supported services
+- Dedicated YouTube Music and YouTube Shorts destinations, advanced search filters, and channel sorting
+- Main, background, and popup playback with advanced gestures, a sleep timer, multi-audio selection,
+  and per-channel playback profiles
+- SponsorBlock, YouTube dislike counts, and clear handling for members-only videos
+- Optional Learning Mode with timestamped notes, playlist progress, study statistics, and a dashboard
+- Secure peer-to-peer synchronization between trusted WizeStream devices, manually or automatically
+  over Wi-Fi or Ethernet
+- Local search across subscriptions, playlists, feeds, history, and Downloads
+- Import/export compatibility with supported NewPipe backup data and a verified in-app update flow
 
 Sensitive areas such as playback, downloads, background playback, popup playback, and extractor logic are changed only through focused and tested work.
 
@@ -181,44 +176,90 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 ## Features
 
-Core features include:
+### Streaming and discovery
 
-- Watch videos and live streams
-- Background playback
-- Popup player
-- Local playlists
-- Subscriptions without signing in to a platform account
-- Service-specific subscriptions, channel groups, and **What's New** feeds with independent refresh
-  state, including separate scopes for YouTube and YouTube Music
-- Search and browse supported services
-- View video details, related videos, and comments where supported
-- Download video, audio, and captions where supported
-- Import and export app data for migration and backup
+- Watch videos, live streams, and audio without signing in to a platform account
+- Browse all [supported services](#supported-services), with dedicated YouTube Music and YouTube
+  Shorts destinations
+- Search with service-provided content, date, duration, feature, and sorting filters
+- Filter channel, feed, and playlist lists by unwatched, partially watched, live, or Shorts content
+- Browse video details, related content, comments, playlists, and channel tabs where supported
+- Sort channel videos by latest, popular, or oldest, and use podcast tabs on supported channels
+- See channel avatars directly in stream lists, open channels from their identity areas, and view
+  view or subscriber counts where the service provides them
+- View YouTube dislike counts where available
+- Identify membership-restricted videos with a **Members only** badge, receive a clear explanation
+  instead of an unplayable native request, or hide those videos from content lists
 
-WizeStream additions include:
+### Playback
 
-- Material 3 theme roles across more app surfaces
-- Bottom navigation for five or fewer main tabs, with a scrollable tab layout for larger tab sets
-- Configurable default main tab
-- Dynamic and manual theme color support
-- SponsorBlock and dislike-count support
-- Independent Subscriptions and **What's New** content for each service, including separate YouTube
-  and YouTube Music scopes
-- Enhanced player gestures
-- Optional pinned video while scrolling
-- Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, watch and search
-  history, playback progress, selected settings, channel playback profiles, and completed-download
-  metadata
-- Manual synchronization and automatic background synchronization on Wi-Fi or Ethernet
-- A **Download on this device** action when synchronized download metadata has no matching local
-  media file
-- Search filters and sorting
-- Latest, popular, and oldest sorting for channel videos
-- Podcast tabs on supported channels
-- Per-channel playback profiles
-- Multi-audio track selection with original, dubbed, descriptive, and secondary track labels
-- Playback-speed retention for live streams
-- Independent release signing
+- Main, background, popup, external-player, and Kodi playback
+- Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
+- Select available video resolutions and formats, including higher adaptive qualities when exposed by
+  the service
+- Select multi-audio tracks with original, dubbed, descriptive, and secondary labels, with preferences
+  for original or descriptive audio
+- Save playback speed, quality, and caption choices in per-channel playback profiles
+- Retain playback speed for live streams
+- Use swipe seeking, fullscreen volume and brightness swipes, hold-to-speed-up, an optional two-finger
+  playback-speed gesture, and swipe down to the miniplayer
+- Optionally keep the video visible while scrolling its details page
+- Set a sleep timer using presets, a custom duration, the end of the current video, or the end of the
+  queue, with optional fade-out
+- Skip or mark SponsorBlock categories with per-category behavior, colors, notifications, seek-bar
+  segments, and a manual skip button
+
+### Library, subscriptions, and downloads
+
+- Subscribe to channels without a platform account and organize subscriptions into channel groups
+- Keep independent **Subscriptions** and **What's New** scopes and refresh state for each service,
+  including separate YouTube and YouTube Music scopes
+- Create local playlists, bookmark remote playlists, and sort remote playlist contents
+- Swipe a video out of a local playlist with an **Undo** action
+- Search locally within subscriptions, playlists, feeds, watch history, and Downloads, then carry a
+  query into the selected service's online search
+- Store watch history, search history, and playback progress locally under user-controlled settings
+- Download video, audio, and captions where supported, with resumable downloads and queue controls
+- Import and export compatible app data for migration and backup
+
+### Learning Mode
+
+Learning Mode is optional and disabled by default. When enabled, it adds:
+
+- Timestamped notes linked to exact positions in non-live videos
+- Completion progress and learning controls for local playlists, including mark-all-watched and reset
+- A learning dashboard for active and completed playlists, recently annotated videos, and continue
+  learning shortcuts
+- Study-time statistics, current and longest streaks, and a 28-day activity calendar
+- A setting to include or exclude background listening from study statistics
+
+### Interface and customization
+
+- Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
+- Dynamic Material You colors where available, plus manual theme color presets
+- A customizable home screen and configurable default main tab
+- Bottom navigation for up to five main sections and a scrollable tab layout for larger tab sets
+- Bottom-navigation labels that can be always visible, active only, or hidden
+- Phone, tablet, landscape, and Android TV layouts
+
+### Device synchronization
+
+- Encrypted peer-to-peer pairing between trusted WizeStream devices using a one-time QR code
+- Manual synchronization and automatic background synchronization over Wi-Fi or Ethernet
+- Synchronization of subscriptions, feed groups, local and remote playlists, watch history, playback
+  progress, home tabs, content filters, channel playback profiles, allowlisted settings, optional
+  search history, and completed-download metadata
+- A **Download on this device** action when synchronized download metadata has no matching local file
+
+See [Device synchronization](#device-synchronization) for behavior, limitations, and setup.
+
+### Updates and releases
+
+- Manual and optional background checks for signed WizeStream releases
+- In-app changelog preview, APK download progress, and installation handoff
+- Update validation for checksum, package identity, version, and signing certificate
+- Independent semantic versioning, release signing, stable builds, and separately installable nightly
+  builds
 
 ---
 
