@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "description": "Experimental cross-platform WizeStream desktop client",
-  "author": "WizeStream contributors",
+  "author": {
+    "name": "WizeStream contributors",
+    "email": "1689896+wizdom13@users.noreply.github.com",
+    "url": "https://github.com/wizdom13/WizeStream"
+  },
+  "homepage": "https://github.com/wizdom13/WizeStream",
+  "desktopName": "WizeStream Desktop",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "dist-electron/main/main.js",
@@ -69,16 +75,17 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "category": "AudioVideo",
-      "icon": "../fastlane/metadata/android/en-US/images/icon.png"
+      "icon": "../assets/wizestream_logo.svg",
+      "syncDesktopName": true
     },
     "win": {
       "target": ["nsis", "portable"],
-      "icon": "../fastlane/metadata/android/en-US/images/icon.png"
+      "icon": "../assets/wizestream_logo.svg"
     },
     "mac": {
       "target": ["dmg", "zip"],
       "category": "public.app-category.video",
-      "icon": "../fastlane/metadata/android/en-US/images/icon.png",
+      "icon": "../assets/wizestream_logo.svg",
       "hardenedRuntime": true,
       "gatekeeperAssess": false
     },
