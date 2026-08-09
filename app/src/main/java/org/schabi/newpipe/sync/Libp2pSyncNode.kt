@@ -878,6 +878,10 @@ class Libp2pSyncNode(
         return listenAddressWithPort(address, 0)
     }
 
+    private fun tcpPortFromMultiaddress(address: Multiaddr): Int? {
+        return TCP_PORT_VALUE.find(address.toString())?.value?.toIntOrNull()
+    }
+
     private fun listenAddressWithPort(address: String, port: Int): String {
         return TCP_PORT_VALUE.replace(address, port.toString())
     }

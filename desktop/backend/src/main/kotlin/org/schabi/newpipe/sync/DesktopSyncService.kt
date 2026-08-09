@@ -220,7 +220,7 @@ class DesktopSyncService(
     } ?: throw IllegalArgumentException("Unknown synchronization category: $value")
 
     private fun Throwable?.isReachabilityFailure(): Boolean = this != null &&
-        generateSequence(this) { it.cause }.take(8).mapNotNull(Throwable::getMessage)
+        generateSequence(this) { it.cause }.take(8).mapNotNull { error -> error.message }
             .any { it.startsWith("Could not reach ") }
 
     private fun Throwable.diagnosticMessage(): String = generateSequence(this) { it.cause }
