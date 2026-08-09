@@ -13,6 +13,7 @@ version = "0.1.0"
 
 repositories {
     mavenCentral()
+    maven(url = "https://dl.cloudsmith.io/public/consensys/maven/maven/")
     maven(url = "https://jitpack.io")
     maven(url = "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/")
 }
