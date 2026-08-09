@@ -3,7 +3,7 @@ import type { BackendMethod, DesktopApi } from '../shared/contracts.js';
 
 const api: DesktopApi = {
   backend: {
-    invoke: <T>(method: BackendMethod, params?: Record<string, unknown>) =>
+    invoke: <T,>(method: BackendMethod, params?: Record<string, unknown>) =>
       ipcRenderer.invoke('backend:invoke', { method, params }) as Promise<T>,
   },
   player: {

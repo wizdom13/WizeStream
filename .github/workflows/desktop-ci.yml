@@ -63,7 +63,7 @@ jobs:
               --data-dir "$DATA_DIR" \
             | tee "$RUNNER_TEMP/backend-response.json"
           grep -q '"status":"ok"' "$RUNNER_TEMP/backend-response.json"
-      - name: Type-check and build Electron application
+      - name: Type-check, build and verify Electron application
         run: npm run build
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high

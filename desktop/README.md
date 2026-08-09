@@ -54,6 +54,10 @@ npm run typecheck
 npm run build
 ```
 
+The production build also executes a packaged-startup verifier. It checks that Electron can load
+the sandboxed CommonJS preload, that the restricted bridge is exposed, that renderer assets exist,
+and that a visible recovery screen is bundled if bridge initialization ever fails.
+
 ## Package
 
 Run the package task on the target operating system:
