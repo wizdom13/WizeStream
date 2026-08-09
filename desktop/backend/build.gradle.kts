@@ -72,6 +72,12 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.11.0"
+    }
+}
+
 application {
     mainClass.set("org.wisso.wizestream.desktop.backend.DesktopBackend")
     applicationName = "wizestream-desktop-backend"
