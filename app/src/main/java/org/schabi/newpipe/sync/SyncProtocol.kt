@@ -4,7 +4,7 @@
  */
 
 // jvm-libp2p's CompletableFuture API is backported by coreLibraryDesugaring.
-@file:android.annotation.SuppressLint("NewApi")
+@file:Suppress("NewApi")
 
 package org.schabi.newpipe.sync
 

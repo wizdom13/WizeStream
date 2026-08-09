@@ -55,21 +55,23 @@ internal class DesktopSyncStateRepository(
         putState(LISTEN_PORT, port.toString())
     }
 
-    override fun saveTrustedPeer(peer: TrustedPeer) = synchronized(lock) {
-        connection.prepareStatement(
-            """INSERT INTO trusted_peers(peer_id, public_key, device_name, addresses_json,
-                paired_at, last_sync_at, last_sync_error) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(peer_id) DO UPDATE SET public_key=excluded.public_key,
-                device_name=excluded.device_name, addresses_json=excluded.addresses_json"""
-        ).use { statement ->
-            statement.setString(1, peer.peerId)
-            statement.setString(2, peer.publicKey)
-            statement.setString(3, peer.deviceName)
-            statement.setString(4, JSON.encodeToString(peer.addresses))
-            statement.setLong(5, peer.pairedAtEpochMillis)
-            statement.setObject(6, peer.lastSyncAtEpochMillis)
-            statement.setString(7, peer.lastSyncError)
-            statement.executeUpdate()
+    override fun saveTrustedPeer(peer: TrustedPeer) {
+        synchronized(lock) {
+            connection.prepareStatement(
+                """INSERT INTO trusted_peers(peer_id, public_key, device_name, addresses_json,
+                    paired_at, last_sync_at, last_sync_error) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(peer_id) DO UPDATE SET public_key=excluded.public_key,
+                    device_name=excluded.device_name, addresses_json=excluded.addresses_json"""
+            ).use { statement ->
+                statement.setString(1, peer.peerId)
+                statement.setString(2, peer.publicKey)
+                statement.setString(3, peer.deviceName)
+                statement.setString(4, JSON.encodeToString(peer.addresses))
+                statement.setLong(5, peer.pairedAtEpochMillis)
+                statement.setObject(6, peer.lastSyncAtEpochMillis)
+                statement.setString(7, peer.lastSyncError)
+                statement.executeUpdate()
+            }
         }
     }
 
