@@ -5,7 +5,7 @@ plugins {
     java
     id("org.jetbrains.kotlin.jvm") version "2.3.21"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21"
-    id("com.google.protobuf") version "0.9.5"
+    id("com.squareup.wire") version "6.4.0"
 }
 
 group = "org.wisso.wizestream"
@@ -40,9 +40,14 @@ sourceSets {
             include("org/schabi/newpipe/sync/SyncProtocol.kt")
             include("org/schabi/newpipe/sync/DesktopSync*.kt")
         }
-        proto {
-            srcDir("../../app/src/main/proto")
-        }
+    }
+}
+
+wire {
+    sourcePath {
+        srcDir("../../app/src/main/proto")
+    }
+    java {
     }
 }
 
@@ -70,12 +75,6 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     testImplementation(kotlin("test"))
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.11.0"
-    }
 }
 
 application {
