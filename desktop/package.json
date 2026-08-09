@@ -1,0 +1,90 @@
+{
+  "name": "wizestream-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Experimental cross-platform WizeStream desktop client",
+  "author": "WizeStream contributors",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "main": "dist-electron/main/main.js",
+  "scripts": {
+    "backend:build": "../gradlew -p backend installDist runtimeImage",
+    "build": "npm run typecheck && vite build && tsc -p tsconfig.electron.json",
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:electron": "wait-on tcp:5173 && npm run backend:build && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
+    "dev:renderer": "vite --host 127.0.0.1",
+    "dist": "npm run backend:build && npm run build && electron-builder",
+    "dist:dir": "npm run backend:build && npm run build && electron-builder --dir",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json"
+  },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "9.3.1",
+    "@mui/material": "9.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.4",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.5",
+    "concurrently": "9.2.1",
+    "cross-env": "10.1.0",
+    "electron": "43.3.0",
+    "electron-builder": "26.15.3",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "wait-on": "9.0.4"
+  },
+  "build": {
+    "appId": "org.wisso.WizeStreamDesktop",
+    "productName": "WizeStream Desktop",
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**",
+      "dist-renderer/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/build/install/wizestream-desktop-backend/lib",
+        "to": "backend/lib"
+      },
+      {
+        "from": "backend/build/runtime",
+        "to": "runtime"
+      }
+    ],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "AudioVideo",
+      "icon": "../fastlane/metadata/android/en-US/images/icon.png"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "../fastlane/metadata/android/en-US/images/icon.png"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.video",
+      "icon": "../fastlane/metadata/android/en-US/images/icon.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

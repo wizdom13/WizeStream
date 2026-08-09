@@ -1,0 +1,131 @@
+name: Desktop CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - desktop-electron
+    paths:
+      - 'desktop/**'
+      - 'app/src/main/java/org/schabi/newpipe/extractor/**'
+      - 'app/src/main/java/org/schabi/newpipe/sync/SyncModels.kt'
+      - 'app/src/main/java/org/schabi/newpipe/sync/PairingSecurity.kt'
+      - 'app/src/main/java/org/schabi/newpipe/sync/SyncProtocol.kt'
+      - '.github/workflows/desktop-ci.yml'
+  pull_request:
+    branches:
+      - pipe
+    paths:
+      - 'desktop/**'
+      - 'app/src/main/java/org/schabi/newpipe/extractor/**'
+      - 'app/src/main/java/org/schabi/newpipe/sync/**'
+      - '.github/workflows/desktop-ci.yml'
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate desktop architecture
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install locked Node dependencies
+        run: npm ci --ignore-scripts
+      - name: Test and assemble JVM backend
+        run: ../gradlew -p backend test installDist runtimeImage --stacktrace
+      - name: Smoke-test JSON-RPC backend
+        shell: bash
+        run: |
+          DATA_DIR="$RUNNER_TEMP/wizestream-desktop-smoke"
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"health","params":{}}' \
+            | backend/build/runtime/bin/java \
+              -cp 'backend/build/install/wizestream-desktop-backend/lib/*' \
+              org.wisso.wizestream.desktop.backend.DesktopBackend \
+              --data-dir "$DATA_DIR" \
+            | tee "$RUNNER_TEMP/backend-response.json"
+          grep -q '"status":"ok"' "$RUNNER_TEMP/backend-response.json"
+      - name: Type-check and build Electron application
+        run: npm run build
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  package:
+    name: Package ${{ matrix.name }}
+    needs: validate
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            runner: ubuntu-24.04
+            target: --linux AppImage deb
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            target: --linux AppImage deb
+          - name: windows-x64
+            runner: windows-2025
+            target: --win nsis portable
+          - name: macos-x64
+            runner: macos-15-intel
+            target: --mac dmg zip
+          - name: macos-arm64
+            runner: macos-15
+            target: --mac dmg zip
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run backend:build
+      - run: npm run build
+      - name: Create unsigned native packages
+        shell: bash
+        run: npx electron-builder ${{ matrix.target }} --publish never
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-desktop-${{ matrix.name }}
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*.exe
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.yml
+            desktop/release/*.yaml
+            desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 14

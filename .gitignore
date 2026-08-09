@@ -26,6 +26,9 @@ xcuserdata
 .externalNativeBuild
 .cxx
 node_modules/
+desktop/dist-electron/
+desktop/dist-renderer/
+desktop/release/
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
