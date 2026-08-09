@@ -29,19 +29,19 @@ kotlin {
 sourceSets {
     main {
         java {
-            srcDir("../../../app/src/main/java")
+            srcDir("../../app/src/main/java")
             include("org/schabi/newpipe/extractor/**")
             include("org/wisso/wizestream/desktop/backend/**")
         }
         kotlin {
-            srcDir("../../../app/src/main/java")
+            srcDir("../../app/src/main/java")
             include("org/schabi/newpipe/sync/SyncModels.kt")
             include("org/schabi/newpipe/sync/PairingSecurity.kt")
             include("org/schabi/newpipe/sync/SyncProtocol.kt")
             include("org/schabi/newpipe/sync/DesktopSync*.kt")
         }
         proto {
-            srcDir("../../../app/src/main/proto")
+            srcDir("../../app/src/main/proto")
         }
     }
 }
