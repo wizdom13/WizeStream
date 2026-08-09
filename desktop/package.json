@@ -8,7 +8,7 @@
   "type": "module",
   "main": "dist-electron/main/main.js",
   "scripts": {
-    "backend:build": "../gradlew -p backend installDist runtimeImage",
+    "backend:build": "node scripts/build-backend.mjs",
     "build": "npm run typecheck && vite build && tsc -p tsconfig.electron.json",
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
     "dev:electron": "wait-on tcp:5173 && npm run backend:build && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
