@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Alert, AppBar, Avatar, Box, Button, Card, CardActionArea, CardContent, Chip,
-  CircularProgress, Container, Divider, IconButton, InputAdornment, List,
+  Checkbox, CircularProgress, Container, Divider, FormControlLabel, IconButton, InputAdornment, List,
   ListItemButton, ListItemIcon, ListItemText, MenuItem, Stack, TextField,
   Toolbar, Tooltip, Typography,
 } from '@mui/material';
@@ -14,7 +14,7 @@ import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import PlayArrowRounded from '@mui/icons-material/PlayArrowRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
-import type { SearchItem, ServiceSummary, StreamDetails, SyncStatus } from '../shared/contracts';
+import type { SearchItem, ServiceSummary, StreamDetails, SyncRunResult, SyncStatus } from '../shared/contracts';
 
 type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'sync';
 
@@ -188,16 +188,82 @@ export function App() {
   );
 }
 
+const syncCategoryLabels: Record<string, string> = {
+  subscriptions: 'Subscriptions', playlists: 'Playlists', watchHistory: 'Watch history',
+  searchHistory: 'Search history', learningNotes: 'Learning notes', feedGroups: 'Feed groups',
+  homeTabs: 'Home tabs', channelProfiles: 'Channel profiles', filters: 'Filters',
+  settings: 'Portable settings', completedDownloads: 'Completed download metadata',
+};
+
 function SyncPanel({ sync, onRefresh }: { sync?: SyncStatus; onRefresh(): void }) {
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [pairingCode, setPairingCode] = useState('');
+  const [invitation, setInvitation] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [panelError, setPanelError] = useState<string>();
+  const [result, setResult] = useState<SyncRunResult>();
+
+  useEffect(() => {
+    if (sync && selectedCategories.length === 0) setSelectedCategories(sync.categories);
+  }, [sync, selectedCategories.length]);
+
+  async function createInvitation() {
+    setBusy(true); setPanelError(undefined);
+    try {
+      const value = await window.wizestream.backend.invoke<{ pairingCode: string }>('sync.invitation');
+      setInvitation(value.pairingCode);
+    } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); }
+  }
+
+  async function pairDevice() {
+    if (!pairingCode.trim()) return;
+    setBusy(true); setPanelError(undefined);
+    try {
+      await window.wizestream.backend.invoke('sync.pair', { pairingCode: pairingCode.trim() });
+      setPairingCode(''); onRefresh();
+    } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); }
+  }
+
+  async function synchronize() {
+    if (selectedCategories.length === 0) return;
+    setBusy(true); setPanelError(undefined); setResult(undefined);
+    try {
+      setResult(await window.wizestream.backend.invoke<SyncRunResult>('sync.run', {
+        categories: selectedCategories,
+      }));
+      onRefresh();
+    } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); }
+  }
+
   return <Stack spacing={3}>
-    <Box><Typography variant="h4">Trusted devices</Typography><Typography color="text.secondary">Encrypted local pairing uses WizeStream sync protocol v1.</Typography></Box>
-    {!sync ? <CircularProgress /> : <Card variant="outlined"><CardContent sx={{ p: 4 }}>
-      <Stack direction="row" sx={{ justifyContent: 'space-between' }}><Box><Typography variant="overline">Desktop Peer ID</Typography><Typography className="mono">{sync.peerId}</Typography></Box><Button onClick={onRefresh}>Refresh</Button></Stack>
-      <Divider sx={{ my: 3 }} />
-      {sync.trustedPeers.length === 0 ? <Typography color="text.secondary">No trusted devices yet. Pairing UI is enabled; category data adapters follow in Phase 2.</Typography>
-        : sync.trustedPeers.map((peer) => <Box key={peer.peerId} sx={{ py: 1 }}><Typography sx={{ fontWeight: 650 }}>{peer.deviceName}</Typography><Typography className="mono" color="text.secondary">{peer.peerId}</Typography></Box>)}
-      <Alert severity="info" sx={{ mt: 3 }}>Pairing transport is implemented. Subscription, playlist, history, Learning Mode and settings adapters are intentionally gated until the desktop schemas pass compatibility fixtures.</Alert>
-    </CardContent></Card>}
+    <Box><Typography variant="h4">Trusted devices</Typography><Typography color="text.secondary">Encrypted local pairing and category synchronization use WizeStream protocol v1.</Typography></Box>
+    {!sync ? <CircularProgress /> : <>
+      <Card variant="outlined"><CardContent sx={{ p: 4 }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Box><Typography variant="overline">Desktop Peer ID</Typography><Typography className="mono">{sync.peerId}</Typography></Box><Button onClick={onRefresh}>Refresh</Button></Stack>
+        <Divider sx={{ my: 3 }} />
+        {sync.trustedPeers.length === 0 ? <Typography color="text.secondary">No trusted devices yet. Generate a code on either device and enter it on the other.</Typography>
+          : sync.trustedPeers.map((peer) => <Box key={peer.peerId} sx={{ py: 1 }}><Typography sx={{ fontWeight: 650 }}>{peer.deviceName}</Typography><Typography className="mono" color="text.secondary">{peer.peerId}</Typography>{peer.lastSyncError && <Typography color="error" variant="body2">{peer.lastSyncError}</Typography>}</Box>)}
+        <Alert severity="success" sx={{ mt: 3 }}>Phase 2 data adapters are enabled. Trusted peers are rediscovered automatically on the local network before retrying an unreachable saved address.</Alert>
+      </CardContent></Card>
+      <Card variant="outlined"><CardContent sx={{ p: 4 }}>
+        <Typography variant="h6">Pair a device</Typography>
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          <Button variant="outlined" disabled={busy} onClick={() => void createInvitation()}>Generate pairing code</Button>
+          {invitation && <TextField label="This desktop's one-time pairing code" value={invitation} multiline minRows={3} slotProps={{ input: { readOnly: true } }} />}
+          <TextField label="Code from another WizeStream device" value={pairingCode} multiline minRows={3} onChange={(event) => setPairingCode(event.target.value)} />
+          <Button variant="contained" disabled={busy || !pairingCode.trim()} onClick={() => void pairDevice()}>Pair device</Button>
+        </Stack>
+      </CardContent></Card>
+      <Card variant="outlined"><CardContent sx={{ p: 4 }}>
+        <Typography variant="h6">Synchronize categories</Typography>
+        <Box className="sync-category-grid" sx={{ my: 2 }}>
+          {sync.categories.map((category) => <FormControlLabel key={category} control={<Checkbox checked={selectedCategories.includes(category)} onChange={(event) => setSelectedCategories((current) => event.target.checked ? [...current, category] : current.filter((value) => value !== category))} />} label={syncCategoryLabels[category] ?? category} />)}
+        </Box>
+        <Button variant="contained" disabled={busy || sync.trustedPeers.length === 0 || selectedCategories.length === 0} onClick={() => void synchronize()}>{busy ? 'Working…' : 'Sync selected'}</Button>
+        {result && <Alert severity={result.failed === 0 ? 'success' : 'warning'} sx={{ mt: 2 }}>Synchronization finished: {result.succeeded} device(s) succeeded, {result.failed} failed.</Alert>}
+        {panelError && <Alert severity="error" sx={{ mt: 2 }}>{panelError}</Alert>}
+      </CardContent></Card>
+    </>}
   </Stack>;
 }
 

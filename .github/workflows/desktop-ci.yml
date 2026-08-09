@@ -56,13 +56,17 @@ jobs:
         shell: bash
         run: |
           DATA_DIR="$RUNNER_TEMP/wizestream-desktop-smoke"
-          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"health","params":{}}' \
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"health","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"sync.status","params":{}}' \
             | backend/build/runtime/bin/java \
               -cp 'backend/build/install/wizestream-desktop-backend/lib/*' \
               org.wisso.wizestream.desktop.backend.DesktopBackend \
               --data-dir "$DATA_DIR" \
             | tee "$RUNNER_TEMP/backend-response.json"
           grep -q '"status":"ok"' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"dataSyncEnabled":true' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"automaticLanDiscovery":true' "$RUNNER_TEMP/backend-response.json"
       - name: Type-check, build and verify Electron application
         run: npm run build
       - name: Audit production dependencies

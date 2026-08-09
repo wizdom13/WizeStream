@@ -38,7 +38,21 @@ sourceSets {
             include("org/schabi/newpipe/sync/SyncModels.kt")
             include("org/schabi/newpipe/sync/PairingSecurity.kt")
             include("org/schabi/newpipe/sync/SyncProtocol.kt")
-            include("org/schabi/newpipe/sync/DesktopSync*.kt")
+            include("org/schabi/newpipe/sync/Libp2pSyncNode.kt")
+            include("org/schabi/newpipe/sync/SubscriptionSyncModels.kt")
+            include("org/schabi/newpipe/sync/SubscriptionSyncEngine.kt")
+            include("org/schabi/newpipe/sync/SubscriptionSyncProtocol.kt")
+            include("org/schabi/newpipe/sync/PlaylistSyncModels.kt")
+            include("org/schabi/newpipe/sync/PlaylistSyncEngine.kt")
+            include("org/schabi/newpipe/sync/PlaylistSyncProtocol.kt")
+            include("org/schabi/newpipe/sync/HistorySyncModels.kt")
+            include("org/schabi/newpipe/sync/HistorySyncEngine.kt")
+            include("org/schabi/newpipe/sync/HistorySyncProtocol.kt")
+            include("org/schabi/newpipe/sync/StructuredPreferenceSyncModels.kt")
+            include("org/schabi/newpipe/sync/StructuredPreferenceSyncEngine.kt")
+            include("org/schabi/newpipe/sync/StructuredPreferenceSyncProtocol.kt")
+            include("org/schabi/newpipe/sync/Desktop*.kt")
+            include("org/schabi/newpipe/database/**/Desktop*.kt")
         }
     }
 }

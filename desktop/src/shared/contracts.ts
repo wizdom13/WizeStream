@@ -6,7 +6,8 @@ export type BackendMethod =
   | 'library.summary'
   | 'sync.status'
   | 'sync.invitation'
-  | 'sync.pair';
+  | 'sync.pair'
+  | 'sync.run';
 
 export interface ServiceSummary {
   id: number;
@@ -57,6 +58,20 @@ export interface SyncStatus {
     lastSyncError?: string;
   }>;
   dataSyncEnabled: boolean;
+  automaticLanDiscovery: boolean;
+  categories: string[];
+}
+
+export interface SyncRunResult {
+  requestedCategories: string[];
+  succeeded: number;
+  failed: number;
+  peers: Array<{
+    peerId: string;
+    deviceName: string;
+    error?: string;
+    results: Record<string, { sent?: number; received?: number; changed?: number; rounds?: number; error?: string }>;
+  }>;
 }
 
 export interface DesktopApi {

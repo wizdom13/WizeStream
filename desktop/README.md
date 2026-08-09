@@ -3,13 +3,14 @@
 WizeStream Desktop is an experimental, real desktop client for Windows, macOS and Linux. It is
 not an Android compatibility wrapper and does not share the Android user interface.
 
-The Phase 1 architecture contains:
+The desktop architecture contains:
 
 - Electron with a sandboxed renderer, context isolation and a narrow typed preload API.
 - React with a Material 3-inspired adaptive interface.
 - The same integrated WizeStreamExtractor Java sources used by the Android application.
 - A versioned JSON-RPC JVM backend transported over standard input/output (no listening API port).
-- SQLite tables for subscriptions, playlists, history, Learning Mode notes and synchronization state.
+- SQLite stores for subscriptions, playlists, watch/search history, Learning Mode notes, portable
+  settings and synchronization state.
 - The existing WizeStream v1 signed pairing messages and authenticated libp2p transport.
 - A shell-free mpv process adapter for extracted HTTP(S) media URLs.
 - Unsigned native preview packages produced on native Windows, Intel/Apple Silicon macOS, and
@@ -17,14 +18,25 @@ The Phase 1 architecture contains:
 
 ## Current scope
 
-This branch is the architecture proof of concept. Search, stream resolution, mpv playback,
-persistent desktop identity and encrypted device pairing are implemented. The database tables and
-navigation surfaces for the remaining features are present.
+Phase 1 established the application shell, extractor-backed search, stream resolution, external
+mpv playback, persistent desktop identity, encrypted pairing and native preview packages.
 
-Subscription, playlist, history, Learning Mode and settings payload synchronization remains
-disabled until desktop SQLite adapters pass shared compatibility fixtures against the Android Room
-implementation. The backend reports `dataSyncEnabled: false` so the UI and automation cannot imply
-that data transfer is already safe.
+Phase 2 enables manual, category-selectable synchronization with Android devices for:
+
+- subscriptions and local/remote playlists;
+- watch history, playback progress and search history;
+- Learning Mode notes;
+- feed groups, home tabs, channel playback profiles and filters;
+- portable settings and completed-download metadata.
+
+The desktop compiles the same v1 synchronization models, validation, engines and libp2p protocol
+bindings used by Android. JDBC adapters use immutable change journals, per-origin revision clocks,
+per-peer acknowledgements, Lamport conflict resolution and tombstones. Structured records without
+a desktop editing surface are retained losslessly so round trips do not discard Android data.
+
+When a trusted device's saved IP address is stale, desktop scans the local IPv4 subnet only on the
+previously trusted sync port and then authenticates the discovered endpoint against the saved
+libp2p PeerID. Discovery never establishes trust by itself.
 
 ## Requirements
 
@@ -83,9 +95,7 @@ not requirements for architecture CI.
 
 ## Next milestone
 
-1. Extract shared synchronization models into an Android/JVM `sync-core` module.
-2. Implement and fixture-test SQLite subscription, playlist, history, Learning Mode and portable
-   settings stores.
-3. Add manual category synchronization, then automatic LAN discovery.
-4. Add downloads, captions, multi-audio selection and embedded libmpv rendering.
-5. Add signed releases and automatic updates after preview stabilization.
+1. Add native desktop library editors for subscriptions, playlists, history and Learning Mode.
+2. Add downloads, captions, multi-audio selection and embedded libmpv rendering.
+3. Add scheduled background synchronization with user-controlled category policy.
+4. Add signed releases and automatic updates after preview stabilization.

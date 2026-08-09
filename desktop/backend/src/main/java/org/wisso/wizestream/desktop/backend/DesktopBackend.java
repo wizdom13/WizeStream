@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class DesktopBackend implements AutoCloseable {
@@ -52,6 +53,7 @@ public final class DesktopBackend implements AutoCloseable {
                 case "sync.status" -> sync.status();
                 case "sync.invitation" -> Map.of("pairingCode", sync.createPairingCode());
                 case "sync.pair" -> sync.pair(requiredText(params, "pairingCode"));
+                case "sync.run" -> sync.sync(optionalTextList(params, "categories"));
                 default -> throw new IllegalArgumentException("Unknown backend method");
             };
             final ObjectNode response = JSON.createObjectNode();
@@ -88,6 +90,22 @@ public final class DesktopBackend implements AutoCloseable {
         final JsonNode value = node.path(name);
         if (!value.canConvertToInt()) throw new IllegalArgumentException("Missing " + name);
         return value.intValue();
+    }
+
+    private static List<String> optionalTextList(final JsonNode node, final String name) {
+        final JsonNode value = node.path(name);
+        if (value.isMissingNode() || value.isNull()) return null;
+        if (!value.isArray() || value.size() > 32) {
+            throw new IllegalArgumentException("Invalid " + name);
+        }
+        final var result = new java.util.ArrayList<String>(value.size());
+        value.forEach(item -> {
+            if (!item.isTextual() || item.textValue().isBlank() || item.textValue().length() > 80) {
+                throw new IllegalArgumentException("Invalid " + name);
+            }
+            result.add(item.textValue());
+        });
+        return List.copyOf(result);
     }
 
     private static String safeMessage(final Exception error) {

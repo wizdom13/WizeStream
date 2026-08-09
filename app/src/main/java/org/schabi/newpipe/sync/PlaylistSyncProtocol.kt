@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-// jvm-libp2p's CompletableFuture API is backported by coreLibraryDesugaring.
-@file:android.annotation.SuppressLint("NewApi")
+// jvm-libp2p's CompletableFuture API is backported by coreLibraryDesugaring on Android.
+@file:Suppress("NewApi")
 
 package org.schabi.newpipe.sync
 

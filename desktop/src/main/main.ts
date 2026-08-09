@@ -11,7 +11,7 @@ const backend = new BackendClient();
 const player = new MpvController();
 const backendMethods = new Set<BackendMethod>([
   'health', 'services.list', 'search', 'stream.resolve', 'library.summary',
-  'sync.status', 'sync.invitation', 'sync.pair',
+  'sync.status', 'sync.invitation', 'sync.pair', 'sync.run',
 ]);
 const rpcSchema = z.object({ method: z.string().max(80), params: z.record(z.string(), z.unknown()).optional() });
 const playSchema = z.object({ url: z.url(), title: z.string().max(200).optional() });
