@@ -19,10 +19,12 @@ public final class DesktopBackend implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final ExtractorFacade extractor = new ExtractorFacade();
     private final DesktopDatabase database;
+    private final DesktopLibrary library;
     private final DesktopSyncService sync;
 
     private DesktopBackend(final Path dataDirectory) throws Exception {
         database = new DesktopDatabase(dataDirectory);
+        library = new DesktopLibrary(database.connection());
         sync = new DesktopSyncService(database.connection(), "WizeStream Desktop");
         sync.start();
     }
@@ -50,6 +52,63 @@ public final class DesktopBackend implements AutoCloseable {
                 case "search" -> extractor.search(requiredInt(params, "serviceId"), requiredText(params, "query"));
                 case "stream.resolve" -> extractor.resolve(requiredText(params, "url"));
                 case "library.summary" -> database.summary();
+                case "library.subscriptions.list" -> library.subscriptions();
+                case "library.subscriptions.save" -> library.saveSubscription(
+                        requiredInt(params, "serviceId"), requiredText(params, "url"),
+                        requiredText(params, "name"), optionalText(params, "avatarUrl"));
+                case "library.subscriptions.delete" -> {
+                    library.deleteSubscription(
+                            requiredInt(params, "serviceId"), requiredText(params, "url"));
+                    yield Map.of("deleted", true);
+                }
+                case "library.playlists.list" -> library.playlists();
+                case "library.playlists.create" -> library.createPlaylist(requiredText(params, "name"));
+                case "library.playlists.rename" -> {
+                    library.renamePlaylist(requiredText(params, "id"), requiredText(params, "name"));
+                    yield Map.of("updated", true);
+                }
+                case "library.playlists.delete" -> {
+                    library.deletePlaylist(requiredText(params, "id"));
+                    yield Map.of("deleted", true);
+                }
+                case "library.playlists.items" -> library.playlistItems(
+                        requiredText(params, "playlistId"));
+                case "library.playlists.add-item" -> library.addPlaylistItem(
+                        requiredText(params, "playlistId"), requiredStream(params));
+                case "library.playlists.delete-item" -> {
+                    library.deletePlaylistItem(
+                            requiredText(params, "playlistId"), requiredText(params, "itemId"));
+                    yield Map.of("deleted", true);
+                }
+                case "library.history.list" -> library.history();
+                case "library.history.record" -> library.recordHistory(requiredStream(params));
+                case "library.history.delete" -> {
+                    library.deleteHistory(requiredText(params, "id"));
+                    yield Map.of("deleted", true);
+                }
+                case "library.history.clear" -> {
+                    library.clearHistory();
+                    yield Map.of("deleted", true);
+                }
+                case "library.search-history.list" -> library.searchHistory();
+                case "library.search-history.record" -> library.recordSearch(
+                        requiredInt(params, "serviceId"), requiredText(params, "query"));
+                case "library.search-history.delete" -> {
+                    library.deleteSearch(requiredText(params, "id"));
+                    yield Map.of("deleted", true);
+                }
+                case "library.search-history.clear" -> {
+                    library.clearSearchHistory();
+                    yield Map.of("deleted", true);
+                }
+                case "library.learning.list" -> library.learningNotes();
+                case "library.learning.save" -> library.saveLearningNote(
+                        optionalText(params, "id"), requiredStream(params),
+                        requiredLong(params, "positionSeconds"), requiredText(params, "note"));
+                case "library.learning.delete" -> {
+                    library.deleteLearningNote(requiredText(params, "id"));
+                    yield Map.of("deleted", true);
+                }
                 case "sync.status" -> sync.status();
                 case "sync.invitation" -> Map.of("pairingCode", sync.createPairingCode());
                 case "sync.pair" -> sync.pair(requiredText(params, "pairingCode"));
@@ -90,6 +149,32 @@ public final class DesktopBackend implements AutoCloseable {
         final JsonNode value = node.path(name);
         if (!value.canConvertToInt()) throw new IllegalArgumentException("Missing " + name);
         return value.intValue();
+    }
+
+    private static long requiredLong(final JsonNode node, final String name) {
+        final JsonNode value = node.path(name);
+        if (!value.canConvertToLong()) throw new IllegalArgumentException("Missing " + name);
+        return value.longValue();
+    }
+
+    private static String optionalText(final JsonNode node, final String name) {
+        final JsonNode value = node.path(name);
+        if (value.isMissingNode() || value.isNull()) return null;
+        if (!value.isTextual()) throw new IllegalArgumentException("Invalid " + name);
+        return value.textValue();
+    }
+
+    private static DesktopLibrary.StreamInput requiredStream(final JsonNode node) {
+        return DesktopLibrary.stream(
+                requiredInt(node, "serviceId"),
+                requiredText(node, "url"),
+                requiredText(node, "title"),
+                requiredLong(node, "duration"),
+                requiredText(node, "streamType"),
+                optionalText(node, "uploader"),
+                optionalText(node, "uploaderUrl"),
+                optionalText(node, "thumbnailUrl")
+        );
     }
 
     private static List<String> optionalTextList(final JsonNode node, final String name) {

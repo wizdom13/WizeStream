@@ -59,6 +59,9 @@ jobs:
           printf '%s\n' \
             '{"jsonrpc":"2.0","id":1,"method":"health","params":{}}' \
             '{"jsonrpc":"2.0","id":2,"method":"sync.status","params":{}}' \
+            '{"jsonrpc":"2.0","id":3,"method":"library.playlists.create","params":{"name":"CI playlist"}}' \
+            '{"jsonrpc":"2.0","id":4,"method":"library.playlists.list","params":{}}' \
+            '{"jsonrpc":"2.0","id":5,"method":"library.learning.list","params":{}}' \
             | backend/build/runtime/bin/java \
               -cp 'backend/build/install/wizestream-desktop-backend/lib/*' \
               org.wisso.wizestream.desktop.backend.DesktopBackend \
@@ -67,6 +70,8 @@ jobs:
           grep -q '"status":"ok"' "$RUNNER_TEMP/backend-response.json"
           grep -q '"dataSyncEnabled":true' "$RUNNER_TEMP/backend-response.json"
           grep -q '"automaticLanDiscovery":true' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"name":"CI playlist"' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"id":5,"result":\[\]' "$RUNNER_TEMP/backend-response.json"
       - name: Type-check, build and verify Electron application
         run: npm run build
       - name: Audit production dependencies

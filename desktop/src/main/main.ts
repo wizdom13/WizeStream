@@ -11,6 +11,14 @@ const backend = new BackendClient();
 const player = new MpvController();
 const backendMethods = new Set<BackendMethod>([
   'health', 'services.list', 'search', 'stream.resolve', 'library.summary',
+  'library.subscriptions.list', 'library.subscriptions.save', 'library.subscriptions.delete',
+  'library.playlists.list', 'library.playlists.create', 'library.playlists.rename',
+  'library.playlists.delete', 'library.playlists.items', 'library.playlists.add-item',
+  'library.playlists.delete-item', 'library.history.list', 'library.history.record',
+  'library.history.delete', 'library.history.clear', 'library.learning.list',
+  'library.search-history.list', 'library.search-history.record',
+  'library.search-history.delete', 'library.search-history.clear',
+  'library.learning.save', 'library.learning.delete',
   'sync.status', 'sync.invitation', 'sync.pair', 'sync.run',
 ]);
 const rpcSchema = z.object({ method: z.string().max(80), params: z.record(z.string(), z.unknown()).optional() });

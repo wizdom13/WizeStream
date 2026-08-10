@@ -4,6 +4,27 @@ export type BackendMethod =
   | 'search'
   | 'stream.resolve'
   | 'library.summary'
+  | 'library.subscriptions.list'
+  | 'library.subscriptions.save'
+  | 'library.subscriptions.delete'
+  | 'library.playlists.list'
+  | 'library.playlists.create'
+  | 'library.playlists.rename'
+  | 'library.playlists.delete'
+  | 'library.playlists.items'
+  | 'library.playlists.add-item'
+  | 'library.playlists.delete-item'
+  | 'library.history.list'
+  | 'library.history.record'
+  | 'library.history.delete'
+  | 'library.history.clear'
+  | 'library.search-history.list'
+  | 'library.search-history.record'
+  | 'library.search-history.delete'
+  | 'library.search-history.clear'
+  | 'library.learning.list'
+  | 'library.learning.save'
+  | 'library.learning.delete'
   | 'sync.status'
   | 'sync.invitation'
   | 'sync.pair'
@@ -45,6 +66,61 @@ export interface StreamDetails {
   hlsUrl?: string;
   videoStreams: StreamVariant[];
   audioStreams: StreamVariant[];
+}
+
+export interface LibraryStream {
+  serviceId: number;
+  url: string;
+  title: string;
+  duration: number;
+  streamType: string;
+  uploader?: string;
+  uploaderUrl?: string;
+  thumbnailUrl?: string;
+}
+
+export interface SubscriptionItem {
+  serviceId: number;
+  url: string;
+  name: string;
+  avatarUrl?: string;
+  subscriberCount?: number;
+  description?: string;
+  youtubeModeMask?: number;
+}
+
+export interface PlaylistSummary {
+  id: string;
+  name: string;
+  thumbnailUrl?: string;
+  displayIndex: number;
+  itemCount: number;
+}
+
+export interface PlaylistItem extends LibraryStream {
+  itemId: string;
+  position: number;
+}
+
+export interface HistoryItem extends LibraryStream {
+  id: string;
+  watchedAt: number;
+  positionSeconds: number;
+}
+
+export interface SearchHistoryItem {
+  id: string;
+  serviceId: number;
+  query: string;
+  searchedAt: number;
+}
+
+export interface LearningNote extends LibraryStream {
+  id: string;
+  positionSeconds: number;
+  note: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface SyncStatus {

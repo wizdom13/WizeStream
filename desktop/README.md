@@ -34,6 +34,11 @@ bindings used by Android. JDBC adapters use immutable change journals, per-origi
 per-peer acknowledgements, Lamport conflict resolution and tombstones. Structured records without
 a desktop editing surface are retained losslessly so round trips do not discard Android data.
 
+Phase 3 adds native desktop library editors for subscriptions, local playlists and their items,
+watch and search history, and Learning Mode notes. Successful searches and playback starts create
+history events, and local edits are reconciled into the same Phase 2 journals before the next
+device synchronization.
+
 When a trusted device's saved IP address is stale, desktop scans the local IPv4 subnet only on the
 previously trusted sync port and then authenticates the discovered endpoint against the saved
 libp2p PeerID. Discovery never establishes trust by itself.
@@ -95,7 +100,6 @@ not requirements for architecture CI.
 
 ## Next milestone
 
-1. Add native desktop library editors for subscriptions, playlists, history and Learning Mode.
-2. Add downloads, captions, multi-audio selection and embedded libmpv rendering.
-3. Add scheduled background synchronization with user-controlled category policy.
-4. Add signed releases and automatic updates after preview stabilization.
+1. Add downloads, captions, multi-audio selection and embedded libmpv rendering.
+2. Add scheduled background synchronization with user-controlled category policy.
+3. Add signed releases and automatic updates after preview stabilization.

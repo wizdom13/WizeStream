@@ -17,6 +17,7 @@ const [preloadSource, mainSource, html] = await Promise.all([
 assert.match(preloadSource, /require\(["']electron["']\)/, 'sandboxed preload must be CommonJS');
 assert.doesNotMatch(preloadSource, /^\s*import\s/m, 'sandboxed preload must not contain ESM imports');
 assert.match(mainSource, /preload[\\/]index\.cjs/, 'main process must load the CommonJS preload');
+assert.match(mainSource, /library\.history\.record/, 'main process must allow Phase 3 library RPC');
 
 let exposedName;
 let exposedApi;
@@ -69,5 +70,7 @@ const rendererJavaScript = (await Promise.all(
 )).join('\n');
 assert.match(rendererJavaScript, /WizeStream could not start/, 'renderer must show a bridge failure');
 assert.match(rendererJavaScript, /secure desktop bridge did not load/, 'bridge failure must be actionable');
+assert.match(rendererJavaScript, /Learning notes/, 'renderer must include the Phase 3 Learning editor');
+assert.match(rendererJavaScript, /Add channel/, 'renderer must include the Phase 3 subscription editor');
 
 console.log('Packaged Electron startup boundary verified.');

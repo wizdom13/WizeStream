@@ -14,4 +14,6 @@ body { overflow-x: hidden; }
 .two-lines { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; overflow-wrap: anywhere; }
 .sync-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-@media (max-width: 1050px) { .navigation-rail { width: 92px; } .navigation-rail .MuiListItemText-root { display: none; } .content-column { margin-left: 92px; width: calc(100% - 92px); } .details-card { grid-template-columns: 1fr; } }
+.library-split { display: grid; grid-template-columns: minmax(260px, 32%) 1fr; gap: 20px; align-items: start; }
+.note-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+@media (max-width: 1050px) { .navigation-rail { width: 92px; } .navigation-rail .MuiListItemText-root { display: none; } .content-column { margin-left: 92px; width: calc(100% - 92px); } .details-card, .library-split { grid-template-columns: 1fr; } }
