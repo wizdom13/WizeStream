@@ -27,9 +27,12 @@ class DesktopSyncService(
     private val historyEngine = HistorySyncEngine(
         DesktopHistorySyncStore(connection, identity.peerId.toBase58(), journal)
     )
-    private val structuredEngine = StructuredPreferenceSyncEngine(
-        DesktopStructuredPreferenceSyncStore(connection, identity.peerId.toBase58(), journal)
+    private val structuredStore = DesktopStructuredPreferenceSyncStore(
+        connection,
+        identity.peerId.toBase58(),
+        journal
     )
+    private val structuredEngine = StructuredPreferenceSyncEngine(structuredStore)
     private val discovery = DesktopPeerDiscovery()
     private val node = Libp2pSyncNode(
         stateRepository = repository,
@@ -69,6 +72,24 @@ class DesktopSyncService(
     )
 
     fun createPairingCode(): String = node.createPairingCode()
+
+    fun recordCompletedDownload(
+        sourceUrl: String,
+        displayName: String,
+        mimeType: String,
+        sizeBytes: Long,
+        completedAtEpochMillis: Long,
+        mediaKind: String
+    ): Map<String, Any> = linkedMapOf(
+        "syncId" to structuredStore.recordCompletedDownload(
+            sourceUrl,
+            displayName,
+            mimeType,
+            sizeBytes,
+            completedAtEpochMillis,
+            mediaKind
+        )
+    )
 
     fun pair(pairingCode: String): Map<String, Any?> {
         val peer = node.pair(pairingCode)

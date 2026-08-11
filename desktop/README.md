@@ -12,7 +12,8 @@ The desktop architecture contains:
 - SQLite stores for subscriptions, playlists, watch/search history, Learning Mode notes, portable
   settings and synchronization state.
 - The existing WizeStream v1 signed pairing messages and authenticated libp2p transport.
-- A shell-free mpv process adapter for extracted HTTP(S) media URLs.
+- An inline libmpv renderer on supported native packages, with a shell-free mpv process fallback.
+- Resumable video, audio and caption downloads stored in a fixed WizeStream Downloads directory.
 - Unsigned native preview packages produced on native Windows, Intel/Apple Silicon macOS, and
   x86_64/aarch64 Linux runners.
 
@@ -39,6 +40,16 @@ watch and search history, and Learning Mode notes. Successful searches and playb
 history events, and local edits are reconciled into the same Phase 2 journals before the next
 device synchronization.
 
+Phase 4 adds semantic original/dubbed/descriptive audio labels, caption selection, embedded libmpv
+rendering, and resumable video, audio and caption downloads. The Windows x64 preview bundles the
+native libmpv renderer and runtime. Other preview targets retain the existing external mpv fallback
+until their native runtime packaging is portable and verified. Selecting a separate adaptive audio
+track or caption currently uses that fallback; adaptive video-only and audio downloads are stored
+as separate files rather than being muxed silently.
+
+The Windows packaging workflow pins the Shinchiro libmpv development archive and verifies its
+SHA-256 digest before compiling or staging native code.
+
 When a trusted device's saved IP address is stale, desktop scans the local IPv4 subnet only on the
 previously trusted sync port and then authenticates the discovered endpoint against the saved
 libp2p PeerID. Discovery never establishes trust by itself.
@@ -47,7 +58,8 @@ libp2p PeerID. Discovery never establishes trust by itself.
 
 - Node.js 24
 - JDK 21
-- mpv on `PATH`, or `WIZESTREAM_MPV_PATH` pointing to the executable
+- mpv on `PATH`, or `WIZESTREAM_MPV_PATH` pointing to the executable, when the package does not
+  contain the embedded renderer or when separate audio/caption playback is selected
 
 Production packages include a trimmed Java runtime. End users do not need to install Java.
 
@@ -91,6 +103,8 @@ not requirements for architecture CI.
 - `nodeIntegration` is disabled.
 - Context isolation and the Chromium renderer sandbox are enabled.
 - The preload bridge exposes only allow-listed backend and player operations.
+- The sandboxed preload bundles the narrow libmpv IPC bridge; native modules are never exposed
+  directly to the renderer.
 - IPC payloads are schema validated in the Electron main process.
 - Navigation, popups and permission requests are denied by default.
 - The JVM backend communicates only over inherited standard input/output.
@@ -100,6 +114,6 @@ not requirements for architecture CI.
 
 ## Next milestone
 
-1. Add downloads, captions, multi-audio selection and embedded libmpv rendering.
-2. Add scheduled background synchronization with user-controlled category policy.
+1. Add scheduled background synchronization with user-controlled category policy.
+2. Add portable embedded-libmpv packaging for the remaining native targets and adaptive muxing.
 3. Add signed releases and automatic updates after preview stabilization.

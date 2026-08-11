@@ -109,6 +109,13 @@ public final class DesktopBackend implements AutoCloseable {
                     library.deleteLearningNote(requiredText(params, "id"));
                     yield Map.of("deleted", true);
                 }
+                case "library.downloads.record" -> sync.recordCompletedDownload(
+                        requiredText(params, "sourceUrl"),
+                        requiredText(params, "displayName"),
+                        requiredText(params, "mimeType"),
+                        requiredLong(params, "sizeBytes"),
+                        requiredLong(params, "completedAt"),
+                        requiredText(params, "mediaKind"));
                 case "sync.status" -> sync.status();
                 case "sync.invitation" -> Map.of("pairingCode", sync.createPairingCode());
                 case "sync.pair" -> sync.pair(requiredText(params, "pairingCode"));

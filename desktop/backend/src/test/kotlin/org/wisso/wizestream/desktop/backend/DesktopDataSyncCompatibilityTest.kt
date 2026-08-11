@@ -102,6 +102,44 @@ class DesktopDataSyncCompatibilityTest {
         assertTrue(candidates.all { it.hostAddress.startsWith("192.168.40.") })
     }
 
+    @Test
+    fun `completed desktop downloads enter the shared metadata journal`() {
+        database().use { desktop ->
+            database().use { phone ->
+                val desktopStores = stores(desktop.connection())
+                val phoneStores = stores(phone.connection())
+                val syncId = desktopStores.structured.recordCompletedDownload(
+                    "https://media.example/video.mp4",
+                    "Fixture video.mp4",
+                    "video/mp4",
+                    42,
+                    1_700_000_000_000,
+                    "v"
+                )
+
+                synchronizeStructured(
+                    StructuredPreferenceSyncEngine(desktopStores.structured),
+                    desktopStores.peerId,
+                    StructuredPreferenceSyncEngine(phoneStores.structured),
+                    phoneStores.peerId,
+                    StructuredPreferenceCategory.COMPLETED_DOWNLOADS
+                )
+
+                assertEquals(1, count(phone.connection(), "portable_records"))
+                phone.connection().prepareStatement(
+                    "SELECT record_id, payload_json FROM portable_records WHERE category=?"
+                ).use { statement ->
+                    statement.setString(1, StructuredPreferenceCategory.COMPLETED_DOWNLOADS.name)
+                    statement.executeQuery().use { rows ->
+                        assertTrue(rows.next())
+                        assertEquals(syncId, rows.getString(1))
+                        assertTrue(rows.getString(2).contains("Fixture video.mp4"))
+                    }
+                }
+            }
+        }
+    }
+
     private fun stores(connection: Connection): Stores {
         val peerId = DesktopSyncStateRepository(connection).loadOrCreateIdentity().peerId.toBase58()
         val journal = DesktopChangeJournal(connection, peerId)

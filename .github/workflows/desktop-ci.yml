@@ -62,6 +62,7 @@ jobs:
             '{"jsonrpc":"2.0","id":3,"method":"library.playlists.create","params":{"name":"CI playlist"}}' \
             '{"jsonrpc":"2.0","id":4,"method":"library.playlists.list","params":{}}' \
             '{"jsonrpc":"2.0","id":5,"method":"library.learning.list","params":{}}' \
+            '{"jsonrpc":"2.0","id":6,"method":"library.downloads.record","params":{"sourceUrl":"https://www.youtube.com/watch?v=phase4fixture","displayName":"Phase 4.mp4","mimeType":"video/mp4","sizeBytes":42,"completedAt":1700000000000,"mediaKind":"v"}}' \
             | backend/build/runtime/bin/java \
               -cp 'backend/build/install/wizestream-desktop-backend/lib/*' \
               org.wisso.wizestream.desktop.backend.DesktopBackend \
@@ -72,8 +73,11 @@ jobs:
           grep -q '"automaticLanDiscovery":true' "$RUNNER_TEMP/backend-response.json"
           grep -q '"name":"CI playlist"' "$RUNNER_TEMP/backend-response.json"
           grep -q '"id":5,"result":\[\]' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"id":6,"result":{"syncId":"' "$RUNNER_TEMP/backend-response.json"
       - name: Type-check, build and verify Electron application
         run: npm run build
+      - name: Test Electron main-process services
+        run: npm test
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
@@ -88,18 +92,23 @@ jobs:
           - name: linux-x64
             runner: ubuntu-24.04
             target: --linux AppImage deb
+            embedded: false
           - name: linux-arm64
             runner: ubuntu-24.04-arm
             target: --linux AppImage deb
+            embedded: false
           - name: windows-x64
             runner: windows-2025
             target: --win nsis portable
+            embedded: true
           - name: macos-x64
             runner: macos-15-intel
             target: --mac dmg zip
+            embedded: false
           - name: macos-arm64
             runner: macos-15
             target: --mac dmg zip
+            embedded: false
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
@@ -118,7 +127,17 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
+      - name: Prepare Windows libmpv SDK and runtime
+        if: matrix.embedded && runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/setup-libmpv-windows.ps1
+      - name: Build embedded libmpv renderer
+        if: matrix.embedded
+        run: npm run embedded:build
+      - name: Verify embedded libmpv Electron ABI and runtime
+        if: matrix.embedded
+        run: npm run embedded:verify
       - run: npm run backend:build
       - run: npm run build
       - name: Create unsigned native packages

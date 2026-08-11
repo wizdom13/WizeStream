@@ -6,6 +6,7 @@
 package org.schabi.newpipe.sync
 
 import java.sql.Connection
+import java.util.UUID
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -21,6 +22,61 @@ internal class DesktopStructuredPreferenceSyncStore(
     override val localPeerId: String,
     private val journal: DesktopChangeJournal
 ) : StructuredPreferenceSyncStore {
+    fun recordCompletedDownload(
+        sourceUrl: String,
+        displayName: String,
+        mimeType: String,
+        sizeBytes: Long,
+        completedAtEpochMillis: Long,
+        mediaKind: String
+    ): String {
+        val syncId = UUID.randomUUID().toString()
+        val download = SyncedCompletedDownload(
+            syncId,
+            localPeerId,
+            sourceUrl,
+            displayName,
+            mimeType,
+            sizeBytes,
+            completedAtEpochMillis,
+            mediaKind
+        )
+        val record = SyncedStructuredPreferenceRecord(completedDownload = download)
+        StructuredPreferenceSyncValidation.validateChanges(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            listOf(
+                StructuredPreferenceChange(
+                    StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+                    localPeerId,
+                    1,
+                    1,
+                    syncId,
+                    StructuredPreferenceRecordType.COMPLETED_DOWNLOAD,
+                    null,
+                    StructuredPreferenceChangeType.UPSERT,
+                    record
+                )
+            )
+        )
+        synchronized(connection) {
+            connection.prepareStatement(
+                """INSERT INTO portable_records(category, record_id, record_type,
+                    parent_record_id, payload_json) VALUES (?, ?, ?, NULL, ?)
+                    ON CONFLICT(category, record_id) DO UPDATE SET
+                    record_type=excluded.record_type,
+                    parent_record_id=NULL,
+                    payload_json=excluded.payload_json"""
+            ).use { statement ->
+                statement.setString(1, StructuredPreferenceCategory.COMPLETED_DOWNLOADS.name)
+                statement.setString(2, syncId)
+                statement.setString(3, StructuredPreferenceRecordType.COMPLETED_DOWNLOAD.name)
+                statement.setString(4, JSON.encodeToString(record))
+                statement.executeUpdate()
+            }
+        }
+        return syncId
+    }
+
     override fun reconcileLocal(category: StructuredPreferenceCategory) {
         val desired = synchronized(connection) {
             connection.prepareStatement(

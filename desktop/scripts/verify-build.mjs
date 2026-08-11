@@ -18,13 +18,17 @@ assert.match(preloadSource, /require\(["']electron["']\)/, 'sandboxed preload mu
 assert.doesNotMatch(preloadSource, /^\s*import\s/m, 'sandboxed preload must not contain ESM imports');
 assert.match(mainSource, /preload[\\/]index\.cjs/, 'main process must load the CommonJS preload');
 assert.match(mainSource, /library\.history\.record/, 'main process must allow Phase 3 library RPC');
+assert.match(mainSource, /downloads:start/, 'main process must expose Phase 4 downloads');
+assert.match(mainSource, /embeddedMpvAvailable/, 'main process must gate the embedded native renderer');
 
 let exposedName;
 let exposedApi;
+const exposedApis = new Map();
 const ipcCalls = [];
 const sandbox = {
   exports: {},
   module: { exports: {} },
+  process: { platform: 'linux' },
   require(specifier) {
     assert.equal(specifier, 'electron', `unexpected preload dependency: ${specifier}`);
     return {
@@ -32,6 +36,7 @@ const sandbox = {
         exposeInMainWorld(name, api) {
           exposedName = name;
           exposedApi = api;
+          exposedApis.set(name, api);
         },
       },
       ipcRenderer: {
@@ -46,10 +51,13 @@ const sandbox = {
 vm.runInNewContext(preloadSource, sandbox, { filename: preloadPath });
 
 assert.equal(exposedName, 'wizestream', 'preload must expose the WizeStream bridge');
+assert.equal(typeof exposedApis.get('_electronMpvVideo')?.create, 'function', 'preload must expose the embedded libmpv bridge');
 assert.equal(typeof exposedApi?.backend?.invoke, 'function');
 assert.equal(typeof exposedApi?.player?.play, 'function');
 assert.equal(typeof exposedApi?.player?.stop, 'function');
 assert.equal(typeof exposedApi?.player?.status, 'function');
+assert.equal(typeof exposedApi?.downloads?.start, 'function');
+assert.equal(typeof exposedApi?.downloads?.onChanged, 'function');
 await exposedApi.backend.invoke('health');
 assert.equal(ipcCalls[0]?.channel, 'backend:invoke');
 assert.equal(ipcCalls[0]?.payload?.method, 'health');
@@ -72,5 +80,7 @@ assert.match(rendererJavaScript, /WizeStream could not start/, 'renderer must sh
 assert.match(rendererJavaScript, /secure desktop bridge did not load/, 'bridge failure must be actionable');
 assert.match(rendererJavaScript, /Learning notes/, 'renderer must include the Phase 3 Learning editor');
 assert.match(rendererJavaScript, /Add channel/, 'renderer must include the Phase 3 subscription editor');
+assert.match(rendererJavaScript, /Play embedded/, 'renderer must include Phase 4 embedded playback');
+assert.match(rendererJavaScript, /Download current stream/, 'renderer must include Phase 4 downloads');
 
 console.log('Packaged Electron startup boundary verified.');

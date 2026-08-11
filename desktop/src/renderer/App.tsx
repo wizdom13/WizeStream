@@ -1,31 +1,39 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   Alert, AppBar, Avatar, Box, Button, Card, CardActionArea, CardContent, Chip,
   Checkbox, CircularProgress, Container, Dialog, DialogActions, DialogContent,
-  DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, List,
+  DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, LinearProgress, List,
   ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, MenuItem,
-  Stack, TextField, Toolbar, Tooltip, Typography,
+  Slider, Stack, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
+import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
 import AddRounded from '@mui/icons-material/AddRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
+import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EditRounded from '@mui/icons-material/EditRounded';
+import FolderOpenRounded from '@mui/icons-material/FolderOpenRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
 import HomeRounded from '@mui/icons-material/HomeRounded';
 import NoteAddRounded from '@mui/icons-material/NoteAddRounded';
+import PauseRounded from '@mui/icons-material/PauseRounded';
 import PlaylistAddRounded from '@mui/icons-material/PlaylistAddRounded';
 import PlaylistPlayRounded from '@mui/icons-material/PlaylistPlayRounded';
 import PlayArrowRounded from '@mui/icons-material/PlayArrowRounded';
+import ReplayRounded from '@mui/icons-material/ReplayRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import type {
-  HistoryItem, LearningNote, LibraryStream, PlaylistItem, PlaylistSummary, SearchHistoryItem, SearchItem,
-  ServiceSummary, StreamDetails, SubscriptionItem, SyncRunResult, SyncStatus,
+  DownloadJob, HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
+  SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
+  SubscriptionItem, SyncRunResult, SyncStatus,
 } from '../shared/contracts';
 
-type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'sync';
+defineMpvVideoElement();
+
+type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'downloads' | 'sync';
 
 const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> = [
   { id: 'discover', label: 'Discover', icon: <HomeRounded /> },
@@ -33,6 +41,7 @@ const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> =
   { id: 'playlists', label: 'Playlists', icon: <PlaylistPlayRounded /> },
   { id: 'history', label: 'History', icon: <HistoryRounded /> },
   { id: 'learning', label: 'Learning', icon: <SchoolRounded /> },
+  { id: 'downloads', label: 'Downloads', icon: <DownloadRounded /> },
   { id: 'sync', label: 'Devices', icon: <DevicesRounded /> },
 ];
 
@@ -46,7 +55,11 @@ export function App() {
   const [sync, setSync] = useState<SyncStatus>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
-  const [mpv, setMpv] = useState<{ available: boolean; running: boolean }>();
+  const [mpv, setMpv] = useState<PlayerStatus>();
+  const [videoChoice, setVideoChoice] = useState('auto');
+  const [audioChoice, setAudioChoice] = useState('auto');
+  const [subtitleChoice, setSubtitleChoice] = useState('none');
+  const [embeddedRequest, setEmbeddedRequest] = useState<{ url: string; title: string; nonce: number }>();
 
   useEffect(() => {
     Promise.all([
@@ -61,16 +74,25 @@ export function App() {
     }).catch((reason: unknown) => setError(errorMessage(reason)));
   }, []);
 
-  const selectedPlaybackUrl = useMemo(() => selected?.hlsUrl
+  const selectedVideo = selected && videoChoice !== 'auto'
+    ? selected.videoStreams[Number(videoChoice)] : undefined;
+  const selectedAudio = selected && audioChoice !== 'auto'
+    ? selected.audioStreams[Number(audioChoice)] : undefined;
+  const selectedSubtitle = selected && subtitleChoice !== 'none'
+    ? selected.subtitles[Number(subtitleChoice)] : undefined;
+  const selectedPlaybackUrl = useMemo(() => selectedVideo?.url ?? selected?.hlsUrl
     ?? selected?.dashMpdUrl
     ?? selected?.videoStreams.find((stream) => !stream.videoOnly)?.url
-    ?? selected?.audioStreams[0]?.url, [selected]);
+    ?? selected?.videoStreams[0]?.url
+    ?? selected?.audioStreams[0]?.url, [selected, selectedVideo]);
   const selectedLibraryStream = useMemo(() => selected ? detailsToLibraryStream(selected) : undefined, [selected]);
+  const embeddedSelection = Boolean(mpv?.embeddedAvailable && selectedPlaybackUrl
+    && audioChoice === 'auto' && subtitleChoice === 'none');
 
   async function submitSearch(event: FormEvent) {
     event.preventDefault();
     if (!query.trim()) return;
-    setLoading(true); setError(undefined); setSelected(undefined);
+    setLoading(true); setError(undefined); setSelected(undefined); setEmbeddedRequest(undefined);
     try {
       const searchQuery = query.trim();
       setResults(await window.wizestream.backend.invoke<SearchItem[]>('search', {
@@ -84,6 +106,7 @@ export function App() {
     setLoading(true); setError(undefined);
     try {
       setSelected(await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', { url }));
+      setVideoChoice('auto'); setAudioChoice('auto'); setSubtitleChoice('none'); setEmbeddedRequest(undefined);
       setSection('discover');
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
   }, []);
@@ -95,7 +118,16 @@ export function App() {
   async function playSelected() {
     if (!selectedPlaybackUrl || !selected || !selectedLibraryStream) return;
     try {
-      await window.wizestream.player.play(selectedPlaybackUrl, selected.name);
+      if (embeddedSelection) {
+        setEmbeddedRequest({ url: selectedPlaybackUrl, title: selected.name, nonce: Date.now() });
+      } else {
+        await window.wizestream.player.play({
+          url: selectedPlaybackUrl,
+          title: selected.name,
+          audioUrl: selectedAudio?.url,
+          subtitleUrl: selectedSubtitle?.url,
+        });
+      }
       await window.wizestream.backend.invoke('library.history.record', { ...selectedLibraryStream });
       setMpv(await window.wizestream.player.status());
     } catch (reason) { setError(errorMessage(reason)); }
@@ -117,7 +149,8 @@ export function App() {
         <AppBar position="sticky" color="transparent" elevation={0}>
           <Toolbar sx={{ gap: 2 }}>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>WizeStream Desktop</Typography>
-            <Chip color={mpv?.available ? 'success' : 'default'} label={mpv?.available ? 'mpv ready' : 'mpv not installed'} />
+            <Chip color={mpv?.embeddedAvailable || mpv?.externalAvailable ? 'success' : 'default'}
+              label={mpv?.embeddedAvailable ? 'embedded libmpv' : mpv?.externalAvailable ? 'external mpv fallback' : 'mpv unavailable'} />
             {mpv?.running && <Tooltip title="Stop player"><IconButton onClick={() => void window.wizestream.player.stop().then(() => setMpv({ ...mpv, running: false }))}><StopRounded /></IconButton></Tooltip>}
           </Toolbar>
         </AppBar>
@@ -133,12 +166,30 @@ export function App() {
             </Box>
             {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
             {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>}
+            {embeddedRequest && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest} onError={setError} />}
             {selected && <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="details-card">
               {selected.thumbnailUrl && <Box component="img" src={selected.thumbnailUrl} alt="" className="details-thumbnail" />}
               <CardContent sx={{ p: 4 }}><Chip label={selected.streamType} size="small" /><Typography variant="h4" sx={{ mt: 2 }}>{selected.name}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{selected.uploaderName}</Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap' }}><Chip label={`${selected.videoStreams.length} video variants`} /><Chip label={`${selected.audioStreams.length} audio variants`} /><Chip label={`${Math.round(selected.duration / 60)} min`} /></Stack>
+                <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap' }}><Chip label={`${selected.videoStreams.length} video variants`} /><Chip label={`${selected.audioStreams.length} audio variants`} /><Chip label={`${selected.subtitles.length} captions`} /><Chip label={`${Math.round(selected.duration / 60)} min`} /></Stack>
+                <Box className="stream-selectors" sx={{ mt: 3 }}>
+                  <TextField select label="Video" value={videoChoice} onChange={(event) => setVideoChoice(event.target.value)}>
+                    <MenuItem value="auto">Automatic</MenuItem>
+                    {selected.videoStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{videoLabel(stream)}</MenuItem>)}
+                  </TextField>
+                  <TextField select label="Audio" value={audioChoice} onChange={(event) => setAudioChoice(event.target.value)}>
+                    <MenuItem value="auto">Automatic</MenuItem>
+                    {selected.audioStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{audioLabel(stream)}</MenuItem>)}
+                  </TextField>
+                  <TextField select label="Captions" value={subtitleChoice} onChange={(event) => setSubtitleChoice(event.target.value)}>
+                    <MenuItem value="none">Off</MenuItem>
+                    {selected.subtitles.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{subtitleLabel(stream)}</MenuItem>)}
+                  </TextField>
+                </Box>
+                {!embeddedSelection && (audioChoice !== 'auto' || subtitleChoice !== 'none') && <Alert severity="info" sx={{ mt: 2 }}>Separate audio or captions use the secure external mpv fallback in this preview.</Alert>}
                 <Stack direction="row" spacing={1} sx={{ mt: 4, flexWrap: 'wrap' }}>
-                  <Button startIcon={<PlayArrowRounded />} variant="contained" size="large" disabled={!selectedPlaybackUrl} onClick={() => void playSelected()}>Play in mpv</Button>
+                  <Button startIcon={<PlayArrowRounded />} variant="contained" size="large"
+                    disabled={!selectedPlaybackUrl || (!embeddedSelection && !mpv?.externalAvailable)} onClick={() => void playSelected()}>{embeddedSelection ? 'Play embedded' : 'Play with mpv'}</Button>
+                  <Button startIcon={<DownloadRounded />} variant="outlined" size="large" onClick={() => setSection('downloads')}>Download</Button>
                   <Button startIcon={<PlaylistAddRounded />} variant="outlined" size="large" onClick={() => setSection('playlists')}>Add to playlist</Button>
                   <Button startIcon={<NoteAddRounded />} variant="outlined" size="large" onClick={() => setSection('learning')}>Add note</Button>
                 </Stack>
@@ -149,11 +200,41 @@ export function App() {
             : section === 'playlists' ? <PlaylistsPanel currentStream={selectedLibraryStream} onOpen={resolveStream} />
               : section === 'history' ? <HistoryPanel onOpen={resolveStream} />
                 : section === 'learning' ? <LearningPanel currentStream={selectedLibraryStream} onOpen={resolveStream} />
-                  : <SyncPanel sync={sync} onRefresh={() => void window.wizestream.backend.invoke<SyncStatus>('sync.status').then(setSync)} />}
+                  : section === 'downloads' ? <DownloadsPanel currentStream={selected} />
+                    : <SyncPanel sync={sync} onRefresh={() => void window.wizestream.backend.invoke<SyncStatus>('sync.status').then(setSync)} />}
         </Container>
       </Box>
     </Box>
   );
+}
+
+function EmbeddedPlayer({ request, onError }: { request: { url: string; title: string; nonce: number }; onError(value: string): void }) {
+  const player = useRef<MpvVideoElement>(null);
+  const [state, setState] = useState({ status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv' });
+
+  useEffect(() => {
+    const element = player.current;
+    if (!element) return;
+    const update = (event: Event) => setState((event as CustomEvent<typeof state>).detail);
+    const fail = (event: Event) => onError(String((event as CustomEvent<unknown>).detail));
+    element.addEventListener('mpv-state', update);
+    element.addEventListener('mpv-error', fail);
+    void element.open(request.url).then(() => element.play()).catch((reason: unknown) => onError(errorMessage(reason)));
+    return () => { element.removeEventListener('mpv-state', update); element.removeEventListener('mpv-error', fail); };
+  }, [request, onError]);
+
+  return <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="embedded-player-frame">
+    <mpv-video ref={player} render-mode="shared-texture" volume="80" title={request.title} />
+  </Box><CardContent><Stack direction="row" sx={{ alignItems: 'center', gap: 2 }}>
+    <IconButton aria-label="Play" onClick={() => void player.current?.play()}><PlayArrowRounded /></IconButton>
+    <IconButton aria-label="Pause" onClick={() => void player.current?.pause()}><PauseRounded /></IconButton>
+    <IconButton aria-label="Stop" onClick={() => void player.current?.stop()}><StopRounded /></IconButton>
+    <Typography className="mono" variant="body2">{formatTimestamp(state.time)}</Typography>
+    <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
+      onChangeCommitted={(_event, value) => void player.current?.seek(Number(value))} sx={{ flexGrow: 1 }} />
+    <Typography className="mono" variant="body2">{formatTimestamp(state.duration)}</Typography>
+    <Chip size="small" label={`${state.status} · ${state.rendererName}`} />
+  </Stack></CardContent></Card>;
 }
 
 function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
@@ -288,6 +369,67 @@ function LearningPanel({ currentStream, onOpen }: { currentStream?: LibraryStrea
   </Stack>;
 }
 
+function DownloadsPanel({ currentStream }: { currentStream?: StreamDetails }) {
+  const [jobs, setJobs] = useState<DownloadJob[]>([]);
+  const [choice, setChoice] = useState('');
+  const [error, setError] = useState<string>();
+  const options = useMemo(() => currentStream ? [
+    ...currentStream.videoStreams.map((stream, index) => ({ key: `video:${index}`, label: `Video · ${videoLabel(stream)}`, stream, kind: 'video' as const })),
+    ...currentStream.audioStreams.map((stream, index) => ({ key: `audio:${index}`, label: `Audio · ${audioLabel(stream)}`, stream, kind: 'audio' as const })),
+    ...currentStream.subtitles.map((stream, index) => ({ key: `caption:${index}`, label: `Caption · ${subtitleLabel(stream)}`, stream, kind: 'caption' as const })),
+  ] : [], [currentStream]);
+
+  useEffect(() => {
+    void window.wizestream.downloads.list().then(setJobs).catch((reason: unknown) => setError(errorMessage(reason)));
+    return window.wizestream.downloads.onChanged(setJobs);
+  }, []);
+  useEffect(() => { setChoice(options[0]?.key ?? ''); }, [options]);
+
+  async function start() {
+    const option = options.find((value) => value.key === choice);
+    if (!option || !currentStream) return;
+    try {
+      await window.wizestream.downloads.start({
+        url: option.stream.url,
+        sourceUrl: currentStream.url,
+        title: `${currentStream.name} - ${option.label}`,
+        format: option.stream.format,
+        mimeType: mimeType(option.stream.format, option.kind),
+        kind: option.kind,
+      });
+    } catch (reason) { setError(errorMessage(reason)); }
+  }
+
+  async function action(operation: 'pause' | 'resume' | 'cancel' | 'show', id: string) {
+    try { await window.wizestream.downloads[operation](id); }
+    catch (reason) { setError(errorMessage(reason)); }
+  }
+
+  return <Stack spacing={3}><PanelHeader title="Downloads" description="Resumable media and caption downloads are stored in your WizeStream Downloads folder."
+    action={<Button startIcon={<FolderOpenRounded />} variant="outlined" onClick={() => void window.wizestream.downloads.openFolder()}>Open folder</Button>} />
+    {error && <Alert severity="error">{error}</Alert>}
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Download current stream</Typography>
+      {!currentStream ? <Typography color="text.secondary" sx={{ mt: 1 }}>Select a stream in Discover first.</Typography>
+        : <Stack direction="row" sx={{ mt: 2, gap: 2, alignItems: 'center' }}><TextField select fullWidth label="Media or caption" value={choice} onChange={(event) => setChoice(event.target.value)}>
+          {options.map((option) => <MenuItem key={option.key} value={option.key}>{option.label}</MenuItem>)}
+        </TextField><Button startIcon={<DownloadRounded />} variant="contained" disabled={!choice} onClick={() => void start()}>Download</Button></Stack>}
+      {currentStream?.videoStreams.some((stream) => stream.videoOnly) && <Alert severity="info" sx={{ mt: 2 }}>Adaptive video-only and audio tracks are downloaded separately; automatic muxing is not yet enabled.</Alert>}
+    </CardContent></Card>
+    {jobs.length === 0 ? <LibraryEmpty text="No desktop downloads yet." /> : <Card variant="outlined"><List disablePadding>{jobs.map((job, index) => {
+      const progress = job.totalBytes ? Math.min(100, job.bytesDownloaded / job.totalBytes * 100) : undefined;
+      return <Box key={job.id}>{index > 0 && <Divider />}<ListItem secondaryAction={<Stack direction="row">
+        {(job.state === 'downloading' || job.state === 'queued') && <Tooltip title="Pause"><IconButton onClick={() => void action('pause', job.id)}><PauseRounded /></IconButton></Tooltip>}
+        {(job.state === 'paused' || job.state === 'failed') && <Tooltip title="Resume"><IconButton onClick={() => void action('resume', job.id)}><ReplayRounded /></IconButton></Tooltip>}
+        {job.state === 'completed' && <Tooltip title="Show file"><IconButton onClick={() => void action('show', job.id)}><FolderOpenRounded /></IconButton></Tooltip>}
+        {!['completed', 'cancelled'].includes(job.state) && <Tooltip title="Cancel"><IconButton onClick={() => void action('cancel', job.id)}><DeleteOutlineRounded /></IconButton></Tooltip>}
+      </Stack>}><ListItemIcon><DownloadRounded /></ListItemIcon><ListItemText primary={job.title} secondary={<Box component="span" sx={{ display: 'block', pr: 12 }}>
+        <Typography component="span" variant="body2" color={job.state === 'failed' ? 'error' : 'text.secondary'}>{job.state} · {formatBytes(job.bytesDownloaded)}{job.totalBytes ? ` of ${formatBytes(job.totalBytes)}` : ''}{job.error ? ` · ${job.error}` : ''}</Typography>
+        {(job.state === 'downloading' || job.state === 'queued') && <LinearProgress variant={progress === undefined ? 'indeterminate' : 'determinate'} value={progress} sx={{ mt: 1 }} />}
+      </Box>} /></ListItem></Box>;
+    })}</List></Card>}
+  </Stack>;
+}
+
 const syncCategoryLabels: Record<string, string> = {
   subscriptions: 'Subscriptions', playlists: 'Playlists', watchHistory: 'Watch history',
   searchHistory: 'Search history', learningNotes: 'Learning notes', feedGroups: 'Feed groups',
@@ -326,6 +468,41 @@ function formatTimestamp(seconds: number): string {
   const value = Math.max(0, Math.floor(seconds));
   const minutes = Math.floor(value / 60);
   return `${Math.floor(minutes / 60).toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`;
+}
+
+function videoLabel(stream: StreamVariant): string {
+  const parts = [stream.resolution || 'Video', stream.format, stream.codec];
+  if (stream.videoOnly) parts.push('video only');
+  if (stream.audioTrackName || stream.audioLocale) parts.push(stream.audioTrackName || stream.audioLocale);
+  return parts.filter(Boolean).join(' · ');
+}
+
+function audioLabel(stream: StreamVariant): string {
+  const type = stream.audioTrackType ? stream.audioTrackType.toLowerCase() : undefined;
+  const bitrate = stream.bitrate && stream.bitrate > 0 ? `${stream.bitrate} kbps` : undefined;
+  return [stream.audioTrackName || stream.audioLocale || 'Audio', type, bitrate, stream.format]
+    .filter(Boolean).join(' · ');
+}
+
+function subtitleLabel(stream: SubtitleVariant): string {
+  return [stream.displayLanguage || stream.languageTag, stream.autoGenerated ? 'auto-generated' : undefined, stream.format]
+    .filter(Boolean).join(' · ');
+}
+
+function mimeType(format: string | undefined, kind: 'video' | 'audio' | 'caption'): string {
+  const normalized = format?.toUpperCase();
+  if (kind === 'caption') return normalized === 'SRT' ? 'application/x-subrip' : normalized === 'TTML' ? 'application/ttml+xml' : 'text/vtt';
+  if (kind === 'audio') return normalized?.includes('WEBM') ? 'audio/webm' : normalized === 'MP3' ? 'audio/mpeg' : normalized === 'OGG' || normalized === 'OPUS' ? 'audio/ogg' : 'audio/mp4';
+  return normalized?.includes('WEBM') ? 'video/webm' : 'video/mp4';
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KiB', 'MiB', 'GiB', 'TiB'];
+  let value = bytes / 1024;
+  let index = 0;
+  while (value >= 1024 && index < units.length - 1) { value /= 1024; index += 1; }
+  return `${value.toFixed(value >= 10 ? 1 : 2)} ${units[index]}`;
 }
 
 function errorMessage(reason: unknown): string {

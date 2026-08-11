@@ -1,6 +1,6 @@
 {
   "name": "wizestream-desktop",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Experimental cross-platform WizeStream desktop client",
   "author": {
@@ -15,12 +15,15 @@
   "main": "dist-electron/main/main.js",
   "scripts": {
     "backend:build": "node scripts/build-backend.mjs",
-    "build": "npm run typecheck && vite build && tsc -p tsconfig.electron.json && npm run verify:build",
+    "build": "npm run typecheck && vite build && npm run build:electron && npm run verify:build",
+    "build:electron": "node scripts/build-electron.mjs",
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
     "dev:electron": "wait-on tcp:5173 && npm run backend:build && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
     "dev:renderer": "vite --host 127.0.0.1",
     "dist": "npm run backend:build && npm run build && electron-builder",
     "dist:dir": "npm run backend:build && npm run build && electron-builder --dir",
+    "embedded:build": "npm rebuild electron-mpv-video && node scripts/stage-embedded-mpv.mjs",
+    "embedded:verify": "electron scripts/verify-embedded-mpv.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
     "verify:build": "node scripts/verify-build.mjs"
@@ -43,6 +46,8 @@
     "cross-env": "10.1.0",
     "electron": "43.3.0",
     "electron-builder": "26.15.3",
+    "electron-mpv-video": "0.1.1",
+    "esbuild": "0.28.2",
     "typescript": "7.0.2",
     "vite": "8.2.1",
     "vitest": "4.1.10",
@@ -52,9 +57,6 @@
     "appId": "org.wisso.WizeStreamDesktop",
     "productName": "WizeStream Desktop",
     "asar": true,
-    "asarUnpack": [
-      "**/*.node"
-    ],
     "directories": {
       "output": "release"
     },
@@ -71,20 +73,42 @@
       {
         "from": "backend/build/runtime",
         "to": "runtime"
+      },
+      {
+        "from": "native/mpv",
+        "to": "native/mpv",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/electron-mpv-video/THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES-libmpv.md"
+      },
+      {
+        "from": "node_modules/electron-mpv-video/LICENSE",
+        "to": "licenses/electron-mpv-video-LICENSE"
       }
     ],
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "AudioVideo",
       "icon": "../assets/wizestream_logo.svg",
       "syncDesktopName": true
     },
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "../assets/wizestream_logo.svg"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.video",
       "icon": "../assets/wizestream_logo.svg",
       "hardenedRuntime": true,

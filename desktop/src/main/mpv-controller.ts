@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { access } from 'node:fs/promises';
+import type { PlayerRequest } from '../shared/contracts.js';
 
 export class MpvController {
   private process?: ChildProcess;
@@ -10,14 +11,17 @@ export class MpvController {
     return { available: executable !== undefined, executable, running: this.process !== undefined };
   }
 
-  async play(url: string, title?: string): Promise<void> {
-    const parsed = new URL(url);
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Only HTTP media URLs are allowed');
+  async play(request: PlayerRequest): Promise<void> {
+    const parsed = mediaUrl(request.url);
+    const audio = request.audioUrl ? mediaUrl(request.audioUrl) : undefined;
+    const subtitle = request.subtitleUrl ? mediaUrl(request.subtitleUrl) : undefined;
     const executable = await this.resolveExecutable();
     if (!executable) throw new Error('mpv was not found. Install mpv or set WIZESTREAM_MPV_PATH.');
     await this.stop();
     const args = ['--force-window=yes', '--keep-open=yes', '--no-terminal'];
-    if (title) args.push(`--force-media-title=${title.slice(0, 200)}`);
+    if (request.title) args.push(`--force-media-title=${request.title.replace(/[\0\r\n]/g, ' ').slice(0, 200)}`);
+    if (audio) args.push(`--audio-file=${audio.toString()}`);
+    if (subtitle) args.push(`--sub-file=${subtitle.toString()}`);
     args.push('--', parsed.toString());
     this.process = spawn(executable, args, { shell: false, stdio: 'ignore', windowsHide: false });
     this.process.once('exit', () => { this.process = undefined; });
@@ -50,4 +54,10 @@ export class MpvController {
     }
     return undefined;
   }
+}
+
+function mediaUrl(value: string): URL {
+  const parsed = new URL(value);
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Only HTTP media URLs are allowed');
+  return parsed;
 }
