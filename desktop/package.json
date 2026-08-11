@@ -53,6 +53,11 @@
     "vitest": "4.1.10",
     "wait-on": "9.0.4"
   },
+  "overrides": {
+    "electron-mpv-video": {
+      "node-gyp": "13.0.1"
+    }
+  },
   "build": {
     "appId": "org.wisso.WizeStreamDesktop",
     "productName": "WizeStream Desktop",
