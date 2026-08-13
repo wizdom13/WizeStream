@@ -2085,6 +2085,14 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
     //region ExoPlayer listeners (that didn't fit in other categories)
 
+    @Override
+    public void onAudioSessionIdChanged(final int audioSessionId) {
+        equalizerController.attachAudioSession(audioSessionId);
+        applyPlayerVolume();
+        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
+                equalizerController.getState(), equalizerController.isOperational()));
+    }
+
     /**
      * <p>Listens for event or state changes on ExoPlayer. When any event happens, we check for
      * changes in the currently-playing metadata and update the encapsulating
@@ -2098,14 +2106,6 @@ public final class Player implements PlaybackListener, Listener {
      * @param events The {@link com.google.android.exoplayer2.Player.Events} that has triggered
      *               the player state changes.
      **/
-    @Override
-    public void onAudioSessionIdChanged(final int audioSessionId) {
-        equalizerController.attachAudioSession(audioSessionId);
-        applyPlayerVolume();
-        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
-                equalizerController.getState(), equalizerController.isOperational()));
-    }
-
     @Override
     public void onEvents(@NonNull final com.google.android.exoplayer2.Player player,
                          @NonNull final com.google.android.exoplayer2.Player.Events events) {

@@ -33,7 +33,7 @@ class ChannelHeaderLayoutTest {
         context: Context,
         widthPixels: Int,
         heightPixels: Int,
-        showBanner: Boolean,
+        showBanner: Boolean
     ) {
         val root = LayoutInflater.from(context)
             .inflate(R.layout.fragment_channel, FrameLayout(context), false)
