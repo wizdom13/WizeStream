@@ -29,7 +29,7 @@
             "<!(node -p \"process.env.MPV_INCLUDE_DIR || '/usr/include'\")"
           ],
           "libraries": [
-            "<!(node -p \"process.env.MPV_LIB || '-lmpv'\")"
+            "-ldl"
           ]
         }],
         ["OS=='win'", {

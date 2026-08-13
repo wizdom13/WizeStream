@@ -8,6 +8,9 @@
 #include <IOSurface/IOSurface.h>
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl3.h>
+#endif
+
+#if defined(__APPLE__) || defined(__linux__)
 #include <dlfcn.h>
 #endif
 
@@ -21,6 +24,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
@@ -29,6 +33,98 @@
 #include <vector>
 
 namespace {
+
+#ifdef __linux__
+void linux_module_anchor() {}
+
+struct LinuxMpvApi {
+  void* library = nullptr;
+  decltype(&::mpv_command) mpv_command_fn = nullptr;
+  decltype(&::mpv_create) mpv_create_fn = nullptr;
+  decltype(&::mpv_error_string) mpv_error_string_fn = nullptr;
+  decltype(&::mpv_event_name) mpv_event_name_fn = nullptr;
+  decltype(&::mpv_initialize) mpv_initialize_fn = nullptr;
+  decltype(&::mpv_observe_property) mpv_observe_property_fn = nullptr;
+  decltype(&::mpv_render_context_create) mpv_render_context_create_fn = nullptr;
+  decltype(&::mpv_render_context_free) mpv_render_context_free_fn = nullptr;
+  decltype(&::mpv_render_context_render) mpv_render_context_render_fn = nullptr;
+  decltype(&::mpv_render_context_set_update_callback) mpv_render_context_set_update_callback_fn = nullptr;
+  decltype(&::mpv_render_context_update) mpv_render_context_update_fn = nullptr;
+  decltype(&::mpv_set_option_string) mpv_set_option_string_fn = nullptr;
+  decltype(&::mpv_set_property) mpv_set_property_fn = nullptr;
+  decltype(&::mpv_set_property_string) mpv_set_property_string_fn = nullptr;
+  decltype(&::mpv_set_wakeup_callback) mpv_set_wakeup_callback_fn = nullptr;
+  decltype(&::mpv_terminate_destroy) mpv_terminate_destroy_fn = nullptr;
+  decltype(&::mpv_wait_event) mpv_wait_event_fn = nullptr;
+};
+
+LinuxMpvApi load_linux_mpv_api() {
+  LinuxMpvApi api;
+  Dl_info module_info{};
+  if (!dladdr(reinterpret_cast<void*>(&linux_module_anchor), &module_info) || !module_info.dli_fname) {
+    std::fprintf(stderr, "Could not locate the WizeStream native addon\n");
+    std::abort();
+  }
+  std::string module_path(module_info.dli_fname);
+  const size_t separator = module_path.find_last_of('/');
+  const std::string directory = separator == std::string::npos ? "." : module_path.substr(0, separator);
+  const std::string versioned = directory + "/libmpv.so.2";
+  api.library = dlopen(versioned.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
+  if (!api.library) {
+    const std::string unversioned = directory + "/libmpv.so";
+    api.library = dlopen(unversioned.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
+  }
+  if (!api.library) {
+    std::fprintf(stderr, "Could not load staged libmpv: %s\n", dlerror());
+    std::abort();
+  }
+#define LOAD_MPV_SYMBOL(name) \
+  api.name##_fn = reinterpret_cast<decltype(api.name##_fn)>(dlsym(api.library, #name)); \
+  if (!api.name##_fn) { std::fprintf(stderr, "Missing libmpv symbol: %s\n", #name); std::abort(); }
+  LOAD_MPV_SYMBOL(mpv_command)
+  LOAD_MPV_SYMBOL(mpv_create)
+  LOAD_MPV_SYMBOL(mpv_error_string)
+  LOAD_MPV_SYMBOL(mpv_event_name)
+  LOAD_MPV_SYMBOL(mpv_initialize)
+  LOAD_MPV_SYMBOL(mpv_observe_property)
+  LOAD_MPV_SYMBOL(mpv_render_context_create)
+  LOAD_MPV_SYMBOL(mpv_render_context_free)
+  LOAD_MPV_SYMBOL(mpv_render_context_render)
+  LOAD_MPV_SYMBOL(mpv_render_context_set_update_callback)
+  LOAD_MPV_SYMBOL(mpv_render_context_update)
+  LOAD_MPV_SYMBOL(mpv_set_option_string)
+  LOAD_MPV_SYMBOL(mpv_set_property)
+  LOAD_MPV_SYMBOL(mpv_set_property_string)
+  LOAD_MPV_SYMBOL(mpv_set_wakeup_callback)
+  LOAD_MPV_SYMBOL(mpv_terminate_destroy)
+  LOAD_MPV_SYMBOL(mpv_wait_event)
+#undef LOAD_MPV_SYMBOL
+  return api;
+}
+
+LinuxMpvApi& linux_mpv_api() {
+  static LinuxMpvApi api = load_linux_mpv_api();
+  return api;
+}
+
+#define mpv_command linux_mpv_api().mpv_command_fn
+#define mpv_create linux_mpv_api().mpv_create_fn
+#define mpv_error_string linux_mpv_api().mpv_error_string_fn
+#define mpv_event_name linux_mpv_api().mpv_event_name_fn
+#define mpv_initialize linux_mpv_api().mpv_initialize_fn
+#define mpv_observe_property linux_mpv_api().mpv_observe_property_fn
+#define mpv_render_context_create linux_mpv_api().mpv_render_context_create_fn
+#define mpv_render_context_free linux_mpv_api().mpv_render_context_free_fn
+#define mpv_render_context_render linux_mpv_api().mpv_render_context_render_fn
+#define mpv_render_context_set_update_callback linux_mpv_api().mpv_render_context_set_update_callback_fn
+#define mpv_render_context_update linux_mpv_api().mpv_render_context_update_fn
+#define mpv_set_option_string linux_mpv_api().mpv_set_option_string_fn
+#define mpv_set_property linux_mpv_api().mpv_set_property_fn
+#define mpv_set_property_string linux_mpv_api().mpv_set_property_string_fn
+#define mpv_set_wakeup_callback linux_mpv_api().mpv_set_wakeup_callback_fn
+#define mpv_terminate_destroy linux_mpv_api().mpv_terminate_destroy_fn
+#define mpv_wait_event linux_mpv_api().mpv_wait_event_fn
+#endif
 
 #ifdef _WIN32
 #ifndef GL_FRAMEBUFFER

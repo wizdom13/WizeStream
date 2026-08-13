@@ -2,7 +2,6 @@ import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { constants as osConstants } from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { app } from 'electron';
@@ -32,7 +31,7 @@ try {
   const fixture = await startFixtureServer(files);
   server = fixture.worker;
   const base = `http://127.0.0.1:${fixture.port}`;
-  const addon = loadNativeAddon(path.join(nativeDirectory, 'mpv_addon.node'));
+  const addon = require(path.join(nativeDirectory, 'mpv_addon.node'));
   player = new addon.MpvPlayer({ mode: 'software' });
   player.openMedia({ source: `${base}/video`, audio: { url: `${base}/audio`, title: 'Fixture audio', language: 'en' },
     subtitle: { url: `${base}/caption`, title: 'Fixture captions', language: 'en' } });
@@ -75,13 +74,6 @@ async function startFixtureServer(files) {
     worker.once('error', reject);
   });
   return { worker, port };
-}
-
-function loadNativeAddon(value) {
-  if (process.platform !== 'linux') return require(value);
-  const nativeModule = { exports: {} };
-  process.dlopen(nativeModule, value, osConstants.dlopen.RTLD_NOW | osConstants.dlopen.RTLD_DEEPBIND);
-  return nativeModule.exports;
 }
 
 function run(executable, args) {

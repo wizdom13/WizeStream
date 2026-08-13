@@ -2,7 +2,6 @@ import * as electron from 'electron';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { constants as osConstants } from 'node:os';
 const CHANNEL_PREFIX = 'electron-mpv-video:v1';
 const channel = (name) => `${CHANNEL_PREFIX}:${name}`;
 const IPC_CHANNELS = [
@@ -21,13 +20,6 @@ const IPC_CHANNELS = [
     'player:destroy',
 ];
 const require = createRequire(import.meta.url);
-function loadNativeModule(addonPath) {
-    if (process.platform !== 'linux')
-        return require(addonPath);
-    const nativeModule = { exports: {} };
-    process.dlopen(nativeModule, addonPath, osConstants.dlopen.RTLD_NOW | osConstants.dlopen.RTLD_DEEPBIND);
-    return nativeModule.exports;
-}
 let activeService = null;
 function supportsSharedTexturePipeline() {
     return (process.platform === 'darwin' || process.platform === 'win32') && Boolean(electron.sharedTexture);
@@ -485,7 +477,7 @@ class MpvMainService {
     }
     getNativeModule() {
         if (!this.nativeModule) {
-            this.nativeModule = loadNativeModule(this.options.addonPath ?? defaultAddonPath());
+            this.nativeModule = require(this.options.addonPath ?? defaultAddonPath());
         }
         return this.nativeModule;
     }
