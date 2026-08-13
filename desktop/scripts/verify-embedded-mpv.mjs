@@ -11,7 +11,7 @@ try {
   const addon = require(addonPath);
   if (typeof addon.MpvPlayer !== 'function') throw new Error('The native addon does not export MpvPlayer');
   console.log(`Embedded libmpv addon loaded under Electron ${process.versions.electron}.`);
-  app.quit();
+  app.exit(0);
 } catch (error) {
   console.error(error);
   app.exit(1);

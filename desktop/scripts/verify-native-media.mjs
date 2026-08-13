@@ -18,6 +18,7 @@ const audioPath = path.join(temporary, 'audio.m4a');
 const captionPath = path.join(temporary, 'caption.vtt');
 let server;
 let player;
+let exitCode = 0;
 
 try {
   await run(ffmpeg, ['-y', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:d=1',
@@ -53,11 +54,17 @@ try {
     throw new Error('libmpv software renderer returned an invalid frame');
   }
   console.log(`Verified composite playback and track switching on ${process.platform}-${process.arch}.`);
+} catch (error) {
+  exitCode = 1;
+  console.error(error);
 } finally {
   player?.destroy();
-  if (server) await new Promise((resolve) => server.close(resolve));
+  if (server) {
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+  }
   await rm(temporary, { recursive: true, force: true });
-  app.quit();
+  app.exit(exitCode);
 }
 
 function run(executable, args) {

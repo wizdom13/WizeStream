@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const release = path.resolve(import.meta.dirname, '../release');
 const executable = await findExecutable(release);
-const args = process.platform === 'linux' ? ['-a', executable] : [];
+const args = process.platform === 'linux' ? ['-a', executable, '--no-sandbox'] : [];
 const command = process.platform === 'linux' ? 'xvfb-run' : executable;
 const output = await new Promise((resolve, reject) => {
   const child = spawn(command, args, {
