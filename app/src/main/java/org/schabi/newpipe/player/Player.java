@@ -105,6 +105,8 @@ import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.player.equalizer.EqualizerController;
+import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.helper.AudioReactor;
@@ -243,6 +245,8 @@ public final class Player implements PlaybackListener, Listener {
 
     private ExoPlayer simpleExoPlayer;
     private AudioReactor audioReactor;
+    @NonNull
+    private final EqualizerController equalizerController;
 
     @NonNull
     private final DefaultTrackSelector trackSelector;
@@ -340,6 +344,7 @@ public final class Player implements PlaybackListener, Listener {
         this.service = service;
         context = service;
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        equalizerController = new EqualizerController(context);
         recordManager = new HistoryRecordManager(context);
         learningSessionTracker = new LearningSessionTracker(context);
 
@@ -701,6 +706,7 @@ public final class Player implements PlaybackListener, Listener {
         simpleExoPlayer.setSeekParameters(PlayerHelper.getSeekParameters(context));
         simpleExoPlayer.setWakeMode(C.WAKE_MODE_NETWORK);
         simpleExoPlayer.setHandleAudioBecomingNoisy(true);
+        equalizerController.attachAudioSession(simpleExoPlayer.getAudioSessionId());
 
         audioReactor = new AudioReactor(context, simpleExoPlayer);
 
@@ -709,12 +715,7 @@ public final class Player implements PlaybackListener, Listener {
         // Setup UIs
         UIs.call(PlayerUi::initPlayer);
 
-        // Disable media tunneling if requested by the user from ExoPlayer settings
-        if (!PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(context.getString(R.string.disable_media_tunneling_key), false)) {
-            trackSelector.setParameters(trackSelector.buildUponParameters()
-                    .setTunnelingEnabled(true));
-        }
+        updateAudioTunneling();
     }
     //endregion
 
@@ -731,6 +732,7 @@ public final class Player implements PlaybackListener, Listener {
         }
         learningSessionTracker.stop();
         UIs.call(PlayerUi::destroyPlayer);
+        equalizerController.releaseAudioSession();
 
         if (!exoPlayerIsNull()) {
             simpleExoPlayer.removeListener(this);
@@ -1735,9 +1737,57 @@ public final class Player implements PlaybackListener, Listener {
         return muted;
     }
 
+    @NonNull
+    public EqualizerState getEqualizerState() {
+        return equalizerController.getState();
+    }
+
+    public boolean isEqualizerAvailable() {
+        return equalizerController.isAvailable();
+    }
+
+    public boolean isEqualizerOperational() {
+        return equalizerController.isOperational();
+    }
+
+    public void previewEqualizerState(@NonNull final EqualizerState state) {
+        applyEqualizerState(state, false);
+    }
+
+    public void updateEqualizerState(@NonNull final EqualizerState state) {
+        applyEqualizerState(state, true);
+    }
+
+    private void applyEqualizerState(@NonNull final EqualizerState state,
+                                     final boolean persist) {
+        final boolean enabledChanged =
+                equalizerController.getState().isEnabled() != state.isEnabled();
+        if (persist) {
+            equalizerController.updateState(state);
+        } else {
+            equalizerController.previewState(state);
+        }
+        applyPlayerVolume();
+        if (enabledChanged) {
+            updateAudioTunneling();
+        }
+        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
+                state, equalizerController.isOperational()));
+    }
+
+    private void updateAudioTunneling() {
+        final boolean tunnelingEnabled = !prefs.getBoolean(
+                context.getString(R.string.disable_media_tunneling_key), false)
+                && !equalizerController.getState().isEnabled();
+        trackSelector.setParameters(trackSelector.buildUponParameters()
+                .setTunnelingEnabled(tunnelingEnabled));
+    }
+
     private void applyPlayerVolume() {
         if (!exoPlayerIsNull()) {
-            simpleExoPlayer.setVolume(muted ? 0.0f : sleepTimerVolumeMultiplier);
+            final float equalizerHeadroom = equalizerController.getHeadroomMultiplier();
+            simpleExoPlayer.setVolume(muted
+                    ? 0.0f : sleepTimerVolumeMultiplier * equalizerHeadroom);
         }
     }
     //endregion
@@ -2048,6 +2098,14 @@ public final class Player implements PlaybackListener, Listener {
      * @param events The {@link com.google.android.exoplayer2.Player.Events} that has triggered
      *               the player state changes.
      **/
+    @Override
+    public void onAudioSessionIdChanged(final int audioSessionId) {
+        equalizerController.attachAudioSession(audioSessionId);
+        applyPlayerVolume();
+        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
+                equalizerController.getState(), equalizerController.isOperational()));
+    }
+
     @Override
     public void onEvents(@NonNull final com.google.android.exoplayer2.Player player,
                          @NonNull final com.google.android.exoplayer2.Player.Events events) {
