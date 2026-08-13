@@ -122,6 +122,22 @@ LinuxMpvApi& linux_mpv_api() {
   return api;
 }
 
+std::mutex linux_handle_pool_mutex;
+std::vector<mpv_handle*> linux_handle_pool;
+
+mpv_handle* acquire_linux_handle() {
+  std::lock_guard<std::mutex> lock(linux_handle_pool_mutex);
+  if (linux_handle_pool.empty()) return nullptr;
+  mpv_handle* handle = linux_handle_pool.back();
+  linux_handle_pool.pop_back();
+  return handle;
+}
+
+void recycle_linux_handle(mpv_handle* handle) {
+  std::lock_guard<std::mutex> lock(linux_handle_pool_mutex);
+  linux_handle_pool.push_back(handle);
+}
+
 #define mpv_command linux_mpv_api().mpv_command_fn
 #define mpv_create linux_mpv_api().mpv_create_fn
 #define mpv_error_string linux_mpv_api().mpv_error_string_fn
@@ -267,46 +283,58 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       }
     }
 
-    handle_ = mpv_create();
+    bool reused_handle = false;
+#ifdef __linux__
+    handle_ = acquire_linux_handle();
+    reused_handle = handle_ != nullptr;
+#endif
+    if (!handle_) handle_ = mpv_create();
     if (!handle_) {
       Napi::Error::New(env, "mpv_create failed").ThrowAsJavaScriptException();
       return;
     }
 
-    set_option("terminal", "no");
-    set_option("msg-level", "all=warn");
-    set_option("input-default-bindings", "no");
-    set_option("audio-display", "no");
-    set_option("pause", "yes");
-    set_option("keep-open", "yes");
-    const char* hwdec = std::getenv("MPV_HWDEC");
+    if (!reused_handle) {
+      set_option("terminal", "no");
+      set_option("msg-level", "all=warn");
+      set_option("input-default-bindings", "no");
+      set_option("audio-display", "no");
+      set_option("pause", "yes");
+      set_option("keep-open", "yes");
+      const char* hwdec = std::getenv("MPV_HWDEC");
 #ifdef _WIN32
-    set_option("hwdec", hwdec && hwdec[0] ? hwdec : "no");
+      set_option("hwdec", hwdec && hwdec[0] ? hwdec : "no");
 #else
-    set_option("hwdec", hwdec && hwdec[0] ? hwdec : "auto-safe");
+      set_option("hwdec", hwdec && hwdec[0] ? hwdec : "auto-safe");
 #endif
-    const char* audio_output = std::getenv("MPV_AO");
-    if (audio_output && audio_output[0]) set_option("ao", audio_output);
-    set_option("sw-fast", "yes");
-    set_option("vo", "libmpv");
+      const char* audio_output = std::getenv("MPV_AO");
+      if (audio_output && audio_output[0]) set_option("ao", audio_output);
+      set_option("sw-fast", "yes");
+      set_option("vo", "libmpv");
+
+      int ret = mpv_initialize(handle_);
+      if (ret < 0) {
+        throw_mpv_error(env, "mpv_initialize", ret);
+        return;
+      }
+
+      observe("time-pos", MPV_FORMAT_DOUBLE);
+      observe("duration", MPV_FORMAT_DOUBLE);
+      observe("pause", MPV_FORMAT_FLAG);
+      observe("eof-reached", MPV_FORMAT_FLAG);
+      observe("width", MPV_FORMAT_INT64);
+      observe("height", MPV_FORMAT_INT64);
+      observe("video-codec", MPV_FORMAT_STRING);
+      observe("container-fps", MPV_FORMAT_DOUBLE);
+      observe("aid", MPV_FORMAT_STRING);
+      observe("sid", MPV_FORMAT_STRING);
+    }
+    if (reused_handle) {
+      while (mpv_wait_event(handle_, 0)->event_id != MPV_EVENT_NONE) {}
+    }
     set_mpv_wakeup_callback(handle_, on_mpv_wakeup, this);
 
-    int ret = mpv_initialize(handle_);
-    if (ret < 0) {
-      throw_mpv_error(env, "mpv_initialize", ret);
-      return;
-    }
-
-    observe("time-pos", MPV_FORMAT_DOUBLE);
-    observe("duration", MPV_FORMAT_DOUBLE);
-    observe("pause", MPV_FORMAT_FLAG);
-    observe("eof-reached", MPV_FORMAT_FLAG);
-    observe("width", MPV_FORMAT_INT64);
-    observe("height", MPV_FORMAT_INT64);
-    observe("video-codec", MPV_FORMAT_STRING);
-    observe("container-fps", MPV_FORMAT_DOUBLE);
-    observe("aid", MPV_FORMAT_STRING);
-    observe("sid", MPV_FORMAT_STRING);
+    int ret = 0;
 
     if (mode_ == "shared-texture") {
 #if defined(__APPLE__)
@@ -924,6 +952,8 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
   void cleanup() {
     alive_ = false;
     if (handle_) {
+      const char* stop[] = {"stop", nullptr};
+      mpv_command(handle_, stop);
       set_mpv_wakeup_callback(handle_, nullptr, nullptr);
     }
     if (render_context_) {
@@ -943,13 +973,11 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     }
     if (handle_) {
 #ifdef __linux__
-      // libmpv is intentionally loaded in an isolated linker namespace so its
-      // FFmpeg stack cannot bind to Electron's. glibc cannot safely free the
-      // final client handle across that namespace boundary. Ask the core to
-      // shut down asynchronously and quarantine this small terminal handle;
-      // the OS reclaims it with the process.
-      const char* quit[] = {"quit", nullptr};
-      mpv_command(handle_, quit);
+      // Linux libmpv lives in an isolated linker namespace so its FFmpeg stack
+      // cannot bind to Electron's. Reuse initialized handles instead of calling
+      // the namespace-unsafe terminal destructor; renderer and media state have
+      // already been released, so the pooled core remains idle between players.
+      recycle_linux_handle(handle_);
       handle_ = nullptr;
 #else
       mpv_terminate_destroy(handle_);

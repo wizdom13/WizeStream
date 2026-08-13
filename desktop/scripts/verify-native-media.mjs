@@ -46,6 +46,16 @@ try {
   if (frame.width !== 64 || frame.height !== 64 || frame.rgba.length !== 64 * 64 * 4) {
     throw new Error('libmpv software renderer returned an invalid frame');
   }
+  if (process.platform === 'linux') {
+    player.destroy();
+    player = new addon.MpvPlayer({ mode: 'software' });
+    player.open(`${base}/video`);
+    await waitForFile(player);
+    const reusedFrame = player.renderFrame(32, 32);
+    if (reusedFrame.width !== 32 || reusedFrame.height !== 32 || reusedFrame.rgba.length !== 32 * 32 * 4) {
+      throw new Error('reused libmpv software renderer returned an invalid frame');
+    }
+  }
   console.log(`Verified composite playback and track switching on ${process.platform}-${process.arch}.`);
 } catch (error) {
   exitCode = 1;
