@@ -51,6 +51,7 @@ sourceSets {
             include("org/schabi/newpipe/sync/StructuredPreferenceSyncModels.kt")
             include("org/schabi/newpipe/sync/StructuredPreferenceSyncEngine.kt")
             include("org/schabi/newpipe/sync/StructuredPreferenceSyncProtocol.kt")
+            include("org/schabi/newpipe/sync/AutomaticSyncPolicy.kt")
             include("org/schabi/newpipe/sync/Desktop*.kt")
             include("org/schabi/newpipe/database/**/Desktop*.kt")
         }
