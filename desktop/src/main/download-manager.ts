@@ -72,6 +72,7 @@ export class DownloadManager {
           await this.recordCompletion(value);
         }
       }
+      await this.persist();
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
@@ -162,10 +163,10 @@ export class DownloadManager {
       }
       if (job.components.length === 2) await this.mux(job);
       else await rename(job.components[0]!.partialPath, job.finalPath);
-      job.completedAt = Date.now(); job.state = 'completed'; job.stage = 'completed';
-      await this.changed();
+      job.completedAt = Date.now();
       await this.recordCompletion(job);
       await Promise.all(job.components.map((value) => rm(value.partialPath, { force: true })));
+      job.state = 'completed'; job.stage = 'completed';
       await this.changed();
     } catch (error) {
       if (job.state !== 'paused' && job.state !== 'cancelled') {
@@ -267,7 +268,6 @@ export class DownloadManager {
     try {
       await this.completed(job);
       job.metadataRecorded = true;
-      await this.changed();
     } catch (error) {
       console.error('[downloads] Could not record synchronized metadata', safeError(error));
     }
