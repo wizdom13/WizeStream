@@ -61,6 +61,8 @@ import org.schabi.newpipe.learning.LearningNoteDialog;
 import org.schabi.newpipe.learning.LearningNoteManager;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.equalizer.EqualizerDialog;
+import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
@@ -174,6 +176,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.segmentsButton.setOnClickListener(v -> onSegmentsClicked());
         binding.sleepTimerButton.setOnClickListener(v ->
                 getParentActivity().ifPresent(activity -> SleepTimerDialog.show(activity, player)));
+        binding.equalizerButton.setOnClickListener(v ->
+                getParentActivity().ifPresent(activity -> EqualizerDialog.show(
+                        activity, EqualizerDialog.forPlayer(player))));
         binding.learningNoteButton.setOnClickListener(v -> showLearningNoteDialog());
 
         binding.addToPlaylistButton.setOnClickListener(v ->
@@ -202,6 +207,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         });
     }
 
+
+    @Override
+    public void onEqualizerStateChanged(@NonNull final EqualizerState state,
+                                        final boolean operational) {
+        binding.equalizerButton.setActivated(state.isEnabled());
+        binding.equalizerButton.setAlpha(state.isEnabled() && operational ? 1.0f : 0.7f);
+    }
 
     @Override
     public void showSponsorBlockSkipButton(@NonNull final String label,
@@ -242,6 +254,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.queueButton.setOnClickListener(null);
         binding.segmentsButton.setOnClickListener(null);
         binding.sleepTimerButton.setOnClickListener(null);
+        binding.equalizerButton.setOnClickListener(null);
         binding.addToPlaylistButton.setOnClickListener(null);
         hideSponsorBlockSkipButton();
         clearSponsorBlockSeekBarMarkers();
@@ -334,6 +347,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.share.setVisibility(View.VISIBLE);
         binding.openInBrowser.setVisibility(View.VISIBLE);
         binding.sleepTimerButton.setVisibility(View.VISIBLE);
+        binding.equalizerButton.setVisibility(View.VISIBLE);
+        binding.equalizerButton.setActivated(player.getEqualizerState().isEnabled());
         updateLearningNoteButtonVisibility(player.getCurrentStreamInfo().orElse(null));
         binding.switchMute.setVisibility(View.VISIBLE);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);

@@ -8,10 +8,14 @@ import android.text.format.DateUtils;
 import android.widget.Toast;
 
 import androidx.preference.ListPreference;
+import androidx.preference.Preference;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.player.equalizer.EqualizerDialog;
+import org.schabi.newpipe.player.equalizer.EqualizerPreferences;
+import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.PermissionHelper;
 
@@ -27,6 +31,7 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
 
         updateSeekOptions();
         updateResolutionOptions();
+        setupEqualizerPreference();
         listener = (sharedPreferences, key) -> {
 
             // on M and above, if user chooses to minimise to popup player on exit
@@ -51,6 +56,29 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
                 updateResolutionOptions();
             }
         };
+    }
+
+    private void setupEqualizerPreference() {
+        final Preference preference = requirePreference(R.string.equalizer_settings_key);
+        updateEqualizerPreferenceSummary(preference);
+        preference.setOnPreferenceClickListener(clicked -> {
+            EqualizerDialog.show(
+                    requireContext(),
+                    EqualizerDialog.forPreferences(requireContext()),
+                    () -> updateEqualizerPreferenceSummary(preference));
+            return true;
+        });
+    }
+
+    private void updateEqualizerPreferenceSummary(final Preference preference) {
+        final EqualizerState state = new EqualizerPreferences(requireContext()).load();
+        if (!state.isEnabled()) {
+            preference.setSummary(R.string.equalizer_settings_summary_disabled);
+            return;
+        }
+        preference.setSummary(getString(
+                R.string.equalizer_settings_summary_enabled,
+                EqualizerDialog.getPresetDisplayName(requireContext(), state.getPreset())));
     }
 
     /**

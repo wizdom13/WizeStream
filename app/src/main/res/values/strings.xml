@@ -1282,4 +1282,26 @@
     <string name="sponsor_block_skip_sponsor">Skip sponsor</string>
     <string name="sponsor_block_skip_segment">Skip segment</string>
     <string name="sponsor_block_skip_button_content_description">Skip SponsorBlock segment</string>
+    <!-- Equalizer -->
+    <string name="equalizer">Equalizer</string>
+    <string name="equalizer_settings_key" translatable="false">equalizer_settings</string>
+    <string name="equalizer_enable">Enable equalizer</string>
+    <string name="equalizer_preset">Preset</string>
+    <string name="equalizer_preset_flat">Flat</string>
+    <string name="equalizer_preset_bass_boost">Bass boost</string>
+    <string name="equalizer_preset_vocal">Vocal</string>
+    <string name="equalizer_preset_acoustic">Acoustic</string>
+    <string name="equalizer_preset_rock">Rock</string>
+    <string name="equalizer_preset_custom">Custom</string>
+    <string name="equalizer_curve_description">The fixed 10-band curve is adapted to the audio bands supported by this device.</string>
+    <string name="equalizer_unavailable">The Android equalizer effect is unavailable on this device.</string>
+    <string name="equalizer_disabled">Equalizer is off.</string>
+    <string name="equalizer_active">Active for this playback session.</string>
+    <string name="equalizer_waiting_for_audio_session">Waiting for a playback audio session.</string>
+    <string name="equalizer_applies_next_playback">Changes apply to the next playback session.</string>
+    <string name="equalizer_headroom">Automatic clipping headroom: −%1$.1f dB</string>
+    <string name="equalizer_frequency_hz">%1$d Hz</string>
+    <string name="equalizer_frequency_khz">%1$d kHz</string>
+    <string name="equalizer_settings_summary_disabled">Off · Five presets and one custom curve</string>
+    <string name="equalizer_settings_summary_enabled">On · %1$s</string>
 </resources>
