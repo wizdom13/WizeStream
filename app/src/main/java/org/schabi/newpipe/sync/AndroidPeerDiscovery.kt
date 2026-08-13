@@ -143,12 +143,9 @@ internal class AndroidPeerDiscovery(context: Context) {
     }
 
     fun addressesFor(peer: TrustedPeer): List<String> {
-        val peerId = peer.peerId
-        val discoveredAddresses = mdnsAddressesFor(peerId)
-        if (discoveredAddresses.isNotEmpty()) {
-            return discoveredAddresses
-        }
-        return subnetAddressesFor(peer)
+        val mdnsAddresses = mdnsAddressesFor(peer.peerId)
+        val subnetAddresses = subnetAddressesFor(peer)
+        return combinePeerDiscoveryCandidates(mdnsAddresses, subnetAddresses)
     }
 
     private fun mdnsAddressesFor(peerId: String): List<String> {
@@ -214,7 +211,7 @@ internal class AndroidPeerDiscovery(context: Context) {
             return emptyList()
         }
 
-        Log.i(TAG, "mDNS did not find the trusted peer; scanning its saved sync port")
+        Log.i(TAG, "Scanning the local subnet for refreshed trusted-peer addresses")
         val probes = targets.flatMap { target ->
             subnetHostAddresses(target.linkAddress).flatMap { address ->
                 ports.map { port -> SubnetProbe(target.network, address, port) }
@@ -350,6 +347,21 @@ internal class AndroidPeerDiscovery(context: Context) {
         private const val MIN_PORT = 1
         private const val MAX_PORT = 65_535
     }
+}
+
+internal fun combinePeerDiscoveryCandidates(
+    mdnsAddresses: List<String>,
+    subnetAddresses: List<String>
+): List<String> {
+    return sequence {
+        // Preserve mDNS as the first choice, but reserve room for subnet recovery. A stale,
+        // non-empty mDNS cache must not prevent dialing a peer that moved to a hotspot subnet.
+        mdnsAddresses.firstOrNull()?.let { yield(it) }
+        yieldAll(subnetAddresses)
+        yieldAll(mdnsAddresses.drop(1))
+    }.distinct()
+        .take(MAX_PAIRING_ADDRESSES)
+        .toList()
 }
 
 private data class SubnetScanTarget(

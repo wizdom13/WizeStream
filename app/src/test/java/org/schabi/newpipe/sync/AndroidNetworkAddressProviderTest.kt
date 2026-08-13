@@ -81,6 +81,39 @@ class AndroidNetworkAddressProviderTest {
         )
     }
 
+    @Test
+    fun `stale mdns candidates do not block hotspot subnet recovery`() {
+        val staleMdns = "/ip4/10.113.36.244/tcp/44065/p2p/trusted-peer"
+        val currentHotspot = "/ip4/10.197.178.244/tcp/44065/p2p/trusted-peer"
+        val secondMdns = "/ip4/192.168.0.244/tcp/44065/p2p/trusted-peer"
+
+        assertEquals(
+            listOf(staleMdns, currentHotspot, secondMdns),
+            combinePeerDiscoveryCandidates(
+                mdnsAddresses = listOf(staleMdns, secondMdns),
+                subnetAddresses = listOf(currentHotspot)
+            )
+        )
+    }
+
+    @Test
+    fun `discovery candidates are deduplicated and bounded without starving subnet recovery`() {
+        val mdns = (1..MAX_PAIRING_ADDRESSES).map { index ->
+            "/ip4/10.0.0.$index/tcp/44065/p2p/trusted-peer"
+        }
+        val recovered = "/ip4/10.197.178.244/tcp/44065/p2p/trusted-peer"
+
+        val candidates = combinePeerDiscoveryCandidates(
+            mdnsAddresses = mdns,
+            subnetAddresses = listOf(recovered, recovered)
+        )
+
+        assertEquals(MAX_PAIRING_ADDRESSES, candidates.size)
+        assertEquals(mdns.first(), candidates.first())
+        assertEquals(recovered, candidates[1])
+        assertEquals(candidates.size, candidates.distinct().size)
+    }
+
     private fun candidate(
         address: String,
         wifiOrEthernet: Boolean,

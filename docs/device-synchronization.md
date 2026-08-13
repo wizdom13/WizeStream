@@ -6,8 +6,9 @@ devices. It does not require a platform login or a WizeStream cloud account.
 ## Pair two devices
 
 Both devices must have a WizeStream version that supports device
-synchronization and must be able to reach each other on the same Wi-Fi or
-Ethernet network.
+synchronization and must be able to reach each other on the same Wi-Fi,
+Ethernet, or local hotspot network. Synchronization does not use the public
+internet.
 
 1. Open **Settings > Device synchronization** on both devices.
 2. On the first device, select **Show pairing code** and keep the code visible.
@@ -34,7 +35,7 @@ hour when:
 
 - The device has sufficient battery.
 - The device is connected through Wi-Fi or Ethernet.
-- A trusted device is reachable on the same network.
+- A trusted device is reachable on the same Wi-Fi, Ethernet, or hotspot network.
 
 A trusted device being temporarily unavailable does not remove the pairing.
 Use **Sync now** when both devices are available if an immediate update is
