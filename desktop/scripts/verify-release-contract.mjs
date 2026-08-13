@@ -23,6 +23,11 @@ for (const [platform, required] of Object.entries({
   }
 }
 
+if (!String(packageJson.build?.nsis?.artifactName ?? '').includes('-setup.')
+  || !String(packageJson.build?.portable?.artifactName ?? '').includes('-portable.')) {
+  failures.push('Windows installer and portable packages must use distinct artifact names');
+}
+
 if (packageJson.build?.mac?.hardenedRuntime !== true || packageJson.build?.mac?.notarize !== true) {
   failures.push('macOS hardened runtime and notarization must be enabled');
 }

@@ -12,6 +12,8 @@ import { embeddedMpvAddonPath, embeddedMpvAvailable } from './embedded-mpv.js';
 import { MpvController } from './mpv-controller.js';
 import { UpdateManager } from './update-manager.js';
 
+declare const __WIZESTREAM_UPDATES_ENABLED__: boolean;
+
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const requireNative = createRequire(import.meta.url);
 const backend = new BackendClient();
@@ -253,7 +255,8 @@ function mediaToolPath(tool: 'ffmpeg' | 'ffprobe'): string {
 }
 
 async function createUpdateManager(): Promise<UpdateManager> {
-  const enabled = app.isPackaged && process.env.WIZESTREAM_PACKAGE_SMOKE !== '1';
+  const enabled = __WIZESTREAM_UPDATES_ENABLED__ && app.isPackaged
+    && process.env.WIZESTREAM_PACKAGE_SMOKE !== '1';
   const updater = enabled ? (await import('electron-updater')).autoUpdater : undefined;
   return new UpdateManager(updater, app.getVersion(), (state) => {
     for (const window of BrowserWindow.getAllWindows()) window.webContents.send('updates:changed', state);

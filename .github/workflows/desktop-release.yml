@@ -132,7 +132,10 @@ jobs:
       - run: npm run embedded:verify
       - run: npm run embedded:media-smoke
       - run: npm run backend:build
-      - run: npm run build
+      - name: Build with production updates enabled
+        run: npm run build
+        env:
+          WIZESTREAM_ENABLE_PRODUCTION_UPDATES: '1'
       - name: Create signed unpacked application
         run: npx electron-builder --dir --publish never --config electron-builder.release.cjs
       - name: Smoke-test packaged application

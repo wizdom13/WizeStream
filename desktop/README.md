@@ -126,6 +126,8 @@ npm run dist
 
 Preview packages are unsigned. Windows signing and macOS signing/notarization are release gates,
 not requirements for architecture CI.
+The explicitly unsigned preview channel disables production updates and intentionally omits updater
+metadata. Preview upgrades are installed manually.
 
 See [docs/releasing.md](docs/releasing.md) for release-repository setup, credential names, signing,
 updater validation and rollback.
@@ -146,6 +148,7 @@ updater validation and rollback.
 
 ## Next milestone
 
-Acquire the Windows and Apple signing identities, initialize the public binary release repository,
-run the protected `0.6.0-beta.1` matrix, and validate one signed update on every architecture before
-opening the `desktop-electron` to `pipe` pull request.
+Collect feedback from the explicitly unsigned preview while acquiring the Windows and Apple signing
+identities. Then initialize the public binary release repository, run the protected signed matrix,
+and validate one signed update on every architecture before opening the `desktop-electron` to `pipe`
+pull request.

@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { build } from 'esbuild';
 
+const updatesEnabled = process.env.WIZESTREAM_ENABLE_PRODUCTION_UPDATES === '1';
 const desktopDirectory = path.resolve(import.meta.dirname, '..');
 const outputDirectory = path.join(desktopDirectory, 'dist-electron');
 await rm(outputDirectory, { recursive: true, force: true });
@@ -12,6 +13,7 @@ const common = {
   target: 'node24',
   external: ['electron', 'electron-updater'],
   sourcemap: false,
+  define: { __WIZESTREAM_UPDATES_ENABLED__: JSON.stringify(updatesEnabled) },
 };
 
 await build({
