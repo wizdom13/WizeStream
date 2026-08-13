@@ -923,9 +923,6 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
 
   void cleanup() {
     alive_ = false;
-#ifdef __linux__
-    std::fprintf(stderr, "WizeStream libmpv cleanup: detach callbacks\n");
-#endif
     if (handle_) {
       set_mpv_wakeup_callback(handle_, nullptr, nullptr);
     }
@@ -941,23 +938,22 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       event_callback_ = nullptr;
     }
     if (render_context_) {
-#ifdef __linux__
-      std::fprintf(stderr, "WizeStream libmpv cleanup: free render context\n");
-#endif
       mpv_render_context_free(render_context_);
       render_context_ = nullptr;
-#ifdef __linux__
-      std::fprintf(stderr, "WizeStream libmpv cleanup: render context freed\n");
-#endif
     }
     if (handle_) {
 #ifdef __linux__
-      std::fprintf(stderr, "WizeStream libmpv cleanup: terminate handle\n");
-#endif
+      // libmpv is intentionally loaded in an isolated linker namespace so its
+      // FFmpeg stack cannot bind to Electron's. glibc cannot safely free the
+      // final client handle across that namespace boundary. Ask the core to
+      // shut down asynchronously and quarantine this small terminal handle;
+      // the OS reclaims it with the process.
+      const char* quit[] = {"quit", nullptr};
+      mpv_command(handle_, quit);
+      handle_ = nullptr;
+#else
       mpv_terminate_destroy(handle_);
       handle_ = nullptr;
-#ifdef __linux__
-      std::fprintf(stderr, "WizeStream libmpv cleanup: handle terminated\n");
 #endif
     }
 #ifdef __APPLE__
