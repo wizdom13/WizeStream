@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { constants as osConstants } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { access } from 'node:fs/promises';
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
@@ -177,7 +178,7 @@ app.whenReady().then(async () => {
   if (process.env.WIZESTREAM_PACKAGE_SMOKE === '1') {
     if (!await embeddedMpvAvailable(embeddedAddonPath)) throw new Error('Packaged embedded libmpv is unavailable');
     process.env.MPV_AO ??= 'null';
-    const native = requireNative(embeddedAddonPath) as {
+    const native = loadNativeAddon(embeddedAddonPath) as {
       MpvPlayer: new (options: { mode: 'software' }) => { destroy(): void };
     };
     const smokePlayer = new native.MpvPlayer({ mode: 'software' });
@@ -204,6 +205,14 @@ function mediaToolPath(tool: 'ffmpeg' | 'ffprobe'): string {
   if (configured) return configured;
   const root = app.isPackaged ? process.resourcesPath : app.getAppPath();
   return path.join(root, 'native', 'media-tools', `${tool}${process.platform === 'win32' ? '.exe' : ''}`);
+}
+
+function loadNativeAddon(addonPath: string): unknown {
+  if (process.platform !== 'linux') return requireNative(addonPath);
+  const nativeModule = { exports: {} as unknown };
+  process.dlopen(nativeModule as NodeModule, addonPath,
+    osConstants.dlopen.RTLD_NOW | osConstants.dlopen.RTLD_DEEPBIND);
+  return nativeModule.exports;
 }
 
 function downloadSources(details: StreamDetails): DownloadSource[] {

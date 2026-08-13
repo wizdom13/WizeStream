@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { createServer } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { constants as osConstants } from 'node:os';
 import path from 'node:path';
+import { Worker } from 'node:worker_threads';
 import { app } from 'electron';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -28,17 +29,10 @@ try {
   await writeFile(captionPath, 'WEBVTT\n\n00:00.000 --> 00:00.800\nWizeStream Phase 6\n');
   const files = { '/video': await readFile(videoPath), '/audio': await readFile(audioPath),
     '/caption': await readFile(captionPath) };
-  server = createServer((request, response) => {
-    const value = files[request.url];
-    if (!value) { response.writeHead(404).end(); return; }
-    response.writeHead(200, { 'content-length': value.length, 'connection': 'close' });
-    response.end(value);
-  });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('Fixture server did not bind');
-  const base = `http://127.0.0.1:${address.port}`;
-  const addon = require(path.join(nativeDirectory, 'mpv_addon.node'));
+  const fixture = await startFixtureServer(files);
+  server = fixture.worker;
+  const base = `http://127.0.0.1:${fixture.port}`;
+  const addon = loadNativeAddon(path.join(nativeDirectory, 'mpv_addon.node'));
   player = new addon.MpvPlayer({ mode: 'software' });
   player.openMedia({ source: `${base}/video`, audio: { url: `${base}/audio`, title: 'Fixture audio', language: 'en' },
     subtitle: { url: `${base}/caption`, title: 'Fixture captions', language: 'en' } });
@@ -59,12 +53,35 @@ try {
   console.error(error);
 } finally {
   player?.destroy();
-  if (server) {
-    server.closeAllConnections();
-    await new Promise((resolve) => server.close(resolve));
-  }
+  if (server) await server.terminate();
   await rm(temporary, { recursive: true, force: true });
   app.exit(exitCode);
+}
+
+async function startFixtureServer(files) {
+  const worker = new Worker(`
+    const { createServer } = require('node:http');
+    const { parentPort, workerData } = require('node:worker_threads');
+    const server = createServer((request, response) => {
+      const value = workerData[request.url];
+      if (!value) { response.writeHead(404).end(); return; }
+      response.writeHead(200, { 'content-length': value.length, 'connection': 'close' });
+      response.end(value);
+    });
+    server.listen(0, '127.0.0.1', () => parentPort.postMessage(server.address().port));
+  `, { eval: true, workerData: files });
+  const port = await new Promise((resolve, reject) => {
+    worker.once('message', resolve);
+    worker.once('error', reject);
+  });
+  return { worker, port };
+}
+
+function loadNativeAddon(value) {
+  if (process.platform !== 'linux') return require(value);
+  const nativeModule = { exports: {} };
+  process.dlopen(nativeModule, value, osConstants.dlopen.RTLD_NOW | osConstants.dlopen.RTLD_DEEPBIND);
+  return nativeModule.exports;
 }
 
 function run(executable, args) {
