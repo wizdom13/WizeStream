@@ -396,6 +396,20 @@
                         app:tint="@color/white" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/equalizerButton"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/equalizer"
+                        android:focusable="true"
+                        android:padding="@dimen/player_main_buttons_padding"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_equalizer"
+                        app:tint="@color/white" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/switchMute"
                         android:layout_width="wrap_content"
                         android:layout_height="37dp"

@@ -16,6 +16,7 @@ import com.google.android.exoplayer2.video.VideoSize;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.helper.SleepTimer;
 
 import java.util.List;
@@ -188,6 +189,10 @@ public abstract class PlayerUi {
     }
 
     public void onMuteUnmuteChanged(final boolean isMuted) {
+    }
+
+    public void onEqualizerStateChanged(@NonNull final EqualizerState state,
+                                        final boolean operational) {
     }
 
     /**
