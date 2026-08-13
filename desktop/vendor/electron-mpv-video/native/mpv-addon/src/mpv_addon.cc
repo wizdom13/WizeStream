@@ -314,6 +314,9 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       return env.Undefined();
     }
     std::string path = info[0].As<Napi::String>().Utf8Value();
+    loaded_ = false;
+    pending_audio_ = false;
+    pending_subtitle_ = false;
     int ret = command({"loadfile", path, "replace"});
     if (ret < 0) throw_mpv_error(env, "loadfile", ret);
     has_external_audio_ = false;
@@ -333,6 +336,9 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       return env.Undefined();
     }
     const std::string source = request.Get("source").As<Napi::String>().Utf8Value();
+    loaded_ = false;
+    pending_audio_ = false;
+    pending_subtitle_ = false;
     int ret = command({"loadfile", source, "replace"});
     if (ret < 0) {
       throw_mpv_error(env, "loadfile", ret);
@@ -367,6 +373,20 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
         ? track.Get("title").As<Napi::String>().Utf8Value() : "";
     const std::string language = track.Has("language") && track.Get("language").IsString()
         ? track.Get("language").As<Napi::String>().Utf8Value() : "";
+    if (!loaded_) {
+      if (audio) {
+        pending_audio_ = true;
+        pending_audio_url_ = url;
+        pending_audio_title_ = title;
+        pending_audio_language_ = language;
+      } else {
+        pending_subtitle_ = true;
+        pending_subtitle_url_ = url;
+        pending_subtitle_title_ = title;
+        pending_subtitle_language_ = language;
+      }
+      return true;
+    }
     const char* action = audio ? "audio-add" : "sub-add";
     const int ret = command({action, url, "select", title, language});
     if (ret < 0) {
@@ -380,6 +400,7 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
   Napi::Value set_external_track(const Napi::CallbackInfo& info, bool audio) {
     Napi::Env env = info.Env();
     bool& active = audio ? has_external_audio_ : has_external_subtitle_;
+    if (audio) pending_audio_ = false; else pending_subtitle_ = false;
     if (active) {
       const char* remove_action = audio ? "audio-remove" : "sub-remove";
       const int ret = command({remove_action});
@@ -421,6 +442,9 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     Napi::Env env = info.Env();
     int ret = command({"stop"});
     if (ret < 0) throw_mpv_error(env, "stop", ret);
+    loaded_ = false;
+    pending_audio_ = false;
+    pending_subtitle_ = false;
     return env.Undefined();
   }
 
@@ -727,6 +751,24 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
 
       if (event->error < 0) {
         item.Set("error", mpv_error_text(event->error));
+      }
+
+      if (event->event_id == MPV_EVENT_FILE_LOADED) {
+        loaded_ = true;
+        if (pending_audio_) {
+          const int ret = command({"audio-add", pending_audio_url_, "select",
+                                   pending_audio_title_, pending_audio_language_});
+          pending_audio_ = false;
+          if (ret < 0) item.Set("error", "audio-add failed: " + mpv_error_text(ret));
+          else has_external_audio_ = true;
+        }
+        if (pending_subtitle_) {
+          const int ret = command({"sub-add", pending_subtitle_url_, "select",
+                                   pending_subtitle_title_, pending_subtitle_language_});
+          pending_subtitle_ = false;
+          if (ret < 0) item.Set("error", "sub-add failed: " + mpv_error_text(ret));
+          else has_external_subtitle_ = true;
+        }
       }
 
       if (event->event_id == MPV_EVENT_PROPERTY_CHANGE && event->data) {
@@ -1213,6 +1255,15 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
   uint64_t next_observer_id_ = 1;
   bool has_external_audio_ = false;
   bool has_external_subtitle_ = false;
+  bool loaded_ = false;
+  bool pending_audio_ = false;
+  bool pending_subtitle_ = false;
+  std::string pending_audio_url_;
+  std::string pending_audio_title_;
+  std::string pending_audio_language_;
+  std::string pending_subtitle_url_;
+  std::string pending_subtitle_title_;
+  std::string pending_subtitle_language_;
   std::string mode_ = "software";
   int64_t timestamp_us_ = 0;
 #ifdef __APPLE__
