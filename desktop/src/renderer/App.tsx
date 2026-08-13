@@ -4,7 +4,7 @@ import {
   Checkbox, CircularProgress, Container, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, LinearProgress, List,
   ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, MenuItem,
-  Slider, Stack, TextField, Toolbar, Tooltip, Typography,
+  Slider, Stack, Switch, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
 import AddRounded from '@mui/icons-material/AddRounded';
@@ -28,7 +28,7 @@ import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import type {
   DownloadJob, HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
-  SubscriptionItem, SyncRunResult, SyncStatus,
+  AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
 } from '../shared/contracts';
 
 defineMpvVideoElement();
@@ -444,11 +444,70 @@ function SyncPanel({ sync, onRefresh }: { sync?: SyncStatus; onRefresh(): void }
   const [busy, setBusy] = useState(false);
   const [panelError, setPanelError] = useState<string>();
   const [result, setResult] = useState<SyncRunResult>();
+  const [automaticDraft, setAutomaticDraft] = useState<AutomaticSyncPolicy>();
+  const [runs, setRuns] = useState<SyncRunLog[]>([]);
   useEffect(() => { if (sync && selectedCategories.length === 0) setSelectedCategories(sync.categories); }, [sync, selectedCategories.length]);
+  useEffect(() => {
+    if (!sync) return;
+    const policy = sync.automaticPolicy;
+    setAutomaticDraft((current) => current && current.updatedAtEpochMillis === policy.updatedAtEpochMillis
+      ? current
+      : { ...policy, peerIds: policy.updatedAtEpochMillis === 0 && policy.peerIds.length === 0
+        ? sync.trustedPeers.map((peer) => peer.peerId) : policy.peerIds });
+  }, [sync?.automaticPolicy.updatedAtEpochMillis, sync?.trustedPeers.length]);
+  useEffect(() => {
+    const refresh = () => {
+      onRefresh();
+      void window.wizestream.backend.invoke<SyncRunLog[]>('sync.runs.list', { limit: 20 }).then(setRuns);
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   async function createInvitation() { setBusy(true); setPanelError(undefined); try { const value = await window.wizestream.backend.invoke<{ pairingCode: string }>('sync.invitation'); setInvitation(value.pairingCode); } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); } }
   async function pairDevice() { if (!pairingCode.trim()) return; setBusy(true); setPanelError(undefined); try { await window.wizestream.backend.invoke('sync.pair', { pairingCode: pairingCode.trim() }); setPairingCode(''); onRefresh(); } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); } }
   async function synchronize() { if (selectedCategories.length === 0) return; setBusy(true); setPanelError(undefined); setResult(undefined); try { setResult(await window.wizestream.backend.invoke<SyncRunResult>('sync.run', { categories: selectedCategories })); onRefresh(); } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); } }
-  return <Stack spacing={3}><Box><Typography variant="h4">Trusted devices</Typography><Typography color="text.secondary">Encrypted local pairing and category synchronization use WizeStream protocol v1.</Typography></Box>{!sync ? <CircularProgress /> : <><Card variant="outlined"><CardContent sx={{ p: 4 }}><Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Box><Typography variant="overline">Desktop Peer ID</Typography><Typography className="mono">{sync.peerId}</Typography></Box><Button onClick={onRefresh}>Refresh</Button></Stack><Divider sx={{ my: 3 }} />{sync.trustedPeers.length === 0 ? <Typography color="text.secondary">No trusted devices yet. Generate a code on either device and enter it on the other.</Typography> : sync.trustedPeers.map((peer) => <Box key={peer.peerId} sx={{ py: 1 }}><Typography sx={{ fontWeight: 650 }}>{peer.deviceName}</Typography><Typography className="mono" color="text.secondary">{peer.peerId}</Typography>{peer.lastSyncError && <Typography color="error" variant="body2">{peer.lastSyncError}</Typography>}</Box>)}<Alert severity="success" sx={{ mt: 3 }}>Phase 3 library editors are enabled. Local changes are reconciled into the shared journal before synchronization.</Alert></CardContent></Card><Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Pair a device</Typography><Stack spacing={2} sx={{ mt: 2 }}><Button variant="outlined" disabled={busy} onClick={() => void createInvitation()}>Generate pairing code</Button>{invitation && <TextField label="This desktop's one-time pairing code" value={invitation} multiline minRows={3} slotProps={{ input: { readOnly: true } }} />}<TextField label="Code from another WizeStream device" value={pairingCode} multiline minRows={3} onChange={(event) => setPairingCode(event.target.value)} /><Button variant="contained" disabled={busy || !pairingCode.trim()} onClick={() => void pairDevice()}>Pair device</Button></Stack></CardContent></Card><Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Synchronize categories</Typography><Box className="sync-category-grid" sx={{ my: 2 }}>{sync.categories.map((category) => <FormControlLabel key={category} control={<Checkbox checked={selectedCategories.includes(category)} onChange={(event) => setSelectedCategories((current) => event.target.checked ? [...current, category] : current.filter((value) => value !== category))} />} label={syncCategoryLabels[category] ?? category} />)}</Box><Button variant="contained" disabled={busy || sync.trustedPeers.length === 0 || selectedCategories.length === 0} onClick={() => void synchronize()}>{busy ? 'Working…' : 'Sync selected'}</Button>{result && <Alert severity={result.failed === 0 ? 'success' : 'warning'} sx={{ mt: 2 }}>Synchronization finished: {result.succeeded} device(s) succeeded, {result.failed} failed.</Alert>}{panelError && <Alert severity="error" sx={{ mt: 2 }}>{panelError}</Alert>}</CardContent></Card></>}</Stack>;
+  async function saveAutomaticPolicy() {
+    if (!automaticDraft) return;
+    setBusy(true); setPanelError(undefined);
+    try {
+      await window.wizestream.backend.invoke<AutomaticSyncPolicy>('sync.policy.update', {
+        enabled: automaticDraft.enabled,
+        intervalMinutes: automaticDraft.intervalMinutes,
+        categories: automaticDraft.categories,
+        peerIds: automaticDraft.peerIds,
+      });
+      onRefresh();
+    } catch (reason) { setPanelError(errorMessage(reason)); } finally { setBusy(false); }
+  }
+  if (!sync || !automaticDraft) return <CircularProgress />;
+  const automaticInvalid = automaticDraft.enabled
+    && (automaticDraft.categories.length === 0 || automaticDraft.peerIds.length === 0);
+  return <Stack spacing={3}>
+    <Box><Typography variant="h4">Trusted devices</Typography><Typography color="text.secondary">Encrypted local pairing and synchronization use WizeStream protocol v1.</Typography></Box>
+    {panelError && <Alert severity="error">{panelError}</Alert>}
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}>
+      <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Box><Typography variant="overline">Desktop Peer ID</Typography><Typography className="mono">{sync.peerId}</Typography></Box><Button onClick={onRefresh}>Refresh</Button></Stack>
+      <Divider sx={{ my: 3 }} />
+      {sync.trustedPeers.length === 0 ? <Typography color="text.secondary">No trusted devices yet. Generate a code on either device and enter it on the other.</Typography> : sync.trustedPeers.map((peer) => <Box key={peer.peerId} sx={{ py: 1 }}><Typography sx={{ fontWeight: 650 }}>{peer.deviceName}</Typography><Typography className="mono" color="text.secondary">{peer.peerId}</Typography>{peer.lastSyncError && <Typography color="error" variant="body2">{peer.lastSyncError}</Typography>}{peer.automaticRetry?.nextRetryAtEpochMillis && <Typography color="warning.main" variant="body2">Automatic retry {new Date(peer.automaticRetry.nextRetryAtEpochMillis).toLocaleString()}</Typography>}</Box>)}
+    </CardContent></Card>
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Pair a device</Typography><Stack spacing={2} sx={{ mt: 2 }}><Button variant="outlined" disabled={busy} onClick={() => void createInvitation()}>Generate pairing code</Button>{invitation && <TextField label="This desktop's one-time pairing code" value={invitation} multiline minRows={3} slotProps={{ input: { readOnly: true } }} />}<TextField label="Code from another WizeStream device" value={pairingCode} multiline minRows={3} onChange={(event) => setPairingCode(event.target.value)} /><Button variant="contained" disabled={busy || !pairingCode.trim()} onClick={() => void pairDevice()}>Pair device</Button></Stack></CardContent></Card>
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}>
+      <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 2 }}><Box><Typography variant="h6">Automatic synchronization</Typography><Typography color="text.secondary">Runs while WizeStream Desktop is open, on a private local network only.</Typography></Box><FormControlLabel label={automaticDraft.enabled ? 'Enabled' : 'Disabled'} control={<Switch checked={automaticDraft.enabled} onChange={(event) => setAutomaticDraft({ ...automaticDraft, enabled: event.target.checked })} />} /></Stack>
+      <Stack direction={{ xs: 'column', md: 'row' }} sx={{ mt: 3, gap: 3, alignItems: 'start' }}>
+        <TextField select label="Interval" value={automaticDraft.intervalMinutes} onChange={(event) => setAutomaticDraft({ ...automaticDraft, intervalMinutes: Number(event.target.value) })} sx={{ minWidth: 220 }}>{[15, 30, 60, 180, 360, 720, 1440].map((minutes) => <MenuItem key={minutes} value={minutes}>{minutes < 60 ? `${minutes} minutes` : minutes === 60 ? '1 hour' : `${minutes / 60} hours`}</MenuItem>)}</TextField>
+        <Alert severity={sync.networkEligibility.eligible ? 'success' : 'warning'} sx={{ flexGrow: 1 }}>{sync.networkEligibility.eligible ? 'Private local network available' : 'Offline or no private local network; automatic runs will wait'}</Alert>
+      </Stack>
+      <Typography variant="subtitle1" sx={{ mt: 3, fontWeight: 650 }}>Categories</Typography>
+      <Box className="sync-category-grid">{sync.categories.map((category) => <FormControlLabel key={category} control={<Checkbox checked={automaticDraft.categories.includes(category)} onChange={(event) => setAutomaticDraft({ ...automaticDraft, categories: event.target.checked ? [...automaticDraft.categories, category] : automaticDraft.categories.filter((value) => value !== category) })} />} label={syncCategoryLabels[category] ?? category} />)}</Box>
+      <Typography variant="subtitle1" sx={{ mt: 3, fontWeight: 650 }}>Trusted devices</Typography>
+      {sync.trustedPeers.length === 0 ? <Typography color="text.secondary">Pair a trusted device before enabling automatic synchronization.</Typography> : sync.trustedPeers.map((peer) => <FormControlLabel key={peer.peerId} sx={{ display: 'flex' }} control={<Checkbox checked={automaticDraft.peerIds.includes(peer.peerId)} onChange={(event) => setAutomaticDraft({ ...automaticDraft, peerIds: event.target.checked ? [...automaticDraft.peerIds, peer.peerId] : automaticDraft.peerIds.filter((value) => value !== peer.peerId) })} />} label={peer.deviceName} />)}
+      {automaticInvalid && <Alert severity="warning" sx={{ mt: 2 }}>Select at least one category and trusted device before enabling automatic synchronization.</Alert>}
+      <Stack direction="row" sx={{ mt: 3, gap: 2, alignItems: 'center', flexWrap: 'wrap' }}><Button variant="contained" disabled={busy || automaticInvalid} onClick={() => void saveAutomaticPolicy()}>Save automatic policy</Button>{sync.activeRun.running && <Chip color="info" label={`${sync.activeRun.trigger} synchronization running`} />}{sync.automaticSchedule.nextRunAtEpochMillis && <Typography color="text.secondary">Next regular run: {new Date(sync.automaticSchedule.nextRunAtEpochMillis).toLocaleString()}</Typography>}</Stack>
+    </CardContent></Card>
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Sync selected now</Typography><Typography color="text.secondary">Manual synchronization remains available even when automatic synchronization is disabled.</Typography><Box className="sync-category-grid" sx={{ my: 2 }}>{sync.categories.map((category) => <FormControlLabel key={category} control={<Checkbox checked={selectedCategories.includes(category)} onChange={(event) => setSelectedCategories((current) => event.target.checked ? [...current, category] : current.filter((value) => value !== category))} />} label={syncCategoryLabels[category] ?? category} />)}</Box><Button variant="contained" disabled={busy || sync.activeRun.running || sync.trustedPeers.length === 0 || selectedCategories.length === 0} onClick={() => void synchronize()}>{busy ? 'Working…' : 'Sync selected'}</Button>{result && <Alert severity={result.failed === 0 ? 'success' : 'warning'} sx={{ mt: 2 }}>Synchronization finished: {result.succeeded} device(s) succeeded, {result.failed} failed.</Alert>}</CardContent></Card>
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Recent synchronization activity</Typography>{runs.length === 0 ? <Typography color="text.secondary" sx={{ mt: 1 }}>No synchronization attempts recorded yet.</Typography> : <List disablePadding sx={{ mt: 2 }}>{runs.map((run, index) => <Box key={run.runId}>{index > 0 && <Divider />}<ListItem><ListItemText primary={`${run.trigger === 'automatic' ? 'Automatic' : 'Manual'} · ${run.outcome.replaceAll('_', ' ')}`} secondary={`${new Date(run.startedAtEpochMillis).toLocaleString()} · ${run.succeeded} succeeded, ${run.failed} failed${run.error ? ` · ${run.error}` : ''}`} /></ListItem></Box>)}</List>}</CardContent></Card>
+  </Stack>;
 }
 
 function PanelHeader({ title, description, action }: { title: string; description: string; action: React.ReactNode }) {

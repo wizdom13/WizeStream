@@ -26,9 +26,26 @@ const backendMethods = new Set<BackendMethod>([
   'library.search-history.delete', 'library.search-history.clear',
   'library.learning.save', 'library.learning.delete',
   'library.downloads.record',
-  'sync.status', 'sync.invitation', 'sync.pair', 'sync.run',
+  'sync.status', 'sync.invitation', 'sync.pair', 'sync.policy.update',
+  'sync.runs.list', 'sync.run',
 ]);
 const rpcSchema = z.object({ method: z.string().max(80), params: z.record(z.string(), z.unknown()).optional() });
+const syncCategorySchema = z.enum([
+  'subscriptions', 'playlists', 'watchHistory', 'searchHistory', 'learningNotes',
+  'feedGroups', 'homeTabs', 'channelProfiles', 'filters', 'settings', 'completedDownloads',
+]);
+const syncPeerIdSchema = z.string().trim().min(1).max(160);
+const syncPolicySchema = z.object({
+  enabled: z.boolean(),
+  intervalMinutes: z.number().int().min(15).max(1440),
+  categories: z.array(syncCategorySchema).max(11),
+  peerIds: z.array(syncPeerIdSchema).max(32),
+});
+const syncRunSchema = z.object({
+  categories: z.array(syncCategorySchema).max(11).optional(),
+  peerIds: z.array(syncPeerIdSchema).max(32).optional(),
+});
+const syncRunsSchema = z.object({ limit: z.number().int().min(1).max(100).optional() });
 const playSchema = z.object({
   url: z.url(),
   title: z.string().max(200).optional(),
@@ -99,7 +116,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('backend:invoke', async (_event, input: unknown) => {
     const { method, params } = rpcSchema.parse(input);
     if (!backendMethods.has(method as BackendMethod)) throw new Error('Backend method is not allowed');
-    return backend.invoke(method as BackendMethod, params);
+    const validatedParams = method === 'sync.policy.update' ? syncPolicySchema.parse(params)
+      : method === 'sync.run' ? syncRunSchema.parse(params ?? {})
+        : method === 'sync.runs.list' ? syncRunsSchema.parse(params ?? {})
+          : params;
+    return backend.invoke(method as BackendMethod, validatedParams);
   });
   ipcMain.handle('player:play', async (_event, input: unknown) => {
     const value = playSchema.parse(input);

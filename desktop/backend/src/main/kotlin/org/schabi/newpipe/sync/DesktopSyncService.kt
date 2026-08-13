@@ -10,6 +10,7 @@ import io.libp2p.core.multiformats.Multiaddr
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.sql.Connection
+import java.util.UUID
 
 class DesktopSyncService(
     connection: Connection,
@@ -33,6 +34,9 @@ class DesktopSyncService(
         journal
     )
     private val structuredEngine = StructuredPreferenceSyncEngine(structuredStore)
+    private val logRepository = DesktopSyncLogRepository(connection)
+    private val coordinator = DesktopSyncRunCoordinator()
+    private val networkEligibility = DesktopNetworkEligibility()
     private val discovery = DesktopPeerDiscovery()
     private val node = Libp2pSyncNode(
         stateRepository = repository,
@@ -47,29 +51,73 @@ class DesktopSyncService(
         structuredPreferenceSyncEngine = structuredEngine,
         peerAddressResolver = discovery::addressesFor
     )
-
-    @Synchronized
-    fun start() = node.start(allowEphemeralFallback = true)
-
-    @Synchronized
-    fun stop() = node.stop()
-
-    fun status(): Map<String, Any?> = linkedMapOf(
-        "protocol" to SYNC_PROTOCOL_ID,
-        "peerId" to identity.peerId.toBase58(),
-        "listenAddresses" to runCatching(node::advertisedAddresses).getOrDefault(emptyList()),
-        "trustedPeers" to repository.getTrustedPeers().map { peer ->
-            linkedMapOf(
-                "peerId" to peer.peerId,
-                "deviceName" to peer.deviceName,
-                "lastSyncAtEpochMillis" to peer.lastSyncAtEpochMillis,
-                "lastSyncError" to peer.lastSyncError
-            )
-        },
-        "dataSyncEnabled" to true,
-        "automaticLanDiscovery" to true,
-        "categories" to CATEGORY_ORDER
+    private val scheduler = DesktopSyncScheduler(
+        logRepository,
+        networkEligibility,
+        ::runAutomaticSynchronization
     )
+
+    @Synchronized
+    fun start() {
+        node.start(allowEphemeralFallback = true)
+        scheduler.start()
+    }
+
+    @Synchronized
+    fun stop() {
+        scheduler.stop()
+        node.stop()
+    }
+
+    fun status(): Map<String, Any?> {
+        val recent = logRepository.recentRuns(1).firstOrNull()
+        return linkedMapOf(
+            "protocol" to SYNC_PROTOCOL_ID,
+            "peerId" to identity.peerId.toBase58(),
+            "listenAddresses" to runCatching(node::advertisedAddresses).getOrDefault(emptyList()),
+            "trustedPeers" to repository.getTrustedPeers().map { peer ->
+                linkedMapOf(
+                    "peerId" to peer.peerId,
+                    "deviceName" to peer.deviceName,
+                    "lastSyncAtEpochMillis" to peer.lastSyncAtEpochMillis,
+                    "lastSyncError" to peer.lastSyncError,
+                    "automaticRetry" to logRepository.peerRetryState(peer.peerId)
+                )
+            },
+            "dataSyncEnabled" to true,
+            "automaticLanDiscovery" to true,
+            "categories" to CATEGORY_ORDER,
+            "automaticPolicy" to logRepository.policy().asMap(),
+            "automaticSchedule" to logRepository.scheduleState(),
+            "activeRun" to coordinator.status(),
+            "networkEligibility" to networkEligibility.status(),
+            "lastRun" to recent
+        )
+    }
+
+    fun updateAutomaticPolicy(
+        enabled: Boolean,
+        intervalMinutes: Int,
+        categoryNames: List<String>,
+        peerIds: List<String>
+    ): Map<String, Any> {
+        categoryNames.forEach(::parseCategory)
+        val trustedIds = repository.getTrustedPeers().map(TrustedPeer::peerId).toSet()
+        require(peerIds.all { it in trustedIds }) { "Automatic sync includes an untrusted device" }
+        val policy = AutomaticSyncPolicy(
+            enabled,
+            intervalMinutes,
+            CATEGORY_ORDER.filter { it in categoryNames },
+            peerIds.distinct(),
+            System.currentTimeMillis()
+        )
+        policy.validate()
+        logRepository.savePolicy(policy)
+        scheduler.policyChanged()
+        return policy.asMap()
+    }
+
+    fun recentRuns(limit: Int): List<Map<String, Any?>> = logRepository.recentRuns(limit)
 
     fun createPairingCode(): String = node.createPairingCode()
 
@@ -96,19 +144,171 @@ class DesktopSyncService(
         return linkedMapOf("peerId" to peer.peerId, "deviceName" to peer.deviceName)
     }
 
-    fun sync(categoryNames: List<String>?): Map<String, Any?> {
+    @JvmOverloads
+    fun sync(categoryNames: List<String>?, peerIds: List<String>? = null): Map<String, Any?> {
+        val runId = UUID.randomUUID().toString()
+        val startedAt = System.currentTimeMillis()
         val categories = categoryNames?.takeIf { it.isNotEmpty() }
             ?.map(::parseCategory)?.toSet() ?: SyncCategory.entries.toSet()
-        val peers = repository.getTrustedPeers()
-        if (peers.isEmpty()) throw SubscriptionSyncException(
-            "Pair a trusted device before synchronizing"
-        )
-        val attempts = peers.map { peer -> syncPeer(peer, categories) }
+        val requestedPeerIds = peerIds ?: repository.getTrustedPeers().map(TrustedPeer::peerId)
+        return coordinator.manual(runId) {
+            runLogged(
+                runId,
+                SyncRunTrigger.MANUAL,
+                startedAt,
+                requestedPeerIds.associateWith { categories },
+                updateRetry = false
+            )
+        }
+    }
+
+    private fun synchronize(
+        categoryPlan: Map<String, Set<SyncCategory>>
+    ): Map<String, Any?> {
+        val peersById = repository.getTrustedPeers().associateBy(TrustedPeer::peerId)
+        val unknown = categoryPlan.keys.filterNot { it in peersById }
+        require(unknown.isEmpty()) { "Synchronization includes an untrusted device" }
+        val peers = categoryPlan.keys.mapNotNull { peersById[it] }
+        if (peers.isEmpty()) throw SubscriptionSyncException("Pair a trusted device before synchronizing")
+        val attempts = peers.map { peer -> syncPeer(peer, categoryPlan.getValue(peer.peerId)) }
+        val categories = categoryPlan.values.flatten().toSet()
         return linkedMapOf(
             "requestedCategories" to CATEGORY_ORDER.filter { parseCategory(it) in categories },
             "peers" to attempts,
             "succeeded" to attempts.count { it["error"] == null },
             "failed" to attempts.count { it["error"] != null }
+        )
+    }
+
+    private fun runAutomaticSynchronization(
+        policy: AutomaticSyncPolicy,
+        startedAt: Long,
+        networkEligible: Boolean
+    ) {
+        val runId = UUID.randomUUID().toString()
+        if (!networkEligible) {
+            recordSkipped(runId, startedAt, policy, SyncRunOutcome.SKIPPED_OFFLINE)
+            return
+        }
+        val trustedIds = repository.getTrustedPeers().map(TrustedPeer::peerId).toSet()
+        val selected = policy.peerIds.filter { it in trustedIds }
+        if (selected.isEmpty()) {
+            recordSkipped(runId, startedAt, policy, SyncRunOutcome.SKIPPED_NO_DEVICES)
+            return
+        }
+        val nextRegular = logRepository.scheduleState()["nextRunAtEpochMillis"] as? Long
+        val categoryPlan = if (nextRegular != null && startedAt < nextRegular) {
+            val enabledCategories = policy.categories.toSet()
+            val retryPlan = logRepository.retryDuePlan(selected, startedAt)
+            val filtered = retryPlan.mapValues { (_, categories) ->
+                categories.filter { it in enabledCategories }.map(::parseCategory).toSet()
+            }.filterValues { it.isNotEmpty() }
+            retryPlan.keys.filterNot { it in filtered }.forEach { peerId ->
+                logRepository.updatePeerRetry(peerId, succeeded = true, attemptedAt = startedAt)
+            }
+            filtered
+        } else {
+            val categories = policy.categories.map(::parseCategory).toSet()
+            logRepository.eligiblePeerIds(selected, startedAt).associateWith { categories }
+        }
+        if (categoryPlan.isEmpty()) {
+            recordSkipped(runId, startedAt, policy, SyncRunOutcome.SKIPPED_BACKOFF)
+            return
+        }
+        val result = coordinator.automatic(runId, startedAt) {
+            runCatching {
+                runLogged(
+                    runId,
+                    SyncRunTrigger.AUTOMATIC,
+                    startedAt,
+                    categoryPlan,
+                    updateRetry = true
+                )
+            }.onFailure { it.printStackTrace(System.err) }
+        }
+        if (result == null) recordSkipped(runId, startedAt, policy, SyncRunOutcome.SKIPPED_BUSY)
+    }
+
+    private fun runLogged(
+        runId: String,
+        trigger: SyncRunTrigger,
+        startedAt: Long,
+        categoryPlan: Map<String, Set<SyncCategory>>,
+        updateRetry: Boolean
+    ): Map<String, Any?> {
+        val categories = categoryPlan.values.flatten().toSet()
+        val peerIds = categoryPlan.keys.toList()
+        return try {
+            val result = synchronize(categoryPlan)
+            val succeeded = result["succeeded"] as Int
+            val failed = result["failed"] as Int
+            val outcome = when {
+                failed == 0 -> SyncRunOutcome.SUCCESS
+                succeeded == 0 -> SyncRunOutcome.FAILED
+                else -> SyncRunOutcome.PARTIAL
+            }
+            if (updateRetry) updateRetryState(result, startedAt)
+            val completedAt = System.currentTimeMillis()
+            logRepository.recordRun(
+                runId, trigger, startedAt, completedAt, outcome,
+                CATEGORY_ORDER.filter { parseCategory(it) in categories }, peerIds, result, null
+            )
+            if (trigger == SyncRunTrigger.AUTOMATIC) {
+                logRepository.updateSchedule(
+                    logRepository.scheduleState()["nextRunAtEpochMillis"] as? Long,
+                    logRepository.scheduleState()["nextWakeAtEpochMillis"] as? Long,
+                    startedAt,
+                    outcome
+                )
+            }
+            result
+        } catch (error: Exception) {
+            val message = error.safeDiagnosticMessage().take(500)
+            logRepository.recordRun(
+                runId, trigger, startedAt, System.currentTimeMillis(), SyncRunOutcome.FAILED,
+                CATEGORY_ORDER.filter { parseCategory(it) in categories }, peerIds, null, message
+            )
+            if (trigger == SyncRunTrigger.AUTOMATIC) {
+                logRepository.updateSchedule(
+                    logRepository.scheduleState()["nextRunAtEpochMillis"] as? Long,
+                    logRepository.scheduleState()["nextWakeAtEpochMillis"] as? Long,
+                    startedAt,
+                    SyncRunOutcome.FAILED
+                )
+            }
+            throw error
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun updateRetryState(result: Map<String, Any?>, attemptedAt: Long) {
+        (result["peers"] as List<Map<String, Any?>>).forEach { peer ->
+            val results = peer["results"] as Map<String, Map<String, Any?>>
+            val failedCategories = results.filterValues { it["error"] != null }.keys.toList()
+            logRepository.updatePeerRetry(
+                peer["peerId"] as String,
+                peer["error"] == null,
+                attemptedAt,
+                failedCategories
+            )
+        }
+    }
+
+    private fun recordSkipped(
+        runId: String,
+        startedAt: Long,
+        policy: AutomaticSyncPolicy,
+        outcome: SyncRunOutcome
+    ) {
+        logRepository.recordRun(
+            runId, SyncRunTrigger.AUTOMATIC, startedAt, System.currentTimeMillis(), outcome,
+            policy.categories, policy.peerIds, null, null
+        )
+        logRepository.updateSchedule(
+            logRepository.scheduleState()["nextRunAtEpochMillis"] as? Long,
+            logRepository.scheduleState()["nextWakeAtEpochMillis"] as? Long,
+            startedAt,
+            outcome
         )
     }
 
@@ -129,7 +329,7 @@ class DesktopSyncService(
             } else attempt
             retried.onSuccess { results[category.wireName] = it }
                 .onFailure { error ->
-                    val message = error.diagnosticMessage()
+                    val message = error.safeDiagnosticMessage()
                     results[category.wireName] = linkedMapOf("error" to message)
                     errors += "${category.wireName}: $message"
                 }
@@ -252,6 +452,9 @@ class DesktopSyncService(
             } ?: error.javaClass.simpleName
         }.take(2_048)
 
+    private fun Throwable.safeDiagnosticMessage(): String = diagnosticMessage()
+        .replace(HTTP_URL, "[redacted-url]")
+
     private enum class SyncCategory(val wireName: String) {
         SUBSCRIPTIONS("subscriptions"),
         PLAYLISTS("playlists"),
@@ -268,6 +471,7 @@ class DesktopSyncService(
 
     companion object {
         private val TCP_PORT = Regex("/tcp/(\\d+)")
-        private val CATEGORY_ORDER = SyncCategory.entries.map(SyncCategory::wireName)
+        private val HTTP_URL = Regex("https?://[^\\s;]+", RegexOption.IGNORE_CASE)
+        private val CATEGORY_ORDER = DesktopSyncCategories.ordered
     }
 }

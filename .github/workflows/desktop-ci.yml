@@ -63,6 +63,8 @@ jobs:
             '{"jsonrpc":"2.0","id":4,"method":"library.playlists.list","params":{}}' \
             '{"jsonrpc":"2.0","id":5,"method":"library.learning.list","params":{}}' \
             '{"jsonrpc":"2.0","id":6,"method":"library.downloads.record","params":{"sourceUrl":"https://www.youtube.com/watch?v=phase4fixture","displayName":"Phase 4.mp4","mimeType":"video/mp4","sizeBytes":42,"completedAt":1700000000000,"mediaKind":"v"}}' \
+            '{"jsonrpc":"2.0","id":7,"method":"sync.policy.update","params":{"enabled":false,"intervalMinutes":30,"categories":["subscriptions"],"peerIds":[]}}' \
+            '{"jsonrpc":"2.0","id":8,"method":"sync.runs.list","params":{"limit":20}}' \
             | backend/build/runtime/bin/java \
               -cp 'backend/build/install/wizestream-desktop-backend/lib/*' \
               org.wisso.wizestream.desktop.backend.DesktopBackend \
@@ -74,6 +76,8 @@ jobs:
           grep -q '"name":"CI playlist"' "$RUNNER_TEMP/backend-response.json"
           grep -q '"id":5,"result":\[\]' "$RUNNER_TEMP/backend-response.json"
           grep -q '"id":6,"result":{"syncId":"' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"id":7,"result":{"enabled":false,"intervalMinutes":30' "$RUNNER_TEMP/backend-response.json"
+          grep -q '"id":8,"result":\[\]' "$RUNNER_TEMP/backend-response.json"
       - name: Type-check, build and verify Electron application
         run: npm run build
       - name: Test Electron main-process services

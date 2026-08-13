@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,13 +20,15 @@ public final class DesktopBackend implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final ExtractorFacade extractor = new ExtractorFacade();
     private final DesktopDatabase database;
+    private final Connection syncConnection;
     private final DesktopLibrary library;
     private final DesktopSyncService sync;
 
     private DesktopBackend(final Path dataDirectory) throws Exception {
         database = new DesktopDatabase(dataDirectory);
         library = new DesktopLibrary(database.connection());
-        sync = new DesktopSyncService(database.connection(), "WizeStream Desktop");
+        syncConnection = database.openConnection();
+        sync = new DesktopSyncService(syncConnection, "WizeStream Desktop");
         sync.start();
     }
 
@@ -119,7 +122,15 @@ public final class DesktopBackend implements AutoCloseable {
                 case "sync.status" -> sync.status();
                 case "sync.invitation" -> Map.of("pairingCode", sync.createPairingCode());
                 case "sync.pair" -> sync.pair(requiredText(params, "pairingCode"));
-                case "sync.run" -> sync.sync(optionalTextList(params, "categories"));
+                case "sync.policy.update" -> sync.updateAutomaticPolicy(
+                        requiredBoolean(params, "enabled"),
+                        requiredInt(params, "intervalMinutes"),
+                        requiredTextList(params, "categories"),
+                        requiredTextList(params, "peerIds"));
+                case "sync.runs.list" -> sync.recentRuns(optionalInt(params, "limit", 20));
+                case "sync.run" -> sync.sync(
+                        optionalTextList(params, "categories"),
+                        optionalTextList(params, "peerIds"));
                 default -> throw new IllegalArgumentException("Unknown backend method");
             };
             final ObjectNode response = JSON.createObjectNode();
@@ -164,6 +175,19 @@ public final class DesktopBackend implements AutoCloseable {
         return value.longValue();
     }
 
+    private static boolean requiredBoolean(final JsonNode node, final String name) {
+        final JsonNode value = node.path(name);
+        if (!value.isBoolean()) throw new IllegalArgumentException("Missing " + name);
+        return value.booleanValue();
+    }
+
+    private static int optionalInt(final JsonNode node, final String name, final int fallback) {
+        final JsonNode value = node.path(name);
+        if (value.isMissingNode() || value.isNull()) return fallback;
+        if (!value.canConvertToInt()) throw new IllegalArgumentException("Invalid " + name);
+        return value.intValue();
+    }
+
     private static String optionalText(final JsonNode node, final String name) {
         final JsonNode value = node.path(name);
         if (value.isMissingNode() || value.isNull()) return null;
@@ -200,6 +224,12 @@ public final class DesktopBackend implements AutoCloseable {
         return List.copyOf(result);
     }
 
+    private static List<String> requiredTextList(final JsonNode node, final String name) {
+        final List<String> value = optionalTextList(node, name);
+        if (value == null) throw new IllegalArgumentException("Missing " + name);
+        return value;
+    }
+
     private static String safeMessage(final Exception error) {
         final String value = error.getMessage();
         if (value == null || value.isBlank()) return error.getClass().getSimpleName();
@@ -216,6 +246,7 @@ public final class DesktopBackend implements AutoCloseable {
     @Override
     public void close() throws Exception {
         sync.stop();
+        syncConnection.close();
         database.close();
     }
 }

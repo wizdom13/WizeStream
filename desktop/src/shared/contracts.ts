@@ -29,6 +29,8 @@ export type BackendMethod =
   | 'sync.status'
   | 'sync.invitation'
   | 'sync.pair'
+  | 'sync.policy.update'
+  | 'sync.runs.list'
   | 'sync.run';
 
 export interface ServiceSummary {
@@ -190,10 +192,67 @@ export interface SyncStatus {
     deviceName: string;
     lastSyncAtEpochMillis?: number;
     lastSyncError?: string;
+    automaticRetry?: {
+      consecutiveFailures: number;
+      nextRetryAtEpochMillis?: number;
+      lastAttemptAtEpochMillis?: number;
+      lastOutcome?: SyncOutcome;
+    };
   }>;
   dataSyncEnabled: boolean;
   automaticLanDiscovery: boolean;
   categories: string[];
+  automaticPolicy: AutomaticSyncPolicy;
+  automaticSchedule: {
+    nextRunAtEpochMillis?: number;
+    nextWakeAtEpochMillis?: number;
+    lastAttemptAtEpochMillis?: number;
+    lastOutcome?: SyncOutcome;
+  };
+  activeRun: {
+    running: boolean;
+    runId?: string;
+    trigger?: SyncTrigger;
+    startedAtEpochMillis?: number;
+  };
+  networkEligibility: {
+    eligible: boolean;
+    reason: 'privateLocalNetwork' | 'offlineOrNoPrivateNetwork';
+  };
+  lastRun?: SyncRunLog;
+}
+
+export type SyncTrigger = 'manual' | 'automatic';
+export type SyncOutcome = 'running' | 'success' | 'partial' | 'failed'
+  | 'skipped_offline' | 'skipped_busy' | 'skipped_no_devices' | 'skipped_backoff';
+
+export interface AutomaticSyncPolicy {
+  enabled: boolean;
+  intervalMinutes: number;
+  categories: string[];
+  peerIds: string[];
+  localNetworkOnly: true;
+  updatedAtEpochMillis: number;
+}
+
+export interface SyncRunLog {
+  runId: string;
+  trigger: SyncTrigger;
+  startedAtEpochMillis: number;
+  completedAtEpochMillis?: number;
+  outcome: SyncOutcome;
+  requestedCategories: string[];
+  requestedPeerIds: string[];
+  succeeded: number;
+  failed: number;
+  error?: string;
+  peers: Array<{
+    peerId: string;
+    deviceName: string;
+    outcome: SyncOutcome;
+    error?: string;
+    results: Record<string, { sent?: number; received?: number; changed?: number; rounds?: number; error?: string }>;
+  }>;
 }
 
 export interface SyncRunResult {

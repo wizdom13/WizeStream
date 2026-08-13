@@ -50,6 +50,18 @@ as separate files rather than being muxed silently.
 The Windows packaging workflow pins the Shinchiro libmpv development archive and verifies its
 SHA-256 digest before compiling or staging native code.
 
+Phase 5 adds opt-in automatic synchronization while WizeStream Desktop is running. The JVM
+backend persists a user-selected interval, categories and explicit trusted-device allowlist,
+checks for a private local IPv4 network, and reuses the Phase 2 engines without changing their
+journals or conflict rules. Runs are serialized with manual synchronization, recover after an
+overdue application restart, and use per-device 5-minute-to-6-hour exponential retry backoff.
+Search history remains excluded until explicitly selected. Recent manual, automatic, skipped and
+failed attempts are shown on the Devices screen without recording synchronized payloads, pairing
+codes, private keys or media URLs.
+
+Automatic synchronization is not an operating-system daemon: closing WizeStream stops its JVM
+backend and scheduler. The next launch performs a jittered catch-up when a persisted run is overdue.
+
 When a trusted device's saved IP address is stale, desktop scans the local IPv4 subnet only on the
 previously trusted sync port and then authenticates the discovered endpoint against the saved
 libp2p PeerID. Discovery never establishes trust by itself.
@@ -114,6 +126,5 @@ not requirements for architecture CI.
 
 ## Next milestone
 
-1. Add scheduled background synchronization with user-controlled category policy.
-2. Add portable embedded-libmpv packaging for the remaining native targets and adaptive muxing.
-3. Add signed releases and automatic updates after preview stabilization.
+1. Add portable embedded-libmpv packaging for the remaining native targets and adaptive muxing.
+2. Add signed releases and automatic updates after preview stabilization.

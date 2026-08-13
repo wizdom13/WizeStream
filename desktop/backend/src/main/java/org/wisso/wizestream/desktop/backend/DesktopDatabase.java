@@ -10,14 +10,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class DesktopDatabase implements AutoCloseable {
+    private static final int SCHEMA_VERSION = 3;
+    private final String jdbcUrl;
     private final Connection connection;
 
     DesktopDatabase(final Path dataDirectory) throws Exception {
         Files.createDirectories(dataDirectory);
-        connection = DriverManager.getConnection("jdbc:sqlite:" + dataDirectory.resolve("wizestream-desktop.db"));
+        jdbcUrl = "jdbc:sqlite:" + dataDirectory.resolve("wizestream-desktop.db");
+        connection = openConnection();
+        connection.setAutoCommit(false);
+        try {
         try (Statement statement = connection.createStatement()) {
-            statement.execute("PRAGMA journal_mode=WAL");
-            statement.execute("PRAGMA foreign_keys=ON");
             statement.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS schema_metadata (
                       key TEXT PRIMARY KEY NOT NULL,
@@ -25,9 +28,12 @@ public final class DesktopDatabase implements AutoCloseable {
                     )
                     """);
             statement.executeUpdate("""
-                    INSERT INTO schema_metadata(key, value) VALUES ('schema_version', '2')
-                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                    INSERT OR IGNORE INTO schema_metadata(key, value) VALUES ('schema_version', '2')
                     """);
+            final int currentVersion = schemaVersion();
+            if (currentVersion < 1 || currentVersion > SCHEMA_VERSION) {
+                throw new SQLException("Unsupported desktop database schema version: " + currentVersion);
+            }
             statement.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS subscriptions (
                       service_id INTEGER NOT NULL, url TEXT NOT NULL, name TEXT NOT NULL,
@@ -163,10 +169,104 @@ public final class DesktopDatabase implements AutoCloseable {
         ensureColumn("learning_notes", "uploader", "TEXT NOT NULL DEFAULT ''");
         ensureColumn("learning_notes", "uploader_url", "TEXT");
         ensureColumn("learning_notes", "thumbnail_url", "TEXT");
+        createAutomaticSyncSchema();
+        ensureColumn("sync_peer_retry_state", "failed_categories_json", "TEXT NOT NULL DEFAULT '[]'");
+        try (var statement = connection.prepareStatement(
+                "UPDATE schema_metadata SET value=? WHERE key='schema_version'")) {
+            statement.setString(1, Integer.toString(SCHEMA_VERSION));
+            statement.executeUpdate();
+        }
+        connection.commit();
+        } catch (final Exception error) {
+            connection.rollback();
+            throw error;
+        } finally {
+            connection.setAutoCommit(true);
+        }
     }
 
     public Connection connection() {
         return connection;
+    }
+
+    public Connection openConnection() throws SQLException {
+        final Connection opened = DriverManager.getConnection(jdbcUrl);
+        try (Statement statement = opened.createStatement()) {
+            statement.execute("PRAGMA journal_mode=WAL");
+            statement.execute("PRAGMA foreign_keys=ON");
+            statement.execute("PRAGMA busy_timeout=5000");
+        }
+        return opened;
+    }
+
+    private void createAutomaticSyncSchema() throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS sync_policy (
+                      id INTEGER PRIMARY KEY CHECK(id=1), enabled INTEGER NOT NULL DEFAULT 0,
+                      interval_minutes INTEGER NOT NULL DEFAULT 60,
+                      categories_json TEXT NOT NULL, peer_ids_json TEXT NOT NULL,
+                      updated_at INTEGER NOT NULL
+                    )
+                    """);
+            statement.executeUpdate("""
+                    INSERT OR IGNORE INTO sync_policy(
+                      id, enabled, interval_minutes, categories_json, peer_ids_json, updated_at
+                    ) VALUES (1, 0, 60,
+                      '["subscriptions","playlists","watchHistory","learningNotes","feedGroups","homeTabs","channelProfiles","filters","settings","completedDownloads"]',
+                      '[]', 0)
+                    """);
+            statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS sync_schedule_state (
+                      id INTEGER PRIMARY KEY CHECK(id=1), next_run_at INTEGER,
+                      next_wake_at INTEGER, last_attempt_at INTEGER, last_outcome TEXT
+                    )
+                    """);
+            statement.executeUpdate("INSERT OR IGNORE INTO sync_schedule_state(id) VALUES (1)");
+            statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS sync_peer_retry_state (
+                      peer_id TEXT PRIMARY KEY NOT NULL REFERENCES trusted_peers(peer_id) ON DELETE CASCADE,
+                      failure_count INTEGER NOT NULL DEFAULT 0, next_retry_at INTEGER,
+                      last_attempt_at INTEGER, last_outcome TEXT,
+                      failed_categories_json TEXT NOT NULL DEFAULT '[]'
+                    )
+                    """);
+            statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS sync_run_log (
+                      run_id TEXT PRIMARY KEY NOT NULL, trigger TEXT NOT NULL,
+                      started_at INTEGER NOT NULL, completed_at INTEGER,
+                      outcome TEXT NOT NULL, requested_categories_json TEXT NOT NULL,
+                      requested_peer_ids_json TEXT NOT NULL,
+                      succeeded INTEGER NOT NULL DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0,
+                      error TEXT
+                    )
+                    """);
+            statement.executeUpdate("""
+                    CREATE INDEX IF NOT EXISTS sync_run_log_started_at
+                    ON sync_run_log(started_at DESC)
+                    """);
+            statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS sync_peer_run_log (
+                      run_id TEXT NOT NULL REFERENCES sync_run_log(run_id) ON DELETE CASCADE,
+                      peer_id TEXT NOT NULL, device_name TEXT NOT NULL, outcome TEXT NOT NULL,
+                      error TEXT, details_json TEXT NOT NULL,
+                      PRIMARY KEY(run_id, peer_id)
+                    )
+                    """);
+        }
+    }
+
+    private int schemaVersion() throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT value FROM schema_metadata WHERE key='schema_version'");
+             var rows = statement.executeQuery()) {
+            if (!rows.next()) throw new SQLException("Desktop database schema version is missing");
+            try {
+                return Integer.parseInt(rows.getString(1));
+            } catch (final NumberFormatException error) {
+                throw new SQLException("Desktop database schema version is invalid", error);
+            }
+        }
     }
 
     private void ensureColumn(final String table, final String column, final String declaration)
