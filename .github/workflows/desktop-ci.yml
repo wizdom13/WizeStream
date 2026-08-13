@@ -12,6 +12,7 @@ on:
       - 'app/src/main/java/org/schabi/newpipe/sync/PairingSecurity.kt'
       - 'app/src/main/java/org/schabi/newpipe/sync/SyncProtocol.kt'
       - '.github/workflows/desktop-ci.yml'
+      - '.github/workflows/desktop-release.yml'
   pull_request:
     branches:
       - pipe
@@ -20,6 +21,7 @@ on:
       - 'app/src/main/java/org/schabi/newpipe/extractor/**'
       - 'app/src/main/java/org/schabi/newpipe/sync/**'
       - '.github/workflows/desktop-ci.yml'
+      - '.github/workflows/desktop-release.yml'
 
 concurrency:
   group: desktop-${{ github.workflow }}-${{ github.ref }}
@@ -50,6 +52,8 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - name: Install locked Node dependencies
         run: npm ci --ignore-scripts
+      - name: Verify Phase 7 release contract
+        run: npm run release:verify
       - name: Prepare checksum-verified FFmpeg tools
         run: npm run media-tools:setup
       - name: Verify FFmpeg tools

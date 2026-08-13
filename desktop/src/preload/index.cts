@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { exposeMpvApi } from 'electron-mpv-video/preload';
-import type { BackendMethod, DesktopApi, DownloadJob } from '../shared/contracts.js';
+import type { BackendMethod, DesktopApi, DownloadJob, UpdateState } from '../shared/contracts.js';
 
 exposeMpvApi();
 
@@ -26,6 +26,17 @@ const api: DesktopApi = {
       const wrapped = (_event: Electron.IpcRendererEvent, jobs: DownloadJob[]) => listener(jobs);
       ipcRenderer.on('downloads:changed', wrapped);
       return () => ipcRenderer.off('downloads:changed', wrapped);
+    },
+  },
+  updates: {
+    state: () => ipcRenderer.invoke('updates:state') as Promise<UpdateState>,
+    check: () => ipcRenderer.invoke('updates:check') as Promise<UpdateState>,
+    download: () => ipcRenderer.invoke('updates:download') as Promise<UpdateState>,
+    install: () => ipcRenderer.invoke('updates:install') as Promise<void>,
+    onChanged: (listener) => {
+      const wrapped = (_event: Electron.IpcRendererEvent, state: UpdateState) => listener(state);
+      ipcRenderer.on('updates:changed', wrapped);
+      return () => ipcRenderer.off('updates:changed', wrapped);
     },
   },
 };

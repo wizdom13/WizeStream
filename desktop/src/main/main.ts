@@ -10,6 +10,7 @@ import { BackendClient } from './backend-client.js';
 import { DownloadManager } from './download-manager.js';
 import { embeddedMpvAddonPath, embeddedMpvAvailable } from './embedded-mpv.js';
 import { MpvController } from './mpv-controller.js';
+import { UpdateManager } from './update-manager.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const requireNative = createRequire(import.meta.url);
@@ -17,6 +18,7 @@ const backend = new BackendClient();
 const player = new MpvController();
 let embeddedPlayer: MpvMain | undefined;
 let downloads: DownloadManager | undefined;
+let updates: UpdateManager | undefined;
 let embeddedAddonPath = '';
 let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
@@ -96,6 +98,9 @@ function createWindow(): BrowserWindow {
   });
   embeddedPlayer?.attachWindow(window);
   window.once('ready-to-show', () => window.show());
+  window.webContents.once('did-finish-load', () => {
+    if (updates) window.webContents.send('updates:changed', updates.state());
+  });
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url);
     return { action: 'deny' };
@@ -174,6 +179,16 @@ app.whenReady().then(async () => {
     if (filePath) shell.showItemInFolder(filePath);
   });
   ipcMain.handle('downloads:open-folder', () => shell.openPath(path.join(app.getPath('downloads'), 'WizeStream')));
+  updates = await createUpdateManager();
+  updates.initialize();
+  ipcMain.handle('updates:state', () => updates?.state());
+  ipcMain.handle('updates:check', () => updates?.check());
+  ipcMain.handle('updates:download', () => updates?.download());
+  ipcMain.handle('updates:install', async () => {
+    if (updates?.state().status !== 'downloaded') return;
+    await cleanupApplication();
+    updates.install();
+  });
   await backend.start();
   if (process.env.WIZESTREAM_PACKAGE_SMOKE === '1') {
     if (!await embeddedMpvAvailable(embeddedAddonPath)) throw new Error('Packaged embedded libmpv is unavailable');
@@ -190,6 +205,7 @@ app.whenReady().then(async () => {
     return;
   }
   createWindow();
+  setTimeout(() => { void updates?.check(); }, 10_000);
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 }).catch((error: unknown) => {
   console.error(error);
@@ -204,14 +220,8 @@ app.on('before-quit', (event) => {
 });
 
 async function shutdownApplication(exitCode: number): Promise<void> {
-  if (shutdownStarted) return;
-  shutdownStarted = true;
-  const results = await Promise.allSettled([embeddedPlayer?.dispose(), player.stop(), backend.stop()]);
-  const failed = results.find((result) => result.status === 'rejected');
-  if (failed?.status === 'rejected') {
-    console.error('Desktop shutdown cleanup failed', failed.reason);
-    exitCode = 1;
-  }
+  const cleanupFailed = await cleanupApplication();
+  if (cleanupFailed) exitCode = 1;
   if (process.platform === 'linux') {
     try {
       const native = requireNative(embeddedAddonPath) as { exitProcess(code: number): never };
@@ -223,11 +233,31 @@ async function shutdownApplication(exitCode: number): Promise<void> {
   app.exit(exitCode);
 }
 
+async function cleanupApplication(): Promise<boolean> {
+  if (shutdownStarted) return false;
+  shutdownStarted = true;
+  const results = await Promise.allSettled([embeddedPlayer?.dispose(), player.stop(), backend.stop()]);
+  const failed = results.find((result) => result.status === 'rejected');
+  if (failed?.status === 'rejected') {
+    console.error('Desktop shutdown cleanup failed', failed.reason);
+    return true;
+  }
+  return false;
+}
+
 function mediaToolPath(tool: 'ffmpeg' | 'ffprobe'): string {
   const configured = process.env[`WIZESTREAM_${tool.toUpperCase()}_PATH`];
   if (configured) return configured;
   const root = app.isPackaged ? process.resourcesPath : app.getAppPath();
   return path.join(root, 'native', 'media-tools', `${tool}${process.platform === 'win32' ? '.exe' : ''}`);
+}
+
+async function createUpdateManager(): Promise<UpdateManager> {
+  const enabled = app.isPackaged && process.env.WIZESTREAM_PACKAGE_SMOKE !== '1';
+  const updater = enabled ? (await import('electron-updater')).autoUpdater : undefined;
+  return new UpdateManager(updater, app.getVersion(), (state) => {
+    for (const window of BrowserWindow.getAllWindows()) window.webContents.send('updates:changed', state);
+  });
 }
 
 function downloadSources(details: StreamDetails): DownloadSource[] {

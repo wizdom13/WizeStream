@@ -309,6 +309,21 @@ export interface SyncRunResult {
   }>;
 }
 
+export type UpdateStatus = 'unavailable' | 'idle' | 'checking' | 'up-to-date'
+  | 'available' | 'downloading' | 'downloaded' | 'error';
+
+export interface UpdateState {
+  status: UpdateStatus;
+  currentVersion: string;
+  channel: 'beta';
+  version?: string;
+  releaseName?: string;
+  releaseNotes?: string;
+  percent?: number;
+  checkedAt?: number;
+  message?: string;
+}
+
 export interface DesktopApi {
   backend: {
     invoke<T>(method: BackendMethod, params?: Record<string, unknown>): Promise<T>;
@@ -327,6 +342,13 @@ export interface DesktopApi {
     show(id: string): Promise<void>;
     openFolder(): Promise<void>;
     onChanged(listener: (jobs: DownloadJob[]) => void): () => void;
+  };
+  updates: {
+    state(): Promise<UpdateState>;
+    check(): Promise<UpdateState>;
+    download(): Promise<UpdateState>;
+    install(): Promise<void>;
+    onChanged(listener: (state: UpdateState) => void): () => void;
   };
 }
 

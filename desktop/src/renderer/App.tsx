@@ -25,10 +25,12 @@ import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
+import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import type {
   DownloadJob, DownloadSource, EmbeddedPlayerRequest, HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
+  UpdateState,
 } from '../shared/contracts';
 
 defineMpvVideoElement();
@@ -60,6 +62,8 @@ export function App() {
   const [audioChoice, setAudioChoice] = useState('auto');
   const [subtitleChoice, setSubtitleChoice] = useState('none');
   const [embeddedRequest, setEmbeddedRequest] = useState<EmbeddedPlayerRequest & { title: string; nonce: number }>();
+  const [updateState, setUpdateState] = useState<UpdateState>();
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -72,6 +76,17 @@ export function App() {
       setSync(syncStatus);
       setMpv(playerStatus);
     }).catch((reason: unknown) => setError(errorMessage(reason)));
+  }, []);
+
+  useEffect(() => {
+    void window.wizestream.updates.state().then((state) => {
+      setUpdateState(state);
+      if (state.status === 'available' || state.status === 'downloaded') setUpdateDialogOpen(true);
+    });
+    return window.wizestream.updates.onChanged((state) => {
+      setUpdateState(state);
+      if (state.status === 'available' || state.status === 'downloaded') setUpdateDialogOpen(true);
+    });
   }, []);
 
   const selectedVideo = selected && videoChoice !== 'auto'
@@ -149,6 +164,13 @@ export function App() {
     setMpv(await window.wizestream.player.status());
   }
 
+  async function openUpdates() {
+    setUpdateDialogOpen(true);
+    if (!updateState || ['idle', 'up-to-date', 'error'].includes(updateState.status)) {
+      setUpdateState(await window.wizestream.updates.check());
+    }
+  }
+
   return (
     <Box className="app-shell">
       <Box component="nav" className="navigation-rail">
@@ -167,6 +189,11 @@ export function App() {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>WizeStream Desktop</Typography>
             <Chip color={mpv?.embeddedAvailable || mpv?.externalAvailable ? 'success' : 'default'}
               label={mpv?.embeddedAvailable ? 'embedded libmpv' : mpv?.externalAvailable ? 'external mpv fallback' : 'mpv unavailable'} />
+            <Tooltip title={updateState?.status === 'downloaded' ? 'Update ready to install'
+              : updateState?.status === 'available' ? 'Update available' : 'Check for updates'}>
+              <IconButton color={['available', 'downloaded'].includes(updateState?.status ?? '') ? 'primary' : 'default'}
+                onClick={() => void openUpdates()}><SystemUpdateAltRounded /></IconButton>
+            </Tooltip>
             {(mpv?.running || embeddedRequest) && <Tooltip title="Stop player"><IconButton onClick={() => void stopAllPlayback()}><StopRounded /></IconButton></Tooltip>}
           </Toolbar>
         </AppBar>
@@ -235,6 +262,38 @@ export function App() {
                     : <SyncPanel sync={sync} onRefresh={() => void window.wizestream.backend.invoke<SyncStatus>('sync.status').then(setSync)} />}
         </Container>
       </Box>
+      <Dialog open={updateDialogOpen} onClose={() => setUpdateDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>WizeStream Desktop updates</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              Installed version {updateState?.currentVersion ?? 'unknown'} · beta channel
+            </Typography>
+            {updateState?.version && <Typography variant="h6">Version {updateState.version}</Typography>}
+            {updateState?.message && <Alert severity={updateState.status === 'error' ? 'error'
+              : updateState.status === 'downloaded' ? 'success' : 'info'}>{updateState.message}</Alert>}
+            {updateState?.status === 'checking' && <LinearProgress />}
+            {updateState?.status === 'downloading' && <LinearProgress variant="determinate" value={updateState.percent ?? 0} />}
+            {updateState?.releaseNotes && <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+              {updateState.releaseNotes}
+            </Typography>}
+            <Typography variant="caption" color="text.secondary">
+              WizeStream never downloads or restarts for an update without your confirmation.
+            </Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateDialogOpen(false)}>
+            {updateState?.status === 'available' || updateState?.status === 'downloaded' ? 'Later' : 'Close'}
+          </Button>
+          {updateState?.status === 'available' && <Button variant="contained"
+            onClick={() => void window.wizestream.updates.download().then(setUpdateState)}>Download update</Button>}
+          {updateState?.status === 'downloaded' && <Button variant="contained"
+            onClick={() => void window.wizestream.updates.install()}>Restart and install</Button>}
+          {updateState && ['idle', 'up-to-date', 'error'].includes(updateState.status) && <Button variant="contained"
+            onClick={() => void window.wizestream.updates.check().then(setUpdateState)}>Check again</Button>}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

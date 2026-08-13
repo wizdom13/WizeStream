@@ -14,8 +14,8 @@ The desktop architecture contains:
 - The existing WizeStream v1 signed pairing messages and authenticated libp2p transport.
 - An inline libmpv renderer on supported native packages, with a shell-free mpv process fallback.
 - Resumable video, audio and caption downloads stored in a fixed WizeStream Downloads directory.
-- Unsigned native preview packages produced on native Windows, Intel/Apple Silicon macOS, and
-  x86_64/aarch64 Linux runners.
+- Native preview packages produced on native Windows, Intel/Apple Silicon macOS, and
+  x86_64/aarch64 Linux runners, plus a protected signed-beta release path.
 
 ## Current scope
 
@@ -76,6 +76,13 @@ When a trusted device's saved IP address is stale, desktop scans the local IPv4 
 previously trusted sync port and then authenticates the discovered endpoint against the saved
 libp2p PeerID. Discovery never establishes trust by itself.
 
+Phase 7 adds the `0.6.0-beta.1` release contract. Installed builds check the public beta channel at
+startup and on demand. An available update is never downloaded until the user confirms, and a
+downloaded update is never installed or restarted until the user confirms again. Windows releases
+must pass Authenticode validation, macOS releases must pass Developer ID signing, notarization and
+stapling validation, and Linux releases include SHA-256 manifests and GitHub provenance
+attestations. The protected release workflow fails closed when any credential is missing.
+
 ## Requirements
 
 - Node.js 24
@@ -120,6 +127,9 @@ npm run dist
 Preview packages are unsigned. Windows signing and macOS signing/notarization are release gates,
 not requirements for architecture CI.
 
+See [docs/releasing.md](docs/releasing.md) for release-repository setup, credential names, signing,
+updater validation and rollback.
+
 ## Security boundary
 
 - `nodeIntegration` is disabled.
@@ -136,5 +146,6 @@ not requirements for architecture CI.
 
 ## Next milestone
 
-1. Add signed releases and automatic updates after preview stabilization.
-2. Complete accessibility, platform UX, migration and security review gates for the preview release.
+Acquire the Windows and Apple signing identities, initialize the public binary release repository,
+run the protected `0.6.0-beta.1` matrix, and validate one signed update on every architecture before
+opening the `desktop-electron` to `pipe` pull request.
