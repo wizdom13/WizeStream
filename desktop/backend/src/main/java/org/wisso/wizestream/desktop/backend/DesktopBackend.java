@@ -113,6 +113,7 @@ public final class DesktopBackend implements AutoCloseable {
                     yield Map.of("deleted", true);
                 }
                 case "library.downloads.record" -> sync.recordCompletedDownload(
+                        optionalText(params, "syncId"),
                         requiredText(params, "sourceUrl"),
                         requiredText(params, "displayName"),
                         requiredText(params, "mimeType"),

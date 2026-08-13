@@ -9,7 +9,8 @@ export function embeddedMpvAddonPath(resourcesPath: string, applicationPath: str
 
 export async function embeddedMpvAvailable(addonPath: string): Promise<boolean> {
   if (!((process.platform === 'win32' && process.arch === 'x64')
-    || (process.platform === 'darwin' && process.arch === 'arm64'))) return false;
+    || (process.platform === 'darwin' && ['x64', 'arm64'].includes(process.arch))
+    || (process.platform === 'linux' && ['x64', 'arm64'].includes(process.arch)))) return false;
   try {
     await access(addonPath);
     return true;

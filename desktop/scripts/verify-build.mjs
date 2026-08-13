@@ -52,6 +52,14 @@ vm.runInNewContext(preloadSource, sandbox, { filename: preloadPath });
 
 assert.equal(exposedName, 'wizestream', 'preload must expose the WizeStream bridge');
 assert.equal(typeof exposedApis.get('_electronMpvVideo')?.create, 'function', 'preload must expose the embedded libmpv bridge');
+const nativeSession = await exposedApis.get('_electronMpvVideo').create();
+assert.equal(typeof nativeSession.openMedia, 'function', 'native bridge must expose typed composite media opening');
+assert.equal(typeof nativeSession.setAudioTrack, 'function', 'native bridge must expose typed audio switching');
+assert.equal(typeof nativeSession.setSubtitleTrack, 'function', 'native bridge must expose typed caption switching');
+await nativeSession.openMedia({ source: 'https://media.example/video',
+  audio: { url: 'https://media.example/audio' }, subtitle: { url: 'https://media.example/caption' } });
+assert.ok(ipcCalls.some((call) => call.channel.endsWith(':player:open-media')),
+  'composite media opening must use the narrow native IPC channel');
 assert.equal(typeof exposedApi?.backend?.invoke, 'function');
 assert.equal(typeof exposedApi?.player?.play, 'function');
 assert.equal(typeof exposedApi?.player?.stop, 'function');
@@ -59,9 +67,9 @@ assert.equal(typeof exposedApi?.player?.status, 'function');
 assert.equal(typeof exposedApi?.downloads?.start, 'function');
 assert.equal(typeof exposedApi?.downloads?.onChanged, 'function');
 await exposedApi.backend.invoke('health');
-assert.equal(ipcCalls[0]?.channel, 'backend:invoke');
-assert.equal(ipcCalls[0]?.payload?.method, 'health');
-assert.equal(ipcCalls[0]?.payload?.params, undefined);
+const healthCall = ipcCalls.find((call) => call.channel === 'backend:invoke');
+assert.equal(healthCall?.payload?.method, 'health');
+assert.equal(healthCall?.payload?.params, undefined);
 
 const assetReferences = [...html.matchAll(/(?:src|href)="\.\/([^"]+)"/g)].map((match) => match[1]);
 assert.ok(assetReferences.some((asset) => asset.endsWith('.js')), 'renderer HTML must load JavaScript');
@@ -82,5 +90,7 @@ assert.match(rendererJavaScript, /Learning notes/, 'renderer must include the Ph
 assert.match(rendererJavaScript, /Add channel/, 'renderer must include the Phase 3 subscription editor');
 assert.match(rendererJavaScript, /Play embedded/, 'renderer must include Phase 4 embedded playback');
 assert.match(rendererJavaScript, /Download current stream/, 'renderer must include Phase 4 downloads');
+assert.match(rendererJavaScript, /Combining tracks/, 'renderer must report Phase 6 adaptive muxing');
+assert.match(rendererJavaScript, /Open with external mpv/, 'renderer must preserve explicit external-player recovery');
 
 console.log('Packaged Electron startup boundary verified.');

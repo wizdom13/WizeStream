@@ -24,6 +24,10 @@
     "dist:dir": "npm run backend:build && npm run build && electron-builder --dir",
     "embedded:build": "npm rebuild electron-mpv-video && node scripts/stage-embedded-mpv.mjs",
     "embedded:verify": "electron scripts/verify-embedded-mpv.mjs",
+    "embedded:media-smoke": "electron scripts/verify-native-media.mjs",
+    "media-tools:setup": "node scripts/setup-media-tools.mjs",
+    "media-tools:verify": "node scripts/verify-media-tools.mjs",
+    "package:smoke": "node scripts/run-packaged-smoke.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
     "verify:build": "node scripts/verify-build.mjs"
@@ -46,7 +50,7 @@
     "cross-env": "10.1.0",
     "electron": "43.3.0",
     "electron-builder": "26.15.3",
-    "electron-mpv-video": "0.1.1",
+    "electron-mpv-video": "file:vendor/electron-mpv-video",
     "esbuild": "0.28.2",
     "typescript": "7.0.2",
     "vite": "8.2.1",
@@ -82,6 +86,11 @@
       {
         "from": "native/mpv",
         "to": "native/mpv",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "native/media-tools",
+        "to": "native/media-tools",
         "filter": ["**/*"]
       },
       {

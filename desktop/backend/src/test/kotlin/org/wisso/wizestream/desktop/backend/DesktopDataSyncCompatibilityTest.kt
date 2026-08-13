@@ -140,6 +140,26 @@ class DesktopDataSyncCompatibilityTest {
         }
     }
 
+    @Test
+    fun `completed download recording is idempotent for a desktop job id`() {
+        database().use { desktop ->
+            val stores = stores(desktop.connection())
+            val jobId = "11111111-1111-4111-8111-111111111111"
+            repeat(2) {
+                stores.structured.recordCompletedDownload(
+                    "https://media.example/video.mp4",
+                    "Fixture video.mp4",
+                    "video/mp4",
+                    42,
+                    1_700_000_000_000,
+                    "v",
+                    jobId
+                )
+            }
+            assertEquals(1, count(desktop.connection(), "portable_records"))
+        }
+    }
+
     private fun stores(connection: Connection): Stores {
         val peerId = DesktopSyncStateRepository(connection).loadOrCreateIdentity().peerId.toBase58()
         val journal = DesktopChangeJournal(connection, peerId)

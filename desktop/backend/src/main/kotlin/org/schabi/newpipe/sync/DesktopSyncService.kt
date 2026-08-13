@@ -122,6 +122,7 @@ class DesktopSyncService(
     fun createPairingCode(): String = node.createPairingCode()
 
     fun recordCompletedDownload(
+        syncId: String?,
         sourceUrl: String,
         displayName: String,
         mimeType: String,
@@ -135,7 +136,8 @@ class DesktopSyncService(
             mimeType,
             sizeBytes,
             completedAtEpochMillis,
-            mediaKind
+            mediaKind,
+            syncId
         )
     )
 

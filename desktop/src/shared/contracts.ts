@@ -96,6 +96,18 @@ export interface PlayerRequest {
   subtitleUrl?: string;
 }
 
+export interface PlayerTrack {
+  url: string;
+  title?: string;
+  language?: string;
+}
+
+export interface EmbeddedPlayerRequest {
+  source: string;
+  audio?: PlayerTrack;
+  subtitle?: PlayerTrack;
+}
+
 export interface PlayerStatus {
   embeddedAvailable: boolean;
   externalAvailable: boolean;
@@ -104,15 +116,42 @@ export interface PlayerStatus {
 }
 
 export type DownloadKind = 'video' | 'audio' | 'caption';
-export type DownloadState = 'queued' | 'downloading' | 'paused' | 'completed' | 'failed' | 'cancelled';
+export type DownloadState = 'queued' | 'downloading' | 'muxing' | 'validating'
+  | 'paused' | 'completed' | 'failed' | 'cancelled';
+
+export type DownloadStage = 'queued' | 'downloading_video' | 'downloading_audio'
+  | 'downloading_caption' | 'muxing' | 'validating' | 'paused' | 'completed' | 'failed' | 'cancelled';
+
+export interface DownloadSource {
+  url: string;
+  kind?: DownloadKind;
+  id?: string;
+  format?: string;
+  mimeType?: string;
+  deliveryMethod?: string;
+  resolution?: string;
+  codec?: string;
+  audioTrackId?: string;
+  videoOnly?: boolean;
+}
+
+export interface DownloadComponent {
+  role: DownloadKind;
+  state: DownloadState;
+  bytesDownloaded: number;
+  totalBytes?: number;
+}
 
 export interface DownloadRequest {
-  url: string;
+  url?: string;
   sourceUrl: string;
   title: string;
   format?: string;
   mimeType?: string;
-  kind: DownloadKind;
+  kind?: DownloadKind;
+  video?: DownloadSource;
+  audio?: DownloadSource;
+  caption?: DownloadSource;
 }
 
 export interface DownloadJob {
@@ -121,11 +160,14 @@ export interface DownloadJob {
   fileName: string;
   kind: DownloadKind;
   state: DownloadState;
+  stage: DownloadStage;
   bytesDownloaded: number;
   totalBytes?: number;
   createdAt: number;
   completedAt?: number;
   error?: string;
+  outputContainer?: string;
+  components: DownloadComponent[];
 }
 
 export interface LibraryStream {

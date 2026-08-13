@@ -26,7 +26,7 @@ import SearchRounded from '@mui/icons-material/SearchRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import type {
-  DownloadJob, HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
+  DownloadJob, DownloadSource, EmbeddedPlayerRequest, HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
 } from '../shared/contracts';
@@ -59,7 +59,7 @@ export function App() {
   const [videoChoice, setVideoChoice] = useState('auto');
   const [audioChoice, setAudioChoice] = useState('auto');
   const [subtitleChoice, setSubtitleChoice] = useState('none');
-  const [embeddedRequest, setEmbeddedRequest] = useState<{ url: string; title: string; nonce: number }>();
+  const [embeddedRequest, setEmbeddedRequest] = useState<EmbeddedPlayerRequest & { title: string; nonce: number }>();
 
   useEffect(() => {
     Promise.all([
@@ -80,14 +80,20 @@ export function App() {
     ? selected.audioStreams[Number(audioChoice)] : undefined;
   const selectedSubtitle = selected && subtitleChoice !== 'none'
     ? selected.subtitles[Number(subtitleChoice)] : undefined;
+  const automaticVideo = selected && !selected.hlsUrl && !selected.dashMpdUrl
+    ? selected.videoStreams.find((stream) => !stream.videoOnly) ?? selected.videoStreams[0]
+    : undefined;
+  const playbackVideo = selectedVideo ?? automaticVideo;
   const selectedPlaybackUrl = useMemo(() => selectedVideo?.url ?? selected?.hlsUrl
     ?? selected?.dashMpdUrl
-    ?? selected?.videoStreams.find((stream) => !stream.videoOnly)?.url
-    ?? selected?.videoStreams[0]?.url
-    ?? selected?.audioStreams[0]?.url, [selected, selectedVideo]);
+    ?? automaticVideo?.url
+    ?? selected?.audioStreams[0]?.url, [selected, selectedVideo, automaticVideo]);
   const selectedLibraryStream = useMemo(() => selected ? detailsToLibraryStream(selected) : undefined, [selected]);
-  const embeddedSelection = Boolean(mpv?.embeddedAvailable && selectedPlaybackUrl
-    && audioChoice === 'auto' && subtitleChoice === 'none');
+  const effectiveAudio = playbackVideo?.videoOnly
+    ? selectedAudio ?? selected?.audioStreams.find((stream) => !playbackVideo.audioTrackId
+      || stream.audioTrackId === playbackVideo.audioTrackId) ?? selected?.audioStreams[0]
+    : selectedAudio;
+  const embeddedSelection = Boolean(mpv?.embeddedAvailable && selectedPlaybackUrl);
 
   async function submitSearch(event: FormEvent) {
     event.preventDefault();
@@ -119,18 +125,28 @@ export function App() {
     if (!selectedPlaybackUrl || !selected || !selectedLibraryStream) return;
     try {
       if (embeddedSelection) {
-        setEmbeddedRequest({ url: selectedPlaybackUrl, title: selected.name, nonce: Date.now() });
+        setEmbeddedRequest({
+          source: selectedPlaybackUrl, title: selected.name, nonce: Date.now(),
+          audio: effectiveAudio ? playerTrack(effectiveAudio, audioLabel(effectiveAudio)) : undefined,
+          subtitle: selectedSubtitle ? playerTrack(selectedSubtitle, subtitleLabel(selectedSubtitle)) : undefined,
+        });
       } else {
         await window.wizestream.player.play({
           url: selectedPlaybackUrl,
           title: selected.name,
-          audioUrl: selectedAudio?.url,
+          audioUrl: effectiveAudio?.url,
           subtitleUrl: selectedSubtitle?.url,
         });
       }
       await window.wizestream.backend.invoke('library.history.record', { ...selectedLibraryStream });
       setMpv(await window.wizestream.player.status());
     } catch (reason) { setError(errorMessage(reason)); }
+  }
+
+  async function stopAllPlayback() {
+    window.dispatchEvent(new Event('wizestream-stop-player'));
+    await window.wizestream.player.stop();
+    setMpv(await window.wizestream.player.status());
   }
 
   return (
@@ -151,7 +167,7 @@ export function App() {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>WizeStream Desktop</Typography>
             <Chip color={mpv?.embeddedAvailable || mpv?.externalAvailable ? 'success' : 'default'}
               label={mpv?.embeddedAvailable ? 'embedded libmpv' : mpv?.externalAvailable ? 'external mpv fallback' : 'mpv unavailable'} />
-            {mpv?.running && <Tooltip title="Stop player"><IconButton onClick={() => void window.wizestream.player.stop().then(() => setMpv({ ...mpv, running: false }))}><StopRounded /></IconButton></Tooltip>}
+            {(mpv?.running || embeddedRequest) && <Tooltip title="Stop player"><IconButton onClick={() => void stopAllPlayback()}><StopRounded /></IconButton></Tooltip>}
           </Toolbar>
         </AppBar>
         <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -166,7 +182,8 @@ export function App() {
             </Box>
             {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
             {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>}
-            {embeddedRequest && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest} onError={setError} />}
+            {embeddedRequest && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest}
+              externalAvailable={Boolean(mpv.externalAvailable)} onError={setError} />}
             {selected && <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="details-card">
               {selected.thumbnailUrl && <Box component="img" src={selected.thumbnailUrl} alt="" className="details-thumbnail" />}
               <CardContent sx={{ p: 4 }}><Chip label={selected.streamType} size="small" /><Typography variant="h4" sx={{ mt: 2 }}>{selected.name}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{selected.uploaderName}</Typography>
@@ -176,19 +193,33 @@ export function App() {
                     <MenuItem value="auto">Automatic</MenuItem>
                     {selected.videoStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{videoLabel(stream)}</MenuItem>)}
                   </TextField>
-                  <TextField select label="Audio" value={audioChoice} onChange={(event) => setAudioChoice(event.target.value)}>
+                  <TextField select label="Audio" value={audioChoice} onChange={(event) => {
+                    const value = event.target.value; setAudioChoice(value);
+                    const stream = value === 'auto' && playbackVideo?.videoOnly
+                      ? selected.audioStreams.find((item) => !playbackVideo.audioTrackId
+                        || item.audioTrackId === playbackVideo.audioTrackId) ?? selected.audioStreams[0]
+                      : value === 'auto' ? undefined : selected.audioStreams[Number(value)];
+                    setEmbeddedRequest((current) => current ? { ...current,
+                      audio: stream ? playerTrack(stream, audioLabel(stream)) : undefined } : current);
+                  }}>
                     <MenuItem value="auto">Automatic</MenuItem>
                     {selected.audioStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{audioLabel(stream)}</MenuItem>)}
                   </TextField>
-                  <TextField select label="Captions" value={subtitleChoice} onChange={(event) => setSubtitleChoice(event.target.value)}>
+                  <TextField select label="Captions" value={subtitleChoice} onChange={(event) => {
+                    const value = event.target.value; setSubtitleChoice(value);
+                    const stream = value === 'none' ? undefined : selected.subtitles[Number(value)];
+                    setEmbeddedRequest((current) => current ? { ...current,
+                      subtitle: stream ? playerTrack(stream, subtitleLabel(stream)) : undefined } : current);
+                  }}>
                     <MenuItem value="none">Off</MenuItem>
                     {selected.subtitles.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{subtitleLabel(stream)}</MenuItem>)}
                   </TextField>
                 </Box>
-                {!embeddedSelection && (audioChoice !== 'auto' || subtitleChoice !== 'none') && <Alert severity="info" sx={{ mt: 2 }}>Separate audio or captions use the secure external mpv fallback in this preview.</Alert>}
+                {playbackVideo?.videoOnly && !effectiveAudio && <Alert severity="warning" sx={{ mt: 2 }}>This video-only variant requires an audio track.</Alert>}
                 <Stack direction="row" spacing={1} sx={{ mt: 4, flexWrap: 'wrap' }}>
                   <Button startIcon={<PlayArrowRounded />} variant="contained" size="large"
-                    disabled={!selectedPlaybackUrl || (!embeddedSelection && !mpv?.externalAvailable)} onClick={() => void playSelected()}>{embeddedSelection ? 'Play embedded' : 'Play with mpv'}</Button>
+                    disabled={!selectedPlaybackUrl || (playbackVideo?.videoOnly && !effectiveAudio)
+                      || (!embeddedSelection && !mpv?.externalAvailable)} onClick={() => void playSelected()}>{embeddedSelection ? 'Play embedded' : 'Play with mpv'}</Button>
                   <Button startIcon={<DownloadRounded />} variant="outlined" size="large" onClick={() => setSection('downloads')}>Download</Button>
                   <Button startIcon={<PlaylistAddRounded />} variant="outlined" size="large" onClick={() => setSection('playlists')}>Add to playlist</Button>
                   <Button startIcon={<NoteAddRounded />} variant="outlined" size="large" onClick={() => setSection('learning')}>Add note</Button>
@@ -208,24 +239,50 @@ export function App() {
   );
 }
 
-function EmbeddedPlayer({ request, onError }: { request: { url: string; title: string; nonce: number }; onError(value: string): void }) {
+function EmbeddedPlayer({ request, externalAvailable, onError }: {
+  request: EmbeddedPlayerRequest & { title: string; nonce: number }; externalAvailable: boolean;
+  onError(value: string): void;
+}) {
   const player = useRef<MpvVideoElement>(null);
-  const [state, setState] = useState({ status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv' });
+  const [state, setState] = useState({ status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv',
+    audioTrack: 'auto', subtitleTrack: 'off' });
+  const [localError, setLocalError] = useState<string>();
 
   useEffect(() => {
     const element = player.current;
     if (!element) return;
     const update = (event: Event) => setState((event as CustomEvent<typeof state>).detail);
-    const fail = (event: Event) => onError(String((event as CustomEvent<unknown>).detail));
+    const fail = (event: Event) => { const value = String((event as CustomEvent<unknown>).detail); setLocalError(value); onError(value); };
     element.addEventListener('mpv-state', update);
     element.addEventListener('mpv-error', fail);
-    void element.open(request.url).then(() => element.play()).catch((reason: unknown) => onError(errorMessage(reason)));
+    setLocalError(undefined);
+    void element.openMedia(request).then(() => element.play()).catch((reason: unknown) => {
+      const value = errorMessage(reason); setLocalError(value); onError(value);
+    });
     return () => { element.removeEventListener('mpv-state', update); element.removeEventListener('mpv-error', fail); };
-  }, [request, onError]);
+  }, [request.nonce, request.source, onError]);
+
+  useEffect(() => {
+    if (!player.current) return;
+    void player.current.setAudioTrack(request.audio).catch((reason: unknown) => onError(`Audio track: ${errorMessage(reason)}`));
+  }, [request.audio?.url, onError]);
+
+  useEffect(() => {
+    if (!player.current) return;
+    void player.current.setSubtitleTrack(request.subtitle).catch((reason: unknown) => onError(`Caption track: ${errorMessage(reason)}`));
+  }, [request.subtitle?.url, onError]);
+
+  useEffect(() => {
+    const stop = () => { void player.current?.stop(); };
+    window.addEventListener('wizestream-stop-player', stop);
+    return () => window.removeEventListener('wizestream-stop-player', stop);
+  }, []);
 
   return <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="embedded-player-frame">
     <mpv-video ref={player} render-mode="shared-texture" volume="80" title={request.title} />
-  </Box><CardContent><Stack direction="row" sx={{ alignItems: 'center', gap: 2 }}>
+  </Box><CardContent>{localError && <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" disabled={!externalAvailable} onClick={() => void window.wizestream.player.play({
+    url: request.source, title: request.title, audioUrl: request.audio?.url, subtitleUrl: request.subtitle?.url,
+  })}>Open with external mpv</Button>}>{localError}</Alert>}<Stack direction="row" sx={{ alignItems: 'center', gap: 2 }}>
     <IconButton aria-label="Play" onClick={() => void player.current?.play()}><PlayArrowRounded /></IconButton>
     <IconButton aria-label="Pause" onClick={() => void player.current?.pause()}><PauseRounded /></IconButton>
     <IconButton aria-label="Stop" onClick={() => void player.current?.stop()}><StopRounded /></IconButton>
@@ -233,6 +290,8 @@ function EmbeddedPlayer({ request, onError }: { request: { url: string; title: s
     <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
       onChangeCommitted={(_event, value) => void player.current?.seek(Number(value))} sx={{ flexGrow: 1 }} />
     <Typography className="mono" variant="body2">{formatTimestamp(state.duration)}</Typography>
+    <Chip size="small" label={`Audio ${request.audio?.title ?? state.audioTrack}`} />
+    <Chip size="small" label={`Captions ${request.subtitle?.title ?? state.subtitleTrack}`} />
     <Chip size="small" label={`${state.status} · ${state.rendererName}`} />
   </Stack></CardContent></Card>;
 }
@@ -372,31 +431,39 @@ function LearningPanel({ currentStream, onOpen }: { currentStream?: LibraryStrea
 function DownloadsPanel({ currentStream }: { currentStream?: StreamDetails }) {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
   const [choice, setChoice] = useState('');
+  const [audioChoice, setAudioChoice] = useState('');
   const [error, setError] = useState<string>();
   const options = useMemo(() => currentStream ? [
     ...currentStream.videoStreams.map((stream, index) => ({ key: `video:${index}`, label: `Video · ${videoLabel(stream)}`, stream, kind: 'video' as const })),
     ...currentStream.audioStreams.map((stream, index) => ({ key: `audio:${index}`, label: `Audio · ${audioLabel(stream)}`, stream, kind: 'audio' as const })),
     ...currentStream.subtitles.map((stream, index) => ({ key: `caption:${index}`, label: `Caption · ${subtitleLabel(stream)}`, stream, kind: 'caption' as const })),
   ] : [], [currentStream]);
+  const selectedOption = options.find((value) => value.key === choice);
 
   useEffect(() => {
     void window.wizestream.downloads.list().then(setJobs).catch((reason: unknown) => setError(errorMessage(reason)));
     return window.wizestream.downloads.onChanged(setJobs);
   }, []);
   useEffect(() => { setChoice(options[0]?.key ?? ''); }, [options]);
+  useEffect(() => { setAudioChoice(currentStream?.audioStreams[0] ? '0' : ''); }, [currentStream]);
 
   async function start() {
     const option = options.find((value) => value.key === choice);
     if (!option || !currentStream) return;
     try {
-      await window.wizestream.downloads.start({
-        url: option.stream.url,
-        sourceUrl: currentStream.url,
-        title: `${currentStream.name} - ${option.label}`,
-        format: option.stream.format,
-        mimeType: mimeType(option.stream.format, option.kind),
-        kind: option.kind,
-      });
+      const source = downloadSource(option.stream, option.kind);
+      if (option.kind === 'video' && 'videoOnly' in option.stream && option.stream.videoOnly) {
+        const audio = currentStream.audioStreams[Number(audioChoice)];
+        if (!audio) throw new Error('Select an audio track for this adaptive video');
+        await window.wizestream.downloads.start({ sourceUrl: currentStream.url,
+          title: `${currentStream.name} - ${option.label}`, video: source,
+          audio: downloadSource(audio, 'audio') });
+      } else {
+        await window.wizestream.downloads.start({ sourceUrl: currentStream.url,
+          title: `${currentStream.name} - ${option.label}`,
+          ...(option.kind === 'video' ? { video: source }
+            : option.kind === 'audio' ? { audio: source } : { caption: source }) });
+      }
     } catch (reason) { setError(errorMessage(reason)); }
   }
 
@@ -412,18 +479,21 @@ function DownloadsPanel({ currentStream }: { currentStream?: StreamDetails }) {
       {!currentStream ? <Typography color="text.secondary" sx={{ mt: 1 }}>Select a stream in Discover first.</Typography>
         : <Stack direction="row" sx={{ mt: 2, gap: 2, alignItems: 'center' }}><TextField select fullWidth label="Media or caption" value={choice} onChange={(event) => setChoice(event.target.value)}>
           {options.map((option) => <MenuItem key={option.key} value={option.key}>{option.label}</MenuItem>)}
-        </TextField><Button startIcon={<DownloadRounded />} variant="contained" disabled={!choice} onClick={() => void start()}>Download</Button></Stack>}
-      {currentStream?.videoStreams.some((stream) => stream.videoOnly) && <Alert severity="info" sx={{ mt: 2 }}>Adaptive video-only and audio tracks are downloaded separately; automatic muxing is not yet enabled.</Alert>}
+        </TextField>{selectedOption?.kind === 'video' && 'videoOnly' in selectedOption.stream && selectedOption.stream.videoOnly && <TextField select fullWidth label="Audio track" value={audioChoice} onChange={(event) => setAudioChoice(event.target.value)}>
+          {currentStream.audioStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{audioLabel(stream)}</MenuItem>)}
+        </TextField>}<Button startIcon={<DownloadRounded />} variant="contained" disabled={!choice || (selectedOption?.kind === 'video' && 'videoOnly' in selectedOption.stream && selectedOption.stream.videoOnly && !audioChoice)} onClick={() => void start()}>Download</Button></Stack>}
+      {selectedOption?.kind === 'video' && 'videoOnly' in selectedOption.stream && selectedOption.stream.videoOnly && <Alert severity="info" sx={{ mt: 2 }}>WizeStream downloads both selected tracks, combines them without re-encoding, and validates the final file.</Alert>}
     </CardContent></Card>
     {jobs.length === 0 ? <LibraryEmpty text="No desktop downloads yet." /> : <Card variant="outlined"><List disablePadding>{jobs.map((job, index) => {
       const progress = job.totalBytes ? Math.min(100, job.bytesDownloaded / job.totalBytes * 100) : undefined;
+      const pausable = ['downloading', 'queued', 'muxing', 'validating'].includes(job.state);
       return <Box key={job.id}>{index > 0 && <Divider />}<ListItem secondaryAction={<Stack direction="row">
-        {(job.state === 'downloading' || job.state === 'queued') && <Tooltip title="Pause"><IconButton onClick={() => void action('pause', job.id)}><PauseRounded /></IconButton></Tooltip>}
+        {pausable && <Tooltip title="Pause"><IconButton onClick={() => void action('pause', job.id)}><PauseRounded /></IconButton></Tooltip>}
         {(job.state === 'paused' || job.state === 'failed') && <Tooltip title="Resume"><IconButton onClick={() => void action('resume', job.id)}><ReplayRounded /></IconButton></Tooltip>}
         {job.state === 'completed' && <Tooltip title="Show file"><IconButton onClick={() => void action('show', job.id)}><FolderOpenRounded /></IconButton></Tooltip>}
         {!['completed', 'cancelled'].includes(job.state) && <Tooltip title="Cancel"><IconButton onClick={() => void action('cancel', job.id)}><DeleteOutlineRounded /></IconButton></Tooltip>}
       </Stack>}><ListItemIcon><DownloadRounded /></ListItemIcon><ListItemText primary={job.title} secondary={<Box component="span" sx={{ display: 'block', pr: 12 }}>
-        <Typography component="span" variant="body2" color={job.state === 'failed' ? 'error' : 'text.secondary'}>{job.state} · {formatBytes(job.bytesDownloaded)}{job.totalBytes ? ` of ${formatBytes(job.totalBytes)}` : ''}{job.error ? ` · ${job.error}` : ''}</Typography>
+        <Typography component="span" variant="body2" color={job.state === 'failed' ? 'error' : 'text.secondary'}>{downloadStageLabel(job)} · {formatBytes(job.bytesDownloaded)}{job.totalBytes ? ` of ${formatBytes(job.totalBytes)}` : ''}{job.outputContainer ? ` · ${job.outputContainer.toUpperCase()}` : ''}{job.error ? ` · ${job.error}` : ''}</Typography>
         {(job.state === 'downloading' || job.state === 'queued') && <LinearProgress variant={progress === undefined ? 'indeterminate' : 'determinate'} value={progress} sx={{ mt: 1 }} />}
       </Box>} /></ListItem></Box>;
     })}</List></Card>}
@@ -553,6 +623,28 @@ function mimeType(format: string | undefined, kind: 'video' | 'audio' | 'caption
   if (kind === 'caption') return normalized === 'SRT' ? 'application/x-subrip' : normalized === 'TTML' ? 'application/ttml+xml' : 'text/vtt';
   if (kind === 'audio') return normalized?.includes('WEBM') ? 'audio/webm' : normalized === 'MP3' ? 'audio/mpeg' : normalized === 'OGG' || normalized === 'OPUS' ? 'audio/ogg' : 'audio/mp4';
   return normalized?.includes('WEBM') ? 'video/webm' : 'video/mp4';
+}
+
+function playerTrack(stream: StreamVariant | SubtitleVariant, title: string) {
+  return { url: stream.url, title, language: 'languageTag' in stream ? stream.languageTag : stream.audioLocale };
+}
+
+function downloadSource(stream: StreamVariant | SubtitleVariant, kind: 'video' | 'audio' | 'caption'): DownloadSource {
+  return {
+    url: stream.url, kind, id: stream.id, format: stream.format,
+    deliveryMethod: stream.deliveryMethod, mimeType: mimeType(stream.format, kind),
+    ...('resolution' in stream ? { resolution: stream.resolution, codec: stream.codec,
+      audioTrackId: stream.audioTrackId, videoOnly: stream.videoOnly } : {}),
+  };
+}
+
+function downloadStageLabel(job: DownloadJob): string {
+  const labels: Record<DownloadJob['stage'], string> = {
+    queued: 'Queued', downloading_video: 'Downloading video', downloading_audio: 'Downloading audio',
+    downloading_caption: 'Downloading caption', muxing: 'Combining tracks', validating: 'Validating output',
+    paused: 'Paused', completed: 'Completed', failed: 'Failed', cancelled: 'Cancelled',
+  };
+  return labels[job.stage];
 }
 
 function formatBytes(bytes: number): string {

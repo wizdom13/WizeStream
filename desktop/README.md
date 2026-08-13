@@ -40,12 +40,8 @@ watch and search history, and Learning Mode notes. Successful searches and playb
 history events, and local edits are reconciled into the same Phase 2 journals before the next
 device synchronization.
 
-Phase 4 adds semantic original/dubbed/descriptive audio labels, caption selection, embedded libmpv
-rendering, and resumable video, audio and caption downloads. The Windows x64 preview bundles the
-native libmpv renderer and runtime. Other preview targets retain the existing external mpv fallback
-until their native runtime packaging is portable and verified. Selecting a separate adaptive audio
-track or caption currently uses that fallback; adaptive video-only and audio downloads are stored
-as separate files rather than being muxed silently.
+Phase 4 added semantic original/dubbed/descriptive audio labels, caption selection, embedded libmpv
+rendering, and resumable video, audio and caption downloads.
 
 The Windows packaging workflow pins the Shinchiro libmpv development archive and verifies its
 SHA-256 digest before compiling or staging native code.
@@ -62,6 +58,20 @@ codes, private keys or media URLs.
 Automatic synchronization is not an operating-system daemon: closing WizeStream stops its JVM
 backend and scheduler. The next launch performs a jittered catch-up when a persisted run is overdue.
 
+Phase 6 packages an Electron-ABI-matched embedded libmpv renderer on Windows x64, Linux x64/arm64,
+and macOS x64/arm64. Windows and macOS prefer shared textures; Linux uses the software/WebGL
+pipeline. Selected external audio and captions now remain inside the embedded player and can be
+switched through narrow typed operations. The shell-free external mpv controller remains an
+explicit recovery option on every platform.
+
+Adaptive video-only downloads require an audio selection and are represented as one recoverable
+job. WizeStream downloads both components, refreshes expired URLs only when the saved stream
+fingerprint resolves unambiguously, and uses packaged checksum-verified FFmpeg/FFprobe tools to
+stream-copy and validate MP4, WebM or Matroska output before an atomic final rename. It never
+transcodes, silently changes quality/language, logs signed media URLs, or records completion before
+the final file is valid. Legacy Phase 4 download state migrates to schema version 2 without deleting
+partial files.
+
 When a trusted device's saved IP address is stale, desktop scans the local IPv4 subnet only on the
 previously trusted sync port and then authenticates the discovered endpoint against the saved
 libp2p PeerID. Discovery never establishes trust by itself.
@@ -70,8 +80,8 @@ libp2p PeerID. Discovery never establishes trust by itself.
 
 - Node.js 24
 - JDK 21
-- mpv on `PATH`, or `WIZESTREAM_MPV_PATH` pointing to the executable, when the package does not
-  contain the embedded renderer or when separate audio/caption playback is selected
+- mpv on `PATH`, or `WIZESTREAM_MPV_PATH` pointing to the executable, only for the optional external
+  recovery player
 
 Production packages include a trimmed Java runtime. End users do not need to install Java.
 
@@ -126,5 +136,5 @@ not requirements for architecture CI.
 
 ## Next milestone
 
-1. Add portable embedded-libmpv packaging for the remaining native targets and adaptive muxing.
-2. Add signed releases and automatic updates after preview stabilization.
+1. Add signed releases and automatic updates after preview stabilization.
+2. Complete accessibility, platform UX, migration and security review gates for the preview release.

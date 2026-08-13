@@ -1,15 +1,18 @@
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { access } from 'node:fs/promises';
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import { createMpvMain, type MpvMain } from 'electron-mpv-video/main';
 import { z } from 'zod';
-import type { BackendMethod, DownloadKind } from '../shared/contracts.js';
+import type { BackendMethod, DownloadKind, DownloadSource, StreamDetails } from '../shared/contracts.js';
 import { BackendClient } from './backend-client.js';
 import { DownloadManager } from './download-manager.js';
 import { embeddedMpvAddonPath, embeddedMpvAvailable } from './embedded-mpv.js';
 import { MpvController } from './mpv-controller.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const requireNative = createRequire(import.meta.url);
 const backend = new BackendClient();
 const player = new MpvController();
 let embeddedPlayer: MpvMain | undefined;
@@ -52,9 +55,25 @@ const playSchema = z.object({
   audioUrl: z.url().optional(),
   subtitleUrl: z.url().optional(),
 });
+const downloadSourceSchema = z.object({
+  url: z.url(), kind: z.enum(['video', 'audio', 'caption']).optional(), id: z.string().max(500).optional(),
+  format: z.string().max(40).optional(), mimeType: z.string().max(100).optional(),
+  deliveryMethod: z.string().max(50).optional(), resolution: z.string().max(50).optional(),
+  codec: z.string().max(100).optional(), audioTrackId: z.string().max(500).optional(),
+  videoOnly: z.boolean().optional(),
+});
 const downloadSchema = z.object({
-  url: z.url(), sourceUrl: z.url(), title: z.string().trim().min(1).max(200), format: z.string().max(40).optional(),
-  mimeType: z.string().max(100).optional(), kind: z.enum(['video', 'audio', 'caption']),
+  url: z.url().optional(), sourceUrl: z.url(), title: z.string().trim().min(1).max(200),
+  format: z.string().max(40).optional(), mimeType: z.string().max(100).optional(),
+  kind: z.enum(['video', 'audio', 'caption']).optional(), video: downloadSourceSchema.optional(),
+  audio: downloadSourceSchema.optional(), caption: downloadSourceSchema.optional(),
+}).superRefine((value, context) => {
+  const legacy = Boolean(value.url && value.kind);
+  const composite = Boolean(value.video && value.audio);
+  const single = Boolean((value.video && !value.audio) || (!value.video && (value.audio || value.caption)));
+  if ([legacy, composite, single].filter(Boolean).length !== 1) {
+    context.addIssue({ code: 'custom', message: 'Select exactly one valid download source' });
+  }
 });
 const downloadIdSchema = z.string().uuid();
 
@@ -100,6 +119,7 @@ app.whenReady().then(async () => {
     async (job) => {
       const mediaKind: Record<DownloadKind, string> = { video: 'v', audio: 'a', caption: 's' };
       await backend.invoke('library.downloads.record', {
+        syncId: job.id,
         sourceUrl: job.sourceUrl,
         displayName: job.fileName,
         mimeType: job.mimeType,
@@ -107,6 +127,13 @@ app.whenReady().then(async () => {
         completedAt: job.completedAt ?? Date.now(),
         mediaKind: mediaKind[job.kind],
       });
+    },
+    {
+      ffmpegPath: mediaToolPath('ffmpeg'),
+      ffprobePath: mediaToolPath('ffprobe'),
+      refreshSources: async (sourceUrl) => downloadSources(
+        await backend.invoke<StreamDetails>('stream.resolve', { url: sourceUrl }),
+      ),
     },
   );
   await downloads.initialize();
@@ -147,6 +174,21 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('downloads:open-folder', () => shell.openPath(path.join(app.getPath('downloads'), 'WizeStream')));
   await backend.start();
+  if (process.env.WIZESTREAM_PACKAGE_SMOKE === '1') {
+    if (!await embeddedMpvAvailable(embeddedAddonPath)) throw new Error('Packaged embedded libmpv is unavailable');
+    process.env.MPV_AO ??= 'null';
+    const native = requireNative(embeddedAddonPath) as {
+      MpvPlayer: new (options: { mode: 'software' }) => { destroy(): void };
+    };
+    const smokePlayer = new native.MpvPlayer({ mode: 'software' });
+    smokePlayer.destroy();
+    await access(mediaToolPath('ffmpeg'));
+    await access(mediaToolPath('ffprobe'));
+    console.log(`WIZESTREAM_PACKAGE_SMOKE_OK ${process.platform}-${process.arch}`);
+    await backend.stop();
+    app.quit();
+    return;
+  }
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 }).catch((error: unknown) => {
@@ -156,3 +198,18 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('before-quit', () => { void embeddedPlayer?.dispose(); void player.stop(); void backend.stop(); });
+
+function mediaToolPath(tool: 'ffmpeg' | 'ffprobe'): string {
+  const configured = process.env[`WIZESTREAM_${tool.toUpperCase()}_PATH`];
+  if (configured) return configured;
+  const root = app.isPackaged ? process.resourcesPath : app.getAppPath();
+  return path.join(root, 'native', 'media-tools', `${tool}${process.platform === 'win32' ? '.exe' : ''}`);
+}
+
+function downloadSources(details: StreamDetails): DownloadSource[] {
+  return [
+    ...details.videoStreams.map((stream) => ({ ...stream, kind: 'video' as const })),
+    ...details.audioStreams.map((stream) => ({ ...stream, kind: 'audio' as const })),
+    ...details.subtitles.map((stream) => ({ ...stream, kind: 'caption' as const })),
+  ];
+}

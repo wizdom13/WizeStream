@@ -96,11 +96,11 @@ jobs:
           - name: linux-x64
             runner: ubuntu-24.04
             target: --linux AppImage deb
-            embedded: false
+            embedded: true
           - name: linux-arm64
             runner: ubuntu-24.04-arm
             target: --linux AppImage deb
-            embedded: false
+            embedded: true
           - name: windows-x64
             runner: windows-2025
             target: --win nsis portable
@@ -108,11 +108,11 @@ jobs:
           - name: macos-x64
             runner: macos-15-intel
             target: --mac dmg zip
-            embedded: false
+            embedded: true
           - name: macos-arm64
             runner: macos-15
             target: --mac dmg zip
-            embedded: false
+            embedded: true
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
@@ -136,14 +136,29 @@ jobs:
         if: matrix.embedded && runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/setup-libmpv-windows.ps1
+      - name: Prepare pinned Unix libmpv SDK and runtime
+        if: matrix.embedded && runner.os != 'Windows'
+        shell: bash
+        run: ./scripts/setup-libmpv-unix.sh
+      - name: Prepare checksum-verified FFmpeg tools
+        run: npm run media-tools:setup
+      - name: Verify FFmpeg tools
+        run: npm run media-tools:verify
       - name: Build embedded libmpv renderer
         if: matrix.embedded
         run: npm run embedded:build
       - name: Verify embedded libmpv Electron ABI and runtime
         if: matrix.embedded
         run: npm run embedded:verify
+      - name: Smoke-test composite native playback and track switching
+        if: matrix.embedded
+        run: npm run embedded:media-smoke
       - run: npm run backend:build
       - run: npm run build
+      - name: Create unpacked application
+        run: npx electron-builder --dir --publish never
+      - name: Smoke-test unpacked packaged application
+        run: npm run package:smoke
       - name: Create unsigned native packages
         shell: bash
         run: npx electron-builder ${{ matrix.target }} --publish never

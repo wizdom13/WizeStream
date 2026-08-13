@@ -28,9 +28,10 @@ internal class DesktopStructuredPreferenceSyncStore(
         mimeType: String,
         sizeBytes: Long,
         completedAtEpochMillis: Long,
-        mediaKind: String
+        mediaKind: String,
+        requestedSyncId: String? = null
     ): String {
-        val syncId = UUID.randomUUID().toString()
+        val syncId = requestedSyncId?.let { UUID.fromString(it).toString() } ?: UUID.randomUUID().toString()
         val download = SyncedCompletedDownload(
             syncId,
             localPeerId,
