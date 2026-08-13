@@ -1,6 +1,7 @@
 package org.schabi.newpipe.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,6 +49,24 @@ public class ChannelTabHelperTest {
 
         assertTrue(ChannelTabHelper.fetchFeedChannelTab(
                 context, preferences, handler(ChannelTabs.PODCASTS)));
+    }
+
+    @Test
+    public void postsAreVisibleButExcludedFromFeedFetching() {
+        final Context context = mock(Context.class);
+        final SharedPreferences preferences = mock(SharedPreferences.class);
+        when(context.getString(R.string.show_channel_tabs_key)).thenReturn("channel_tabs");
+        when(context.getString(R.string.show_channel_tabs_posts))
+                .thenReturn("show_channel_tabs_posts");
+        when(preferences.getStringSet("channel_tabs", null))
+                .thenReturn(Set.of("show_channel_tabs_posts"));
+
+        assertFalse(ChannelTabHelper.isStreamsTab(ChannelTabs.POSTS));
+        assertTrue(ChannelTabHelper.showChannelTab(context, preferences, ChannelTabs.POSTS));
+        assertEquals(R.string.channel_tab_posts,
+                ChannelTabHelper.getTranslationKey(ChannelTabs.POSTS));
+        assertFalse(ChannelTabHelper.fetchFeedChannelTab(
+                context, preferences, handler(ChannelTabs.POSTS)));
     }
 
     private static ListLinkHandler handler(final String tab) {

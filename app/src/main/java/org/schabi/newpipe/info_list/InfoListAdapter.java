@@ -27,6 +27,7 @@ import org.schabi.newpipe.info_list.holder.PlaylistCardInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.PlaylistGridInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.PlaylistInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.PlaylistMiniInfoItemHolder;
+import org.schabi.newpipe.info_list.holder.PostInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamCardInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamGridInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamInfoItemHolder;
@@ -80,6 +81,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private static final int GRID_PLAYLIST_HOLDER_TYPE = 0x302;
     private static final int CARD_PLAYLIST_HOLDER_TYPE = 0x303;
     private static final int COMMENT_HOLDER_TYPE = 0x400;
+    private static final int POST_HOLDER_TYPE = 0x500;
 
     private final LayoutInflater layoutInflater;
     private final InfoItemBuilder infoItemBuilder;
@@ -282,6 +284,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 }
             case COMMENT:
                 return COMMENT_HOLDER_TYPE;
+            case POST:
+                return POST_HOLDER_TYPE;
             default:
                 return -1;
         }
@@ -332,6 +336,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 return new PlaylistCardInfoItemHolder(infoItemBuilder, parent);
             case COMMENT_HOLDER_TYPE:
                 return new CommentInfoItemHolder(infoItemBuilder, parent);
+            case POST_HOLDER_TYPE:
+                return new PostInfoItemHolder(infoItemBuilder, parent);
             default:
                 return new FallbackViewHolder(new View(parent.getContext()));
         }
@@ -357,7 +363,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             @Override
             public int getSpanSize(final int position) {
                 final int type = getItemViewType(position);
-                return type == HEADER_TYPE || type == FOOTER_TYPE ? spanCount : 1;
+                return type == HEADER_TYPE || type == FOOTER_TYPE || type == POST_HOLDER_TYPE
+                        ? spanCount : 1;
             }
         };
     }
