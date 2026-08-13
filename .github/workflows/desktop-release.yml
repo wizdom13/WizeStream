@@ -71,33 +71,38 @@ jobs:
         include:
           - name: linux-x64
             runner: ubuntu-24.04
+            os: Linux
             target: --linux AppImage deb
           - name: linux-arm64
             runner: ubuntu-24.04-arm
+            os: Linux
             target: --linux AppImage deb
           - name: windows-x64
             runner: windows-2025
+            os: Windows
             target: --win nsis portable
           - name: macos-x64
             runner: macos-15-intel
+            os: macOS
             target: --mac dmg zip
           - name: macos-arm64
             runner: macos-15
+            os: macOS
             target: --mac dmg zip
     defaults:
       run:
         working-directory: desktop
     env:
-      WIN_CSC_LINK: ${{ runner.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE || '' }}
-      WIN_CSC_KEY_PASSWORD: ${{ runner.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE_PASSWORD || '' }}
-      WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER: ${{ runner.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER || '' }}
-      CSC_LINK: ${{ runner.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE || '' }}
-      CSC_KEY_PASSWORD: ${{ runner.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE_PASSWORD || '' }}
-      APPLE_API_KEY: ${{ runner.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY || '' }}
-      APPLE_API_KEY_ID: ${{ runner.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY_ID || '' }}
-      APPLE_API_ISSUER: ${{ runner.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_ISSUER || '' }}
-      APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_TEAM_ID || '' }}
-      CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'Linux' && 'false' || 'true' }}
+      WIN_CSC_LINK: ${{ matrix.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE || '' }}
+      WIN_CSC_KEY_PASSWORD: ${{ matrix.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE_PASSWORD || '' }}
+      WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER: ${{ matrix.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER || '' }}
+      CSC_LINK: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE || '' }}
+      CSC_KEY_PASSWORD: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE_PASSWORD || '' }}
+      APPLE_API_KEY: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY || '' }}
+      APPLE_API_KEY_ID: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY_ID || '' }}
+      APPLE_API_ISSUER: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_ISSUER || '' }}
+      APPLE_TEAM_ID: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_TEAM_ID || '' }}
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ matrix.os == 'Linux' && 'false' || 'true' }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
