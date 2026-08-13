@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "node-addon-api": "^8.3.0",
-    "node-gyp": "^11.0.0"
+    "node-gyp": "13.0.1"
   },
   "types": "dist/main/index.d.ts",
   "exports": {
