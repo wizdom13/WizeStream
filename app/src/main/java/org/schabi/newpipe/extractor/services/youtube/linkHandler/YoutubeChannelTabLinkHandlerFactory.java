@@ -60,6 +60,8 @@ public final class YoutubeChannelTabLinkHandlerFactory extends ListLinkHandlerFa
                 return "/playlists";
             case ChannelTabs.PODCASTS:
                 return "/podcasts";
+            case ChannelTabs.POSTS:
+                return "/posts";
             case ChannelTabs.LIVESTREAMS:
                 return "/streams";
             case ChannelTabs.SHORTS:
@@ -185,6 +187,9 @@ public final class YoutubeChannelTabLinkHandlerFactory extends ListLinkHandlerFa
                         return ChannelTabs.PLAYLISTS;
                     case "podcasts":
                         return ChannelTabs.PODCASTS;
+                    case "posts":
+                    case "community":
+                        return ChannelTabs.POSTS;
                     case "streams":
                         return ChannelTabs.LIVESTREAMS;
                     case "shorts":

@@ -72,6 +72,8 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
                 return "EglwbGF5bGlzdHPyBgQKAkIA";
             case ChannelTabs.PODCASTS:
                 return "Eghwb2RjYXN0c_IGBQoDugEA";
+            case ChannelTabs.POSTS:
+                return "Egljb21tdW5pdHnyBgQKAkoA";
             case ChannelTabs.SEARCH:
                 return "EgZzZWFyY2jyBgQKAloA";
             default:
@@ -330,7 +332,10 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
             final String tabUrl = tabRenderer.getObject("endpoint")
                     .getObject("commandMetadata").getObject("webCommandMetadata")
                     .getString("url");
-            if (tabUrl != null && normalizeTabUrl(tabUrl).endsWith(urlSuffix)) {
+            final String normalizedTabUrl = tabUrl == null ? "" : normalizeTabUrl(tabUrl);
+            if (normalizedTabUrl.endsWith(urlSuffix)
+                    || (ChannelTabs.POSTS.equals(getTab())
+                    && normalizedTabUrl.endsWith("/community"))) {
                 foundTab = tabRenderer;
                 break;
             }
@@ -467,6 +472,18 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
         } else if (item.has("channelRenderer")) {
             collector.commit(new YoutubeChannelInfoItemExtractor(
                     item.getObject("channelRenderer")));
+        } else if (item.has("backstagePostThreadRenderer")) {
+            final JsonObject post = item.getObject("backstagePostThreadRenderer")
+                    .getObject("post").getObject("backstagePostRenderer");
+            if (!post.isEmpty()) {
+                collector.commit(new YoutubePostInfoItemExtractor(post, getTimeAgoParser()));
+            }
+        } else if (item.has("backstagePostRenderer")) {
+            collector.commit(new YoutubePostInfoItemExtractor(
+                    item.getObject("backstagePostRenderer"), getTimeAgoParser()));
+        } else if (item.has("postRenderer")) {
+            collector.commit(new YoutubePostInfoItemExtractor(
+                    item.getObject("postRenderer"), getTimeAgoParser()));
         } else if (item.has("shelfRenderer")) {
             return collectItem(collector, item.getObject("shelfRenderer")
                     .getObject("content"), channelIds);

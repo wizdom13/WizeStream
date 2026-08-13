@@ -668,8 +668,11 @@ public class YoutubeChannelExtractor extends ChannelExtractor {
         };
 
         for (final Object tab : responseTabs) {
-            if (((JsonObject) tab).has("tabRenderer")) {
-                final JsonObject tabRenderer = ((JsonObject) tab).getObject("tabRenderer");
+            final JsonObject tabObject = (JsonObject) tab;
+            if (tabObject.has("tabRenderer") || tabObject.has("expandableTabRenderer")) {
+                final JsonObject tabRenderer = tabObject.has("tabRenderer")
+                        ? tabObject.getObject("tabRenderer")
+                        : tabObject.getObject("expandableTabRenderer");
                 final String tabUrl = tabRenderer.getObject("endpoint")
                         .getObject("commandMetadata").getObject("webCommandMetadata")
                         .getString("url");
@@ -686,6 +689,10 @@ public class YoutubeChannelExtractor extends ChannelExtractor {
                             break;
                         case "podcasts":
                             addTab.accept(ChannelTabs.PODCASTS);
+                            break;
+                        case "posts":
+                        case "community":
+                            addTab.accept(ChannelTabs.POSTS);
                             break;
                         case "streams":
                             addTab.accept(ChannelTabs.LIVESTREAMS);
