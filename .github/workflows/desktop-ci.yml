@@ -50,6 +50,10 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - name: Install locked Node dependencies
         run: npm ci --ignore-scripts
+      - name: Prepare checksum-verified FFmpeg tools
+        run: npm run media-tools:setup
+      - name: Verify FFmpeg tools
+        run: npm run media-tools:verify
       - name: Test and assemble JVM backend
         run: ../gradlew -p backend test installDist runtimeImage --stacktrace
       - name: Smoke-test JSON-RPC backend

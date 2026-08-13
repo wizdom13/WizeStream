@@ -9,6 +9,9 @@ import { DownloadManager } from './download-manager.js';
 
 const temporaryDirectories: string[] = [];
 const execute = promisify(execFile);
+const toolSuffix = process.platform === 'win32' ? '.exe' : '';
+const ffmpeg = path.resolve(import.meta.dirname, `../../native/media-tools/ffmpeg${toolSuffix}`);
+const ffprobe = path.resolve(import.meta.dirname, `../../native/media-tools/ffprobe${toolSuffix}`);
 
 afterEach(async () => {
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
@@ -114,9 +117,9 @@ describe('DownloadManager', () => {
     temporaryDirectories.push(directory);
     const videoPath = path.join(directory, 'video.mp4');
     const audioPath = path.join(directory, 'audio.m4a');
-    await execute('ffmpeg', ['-y', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:d=1',
+    await execute(ffmpeg, ['-y', '-f', 'lavfi', '-i', 'color=c=blue:s=160x90:d=1',
       '-an', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', videoPath]);
-    await execute('ffmpeg', ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1',
+    await execute(ffmpeg, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1',
       '-vn', '-c:a', 'aac', audioPath]);
     const video = await readFile(videoPath);
     const audio = await readFile(audioPath);
@@ -130,7 +133,7 @@ describe('DownloadManager', () => {
     if (!address || typeof address === 'string') throw new Error('Missing test server address');
     const completed: string[] = [];
     const manager = new DownloadManager(path.join(directory, 'downloads'), path.join(directory, 'downloads.json'),
-      async (job) => { completed.push(job.fileName); }, { ffmpegPath: 'ffmpeg', ffprobePath: 'ffprobe' });
+      async (job) => { completed.push(job.fileName); }, { ffmpegPath: ffmpeg, ffprobePath: ffprobe });
     await manager.initialize();
     const started = await manager.start({
       sourceUrl: 'https://www.youtube.com/watch?v=adaptivefixture', title: 'Adaptive fixture',
@@ -140,7 +143,7 @@ describe('DownloadManager', () => {
     const result = await waitFor(() => manager.list().find((job) => job.id === started.id), 'completed');
     expect(result.outputContainer).toBe('mp4');
     expect(result.components.map((value) => value.state)).toEqual(['completed', 'completed']);
-    const { stdout } = await execute('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type',
+    const { stdout } = await execute(ffprobe, ['-v', 'error', '-show_entries', 'stream=codec_type',
       '-of', 'csv=p=0', manager.completedPath(started.id)]);
     expect(stdout).toContain('video');
     expect(stdout).toContain('audio');
