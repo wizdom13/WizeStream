@@ -51,9 +51,13 @@ try {
   exitCode = 1;
   console.error(error);
 } finally {
+  console.log('Native media smoke: destroying player.');
   player?.destroy();
+  console.log('Native media smoke: player destroyed.');
   if (server) await server.terminate();
+  console.log('Native media smoke: fixture server stopped.');
   await rm(temporary, { recursive: true, force: true });
+  console.log('Native media smoke: exiting Electron.');
   app.exit(exitCode);
 }
 
