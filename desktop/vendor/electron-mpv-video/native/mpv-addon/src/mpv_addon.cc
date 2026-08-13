@@ -1,3 +1,9 @@
+#ifdef __linux__
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#endif
+
 #include <napi.h>
 #include <mpv/client.h>
 #include <mpv/render.h>
@@ -12,6 +18,10 @@
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <dlfcn.h>
+#endif
+
+#ifdef __linux__
+#include <link.h>
 #endif
 
 #ifdef _WIN32
@@ -69,10 +79,15 @@ LinuxMpvApi load_linux_mpv_api() {
   const size_t separator = module_path.find_last_of('/');
   const std::string directory = separator == std::string::npos ? "." : module_path.substr(0, separator);
   const std::string versioned = directory + "/libmpv.so.2";
-  api.library = dlopen(versioned.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
+  // Electron and libmpv both ship FFmpeg. Loading libmpv into Electron's base
+  // namespace can bind one stack to symbols from the other, which is especially
+  // prone to allocator corruption on arm64. A new glibc namespace keeps the
+  // staged libmpv dependency closure self-contained while the addon continues to
+  // use Electron's normal N-API symbols.
+  api.library = dlmopen(LM_ID_NEWLM, versioned.c_str(), RTLD_NOW | RTLD_LOCAL);
   if (!api.library) {
     const std::string unversioned = directory + "/libmpv.so";
-    api.library = dlopen(unversioned.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
+    api.library = dlmopen(LM_ID_NEWLM, unversioned.c_str(), RTLD_NOW | RTLD_LOCAL);
   }
   if (!api.library) {
     std::fprintf(stderr, "Could not load staged libmpv: %s\n", dlerror());
