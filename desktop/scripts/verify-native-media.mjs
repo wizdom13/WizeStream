@@ -18,6 +18,7 @@ const audioPath = path.join(temporary, 'audio.m4a');
 const captionPath = path.join(temporary, 'caption.vtt');
 let server;
 let player;
+let addon;
 let exitCode = 0;
 
 try {
@@ -31,7 +32,7 @@ try {
   const fixture = await startFixtureServer(files);
   server = fixture.worker;
   const base = `http://127.0.0.1:${fixture.port}`;
-  const addon = require(path.join(nativeDirectory, 'mpv_addon.node'));
+  addon = require(path.join(nativeDirectory, 'mpv_addon.node'));
   player = new addon.MpvPlayer({ mode: 'software' });
   player.openMedia({ source: `${base}/video`, audio: { url: `${base}/audio`, title: 'Fixture audio', language: 'en' },
     subtitle: { url: `${base}/caption`, title: 'Fixture captions', language: 'en' } });
@@ -64,7 +65,8 @@ try {
   player?.destroy();
   if (server) await server.terminate();
   await rm(temporary, { recursive: true, force: true });
-  app.exit(exitCode);
+  if (process.platform === 'linux' && addon?.exitProcess) addon.exitProcess(exitCode);
+  else app.exit(exitCode);
 }
 
 async function startFixtureServer(files) {

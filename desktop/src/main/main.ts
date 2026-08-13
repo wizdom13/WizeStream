@@ -18,6 +18,7 @@ const player = new MpvController();
 let embeddedPlayer: MpvMain | undefined;
 let downloads: DownloadManager | undefined;
 let embeddedAddonPath = '';
+let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
   'health', 'services.list', 'search', 'stream.resolve', 'library.summary',
   'library.subscriptions.list', 'library.subscriptions.save', 'library.subscriptions.delete',
@@ -185,19 +186,42 @@ app.whenReady().then(async () => {
     await access(mediaToolPath('ffmpeg'));
     await access(mediaToolPath('ffprobe'));
     console.log(`WIZESTREAM_PACKAGE_SMOKE_OK ${process.platform}-${process.arch}`);
-    await backend.stop();
-    app.quit();
+    await shutdownApplication(0);
     return;
   }
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 }).catch((error: unknown) => {
   console.error(error);
-  app.quit();
+  void shutdownApplication(1);
 });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('before-quit', () => { void embeddedPlayer?.dispose(); void player.stop(); void backend.stop(); });
+app.on('before-quit', (event) => {
+  if (shutdownStarted) return;
+  event.preventDefault();
+  void shutdownApplication(0);
+});
+
+async function shutdownApplication(exitCode: number): Promise<void> {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
+  const results = await Promise.allSettled([embeddedPlayer?.dispose(), player.stop(), backend.stop()]);
+  const failed = results.find((result) => result.status === 'rejected');
+  if (failed?.status === 'rejected') {
+    console.error('Desktop shutdown cleanup failed', failed.reason);
+    exitCode = 1;
+  }
+  if (process.platform === 'linux') {
+    try {
+      const native = requireNative(embeddedAddonPath) as { exitProcess(code: number): never };
+      native.exitProcess(exitCode);
+    } catch (error) {
+      console.error('Immediate Linux process exit is unavailable', error);
+    }
+  }
+  app.exit(exitCode);
+}
 
 function mediaToolPath(tool: 'ffmpeg' | 'ffprobe'): string {
   const configured = process.env[`WIZESTREAM_${tool.toUpperCase()}_PATH`];
