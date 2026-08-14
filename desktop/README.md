@@ -27,6 +27,8 @@ The desktop architecture contains:
 - Download video, audio and captions, with pause and resume support.
 - Manage subscriptions, playlists, history and Learning Mode notes.
 - Pair with trusted WizeStream devices and synchronize selected data over the local network.
+- Adjust applicable playback, download, appearance, history, content, device and Learning Mode
+  settings using the same familiar sections as the Android app.
 - Keep user data locally without requiring a WizeStream account.
 
 Synchronization can run manually or automatically while WizeStream Desktop is open. It works only

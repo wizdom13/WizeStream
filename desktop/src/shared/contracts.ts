@@ -324,6 +324,39 @@ export interface UpdateState {
   message?: string;
 }
 
+export type DesktopTheme = 'system' | 'light' | 'dark';
+export type PreferredVideoFormat = 'video_mp4' | 'video_webm' | 'video_3gp';
+export type PreferredAudioFormat = 'audio_m4a' | 'audio_webm';
+
+export interface DesktopSettings {
+  theme: DesktopTheme;
+  defaultServiceId: number | null;
+  defaultResolution: 'best_resolution' | '1080p60' | '1080p' | '720p60' | '720p'
+    | '480p' | '360p' | '240p' | '144p';
+  defaultVideoFormat: PreferredVideoFormat;
+  defaultAudioFormat: PreferredAudioFormat;
+  preferOriginalAudio: boolean;
+  preferDescriptiveAudio: boolean;
+  enableWatchHistory: boolean;
+  enableSearchHistory: boolean;
+  learningMode: boolean;
+  learningNotes: boolean;
+}
+
+export const defaultDesktopSettings: DesktopSettings = {
+  theme: 'system',
+  defaultServiceId: null,
+  defaultResolution: '720p60',
+  defaultVideoFormat: 'video_mp4',
+  defaultAudioFormat: 'audio_m4a',
+  preferOriginalAudio: true,
+  preferDescriptiveAudio: false,
+  enableWatchHistory: true,
+  enableSearchHistory: true,
+  learningMode: false,
+  learningNotes: true,
+};
+
 export interface DesktopApi {
   backend: {
     invoke<T>(method: BackendMethod, params?: Record<string, unknown>): Promise<T>;
@@ -349,6 +382,11 @@ export interface DesktopApi {
     download(): Promise<UpdateState>;
     install(): Promise<void>;
     onChanged(listener: (state: UpdateState) => void): () => void;
+  };
+  settings: {
+    get(): Promise<DesktopSettings>;
+    update(patch: Partial<DesktopSettings>): Promise<DesktopSettings>;
+    reset(): Promise<DesktopSettings>;
   };
 }
 
