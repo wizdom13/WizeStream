@@ -1,7 +1,9 @@
 # WizeStream Desktop
 
-WizeStream Desktop is an experimental, real desktop client for Windows, macOS and Linux. It is
-not an Android compatibility wrapper and does not share the Android user interface.
+WizeStream is a multi-platform application for Android, Windows, macOS and Linux. WizeStream
+Desktop is its real desktop client for Windows, macOS and Linux, currently distributed as an
+explicitly unsigned preview. It is not an Android compatibility wrapper and does not share the
+Android user interface.
 
 The desktop architecture contains:
 
@@ -17,80 +19,25 @@ The desktop architecture contains:
 - Native preview packages produced on native Windows, Intel/Apple Silicon macOS, and
   x86_64/aarch64 Linux runners, plus a protected signed-beta release path.
 
-## Current scope
+## What the Desktop app can do
 
-Phase 1 established the application shell, extractor-backed search, stream resolution, external
-mpv playback, persistent desktop identity, encrypted pairing and native preview packages.
+- Search and browse supported streaming services.
+- Play video and audio inside the application.
+- Choose available audio tracks and captions.
+- Download video, audio and captions, with pause and resume support.
+- Manage subscriptions, playlists, history and Learning Mode notes.
+- Pair with trusted WizeStream devices and synchronize selected data over the local network.
+- Keep user data locally without requiring a WizeStream account.
 
-Phase 2 enables manual, category-selectable synchronization with Android devices for:
+Synchronization can run manually or automatically while WizeStream Desktop is open. It works only
+with devices you deliberately pair and trust. If a trusted device changes address after using a
+hotspot, WizeStream can find it again but still verifies the saved device identity before syncing.
 
-- subscriptions and local/remote playlists;
-- watch history, playback progress and search history;
-- Learning Mode notes;
-- feed groups, home tabs, channel playback profiles and filters;
-- portable settings and completed-download metadata.
+Downloads are checked before they are marked complete. When separate video and audio tracks are
+needed, WizeStream combines them without lowering their quality.
 
-The desktop compiles the same v1 synchronization models, validation, engines and libp2p protocol
-bindings used by Android. JDBC adapters use immutable change journals, per-origin revision clocks,
-per-peer acknowledgements, Lamport conflict resolution and tombstones. Structured records without
-a desktop editing surface are retained losslessly so round trips do not discard Android data.
-
-Phase 3 adds native desktop library editors for subscriptions, local playlists and their items,
-watch and search history, and Learning Mode notes. Successful searches and playback starts create
-history events, and local edits are reconciled into the same Phase 2 journals before the next
-device synchronization.
-
-Phase 4 added semantic original/dubbed/descriptive audio labels, caption selection, embedded libmpv
-rendering, and resumable video, audio and caption downloads.
-
-The Windows packaging workflow pins the Shinchiro libmpv development archive and verifies its
-SHA-256 digest before compiling or staging native code.
-
-Phase 5 adds opt-in automatic synchronization while WizeStream Desktop is running. The JVM
-backend persists a user-selected interval, categories and explicit trusted-device allowlist,
-checks for a private local IPv4 network, and reuses the Phase 2 engines without changing their
-journals or conflict rules. Runs are serialized with manual synchronization, recover after an
-overdue application restart, and use per-device 5-minute-to-6-hour exponential retry backoff.
-Search history remains excluded until explicitly selected. Recent manual, automatic, skipped and
-failed attempts are shown on the Devices screen without recording synchronized payloads, pairing
-codes, private keys or media URLs.
-
-Automatic synchronization is not an operating-system daemon: closing WizeStream stops its JVM
-backend and scheduler. The next launch performs a jittered catch-up when a persisted run is overdue.
-
-Phase 6 packages an Electron-ABI-matched embedded libmpv renderer on Windows x64, Linux x64/arm64,
-and macOS x64/arm64. Windows and macOS prefer shared textures; Linux uses the software/WebGL
-pipeline. Selected external audio and captions now remain inside the embedded player and can be
-switched through narrow typed operations. The shell-free external mpv controller remains an
-explicit recovery option on every platform.
-
-Adaptive video-only downloads require an audio selection and are represented as one recoverable
-job. WizeStream downloads both components, refreshes expired URLs only when the saved stream
-fingerprint resolves unambiguously, and uses packaged checksum-verified FFmpeg/FFprobe tools to
-stream-copy and validate MP4, WebM or Matroska output before an atomic final rename. It never
-transcodes, silently changes quality/language, logs signed media URLs, or records completion before
-the final file is valid. Legacy Phase 4 download state migrates to schema version 2 without deleting
-partial files.
-
-When a trusted device's saved IP address is stale, desktop scans the local IPv4 subnet only on the
-previously trusted sync port and then authenticates the discovered endpoint against the saved
-libp2p PeerID. Discovery never establishes trust by itself.
-
-Phase 7 adds the `0.6.0-beta.1-unsigned-preview` release contract. Preview packages are produced by
-GitHub Actions for all five target architectures and published with `SHA256SUMS` plus GitHub
-artifact attestations. Production automatic updates are hard-disabled, updater metadata is omitted,
-and preview upgrades are installed manually. Windows unknown-publisher or SmartScreen warnings and
-macOS Gatekeeper approval are expected for these unsigned packages. The protected signed-release
-workflow is retained as a postponed future path and remains inactive unless maintainers explicitly
-change the release policy and configure trusted signing identities.
-
-Phase 8 synchronizes the WizeStream 1.6.0 Android changes from `pipe`, reconciles the release
-documentation with the unsigned-preview policy, reruns Android regression checks and the complete
-five-platform Desktop matrix, and integrates WizeStream Desktop into `pipe`.
-
-Phase 9 stabilizes that integrated preview. It adds a dedicated Desktop bug-report path and a
-repeatable five-platform manual acceptance checklist, while keeping the first unsigned preview
-immutable. Another preview is published only when material fixes justify a higher beta version.
+The current Desktop packages are explicitly unsigned previews. They are built and tested for
+Windows x64, macOS x64/arm64 and Linux x64/arm64. Updates are installed manually.
 
 ## Requirements
 
@@ -138,7 +85,7 @@ omitted, so preview upgrades are installed manually. Windows signing and macOS
 signing/notarization are postponed future release gates, not requirements for architecture CI or
 the current preview channel.
 
-See [docs/preview-testing.md](docs/preview-testing.md) for the Phase 9 manual acceptance checklist.
+See [docs/preview-testing.md](docs/preview-testing.md) for the manual acceptance checklist.
 See [docs/releasing.md](docs/releasing.md) for the current unsigned-preview policy and the postponed
 future signing, updater-validation and rollback procedures.
 
@@ -156,11 +103,10 @@ future signing, updater-validation and rollback procedures.
 - Pairing invitations retain WizeStream's protocol version, peer identity signature checks,
   expiration, one-time token and libp2p authenticated transport.
 
-## Next milestone
+## Maintenance status
 
-Complete the Phase 9 five-platform manual acceptance checklist and triage reports submitted through
-the Desktop preview issue form. Fix reproducible preview regressions from dedicated branches based
-on `pipe`, and require the Android and complete Desktop CI matrices before merging them. Publish a
-higher unsigned beta only when material fixes change the tested binaries. Signed public releases
-and production automatic updates remain postponed until the maintainers explicitly adopt a new
-release policy.
+WizeStream Desktop is integrated into the main project. Ongoing work is regular maintenance:
+testing the supported platforms, reviewing preview reports and fixing reproducible problems.
+Changes must pass the Android and complete Desktop test matrices before they are merged. A higher
+unsigned beta is published only when important fixes change the application. Signed public
+releases and production automatic updates remain postponed.

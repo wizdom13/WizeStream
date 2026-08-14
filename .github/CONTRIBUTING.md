@@ -2,10 +2,10 @@
 
 Thank you for your interest in contributing to WizeStream.
 
-WizeStream is an independent, NewPipe-based streaming client for Android. It combines Material 3
-Expressive design with privacy-friendly playback, local-first features, multiple streaming
-platforms, and its own integrated extractor changes while preserving the strengths of the core
-NewPipe experience.
+WizeStream is an independent, NewPipe-based, multi-platform streaming application for Android,
+Windows, macOS and Linux. It combines Material 3 Expressive Android design with a dedicated Desktop
+interface, privacy-friendly playback, local-first features, multiple streaming services, and its
+own integrated extractor changes while preserving the strengths of the core NewPipe experience.
 
 This project welcomes focused contributions, but changes must respect the project direction and avoid unnecessary behavior changes.
 
@@ -21,8 +21,9 @@ WizeStream focuses on:
 * Privacy-friendly playback and downloads
 * Useful local-first features
 * Reliable support for multiple streaming platforms
+* Consistent Android, Windows, macOS and Linux project identity
 * Maintained, integrated extractor and service compatibility
-* Release-ready signed builds
+* Release-ready signed Android builds and verified Desktop previews
 * Clear fork attribution
 * Preserving compatible NewPipe behavior and data migration where practical
 * Safe, reviewable, well-scoped changes
@@ -54,6 +55,7 @@ Good contribution types include:
 * Release-readiness fixes
 * Accessibility improvements
 * Build, CI, and signing workflow fixes
+* Desktop preview testing and platform-specific fixes
 * Small refactors that reduce risk or improve maintainability
 * QA reports with screenshots, device info, and reproduction steps
 
@@ -170,6 +172,11 @@ git diff --check
 
 For Android/device-sensitive changes, also run or request device QA.
 
+For Desktop changes, run the checks documented in
+[`desktop/README.md`](../desktop/README.md#validate) and request platform QA using the
+[`desktop/docs/preview-testing.md`](../desktop/docs/preview-testing.md) checklist. Desktop changes
+must pass the complete Windows x64, macOS x64/arm64 and Linux x64/arm64 CI matrix.
+
 Recommended manual QA for UI changes:
 
 * Light theme
@@ -193,7 +200,8 @@ For visual changes, include screenshots when possible.
 A useful QA report includes:
 
 * Device model
-* Android version
+* Platform and operating-system version
+* Architecture for Desktop reports
 * App build type
 * Theme mode
 * Theme color
@@ -218,7 +226,7 @@ When opening an issue, include:
 
 * Clear title
 * App version
-* Device and Android version
+* Platform, device and operating-system version
 * Steps to reproduce
 * Expected behavior
 * Actual behavior

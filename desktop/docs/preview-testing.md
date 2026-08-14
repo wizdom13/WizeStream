@@ -1,7 +1,7 @@
 # Desktop unsigned-preview testing
 
-This checklist defines the Phase 9 manual acceptance pass for WizeStream Desktop. It supplements
-the automated five-target Desktop CI matrix; it does not replace it.
+This checklist helps testers confirm that the WizeStream Desktop preview works on every supported
+platform. It supplements automated testing; it does not replace it.
 
 ## Safety and authenticity
 
@@ -65,7 +65,7 @@ Never attach access tokens, private keys, pairing invitations, signed media URLs
 private filesystem paths. Include the smallest useful redacted log or screenshot, the exact package
 filename and exact reproduction steps.
 
-## Phase 9 release gate
+## Release gate
 
 The existing `v0.6.0-beta.1-unsigned-preview` tag and assets are immutable. A second unsigned
 preview is justified only when one or more material fixes change the tested binaries. A new preview

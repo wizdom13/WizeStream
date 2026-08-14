@@ -2,10 +2,17 @@
 
 ## What is WizeStream?
 
-WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern
-Material 3 Expressive interface with privacy-friendly playback, useful local-first features, and
-support for multiple streaming platforms. Material 3 is an important design goal, not the
-project's only purpose.
+WizeStream is an independent, NewPipe-based, multi-platform streaming application for Android,
+Windows, macOS and Linux. It combines privacy-friendly playback, useful local-first features,
+support for multiple streaming services, an expressive Android interface and a dedicated Desktop
+experience. Material 3 is an important Android design goal, not the project's only purpose.
+
+## Which operating systems are supported?
+
+WizeStream provides signed Android application releases. Its integrated Desktop client supports
+Windows x64, macOS x64/arm64 and Linux x64/arm64. Desktop packages are currently explicitly
+unsigned previews, and production automatic updates are disabled. Download them only from the
+official repository and verify `SHA256SUMS` before opening them.
 
 ## Is WizeStream an official NewPipe release?
 
@@ -44,7 +51,13 @@ shown as **Not local** and can be fetched from its original source with **Downlo
 
 ## How should I update WizeStream?
 
-Use the same source from which you installed it whenever possible. IzzyOnDroid users should update through their F-Droid-compatible client. Direct installations can use signed WizeStream GitHub releases or the in-app GitHub release checker.
+On Android, use the same source from which you installed WizeStream whenever possible.
+IzzyOnDroid users should update through their F-Droid-compatible client. Direct Android
+installations can use signed WizeStream GitHub releases or the in-app GitHub release checker.
+
+Desktop preview updates are manual. Download a higher preview only from the official GitHub release,
+verify its checksum, and install it over or alongside the existing package as appropriate for the
+operating system. Production automatic Desktop updates remain disabled.
 
 ## Which services are supported?
 

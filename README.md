@@ -2,13 +2,20 @@
 
 <h1 align="center">WizeStream</h1>
 
-<p align="center"><b>An independent, privacy-friendly NewPipe-based streaming client for Android.</b></p>
+<p align="center"><b>An independent, privacy-friendly, multi-platform streaming application for Android, Windows, macOS and Linux.</b></p>
 
-> **Desktop development preview:** A native Windows, macOS and Linux architecture is being built
-> with Electron, TypeScript, React, WizeStreamExtractor, SQLite and mpv on the
-> [`desktop-electron`](https://github.com/wizdom13/WizeStream/tree/desktop-electron) branch. See the
-> [desktop implementation guide](desktop/README.md). This is separate from the experimental ATL
-> Flatpak and is not yet a stable end-user release.
+WizeStream combines its established Android application with a real Desktop client built for
+Windows, macOS and Linux. Desktop is integrated into the `pipe` branch and available as an
+**explicitly unsigned preview**; it is not an Android compatibility wrapper. See the
+[Desktop implementation guide](desktop/README.md) and
+[Desktop preview testing guide](desktop/docs/preview-testing.md).
+
+| Platform | Availability | Packages |
+| --- | --- | --- |
+| Android | Signed application releases | APK / IzzyOnDroid |
+| Windows x64 | Unsigned Desktop preview | Installer and portable `.exe` |
+| macOS x64 and arm64 | Unsigned Desktop preview | `.dmg` and `.zip` |
+| Linux x64 and arm64 | Unsigned Desktop preview | `.AppImage` and `.deb` |
 
 <p align="center">
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a>
@@ -20,6 +27,7 @@
 <p align="center">
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPL%20v3-blue.svg" alt="License: GPLv3"></a>
   <a href="https://github.com/wizdom13/WizeStream/actions"><img src="https://github.com/wizdom13/WizeStream/actions/workflows/ci.yml/badge.svg?branch=pipe" alt="Build status"></a>
+  <a href="https://github.com/wizdom13/WizeStream/actions/workflows/desktop-ci.yml"><img src="https://github.com/wizdom13/WizeStream/actions/workflows/desktop-ci.yml/badge.svg?branch=pipe" alt="Desktop build status"></a>
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/org.wisso.newpipematerial&amp;label=IzzyOnDroid" alt="Latest version on IzzyOnDroid"></a>
   <a href="https://shields.rbtlog.dev/org.wisso.newpipematerial"><img src="https://shields.rbtlog.dev/simple/org.wisso.newpipematerial" alt="Reproducible build status"></a>
 </p>
@@ -64,9 +72,10 @@
 
 ## Important project notice
 
-WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern
-Material 3 Expressive interface with privacy-friendly playback, useful local-first features, and
-support for multiple streaming platforms.
+WizeStream is an independent, NewPipe-based, multi-platform streaming application for Android,
+Windows, macOS and Linux. It combines privacy-friendly playback, useful local-first features,
+support for multiple streaming services, an expressive Android interface, and a dedicated Desktop
+experience.
 
 WizeStream maintains its own application and integrated extractor changes. It is **not affiliated
 with, sponsored by, or endorsed by** the official NewPipe project, TeamNewPipe, or NewPipe e.V.
@@ -103,10 +112,13 @@ baseline is recorded in [UPSTREAM.md](UPSTREAM.md).
 WizeStream keeps the lightweight, privacy-friendly NewPipe experience while developing its own
 interface, playback, discovery, synchronization, and service-support features. Material 3
 Expressive design remains an important project goal, but it is one part of a broader independent
-client rather than the project's only purpose.
+application rather than the project's only purpose. Android and Desktop use platform-appropriate
+interfaces while sharing WizeStream's integrated extractor sources and compatible synchronization
+protocol.
 
 Project highlights:
 
+- Android, Windows, macOS and Linux support in one open-source project
 - Material 3-inspired design with Material You colors, manual color presets, and customizable navigation
 - Account-free playback, subscriptions, feeds, playlists, downloads, and history across supported services
 - Dedicated YouTube Music and YouTube Shorts destinations, advanced search filters, and channel sorting
@@ -181,6 +193,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 ---
 
 ## Features
+
+Feature availability differs between the Android and Desktop interfaces. Android provides the full
+mobile feature set documented below. The Desktop preview provides native Desktop browsing,
+playback, downloads, libraries, Learning Mode notes and trusted-device synchronization; see the
+[Desktop implementation guide](desktop/README.md) for its exact current scope.
 
 ### Streaming and discovery
 
@@ -261,11 +278,12 @@ See [Device synchronization](#device-synchronization) for behavior, limitations,
 
 ### Updates and releases
 
-- Manual and optional background checks for signed WizeStream releases
-- In-app changelog preview, APK download progress, and installation handoff
-- Update validation for checksum, package identity, version, and signing certificate
-- Independent semantic versioning, release signing, stable builds, and separately installable nightly
-  builds
+- Android supports manual and optional background checks for signed WizeStream releases, with
+  changelog preview, APK download progress, installation handoff, and update validation.
+- Desktop preview packages are downloaded and updated manually. Production automatic updates are
+  disabled, and Windows/macOS packages are currently unsigned.
+- Independent semantic versioning, signed Android releases, and separately installable Android
+  nightly builds
 
 ---
 
@@ -307,7 +325,7 @@ data details, background behavior, and privacy notes.
 
 Install WizeStream through an F-Droid-compatible client from the IzzyOnDroid repository.
 
-### Release APK
+### Android release APK
 
 <a href="https://github.com/wizdom13/WizeStream/releases"><img src="https://i.ibb.co/q0mdc4Z/get-it-on-github.png" height="80" alt="Get it on GitHub"></a>
 
@@ -321,6 +339,18 @@ WizeStream uses a different application ID from official NewPipe, so both apps c
 WizeStream:        org.wisso.newpipematerial
 Debug build:       org.wisso.newpipematerial.debug
 ```
+
+### Desktop unsigned preview
+
+Download Windows, macOS or Linux packages from the
+[`v0.6.0-beta.1-unsigned-preview`](https://github.com/wizdom13/WizeStream/releases/tag/v0.6.0-beta.1-unsigned-preview)
+release. Verify the supplied `SHA256SUMS` before opening a package.
+
+The Desktop preview is explicitly unsigned. Windows may show an unknown-publisher or SmartScreen
+warning, and macOS Gatekeeper may require deliberate approval. Production automatic updates are
+disabled, so Desktop preview upgrades are installed manually. See the
+[Desktop preview testing guide](desktop/docs/preview-testing.md) for package and verification
+details.
 
 ### GitHub Store
 
@@ -360,7 +390,8 @@ Do not publish WizeStream or forks of NewPipe to Google Play without first revie
 
 ## Building from source
 
-WizeStream includes its extractor source directly in the `app` module:
+WizeStream includes its extractor source directly in the Android `app` module and reuses those
+sources in the Desktop backend:
 
 ```bash
 git clone https://github.com/wizdom13/WizeStream.git
@@ -392,9 +423,24 @@ See [BUILDING.md](BUILDING.md) for complete build, signing, and reproducible-rel
 
 The debug APK uses the app label **WizeStream Debug** and package `org.wisso.newpipematerial.debug`.
 
+To develop the Desktop application, install Node.js 24 and JDK 21, then run from `desktop/`:
+
+```bash
+npm ci
+npm run dev
+```
+
+Desktop packages must be built on their target operating system with `npm run dist`. See the
+[Desktop implementation guide](desktop/README.md) for architecture, validation and packaging
+details.
+
 ---
 
 ## Release signing
+
+The environment variables below sign Android releases. Desktop Windows signing and macOS
+signing/notarization are postponed; the current Desktop preview remains explicitly unsigned. See
+[Desktop release operations](desktop/docs/releasing.md) for that policy.
 
 Configure release signing with the WizeStream environment-variable names:
 
@@ -426,9 +472,10 @@ extractor source stored in that commit.
 
 ## Development status
 
-WizeStream is under active development as an independent NewPipe-based client. Current priorities
-include Material 3 Expressive polish, playback reliability, local-first features, service
-compatibility, and release readiness.
+WizeStream is under active maintenance as an independent, multi-platform NewPipe-based
+application. The Desktop application is integrated into the main project and future work is normal
+maintenance and improvement. Ongoing work focuses on Android and Desktop reliability, user
+feedback, local-first features, service compatibility, security and release readiness.
 
 Completed or in-progress areas include:
 
@@ -445,6 +492,8 @@ Completed or in-progress areas include:
 - Multi-audio selection and clearer audio-track labels
 - Dialog, snackbar, settings, video-detail, and download UI polish
 - Release-signing workflow support
+- Integrated Windows, macOS and Linux Desktop application with five-target CI
+- Explicitly unsigned Desktop preview distribution with checksums and artifact attestations
 
 High-risk areas receive dedicated QA before broad behavior changes.
 
