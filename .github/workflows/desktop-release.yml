@@ -1,0 +1,222 @@
+name: Desktop signed beta release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Type v0.6.0-beta.1 to authorize the protected beta release
+        required: true
+        type: string
+
+concurrency:
+  group: desktop-release-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  gate:
+    name: Verify protected release gate
+    runs-on: ubuntu-24.04
+    environment: desktop-release
+    timeout-minutes: 10
+    env:
+      WINDOWS_CERTIFICATE: ${{ secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE_PASSWORD }}
+      WINDOWS_PUBLISHER: ${{ secrets.WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER }}
+      MACOS_CERTIFICATE: ${{ secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE_PASSWORD }}
+      APPLE_API_KEY_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY }}
+      APPLE_API_KEY_ID_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_API_ISSUER }}
+      APPLE_TEAM_ID_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_TEAM_ID }}
+      RELEASE_TOKEN: ${{ secrets.WIZESTREAM_DESKTOP_RELEASE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Require the exact beta tag
+        shell: bash
+        run: test '${{ inputs.release_tag }}' = 'v0.6.0-beta.1'
+      - name: Fail closed when a release credential is absent
+        shell: bash
+        run: |
+          missing=0
+          for name in WINDOWS_CERTIFICATE WINDOWS_CERTIFICATE_PASSWORD WINDOWS_PUBLISHER \
+            MACOS_CERTIFICATE MACOS_CERTIFICATE_PASSWORD APPLE_API_KEY_VALUE \
+            APPLE_API_KEY_ID_VALUE APPLE_API_ISSUER_VALUE APPLE_TEAM_ID_VALUE RELEASE_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing protected Phase 7 credential: $name"
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+      - name: Verify version and release repository
+        shell: bash
+        run: |
+          test "$(node -p "require('./desktop/package.json').version")" = '0.6.0-beta.1'
+          curl --fail --silent --show-error https://api.github.com/repos/wizdom13/WizeStream_Desktop >/dev/null
+
+  package:
+    name: Sign and package ${{ matrix.name }}
+    needs: gate
+    runs-on: ${{ matrix.runner }}
+    environment: desktop-release
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            runner: ubuntu-24.04
+            os: Linux
+            target: --linux AppImage deb
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            os: Linux
+            target: --linux AppImage deb
+          - name: windows-x64
+            runner: windows-2025
+            os: Windows
+            target: --win nsis portable
+          - name: macos-x64
+            runner: macos-15-intel
+            os: macOS
+            target: --mac dmg zip
+          - name: macos-arm64
+            runner: macos-15
+            os: macOS
+            target: --mac dmg zip
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      WIN_CSC_LINK: ${{ matrix.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE || '' }}
+      WIN_CSC_KEY_PASSWORD: ${{ matrix.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_CERTIFICATE_PASSWORD || '' }}
+      WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER: ${{ matrix.os == 'Windows' && secrets.WIZESTREAM_DESKTOP_WINDOWS_PUBLISHER || '' }}
+      CSC_LINK: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE || '' }}
+      CSC_KEY_PASSWORD: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_MACOS_CERTIFICATE_PASSWORD || '' }}
+      APPLE_API_KEY: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY || '' }}
+      APPLE_API_KEY_ID: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY_ID || '' }}
+      APPLE_API_ISSUER: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_API_ISSUER || '' }}
+      APPLE_TEAM_ID: ${{ matrix.os == 'macOS' && secrets.WIZESTREAM_DESKTOP_APPLE_TEAM_ID || '' }}
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ matrix.os == 'Linux' && 'false' || 'true' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Verify Phase 7 release contract
+        run: npm run release:verify
+      - name: Prepare Windows libmpv SDK and runtime
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/setup-libmpv-windows.ps1
+      - name: Prepare pinned Unix libmpv SDK and runtime
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./scripts/setup-libmpv-unix.sh
+      - run: npm run media-tools:setup
+      - run: npm run media-tools:verify
+      - run: npm run embedded:build
+      - run: npm run embedded:verify
+      - run: npm run embedded:media-smoke
+      - run: npm run backend:build
+      - name: Build with production updates enabled
+        run: npm run build
+        env:
+          WIZESTREAM_ENABLE_PRODUCTION_UPDATES: '1'
+      - name: Create signed unpacked application
+        run: npx electron-builder --dir --publish never --config electron-builder.release.cjs
+      - name: Smoke-test packaged application
+        run: npm run package:smoke
+      - name: Create release packages
+        run: npx electron-builder ${{ matrix.target }} --publish never --config electron-builder.release.cjs
+      - name: Verify Windows Authenticode signatures
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem release -Filter *.exe
+          if ($files.Count -lt 2) { throw 'Expected signed NSIS and portable executables' }
+          foreach ($file in $files) {
+            $signature = Get-AuthenticodeSignature $file.FullName
+            if ($signature.Status -ne 'Valid') { throw "$($file.Name): $($signature.Status)" }
+          }
+      - name: Verify macOS signature, notarization and stapling
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          app_path="$(find release -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          spctl --assess --type execute --verbose=2 "$app_path"
+          xcrun stapler validate "$app_path"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-desktop-${{ matrix.name }}
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*.exe
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.yml
+            desktop/release/*.yaml
+            desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Attest and publish beta
+    needs: package
+    runs-on: ubuntu-24.04
+    environment: desktop-release
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: desktop
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wizestream-desktop-*
+          path: desktop/release-input
+      - name: Merge architecture metadata and create SHA-256 manifest
+        working-directory: desktop
+        run: npm run release:prepare
+      - name: Attest release artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: desktop/release-ready/*
+      - name: Publish v0.6.0-beta.1 prerelease
+        uses: softprops/action-gh-release@v3
+        with:
+          repository: wizdom13/WizeStream_Desktop
+          token: ${{ secrets.WIZESTREAM_DESKTOP_RELEASE_TOKEN }}
+          tag_name: v0.6.0-beta.1
+          target_commitish: main
+          name: WizeStream Desktop 0.6.0 Beta 1
+          prerelease: true
+          draft: false
+          fail_on_unmatched_files: true
+          body: |
+            First signed WizeStream Desktop beta.
+
+            Updates are checked at startup or manually and require confirmation before download and restart.
+            Verify downloads against SHA256SUMS and the GitHub artifact attestations.
+            Corresponding GPL source: https://github.com/${{ github.repository }}/tree/${{ github.sha }}
+          files: desktop/release-ready/*

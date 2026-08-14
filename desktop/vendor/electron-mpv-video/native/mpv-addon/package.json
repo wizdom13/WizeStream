@@ -1,0 +1,11 @@
+{
+  "name": "mpv-addon",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "gypfile": true,
+  "main": "build/Release/mpv_addon.node",
+  "dependencies": {
+    "node-addon-api": "^8.3.0"
+  }
+}

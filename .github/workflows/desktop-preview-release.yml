@@ -1,0 +1,197 @@
+name: Desktop unsigned preview release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - desktop-electron
+    paths:
+      - '.github/workflows/desktop-preview-release.yml'
+
+concurrency:
+  group: desktop-unsigned-preview-v0.6.0-beta.1
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  validate:
+    name: Validate unsigned preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Verify Phase 7 package contract
+        run: npm run release:verify
+      - name: Verify production updates are disabled in preview builds
+        shell: bash
+        run: test "${WIZESTREAM_ENABLE_PRODUCTION_UPDATES:-0}" != '1'
+      - run: npm run media-tools:setup
+      - run: npm run media-tools:verify
+      - run: ../gradlew -p backend test installDist runtimeImage --stacktrace
+      - run: npm run build
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+
+  package:
+    name: Package unsigned preview ${{ matrix.name }}
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            runner: ubuntu-24.04
+            target: --linux AppImage deb
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            target: --linux AppImage deb
+          - name: windows-x64
+            runner: windows-2025
+            target: --win nsis portable
+          - name: macos-x64
+            runner: macos-15-intel
+            target: --mac dmg zip
+          - name: macos-arm64
+            runner: macos-15
+            target: --mac dmg zip
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      WIZESTREAM_ENABLE_PRODUCTION_UPDATES: '0'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Prepare Windows libmpv SDK and runtime
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/setup-libmpv-windows.ps1
+      - name: Prepare pinned Unix libmpv SDK and runtime
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./scripts/setup-libmpv-unix.sh
+      - run: npm run media-tools:setup
+      - run: npm run media-tools:verify
+      - run: npm run embedded:build
+      - run: npm run embedded:verify
+      - run: npm run embedded:media-smoke
+      - run: npm run backend:build
+      - run: npm run build
+      - name: Create unpacked application
+        run: npx electron-builder --dir --publish never
+      - name: Smoke-test packaged application
+        run: npm run package:smoke
+      - name: Create unsigned preview packages
+        run: npx electron-builder ${{ matrix.target }} --publish never
+      - name: Verify both Windows package types exist
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'release/*-setup.exe')) { throw 'Missing Windows installer' }
+          if (-not (Test-Path 'release/*-portable.exe')) { throw 'Missing Windows portable package' }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-unsigned-preview-${{ matrix.name }}
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*.exe
+            desktop/release/*.dmg
+            desktop/release/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Attest and publish unsigned preview
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wizestream-unsigned-preview-*
+          path: release-input
+      - name: Prepare installers and checksums without updater metadata
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir release-ready
+          while IFS= read -r -d '' file; do
+            name="$(basename "$file")"
+            case "$name" in
+              *.AppImage|*.deb|*.exe|*.dmg|*.zip) ;;
+              *) continue ;;
+            esac
+            test ! -e "release-ready/$name"
+            cp "$file" "release-ready/$name"
+          done < <(find release-input -type f -print0)
+          test "$(find release-ready -maxdepth 1 -type f -name '*.exe' | wc -l)" -eq 2
+          test "$(find release-ready -maxdepth 1 -type f -name '*.dmg' | wc -l)" -eq 2
+          test "$(find release-ready -maxdepth 1 -type f -name '*.AppImage' | wc -l)" -eq 2
+          (cd release-ready && sha256sum * | sort -k2 > SHA256SUMS)
+          node -e "const fs=require('fs'); fs.writeFileSync('release-ready/release-manifest.json', JSON.stringify({version:'0.6.0-beta.1',tag:'v0.6.0-beta.1-unsigned-preview',prerelease:true,unsigned:true,productionUpdates:false,sourceCommit:process.env.SOURCE_SHA},null,2)+'\\n')"
+      - name: Attest unsigned preview artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: release-ready/*
+      - name: Publish explicitly unsigned preview prerelease
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v0.6.0-beta.1-unsigned-preview
+          target_commitish: ${{ github.sha }}
+          name: WizeStream Desktop 0.6.0 Beta 1 — Unsigned Preview
+          prerelease: true
+          draft: false
+          make_latest: false
+          fail_on_unmatched_files: true
+          body: |
+            > [!WARNING]
+            > This is an explicitly unsigned preview for testing. It is not a signed public release.
+
+            Windows will show an unknown-publisher or SmartScreen warning. macOS Gatekeeper may block the app unless the tester deliberately allows it. Only install this preview if you understand and accept those warnings.
+
+            Production automatic updates are disabled in these builds, and updater metadata is intentionally not published. Install future previews manually.
+
+            Included platforms:
+            - Windows x64 installer and portable executable
+            - macOS Intel and Apple Silicon DMG/ZIP
+            - Linux x64 and arm64 AppImage/DEB
+
+            Verify downloads with `SHA256SUMS` and the attached GitHub artifact attestations.
+            Corresponding GPL source: https://github.com/${{ github.repository }}/tree/${{ github.sha }}
+          files: release-ready/*

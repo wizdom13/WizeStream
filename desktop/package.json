@@ -1,0 +1,161 @@
+{
+  "name": "wizestream-desktop",
+  "version": "0.6.0-beta.1",
+  "private": true,
+  "description": "Experimental cross-platform WizeStream desktop client",
+  "author": {
+    "name": "WizeStream contributors",
+    "email": "1689896+wizdom13@users.noreply.github.com",
+    "url": "https://github.com/wizdom13/WizeStream"
+  },
+  "homepage": "https://github.com/wizdom13/WizeStream",
+  "desktopName": "WizeStream Desktop",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "main": "dist-electron/main/main.js",
+  "scripts": {
+    "backend:build": "node scripts/build-backend.mjs",
+    "build": "npm run typecheck && vite build && npm run build:electron && npm run verify:build",
+    "build:electron": "node scripts/build-electron.mjs",
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:electron": "wait-on tcp:5173 && npm run backend:build && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
+    "dev:renderer": "vite --host 127.0.0.1",
+    "dist": "npm run backend:build && npm run build && electron-builder",
+    "dist:dir": "npm run backend:build && npm run build && electron-builder --dir",
+    "embedded:build": "npm rebuild electron-mpv-video && node scripts/stage-embedded-mpv.mjs",
+    "embedded:verify": "electron --no-sandbox scripts/verify-embedded-mpv.mjs",
+    "embedded:media-smoke": "electron --no-sandbox scripts/verify-native-media.mjs",
+    "media-tools:setup": "node scripts/setup-media-tools.mjs",
+    "media-tools:verify": "node scripts/verify-media-tools.mjs",
+    "package:smoke": "node scripts/run-packaged-smoke.mjs",
+    "release:prepare": "node scripts/prepare-release-assets.mjs",
+    "release:verify": "node scripts/verify-release-contract.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
+    "verify:build": "node scripts/verify-build.mjs"
+  },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "9.3.1",
+    "@mui/material": "9.3.1",
+    "electron-updater": "6.8.9",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.4",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.5",
+    "concurrently": "9.2.1",
+    "cross-env": "10.1.0",
+    "electron": "43.3.0",
+    "electron-builder": "26.15.3",
+    "electron-mpv-video": "file:vendor/electron-mpv-video",
+    "esbuild": "0.28.2",
+    "js-yaml": "4.3.1",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "wait-on": "9.0.4"
+  },
+  "overrides": {
+    "electron-mpv-video": {
+      "node-gyp": "13.0.1"
+    }
+  },
+  "build": {
+    "appId": "org.wisso.WizeStreamDesktop",
+    "productName": "WizeStream Desktop",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "wizdom13",
+        "repo": "WizeStream_Desktop",
+        "releaseType": "prerelease",
+        "channel": "beta"
+      }
+    ],
+    "files": [
+      "dist-electron/**",
+      "dist-renderer/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/build/install/wizestream-desktop-backend/lib",
+        "to": "backend/lib"
+      },
+      {
+        "from": "backend/build/runtime",
+        "to": "runtime"
+      },
+      {
+        "from": "native/mpv",
+        "to": "native/mpv",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "native/media-tools",
+        "to": "native/media-tools",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/electron-mpv-video/THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES-libmpv.md"
+      },
+      {
+        "from": "node_modules/electron-mpv-video/LICENSE",
+        "to": "licenses/electron-mpv-video-LICENSE"
+      }
+    ],
+    "linux": {
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo",
+      "icon": "../assets/wizestream_logo.svg",
+      "syncDesktopName": true
+    },
+    "win": {
+      "artifactName": "${productName}-${version}-windows-${arch}.${ext}",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "../assets/wizestream_logo.svg"
+    },
+    "mac": {
+      "artifactName": "${productName}-${version}-macos-${arch}.${ext}",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.video",
+      "icon": "../assets/wizestream_logo.svg",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "notarize": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-${version}-windows-${arch}-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-windows-${arch}-portable.${ext}"
+    }
+  }
+}

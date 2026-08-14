@@ -4,6 +4,12 @@
 
 <p align="center"><b>An independent, privacy-friendly NewPipe-based streaming client for Android.</b></p>
 
+> **Desktop development preview:** A native Windows, macOS and Linux architecture is being built
+> with Electron, TypeScript, React, WizeStreamExtractor, SQLite and mpv on the
+> [`desktop-electron`](https://github.com/wizdom13/WizeStream/tree/desktop-electron) branch. See the
+> [desktop implementation guide](desktop/README.md). This is separate from the experimental ATL
+> Flatpak and is not yet a stable end-user release.
+
 <p align="center">
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a>
   <a href="https://github.com/wizdom13/WizeStream/releases"><img src="https://i.ibb.co/q0mdc4Z/get-it-on-github.png" height="80" alt="Get it on GitHub"></a>

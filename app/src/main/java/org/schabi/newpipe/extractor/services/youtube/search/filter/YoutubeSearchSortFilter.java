@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.services.youtube.search.filter.protobuf.Type
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -22,7 +23,7 @@ import static org.schabi.newpipe.extractor.NewPipe.getDownloader;
 
 public final class YoutubeSearchSortFilter {
 
-    private static final String UTF_8 = "UTF_8";
+    private static final String UTF_8 = StandardCharsets.UTF_8.name();
     private String searchParameter = "";
 
     public YoutubeSearchSortFilter() {

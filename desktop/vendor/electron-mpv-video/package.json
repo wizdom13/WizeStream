@@ -1,0 +1,74 @@
+{
+  "name": "electron-mpv-video",
+  "version": "0.1.1-wizestream.1",
+  "description": "Bring libmpv's broad video format support to Electron with shared-texture and software rendering pipelines.",
+  "keywords": [
+    "electron",
+    "libmpv",
+    "video",
+    "shared-texture",
+    "software-rendering",
+    "mp4",
+    "h265",
+    "rtsp",
+    "flv"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "install": "npm run build:native",
+    "build:native": "node scripts/libmpv-runtime.mjs check && node-gyp rebuild --directory native/mpv-addon && node scripts/libmpv-runtime.mjs stage"
+  },
+  "dependencies": {
+    "node-addon-api": "^8.3.0",
+    "node-gyp": "13.0.1"
+  },
+  "types": "dist/main/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/main/index.d.ts",
+      "import": "./dist/main/index.js",
+      "default": "./dist/main/index.js"
+    },
+    "./main": {
+      "types": "./dist/main/index.d.ts",
+      "import": "./dist/main/index.js",
+      "default": "./dist/main/index.js"
+    },
+    "./preload": {
+      "types": "./dist/preload/index.d.cts",
+      "require": "./dist/preload/index.cjs",
+      "default": "./dist/preload/index.cjs"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "import": "./dist/renderer/index.js",
+      "default": "./dist/renderer/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/main",
+    "dist/preload",
+    "dist/renderer",
+    "dist/shared",
+    "scripts/libmpv-runtime.mjs",
+    "scripts/create-libmpv-import-lib.ps1",
+    "native/mpv-addon/binding.gyp",
+    "native/mpv-addon/package.json",
+    "native/mpv-addon/src",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md",
+    "WIZESTREAM_FORK.md"
+  ],
+  "homepage": "https://github.com/yscoder/electron-mpv-video",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yscoder/electron-mpv-video.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  }
+}
