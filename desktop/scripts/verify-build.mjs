@@ -18,6 +18,7 @@ assert.match(preloadSource, /require\(["']electron["']\)/, 'sandboxed preload mu
 assert.doesNotMatch(preloadSource, /^\s*import\s/m, 'sandboxed preload must not contain ESM imports');
 assert.match(mainSource, /preload[\\/]index\.cjs/, 'main process must load the CommonJS preload');
 assert.match(mainSource, /library\.history\.record/, 'main process must allow Phase 3 library RPC');
+assert.match(mainSource, /channel\.resolve/, 'main process must allow internal channel navigation');
 assert.match(mainSource, /downloads:start/, 'main process must expose Phase 4 downloads');
 assert.match(mainSource, /embeddedMpvAvailable/, 'main process must gate the embedded native renderer');
 
@@ -104,6 +105,8 @@ assert.match(rendererJavaScript, /History and cache/, 'renderer must include app
 assert.match(rendererJavaScript, /Device synchronization/, 'renderer must link settings to Devices');
 assert.match(rendererJavaScript, /Refresh channel details/, 'renderer must offer subscription metadata refresh');
 assert.match(rendererJavaScript, /subscription-grid/, 'renderer must display subscriptions in a grid');
+assert.match(rendererJavaScript, /Back to subscriptions/, 'renderer must include the internal channel view');
+assert.match(rendererJavaScript, /Recent videos/, 'renderer must show channel videos');
 assert.match(rendererJavaScript, /Backup and restore/, 'renderer must include Desktop backup tools');
 assert.match(rendererJavaScript, /Android JSON subscription export/, 'renderer must explain Android subscription compatibility');
 

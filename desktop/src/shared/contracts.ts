@@ -3,6 +3,7 @@ export type BackendMethod =
   | 'services.list'
   | 'search'
   | 'stream.resolve'
+  | 'channel.resolve'
   | 'library.summary'
   | 'library.subscriptions.list'
   | 'library.subscriptions.save'
@@ -195,6 +196,17 @@ export interface SubscriptionItem {
   subscriberCount?: number | null;
   description?: string;
   youtubeModeMask?: number;
+}
+
+export interface ChannelDetails {
+  serviceId: number;
+  url: string;
+  name: string;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  subscriberCount?: number | null;
+  description?: string;
+  streams: SearchItem[];
 }
 
 export interface PlaylistSummary {

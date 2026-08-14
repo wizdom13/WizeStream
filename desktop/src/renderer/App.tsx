@@ -9,6 +9,7 @@ import {
 import { useColorScheme } from '@mui/material/styles';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
 import AddRounded from '@mui/icons-material/AddRounded';
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
@@ -30,7 +31,7 @@ import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import { defaultDesktopSettings } from '../shared/contracts';
 import type {
-  DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
+  ChannelDetails, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
   HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
@@ -296,7 +297,7 @@ export function App() {
               </CardContent>
             </Box></Card>}
             {!loading && !selected && results.length > 0 && <Box className="result-grid" sx={{ mt: 4 }}>{results.map((item) => <Card key={`${item.type}:${item.url}`} variant="outlined"><CardActionArea onClick={() => void openResult(item)} disabled={item.type !== 'STREAM'} sx={{ height: '100%' }}>{item.thumbnailUrl && <Box component="img" src={item.thumbnailUrl} alt="" className="result-thumbnail" />}<CardContent><Chip label={item.type.toLowerCase()} size="small" /><Typography variant="h6" sx={{ mt: 1 }} className="two-lines">{item.name}</Typography><Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>{item.uploaderName}</Typography></CardContent></CardActionArea></Card>)}</Box>}
-          </> : section === 'subscriptions' ? <SubscriptionsPanel services={services} />
+          </> : section === 'subscriptions' ? <SubscriptionsPanel services={services} onOpen={resolveStream} />
             : section === 'playlists' ? <PlaylistsPanel currentStream={selectedLibraryStream} onOpen={resolveStream} />
               : section === 'history' ? <HistoryPanel onOpen={resolveStream} />
                 : section === 'learning' ? <LearningPanel currentStream={selectedLibraryStream} onOpen={resolveStream} />
@@ -405,8 +406,14 @@ function EmbeddedPlayer({ request, externalAvailable, onError }: {
   </Stack></CardContent></Card>;
 }
 
-function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
+function SubscriptionsPanel({ services, onOpen }: {
+  services: ServiceSummary[];
+  onOpen(url: string): Promise<void>;
+}) {
   const [items, setItems] = useState<SubscriptionItem[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<SubscriptionItem>();
+  const [channelDetails, setChannelDetails] = useState<ChannelDetails>();
+  const [channelLoading, setChannelLoading] = useState(false);
   const [editing, setEditing] = useState<SubscriptionItem>();
   const [open, setOpen] = useState(false);
   const [serviceId, setServiceId] = useState(0);
@@ -473,6 +480,65 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
     try { await window.wizestream.backend.invoke('library.subscriptions.delete', { serviceId: item.serviceId, url: item.url }); await load(); }
     catch (reason) { setError(errorMessage(reason)); }
   }
+
+  async function openChannel(item: SubscriptionItem) {
+    setSelectedChannel(item); setChannelDetails(undefined); setChannelLoading(true); setError(undefined);
+    try {
+      setChannelDetails(await window.wizestream.backend.invoke<ChannelDetails>('channel.resolve', {
+        serviceId: item.serviceId, url: item.url,
+      }));
+    } catch (reason) { setError(errorMessage(reason)); } finally { setChannelLoading(false); }
+  }
+
+  function closeChannel() {
+    setSelectedChannel(undefined); setChannelDetails(undefined); setChannelLoading(false); setError(undefined);
+  }
+
+  if (selectedChannel) return <Stack spacing={3}>
+    <Button startIcon={<ArrowBackRounded />} onClick={closeChannel} sx={{ alignSelf: 'flex-start' }}>
+      Back to subscriptions
+    </Button>
+    {error && <Alert severity="error">{error}</Alert>}
+    {channelLoading && <Stack direction="row" spacing={2} sx={{ alignItems: 'center', py: 6, justifyContent: 'center' }}>
+      <CircularProgress /><Typography color="text.secondary">Loading channel…</Typography>
+    </Stack>}
+    {!channelLoading && channelDetails && <>
+      <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+        {channelDetails.bannerUrl && <Box component="img" src={channelDetails.bannerUrl} alt="" className="channel-banner" />}
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ alignItems: { xs: 'center', sm: 'flex-start' } }}>
+            <Avatar src={channelDetails.avatarUrl || selectedChannel.avatarUrl} alt=""
+              sx={{ width: 112, height: 112, flexShrink: 0 }}><SubscriptionsRounded sx={{ fontSize: 48 }} /></Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h4">{channelDetails.name || selectedChannel.name}</Typography>
+              {subscriberCountLabel(channelDetails.subscriberCount ?? selectedChannel.subscriberCount)
+                && <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                  {subscriberCountLabel(channelDetails.subscriberCount ?? selectedChannel.subscriberCount)}
+                </Typography>}
+              {channelDetails.description && <Typography sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>
+                {channelDetails.description}
+              </Typography>}
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+      <Typography variant="h5">Recent videos</Typography>
+      {channelDetails.streams.length === 0 ? <LibraryEmpty text="No recent videos are available for this channel." />
+        : <Box className="result-grid">{channelDetails.streams.map((stream) => <Card key={stream.url} variant="outlined">
+          <CardActionArea onClick={() => void onOpen(stream.url)} sx={{ height: '100%' }} aria-label={`Open ${stream.name}`}>
+            {stream.thumbnailUrl && <Box component="img" src={stream.thumbnailUrl} alt="" className="result-thumbnail" />}
+            <CardContent>
+              <Typography variant="h6" className="two-lines">{stream.name}</Typography>
+              <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+                {[stream.uploaderName, stream.duration && stream.duration > 0 ? formatTimestamp(stream.duration) : undefined]
+                  .filter(Boolean).join(' · ')}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
+        </Card>)}</Box>}
+    </>}
+  </Stack>;
+
   return <Stack spacing={3}><PanelHeader title="Subscriptions" description="Manage channels synchronized with your Android devices." action={<Stack direction="row" spacing={1}>
     <Button startIcon={refreshingDetails ? <CircularProgress size={18} /> : <ReplayRounded />} variant="outlined"
       disabled={refreshingDetails || items.length === 0 || items.every((item) => item.avatarUrl
@@ -481,17 +547,21 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
     <Button startIcon={<AddRounded />} variant="contained" onClick={() => showEditor()}>Add channel</Button>
   </Stack>} />
     {error && <Alert severity="error">{error}</Alert>}
-    {items.length === 0 ? <LibraryEmpty text="No subscriptions yet." /> : <Box className="subscription-grid">{items.map((item) => <Card key={`${item.serviceId}:${item.url}`} variant="outlined">
-      <CardContent sx={{ p: 3, textAlign: 'center', height: '100%', boxSizing: 'border-box' }}>
-        <Avatar src={item.avatarUrl} alt="" sx={{ width: 88, height: 88, mx: 'auto', mb: 2 }}><SubscriptionsRounded sx={{ fontSize: 38 }} /></Avatar>
-        <Typography variant="h6" className="two-lines" sx={{ minHeight: '3em' }}>{item.name}</Typography>
-        {subscriberCountLabel(item.subscriberCount) && <Typography color="text.secondary" sx={{ mt: 0.5 }}>{subscriberCountLabel(item.subscriberCount)}</Typography>}
-        <Typography color="text.secondary" variant="body2" className="two-lines" sx={{ mt: 1, overflowWrap: 'anywhere' }}>{item.url}</Typography>
-        <Stack direction="row" sx={{ justifyContent: 'center', mt: 2 }}>
+    {items.length === 0 ? <LibraryEmpty text="No subscriptions yet." /> : <Box className="subscription-grid">{items.map((item) => <Card key={`${item.serviceId}:${item.url}`} variant="outlined" sx={{ display: 'flex', flexDirection: 'column' }}>
+      <CardActionArea onClick={() => void openChannel(item)} aria-label={`Open ${item.name}`} sx={{ flexGrow: 1 }}>
+        <CardContent sx={{ p: 3, textAlign: 'center', height: '100%', boxSizing: 'border-box' }}>
+          <Avatar src={item.avatarUrl} alt="" sx={{ width: 88, height: 88, mx: 'auto', mb: 2 }}><SubscriptionsRounded sx={{ fontSize: 38 }} /></Avatar>
+          <Typography variant="h6" className="two-lines" sx={{ minHeight: '3em' }}>{item.name}</Typography>
+          {subscriberCountLabel(item.subscriberCount) && <Typography color="text.secondary" sx={{ mt: 0.5 }}>{subscriberCountLabel(item.subscriberCount)}</Typography>}
+          <Typography color="text.secondary" variant="body2" className="two-lines" sx={{ mt: 1, overflowWrap: 'anywhere' }}>{item.url}</Typography>
+        </CardContent>
+      </CardActionArea>
+      <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+        <Stack direction="row" sx={{ justifyContent: 'center', py: 0.5 }}>
           <Tooltip title="Edit"><IconButton aria-label="Edit subscription" onClick={() => showEditor(item)}><EditRounded /></IconButton></Tooltip>
           <Tooltip title="Remove"><IconButton aria-label="Delete subscription" onClick={() => void remove(item)}><DeleteOutlineRounded /></IconButton></Tooltip>
         </Stack>
-      </CardContent>
+      </Box>
     </Card>)}</Box>}
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm"><DialogTitle>{editing ? 'Edit subscription' : 'Add subscription'}</DialogTitle><DialogContent><Stack spacing={2} sx={{ pt: 1 }}><TextField select label="Service" value={serviceId} disabled={Boolean(editing)} onChange={(event) => setServiceId(Number(event.target.value))}>{services.map((service) => <MenuItem key={service.id} value={service.id}>{service.name}</MenuItem>)}</TextField><TextField label="Channel name" value={name} onChange={(event) => setName(event.target.value)} /><TextField label="Channel URL" value={url} disabled={Boolean(editing)} onChange={(event) => setUrl(event.target.value)} /><TextField label="Avatar URL (optional)" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} />{error && <Alert severity="error">{error}</Alert>}</Stack></DialogContent><DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" disabled={!name.trim() || !url.trim()} onClick={() => void save()}>Save</Button></DialogActions></Dialog>
   </Stack>;
