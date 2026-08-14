@@ -76,10 +76,10 @@ final class DesktopBackupManager {
             manifest.put("createdTimestamp", root.path("createdTimestamp").longValue());
             manifest.put("includesDatabase", true);
             manifest.put("includesPreferences", true);
-            JSON.writeValue(zip, manifest);
+            zip.write(JSON.writeValueAsBytes(manifest));
             zip.closeEntry();
             zip.putNextEntry(new ZipEntry(DATA_ENTRY));
-            JSON.writeValue(zip, root);
+            zip.write(JSON.writeValueAsBytes(root));
             zip.closeEntry();
         }
         atomicReplace(temporary, target);
