@@ -19,7 +19,17 @@ permissions:
   artifact-metadata: write
 
 jobs:
+  source:
+    name: Verify pipe release source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require the integrated release branch
+        shell: bash
+        run: test "$GITHUB_REF" = 'refs/heads/pipe'
+
   gate:
+    needs: source
     name: Verify protected release gate
     runs-on: ubuntu-24.04
     environment: desktop-release

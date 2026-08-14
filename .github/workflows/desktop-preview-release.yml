@@ -2,11 +2,11 @@ name: Desktop unsigned preview release
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - desktop-electron
-    paths:
-      - '.github/workflows/desktop-preview-release.yml'
+    inputs:
+      release_tag:
+        description: Type v0.6.0-beta.1-unsigned-preview to authorize this immutable preview
+        required: true
+        type: string
 
 concurrency:
   group: desktop-unsigned-preview-v0.6.0-beta.1
@@ -29,6 +29,17 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@v6
+      - name: Require pipe and refuse to overwrite the published preview
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/pipe'
+          test "$RELEASE_TAG" = 'v0.6.0-beta.1-unsigned-preview'
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Release tag $RELEASE_TAG already exists and is immutable"
+            exit 1
+          fi
       - uses: actions/setup-java@v5
         with:
           distribution: temurin

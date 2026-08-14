@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - desktop-electron
+      - pipe
     paths:
       - 'desktop/**'
       - 'app/src/main/java/org/schabi/newpipe/extractor/**'
-      - 'app/src/main/java/org/schabi/newpipe/sync/SyncModels.kt'
-      - 'app/src/main/java/org/schabi/newpipe/sync/PairingSecurity.kt'
-      - 'app/src/main/java/org/schabi/newpipe/sync/SyncProtocol.kt'
+      - 'app/src/main/java/org/schabi/newpipe/sync/**'
       - '.github/workflows/desktop-ci.yml'
+      - '.github/workflows/desktop-preview-release.yml'
       - '.github/workflows/desktop-release.yml'
   pull_request:
     branches:
@@ -21,6 +20,7 @@ on:
       - 'app/src/main/java/org/schabi/newpipe/extractor/**'
       - 'app/src/main/java/org/schabi/newpipe/sync/**'
       - '.github/workflows/desktop-ci.yml'
+      - '.github/workflows/desktop-preview-release.yml'
       - '.github/workflows/desktop-release.yml'
 
 concurrency:
