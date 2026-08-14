@@ -39,6 +39,11 @@ const api: DesktopApi = {
       return () => ipcRenderer.off('updates:changed', wrapped);
     },
   },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get') as ReturnType<DesktopApi['settings']['get']>,
+    update: (patch) => ipcRenderer.invoke('settings:update', patch) as ReturnType<DesktopApi['settings']['update']>,
+    reset: () => ipcRenderer.invoke('settings:reset') as ReturnType<DesktopApi['settings']['reset']>,
+  },
 };
 
 contextBridge.exposeInMainWorld('wizestream', api);

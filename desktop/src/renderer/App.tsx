@@ -6,6 +6,7 @@ import {
   ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, MenuItem,
   Slider, Stack, Switch, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
 import AddRounded from '@mui/icons-material/AddRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
@@ -23,19 +24,24 @@ import PlayArrowRounded from '@mui/icons-material/PlayArrowRounded';
 import ReplayRounded from '@mui/icons-material/ReplayRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
+import SettingsRounded from '@mui/icons-material/SettingsRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
+import { defaultDesktopSettings } from '../shared/contracts';
 import type {
-  DownloadJob, DownloadSource, EmbeddedPlayerRequest, HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
+  DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
+  HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
   UpdateState,
 } from '../shared/contracts';
+import { SettingsPanel } from './SettingsPanel';
+import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
 
 defineMpvVideoElement();
 
-type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'downloads' | 'sync';
+type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'downloads' | 'sync' | 'settings';
 
 const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> = [
   { id: 'discover', label: 'Discover', icon: <HomeRounded /> },
@@ -45,9 +51,11 @@ const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> =
   { id: 'learning', label: 'Learning', icon: <SchoolRounded /> },
   { id: 'downloads', label: 'Downloads', icon: <DownloadRounded /> },
   { id: 'sync', label: 'Devices', icon: <DevicesRounded /> },
+  { id: 'settings', label: 'Settings', icon: <SettingsRounded /> },
 ];
 
 export function App() {
+  const { setMode } = useColorScheme();
   const [section, setSection] = useState<Section>('discover');
   const [services, setServices] = useState<ServiceSummary[]>([]);
   const [serviceId, setServiceId] = useState(0);
@@ -64,19 +72,25 @@ export function App() {
   const [embeddedRequest, setEmbeddedRequest] = useState<EmbeddedPlayerRequest & { title: string; nonce: number }>();
   const [updateState, setUpdateState] = useState<UpdateState>();
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [settings, setSettings] = useState<DesktopSettings>(defaultDesktopSettings);
 
   useEffect(() => {
     Promise.all([
       window.wizestream.backend.invoke<ServiceSummary[]>('services.list'),
       window.wizestream.backend.invoke<SyncStatus>('sync.status'),
       window.wizestream.player.status(),
-    ]).then(([availableServices, syncStatus, playerStatus]) => {
+      window.wizestream.settings.get(),
+    ]).then(([availableServices, syncStatus, playerStatus, savedSettings]) => {
       setServices(availableServices);
-      setServiceId(availableServices[0]?.id ?? 0);
+      setServiceId(availableServices.some((service) => service.id === savedSettings.defaultServiceId)
+        ? savedSettings.defaultServiceId! : availableServices[0]?.id ?? 0);
       setSync(syncStatus);
       setMpv(playerStatus);
+      setSettings(savedSettings);
     }).catch((reason: unknown) => setError(errorMessage(reason)));
   }, []);
+
+  useEffect(() => { setMode(settings.theme); }, [setMode, settings.theme]);
 
   useEffect(() => {
     void window.wizestream.updates.state().then((state) => {
@@ -119,18 +133,25 @@ export function App() {
       setResults(await window.wizestream.backend.invoke<SearchItem[]>('search', {
         serviceId, query: searchQuery,
       }));
-      await window.wizestream.backend.invoke('library.search-history.record', { serviceId, query: searchQuery });
+      if (settings.enableSearchHistory) {
+        await window.wizestream.backend.invoke('library.search-history.record', { serviceId, query: searchQuery });
+      }
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
   }
 
   const resolveStream = useCallback(async (url: string) => {
     setLoading(true); setError(undefined);
     try {
-      setSelected(await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', { url }));
-      setVideoChoice('auto'); setAudioChoice('auto'); setSubtitleChoice('none'); setEmbeddedRequest(undefined);
+      const details = await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', { url });
+      setSelected(details);
+      const videoIndex = preferredVideoIndex(details, settings);
+      const audioIndex = preferredAudioIndex(details, settings);
+      setVideoChoice(videoIndex === undefined ? 'auto' : String(videoIndex));
+      setAudioChoice(audioIndex === undefined ? 'auto' : String(audioIndex));
+      setSubtitleChoice('none'); setEmbeddedRequest(undefined);
       setSection('discover');
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
-  }, []);
+  }, [settings]);
 
   async function openResult(item: SearchItem) {
     if (item.type === 'STREAM') await resolveStream(item.url);
@@ -153,7 +174,9 @@ export function App() {
           subtitleUrl: selectedSubtitle?.url,
         });
       }
-      await window.wizestream.backend.invoke('library.history.record', { ...selectedLibraryStream });
+      if (settings.enableWatchHistory) {
+        await window.wizestream.backend.invoke('library.history.record', { ...selectedLibraryStream });
+      }
       setMpv(await window.wizestream.player.status());
     } catch (reason) { setError(errorMessage(reason)); }
   }
@@ -171,12 +194,27 @@ export function App() {
     }
   }
 
+  async function saveSettings(patch: Partial<DesktopSettings>) {
+    const saved = await window.wizestream.settings.update(patch);
+    setSettings(saved);
+    if (patch.defaultServiceId !== undefined) {
+      const preferred = services.find((service) => service.id === saved.defaultServiceId);
+      if (preferred) setServiceId(preferred.id);
+    }
+  }
+
+  async function resetSettings() {
+    const saved = await window.wizestream.settings.reset();
+    setSettings(saved);
+    setServiceId(services[0]?.id ?? 0);
+  }
+
   return (
     <Box className="app-shell">
       <Box component="nav" className="navigation-rail">
         <Avatar sx={{ width: 48, height: 48, mb: 2, bgcolor: 'primary.main' }}>W</Avatar>
         <List sx={{ width: '100%' }}>
-          {navigation.map((item) => (
+          {navigation.filter((item) => item.id !== 'learning' || settings.learningMode).map((item) => (
             <ListItemButton key={item.id} selected={section === item.id} onClick={() => setSection(item.id)}>
               <ListItemIcon>{item.icon}</ListItemIcon><ListItemText primary={item.label} />
             </ListItemButton>
@@ -249,7 +287,7 @@ export function App() {
                       || (!embeddedSelection && !mpv?.externalAvailable)} onClick={() => void playSelected()}>{embeddedSelection ? 'Play embedded' : 'Play with mpv'}</Button>
                   <Button startIcon={<DownloadRounded />} variant="outlined" size="large" onClick={() => setSection('downloads')}>Download</Button>
                   <Button startIcon={<PlaylistAddRounded />} variant="outlined" size="large" onClick={() => setSection('playlists')}>Add to playlist</Button>
-                  <Button startIcon={<NoteAddRounded />} variant="outlined" size="large" onClick={() => setSection('learning')}>Add note</Button>
+                  {settings.learningMode && settings.learningNotes && <Button startIcon={<NoteAddRounded />} variant="outlined" size="large" onClick={() => setSection('learning')}>Add note</Button>}
                 </Stack>
               </CardContent>
             </Box></Card>}
@@ -259,7 +297,11 @@ export function App() {
               : section === 'history' ? <HistoryPanel onOpen={resolveStream} />
                 : section === 'learning' ? <LearningPanel currentStream={selectedLibraryStream} onOpen={resolveStream} />
                   : section === 'downloads' ? <DownloadsPanel currentStream={selected} />
-                    : <SyncPanel sync={sync} onRefresh={() => void window.wizestream.backend.invoke<SyncStatus>('sync.status').then(setSync)} />}
+                    : section === 'sync' ? <SyncPanel sync={sync} onRefresh={() => void window.wizestream.backend.invoke<SyncStatus>('sync.status').then(setSync)} />
+                      : <SettingsPanel settings={settings} services={services} currentVersion={updateState?.currentVersion}
+                        onUpdate={saveSettings} onReset={resetSettings}
+                        onOpenDownloads={() => void window.wizestream.downloads.openFolder()} onOpenDevices={() => setSection('sync')}
+                        onOpenUpdates={() => void openUpdates()} />}
         </Container>
       </Box>
       <Dialog open={updateDialogOpen} onClose={() => setUpdateDialogOpen(false)} fullWidth maxWidth="sm">

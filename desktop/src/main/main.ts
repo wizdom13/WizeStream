@@ -10,6 +10,7 @@ import { BackendClient } from './backend-client.js';
 import { DownloadManager } from './download-manager.js';
 import { embeddedMpvAddonPath, embeddedMpvAvailable } from './embedded-mpv.js';
 import { MpvController } from './mpv-controller.js';
+import { SettingsManager } from './settings-manager.js';
 import { UpdateManager } from './update-manager.js';
 
 declare const __WIZESTREAM_UPDATES_ENABLED__: boolean;
@@ -21,6 +22,7 @@ const player = new MpvController();
 let embeddedPlayer: MpvMain | undefined;
 let downloads: DownloadManager | undefined;
 let updates: UpdateManager | undefined;
+let settings: SettingsManager | undefined;
 let embeddedAddonPath = '';
 let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
@@ -119,6 +121,8 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  settings = new SettingsManager(path.join(app.getPath('userData'), 'settings.json'));
+  await settings.initialize();
   embeddedAddonPath = embeddedMpvAddonPath(process.resourcesPath, app.getAppPath(), app.isPackaged);
   embeddedPlayer = createMpvMain({ addonPath: embeddedAddonPath });
   downloads = new DownloadManager(
@@ -181,6 +185,9 @@ app.whenReady().then(async () => {
     if (filePath) shell.showItemInFolder(filePath);
   });
   ipcMain.handle('downloads:open-folder', () => shell.openPath(path.join(app.getPath('downloads'), 'WizeStream')));
+  ipcMain.handle('settings:get', () => settings?.get());
+  ipcMain.handle('settings:update', (_event, input: unknown) => settings?.update(input));
+  ipcMain.handle('settings:reset', () => settings?.reset());
   updates = await createUpdateManager();
   updates.initialize();
   ipcMain.handle('updates:state', () => updates?.state());

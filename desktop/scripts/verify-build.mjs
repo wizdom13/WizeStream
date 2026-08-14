@@ -66,6 +66,9 @@ assert.equal(typeof exposedApi?.player?.stop, 'function');
 assert.equal(typeof exposedApi?.player?.status, 'function');
 assert.equal(typeof exposedApi?.downloads?.start, 'function');
 assert.equal(typeof exposedApi?.downloads?.onChanged, 'function');
+assert.equal(typeof exposedApi?.settings?.get, 'function');
+assert.equal(typeof exposedApi?.settings?.update, 'function');
+assert.equal(typeof exposedApi?.settings?.reset, 'function');
 await exposedApi.backend.invoke('health');
 const healthCall = ipcCalls.find((call) => call.channel === 'backend:invoke');
 assert.equal(healthCall?.payload?.method, 'health');
@@ -92,5 +95,8 @@ assert.match(rendererJavaScript, /Play embedded/, 'renderer must include Phase 4
 assert.match(rendererJavaScript, /Download current stream/, 'renderer must include Phase 4 downloads');
 assert.match(rendererJavaScript, /Combining tracks/, 'renderer must report Phase 6 adaptive muxing');
 assert.match(rendererJavaScript, /Open with external mpv/, 'renderer must preserve explicit external-player recovery');
+assert.match(rendererJavaScript, /Video and audio/, 'renderer must include Android-aligned desktop settings');
+assert.match(rendererJavaScript, /History and cache/, 'renderer must include applicable history settings');
+assert.match(rendererJavaScript, /Device synchronization/, 'renderer must link settings to Devices');
 
 console.log('Packaged Electron startup boundary verified.');
