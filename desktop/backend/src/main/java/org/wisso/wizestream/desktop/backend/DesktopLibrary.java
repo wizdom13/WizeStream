@@ -63,28 +63,37 @@ final class DesktopLibrary {
                 "avatarUrl", safeAvatar);
     }
 
-    Map<String, Object> updateSubscriptionAvatar(
+    Map<String, Object> updateSubscriptionMetadata(
             final int serviceId,
             final String url,
-            final String avatarUrl
+            final String avatarUrl,
+            final Long subscriberCount
     ) throws SQLException {
         if (serviceId < 0) throw new IllegalArgumentException("Invalid serviceId");
         final String safeUrl = httpUrl(url, "url");
         final String safeAvatar = optionalHttpUrl(avatarUrl, "avatarUrl");
-        if (safeAvatar == null) throw new IllegalArgumentException("Invalid avatarUrl");
+        if (subscriberCount != null && subscriberCount < 0) {
+            throw new IllegalArgumentException("Invalid subscriberCount");
+        }
+        if (safeAvatar == null && subscriberCount == null) {
+            throw new IllegalArgumentException("Channel metadata is missing");
+        }
         final int updated;
         synchronized (connection) {
             try (PreparedStatement statement = connection.prepareStatement("""
-                    UPDATE subscriptions SET avatar_url=? WHERE service_id=? AND url=?
+                    UPDATE subscriptions SET avatar_url=COALESCE(?, avatar_url),
+                    subscriber_count=COALESCE(?, subscriber_count) WHERE service_id=? AND url=?
                     """)) {
                 statement.setString(1, safeAvatar);
-                statement.setInt(2, serviceId);
-                statement.setString(3, safeUrl);
+                statement.setObject(2, subscriberCount);
+                statement.setInt(3, serviceId);
+                statement.setString(4, safeUrl);
                 updated = statement.executeUpdate();
             }
         }
         if (updated == 0) throw new IllegalArgumentException("Subscription was not found");
-        return row("serviceId", serviceId, "url", safeUrl, "avatarUrl", safeAvatar);
+        return row("serviceId", serviceId, "url", safeUrl, "avatarUrl", safeAvatar,
+                "subscriberCount", subscriberCount);
     }
 
     void deleteSubscription(final int serviceId, final String url) throws SQLException {

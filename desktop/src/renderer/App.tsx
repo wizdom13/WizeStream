@@ -37,6 +37,7 @@ import type {
   UpdateState,
 } from '../shared/contracts';
 import { SettingsPanel } from './SettingsPanel';
+import { subscriberCountLabel } from './subscriber-count';
 import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
 
 defineMpvVideoElement();
@@ -54,7 +55,7 @@ const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> =
   { id: 'settings', label: 'Settings', icon: <SettingsRounded /> },
 ];
 
-const attemptedSubscriptionAvatars = new Set<string>();
+const attemptedSubscriptionMetadata = new Set<string>();
 
 export function App() {
   const { setMode } = useColorScheme();
@@ -413,40 +414,46 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
   const [url, setUrl] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [error, setError] = useState<string>();
-  const [refreshingImages, setRefreshingImages] = useState(false);
+  const [refreshingDetails, setRefreshingDetails] = useState(false);
   const refreshRunning = useRef(false);
   const load = useCallback(() => window.wizestream.backend.invoke<SubscriptionItem[]>('library.subscriptions.list').then(setItems).catch((reason: unknown) => setError(errorMessage(reason))), []);
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
     if (refreshRunning.current) return;
-    const missing = items.filter((item) => !item.avatarUrl
-      && !attemptedSubscriptionAvatars.has(`${item.serviceId}:${item.url}`));
+    const missing = items.filter((item) => (!item.avatarUrl || item.subscriberCount == null
+      || item.subscriberCount < 0) && !attemptedSubscriptionMetadata.has(`${item.serviceId}:${item.url}`));
     if (missing.length === 0) return;
     refreshRunning.current = true;
-    setRefreshingImages(true);
+    setRefreshingDetails(true);
     void (async () => {
       for (const item of missing) {
         const key = `${item.serviceId}:${item.url}`;
-        attemptedSubscriptionAvatars.add(key);
+        attemptedSubscriptionMetadata.add(key);
         try {
-          const refreshed = await window.wizestream.backend.invoke<Pick<SubscriptionItem, 'serviceId' | 'url' | 'avatarUrl'>>(
-            'library.subscriptions.refresh-avatar', { serviceId: item.serviceId, url: item.url },
+          const refreshed = await window.wizestream.backend.invoke<Pick<SubscriptionItem, 'serviceId' | 'url' | 'avatarUrl' | 'subscriberCount'>>(
+            'library.subscriptions.refresh-metadata', { serviceId: item.serviceId, url: item.url },
           );
           setItems((current) => current.map((candidate) => candidate.serviceId === refreshed.serviceId
-            && candidate.url === refreshed.url ? { ...candidate, avatarUrl: refreshed.avatarUrl } : candidate));
+            && candidate.url === refreshed.url ? {
+              ...candidate,
+              avatarUrl: refreshed.avatarUrl ?? candidate.avatarUrl,
+              subscriberCount: refreshed.subscriberCount ?? candidate.subscriberCount,
+            } : candidate));
         } catch {
           // Keep the standard channel placeholder when a service cannot provide an image.
         }
       }
       refreshRunning.current = false;
-      setRefreshingImages(false);
+      setRefreshingDetails(false);
     })();
   }, [items]);
 
-  function retryMissingImages() {
+  function retryMissingDetails() {
     for (const item of items) {
-      if (!item.avatarUrl) attemptedSubscriptionAvatars.delete(`${item.serviceId}:${item.url}`);
+      if (!item.avatarUrl || item.subscriberCount == null || item.subscriberCount < 0) {
+        attemptedSubscriptionMetadata.delete(`${item.serviceId}:${item.url}`);
+      }
     }
     setItems((current) => [...current]);
   }
@@ -467,9 +474,10 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
     catch (reason) { setError(errorMessage(reason)); }
   }
   return <Stack spacing={3}><PanelHeader title="Subscriptions" description="Manage channels synchronized with your Android devices." action={<Stack direction="row" spacing={1}>
-    <Button startIcon={refreshingImages ? <CircularProgress size={18} /> : <ReplayRounded />} variant="outlined"
-      disabled={refreshingImages || items.length === 0 || items.every((item) => item.avatarUrl)}
-      onClick={retryMissingImages}>{refreshingImages ? 'Loading images…' : 'Refresh channel images'}</Button>
+    <Button startIcon={refreshingDetails ? <CircularProgress size={18} /> : <ReplayRounded />} variant="outlined"
+      disabled={refreshingDetails || items.length === 0 || items.every((item) => item.avatarUrl
+        && item.subscriberCount != null && item.subscriberCount >= 0)}
+      onClick={retryMissingDetails}>{refreshingDetails ? 'Loading channel details…' : 'Refresh channel details'}</Button>
     <Button startIcon={<AddRounded />} variant="contained" onClick={() => showEditor()}>Add channel</Button>
   </Stack>} />
     {error && <Alert severity="error">{error}</Alert>}
@@ -477,6 +485,7 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
       <CardContent sx={{ p: 3, textAlign: 'center', height: '100%', boxSizing: 'border-box' }}>
         <Avatar src={item.avatarUrl} alt="" sx={{ width: 88, height: 88, mx: 'auto', mb: 2 }}><SubscriptionsRounded sx={{ fontSize: 38 }} /></Avatar>
         <Typography variant="h6" className="two-lines" sx={{ minHeight: '3em' }}>{item.name}</Typography>
+        {subscriberCountLabel(item.subscriberCount) && <Typography color="text.secondary" sx={{ mt: 0.5 }}>{subscriberCountLabel(item.subscriberCount)}</Typography>}
         <Typography color="text.secondary" variant="body2" className="two-lines" sx={{ mt: 1, overflowWrap: 'anywhere' }}>{item.url}</Typography>
         <Stack direction="row" sx={{ justifyContent: 'center', mt: 2 }}>
           <Tooltip title="Edit"><IconButton aria-label="Edit subscription" onClick={() => showEditor(item)}><EditRounded /></IconButton></Tooltip>
