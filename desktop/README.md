@@ -76,12 +76,18 @@ When a trusted device's saved IP address is stale, desktop scans the local IPv4 
 previously trusted sync port and then authenticates the discovered endpoint against the saved
 libp2p PeerID. Discovery never establishes trust by itself.
 
-Phase 7 adds the `0.6.0-beta.1` release contract. Installed builds check the public beta channel at
-startup and on demand. An available update is never downloaded until the user confirms, and a
-downloaded update is never installed or restarted until the user confirms again. Windows releases
-must pass Authenticode validation, macOS releases must pass Developer ID signing, notarization and
-stapling validation, and Linux releases include SHA-256 manifests and GitHub provenance
-attestations. The protected release workflow fails closed when any credential is missing.
+Phase 7 adds the `0.6.0-beta.1-unsigned-preview` release contract. Preview packages are produced by
+GitHub Actions for all five target architectures and published with `SHA256SUMS` plus GitHub
+artifact attestations. Production automatic updates are hard-disabled, updater metadata is omitted,
+and preview upgrades are installed manually. Windows unknown-publisher or SmartScreen warnings and
+macOS Gatekeeper approval are expected for these unsigned packages. The protected signed-release
+workflow is retained as a postponed future path and remains inactive unless maintainers explicitly
+change the release policy and configure trusted signing identities.
+
+Phase 8 synchronizes the WizeStream 1.6.0 Android changes from `pipe`, reconciles the release
+documentation with the unsigned-preview policy, reruns Android regression checks and the complete
+five-platform Desktop matrix, and prepares `desktop-electron` for review before integration into
+`pipe`.
 
 ## Requirements
 
@@ -124,13 +130,13 @@ Run the package task on the target operating system:
 npm run dist
 ```
 
-Preview packages are unsigned. Windows signing and macOS signing/notarization are release gates,
-not requirements for architecture CI.
-The explicitly unsigned preview channel disables production updates and intentionally omits updater
-metadata. Preview upgrades are installed manually.
+Preview packages are unsigned. Production updates are disabled and updater metadata is intentionally
+omitted, so preview upgrades are installed manually. Windows signing and macOS
+signing/notarization are postponed future release gates, not requirements for architecture CI or
+the current preview channel.
 
-See [docs/releasing.md](docs/releasing.md) for release-repository setup, credential names, signing,
-updater validation and rollback.
+See [docs/releasing.md](docs/releasing.md) for the current unsigned-preview policy and the postponed
+future signing, updater-validation and rollback procedures.
 
 ## Security boundary
 
@@ -148,7 +154,7 @@ updater validation and rollback.
 
 ## Next milestone
 
-Collect feedback from the explicitly unsigned preview while acquiring the Windows and Apple signing
-identities. Then initialize the public binary release repository, run the protected signed matrix,
-and validate one signed update on every architecture before opening the `desktop-electron` to `pipe`
-pull request.
+Complete Phase 8 validation, collect feedback from the explicitly unsigned preview, and review the
+`desktop-electron` to `pipe` pull request. Publish another unsigned preview only when fixes
+materially change the existing beta. Signed public releases and production automatic updates remain
+postponed until the maintainers explicitly adopt a new release policy.
