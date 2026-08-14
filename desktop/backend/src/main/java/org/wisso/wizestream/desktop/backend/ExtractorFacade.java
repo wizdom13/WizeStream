@@ -3,6 +3,7 @@ package org.wisso.wizestream.desktop.backend;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandler;
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandlerFactory;
 import org.schabi.newpipe.extractor.search.SearchInfo;
@@ -85,6 +86,17 @@ final class ExtractorFacade {
         value.put("audioStreams", audioStreams(info));
         value.put("subtitles", subtitles(info));
         return value;
+    }
+
+    String channelAvatar(final int serviceId, final String url) throws Exception {
+        if (serviceId < 0 || url == null || url.length() > 4_096
+                || !(url.startsWith("https://") || url.startsWith("http://"))) {
+            throw new IllegalArgumentException("Invalid channel URL");
+        }
+        final ChannelInfo info = ChannelInfo.getInfo(NewPipe.getService(serviceId), url);
+        final String avatarUrl = blankToNull(info.getAvatarUrl());
+        if (avatarUrl == null) throw new IllegalArgumentException("Channel image is unavailable");
+        return avatarUrl;
     }
 
     private Map<String, Object> searchItem(final InfoItem item) {

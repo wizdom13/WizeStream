@@ -63,6 +63,30 @@ final class DesktopLibrary {
                 "avatarUrl", safeAvatar);
     }
 
+    Map<String, Object> updateSubscriptionAvatar(
+            final int serviceId,
+            final String url,
+            final String avatarUrl
+    ) throws SQLException {
+        if (serviceId < 0) throw new IllegalArgumentException("Invalid serviceId");
+        final String safeUrl = httpUrl(url, "url");
+        final String safeAvatar = optionalHttpUrl(avatarUrl, "avatarUrl");
+        if (safeAvatar == null) throw new IllegalArgumentException("Invalid avatarUrl");
+        final int updated;
+        synchronized (connection) {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    UPDATE subscriptions SET avatar_url=? WHERE service_id=? AND url=?
+                    """)) {
+                statement.setString(1, safeAvatar);
+                statement.setInt(2, serviceId);
+                statement.setString(3, safeUrl);
+                updated = statement.executeUpdate();
+            }
+        }
+        if (updated == 0) throw new IllegalArgumentException("Subscription was not found");
+        return row("serviceId", serviceId, "url", safeUrl, "avatarUrl", safeAvatar);
+    }
+
     void deleteSubscription(final int serviceId, final String url) throws SQLException {
         if (serviceId < 0) throw new IllegalArgumentException("Invalid serviceId");
         execute("DELETE FROM subscriptions WHERE service_id=? AND url=?", statement -> {
