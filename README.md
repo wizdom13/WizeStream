@@ -54,7 +54,6 @@
   <a href="#development-status">Development</a> •
   <a href="#contributing">Contributing</a> •
   <a href="#upstream-newpipe">Upstream</a> •
-  <a href="#donate">Donate</a> •
   <a href="#license">License</a>
 </p>
 
@@ -490,16 +489,6 @@ Please report issues carefully:
   shared upstream issue from WizeStream-specific behavior.
 - Report a problem to an upstream project only when it is reproducible there and follows that
   project's reporting requirements.
-
----
-
-## Donate
-
-To support upstream NewPipe, see its official donation page:
-
-https://newpipe.net/donate
-
-Upstream donations go to the upstream NewPipe project, not automatically to WizeStream.
 
 ---
 

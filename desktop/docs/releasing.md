@@ -12,6 +12,12 @@ unsigned packages. Signed public releases and production automatic updates are p
 future signing procedures below remain inactive unless the maintainers explicitly change this
 policy and configure protected, trusted signing identities.
 
+Phase 9 feedback and manual acceptance use the checklist in
+[`preview-testing.md`](preview-testing.md). Preview failures must be reported through the dedicated
+Desktop issue form with the exact release tag, package filename, platform and architecture. The
+existing `v0.6.0-beta.1-unsigned-preview` release is immutable; publish a higher beta only after
+material fixes pass the Android regression checks and the complete five-target Desktop matrix.
+
 ## Future signed-release setup (postponed)
 
 1. Create the public `wizdom13/WizeStream_Desktop` repository with a `main` branch. Its README must

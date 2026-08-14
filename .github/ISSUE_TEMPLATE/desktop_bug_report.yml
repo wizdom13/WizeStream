@@ -1,0 +1,129 @@
+name: Desktop preview bug report
+description: Report a problem with an unsigned WizeStream Desktop preview
+labels: [bug, needs triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing WizeStream Desktop.
+
+        Download previews only from the official `wizdom13/WizeStream` GitHub Releases page and verify the supplied `SHA256SUMS` before testing. These packages are explicitly unsigned, so Windows unknown-publisher or SmartScreen warnings and macOS Gatekeeper approval are expected.
+
+        Never paste access tokens, private keys, pairing invitations, signed media URLs, or other secrets into an issue or log.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: "I can reproduce the problem with the latest WizeStream Desktop preview from the official repository."
+          required: true
+        - label: "I verified the downloaded package against the release's `SHA256SUMS`."
+          required: true
+        - label: "I checked the open and closed issues for an existing report."
+          required: true
+        - label: "I removed secrets, pairing invitations, signed media URLs, and private information from this report."
+          required: true
+
+  - type: input
+    id: release-tag
+    attributes:
+      label: Preview release tag
+      description: Enter the exact GitHub release tag you tested.
+      placeholder: v0.6.0-beta.1-unsigned-preview
+    validations:
+      required: true
+
+  - type: input
+    id: package-name
+    attributes:
+      label: Package filename
+      description: Enter the complete filename from GitHub Releases.
+      placeholder: WizeStream Desktop-0.6.0-beta.1-windows-x64-setup.exe
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Architecture
+      options:
+        - x64
+        - arm64
+    validations:
+      required: true
+
+  - type: input
+    id: system-version
+    attributes:
+      label: Operating-system version and device
+      description: Include the exact OS version and computer model or relevant hardware details.
+      placeholder: Windows 11 23H2, desktop PC with Intel x64 processor
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      options:
+        - Installation or first launch
+        - Startup or navigation
+        - Search or browsing
+        - Playback or track selection
+        - Downloads or recovery
+        - Pairing or synchronization
+        - Subscriptions, playlists, history, or notes
+        - Packaging or platform integration
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: Include the exact error text when one is shown.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs or screenshots
+      description: Attach useful evidence after removing secrets, pairing invitations, signed media URLs, usernames, and private filesystem paths.
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Include package type, network conditions, media service, and whether the problem is consistently reproducible.

@@ -86,8 +86,11 @@ change the release policy and configure trusted signing identities.
 
 Phase 8 synchronizes the WizeStream 1.6.0 Android changes from `pipe`, reconciles the release
 documentation with the unsigned-preview policy, reruns Android regression checks and the complete
-five-platform Desktop matrix, and prepares `desktop-electron` for review before integration into
-`pipe`.
+five-platform Desktop matrix, and integrates WizeStream Desktop into `pipe`.
+
+Phase 9 stabilizes that integrated preview. It adds a dedicated Desktop bug-report path and a
+repeatable five-platform manual acceptance checklist, while keeping the first unsigned preview
+immutable. Another preview is published only when material fixes justify a higher beta version.
 
 ## Requirements
 
@@ -135,6 +138,7 @@ omitted, so preview upgrades are installed manually. Windows signing and macOS
 signing/notarization are postponed future release gates, not requirements for architecture CI or
 the current preview channel.
 
+See [docs/preview-testing.md](docs/preview-testing.md) for the Phase 9 manual acceptance checklist.
 See [docs/releasing.md](docs/releasing.md) for the current unsigned-preview policy and the postponed
 future signing, updater-validation and rollback procedures.
 
@@ -154,7 +158,9 @@ future signing, updater-validation and rollback procedures.
 
 ## Next milestone
 
-Complete Phase 8 validation, collect feedback from the explicitly unsigned preview, and review the
-`desktop-electron` to `pipe` pull request. Publish another unsigned preview only when fixes
-materially change the existing beta. Signed public releases and production automatic updates remain
-postponed until the maintainers explicitly adopt a new release policy.
+Complete the Phase 9 five-platform manual acceptance checklist and triage reports submitted through
+the Desktop preview issue form. Fix reproducible preview regressions from dedicated branches based
+on `pipe`, and require the Android and complete Desktop CI matrices before merging them. Publish a
+higher unsigned beta only when material fixes change the tested binaries. Signed public releases
+and production automatic updates remain postponed until the maintainers explicitly adopt a new
+release policy.
