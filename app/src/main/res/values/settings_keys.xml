@@ -376,6 +376,7 @@
     <string name="show_channel_tabs_playlists">show_channel_tabs_playlists</string>
     <string name="show_channel_tabs_albums">show_channel_tabs_albums</string>
     <string name="show_channel_tabs_podcasts">show_channel_tabs_podcasts</string>
+    <string name="show_channel_tabs_posts">show_channel_tabs_posts</string>
     <string name="show_channel_tabs_likes">show_channel_tabs_likes</string>
     <string name="show_channel_tabs_about">show_channel_tabs_about</string>
     <string-array name="show_channel_tabs_value_list">
@@ -387,6 +388,7 @@
         <item>@string/show_channel_tabs_playlists</item>
         <item>@string/show_channel_tabs_albums</item>
         <item>@string/show_channel_tabs_podcasts</item>
+        <item>@string/show_channel_tabs_posts</item>
         <item>@string/show_channel_tabs_likes</item>
         <item>@string/show_channel_tabs_about</item>
     </string-array>
@@ -399,6 +401,7 @@
         <item>@string/channel_tab_playlists</item>
         <item>@string/channel_tab_albums</item>
         <item>@string/channel_tab_podcasts</item>
+        <item>@string/channel_tab_posts</item>
         <item>@string/channel_tab_likes</item>
         <item>@string/channel_tab_about</item>
     </string-array>

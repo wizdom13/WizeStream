@@ -2,6 +2,24 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## WizeStream 1.6.0 (`1006000`)
+
+### New features
+
+- Added a built-in 10-band audio equalizer with five presets, automatic clipping headroom, and one persistent custom curve.
+- Added read-only YouTube channel posts with text, images, polls, links, attached videos and playlists, and continuation-page support.
+
+### Improvements
+
+- Improved device synchronization recovery after hotspot or local-network address changes.
+
+### Fixes
+
+- Restored channel metadata in portrait layouts.
+- Fixed timestamped note button visibility during Learning Mode playback.
+
+[View the complete changes since v1.5.0](https://github.com/wizdom13/WizeStream/compare/v1.5.0...v1.6.0)
+
 ## WizeStream 1.5.0 (`1005000`)
 
 ### New features

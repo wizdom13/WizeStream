@@ -1,0 +1,7 @@
+WizeStream 1.6.0
+
+- Added a built-in 10-band audio equalizer with five presets and a saved custom curve.
+- Added read-only YouTube channel posts with text, images, polls, links, videos, playlists, and pagination.
+- Improved device-sync recovery after hotspot or local-network address changes.
+- Restored channel metadata in portrait layouts.
+- Fixed timestamped note button visibility during Learning Mode playback.
