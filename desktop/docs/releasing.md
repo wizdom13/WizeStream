@@ -1,10 +1,18 @@
 # Desktop release operations
 
-Phase 7 publishes signed prereleases from the source repository to the public
-`wizdom13/WizeStream_Desktop` binary-release repository. The first release is
-`v0.6.0-beta.1`. Ordinary Desktop CI stays unsigned and cannot publish.
+## Current unsigned preview policy
 
-## One-time setup
+WizeStream Desktop releases are unsigned open-source builds produced by GitHub Actions. Users
+should download them only from the official repository and verify the supplied `SHA256SUMS` and
+GitHub artifact attestations. Production automatic updates are not provided.
+
+Preview upgrades are installed manually. Windows may show an unknown-publisher or SmartScreen
+warning, and macOS Gatekeeper may require explicit user approval; these warnings are expected for
+unsigned packages. Signed public releases and production automatic updates are postponed. The
+future signing procedures below remain inactive unless the maintainers explicitly change this
+policy and configure protected, trusted signing identities.
+
+## Future signed-release setup (postponed)
 
 1. Create the public `wizdom13/WizeStream_Desktop` repository with a `main` branch. Its README must
    link to `wizdom13/WizeStream` as the corresponding GPL source repository.
@@ -53,7 +61,7 @@ npm run typecheck
 npm test
 ```
 
-## Signed beta release
+## Future signed beta release (postponed)
 
 1. Confirm `desktop-electron` is green and points at the intended source commit.
 2. Open **Desktop signed beta release** in Actions and enter exactly `v0.6.0-beta.1`.
@@ -69,7 +77,7 @@ npm test
 Do not rerun a partially published tag with changed binaries. Delete a failed draft before it is
 public, or increment the beta version and publish a new immutable tag.
 
-## Updater contract
+## Future signed updater contract (postponed)
 
 - Provider: public GitHub releases in `wizdom13/WizeStream_Desktop`.
 - Channel: `beta`; prereleases are allowed and downgrades are disabled.
