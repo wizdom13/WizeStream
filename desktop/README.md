@@ -29,6 +29,8 @@ The desktop architecture contains:
 - Pair with trusted WizeStream devices and synchronize selected data over the local network.
 - Adjust applicable playback, download, appearance, history, content, device and Learning Mode
   settings using the same familiar sections as the Android app.
+- Export and restore versioned Desktop ZIP backups. Subscription-only JSON exports use Android's
+  schema, and Desktop can import subscriptions from Android JSON exports or Android full-backup ZIPs.
 - Keep user data locally without requiring a WizeStream account.
 
 Synchronization can run manually or automatically while WizeStream Desktop is open. It works only

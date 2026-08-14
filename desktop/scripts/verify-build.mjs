@@ -69,6 +69,10 @@ assert.equal(typeof exposedApi?.downloads?.onChanged, 'function');
 assert.equal(typeof exposedApi?.settings?.get, 'function');
 assert.equal(typeof exposedApi?.settings?.update, 'function');
 assert.equal(typeof exposedApi?.settings?.reset, 'function');
+assert.equal(typeof exposedApi?.backup?.exportFull, 'function');
+assert.equal(typeof exposedApi?.backup?.restoreFull, 'function');
+assert.equal(typeof exposedApi?.backup?.importSubscriptions, 'function');
+assert.equal(typeof exposedApi?.backup?.exportSubscriptions, 'function');
 await exposedApi.backend.invoke('health');
 const healthCall = ipcCalls.find((call) => call.channel === 'backend:invoke');
 assert.equal(healthCall?.payload?.method, 'health');
@@ -98,5 +102,7 @@ assert.match(rendererJavaScript, /Open with external mpv/, 'renderer must preser
 assert.match(rendererJavaScript, /Video and audio/, 'renderer must include Android-aligned desktop settings');
 assert.match(rendererJavaScript, /History and cache/, 'renderer must include applicable history settings');
 assert.match(rendererJavaScript, /Device synchronization/, 'renderer must link settings to Devices');
+assert.match(rendererJavaScript, /Backup and restore/, 'renderer must include Desktop backup tools');
+assert.match(rendererJavaScript, /Android JSON subscription export/, 'renderer must explain Android subscription compatibility');
 
 console.log('Packaged Electron startup boundary verified.');

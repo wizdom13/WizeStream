@@ -31,7 +31,12 @@ export type BackendMethod =
   | 'sync.pair'
   | 'sync.policy.update'
   | 'sync.runs.list'
-  | 'sync.run';
+  | 'sync.run'
+  | 'backup.export'
+  | 'backup.inspect'
+  | 'backup.restore'
+  | 'subscriptions.import'
+  | 'subscriptions.export';
 
 export interface ServiceSummary {
   id: number;
@@ -343,6 +348,21 @@ export interface DesktopSettings {
   learningNotes: boolean;
 }
 
+export interface BackupOperationResult {
+  cancelled?: boolean;
+  status?: 'ready' | 'exported' | 'restored';
+  fileName?: string;
+  subscriptions?: number;
+  playlists?: number;
+  history?: number;
+  searchHistory?: number;
+  learningNotes?: number;
+  settings?: DesktopSettings;
+  imported?: number;
+  exported?: number;
+  source?: string;
+}
+
 export const defaultDesktopSettings: DesktopSettings = {
   theme: 'system',
   defaultServiceId: null,
@@ -387,6 +407,12 @@ export interface DesktopApi {
     get(): Promise<DesktopSettings>;
     update(patch: Partial<DesktopSettings>): Promise<DesktopSettings>;
     reset(): Promise<DesktopSettings>;
+  };
+  backup: {
+    exportFull(): Promise<BackupOperationResult>;
+    restoreFull(): Promise<BackupOperationResult>;
+    importSubscriptions(): Promise<BackupOperationResult>;
+    exportSubscriptions(): Promise<BackupOperationResult>;
   };
 }
 

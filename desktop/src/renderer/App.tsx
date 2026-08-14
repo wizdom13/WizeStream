@@ -301,7 +301,11 @@ export function App() {
                       : <SettingsPanel settings={settings} services={services} currentVersion={updateState?.currentVersion}
                         onUpdate={saveSettings} onReset={resetSettings}
                         onOpenDownloads={() => void window.wizestream.downloads.openFolder()} onOpenDevices={() => setSection('sync')}
-                        onOpenUpdates={() => void openUpdates()} />}
+                        onOpenUpdates={() => void openUpdates()} onSettingsRestored={(restored) => {
+                          setSettings(restored);
+                          const preferred = services.find((service) => service.id === restored.defaultServiceId);
+                          setServiceId(preferred?.id ?? services[0]?.id ?? 0);
+                        }} />}
         </Container>
       </Box>
       <Dialog open={updateDialogOpen} onClose={() => setUpdateDialogOpen(false)} fullWidth maxWidth="sm">

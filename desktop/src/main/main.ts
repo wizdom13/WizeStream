@@ -2,10 +2,10 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { access } from 'node:fs/promises';
-import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron';
 import { createMpvMain, type MpvMain } from 'electron-mpv-video/main';
 import { z } from 'zod';
-import type { BackendMethod, DownloadKind, DownloadSource, StreamDetails } from '../shared/contracts.js';
+import type { BackupOperationResult, BackendMethod, DownloadKind, DownloadSource, StreamDetails } from '../shared/contracts.js';
 import { BackendClient } from './backend-client.js';
 import { DownloadManager } from './download-manager.js';
 import { embeddedMpvAddonPath, embeddedMpvAvailable } from './embedded-mpv.js';
@@ -188,6 +188,70 @@ app.whenReady().then(async () => {
   ipcMain.handle('settings:get', () => settings?.get());
   ipcMain.handle('settings:update', (_event, input: unknown) => settings?.update(input));
   ipcMain.handle('settings:reset', () => settings?.reset());
+  ipcMain.handle('backup:export-full', async () => {
+    const selection = await dialog.showSaveDialog({
+      title: 'Export full backup',
+      defaultPath: path.join(app.getPath('documents'), `WizeStreamData-${backupTimestamp()}.zip`),
+      filters: [{ name: 'WizeStream ZIP backup', extensions: ['zip'] }],
+    });
+    if (selection.canceled || !selection.filePath) return { cancelled: true };
+    const result = await backend.invoke<BackupOperationResult>('backup.export', {
+      path: selection.filePath,
+      settings: settings?.get(),
+    });
+    return { ...result, fileName: path.basename(selection.filePath) };
+  });
+  ipcMain.handle('backup:restore-full', async () => {
+    const selection = await dialog.showOpenDialog({
+      title: 'Import full backup', properties: ['openFile'],
+      filters: [{ name: 'WizeStream ZIP backup', extensions: ['zip'] }],
+    });
+    const filePath = selection.filePaths[0];
+    if (selection.canceled || !filePath) return { cancelled: true };
+    const inspected = await backend.invoke<BackupOperationResult>('backup.inspect', { path: filePath });
+    const restoredSettings = settings?.validate(inspected.settings);
+    const details = [
+      `${inspected.subscriptions ?? 0} subscriptions`, `${inspected.playlists ?? 0} playlists`,
+      `${inspected.history ?? 0} watch-history entries`, `${inspected.searchHistory ?? 0} searches`,
+      `${inspected.learningNotes ?? 0} Learning Mode notes`, 'desktop settings',
+    ].join(', ');
+    const confirmation = await dialog.showMessageBox({
+      type: 'warning', title: 'Import full backup?',
+      message: 'Current local data and settings may be replaced.',
+      detail: `Detected contents: ${details}\n\nThe selected file is validated before any current data is changed.`,
+      buttons: ['Cancel', 'Import'], defaultId: 1, cancelId: 0, noLink: true,
+    });
+    if (confirmation.response !== 1) return { cancelled: true };
+    const result = await backend.invoke<BackupOperationResult>('backup.restore', { path: filePath });
+    const savedSettings = restoredSettings ? await settings?.replace(restoredSettings) : undefined;
+    return { ...result, settings: savedSettings, fileName: path.basename(filePath) };
+  });
+  ipcMain.handle('backup:import-subscriptions', async () => {
+    const selection = await dialog.showOpenDialog({
+      title: 'Import subscriptions only', properties: ['openFile'],
+      filters: [
+        { name: 'WizeStream Android exports', extensions: ['json', 'zip'] },
+        { name: 'JSON subscription export', extensions: ['json'] },
+        { name: 'Android full backup', extensions: ['zip'] },
+      ],
+    });
+    const filePath = selection.filePaths[0];
+    if (selection.canceled || !filePath) return { cancelled: true };
+    const result = await backend.invoke<BackupOperationResult>('subscriptions.import', { path: filePath });
+    return { ...result, fileName: path.basename(filePath) };
+  });
+  ipcMain.handle('backup:export-subscriptions', async () => {
+    const selection = await dialog.showSaveDialog({
+      title: 'Export subscriptions only',
+      defaultPath: path.join(app.getPath('documents'), `WizeStreamSubscriptions-${backupTimestamp()}.json`),
+      filters: [{ name: 'Android-compatible subscription JSON', extensions: ['json'] }],
+    });
+    if (selection.canceled || !selection.filePath) return { cancelled: true };
+    const result = await backend.invoke<BackupOperationResult>('subscriptions.export', {
+      path: selection.filePath, appVersion: app.getVersion(),
+    });
+    return { ...result, fileName: path.basename(selection.filePath) };
+  });
   updates = await createUpdateManager();
   updates.initialize();
   ipcMain.handle('updates:state', () => updates?.state());
@@ -268,6 +332,10 @@ async function createUpdateManager(): Promise<UpdateManager> {
   return new UpdateManager(updater, app.getVersion(), (state) => {
     for (const window of BrowserWindow.getAllWindows()) window.webContents.send('updates:changed', state);
   });
+}
+
+function backupTimestamp(): string {
+  return new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').slice(0, 15);
 }
 
 function downloadSources(details: StreamDetails): DownloadSource[] {

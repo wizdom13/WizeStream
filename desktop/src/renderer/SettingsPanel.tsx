@@ -5,6 +5,7 @@ import {
   TextField, Tooltip, Typography,
 } from '@mui/material';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
+import BackupRounded from '@mui/icons-material/BackupRounded';
 import CleaningServicesRounded from '@mui/icons-material/CleaningServicesRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
@@ -14,9 +15,9 @@ import PaletteRounded from '@mui/icons-material/PaletteRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import VideoSettingsRounded from '@mui/icons-material/VideoSettingsRounded';
-import type { DesktopSettings, ServiceSummary } from '../shared/contracts';
+import type { BackupOperationResult, DesktopSettings, ServiceSummary } from '../shared/contracts';
 
-type Category = 'video' | 'download' | 'appearance' | 'history' | 'content' | 'sync' | 'learning' | 'updates';
+type Category = 'video' | 'download' | 'appearance' | 'history' | 'content' | 'updates' | 'backup' | 'sync' | 'learning';
 
 const categories: Array<{ id: Category; title: string; summary: string; icon: React.ReactNode }> = [
   { id: 'video', title: 'Video and audio', summary: 'Playback, resolution, formats, and audio behavior', icon: <VideoSettingsRounded /> },
@@ -24,13 +25,14 @@ const categories: Array<{ id: Category; title: string; summary: string; icon: Re
   { id: 'appearance', title: 'Appearance', summary: 'Theme, colors, tabs, and layout', icon: <PaletteRounded /> },
   { id: 'history', title: 'History and cache', summary: 'Watch history, search history, and cached data', icon: <HistoryRounded /> },
   { id: 'content', title: 'Content', summary: 'Services, languages, regions, and content filters', icon: <HomeRounded /> },
+  { id: 'updates', title: 'Updates', summary: 'Version, changelog, and update checks', icon: <SystemUpdateAltRounded /> },
+  { id: 'backup', title: 'Backup and restore', summary: 'Export, import, and restore app data', icon: <BackupRounded /> },
   { id: 'sync', title: 'Device synchronization', summary: 'Securely pair trusted devices for private synchronization', icon: <DevicesRounded /> },
   { id: 'learning', title: 'Learning Mode', summary: 'Optional notes, progress, dashboard, and study statistics', icon: <SchoolRounded /> },
-  { id: 'updates', title: 'Updates', summary: 'Version, changelog, and update checks', icon: <SystemUpdateAltRounded /> },
 ];
 
 export function SettingsPanel({ settings, services, currentVersion, onUpdate, onReset, onOpenDownloads,
-  onOpenDevices, onOpenUpdates }: {
+  onOpenDevices, onOpenUpdates, onSettingsRestored }: {
   settings: DesktopSettings;
   services: ServiceSummary[];
   currentVersion?: string;
@@ -39,14 +41,17 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
   onOpenDownloads(): void;
   onOpenDevices(): void;
   onOpenUpdates(): void;
+  onSettingsRestored(settings: DesktopSettings): void;
 }) {
   const [category, setCategory] = useState<Category>();
   const [message, setMessage] = useState<string>();
+  const [messageSeverity, setMessageSeverity] = useState<'success' | 'error' | 'info'>('info');
+  const [busy, setBusy] = useState(false);
 
   async function update(patch: Partial<DesktopSettings>) {
     setMessage(undefined);
     try { await onUpdate(patch); }
-    catch (reason) { setMessage(reason instanceof Error ? reason.message : String(reason)); }
+    catch (reason) { setMessageSeverity('error'); setMessage(reason instanceof Error ? reason.message : String(reason)); }
   }
 
   async function clear(method: 'library.history.clear' | 'library.search-history.clear', confirmation: string) {
@@ -54,13 +59,32 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
     setMessage(undefined);
     try {
       await window.wizestream.backend.invoke(method);
+      setMessageSeverity('success');
       setMessage(method === 'library.history.clear' ? 'Watch history cleared.' : 'Search history cleared.');
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : String(reason)); }
+    } catch (reason) { setMessageSeverity('error'); setMessage(reason instanceof Error ? reason.message : String(reason)); }
+  }
+
+  async function backupAction(operation: 'exportFull' | 'restoreFull' | 'importSubscriptions' | 'exportSubscriptions') {
+    setBusy(true); setMessage(undefined);
+    try {
+      const result: BackupOperationResult = await window.wizestream.backup[operation]();
+      if (result.cancelled) return;
+      if (result.settings) onSettingsRestored(result.settings);
+      const descriptions: Record<typeof operation, string> = {
+        exportFull: `Backup exported: ${result.fileName ?? 'WizeStream backup'}`,
+        restoreFull: `Backup restored from ${result.fileName ?? 'the selected file'}.`,
+        importSubscriptions: `Imported ${result.imported ?? 0} subscriptions from ${result.fileName ?? 'the selected file'}.`,
+        exportSubscriptions: `Exported ${result.exported ?? 0} subscriptions to ${result.fileName ?? 'the selected file'}.`,
+      };
+      setMessageSeverity('success'); setMessage(descriptions[operation]);
+    } catch (reason) {
+      setMessageSeverity('error'); setMessage(reason instanceof Error ? reason.message : String(reason));
+    } finally { setBusy(false); }
   }
 
   if (!category) return <Stack spacing={3}>
     <Box><Typography variant="h4">Settings</Typography><Typography color="text.secondary">Choose how WizeStream Desktop works for you.</Typography></Box>
-    {message && <Alert severity="info">{message}</Alert>}
+    {message && <Alert severity={messageSeverity}>{message}</Alert>}
     <Box className="settings-category-grid">{categories.map((item) => <Card key={item.id} variant="outlined">
       <CardActionArea onClick={() => setCategory(item.id)} sx={{ height: '100%' }}><CardContent sx={{ p: 3 }}>
         <Stack direction="row" sx={{ gap: 2, alignItems: 'center' }}><Box color="primary.main">{item.icon}</Box><Box>
@@ -68,9 +92,6 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         </Box></Stack>
       </CardContent></CardActionArea>
     </Card>)}</Box>
-    <Box><Button color="inherit" startIcon={<CleaningServicesRounded />} onClick={() => {
-      if (window.confirm('Reset all desktop settings to their defaults?')) void onReset();
-    }}>Reset settings</Button></Box>
   </Stack>;
 
   const metadata = categories.find((item) => item.id === category)!;
@@ -79,7 +100,7 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
       <Tooltip title="Back to Settings"><IconButton onClick={() => { setCategory(undefined); setMessage(undefined); }}><ArrowBackRounded /></IconButton></Tooltip>
       <Box><Typography variant="h4">{metadata.title}</Typography><Typography color="text.secondary">{metadata.summary}</Typography></Box>
     </Stack>
-    {message && <Alert severity={message.endsWith('cleared.') ? 'success' : 'error'}>{message}</Alert>}
+    {message && <Alert severity={messageSeverity}>{message}</Alert>}
     <Card variant="outlined"><CardContent sx={{ p: 0 }}>
       {category === 'video' && <List disablePadding>
         <SettingSelect title="Default resolution" value={settings.defaultResolution} onChange={(value) => void update({ defaultResolution: value as DesktopSettings['defaultResolution'] })}
@@ -112,6 +133,20 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         <Alert severity="info" sx={{ my: 2 }}>Preview builds are explicitly unsigned. Updates remain manual until signed public releases are available.</Alert>
         <Button startIcon={<SystemUpdateAltRounded />} variant="outlined" onClick={onOpenUpdates}>Check for updates</Button>
       </Box>}
+      {category === 'backup' && <List disablePadding>
+        <ListItem sx={{ py: 2.5 }}><ListItemIcon><BackupRounded /></ListItemIcon><ListItemText primary="What full backup includes" secondary="Full backup includes subscriptions, playlists, app settings, history, search history, and Learning Mode notes." /></ListItem>
+        <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Import full backup" summary="Restore subscriptions, playlists, app settings, and local data from a ZIP backup." action="Import" disabled={busy} onClick={() => void backupAction('restoreFull')} />
+        <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Export full backup" summary="Create a ZIP backup with subscriptions, playlists, app settings, and local data." action="Export" disabled={busy} onClick={() => void backupAction('exportFull')} />
+        <Divider component="li" /><SettingAction icon={<CleaningServicesRounded />} title="Reset settings" summary="Reset all settings to their default values" action="Reset" disabled={busy} onClick={() => {
+          if (!window.confirm('Do you want to restore defaults?')) return;
+          setBusy(true); setMessage(undefined);
+          void onReset().then(() => { setMessageSeverity('success'); setMessage('Settings restored to defaults.'); })
+            .catch((reason: unknown) => { setMessageSeverity('error'); setMessage(reason instanceof Error ? reason.message : String(reason)); })
+            .finally(() => setBusy(false));
+        }} />
+        <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Export subscriptions only" summary="Use this for Android-compatible JSON subscription migration only. Full backup already includes subscriptions." action="Export" disabled={busy} onClick={() => void backupAction('exportSubscriptions')} />
+        <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Import subscriptions only" summary="Import an Android JSON subscription export or subscriptions from an Android full-backup ZIP. Existing subscriptions are merged." action="Import" disabled={busy} onClick={() => void backupAction('importSubscriptions')} />
+      </List>}
     </CardContent></Card>
   </Stack>;
 }
@@ -125,6 +160,6 @@ function SettingSwitch({ title, summary, checked, disabled, onChange }: { title:
   return <ListItem sx={{ py: 2 }}><ListItemText primary={title} secondary={summary} /><FormControlLabel sx={{ ml: 2 }} label={checked ? 'On' : 'Off'} control={<Switch checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />} /></ListItem>;
 }
 
-function SettingAction({ icon, title, summary, action, onClick }: { icon: React.ReactNode; title: string; summary: string; action: string; onClick(): void }) {
-  return <ListItem sx={{ py: 2.5 }}><ListItemIcon>{icon}</ListItemIcon><ListItemText primary={title} secondary={summary} /><Button sx={{ ml: 2 }} variant="outlined" onClick={onClick}>{action}</Button></ListItem>;
+function SettingAction({ icon, title, summary, action, disabled, onClick }: { icon: React.ReactNode; title: string; summary: string; action: string; disabled?: boolean; onClick(): void }) {
+  return <ListItem sx={{ py: 2.5 }}><ListItemIcon>{icon}</ListItemIcon><ListItemText primary={title} secondary={summary} /><Button sx={{ ml: 2 }} variant="outlined" disabled={disabled} onClick={onClick}>{action}</Button></ListItem>;
 }
