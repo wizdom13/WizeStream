@@ -102,6 +102,8 @@ assert.match(rendererJavaScript, /Open with external mpv/, 'renderer must preser
 assert.match(rendererJavaScript, /Video and audio/, 'renderer must include Android-aligned desktop settings');
 assert.match(rendererJavaScript, /History and cache/, 'renderer must include applicable history settings');
 assert.match(rendererJavaScript, /Device synchronization/, 'renderer must link settings to Devices');
+assert.match(rendererJavaScript, /Refresh channel images/, 'renderer must offer subscription avatar refresh');
+assert.match(rendererJavaScript, /subscription-grid/, 'renderer must display subscriptions in a grid');
 assert.match(rendererJavaScript, /Backup and restore/, 'renderer must include Desktop backup tools');
 assert.match(rendererJavaScript, /Android JSON subscription export/, 'renderer must explain Android subscription compatibility');
 

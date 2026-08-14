@@ -61,6 +61,12 @@ public final class DesktopBackend implements AutoCloseable {
                 case "library.subscriptions.save" -> library.saveSubscription(
                         requiredInt(params, "serviceId"), requiredText(params, "url"),
                         requiredText(params, "name"), optionalText(params, "avatarUrl"));
+                case "library.subscriptions.refresh-avatar" -> {
+                    final int serviceId = requiredInt(params, "serviceId");
+                    final String url = requiredText(params, "url");
+                    yield library.updateSubscriptionAvatar(
+                            serviceId, url, extractor.channelAvatar(serviceId, url));
+                }
                 case "library.subscriptions.delete" -> {
                     library.deleteSubscription(
                             requiredInt(params, "serviceId"), requiredText(params, "url"));

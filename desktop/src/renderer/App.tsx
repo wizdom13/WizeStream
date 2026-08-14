@@ -54,6 +54,8 @@ const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> =
   { id: 'settings', label: 'Settings', icon: <SettingsRounded /> },
 ];
 
+const attemptedSubscriptionAvatars = new Set<string>();
+
 export function App() {
   const { setMode } = useColorScheme();
   const [section, setSection] = useState<Section>('discover');
@@ -222,7 +224,8 @@ export function App() {
         </List>
       </Box>
       <Box component="main" className="content-column">
-        <AppBar position="sticky" color="transparent" elevation={0}>
+        <AppBar position="sticky" color="inherit" elevation={0}
+          sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
           <Toolbar sx={{ gap: 2 }}>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>WizeStream Desktop</Typography>
             <Chip color={mpv?.embeddedAvailable || mpv?.externalAvailable ? 'success' : 'default'}
@@ -410,8 +413,43 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
   const [url, setUrl] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [error, setError] = useState<string>();
+  const [refreshingImages, setRefreshingImages] = useState(false);
+  const refreshRunning = useRef(false);
   const load = useCallback(() => window.wizestream.backend.invoke<SubscriptionItem[]>('library.subscriptions.list').then(setItems).catch((reason: unknown) => setError(errorMessage(reason))), []);
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    if (refreshRunning.current) return;
+    const missing = items.filter((item) => !item.avatarUrl
+      && !attemptedSubscriptionAvatars.has(`${item.serviceId}:${item.url}`));
+    if (missing.length === 0) return;
+    refreshRunning.current = true;
+    setRefreshingImages(true);
+    void (async () => {
+      for (const item of missing) {
+        const key = `${item.serviceId}:${item.url}`;
+        attemptedSubscriptionAvatars.add(key);
+        try {
+          const refreshed = await window.wizestream.backend.invoke<Pick<SubscriptionItem, 'serviceId' | 'url' | 'avatarUrl'>>(
+            'library.subscriptions.refresh-avatar', { serviceId: item.serviceId, url: item.url },
+          );
+          setItems((current) => current.map((candidate) => candidate.serviceId === refreshed.serviceId
+            && candidate.url === refreshed.url ? { ...candidate, avatarUrl: refreshed.avatarUrl } : candidate));
+        } catch {
+          // Keep the standard channel placeholder when a service cannot provide an image.
+        }
+      }
+      refreshRunning.current = false;
+      setRefreshingImages(false);
+    })();
+  }, [items]);
+
+  function retryMissingImages() {
+    for (const item of items) {
+      if (!item.avatarUrl) attemptedSubscriptionAvatars.delete(`${item.serviceId}:${item.url}`);
+    }
+    setItems((current) => [...current]);
+  }
 
   function showEditor(item?: SubscriptionItem) {
     setEditing(item); setServiceId(item?.serviceId ?? services[0]?.id ?? 0); setName(item?.name ?? '');
@@ -428,9 +466,24 @@ function SubscriptionsPanel({ services }: { services: ServiceSummary[] }) {
     try { await window.wizestream.backend.invoke('library.subscriptions.delete', { serviceId: item.serviceId, url: item.url }); await load(); }
     catch (reason) { setError(errorMessage(reason)); }
   }
-  return <Stack spacing={3}><PanelHeader title="Subscriptions" description="Manage channels synchronized with your Android devices." action={<Button startIcon={<AddRounded />} variant="contained" onClick={() => showEditor()}>Add channel</Button>} />
+  return <Stack spacing={3}><PanelHeader title="Subscriptions" description="Manage channels synchronized with your Android devices." action={<Stack direction="row" spacing={1}>
+    <Button startIcon={refreshingImages ? <CircularProgress size={18} /> : <ReplayRounded />} variant="outlined"
+      disabled={refreshingImages || items.length === 0 || items.every((item) => item.avatarUrl)}
+      onClick={retryMissingImages}>{refreshingImages ? 'Loading images…' : 'Refresh channel images'}</Button>
+    <Button startIcon={<AddRounded />} variant="contained" onClick={() => showEditor()}>Add channel</Button>
+  </Stack>} />
     {error && <Alert severity="error">{error}</Alert>}
-    {items.length === 0 ? <LibraryEmpty text="No subscriptions yet." /> : <Card variant="outlined"><List disablePadding>{items.map((item, index) => <Box key={`${item.serviceId}:${item.url}`}>{index > 0 && <Divider />}<ListItem secondaryAction={<Stack direction="row"><IconButton aria-label="Edit subscription" onClick={() => showEditor(item)}><EditRounded /></IconButton><IconButton aria-label="Delete subscription" onClick={() => void remove(item)}><DeleteOutlineRounded /></IconButton></Stack>}><ListItemAvatar><Avatar src={item.avatarUrl}><SubscriptionsRounded /></Avatar></ListItemAvatar><ListItemText primary={item.name} secondary={item.url} /></ListItem></Box>)}</List></Card>}
+    {items.length === 0 ? <LibraryEmpty text="No subscriptions yet." /> : <Box className="subscription-grid">{items.map((item) => <Card key={`${item.serviceId}:${item.url}`} variant="outlined">
+      <CardContent sx={{ p: 3, textAlign: 'center', height: '100%', boxSizing: 'border-box' }}>
+        <Avatar src={item.avatarUrl} alt="" sx={{ width: 88, height: 88, mx: 'auto', mb: 2 }}><SubscriptionsRounded sx={{ fontSize: 38 }} /></Avatar>
+        <Typography variant="h6" className="two-lines" sx={{ minHeight: '3em' }}>{item.name}</Typography>
+        <Typography color="text.secondary" variant="body2" className="two-lines" sx={{ mt: 1, overflowWrap: 'anywhere' }}>{item.url}</Typography>
+        <Stack direction="row" sx={{ justifyContent: 'center', mt: 2 }}>
+          <Tooltip title="Edit"><IconButton aria-label="Edit subscription" onClick={() => showEditor(item)}><EditRounded /></IconButton></Tooltip>
+          <Tooltip title="Remove"><IconButton aria-label="Delete subscription" onClick={() => void remove(item)}><DeleteOutlineRounded /></IconButton></Tooltip>
+        </Stack>
+      </CardContent>
+    </Card>)}</Box>}
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm"><DialogTitle>{editing ? 'Edit subscription' : 'Add subscription'}</DialogTitle><DialogContent><Stack spacing={2} sx={{ pt: 1 }}><TextField select label="Service" value={serviceId} disabled={Boolean(editing)} onChange={(event) => setServiceId(Number(event.target.value))}>{services.map((service) => <MenuItem key={service.id} value={service.id}>{service.name}</MenuItem>)}</TextField><TextField label="Channel name" value={name} onChange={(event) => setName(event.target.value)} /><TextField label="Channel URL" value={url} disabled={Boolean(editing)} onChange={(event) => setUrl(event.target.value)} /><TextField label="Avatar URL (optional)" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} />{error && <Alert severity="error">{error}</Alert>}</Stack></DialogContent><DialogActions><Button onClick={() => setOpen(false)}>Cancel</Button><Button variant="contained" disabled={!name.trim() || !url.trim()} onClick={() => void save()}>Save</Button></DialogActions></Dialog>
   </Stack>;
 }

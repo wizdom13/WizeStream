@@ -6,6 +6,7 @@ export type BackendMethod =
   | 'library.summary'
   | 'library.subscriptions.list'
   | 'library.subscriptions.save'
+  | 'library.subscriptions.refresh-avatar'
   | 'library.subscriptions.delete'
   | 'library.playlists.list'
   | 'library.playlists.create'

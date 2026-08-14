@@ -27,7 +27,8 @@ let embeddedAddonPath = '';
 let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
   'health', 'services.list', 'search', 'stream.resolve', 'library.summary',
-  'library.subscriptions.list', 'library.subscriptions.save', 'library.subscriptions.delete',
+  'library.subscriptions.list', 'library.subscriptions.save',
+  'library.subscriptions.refresh-avatar', 'library.subscriptions.delete',
   'library.playlists.list', 'library.playlists.create', 'library.playlists.rename',
   'library.playlists.delete', 'library.playlists.items', 'library.playlists.add-item',
   'library.playlists.delete-item', 'library.history.list', 'library.history.record',
