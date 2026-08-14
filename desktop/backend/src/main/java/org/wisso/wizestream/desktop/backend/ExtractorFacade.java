@@ -89,11 +89,7 @@ final class ExtractorFacade {
     }
 
     Map<String, Object> channelMetadata(final int serviceId, final String url) throws Exception {
-        if (serviceId < 0 || url == null || url.length() > 4_096
-                || !(url.startsWith("https://") || url.startsWith("http://"))) {
-            throw new IllegalArgumentException("Invalid channel URL");
-        }
-        final ChannelInfo info = ChannelInfo.getInfo(NewPipe.getService(serviceId), url);
+        final ChannelInfo info = channelInfo(serviceId, url);
         final String avatarUrl = blankToNull(info.getAvatarUrl());
         final Long subscriberCount = info.getSubscriberCount() < 0 ? null : info.getSubscriberCount();
         if (avatarUrl == null && subscriberCount == null) {
@@ -103,6 +99,29 @@ final class ExtractorFacade {
         value.put("avatarUrl", avatarUrl);
         value.put("subscriberCount", subscriberCount);
         return value;
+    }
+
+    Map<String, Object> channel(final int serviceId, final String url) throws Exception {
+        final ChannelInfo info = channelInfo(serviceId, url);
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("serviceId", info.getServiceId());
+        value.put("url", info.getUrl());
+        value.put("name", info.getName());
+        value.put("avatarUrl", blankToNull(info.getAvatarUrl()));
+        value.put("bannerUrl", blankToNull(info.getBannerUrl()));
+        value.put("subscriberCount", info.getSubscriberCount() < 0 ? null : info.getSubscriberCount());
+        value.put("description", blankToNull(info.getDescription()));
+        value.put("streams", info.getRelatedItems().stream().limit(60)
+                .map(this::searchItem).toList());
+        return value;
+    }
+
+    private ChannelInfo channelInfo(final int serviceId, final String url) throws Exception {
+        if (serviceId < 0 || url == null || url.length() > 4_096
+                || !(url.startsWith("https://") || url.startsWith("http://"))) {
+            throw new IllegalArgumentException("Invalid channel URL");
+        }
+        return ChannelInfo.getInfo(NewPipe.getService(serviceId), url);
     }
 
     private Map<String, Object> searchItem(final InfoItem item) {

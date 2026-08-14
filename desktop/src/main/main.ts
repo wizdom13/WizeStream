@@ -26,7 +26,7 @@ let settings: SettingsManager | undefined;
 let embeddedAddonPath = '';
 let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
-  'health', 'services.list', 'search', 'stream.resolve', 'library.summary',
+  'health', 'services.list', 'search', 'stream.resolve', 'channel.resolve', 'library.summary',
   'library.subscriptions.list', 'library.subscriptions.save',
   'library.subscriptions.refresh-metadata', 'library.subscriptions.delete',
   'library.playlists.list', 'library.playlists.create', 'library.playlists.rename',
