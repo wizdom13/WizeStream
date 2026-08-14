@@ -22,11 +22,13 @@ public final class DesktopBackend implements AutoCloseable {
     private final DesktopDatabase database;
     private final Connection syncConnection;
     private final DesktopLibrary library;
+    private final DesktopBackupManager backups;
     private final DesktopSyncService sync;
 
     private DesktopBackend(final Path dataDirectory) throws Exception {
         database = new DesktopDatabase(dataDirectory);
         library = new DesktopLibrary(database.connection());
+        backups = new DesktopBackupManager(database.connection(), library);
         syncConnection = database.openConnection();
         sync = new DesktopSyncService(syncConnection, "WizeStream Desktop");
         sync.start();
@@ -120,6 +122,14 @@ public final class DesktopBackend implements AutoCloseable {
                         requiredLong(params, "sizeBytes"),
                         requiredLong(params, "completedAt"),
                         requiredText(params, "mediaKind"));
+                case "backup.export" -> backups.exportBackup(
+                        Path.of(requiredText(params, "path")), params.path("settings"));
+                case "backup.inspect" -> backups.inspectBackup(Path.of(requiredText(params, "path")));
+                case "backup.restore" -> backups.restoreBackup(Path.of(requiredText(params, "path")));
+                case "subscriptions.import" -> backups.importSubscriptions(
+                        Path.of(requiredText(params, "path")));
+                case "subscriptions.export" -> backups.exportSubscriptions(
+                        Path.of(requiredText(params, "path")), requiredText(params, "appVersion"));
                 case "sync.status" -> sync.status();
                 case "sync.invitation" -> Map.of("pairingCode", sync.createPairingCode());
                 case "sync.pair" -> sync.pair(requiredText(params, "pairingCode"));

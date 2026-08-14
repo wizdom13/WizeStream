@@ -47,4 +47,14 @@ describe('SettingsManager', () => {
     const manager = new SettingsManager(filePath);
     expect(await manager.initialize()).toEqual(defaultDesktopSettings);
   });
+
+  it('validates and atomically replaces settings restored from a backup', async () => {
+    const filePath = await fixture();
+    const manager = new SettingsManager(filePath);
+    await manager.initialize();
+    const restored = { ...defaultDesktopSettings, theme: 'dark' as const, learningMode: true };
+    expect(manager.validate(restored)).toEqual(restored);
+    expect(await manager.replace(restored)).toEqual(restored);
+    await expect(manager.replace({ theme: 'dark' })).rejects.toThrow();
+  });
 });

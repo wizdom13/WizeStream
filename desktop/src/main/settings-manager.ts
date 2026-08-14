@@ -43,6 +43,10 @@ export class SettingsManager {
     return { ...this.value };
   }
 
+  validate(input: unknown): DesktopSettings {
+    return settingsSchema.parse(input);
+  }
+
   async update(input: unknown): Promise<DesktopSettings> {
     const patch = settingsPatchSchema.parse(input);
     this.value = settingsSchema.parse({ ...this.value, ...patch });
@@ -52,6 +56,12 @@ export class SettingsManager {
 
   async reset(): Promise<DesktopSettings> {
     this.value = { ...defaultDesktopSettings };
+    await this.save();
+    return this.get();
+  }
+
+  async replace(input: unknown): Promise<DesktopSettings> {
+    this.value = this.validate(input);
     await this.save();
     return this.get();
   }

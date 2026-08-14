@@ -44,6 +44,12 @@ const api: DesktopApi = {
     update: (patch) => ipcRenderer.invoke('settings:update', patch) as ReturnType<DesktopApi['settings']['update']>,
     reset: () => ipcRenderer.invoke('settings:reset') as ReturnType<DesktopApi['settings']['reset']>,
   },
+  backup: {
+    exportFull: () => ipcRenderer.invoke('backup:export-full') as ReturnType<DesktopApi['backup']['exportFull']>,
+    restoreFull: () => ipcRenderer.invoke('backup:restore-full') as ReturnType<DesktopApi['backup']['restoreFull']>,
+    importSubscriptions: () => ipcRenderer.invoke('backup:import-subscriptions') as ReturnType<DesktopApi['backup']['importSubscriptions']>,
+    exportSubscriptions: () => ipcRenderer.invoke('backup:export-subscriptions') as ReturnType<DesktopApi['backup']['exportSubscriptions']>,
+  },
 };
 
 contextBridge.exposeInMainWorld('wizestream', api);
