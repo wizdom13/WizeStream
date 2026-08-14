@@ -88,15 +88,21 @@ final class ExtractorFacade {
         return value;
     }
 
-    String channelAvatar(final int serviceId, final String url) throws Exception {
+    Map<String, Object> channelMetadata(final int serviceId, final String url) throws Exception {
         if (serviceId < 0 || url == null || url.length() > 4_096
                 || !(url.startsWith("https://") || url.startsWith("http://"))) {
             throw new IllegalArgumentException("Invalid channel URL");
         }
         final ChannelInfo info = ChannelInfo.getInfo(NewPipe.getService(serviceId), url);
         final String avatarUrl = blankToNull(info.getAvatarUrl());
-        if (avatarUrl == null) throw new IllegalArgumentException("Channel image is unavailable");
-        return avatarUrl;
+        final Long subscriberCount = info.getSubscriberCount() < 0 ? null : info.getSubscriberCount();
+        if (avatarUrl == null && subscriberCount == null) {
+            throw new IllegalArgumentException("Channel details are unavailable");
+        }
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("avatarUrl", avatarUrl);
+        value.put("subscriberCount", subscriberCount);
+        return value;
     }
 
     private Map<String, Object> searchItem(final InfoItem item) {

@@ -6,7 +6,7 @@ export type BackendMethod =
   | 'library.summary'
   | 'library.subscriptions.list'
   | 'library.subscriptions.save'
-  | 'library.subscriptions.refresh-avatar'
+  | 'library.subscriptions.refresh-metadata'
   | 'library.subscriptions.delete'
   | 'library.playlists.list'
   | 'library.playlists.create'
@@ -192,7 +192,7 @@ export interface SubscriptionItem {
   url: string;
   name: string;
   avatarUrl?: string;
-  subscriberCount?: number;
+  subscriberCount?: number | null;
   description?: string;
   youtubeModeMask?: number;
 }

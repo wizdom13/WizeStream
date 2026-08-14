@@ -31,15 +31,17 @@ class DesktopLibraryTest {
                     "https://example.com/avatar.png"
                 )
                 assertEquals("WizeStream", library.subscriptions().single()["name"])
-                library.updateSubscriptionAvatar(
+                library.updateSubscriptionMetadata(
                     0,
                     "https://www.youtube.com/@wizestream",
-                    "https://example.com/refreshed-avatar.png"
+                    "https://example.com/refreshed-avatar.png",
+                    144_000L
                 )
                 assertEquals(
                     "https://example.com/refreshed-avatar.png",
                     library.subscriptions().single()["avatarUrl"]
                 )
+                assertEquals(144_000L, library.subscriptions().single()["subscriberCount"])
 
                 val playlist = library.createPlaylist("Study")
                 val playlistId = playlist.getValue("id") as String
