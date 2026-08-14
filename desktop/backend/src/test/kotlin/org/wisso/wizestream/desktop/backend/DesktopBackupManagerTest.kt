@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import java.nio.file.Files
 import java.sql.DriverManager
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
@@ -36,6 +37,10 @@ class DesktopBackupManagerTest {
                 val settings = json.createObjectNode().put("theme", "dark")
                 val exported = manager.exportBackup(backup, settings)
                 assertEquals(1, exported["subscriptions"])
+                ZipFile(backup.toFile()).use { zip ->
+                    assertTrue(zip.getEntry("backup_manifest.json") != null)
+                    assertTrue(zip.getEntry("wizestream-desktop-backup.json") != null)
+                }
 
                 library.deleteSubscription(0, "https://www.youtube.com/@wizestream")
                 library.deletePlaylist(playlistId)
