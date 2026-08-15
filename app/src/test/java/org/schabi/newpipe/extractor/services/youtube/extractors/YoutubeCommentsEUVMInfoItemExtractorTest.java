@@ -4,6 +4,8 @@ import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 
 import org.junit.jupiter.api.Test;
+import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.extractor.comments.CommentsInfoItemsCollector;
 import org.schabi.newpipe.extractor.localization.TimeAgoParser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,25 +13,31 @@ import static org.mockito.Mockito.mock;
 
 class YoutubeCommentsEUVMInfoItemExtractorTest {
     @Test
-    void extractsAvatarFromCurrentAuthorPayload() throws Exception {
+    void extractsAvatarThumbnailUrlFromCurrentAuthorPayload() throws Exception {
         final YoutubeCommentsEUVMInfoItemExtractor extractor = createExtractor("""
                 {
                   "author": {
-                    "avatar": {
-                      "image": {
-                        "sources": [{
-                          "url": "https://yt3.ggpht.com/comment-avatar",
-                          "width": 48,
-                          "height": 48
-                        }]
-                      }
-                    }
+                    "avatarThumbnailUrl": "https://yt3.ggpht.com/comment-avatar"
                   }
                 }
                 """);
 
         assertEquals("https://yt3.ggpht.com/comment-avatar",
                 extractor.getUploaderAvatarUrl());
+    }
+
+    @Test
+    void collectorPreservesCurrentAvatarThumbnailUrl() throws Exception {
+        final YoutubeCommentsEUVMInfoItemExtractor extractor = createExtractor("""
+                {
+                  "author": {
+                    "avatarThumbnailUrl": "https://yt3.ggpht.com/comment-avatar"
+                  }
+                }
+                """);
+        final CommentsInfoItem item = new CommentsInfoItemsCollector(0).extract(extractor);
+
+        assertEquals("https://yt3.ggpht.com/comment-avatar", item.getUploaderAvatarUrl());
     }
 
     @Test
@@ -49,6 +57,28 @@ class YoutubeCommentsEUVMInfoItemExtractorTest {
                 """);
 
         assertEquals("https://yt3.ggpht.com/legacy-comment-avatar",
+                extractor.getUploaderAvatarUrl());
+    }
+
+    @Test
+    void retainsCompatibilityWithNestedAuthorAvatarPayload() throws Exception {
+        final YoutubeCommentsEUVMInfoItemExtractor extractor = createExtractor("""
+                {
+                  "author": {
+                    "avatar": {
+                      "image": {
+                        "sources": [{
+                          "url": "https://yt3.ggpht.com/nested-comment-avatar",
+                          "width": 48,
+                          "height": 48
+                        }]
+                      }
+                    }
+                  }
+                }
+                """);
+
+        assertEquals("https://yt3.ggpht.com/nested-comment-avatar",
                 extractor.getUploaderAvatarUrl());
     }
 
