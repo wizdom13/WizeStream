@@ -17,6 +17,7 @@ import coil3.size.Size
 import coil3.target.Target
 import coil3.toBitmap
 import coil3.transform.Transformation
+import coil3.util.CoilUtils
 import kotlin.math.min
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
@@ -48,6 +49,20 @@ object CoilHelper {
         url: String?
     ) {
         loadImageDefault(target, url, R.drawable.placeholder_person)
+    }
+
+    /** Loads the direct avatar URL exposed by comment items. */
+    fun loadCommentAvatar(
+        target: ImageView,
+        url: String?
+    ) {
+        clearAvatar(target)
+        loadImageDefault(target, normalizeCommentAvatarUrl(url), R.drawable.placeholder_person)
+    }
+
+    fun clearAvatar(target: ImageView) {
+        CoilUtils.dispose(target)
+        target.setImageResource(R.drawable.placeholder_person)
     }
 
     fun loadThumbnail(
@@ -181,5 +196,15 @@ object CoilHelper {
                     placeholder(placeholderResId)
                 }
             }
+    }
+}
+
+internal fun normalizeCommentAvatarUrl(url: String?): String? {
+    val normalized = url?.trim()?.takeIf(String::isNotEmpty) ?: return null
+    return when {
+        normalized.startsWith("//") -> "https:$normalized"
+        normalized.startsWith("https://", ignoreCase = true) -> normalized
+        normalized.startsWith("http://", ignoreCase = true) -> normalized
+        else -> null
     }
 }
