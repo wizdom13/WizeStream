@@ -149,12 +149,12 @@ class LocalMediaFragment : Fragment() {
     private fun updateList() {
         if (!::adapter.isInitialized) return
         val term = query.trim().lowercase(Locale.getDefault())
-        val comparator = when (sort) {
-            Sort.TITLE -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }
-            Sort.ARTIST -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.artist }
-            Sort.ALBUM -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.album }
-            Sort.FOLDER -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.folder }
-            Sort.RECENT -> compareByDescending { it.addedAtSeconds }
+        val comparator: Comparator<LocalMediaItem> = when (sort) {
+            Sort.TITLE -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::title)
+            Sort.ARTIST -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::artist)
+            Sort.ALBUM -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::album)
+            Sort.FOLDER -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::folder)
+            Sort.RECENT -> compareByDescending(LocalMediaItem::addedAtSeconds)
         }
         shownItems = allItems.asSequence()
             .filter {
