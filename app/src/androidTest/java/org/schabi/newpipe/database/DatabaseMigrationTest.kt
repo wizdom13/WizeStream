@@ -728,6 +728,35 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom19to20AddsLocalMediaSourceColumns() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_19
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_20,
+            true,
+            Migrations.MIGRATION_19_20
+        )
+        migrated.query("PRAGMA table_info(streams)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            val defaultIndex = cursor.getColumnIndex("dflt_value")
+            val columns = mutableMapOf<String, String?>()
+            while (cursor.moveToNext()) {
+                columns[cursor.getString(nameIndex)] = cursor.getString(defaultIndex)
+            }
+            assertEquals("'REMOTE'", columns["source_type"])
+            assertTrue(columns.containsKey("mime_type"))
+            assertTrue(columns.containsKey("local_media_id"))
+            assertTrue(columns.containsKey("local_album"))
+            assertTrue(columns.containsKey("local_folder"))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -740,7 +769,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_15_16,
                 Migrations.MIGRATION_16_17,
                 Migrations.MIGRATION_17_18,
-                Migrations.MIGRATION_18_19
+                Migrations.MIGRATION_18_19,
+                Migrations.MIGRATION_19_20
             )
             .build()
         testHelper.closeWhenFinished(database)

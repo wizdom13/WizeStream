@@ -64,6 +64,8 @@ public final class HomeDestinationResolver {
             return HomeDestinationKey.BOOKMARKS;
         } else if (tab instanceof Tab.DownloadsTab) {
             return HomeDestinationKey.DOWNLOADS;
+        } else if (tab instanceof Tab.LocalMediaTab) {
+            return HomeDestinationKey.LOCAL_MEDIA;
         } else if (tab instanceof Tab.HistoryTab) {
             return HomeDestinationKey.HISTORY;
         } else if (tab instanceof Tab.KioskTab) {

@@ -58,9 +58,11 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
         final PlaylistStreamEntry item = (PlaylistStreamEntry) localItem;
 
         itemVideoTitleView.setText(item.getStreamEntity().getTitle());
+        final String sourceName = item.getStreamEntity().isLocalMedia()
+                ? itemBuilder.getContext().getString(R.string.local_media_on_device)
+                : ServiceHelper.getNameOfServiceById(item.getStreamEntity().getServiceId());
         itemAdditionalDetailsView.setText(Localization
-                .concatenateStrings(item.getStreamEntity().getUploader(),
-                        ServiceHelper.getNameOfServiceById(item.getStreamEntity().getServiceId())));
+                .concatenateStrings(item.getStreamEntity().getUploader(), sourceName));
 
         if (item.getStreamEntity().getDuration() > 0) {
             itemDurationView.setText(Localization

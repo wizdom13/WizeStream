@@ -213,6 +213,14 @@ internal class RoomPlaylistSyncStore internal constructor(
                 playlistUid = playlist.uid
             ).also(syncDao::upsertLocalMapping)
         val playlistRecordId = mapping.playlistRecordId
+        val streams = playlistStreamDao.getOrderedStreamsDirect(playlist.uid)
+        if (streams.any(StreamEntity::isLocalMedia)) {
+            // MediaStore content URIs are scoped to this Android device. A playlist containing
+            // one cannot be safely materialized on a paired device, so keep the entire playlist
+            // local instead of silently dropping or corrupting entries.
+            deleteLocalPlaylistRecords(playlistRecordId)
+            return
+        }
         val thumbnail = if (
             playlist.isThumbnailPermanent &&
             playlist.thumbnailStreamId != PlaylistEntity.DEFAULT_THUMBNAIL_ID
@@ -235,7 +243,6 @@ internal class RoomPlaylistSyncStore internal constructor(
             record = SyncedPlaylistRecord(localPlaylist = syncedPlaylist)
         )
 
-        val streams = playlistStreamDao.getOrderedStreamsDirect(playlist.uid)
         if (streams.size > MAX_PLAYLIST_ITEMS) {
             throw PlaylistSyncException(
                 "Playlist “${playlist.name.orEmpty()}” has too many items to synchronize"

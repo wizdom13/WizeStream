@@ -14,6 +14,7 @@ import com.google.android.exoplayer2.Player.RepeatMode;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.helper.PlayerHelper;
+import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.ui.PlayerUi;
 
 public final class NotificationPlayerUi extends PlayerUi {
@@ -104,6 +105,12 @@ public final class NotificationPlayerUi extends PlayerUi {
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        notificationUtil.createNotificationIfNeededAndUpdate(true);
+    }
+
+    @Override
+    public void onMetadataChanged(@NonNull final MediaItemTag tag) {
+        super.onMetadataChanged(tag);
         notificationUtil.createNotificationIfNeededAndUpdate(true);
     }
 

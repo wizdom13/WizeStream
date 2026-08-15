@@ -19,6 +19,7 @@ public class HomeDestinationResolverTest {
         assertEquals(HomeDestinationKey.BOOKMARKS, resolve(Tab.Type.BOOKMARKS.getTab()));
         assertEquals(HomeDestinationKey.DOWNLOADS, resolve(Tab.Type.DOWNLOADS.getTab()));
         assertEquals(HomeDestinationKey.HISTORY, resolve(Tab.Type.HISTORY.getTab()));
+        assertEquals(HomeDestinationKey.LOCAL_MEDIA, resolve(Tab.Type.LOCAL_MEDIA.getTab()));
     }
 
     @Test
@@ -44,6 +45,7 @@ public class HomeDestinationResolverTest {
                 Tab.Type.BOOKMARKS.getTab(),
                 Tab.Type.DOWNLOADS.getTab(),
                 Tab.Type.HISTORY.getTab(),
+                Tab.Type.LOCAL_MEDIA.getTab(),
                 new Tab.KioskTab(0, "live"),
                 new Tab.ChannelTab(0, "https://example.com", "Channel"),
                 new Tab.PlaylistTab(1L, "Playlist"),
@@ -55,9 +57,10 @@ public class HomeDestinationResolverTest {
         assertTrue(keys.contains(HomeDestinationKey.BOOKMARKS));
         assertTrue(keys.contains(HomeDestinationKey.DOWNLOADS));
         assertTrue(keys.contains(HomeDestinationKey.HISTORY));
+        assertTrue(keys.contains(HomeDestinationKey.LOCAL_MEDIA));
         assertTrue(keys.contains(HomeDestinationKey.kiosk(0, "live")));
         assertFalse(keys.contains(HomeDestinationKey.kiosk(0, "default")));
-        assertEquals(6, keys.size());
+        assertEquals(7, keys.size());
     }
 
     private HomeDestinationKey resolve(final Tab tab) {

@@ -18,6 +18,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.helper.SleepTimer;
+import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 
 import java.util.List;
 
@@ -241,6 +242,14 @@ public abstract class PlayerUi {
      *             available video streams (to be used to build the resolution menus, for example)
      */
     public void onMetadataChanged(@NonNull final StreamInfo info) {
+    }
+
+    /**
+     * Called for metadata that does not originate from an online extractor.
+     *
+     * @param tag the metadata for the current non-extractor media item
+     */
+    public void onMetadataChanged(@NonNull final MediaItemTag tag) {
     }
 
     /**

@@ -13,6 +13,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.util.image.ExtractorImageCompat
 import org.schabi.newpipe.util.image.ImageStrategy
 
@@ -49,5 +50,9 @@ data class PlaylistStreamEntry(
                 ImageStrategy.dbUrlToImageList(streamEntity.thumbnailUrl)
             )
         }
+    }
+
+    fun toPlayQueueItem(): PlayQueueItem {
+        return streamEntity.toPlayQueueItem()
     }
 }

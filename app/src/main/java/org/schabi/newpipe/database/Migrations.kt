@@ -39,6 +39,7 @@ object Migrations {
     const val DB_VER_17 = 17
     const val DB_VER_18 = 18
     const val DB_VER_19 = 19
+    const val DB_VER_20 = 20
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -726,5 +727,16 @@ object Migrations {
             "ALTER TABLE streams ADD COLUMN requires_membership " +
                 "INTEGER NOT NULL DEFAULT 0"
         )
+    }
+
+    val MIGRATION_19_20 = Migration(DB_VER_19, DB_VER_20) { db ->
+        db.execSQL(
+            "ALTER TABLE streams ADD COLUMN source_type " +
+                "TEXT NOT NULL DEFAULT 'REMOTE'"
+        )
+        db.execSQL("ALTER TABLE streams ADD COLUMN mime_type TEXT")
+        db.execSQL("ALTER TABLE streams ADD COLUMN local_media_id INTEGER")
+        db.execSQL("ALTER TABLE streams ADD COLUMN local_album TEXT")
+        db.execSQL("ALTER TABLE streams ADD COLUMN local_folder TEXT")
     }
 }

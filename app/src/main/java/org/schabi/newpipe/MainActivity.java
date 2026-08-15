@@ -137,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_DOWNLOADS = -4;
     private static final int ITEM_ID_HISTORY = -5;
     private static final int ITEM_ID_LEARNING = -6;
+    private static final int ITEM_ID_LOCAL_MEDIA = -7;
     private static final int ITEM_ID_SETTINGS = 0;
     private static final int ITEM_ID_DONATION = 1;
     private static final int ITEM_ID_ABOUT = 2;
@@ -309,6 +310,8 @@ public class MainActivity extends AppCompatActivity {
                 ITEM_ID_BOOKMARKS, R.string.tab_bookmarks, R.drawable.ic_bookmark);
         addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.DOWNLOADS,
                 ITEM_ID_DOWNLOADS, R.string.downloads, R.drawable.ic_file_download);
+        addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.LOCAL_MEDIA,
+                ITEM_ID_LOCAL_MEDIA, R.string.local_media, R.drawable.ic_music_note);
         addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.HISTORY,
                 ITEM_ID_HISTORY, R.string.action_history, R.drawable.ic_history);
         if (LearningMode.isEnabled(this)) {
@@ -429,6 +432,9 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case ITEM_ID_HISTORY:
                 NavigationHelper.openStatisticFragment(getSupportFragmentManager());
+                break;
+            case ITEM_ID_LOCAL_MEDIA:
+                NavigationHelper.openLocalMediaFragment(getSupportFragmentManager());
                 break;
             case ITEM_ID_LEARNING:
                 NavigationHelper.openLearningDashboardFragment(getSupportFragmentManager());

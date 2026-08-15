@@ -679,6 +679,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        binding.openInBrowser.setVisibility(View.VISIBLE);
         showHideKodiButton();
         updateLearningNoteButtonVisibility(info);
         if (areSegmentsVisible) {
@@ -691,6 +692,14 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 closeItemsList();
             }
         }
+    }
+
+    @Override
+    public void onMetadataChanged(@NonNull final MediaItemTag tag) {
+        super.onMetadataChanged(tag);
+        binding.openInBrowser.setVisibility(View.GONE);
+        binding.playWithKodi.setVisibility(View.GONE);
+        binding.learningNoteButton.setVisibility(View.GONE);
     }
 
     @Override

@@ -44,6 +44,11 @@ public interface MediaItemTag {
 
     String getUploaderUrl();
 
+    @Nullable
+    default String getAlbumTitle() {
+        return null;
+    }
+
     StreamType getStreamType();
 
     @NonNull
@@ -85,6 +90,7 @@ public interface MediaItemTag {
         final MediaMetadata mediaMetadata = new MediaMetadata.Builder()
                 .setArtworkUri(thumbnailUrl == null ? null : Uri.parse(thumbnailUrl))
                 .setArtist(getUploaderName())
+                .setAlbumTitle(getAlbumTitle())
                 .setDescription(getTitle())
                 .setDisplayTitle(getTitle())
                 .setTitle(getTitle())
