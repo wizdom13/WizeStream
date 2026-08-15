@@ -1331,4 +1331,14 @@
     <string name="local_media_sort_recent">Recently added</string>
     <string name="local_media_play_background">Play in background</string>
     <string name="local_media_enqueue_next">Enqueue next</string>
+    <string name="local_media_metadata_format">Format</string>
+    <string name="local_media_metadata_resolution">Resolution</string>
+    <string name="local_media_metadata_length">Length</string>
+    <string name="local_media_metadata_captured_on">Captured on</string>
+    <string name="local_media_metadata_audio_quality">Audio quality</string>
+    <string name="local_media_sample_rate">%1$s kHz</string>
+    <string name="local_media_audio_mono">Mono</string>
+    <string name="local_media_audio_stereo">Stereo</string>
+    <string name="local_media_audio_channels">%1$d channels</string>
+    <string name="local_media_audio_bitrate">%1$d kbps</string>
 </resources>

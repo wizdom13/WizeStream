@@ -926,9 +926,14 @@ public final class VideoDetailFragment
             scrollToTop();
         }
         pageAdapter.clearAllItems();
+        pageAdapter.addFragment(LocalMediaDescriptionFragment.newInstance(item),
+                DESCRIPTION_TAB_TAG);
         pageAdapter.notifyDataSetUpdate();
-        binding.viewPager.setVisibility(View.GONE);
-        binding.detailNavigation.setVisibility(View.GONE);
+        binding.viewPager.setVisibility(View.VISIBLE);
+        binding.viewPager.setCurrentItem(0, false);
+        updateDetailNavigationItems();
+        updateDetailNavigationSelection(0);
+        updateDetailNavigationVisibility();
         if (binding.relatedItemsLayout != null) {
             binding.relatedItemsLayout.setVisibility(View.GONE);
         }
