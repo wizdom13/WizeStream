@@ -124,10 +124,6 @@ public final class NavigationHelper {
                                         @NonNull final PlayQueue playQueue) {
         final PlayQueueItem item = playQueue.getItem();
         if (item != null) {
-            if (item.isLocalMedia()) {
-                startLocalMediaOnMainPlayer(activity, playQueue);
-                return;
-            }
             openVideoDetailFragment(activity, activity.getSupportFragmentManager(),
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,
                     false);
@@ -139,23 +135,10 @@ public final class NavigationHelper {
                                         final boolean switchingPlayers) {
         final PlayQueueItem item = playQueue.getItem();
         if (item != null) {
-            if (item.isLocalMedia()) {
-                startLocalMediaOnMainPlayer(context, playQueue);
-                return;
-            }
             openVideoDetail(context,
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,
                     switchingPlayers);
         }
-    }
-
-    private static void startLocalMediaOnMainPlayer(@NonNull final Context context,
-                                                     @NonNull final PlayQueue queue) {
-        final Intent intent = getPlayerIntent(context, PlayerService.class, queue,
-                PlayerIntentType.AllOthers)
-                .putExtra(Player.PLAYER_TYPE, PlayerType.MAIN)
-                .putExtra(Player.RESUME_PLAYBACK, true);
-        ContextCompat.startForegroundService(context, intent);
     }
 
     public static void playOnPopupPlayer(final Context context,

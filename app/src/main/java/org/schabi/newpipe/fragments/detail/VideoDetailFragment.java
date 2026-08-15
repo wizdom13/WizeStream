@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 31851)
+Total output lines: 2936
+
 package org.schabi.newpipe.fragments.detail;
 
 import static android.text.TextUtils.isEmpty;
@@ -90,6 +93,7 @@ import org.schabi.newpipe.fragments.list.videos.RelatedItemsFragment;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerIntentType;
@@ -99,6 +103,8 @@ import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.event.PlayerServiceExtendedEventListener;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.PlayerHolder;
+import org.schabi.newpipe.player.mediaitem.MediaItemTag;
+import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
@@ -183,6 +189,8 @@ public final class VideoDetailFragment
     private int lastAppBarVerticalOffset = Integer.MAX_VALUE; // prevents useless updates
     @Nullable
     private StreamInfo currentInfo = null;
+    @Nullable
+    private PlayQueueItem currentLocalItem = null;
     private FragmentVideoDetailBinding binding;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener =
@@ -282,7 +290,7 @@ public final class VideoDetailFragment
         }
 
         if (playAfterConnect
-                || (currentInfo != null
+                || ((currentInfo != null || currentLocalItem != null)
                 && isAutoplayEnabled()
                 && playerUi.isEmpty())) {
             autoPlayEnabled = true; // forcefully start playing
@@ -482,7 +490,11 @@ public final class VideoDetailFragment
     //////////////////////////////////////////////////////////////////////////*/
 
     private void setOnClickListeners() {
-        binding.detailTitleRootLayout.setOnClickListener(v -> toggleTitleAndSecondaryControls());
+        binding.detailTitleRootLayout.setOnClickListener(v -> {
+            if (currentLocalItem == null) {
+                toggleTitleAndSecondaryControls();
+            }
+        });
         binding.detailUploaderRootLayout.setOnClickListener(makeOnClickListener(info -> {
             if (isEmpty(info.getSubChannelUrl())) {
                 if (!isEmpty(info.getUploaderUrl())) {
@@ -507,8 +519,9 @@ public final class VideoDetailFragment
 
         binding.detailControlsBackground.setOnClickListener(v -> openBackgroundPlayer(false));
         binding.detailControlsPopup.setOnClickListener(v -> openPopupPlayer(false));
-        binding.detailControlsPlaylistAppend.setOnClickListener(makeOnClickListener(info -> {
-            if (getFM() != null && currentInfo != null) {
+        binding.detailControlsPlaylistAppend.setOnClickListener(v -> {
+            if (getFM() != null && !isLoading.get()
+                    && (currentInfo != null || currentLocalItem != null)) {
                 final Fragment fragment = getParentFragmentManager().
                         findFragmentById(R.id.fragment_holder);
 
@@ -519,11 +532,13 @@ public final class VideoDetailFragment
                     ((MainFragment) fragment).commitPlaylistTabs();
                 }
 
+                final StreamEntity stream = currentLocalItem != null
+                        ? new StreamEntity(currentLocalItem) : new StreamEntity(currentInfo);
                 disposables.add(PlaylistDialog.createCorrespondingDialog(requireContext(),
-                        List.of(new StreamEntity(info)),
+                        List.of(stream),
                         dialog -> dialog.show(getParentFragmentManager(), TAG)));
             }
-        }));
+        });
         binding.detailControlsDownload.setOnClickListener(v -> {
             if (PermissionHelper.checkStoragePermissions(activity,
                     PermissionHelper.DOWNLOAD_DIALOG_REQUEST_CODE)) {
@@ -573,9 +588,14 @@ public final class VideoDetailFragment
     }
 
     private void setOnLongClickListeners() {
-        binding.detailTitleRootLayout.setOnLongClickListener(makeOnLongClickListener(info ->
-                ShareUtils.copyToClipboard(requireContext(),
-                        binding.detailVideoTitleView.getText().toString())));
+        binding.detailTitleRootLayout.setOnLongClickListener(v -> {
+            if (isLoading.get() || (currentInfo == null && currentLocalItem == null)) {
+                return false;
+            }
+            ShareUtils.copyToClipboard(requireContext(),
+                    binding.detailVideoTitleView.getText().toString());
+            return true;
+        });
         binding.detailUploaderRootLayout.setOnLongClickListener(makeOnLongClickListener(info -> {
             if (isEmpty(info.getSubChannelUrl())) {
                 Log.w(TAG, "Can't open parent channel because we got no parent channel URL");
@@ -584,12 +604,10 @@ public final class VideoDetailFragment
             }
         }));
 
-        binding.detailControlsBackground.setOnLongClickListener(makeOnLongClickListener(info ->
-            openBackgroundPlayer(true)
-        ));
-        binding.detailControlsPopup.setOnLongClickListener(makeOnLongClickListener(info ->
-            openPopupPlayer(true)
-        ));
+        binding.detailControlsBackground.setOnLongClickListener(
+                makeOnMediaLongClick(() -> openBackgroundPlayer(true)));
+        binding.detailControlsPopup.setOnLongClickListener(
+                makeOnMediaLongClick(() -> openPopupPlayer(true)));
         binding.detailControlsDownload.setOnLongClickListener(makeOnLongClickListener(info ->
                 NavigationHelper.openDownloads(activity)));
 
@@ -605,6 +623,16 @@ public final class VideoDetailFragment
                 return false;
             }
             consumer.accept(currentInfo);
+            return true;
+        };
+    }
+
+    private View.OnLongClickListener makeOnMediaLongClick(final Runnable action) {
+        return v -> {
+            if (isLoading.get() || (currentInfo == null && currentLocalItem == null)) {
+                return false;
+            }
+            action.run();
             return true;
         };
     }
@@ -783,7 +811,12 @@ public final class VideoDetailFragment
 
         setInitialData(item.getServiceId(), item.getUrl(),
                 item.getTitle() == null ? "" : item.getTitle(), item.getPlayQueue());
-        startLoading(false);
+        if (currentLocalItem != null) {
+            prepareAndHandleLocalMedia(currentLocalItem, true);
+            openVideoPlayer(false);
+        } else {
+            startLoading(false);
+        }
 
         // Maybe an item was deleted in background activity
         if (item.getPlayQueue().getItem() == null) {
@@ -809,6 +842,11 @@ public final class VideoDetailFragment
             return;
         }
 
+        if (currentLocalItem != null) {
+            prepareAndHandleLocalMedia(currentLocalItem, false);
+            return;
+        }
+
         if (currentInfo == null) {
             prepareAndLoadInfo();
         } else {
@@ -827,6 +865,16 @@ public final class VideoDetailFragment
         }
 
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
+        if (currentLocalItem != null) {
+            prepareAndHandleLocalMedia(currentLocalItem, true);
+            if (stack.isEmpty() || !stack.peek().getPlayQueue().equalStreams(newQueue)) {
+                stack.push(new StackItem(newServiceId, newUrl, newTitle, newQueue));
+            }
+            if (isAutoplayEnabled() || forceFullscreen) {
+                openVideoPlayerAutoFullscreen();
+            }
+            return;
+        }
         startLoading(false, true);
     }
 
@@ -860,6 +908,119 @@ public final class VideoDetailFragment
         handleResult(info);
         showContent();
 
+    }
+
+    private void prepareAndHandleLocalMedia(@NonNull final PlayQueueItem item,
+                                            final boolean scrollToTop) {
+        if (binding == null) {
+            return;
+        }
+        if (currentWorker != null) {
+            currentWorker.dispose();
+        }
+        isLoading.set(false);
+        currentInfo = null;
+        currentLocalItem = item;
+        serviceId = item.getServiceId();
+        url = item.getUrl();
+        title = item.getTitle();
+
+        if (scrollToTop) {
+            scrollToTop();
+        }
+        pageAdapter.clearAllItems();
+        pageAdapter.notifyDataSetUpdate();
+        binding.viewPager.setVisibility(View.GONE);
+        binding.detailNavigation.setVisibility(View.GONE);
+        if (binding.relatedItemsLayout != null) {
+            binding.relatedItemsLayout.setVisibility(View.GONE);
+        }
+
+        binding.detailVideoTitleView.setText(item.getTitle());
+        binding.detailVideoTitleView.setMaxLines(3);
+        binding.detailToggleSecondaryControlsView.setVisibility(View.GONE);
+        binding.detailSecondaryControlPanel.setVisibility(View.GONE);
+
+        final String primary = firstNonEmpty(item.getUploader(), item.getAlbum(),
+                item.getFolder(), getString(R.string.local_media_on_device));
+        final String secondary;
+        if (!isEmpty(item.getAlbum()) && !item.getAlbum().equals(primary)) {
+            secondary = item.getAlbum();
+        } else if (!isEmpty(item.getFolder()) && !item.getFolder().equals(primary)) {
+            secondary = item.getFolder();
+        } else {
+            secondary = getString(R.string.local_media_on_device);
+        }
+        binding.detailSubChannelTextView.setText(primary);
+        binding.detailSubChannelTextView.setVisibility(View.VISIBLE);
+        binding.detailUploaderTextView.setText(secondary);
+        binding.detailUploaderTextView.setVisibility(View.VISIBLE);
+        binding.detailSubChannelThumbnailView.setVisibility(View.GONE);
+        binding.detailUploaderThumbnailView.setVisibility(View.GONE);
+        binding.detailUploaderRootLayout.setClickable(false);
+        binding.detailsPanel.setVisibility(View.GONE);
+
+        if (item.getDuration() > 0) {
+            binding.detailDurationView.setText(Localization.getDurationString(item.getDuration()));
+            binding.detailDurationView.setBackgroundColor(
+                    ContextCompat.getColor(activity, R.color.duration_background_color));
+            binding.detailDurationView.setVisibility(View.VISIBLE);
+        } else {
+            binding.detailDurationView.setVisibility(View.GONE);
+        }
+        binding.detailThumbnailPlayButton.setImageResource(
+                item.getStreamType() == StreamType.AUDIO_STREAM
+                        ? R.drawable.ic_headset_shadow : R.drawable.ic_play_arrow_shadow);
+        binding.detailThumbnailPlayButton.setVisibility(View.VISIBLE);
+        LocalMediaThumbnailLoader.INSTANCE.load(binding.detailThumbnailImageView, item);
+
+        binding.detailControlsPlaylistAppend.setVisibility(View.VISIBLE);
+        binding.detailControlsBackground.setVisibility(View.VISIBLE);
+        binding.detailControlsPopup.setVisibility(item.getStreamType() == StreamType.AUDIO_STREAM
+                ? View.GONE : View.VISIBLE);
+        binding.detailControlsDownload.setVisibility(View.GONE);
+        binding.detailControlsShare.setVisibility(View.GONE);
+        binding.detailControlsOpenInBrowser.setVisibility(View.GONE);
+        binding.detailControlsPlayWithKodi.setVisibility(View.GONE);
+
+        final StringBuilder metadata = new StringBuilder(
+                getString(R.string.local_media_on_device));
+        appendLocalMetadata(metadata, item.getFolder());
+        appendLocalMetadata(metadata, item.getMimeType());
+        if (item.getDuration() > 0) {
+            appendLocalMetadata(metadata, Localization.getDurationString(item.getDuration()));
+        }
+        binding.detailMetaInfoTextView.setText(metadata);
+        binding.detailMetaInfoTextView.setVisibility(View.VISIBLE);
+        binding.detailMetaInfoSeparator.setVisibility(View.VISIBLE);
+
+        updateLocalOverlay(item);
+        hideLoading();
+        showContent();
+    }
+
+    @NonNull
+    private String firstNonEmpty(@Nullable final String first,
+                                 @Nullable final String second,
+                                 @Nullable final String third,
+                                 @NonNull final String fallback) {
+        if (!isEmpty(first)) {
+            return first;
+        }
+        if (!isEmpty(second)) {
+            return second;
+        }
+        if (!isEmpty(third)) {
+            return third;
+        }
+        return fallback;
+    }
+
+    private void appendLocalMetadata(@NonNull final StringBuilder metadata,
+                                     @Nullable final String value) {
+        if (!isEmpty(value) && metadata.indexOf(value) < 0) {
+            metadata.append(Localization.DOT_SEPARATOR).append(value);
+        }
     }
 
     protected void prepareAndLoadInfo() {
@@ -1230,7 +1391,7 @@ public final class VideoDetailFragment
             playerHolder.startService(autoPlayEnabled, this);
             return;
         }
-        if (currentInfo == null) {
+        if (currentInfo == null && currentLocalItem == null) {
             return;
         }
 
@@ -1255,174 +1416,7 @@ public final class VideoDetailFragment
      */
     private void hideMainPlayerOnLoadingNewStream() {
         final var root = getRoot();
-        if (!isPlayerServiceAvailable() || root.isEmpty() || !player.videoPlayerSelected()) {
-            return;
-        }
-
-        removeVideoPlayerView();
-        if (isAutoplayEnabled()) {
-            playerService.stopForImmediateReusing();
-            root.ifPresent(view -> view.setVisibility(View.GONE));
-        } else {
-            playerHolder.stopService();
-        }
-    }
-
-    private PlayQueue setupPlayQueueForIntent(final boolean append) {
-        if (append) {
-            return new SinglePlayQueue(currentInfo);
-        }
-
-        PlayQueue queue = playQueue;
-        // Size can be 0 because queue removes bad stream automatically when error occurs
-        if (queue == null || queue.isEmpty()) {
-            queue = new SinglePlayQueue(currentInfo);
-        }
-
-        return queue;
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Utils
-    //////////////////////////////////////////////////////////////////////////*/
-
-    public void setAutoPlay(final boolean autoPlay) {
-        this.autoPlayEnabled = autoPlay;
-    }
-
-    private void startOnExternalPlayer(@NonNull final Context context,
-                                       @NonNull final StreamInfo info,
-                                       @NonNull final Stream selectedStream) {
-        NavigationHelper.playOnExternalPlayer(context, currentInfo.getName(),
-                currentInfo.getSubChannelName(), selectedStream);
-
-        final HistoryRecordManager recordManager = new HistoryRecordManager(requireContext());
-        disposables.add(recordManager.onViewed(info).onErrorComplete()
-                .subscribe(
-                        ignored -> { /* successful */ },
-                        error -> showSnackBarError(
-                                new ErrorInfo(
-                                        error,
-                                        UserAction.PLAY_STREAM,
-                                        "Got an error when modifying history on viewed"
-                                )
-                        )
-                ));
-    }
-
-    private boolean isExternalPlayerEnabled() {
-        return PreferenceManager.getDefaultSharedPreferences(requireContext())
-                .getBoolean(getString(R.string.use_external_video_player_key), false);
-    }
-
-    // This method overrides default behaviour when setAutoPlay() is called.
-    // Don't auto play if the user selected an external player or disabled it in settings
-    private boolean isAutoplayEnabled() {
-        return autoPlayEnabled
-                && !isExternalPlayerEnabled()
-                && (!isPlayerAvailable() || player.videoPlayerSelected())
-                && bottomSheetState != BottomSheetBehavior.STATE_HIDDEN
-                && PlayerHelper.isAutoplayAllowedByUser(requireContext());
-    }
-
-    private void tryAddVideoPlayerView() {
-        if (isPlayerAvailable() && getView() != null) {
-            // Setup the surface view height, so that it fits the video correctly; this is done also
-            // here, and not only in the Handler, to avoid a choppy fullscreen rotation animation.
-            setHeightThumbnail();
-        }
-
-        // do all the null checks in the posted lambda, too, since the player, the binding and the
-        // view could be set or unset before the lambda gets executed on the next main thread cycle
-        new Handler(Looper.getMainLooper()).post(() -> {
-            if (!isPlayerAvailable() || getView() == null) {
-                return;
-            }
-
-            // setup the surface view height, so that it fits the video correctly
-            setHeightThumbnail();
-
-            player.UIs().get(MainPlayerUi.class).ifPresent(playerUi -> {
-                // sometimes binding would be null here, even though getView() != null above u.u
-                if (binding != null) {
-                    // prevent from re-adding a view multiple times
-                    playerUi.removeViewFromParent();
-                    binding.playerPlaceholder.addView(playerUi.getBinding().getRoot());
-                    playerUi.setupVideoSurfaceIfNeeded();
-                    updatePinnedPlayerLayout();
-                }
-            });
-        });
-    }
-
-    private void removeVideoPlayerView() {
-        makeDefaultHeightForVideoPlaceholder();
-
-        if (player != null) {
-            player.UIs().get(VideoPlayerUi.class).ifPresent(VideoPlayerUi::removeViewFromParent);
-        }
-        updatePinnedPlayerLayout();
-    }
-
-    private void makeDefaultHeightForVideoPlaceholder() {
-        if (getView() == null) {
-            return;
-        }
-
-        binding.playerPlaceholder.getLayoutParams().height = FrameLayout.LayoutParams.MATCH_PARENT;
-        binding.playerPlaceholder.requestLayout();
-    }
-
-    private final ViewTreeObserver.OnPreDrawListener preDrawListener =
-            new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    final DisplayMetrics metrics = getResources().getDisplayMetrics();
-
-                    if (getView() != null) {
-                        final int height = (DeviceUtils.isInMultiWindow(activity)
-                                ? requireView()
-                                : activity.getWindow().getDecorView()).getHeight();
-                        setHeightThumbnail(height, metrics);
-                        getView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
-                    }
-                    return false;
-                }
-            };
-
-    /**
-     * Method which controls the size of thumbnail and the size of main player inside
-     * a layout with thumbnail. It decides what height the player should have in both
-     * screen orientations. It knows about multiWindow feature
-     * and about videos with aspectRatio ZOOM (the height for them will be a bit higher,
-     * {@link #MAX_PLAYER_HEIGHT})
-     */
-    private void setHeightThumbnail() {
-        final DisplayMetrics metrics = getResources().getDisplayMetrics();
-        final boolean isPortrait = metrics.heightPixels > metrics.widthPixels;
-        requireView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
-
-        if (isFullscreen()) {
-            final int height = (DeviceUtils.isInMultiWindow(activity)
-                    ? requireView()
-                    : activity.getWindow().getDecorView()).getHeight();
-            // Height is zero when the view is not yet displayed like after orientation change
-            if (height != 0) {
-                setHeightThumbnail(height, metrics);
-            } else {
-                requireView().getViewTreeObserver().addOnPreDrawListener(preDrawListener);
-            }
-        } else {
-            final int height = (int) (isPortrait
-                    ? metrics.widthPixels / (16.0f / 9.0f)
-                    : metrics.heightPixels / 2.0f);
-            setHeightThumbnail(height, metrics);
-        }
-    }
-
-    private void setHeightThumbnail(final int newHeight, final DisplayMetrics metrics) {
-        binding.detailThumbnailImageView.setLayoutParams(
-                new FrameLayout.LayoutParams(
+      …1851 tokens truncated…eLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
         binding.detailThumbnailImageView.setMinimumHeight(newHeight);
         updatePinnedPlayerLayout(newHeight);
@@ -1553,6 +1547,8 @@ public final class VideoDetailFragment
         this.url = newUrl;
         this.title = newTitle;
         this.playQueue = newPlayQueue;
+        final PlayQueueItem queueItem = newPlayQueue == null ? null : newPlayQueue.getItem();
+        currentLocalItem = queueItem != null && queueItem.isLocalMedia() ? queueItem : null;
     }
 
     private void setErrorImage(final int imageResource) {
@@ -1687,6 +1683,15 @@ public final class VideoDetailFragment
         currentInfo = info;
         setInitialData(info.getServiceId(), info.getOriginalUrl(), info.getName(), playQueue);
 
+        binding.detailVideoTitleView.setMaxLines(1);
+        binding.detailUploaderRootLayout.setClickable(true);
+        binding.detailsPanel.setVisibility(View.VISIBLE);
+        binding.detailControlsShare.setVisibility(View.VISIBLE);
+        binding.detailControlsOpenInBrowser.setVisibility(View.VISIBLE);
+        binding.detailControlsPlayWithKodi.setVisibility(
+                KoreUtils.shouldShowPlayWithKodi(requireContext(), info.getServiceId())
+                        ? View.VISIBLE : View.GONE);
+
         updateTabs(info);
 
         animate(binding.detailThumbnailPlayButton, true, 200);
@@ -1738,6 +1743,7 @@ public final class VideoDetailFragment
         binding.detailSecondaryControlPanel.setVisibility(View.GONE);
 
         checkUpdateProgressInfo(info);
+        LocalMediaThumbnailLoader.INSTANCE.clear(binding.detailThumbnailImageView);
         CoilHelper.INSTANCE.loadDetailsThumbnail(binding.detailThumbnailImageView,
                 ExtractorImageCompat.thumbnailImages(info));
         showMetaInfoInTextView(info.getMetaInfo(), binding.detailMetaInfoTextView,
@@ -1932,6 +1938,13 @@ public final class VideoDetailFragment
     @Override
     public void onQueueUpdate(final PlayQueue queue) {
         playQueue = queue;
+        final PlayQueueItem queueItem = queue.getItem();
+        if (queueItem != null && queueItem.isLocalMedia() && binding != null
+                && (currentLocalItem == null || !currentLocalItem.isSameItem(queueItem))) {
+            setInitialData(queueItem.getServiceId(), queueItem.getUrl(),
+                    queueItem.getTitle(), queue);
+            prepareAndHandleLocalMedia(queueItem, true);
+        }
         if (DEBUG) {
             Log.d(TAG, "onQueueUpdate() called with: serviceId = ["
                     + serviceId + "], url = [" + url + "], name = ["
@@ -2037,6 +2050,18 @@ public final class VideoDetailFragment
     }
 
     @Override
+    public void onMetadataUpdate(final MediaItemTag tag, final PlayQueue queue) {
+        final PlayQueueItem item = queue.getItem();
+        if (item == null || !item.isLocalMedia()
+                || (playQueue != null && !queue.equalStreams(playQueue))) {
+            return;
+        }
+        setInitialData(item.getServiceId(), item.getUrl(), item.getTitle(), queue);
+        setAutoPlay(false);
+        prepareAndHandleLocalMedia(item, true);
+    }
+
+    @Override
     public void onPlayerError(final PlaybackException error, final boolean isCatchableException) {
         if (!isCatchableException) {
             // Properly exit from fullscreen
@@ -2054,6 +2079,8 @@ public final class VideoDetailFragment
                 updateOverlayData(currentInfo.getName(),
                         currentInfo.getUploaderName(),
                         ExtractorImageCompat.thumbnailImages(currentInfo));
+            } else if (currentLocalItem != null) {
+                updateLocalOverlay(currentLocalItem);
             }
             updateOverlayPlayQueueButtonVisibility();
         }
@@ -2667,8 +2694,15 @@ public final class VideoDetailFragment
                                    @NonNull final List<Image> thumbnails) {
         binding.overlayTitleTextView.setText(isEmpty(overlayTitle) ? "" : overlayTitle);
         binding.overlayChannelTextView.setText(isEmpty(uploader) ? "" : uploader);
-        binding.overlayThumbnail.setImageDrawable(null);
+        LocalMediaThumbnailLoader.INSTANCE.clear(binding.overlayThumbnail);
         CoilHelper.INSTANCE.loadDetailsThumbnail(binding.overlayThumbnail, thumbnails);
+    }
+
+    private void updateLocalOverlay(@NonNull final PlayQueueItem item) {
+        binding.overlayTitleTextView.setText(item.getTitle());
+        binding.overlayChannelTextView.setText(firstNonEmpty(item.getUploader(), item.getAlbum(),
+                item.getFolder(), getString(R.string.local_media_on_device)));
+        LocalMediaThumbnailLoader.INSTANCE.load(binding.overlayThumbnail, item);
     }
 
     private void setOverlayPlayPauseImage(final boolean playerIsPlaying) {

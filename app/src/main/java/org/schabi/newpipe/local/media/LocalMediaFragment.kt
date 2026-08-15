@@ -17,9 +17,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
@@ -30,12 +32,19 @@ import java.util.Locale
 import java.util.concurrent.Executors
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.stream.model.StreamEntity
+import org.schabi.newpipe.info_list.ItemViewMode
 import org.schabi.newpipe.local.dialog.PlaylistDialog
 import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.ThemeHelper
-import org.schabi.newpipe.util.image.CoilHelper
+
+@LayoutRes
+internal fun localMediaItemLayout(itemViewMode: ItemViewMode): Int = when (itemViewMode) {
+    ItemViewMode.GRID -> R.layout.list_stream_grid_item
+    ItemViewMode.CARD -> R.layout.list_stream_card_item
+    else -> R.layout.list_stream_item
+}
 
 class LocalMediaFragment : Fragment() {
     private enum class Filter { ALL, AUDIO, VIDEO }
@@ -50,6 +59,7 @@ class LocalMediaFragment : Fragment() {
     private var sort = Sort.TITLE
     private var query = ""
     private lateinit var adapter: LocalMediaAdapter
+    private lateinit var list: RecyclerView
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -65,10 +75,10 @@ class LocalMediaFragment : Fragment() {
 
     override fun onViewCreated(view: View, state: Bundle?) {
         super.onViewCreated(view, state)
-        val list = view.findViewById<RecyclerView>(R.id.localMediaList)
+        list = view.findViewById(R.id.localMediaList)
         adapter = LocalMediaAdapter(::play, ::showActions)
-        list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
+        applyItemViewMode()
 
         view.findViewById<View>(R.id.localMediaGrantAccess).setOnClickListener {
             permissionLauncher.launch(requiredPermissions())
@@ -102,6 +112,7 @@ class LocalMediaFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         ThemeHelper.setTitleToAppCompatActivity(activity, getString(R.string.local_media))
+        if (::adapter.isInitialized) applyItemViewMode()
     }
 
     override fun onDestroy() {
@@ -177,6 +188,16 @@ class LocalMediaFragment : Fragment() {
         }
     }
 
+    private fun applyItemViewMode() {
+        val mode = ThemeHelper.getItemViewMode(requireContext())
+        list.layoutManager = if (mode == ItemViewMode.GRID) {
+            GridLayoutManager(requireContext(), ThemeHelper.getGridSpanCountStreams(requireContext()))
+        } else {
+            LinearLayoutManager(requireContext())
+        }
+        adapter.setItemViewMode(mode)
+    }
+
     private fun showMessage(message: Int, showButton: Boolean) {
         view?.findViewById<TextView>(R.id.localMediaMessage)?.setText(message)
         view?.findViewById<View>(R.id.localMediaGrantAccess)?.visibility =
@@ -248,19 +269,34 @@ private class LocalMediaAdapter(
     private val onLongClick: (LocalMediaItem) -> Unit
 ) : RecyclerView.Adapter<LocalMediaAdapter.Holder>() {
     private var items = emptyList<LocalMediaItem>()
+    private var itemViewMode = ItemViewMode.LIST
+
+    fun setItemViewMode(updated: ItemViewMode) {
+        if (itemViewMode == updated) return
+        itemViewMode = updated
+        notifyDataSetChanged()
+    }
 
     fun submit(updated: List<LocalMediaItem>) {
         items = updated
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder = Holder(
-        LayoutInflater.from(parent.context).inflate(R.layout.list_stream_item, parent, false)
-    )
+    override fun getItemViewType(position: Int): Int = itemViewMode.ordinal
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+        val layout = localMediaItemLayout(ItemViewMode.values()[viewType])
+        return Holder(LayoutInflater.from(parent.context).inflate(layout, parent, false))
+    }
 
     override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(items[position])
+
+    override fun onViewRecycled(holder: Holder) {
+        holder.recycle()
+        super.onViewRecycled(holder)
+    }
 
     inner class Holder(view: View) : RecyclerView.ViewHolder(view) {
         private val thumbnail = view.findViewById<ImageView>(R.id.itemThumbnailView)
@@ -278,7 +314,7 @@ private class LocalMediaAdapter(
             itemView.findViewById<View>(R.id.itemUploaderAvatarView).visibility = View.GONE
             itemView.findViewById<View>(R.id.itemMembersOnlyView).visibility = View.GONE
             itemView.findViewById<View>(R.id.itemProgressView).visibility = View.GONE
-            CoilHelper.loadThumbnail(thumbnail, item.thumbnailUri)
+            LocalMediaThumbnailLoader.load(thumbnail, item)
             itemView.setOnClickListener { onClick(item) }
             itemView.findViewById<View>(R.id.itemUploaderRoot).apply {
                 setOnClickListener { onClick(item) }
@@ -291,6 +327,10 @@ private class LocalMediaAdapter(
                 onLongClick(item)
                 true
             }
+        }
+
+        fun recycle() {
+            LocalMediaThumbnailLoader.clear(thumbnail)
         }
     }
 }
