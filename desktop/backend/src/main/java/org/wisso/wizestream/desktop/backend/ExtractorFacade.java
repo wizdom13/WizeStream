@@ -19,11 +19,22 @@ import org.schabi.newpipe.extractor.stream.VideoStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 final class ExtractorFacade {
+    private static final long FEED_CACHE_MILLIS = 15 * 60_000L;
+    private volatile Map<String, Object> cachedFeed;
+    private volatile String cachedFeedSignature;
+    private volatile long cachedFeedAt;
+
     ExtractorFacade() {
         NewPipe.init(new OkHttpDownloader());
     }
@@ -44,6 +55,56 @@ final class ExtractorFacade {
         final StreamingService service = NewPipe.getService(serviceId);
         final SearchInfo info = SearchInfo.getInfo(service, createSearchQuery(service, query));
         return info.getRelatedItems().stream().limit(60).map(this::searchItem).toList();
+    }
+
+    Map<String, Object> subscriptionFeed(
+            final List<Map<String, Object>> subscriptions,
+            final boolean refresh
+    ) throws Exception {
+        final String signature = subscriptionSignature(subscriptions);
+        final long now = System.currentTimeMillis();
+        final Map<String, Object> cached = cachedFeed;
+        if (!refresh && cached != null && signature.equals(cachedFeedSignature)
+                && now - cachedFeedAt < FEED_CACHE_MILLIS) {
+            return cached;
+        }
+
+        if (subscriptions.isEmpty()) {
+            final Map<String, Object> empty = feedResult(List.of(), 0, 0, now);
+            cacheFeed(signature, now, empty);
+            return empty;
+        }
+
+        final List<Callable<ChannelFeedResult>> tasks = subscriptions.stream()
+                .map(subscription -> (Callable<ChannelFeedResult>) () -> channelFeed(subscription))
+                .toList();
+        final ExecutorService executor = Executors.newFixedThreadPool(Math.min(4, tasks.size()));
+        final Map<String, Map<String, Object>> uniqueItems = new LinkedHashMap<>();
+        int failedChannels = 0;
+        try {
+            for (final Future<ChannelFeedResult> future : executor.invokeAll(tasks)) {
+                try {
+                    final ChannelFeedResult channel = future.get();
+                    if (channel.failed()) failedChannels++;
+                    for (final Map<String, Object> item : channel.items()) {
+                        uniqueItems.putIfAbsent((String) item.get("url"), item);
+                    }
+                } catch (final ExecutionException error) {
+                    failedChannels++;
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        final List<Map<String, Object>> items = new ArrayList<>(uniqueItems.values());
+        items.sort(Comparator.comparingLong(ExtractorFacade::publishedAt).reversed());
+        final List<Map<String, Object>> limited = List.copyOf(items.subList(0, Math.min(600, items.size())));
+        final long refreshedAt = System.currentTimeMillis();
+        final Map<String, Object> result = feedResult(
+                limited, subscriptions.size(), failedChannels, refreshedAt);
+        cacheFeed(signature, refreshedAt, result);
+        return result;
     }
 
     SearchQueryHandler createSearchQuery(final StreamingService service, final String query)
@@ -124,7 +185,7 @@ final class ExtractorFacade {
         return ChannelInfo.getInfo(NewPipe.getService(serviceId), url);
     }
 
-    private Map<String, Object> searchItem(final InfoItem item) {
+    Map<String, Object> searchItem(final InfoItem item) {
         final Map<String, Object> value = new LinkedHashMap<>();
         value.put("type", item.getInfoType().name());
         value.put("serviceId", item.getServiceId());
@@ -133,10 +194,78 @@ final class ExtractorFacade {
         value.put("thumbnailUrl", item.getThumbnailUrl());
         if (item instanceof StreamInfoItem stream) {
             value.put("uploaderName", stream.getUploaderName());
+            value.put("uploaderUrl", blankToNull(stream.getUploaderUrl()));
+            value.put("uploaderAvatarUrl", blankToNull(stream.getUploaderAvatarUrl()));
             value.put("duration", stream.getDuration());
+            value.put("viewCount", stream.getViewCount() < 0 ? null : stream.getViewCount());
+            value.put("publishedAt", stream.getUploadDate() == null ? null
+                    : stream.getUploadDate().offsetDateTime().toInstant().toEpochMilli());
+            value.put("textualUploadDate", blankToNull(stream.getTextualUploadDate()));
+            value.put("streamType", stream.getStreamType().name());
+            value.put("shortForm", stream.isShortFormContent());
         }
         return value;
     }
+
+    private ChannelFeedResult channelFeed(final Map<String, Object> subscription) {
+        try {
+            final int serviceId = ((Number) subscription.get("serviceId")).intValue();
+            final ChannelInfo info = channelInfo(serviceId, (String) subscription.get("url"));
+            final String fallbackName = (String) subscription.get("name");
+            final String fallbackAvatar = blankToNull((String) subscription.get("avatarUrl"));
+            final List<Map<String, Object>> items = info.getRelatedItems().stream()
+                    .filter(StreamInfoItem.class::isInstance).limit(24)
+                    .map(this::searchItem)
+                    .peek(item -> {
+                        if (blankToNull((String) item.get("uploaderName")) == null) {
+                            item.put("uploaderName", fallbackName);
+                        }
+                        if (blankToNull((String) item.get("uploaderAvatarUrl")) == null
+                                && fallbackAvatar != null) {
+                            item.put("uploaderAvatarUrl", fallbackAvatar);
+                        }
+                    }).toList();
+            return new ChannelFeedResult(items, false);
+        } catch (final Exception error) {
+            return new ChannelFeedResult(List.of(), true);
+        }
+    }
+
+    private static long publishedAt(final Map<String, Object> item) {
+        final Object value = item.get("publishedAt");
+        return value instanceof Number number ? number.longValue() : Long.MIN_VALUE;
+    }
+
+    private static String subscriptionSignature(final List<Map<String, Object>> subscriptions) {
+        final StringBuilder value = new StringBuilder();
+        for (final Map<String, Object> subscription : subscriptions) {
+            value.append(subscription.get("serviceId")).append(':')
+                    .append(subscription.get("url")).append('\n');
+        }
+        return value.toString();
+    }
+
+    private static Map<String, Object> feedResult(
+            final List<Map<String, Object>> items,
+            final int totalChannels,
+            final int failedChannels,
+            final long refreshedAt
+    ) {
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("items", items);
+        value.put("totalChannels", totalChannels);
+        value.put("failedChannels", failedChannels);
+        value.put("refreshedAt", refreshedAt);
+        return value;
+    }
+
+    private void cacheFeed(final String signature, final long refreshedAt, final Map<String, Object> result) {
+        cachedFeedSignature = signature;
+        cachedFeedAt = refreshedAt;
+        cachedFeed = result;
+    }
+
+    private record ChannelFeedResult(List<Map<String, Object>> items, boolean failed) { }
 
     private List<Map<String, Object>> videoStreams(final StreamInfo info) {
         final List<Map<String, Object>> result = new ArrayList<>();

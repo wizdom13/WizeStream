@@ -55,6 +55,8 @@ public final class DesktopBackend implements AutoCloseable {
                 case "health" -> Map.of("status", "ok", "apiVersion", 1, "extractor", "WizeStreamExtractor");
                 case "services.list" -> extractor.services();
                 case "search" -> extractor.search(requiredInt(params, "serviceId"), requiredText(params, "query"));
+                case "feed.subscriptions" -> extractor.subscriptionFeed(
+                        library.subscriptions(), optionalBoolean(params, "refresh", false));
                 case "stream.resolve" -> extractor.resolve(requiredText(params, "url"));
                 case "channel.resolve" -> extractor.channel(
                         requiredInt(params, "serviceId"), requiredText(params, "url"));
@@ -106,6 +108,7 @@ public final class DesktopBackend implements AutoCloseable {
                     library.clearHistory();
                     yield Map.of("deleted", true);
                 }
+                case "library.playback-state.list" -> library.playbackStates();
                 case "library.search-history.list" -> library.searchHistory();
                 case "library.search-history.record" -> library.recordSearch(
                         requiredInt(params, "serviceId"), requiredText(params, "query"));
@@ -200,6 +203,17 @@ public final class DesktopBackend implements AutoCloseable {
     private static boolean requiredBoolean(final JsonNode node, final String name) {
         final JsonNode value = node.path(name);
         if (!value.isBoolean()) throw new IllegalArgumentException("Missing " + name);
+        return value.booleanValue();
+    }
+
+    private static boolean optionalBoolean(
+            final JsonNode node,
+            final String name,
+            final boolean fallback
+    ) {
+        final JsonNode value = node.path(name);
+        if (value.isMissingNode() || value.isNull()) return fallback;
+        if (!value.isBoolean()) throw new IllegalArgumentException("Invalid " + name);
         return value.booleanValue();
     }
 

@@ -232,6 +232,18 @@ final class DesktopLibrary {
         ));
     }
 
+    List<Map<String, Object>> playbackStates() throws SQLException {
+        return query("""
+                SELECT service_id, url, position_millis, updated_at
+                FROM playback_state ORDER BY updated_at DESC, service_id, url
+                """, rows -> row(
+                "serviceId", rows.getInt(1),
+                "url", rows.getString(2),
+                "positionMillis", rows.getLong(3),
+                "updatedAt", rows.getLong(4)
+        ));
+    }
+
     Map<String, Object> recordHistory(final StreamInput stream) throws SQLException {
         final String id = UUID.randomUUID().toString();
         final long now = System.currentTimeMillis();
