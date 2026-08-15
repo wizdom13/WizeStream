@@ -69,7 +69,12 @@ public interface PlaybackListener {
     @Nullable
     MediaSource sourceOf(PlayQueueItem item, StreamInfo info);
 
-    /** Resolves a device-local queue item without using an online extractor. */
+    /**
+     * Resolves a device-local queue item without using an online extractor.
+     *
+     * @param item the device-local queue item to resolve
+     * @return a playable media source, or {@code null} if it cannot be resolved
+     */
     @Nullable
     MediaSource sourceOfLocal(PlayQueueItem item);
 

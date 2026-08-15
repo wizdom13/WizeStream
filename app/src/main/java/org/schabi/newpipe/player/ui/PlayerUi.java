@@ -244,7 +244,11 @@ public abstract class PlayerUi {
     public void onMetadataChanged(@NonNull final StreamInfo info) {
     }
 
-    /** Called for metadata that does not originate from an online extractor. */
+    /**
+     * Called for metadata that does not originate from an online extractor.
+     *
+     * @param tag the metadata for the current non-extractor media item
+     */
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
     }
 

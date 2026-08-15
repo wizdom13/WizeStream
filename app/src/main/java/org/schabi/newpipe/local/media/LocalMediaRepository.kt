@@ -123,15 +123,18 @@ class LocalMediaRepository(private val context: Context) {
         return result
     }
 
-    private fun Cursor.text(column: String): String =
-        getColumnIndex(column).takeIf { it >= 0 }?.let(::getString).orEmpty()
+    private fun Cursor.text(column: String): String {
+        return getColumnIndex(column).takeIf { it >= 0 }?.let(::getString).orEmpty()
             .takeUnless { it == MediaStore.UNKNOWN_STRING }.orEmpty()
+    }
 
-    private fun Cursor.long(column: String): Long =
-        getColumnIndex(column).takeIf { it >= 0 }?.let(::getLong) ?: 0L
+    private fun Cursor.long(column: String): Long {
+        return getColumnIndex(column).takeIf { it >= 0 }?.let(::getLong) ?: 0L
+    }
 
-    private fun Cursor.title(titleColumn: String, displayNameColumn: String): String =
-        text(titleColumn).ifBlank { text(displayNameColumn).substringBeforeLast('.') }
+    private fun Cursor.title(titleColumn: String, displayNameColumn: String): String {
+        return text(titleColumn).ifBlank { text(displayNameColumn).substringBeforeLast('.') }
+    }
 
     private fun Cursor.folder(): String {
         val column = if (Build.VERSION.SDK_INT >= 29) {
@@ -140,8 +143,11 @@ class LocalMediaRepository(private val context: Context) {
             MediaStore.MediaColumns.DATA
         }
         val value = text(column)
-        return if (Build.VERSION.SDK_INT >= 29) value.trimEnd('/').substringAfterLast('/')
-        else File(value).parentFile?.name.orEmpty()
+        return if (Build.VERSION.SDK_INT >= 29) {
+            value.trimEnd('/').substringAfterLast('/')
+        } else {
+            File(value).parentFile?.name.orEmpty()
+        }
     }
 
     private companion object {

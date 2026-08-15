@@ -55,8 +55,13 @@ class LocalMediaFragment : Fragment() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { loadOrExplainPermission() }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View =
-        inflater.inflate(R.layout.fragment_local_media, container, false)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        state: Bundle?
+    ): View {
+        return inflater.inflate(R.layout.fragment_local_media, container, false)
+    }
 
     override fun onViewCreated(view: View, state: Bundle?) {
         super.onViewCreated(view, state)
@@ -110,7 +115,9 @@ class LocalMediaFragment : Fragment() {
             Manifest.permission.READ_MEDIA_AUDIO,
             Manifest.permission.READ_MEDIA_VIDEO
         )
+
         Build.VERSION.SDK_INT >= 23 -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+
         else -> emptyArray()
     }
 
@@ -163,8 +170,11 @@ class LocalMediaFragment : Fragment() {
             .sortedWith(comparator)
             .toList()
         adapter.submit(shownItems)
-        if (shownItems.isEmpty()) showMessage(R.string.local_media_empty, false)
-        else view?.findViewById<View>(R.id.localMediaMessagePanel)?.visibility = View.GONE
+        if (shownItems.isEmpty()) {
+            showMessage(R.string.local_media_empty, false)
+        } else {
+            view?.findViewById<View>(R.id.localMediaMessagePanel)?.visibility = View.GONE
+        }
     }
 
     private fun showMessage(message: Int, showButton: Boolean) {
@@ -195,13 +205,21 @@ class LocalMediaFragment : Fragment() {
                 val queue = LocalMediaPlayQueue(listOf(item.toPlayQueueItem()), 0)
                 when (which) {
                     0 -> play(item)
+
                     1 -> NavigationHelper.playOnBackgroundPlayer(requireContext(), queue, true)
+
                     2 -> NavigationHelper.enqueueOnPlayer(requireContext(), queue)
+
                     3 -> NavigationHelper.enqueueNextOnPlayer(requireContext(), queue)
-                    4 -> disposables.add(PlaylistDialog.createCorrespondingDialog(
-                        requireContext(),
-                        listOf(StreamEntity(item.toPlayQueueItem()))
-                    ) { dialog -> dialog.show(parentFragmentManager, "LocalMediaPlaylist") })
+
+                    4 -> disposables.add(
+                        PlaylistDialog.createCorrespondingDialog(
+                            requireContext(),
+                            listOf(StreamEntity(item.toPlayQueueItem()))
+                        ) { dialog ->
+                            dialog.show(parentFragmentManager, "LocalMediaPlaylist")
+                        }
+                    )
                 }
             }.show()
     }

@@ -147,7 +147,12 @@ public class HistoryRecordManager {
         })).subscribeOn(Schedulers.io());
     }
 
-    /** Marks a local item watched without syncing its device-scoped content URI. */
+    /**
+     * Marks a local item watched without syncing its device-scoped content URI.
+     *
+     * @param item the device-local queue item to mark as watched
+     * @return the inserted history row ID, or an empty result when history is disabled
+     */
     public Maybe<Long> markAsWatched(@NonNull final PlayQueueItem item) {
         if (!item.isLocalMedia() || !isStreamHistoryEnabled()) {
             return Maybe.empty();
@@ -191,7 +196,12 @@ public class HistoryRecordManager {
         })).subscribeOn(Schedulers.io());
     }
 
-    /** Records device-local playback without adding a non-portable URI to sync. */
+    /**
+     * Records device-local playback without adding a non-portable URI to sync.
+     *
+     * @param item the device-local queue item that was viewed
+     * @return the inserted or updated history row ID, or an empty result when history is disabled
+     */
     public Maybe<Long> onViewed(@NonNull final PlayQueueItem item) {
         if (!item.isLocalMedia() || !isStreamHistoryEnabled()) {
             return Maybe.empty();
@@ -359,7 +369,13 @@ public class HistoryRecordManager {
         })).subscribeOn(Schedulers.io());
     }
 
-    /** Saves local resume progress only on this device. */
+    /**
+     * Saves local resume progress only on this device.
+     *
+     * @param item the device-local queue item whose progress should be saved
+     * @param progressMillis the current playback position in milliseconds
+     * @return a completable that finishes after the local state is stored
+     */
     public Completable saveStreamState(@NonNull final PlayQueueItem item,
                                        final long progressMillis) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
