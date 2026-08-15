@@ -51,16 +51,13 @@ class DesktopLibraryTest {
 
                 val history = library.recordHistory(stream)
                 assertEquals("Phase 3 fixture", library.history().single()["title"])
-                database.connection().prepareStatement(
-                    "INSERT INTO playback_state(service_id, url, position_millis, updated_at) VALUES (?, ?, ?, ?)"
-                ).use { statement ->
-                    statement.setInt(1, 0)
-                    statement.setString(2, "https://www.youtube.com/watch?v=phase3fixture")
-                    statement.setLong(3, 42_000)
-                    statement.setLong(4, 1_000)
-                    statement.executeUpdate()
-                }
+                library.savePlaybackState(
+                    0,
+                    "https://www.youtube.com/watch?v=phase3fixture",
+                    42_000
+                )
                 assertEquals(42_000L, library.playbackStates().single()["positionMillis"])
+                assertEquals(42L, library.history().single()["positionSeconds"])
                 val search = library.recordSearch(0, "Phase 3")
                 assertEquals("Phase 3", library.searchHistory().single()["query"])
 
@@ -72,6 +69,8 @@ class DesktopLibraryTest {
                 library.deletePlaylistItem(playlistId, item.getValue("itemId") as String)
                 library.deletePlaylist(playlistId)
                 library.deleteHistory(history.getValue("id") as String)
+                library.clearHistory()
+                assertTrue(library.playbackStates().isEmpty())
                 library.deleteSearch(search.getValue("id") as String)
                 library.deleteLearningNote(note.getValue("id") as String)
                 library.deleteSubscription(0, "https://www.youtube.com/@wizestream")

@@ -4,13 +4,15 @@ import {
   Checkbox, CircularProgress, Container, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, LinearProgress, List,
   ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, MenuItem,
-  Slider, Stack, Switch, TextField, Toolbar, Tooltip, Typography,
+  Slider, Stack, Switch, Tab, Tabs, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
 import AddRounded from '@mui/icons-material/AddRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
+import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
+import DescriptionRounded from '@mui/icons-material/DescriptionRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EditRounded from '@mui/icons-material/EditRounded';
@@ -23,23 +25,29 @@ import PlaylistAddRounded from '@mui/icons-material/PlaylistAddRounded';
 import PlaylistPlayRounded from '@mui/icons-material/PlaylistPlayRounded';
 import PlayArrowRounded from '@mui/icons-material/PlayArrowRounded';
 import ReplayRounded from '@mui/icons-material/ReplayRounded';
+import QueuePlayNextRounded from '@mui/icons-material/QueuePlayNextRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import SettingsRounded from '@mui/icons-material/SettingsRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
+import ThumbDownRounded from '@mui/icons-material/ThumbDownRounded';
+import ThumbUpRounded from '@mui/icons-material/ThumbUpRounded';
 import { defaultDesktopSettings } from '../shared/contracts';
 import type {
-  ChannelDetails, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
+  ChannelDetails, CommentItem, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
   HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   PlaybackState, SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
-  SubscriptionFeed,
+  StreamComments, SubscriptionFeed,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
   UpdateState,
 } from '../shared/contracts';
 import { SettingsPanel } from './SettingsPanel';
-import { matchesFeedFilter, playbackKey, publishedAgeLabel, viewCountLabel, type FeedFilter } from './feed';
+import {
+  historyResumePosition, matchesFeedFilter, playbackKey, publishedAgeLabel, viewCountLabel,
+  type FeedFilter,
+} from './feed';
 import { subscriberCountLabel } from './subscriber-count';
 import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
 
@@ -89,6 +97,7 @@ export function App() {
   const [videoChoice, setVideoChoice] = useState('auto');
   const [audioChoice, setAudioChoice] = useState('auto');
   const [subtitleChoice, setSubtitleChoice] = useState('none');
+  const [resumePosition, setResumePosition] = useState(0);
   const [embeddedRequest, setEmbeddedRequest] = useState<EmbeddedPlayerRequest & { title: string; nonce: number }>();
   const [updateState, setUpdateState] = useState<UpdateState>();
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
@@ -155,6 +164,7 @@ export function App() {
       || stream.audioTrackId === playbackVideo.audioTrackId) ?? selected?.audioStreams[0]
     : selectedAudio;
   const embeddedSelection = Boolean(mpv?.embeddedAvailable && selectedPlaybackUrl);
+  const showPlayingInfo = Boolean(selected && (embeddedRequest || mpv?.running));
   const playbackByStream = useMemo(() => new Map(playbackStates.map((state) => [
     playbackKey(state.serviceId, state.url), state,
   ])), [playbackStates]);
@@ -183,7 +193,7 @@ export function App() {
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
   }
 
-  const resolveStream = useCallback(async (url: string) => {
+  const resolveStream = useCallback(async (url: string, startPosition = 0) => {
     setLoading(true); setError(undefined);
     try {
       const details = await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', { url });
@@ -192,7 +202,7 @@ export function App() {
       const audioIndex = preferredAudioIndex(details, settings);
       setVideoChoice(videoIndex === undefined ? 'auto' : String(videoIndex));
       setAudioChoice(audioIndex === undefined ? 'auto' : String(audioIndex));
-      setSubtitleChoice('none'); setEmbeddedRequest(undefined);
+      setSubtitleChoice('none'); setResumePosition(Math.max(0, startPosition)); setEmbeddedRequest(undefined);
       setSection('discover');
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
   }, [settings]);
@@ -207,6 +217,7 @@ export function App() {
       if (embeddedSelection) {
         setEmbeddedRequest({
           source: selectedPlaybackUrl, title: selected.name, nonce: Date.now(),
+          startSeconds: resumePosition,
           audio: effectiveAudio ? playerTrack(effectiveAudio, audioLabel(effectiveAudio)) : undefined,
           subtitle: selectedSubtitle ? playerTrack(selectedSubtitle, subtitleLabel(selectedSubtitle)) : undefined,
         });
@@ -216,11 +227,13 @@ export function App() {
           title: selected.name,
           audioUrl: effectiveAudio?.url,
           subtitleUrl: selectedSubtitle?.url,
+          startSeconds: resumePosition,
         });
       }
       if (settings.enableWatchHistory) {
         await window.wizestream.backend.invoke('library.history.record', { ...selectedLibraryStream });
       }
+      setResumePosition(0);
       setMpv(await window.wizestream.player.status());
     } catch (reason) { setError(errorMessage(reason)); }
   }
@@ -228,6 +241,7 @@ export function App() {
   async function stopAllPlayback() {
     window.dispatchEvent(new Event('wizestream-stop-player'));
     await window.wizestream.player.stop();
+    setEmbeddedRequest(undefined);
     setMpv(await window.wizestream.player.status());
   }
 
@@ -316,9 +330,14 @@ export function App() {
             </Alert>}
             {feedLoading && subscriptionFeed.items.length > 0 && <LinearProgress sx={{ mt: 2 }} />}
             {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>}
-            {embeddedRequest && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest}
+            {embeddedRequest && selected && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest}
+              stream={selected} recordPlayback={settings.enableWatchHistory}
               externalAvailable={Boolean(mpv.externalAvailable)} onError={setError} />}
-            {selected && <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="details-card">
+            {selected && showPlayingInfo && <VideoInformationPanel details={selected}
+              onOpen={resolveStream} onDownload={() => setSection('downloads')}
+              onAddToPlaylist={() => setSection('playlists')}
+              onAddNote={settings.learningMode && settings.learningNotes ? () => setSection('learning') : undefined} />}
+            {selected && !showPlayingInfo && <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="details-card">
               {selected.thumbnailUrl && <Box component="img" src={selected.thumbnailUrl} alt="" className="details-thumbnail" />}
               <CardContent sx={{ p: 4 }}><Chip label={selected.streamType} size="small" /><Typography variant="h4" sx={{ mt: 2 }}>{selected.name}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{selected.uploaderName}</Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap' }}><Chip label={`${selected.videoStreams.length} video variants`} /><Chip label={`${selected.audioStreams.length} audio variants`} /><Chip label={`${selected.subtitles.length} captions`} /><Chip label={`${Math.round(selected.duration / 60)} min`} /></Stack>
@@ -451,28 +470,53 @@ function FeedVideoCard({ item, onOpen }: { item: SearchItem; onOpen(): void }) {
   </Card>;
 }
 
-function EmbeddedPlayer({ request, externalAvailable, onError }: {
+function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, onError }: {
   request: EmbeddedPlayerRequest & { title: string; nonce: number }; externalAvailable: boolean;
+  stream: StreamDetails; recordPlayback: boolean;
   onError(value: string): void;
 }) {
   const player = useRef<MpvVideoElement>(null);
   const [state, setState] = useState({ status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv',
     audioTrack: 'auto', subtitleTrack: 'off' });
+  const latestState = useRef(state);
+  const lastPlaybackSave = useRef(0);
   const [localError, setLocalError] = useState<string>();
 
   useEffect(() => {
     const element = player.current;
     if (!element) return;
-    const update = (event: Event) => setState((event as CustomEvent<typeof state>).detail);
+    const openingState = { status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv',
+      audioTrack: 'auto', subtitleTrack: 'off' };
+    latestState.current = openingState; setState(openingState);
+    lastPlaybackSave.current = 0;
+    const savePosition = (time: number, force = false) => {
+      if (!recordPlayback || !Number.isFinite(time) || time < 0) return;
+      const now = Date.now();
+      if (!force && now - lastPlaybackSave.current < 10_000) return;
+      lastPlaybackSave.current = now;
+      void window.wizestream.backend.invoke('library.playback-state.save', {
+        serviceId: stream.serviceId, url: stream.url, positionMillis: Math.round(time * 1_000),
+      }).catch(() => undefined);
+    };
+    const update = (event: Event) => {
+      const next = (event as CustomEvent<typeof state>).detail;
+      latestState.current = next; setState(next); savePosition(next.time);
+    };
     const fail = (event: Event) => { const value = String((event as CustomEvent<unknown>).detail); setLocalError(value); onError(value); };
     element.addEventListener('mpv-state', update);
     element.addEventListener('mpv-error', fail);
     setLocalError(undefined);
-    void element.openMedia(request).then(() => element.play()).catch((reason: unknown) => {
+    void element.openMedia(request).then(async () => {
+      if (request.startSeconds && request.startSeconds > 0) await element.seek(request.startSeconds);
+      await element.play();
+    }).catch((reason: unknown) => {
       const value = errorMessage(reason); setLocalError(value); onError(value);
     });
-    return () => { element.removeEventListener('mpv-state', update); element.removeEventListener('mpv-error', fail); };
-  }, [request.nonce, request.source, onError]);
+    return () => {
+      if (latestState.current.time > 0) savePosition(latestState.current.time, true);
+      element.removeEventListener('mpv-state', update); element.removeEventListener('mpv-error', fail);
+    };
+  }, [request.nonce, request.source, stream.serviceId, stream.url, recordPlayback, onError]);
 
   useEffect(() => {
     if (!player.current) return;
@@ -494,18 +538,160 @@ function EmbeddedPlayer({ request, externalAvailable, onError }: {
     <mpv-video ref={player} render-mode="shared-texture" volume="80" title={request.title} />
   </Box><CardContent>{localError && <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" disabled={!externalAvailable} onClick={() => void window.wizestream.player.play({
     url: request.source, title: request.title, audioUrl: request.audio?.url, subtitleUrl: request.subtitle?.url,
-  })}>Open with external mpv</Button>}>{localError}</Alert>}<Stack direction="row" sx={{ alignItems: 'center', gap: 2 }}>
-    <IconButton aria-label="Play" onClick={() => void player.current?.play()}><PlayArrowRounded /></IconButton>
-    <IconButton aria-label="Pause" onClick={() => void player.current?.pause()}><PauseRounded /></IconButton>
-    <IconButton aria-label="Stop" onClick={() => void player.current?.stop()}><StopRounded /></IconButton>
-    <Typography className="mono" variant="body2">{formatTimestamp(state.time)}</Typography>
-    <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
-      onChangeCommitted={(_event, value) => void player.current?.seek(Number(value))} sx={{ flexGrow: 1 }} />
-    <Typography className="mono" variant="body2">{formatTimestamp(state.duration)}</Typography>
-    <Chip size="small" label={`Audio ${request.audio?.title ?? state.audioTrack}`} />
-    <Chip size="small" label={`Captions ${request.subtitle?.title ?? state.subtitleTrack}`} />
-    <Chip size="small" label={`${state.status} · ${state.rendererName}`} />
-  </Stack></CardContent></Card>;
+    startSeconds: request.startSeconds,
+  })}>Open with external mpv</Button>}>{localError}</Alert>}
+    <Box className="player-controls-primary">
+      <Stack direction="row" spacing={0.5}>
+        <IconButton aria-label="Play" onClick={() => void player.current?.play()}><PlayArrowRounded /></IconButton>
+        <IconButton aria-label="Pause" onClick={() => void player.current?.pause()}><PauseRounded /></IconButton>
+        <IconButton aria-label="Stop" onClick={() => void player.current?.stop()}><StopRounded /></IconButton>
+      </Stack>
+      <Typography className="mono player-time" variant="body2">{formatTimestamp(state.time)}</Typography>
+      <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
+        onChangeCommitted={(_event, value) => void player.current?.seek(Number(value))} />
+      <Typography className="mono player-time" variant="body2">{formatTimestamp(state.duration)}</Typography>
+    </Box>
+    <Stack direction="row" className="player-status-row" sx={{ mt: 1.5, gap: 1, flexWrap: 'wrap' }}>
+      <Chip size="small" label={`Audio · ${request.audio?.title ?? state.audioTrack}`} />
+      <Chip size="small" label={`Captions · ${request.subtitle?.title ?? state.subtitleTrack}`} />
+      <Chip size="small" label={`${state.status} · ${state.rendererName}`} />
+    </Stack>
+  </CardContent></Card>;
+}
+
+type VideoInfoTab = 'comments' | 'related' | 'description';
+
+function VideoInformationPanel({ details, onOpen, onDownload, onAddToPlaylist, onAddNote }: {
+  details: StreamDetails;
+  onOpen(url: string): Promise<void>;
+  onDownload(): void;
+  onAddToPlaylist(): void;
+  onAddNote?: () => void;
+}) {
+  const [tab, setTab] = useState<VideoInfoTab>('related');
+  const [comments, setComments] = useState<StreamComments>();
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState<string>();
+
+  useEffect(() => {
+    setTab('related'); setComments(undefined); setCommentsError(undefined); setCommentsLoading(false);
+  }, [details.url]);
+
+  useEffect(() => {
+    if (tab !== 'comments' || comments || commentsLoading || commentsError) return;
+    setCommentsLoading(true); setCommentsError(undefined);
+    void window.wizestream.backend.invoke<StreamComments>('stream.comments', {
+      serviceId: details.serviceId, url: details.url,
+    }).then(setComments).catch((reason: unknown) => setCommentsError(errorMessage(reason)))
+      .finally(() => setCommentsLoading(false));
+  }, [comments, commentsError, commentsLoading, details.serviceId, details.url, tab]);
+
+  const published = details.publishedAt != null
+    ? `Published on ${new Date(details.publishedAt).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+    })}` : details.textualUploadDate;
+  const description = plainDescription(details.description, details.descriptionType);
+
+  return <Card variant="outlined" sx={{ mt: 3, overflow: 'hidden' }}>
+    <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+      <Typography variant="h4">{details.name}</Typography>
+      <Stack direction={{ xs: 'column', md: 'row' }} sx={{ mt: 3, gap: 2, alignItems: { md: 'center' } }}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', minWidth: 0, flexGrow: 1 }}>
+          <Avatar src={details.uploaderAvatarUrl} alt="" sx={{ width: 52, height: 52 }}>
+            <SubscriptionsRounded />
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="h6" className="two-lines">{details.uploaderName || 'Unknown channel'}</Typography>
+            {subscriberCountLabel(details.uploaderSubscriberCount)
+              && <Typography color="text.secondary">{subscriberCountLabel(details.uploaderSubscriberCount)}</Typography>}
+          </Box>
+        </Stack>
+        <Stack direction="row" sx={{ gap: 2.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          {viewCountLabel(details.viewCount) && <Typography color="text.secondary">
+            {viewCountLabel(details.viewCount)}
+          </Typography>}
+          {compactMetric(details.likeCount) && <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+            <ThumbUpRounded fontSize="small" /><Typography>{compactMetric(details.likeCount)}</Typography>
+          </Stack>}
+          {compactMetric(details.dislikeCount) && <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+            <ThumbDownRounded fontSize="small" /><Typography>{compactMetric(details.dislikeCount)}</Typography>
+          </Stack>}
+        </Stack>
+      </Stack>
+      <Stack direction="row" sx={{ mt: 3, gap: 1, flexWrap: 'wrap' }}>
+        <Button startIcon={<PlaylistAddRounded />} variant="outlined" onClick={onAddToPlaylist}>Add to playlist</Button>
+        <Button startIcon={<DownloadRounded />} variant="outlined" onClick={onDownload}>Download</Button>
+        {onAddNote && <Button startIcon={<NoteAddRounded />} variant="outlined" onClick={onAddNote}>Add note</Button>}
+      </Stack>
+    </CardContent>
+    <Divider />
+    <Tabs value={tab} onChange={(_event, value: VideoInfoTab) => setTab(value)} variant="fullWidth"
+      aria-label="Video information">
+      <Tab value="comments" icon={<ChatBubbleOutlineRounded />} iconPosition="start" label="Comments" />
+      <Tab value="related" icon={<QueuePlayNextRounded />} iconPosition="start" label="Related items" />
+      <Tab value="description" icon={<DescriptionRounded />} iconPosition="start" label="Description" />
+    </Tabs>
+    <Divider />
+    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+      {tab === 'related' && (details.relatedItems.length === 0
+        ? <LibraryEmpty text="No related videos are available." />
+        : <Box className="feed-video-grid">{details.relatedItems.map((item) => <FeedVideoCard
+          key={`${item.serviceId}:${item.url}`} item={item} onOpen={() => void onOpen(item.url)} />)}</Box>)}
+      {tab === 'description' && <Stack spacing={2}>
+        {published && <Typography variant="h6">{published}</Typography>}
+        {description ? <Typography sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{description}</Typography>
+          : <Typography color="text.secondary">No description is available.</Typography>}
+      </Stack>}
+      {tab === 'comments' && <>
+        {commentsLoading && <Box sx={{ display: 'grid', placeItems: 'center', py: 6 }}><CircularProgress /></Box>}
+        {commentsError && <Alert severity="error" action={<Button color="inherit"
+          onClick={() => setCommentsError(undefined)}>Retry</Button>}>{commentsError}</Alert>}
+        {!commentsLoading && comments?.disabled && <Alert severity="info">Comments are disabled for this video.</Alert>}
+        {!commentsLoading && comments && !comments.disabled && comments.items.length === 0
+          && <Typography color="text.secondary">No comments are available.</Typography>}
+        {!commentsLoading && comments && comments.items.length > 0 && <Stack spacing={1.5}>
+          {comments.items.map((comment, index) => <CommentCard key={comment.id || `${comment.uploaderName}:${index}`}
+            comment={comment} serviceId={details.serviceId} streamUrl={details.url} />)}
+        </Stack>}
+      </>}
+    </Box>
+  </Card>;
+}
+
+function CommentCard({ comment, serviceId, streamUrl }: {
+  comment: CommentItem; serviceId: number; streamUrl: string;
+}) {
+  const age = publishedAgeLabel({
+    type: 'COMMENT', serviceId, url: streamUrl, name: comment.uploaderName || 'Comment',
+    publishedAt: comment.publishedAt, textualUploadDate: comment.textualUploadDate,
+  });
+  return <Card variant="outlined"><CardContent>
+    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+      <Avatar src={comment.uploaderAvatarUrl} alt="" sx={{ width: 44, height: 44 }} />
+      <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+        <Stack direction="row" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 650 }}>{comment.uploaderName || 'Unknown user'}</Typography>
+          {comment.uploaderVerified && <Chip size="small" label="Verified" />}
+          {age && <Typography color="text.secondary" variant="body2">· {age}</Typography>}
+          {comment.pinned && <Chip size="small" label="Pinned" />}
+        </Stack>
+        {comment.text && <Typography sx={{ mt: 1, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+          {comment.text}
+        </Typography>}
+        <Stack direction="row" sx={{ mt: 1.5, gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          {(comment.textualLikeCount || compactMetric(comment.likeCount)) && <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+            <ThumbUpRounded fontSize="small" />
+            <Typography variant="body2">{comment.textualLikeCount || compactMetric(comment.likeCount)}</Typography>
+          </Stack>}
+          {comment.replyCount != null && <Typography color="primary" variant="body2" sx={{ fontWeight: 650 }}>
+            {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
+          </Typography>}
+          {comment.streamPosition != null && <Chip size="small" label={formatTimestamp(comment.streamPosition)} />}
+          {comment.heartedByUploader && <Chip color="primary" size="small" label="Loved by channel" />}
+        </Stack>
+      </Box>
+    </Stack>
+  </CardContent></Card>;
 }
 
 function SubscriptionsPanel({ services, onOpen }: {
@@ -715,7 +901,7 @@ function PlaylistsPanel({ currentStream, onOpen }: { currentStream?: LibraryStre
   </Stack>;
 }
 
-function HistoryPanel({ onOpen }: { onOpen(url: string): Promise<void> }) {
+function HistoryPanel({ onOpen }: { onOpen(url: string, startPosition?: number): Promise<void> }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [searches, setSearches] = useState<SearchHistoryItem[]>([]);
   const [error, setError] = useState<string>();
@@ -730,9 +916,52 @@ function HistoryPanel({ onOpen }: { onOpen(url: string): Promise<void> }) {
   async function removeSearch(id: string) { if (!window.confirm('Delete this search-history entry?')) return; try { await window.wizestream.backend.invoke('library.search-history.delete', { id }); await load(); } catch (reason) { setError(errorMessage(reason)); } }
   async function clearSearches() { if (!window.confirm('Clear all search history on this device?')) return; try { await window.wizestream.backend.invoke('library.search-history.clear'); await load(); } catch (reason) { setError(errorMessage(reason)); } }
   return <Stack spacing={4}><PanelHeader title="History" description="Manage watch and search records shared through device sync." action={<></>} />{error && <Alert severity="error">{error}</Alert>}
-    <Stack spacing={2}><PanelHeader title="Watch history" description="Playback records are added when mpv starts." action={<Button startIcon={<DeleteOutlineRounded />} variant="outlined" color="error" disabled={items.length === 0} onClick={() => void clear()}>Clear watch history</Button>} />{items.length === 0 ? <LibraryEmpty text="No watch history yet. Playing a stream adds it here." /> : <Card variant="outlined"><List disablePadding>{items.map((item, index) => <Box key={item.id}>{index > 0 && <Divider />}<ListItemButton onClick={() => void onOpen(item.url)}><ListItemAvatar><Avatar variant="rounded" src={item.thumbnailUrl}><HistoryRounded /></Avatar></ListItemAvatar><ListItemText primary={item.title} secondary={`${item.uploader || 'Unknown uploader'} · ${new Date(item.watchedAt).toLocaleString()}`} /><IconButton aria-label="Delete history entry" onClick={(event) => { event.stopPropagation(); void remove(item.id); }}><DeleteOutlineRounded /></IconButton></ListItemButton></Box>)}</List></Card>}</Stack>
+    <Stack spacing={2}><PanelHeader title="Watch history" description="Playback records are added when mpv starts." action={<Button startIcon={<DeleteOutlineRounded />} variant="outlined" color="error" disabled={items.length === 0} onClick={() => void clear()}>Clear watch history</Button>} />{items.length === 0 ? <LibraryEmpty text="No watch history yet. Playing a stream adds it here." /> : <Box className="history-grid">{items.map((item) => <HistoryVideoCard key={item.id} item={item} onOpen={() => void onOpen(item.url, historyResumePosition(item.positionSeconds, item.duration))} onDelete={() => void remove(item.id)} />)}</Box>}</Stack>
     <Stack spacing={2}><PanelHeader title="Search history" description="Successful extractor searches are retained locally." action={<Button startIcon={<DeleteOutlineRounded />} variant="outlined" color="error" disabled={searches.length === 0} onClick={() => void clearSearches()}>Clear searches</Button>} />{searches.length === 0 ? <LibraryEmpty text="No search history yet." /> : <Card variant="outlined"><List disablePadding>{searches.map((item, index) => <Box key={item.id}>{index > 0 && <Divider />}<ListItem secondaryAction={<IconButton aria-label="Delete search entry" onClick={() => void removeSearch(item.id)}><DeleteOutlineRounded /></IconButton>}><ListItemAvatar><Avatar><SearchRounded /></Avatar></ListItemAvatar><ListItemText primary={item.query} secondary={new Date(item.searchedAt).toLocaleString()} /></ListItem></Box>)}</List></Card>}</Stack>
   </Stack>;
+}
+
+function HistoryVideoCard({ item, onOpen, onDelete }: {
+  item: HistoryItem; onOpen(): void; onDelete(): void;
+}) {
+  const position = Math.max(0, item.positionSeconds);
+  const resumeAt = historyResumePosition(item.positionSeconds, item.duration);
+  const progress = item.duration > 0 ? Math.min(100, position / item.duration * 100) : 0;
+  return <Card variant="outlined" className="history-video-card">
+    <CardActionArea onClick={onOpen} aria-label={`Open ${item.title}`}>
+      <Box className="feed-video-cover">
+        {item.thumbnailUrl
+          ? <Box component="img" src={item.thumbnailUrl} alt="" className="result-thumbnail" />
+          : <Box className="result-thumbnail" />}
+        {item.duration > 0 && <Chip size="small" label={formatTimestamp(item.duration)} className="feed-video-badge" />}
+        {progress > 0 && <LinearProgress variant="determinate" value={progress} className="history-progress" />}
+      </Box>
+      <CardContent>
+        <Typography variant="h6" className="two-lines">{item.title}</Typography>
+        <Typography color="text.secondary" className="two-lines" sx={{ mt: 0.5 }}>
+          {item.uploader || 'Unknown channel'}
+        </Typography>
+        <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+          Watched {new Date(item.watchedAt).toLocaleString()}
+        </Typography>
+        <Stack direction="row" sx={{ mt: 1.5, alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Typography className="mono history-time" variant="body2">{formatTimestamp(position)}</Typography>
+          <Typography color="text.secondary" variant="body2">of</Typography>
+          <Typography className="mono history-time" variant="body2">{formatTimestamp(item.duration)}</Typography>
+        </Stack>
+      </CardContent>
+    </CardActionArea>
+    <Divider />
+    <Stack direction="row" sx={{ p: 1, alignItems: 'center' }}>
+      <Button startIcon={resumeAt > 5 ? <ReplayRounded /> : <PlayArrowRounded />} onClick={onOpen}>
+        {resumeAt > 5 ? 'Resume' : position > 5 ? 'Play again' : 'Play'}
+      </Button>
+      <Box sx={{ flexGrow: 1 }} />
+      <Tooltip title="Delete from watch history"><IconButton aria-label="Delete history entry" onClick={onDelete}>
+        <DeleteOutlineRounded />
+      </IconButton></Tooltip>
+    </Stack>
+  </Card>;
 }
 
 function LearningPanel({ currentStream, onOpen }: { currentStream?: LibraryStream; onOpen(url: string): Promise<void> }) {
@@ -919,7 +1148,21 @@ function LibraryEmpty({ text }: { text: string }) {
 
 function detailsToLibraryStream(value: StreamDetails): LibraryStream {
   return { serviceId: value.serviceId, url: value.url, title: value.name, duration: value.duration,
-    streamType: value.streamType, uploader: value.uploaderName, thumbnailUrl: value.thumbnailUrl };
+    streamType: value.streamType, uploader: value.uploaderName, uploaderUrl: value.uploaderUrl,
+    thumbnailUrl: value.thumbnailUrl };
+}
+
+function compactMetric(value?: number | null): string | undefined {
+  if (value == null || !Number.isSafeInteger(value) || value < 0) return undefined;
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+    .format(value).replace('K', 'k').replace('M', 'm').replace('B', 'b');
+}
+
+function plainDescription(value?: string, type?: number): string {
+  if (!value) return '';
+  if (type !== 1) return value;
+  const document = new DOMParser().parseFromString(value.replace(/<br\s*\/?>/gi, '\n'), 'text/html');
+  return document.body.textContent?.trim() ?? '';
 }
 
 function formatTimestamp(seconds: number): string {

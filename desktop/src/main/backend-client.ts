@@ -73,6 +73,7 @@ export class BackendClient {
         this.pending.delete(id);
         reject(new Error(`Backend request timed out: ${method}`));
       }, method === 'sync.run' || method === 'feed.subscriptions' ? 10 * 60_000
+        : method === 'stream.comments' ? 2 * 60_000
         : method.startsWith('backup.') || method.startsWith('subscriptions.') ? 2 * 60_000 : 45_000);
       this.pending.set(id, { resolve: resolve as (value: unknown) => void, reject, timeout });
       this.process?.stdin.write(`${request}\n`, (error) => {

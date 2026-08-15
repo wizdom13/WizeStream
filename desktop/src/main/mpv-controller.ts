@@ -22,6 +22,7 @@ export class MpvController {
     if (request.title) args.push(`--force-media-title=${request.title.replace(/[\0\r\n]/g, ' ').slice(0, 200)}`);
     if (audio) args.push(`--audio-file=${audio.toString()}`);
     if (subtitle) args.push(`--sub-file=${subtitle.toString()}`);
+    if (request.startSeconds && request.startSeconds > 0) args.push(`--start=${Math.floor(request.startSeconds)}`);
     args.push('--', parsed.toString());
     this.process = spawn(executable, args, { shell: false, stdio: 'ignore', windowsHide: false });
     this.process.once('exit', () => { this.process = undefined; });

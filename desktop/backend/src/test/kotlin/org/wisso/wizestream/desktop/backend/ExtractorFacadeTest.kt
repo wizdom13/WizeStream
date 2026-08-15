@@ -5,9 +5,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.comments.CommentsInfoItem
 import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.AudioTrackType
+import org.schabi.newpipe.extractor.stream.Description
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
@@ -84,6 +87,69 @@ class ExtractorFacadeTest {
         assertEquals(published.toInstant().toEpochMilli(), value["publishedAt"])
         assertEquals("VIDEO_STREAM", value["streamType"])
         assertEquals(true, value["shortForm"])
+    }
+
+    @Test
+    fun `stream details retain Android player information`() {
+        val published = OffsetDateTime.of(2026, 8, 13, 12, 0, 0, 0, ZoneOffset.UTC)
+        val related = StreamInfoItem(
+            0, "https://video.example/watch/related", "Related", StreamType.VIDEO_STREAM
+        )
+        val info = StreamInfo(
+            0,
+            "https://video.example/watch/1",
+            "https://video.example/watch/1",
+            StreamType.VIDEO_STREAM,
+            "1",
+            "Video",
+            0
+        ).apply {
+            uploaderName = "Channel"
+            uploaderUrl = "https://video.example/channel"
+            uploaderAvatarUrl = "https://video.example/avatar.png"
+            uploaderSubscriberCount = 1_800_000
+            viewCount = 142_157
+            likeCount = 8_500
+            dislikeCount = 731
+            uploadDate = DateWrapper(published)
+            textualUploadDate = "1 day ago"
+            description = Description("Player description", Description.PLAIN_TEXT)
+            relatedItems = listOf(related)
+        }
+
+        val value = ExtractorFacade().streamDetails(info)
+
+        assertEquals("https://video.example/avatar.png", value["uploaderAvatarUrl"])
+        assertEquals(1_800_000L, value["uploaderSubscriberCount"])
+        assertEquals(142_157L, value["viewCount"])
+        assertEquals(8_500L, value["likeCount"])
+        assertEquals(731L, value["dislikeCount"])
+        assertEquals("Player description", value["description"])
+        assertEquals(1, (value["relatedItems"] as List<*>).size)
+    }
+
+    @Test
+    fun `comments retain author reactions and reply details`() {
+        val published = OffsetDateTime.of(2026, 8, 14, 12, 0, 0, 0, ZoneOffset.UTC)
+        val comment = CommentsInfoItem(0, "https://video.example/watch/1", "Comment").apply {
+            commentId = "comment-1"
+            commentText = "A useful comment"
+            uploaderName = "Viewer"
+            uploaderAvatarUrl = "https://video.example/viewer.png"
+            uploadDate = DateWrapper(published)
+            likeCount = 889
+            replyCount = 86
+            setPinned(true)
+            setHeartedByUploader(true)
+        }
+
+        val value = ExtractorFacade().commentItem(comment)
+
+        assertEquals("A useful comment", value["text"])
+        assertEquals(889, value["likeCount"])
+        assertEquals(86, value["replyCount"])
+        assertEquals(true, value["pinned"])
+        assertEquals(true, value["heartedByUploader"])
     }
 
     @Test

@@ -4,6 +4,8 @@ import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.channel.ChannelInfo;
+import org.schabi.newpipe.extractor.comments.CommentsInfo;
+import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandler;
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandlerFactory;
 import org.schabi.newpipe.extractor.search.SearchInfo;
@@ -11,6 +13,7 @@ import org.schabi.newpipe.extractor.search.filter.Filter;
 import org.schabi.newpipe.extractor.search.filter.FilterGroup;
 import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
@@ -132,20 +135,72 @@ final class ExtractorFacade {
         if (url == null || url.length() > 4_096 || !(url.startsWith("https://") || url.startsWith("http://"))) {
             throw new IllegalArgumentException("Invalid stream URL");
         }
-        final StreamInfo info = StreamInfo.getInfo(url);
+        return streamDetails(StreamInfo.getInfo(url));
+    }
+
+    Map<String, Object> streamDetails(final StreamInfo info) {
         final Map<String, Object> value = new LinkedHashMap<>();
         value.put("serviceId", info.getServiceId());
         value.put("url", info.getUrl());
         value.put("name", info.getName());
         value.put("uploaderName", info.getUploaderName());
+        value.put("uploaderUrl", blankToNull(info.getUploaderUrl()));
+        value.put("uploaderAvatarUrl", blankToNull(info.getUploaderAvatarUrl()));
+        value.put("uploaderSubscriberCount", info.getUploaderSubscriberCount() < 0
+                ? null : info.getUploaderSubscriberCount());
         value.put("thumbnailUrl", info.getThumbnailUrl());
         value.put("duration", info.getDuration());
         value.put("streamType", info.getStreamType().name());
+        value.put("viewCount", info.getViewCount() < 0 ? null : info.getViewCount());
+        value.put("likeCount", info.getLikeCount() < 0 ? null : info.getLikeCount());
+        value.put("dislikeCount", info.getDislikeCount() < 0 ? null : info.getDislikeCount());
+        value.put("publishedAt", info.getUploadDate() == null ? null
+                : info.getUploadDate().offsetDateTime().toInstant().toEpochMilli());
+        value.put("textualUploadDate", blankToNull(info.getTextualUploadDate()));
+        final Description description = info.getDescription();
+        value.put("description", description == null ? null : blankToNull(description.getContent()));
+        value.put("descriptionType", description == null ? null : description.getType());
+        value.put("relatedItems", info.getRelatedItems().stream()
+                .filter(StreamInfoItem.class::isInstance).limit(40)
+                .map(this::searchItem).toList());
         value.put("dashMpdUrl", blankToNull(info.getDashMpdUrl()));
         value.put("hlsUrl", blankToNull(info.getHlsUrl()));
         value.put("videoStreams", videoStreams(info));
         value.put("audioStreams", audioStreams(info));
         value.put("subtitles", subtitles(info));
+        return value;
+    }
+
+    Map<String, Object> comments(final int serviceId, final String url) throws Exception {
+        if (serviceId < 0 || url == null || url.length() > 4_096
+                || !(url.startsWith("https://") || url.startsWith("http://"))) {
+            throw new IllegalArgumentException("Invalid stream URL");
+        }
+        final CommentsInfo info = CommentsInfo.getInfo(NewPipe.getService(serviceId), url);
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("disabled", info == null || info.isCommentsDisabled());
+        value.put("items", info == null ? List.of() : info.getRelatedItems().stream()
+                .limit(80).map(this::commentItem).toList());
+        return value;
+    }
+
+    Map<String, Object> commentItem(final CommentsInfoItem item) {
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("id", blankToNull(item.getCommentId()));
+        value.put("text", blankToNull(item.getCommentText()));
+        value.put("uploaderName", blankToNull(item.getUploaderName()));
+        value.put("uploaderAvatarUrl", blankToNull(item.getUploaderAvatarUrl()));
+        value.put("uploaderUrl", blankToNull(item.getUploaderUrl()));
+        value.put("publishedAt", item.getUploadDate() == null ? null
+                : item.getUploadDate().offsetDateTime().toInstant().toEpochMilli());
+        value.put("textualUploadDate", blankToNull(item.getTextualUploadDate()));
+        value.put("likeCount", item.getLikeCount() < 0 ? null : item.getLikeCount());
+        value.put("textualLikeCount", blankToNull(item.getTextualLikeCount()));
+        value.put("replyCount", item.getReplyCount() < 0 ? null : item.getReplyCount());
+        value.put("streamPosition", item.getStreamPosition() < 0 ? null : item.getStreamPosition());
+        value.put("uploaderVerified", item.isUploaderVerified());
+        value.put("heartedByUploader", item.isHeartedByUploader());
+        value.put("pinned", item.isPinned());
         return value;
     }
 
