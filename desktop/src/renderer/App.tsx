@@ -670,7 +670,7 @@ function CommentCard({ comment, serviceId, streamUrl }: {
       <Avatar src={comment.uploaderAvatarUrl} alt="" sx={{ width: 44, height: 44 }} />
       <Box sx={{ minWidth: 0, flexGrow: 1 }}>
         <Stack direction="row" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Typography fontWeight={650}>{comment.uploaderName || 'Unknown user'}</Typography>
+          <Typography sx={{ fontWeight: 650 }}>{comment.uploaderName || 'Unknown user'}</Typography>
           {comment.uploaderVerified && <Chip size="small" label="Verified" />}
           {age && <Typography color="text.secondary" variant="body2">· {age}</Typography>}
           {comment.pinned && <Chip size="small" label="Pinned" />}
@@ -683,7 +683,7 @@ function CommentCard({ comment, serviceId, streamUrl }: {
             <ThumbUpRounded fontSize="small" />
             <Typography variant="body2">{comment.textualLikeCount || compactMetric(comment.likeCount)}</Typography>
           </Stack>}
-          {comment.replyCount != null && <Typography color="primary" variant="body2" fontWeight={650}>
+          {comment.replyCount != null && <Typography color="primary" variant="body2" sx={{ fontWeight: 650 }}>
             {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
           </Typography>}
           {comment.streamPosition != null && <Chip size="small" label={formatTimestamp(comment.streamPosition)} />}
