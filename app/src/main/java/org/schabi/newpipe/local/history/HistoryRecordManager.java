@@ -147,6 +147,23 @@ public class HistoryRecordManager {
         })).subscribeOn(Schedulers.io());
     }
 
+    /** Marks a local item watched without syncing its device-scoped content URI. */
+    public Maybe<Long> markAsWatched(@NonNull final PlayQueueItem item) {
+        if (!item.isLocalMedia() || !isStreamHistoryEnabled()) {
+            return Maybe.empty();
+        }
+        final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
+        return Maybe.fromCallable(() -> database.runInTransaction(() -> {
+            final long streamId = streamTable.upsert(new StreamEntity(item));
+            streamStateTable.upsert(new StreamStateEntity(streamId, item.getDuration() * 1000));
+            if (streamHistoryTable.getLatestEntry(streamId) == null) {
+                return streamHistoryTable.insert(
+                        new StreamHistoryEntity(streamId, currentTime, 0));
+            }
+            return 0L;
+        })).subscribeOn(Schedulers.io());
+    }
+
     public Maybe<Long> onViewed(final StreamInfo info) {
         if (!isStreamHistoryEnabled()) {
             return Maybe.empty();
@@ -171,6 +188,25 @@ public class HistoryRecordManager {
                 // just viewed for the first time: set 1 view
                 return streamHistoryTable.insert(new StreamHistoryEntity(streamId, currentTime, 1));
             }
+        })).subscribeOn(Schedulers.io());
+    }
+
+    /** Records device-local playback without adding a non-portable URI to sync. */
+    public Maybe<Long> onViewed(@NonNull final PlayQueueItem item) {
+        if (!item.isLocalMedia() || !isStreamHistoryEnabled()) {
+            return Maybe.empty();
+        }
+        final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
+        return Maybe.fromCallable(() -> database.runInTransaction(() -> {
+            final long streamId = streamTable.upsert(new StreamEntity(item));
+            final StreamHistoryEntity latestEntry = streamHistoryTable.getLatestEntry(streamId);
+            if (latestEntry != null) {
+                streamHistoryTable.delete(latestEntry);
+                latestEntry.setAccessDate(currentTime);
+                latestEntry.setRepeatCount(latestEntry.getRepeatCount() + 1);
+                return streamHistoryTable.insert(latestEntry);
+            }
+            return streamHistoryTable.insert(new StreamHistoryEntity(streamId, currentTime, 1));
         })).subscribeOn(Schedulers.io());
     }
 
@@ -288,8 +324,10 @@ public class HistoryRecordManager {
     ///////////////////////////////////////////////////////
 
     public Maybe<StreamStateEntity> loadStreamState(final PlayQueueItem queueItem) {
-        return queueItem.getStream()
-                .map(info -> streamTable.upsert(new StreamEntity(info)))
+        final Single<Long> streamId = queueItem.isLocalMedia()
+                ? Single.fromCallable(() -> streamTable.upsert(new StreamEntity(queueItem)))
+                : queueItem.getStream().map(info -> streamTable.upsert(new StreamEntity(info)));
+        return streamId
                 .flatMapPublisher(streamStateTable::getState)
                 .firstElement()
                 .flatMap(list -> list.isEmpty() ? Maybe.empty() : Maybe.just(list.get(0)))
@@ -316,6 +354,18 @@ public class HistoryRecordManager {
                         progressMillis,
                         System.currentTimeMillis()
                 );
+                streamStateTable.upsert(state);
+            }
+        })).subscribeOn(Schedulers.io());
+    }
+
+    /** Saves local resume progress only on this device. */
+    public Completable saveStreamState(@NonNull final PlayQueueItem item,
+                                       final long progressMillis) {
+        return Completable.fromAction(() -> database.runInTransaction(() -> {
+            final long streamId = streamTable.upsert(new StreamEntity(item));
+            final StreamStateEntity state = new StreamStateEntity(streamId, progressMillis);
+            if (state.isValid(item.getDuration())) {
                 streamStateTable.upsert(state);
             }
         })).subscribeOn(Schedulers.io());

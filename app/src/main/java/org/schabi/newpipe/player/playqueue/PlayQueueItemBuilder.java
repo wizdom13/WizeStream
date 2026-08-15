@@ -25,8 +25,12 @@ public class PlayQueueItemBuilder {
         if (!TextUtils.isEmpty(item.getTitle())) {
             holder.itemVideoTitleView.setText(item.getTitle());
         }
-        holder.itemAdditionalDetailsView.setText(Localization.concatenateStrings(item.getUploader(),
-                ServiceHelper.getNameOfServiceById(item.getServiceId())));
+        final String sourceName = item.isLocalMedia()
+                ? holder.itemView.getContext().getString(
+                        org.schabi.newpipe.R.string.local_media_on_device)
+                : ServiceHelper.getNameOfServiceById(item.getServiceId());
+        holder.itemAdditionalDetailsView.setText(Localization.concatenateStrings(
+                item.getUploader(), sourceName));
 
         if (item.getDuration() > 0) {
             holder.itemDurationView.setText(Localization.getDurationString(item.getDuration()));
@@ -34,8 +38,13 @@ public class PlayQueueItemBuilder {
             holder.itemDurationView.setVisibility(View.GONE);
         }
 
-        CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
-                ExtractorImageCompat.thumbnailImages(item));
+        if (item.isLocalMedia()) {
+            CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
+                    item.getLocalThumbnailUrl());
+        } else {
+            CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
+                    ExtractorImageCompat.thumbnailImages(item));
+        }
 
         holder.itemRoot.setOnClickListener(view -> {
             if (onItemClickListener != null) {

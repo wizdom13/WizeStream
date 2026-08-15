@@ -69,6 +69,10 @@ public interface PlaybackListener {
     @Nullable
     MediaSource sourceOf(PlayQueueItem item, StreamInfo info);
 
+    /** Resolves a device-local queue item without using an online extractor. */
+    @Nullable
+    MediaSource sourceOfLocal(PlayQueueItem item);
+
     /**
      * Called when the play queue can no longer be played or used.
      * Currently, this means the play queue is empty and complete.

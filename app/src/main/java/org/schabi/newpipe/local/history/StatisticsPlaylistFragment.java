@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 
 import com.evernote.android.state.State;
 import com.google.android.material.snackbar.Snackbar;
@@ -35,6 +36,8 @@ import org.schabi.newpipe.local.BaseLocalListFragment;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
+import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
+import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.settings.HistorySettingsFragment;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -148,6 +151,12 @@ public class StatisticsPlaylistFragment
                 if (selectedItem instanceof StreamStatisticsEntry) {
                     final StreamEntity item =
                             ((StreamStatisticsEntry) selectedItem).getStreamEntity();
+                    if (item.isLocalMedia()) {
+                        NavigationHelper.playOnMainPlayer(requireContext(),
+                                getPlayQueueStartingAt((StreamStatisticsEntry) selectedItem),
+                                false);
+                        return;
+                    }
                     NavigationHelper.openVideoDetailFragment(requireContext(), getFM(),
                             item.getServiceId(), item.getUrl(), item.getTitle(), null, false);
                 }
@@ -343,6 +352,29 @@ public class StatisticsPlaylistFragment
     }
 
     private void showInfoItemDialog(final StreamStatisticsEntry item) {
+        if (item.getStreamEntity().isLocalMedia()) {
+            final String[] actions = {
+                    getString(R.string.play),
+                    getString(R.string.local_media_play_background),
+                    getString(R.string.delete)
+            };
+            new AlertDialog.Builder(requireContext())
+                    .setTitle(item.getStreamEntity().getTitle())
+                    .setItems(actions, (dialog, which) -> {
+                        if (which == 0) {
+                            NavigationHelper.playOnMainPlayer(requireContext(),
+                                    getPlayQueueStartingAt(item), false);
+                        } else if (which == 1) {
+                            NavigationHelper.playOnBackgroundPlayer(requireContext(),
+                                    getPlayQueueStartingAt(item), true);
+                        } else if (which == 2) {
+                            deleteEntry(Math.max(
+                                    itemListAdapter.getItemsList().indexOf(item), 0));
+                        }
+                    })
+                    .show();
+            return;
+        }
         final Context context = getContext();
         final StreamInfoItem infoItem = item.toStreamInfoItem();
 
@@ -400,13 +432,13 @@ public class StatisticsPlaylistFragment
         }
 
         final List<LocalItem> infoItems = itemListAdapter.getItemsList();
-        final List<StreamInfoItem> streamInfoItems = new ArrayList<>(infoItems.size());
+        final List<PlayQueueItem> queueItems = new ArrayList<>(infoItems.size());
         for (final LocalItem item : infoItems) {
             if (item instanceof StreamStatisticsEntry) {
-                streamInfoItems.add(((StreamStatisticsEntry) item).toStreamInfoItem());
+                queueItems.add(((StreamStatisticsEntry) item).toPlayQueueItem());
             }
         }
-        return new SinglePlayQueue(streamInfoItems, index);
+        return new LocalMediaPlayQueue(queueItems, index);
     }
 
     private enum StatisticSortMode {

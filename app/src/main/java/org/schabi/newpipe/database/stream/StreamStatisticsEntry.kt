@@ -15,6 +15,7 @@ import org.schabi.newpipe.database.history.model.StreamHistoryEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.STREAM_PROGRESS_MILLIS
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.util.image.ExtractorImageCompat
 import org.schabi.newpipe.util.image.ImageStrategy
 
@@ -55,6 +56,9 @@ data class StreamStatisticsEntry(
             )
         }
     }
+
+    @Ignore
+    fun toPlayQueueItem(): PlayQueueItem = streamEntity.toPlayQueueItem()
 
     companion object {
         const val STREAM_LATEST_DATE = "latestAccess"

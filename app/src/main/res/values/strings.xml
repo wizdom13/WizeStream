@@ -1316,4 +1316,19 @@
     <string name="equalizer_frequency_khz">%1$d kHz</string>
     <string name="equalizer_settings_summary_disabled">Off · Five presets and one custom curve</string>
     <string name="equalizer_settings_summary_enabled">On · %1$s</string>
+    <!-- Local media -->
+    <string name="local_media">Local media</string>
+    <string name="local_media_on_device">On this device</string>
+    <string name="local_media_permission_description">Allow WizeStream to find music and videos stored on this device. Access is requested only when you open Local media.</string>
+    <string name="local_media_grant_access">Allow media access</string>
+    <string name="local_media_empty">No matching music or videos were found on this device.</string>
+    <string name="local_media_search_hint">Search title, artist, album, or folder</string>
+    <string name="local_media_sort">Sort local media</string>
+    <string name="local_media_sort_title">Title</string>
+    <string name="local_media_sort_artist">Artist</string>
+    <string name="local_media_sort_album">Album</string>
+    <string name="local_media_sort_folder">Folder</string>
+    <string name="local_media_sort_recent">Recently added</string>
+    <string name="local_media_play_background">Play in background</string>
+    <string name="local_media_enqueue_next">Enqueue next</string>
 </resources>

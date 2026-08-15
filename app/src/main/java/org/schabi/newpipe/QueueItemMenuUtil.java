@@ -37,8 +37,12 @@ public final class QueueItemMenuUtil {
         final PopupMenu popupMenu = new PopupMenu(themeWrapper, view);
         popupMenu.inflate(R.menu.menu_play_queue_item);
 
-        if (hideDetails) {
+        if (hideDetails || item.isLocalMedia()) {
             popupMenu.getMenu().findItem(R.id.menu_item_details).setVisible(false);
+        }
+        if (item.isLocalMedia()) {
+            popupMenu.getMenu().findItem(R.id.menu_item_channel_details).setVisible(false);
+            popupMenu.getMenu().findItem(R.id.menu_item_download).setVisible(false);
         }
 
         popupMenu.setOnMenuItemClickListener(menuItem -> {

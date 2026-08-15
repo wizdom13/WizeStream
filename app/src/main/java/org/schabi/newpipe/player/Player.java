@@ -117,6 +117,7 @@ import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.SleepTimer;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
+import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag;
 import org.schabi.newpipe.player.mediasession.MediaSessionPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationPlayerUi;
 import org.schabi.newpipe.player.playback.MediaSourceManager;
@@ -323,6 +324,8 @@ public final class Player implements PlaybackListener, Listener {
     private final HistoryRecordManager recordManager;
     @NonNull
     private final LearningSessionTracker learningSessionTracker;
+    @NonNull
+    private final PlayerDataSource dataSource;
 
     private boolean screenOn = true;
 
@@ -351,7 +354,7 @@ public final class Player implements PlaybackListener, Listener {
         setupBroadcastReceiver();
 
         trackSelector = new DefaultTrackSelector(context, PlayerHelper.getQualitySelector());
-        final PlayerDataSource dataSource = new PlayerDataSource(context,
+        dataSource = new PlayerDataSource(context,
                 new DefaultBandwidthMeter.Builder(context).build());
         loadController = new LoadController();
 
@@ -2148,6 +2151,9 @@ public final class Player implements PlaybackListener, Listener {
                     notifyAudioTrackUpdateToListeners();
                 }
             });
+            if (currentMetadata instanceof LocalMediaItemTag) {
+                updateMetadataForLocalMedia(((LocalMediaItemTag) currentMetadata).getItem());
+            }
         });
     }
 
@@ -2669,11 +2675,26 @@ public final class Player implements PlaybackListener, Listener {
     //region StreamInfo history: views and progress
 
     private void registerStreamViewed() {
-        getCurrentStreamInfo().ifPresent(info -> databaseUpdateDisposable
-                .add(recordManager.onViewed(info).onErrorComplete().subscribe()));
+        if (currentItem != null && currentItem.isLocalMedia()) {
+            databaseUpdateDisposable.add(recordManager.onViewed(currentItem)
+                    .onErrorComplete().subscribe());
+        } else {
+            getCurrentStreamInfo().ifPresent(info -> databaseUpdateDisposable
+                    .add(recordManager.onViewed(info).onErrorComplete().subscribe()));
+        }
     }
 
     private void saveStreamProgressState(final long progressMillis) {
+        if (currentItem != null && currentItem.isLocalMedia()) {
+            if (!prefs.getBoolean(context.getString(R.string.enable_watch_history_key), true)) {
+                return;
+            }
+            databaseUpdateDisposable.add(recordManager.saveStreamState(currentItem, progressMillis)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .onErrorComplete()
+                    .subscribe());
+            return;
+        }
         getCurrentStreamInfo().ifPresent(info -> {
             if (!prefs.getBoolean(context.getString(R.string.enable_watch_history_key), true)) {
                 return;
@@ -2711,8 +2732,12 @@ public final class Player implements PlaybackListener, Listener {
 
     public void saveStreamProgressStateCompleted() {
         // current stream has ended, so the progress is its duration (+1 to overcome rounding)
-        getCurrentStreamInfo().ifPresent(info ->
-                saveStreamProgressState((info.getDuration() + 1) * 1000));
+        if (currentItem != null && currentItem.isLocalMedia()) {
+            saveStreamProgressState((currentItem.getDuration() + 1) * 1000);
+        } else {
+            getCurrentStreamInfo().ifPresent(info ->
+                    saveStreamProgressState((info.getDuration() + 1) * 1000));
+        }
     }
     //endregion
 
@@ -2741,6 +2766,19 @@ public final class Player implements PlaybackListener, Listener {
         notifyMetadataUpdateToListeners();
         notifyAudioTrackUpdateToListeners();
         UIs.call(playerUi -> playerUi.onMetadataChanged(info));
+    }
+
+    private void updateMetadataForLocalMedia(@NonNull final PlayQueueItem item) {
+        skippedSponsorBlockSegments.clear();
+        ignoredSponsorBlockSegment = null;
+        sponsorBlockSegments = Collections.emptyList();
+        hideSponsorBlockManualSkipButton();
+        clearSponsorBlockSeekBarMarkers();
+        onThumbnailLoaded(null);
+        databaseUpdateDisposable.add(recordManager.onViewed(item)
+                .onErrorComplete().subscribe());
+        notifyAudioTrackUpdateToListeners();
+        UIs.call(playerUi -> playerUi.onMetadataChanged(currentMetadata));
     }
 
     private void updateSponsorBlockSegments(@NonNull final StreamInfo info) {
@@ -2919,6 +2957,16 @@ public final class Player implements PlaybackListener, Listener {
                     info, ChannelPlaybackProfileManager.getQuality(context, info));
         }
         return videoResolver.resolve(info);
+    }
+
+    @Override
+    @Nullable
+    public MediaSource sourceOfLocal(final PlayQueueItem item) {
+        if (!item.isLocalMedia()) {
+            return null;
+        }
+        return dataSource.getProgressiveMediaSourceFactory()
+                .createMediaSource(LocalMediaItemTag.of(item).asMediaItem());
     }
 
     public void disablePreloadingOfCurrentTrack() {

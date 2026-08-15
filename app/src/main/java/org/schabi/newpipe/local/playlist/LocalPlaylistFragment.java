@@ -60,6 +60,8 @@ import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.learning.LearningPlaylistProgress;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
+import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
+import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.Localization;
@@ -192,6 +194,11 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             public void selected(final LocalItem selectedItem) {
                 if (selectedItem instanceof PlaylistStreamEntry entry) {
                     final StreamEntity item = entry.getStreamEntity();
+                    if (item.isLocalMedia()) {
+                        NavigationHelper.playOnMainPlayer(requireContext(),
+                                getPlayQueueStartingAt(entry), false);
+                        return;
+                    }
                     NavigationHelper.openVideoDetailFragment(requireContext(), getFM(),
                             item.getServiceId(), item.getUrl(), item.getTitle(), null, false);
                 }
@@ -884,6 +891,28 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     }
 
     protected void showInfoItemDialog(final PlaylistStreamEntry item) {
+        if (item.getStreamEntity().isLocalMedia()) {
+            final String[] actions = {
+                    getString(R.string.play),
+                    getString(R.string.local_media_play_background),
+                    getString(R.string.delete)
+            };
+            new AlertDialog.Builder(requireContext())
+                    .setTitle(item.getStreamEntity().getTitle())
+                    .setItems(actions, (dialog, which) -> {
+                        if (which == 0) {
+                            NavigationHelper.playOnMainPlayer(requireContext(),
+                                    getPlayQueueStartingAt(item), false);
+                        } else if (which == 1) {
+                            NavigationHelper.playOnBackgroundPlayer(requireContext(),
+                                    getPlayQueueStartingAt(item), true);
+                        } else if (which == 2) {
+                            deleteItem(item);
+                        }
+                    })
+                    .show();
+            return;
+        }
         final StreamInfoItem infoItem = item.toStreamInfoItem();
 
         try {
@@ -991,7 +1020,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                 .filter(PlaylistStreamEntry.class::isInstance)
                 .map(PlaylistStreamEntry.class::cast)
                 .map(entry -> markWatched
-                        ? manager.markAsWatched(entry.toStreamInfoItem()).ignoreElement()
+                        ? (entry.getStreamEntity().isLocalMedia()
+                                ? manager.markAsWatched(entry.toPlayQueueItem()).ignoreElement()
+                                : manager.markAsWatched(entry.toStreamInfoItem()).ignoreElement())
                         : manager.deleteStreamHistoryAndState(entry.getStreamId()))
                 .collect(Collectors.toList());
         disposables.add(Completable.concat(operations)
@@ -1018,13 +1049,13 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
 
         final List<LocalItem> infoItems = itemListAdapter.getItemsList();
-        final List<StreamInfoItem> streamInfoItems = new ArrayList<>(infoItems.size());
+        final List<PlayQueueItem> queueItems = new ArrayList<>(infoItems.size());
         for (final LocalItem item : infoItems) {
             if (item instanceof PlaylistStreamEntry) {
-                streamInfoItems.add(((PlaylistStreamEntry) item).toStreamInfoItem());
+                queueItems.add(((PlaylistStreamEntry) item).toPlayQueueItem());
             }
         }
-        return new SinglePlayQueue(streamInfoItems, index);
+        return new LocalMediaPlayQueue(queueItems, index);
     }
 
     /**
