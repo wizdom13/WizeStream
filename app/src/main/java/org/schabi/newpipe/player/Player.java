@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 35211)
-Total output lines: 3496
-
 package org.schabi.newpipe.player;
 
 import static com.google.android.exoplayer2.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW;
@@ -1387,7 +1384,617 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private String getSegmentCategoryName(@NonNull final SponsorBlockSegment segment) {
         final SponsorBlockCategory category = getSponsorBlockSegmentCategory(segment);
-        if (category == n…5211 tokens truncated…) {
+        if (category == null) {
+            return context.getString(R.string.sponsor_block_skipped_segment_fallback);
+        }
+        switch (category) {
+            case SPONSOR:
+                return context.getString(R.string.sponsor_block_category_sponsor_title);
+            case INTRO:
+                return context.getString(R.string.sponsor_block_category_intro_title);
+            case OUTRO:
+                return context.getString(R.string.sponsor_block_category_outro_title);
+            case INTERACTION:
+                return context.getString(R.string.sponsor_block_category_interaction_title);
+            case HIGHLIGHT:
+                return context.getString(R.string.sponsor_block_category_highlight_title);
+            case SELF_PROMO:
+                return context.getString(R.string.sponsor_block_category_self_promo_title);
+            case NON_MUSIC:
+                return context.getString(R.string.sponsor_block_category_non_music_title);
+            case PREVIEW:
+                return context.getString(R.string.sponsor_block_category_preview_title);
+            case FILLER:
+                return context.getString(R.string.sponsor_block_category_filler_title);
+            default:
+                return context.getString(R.string.sponsor_block_skipped_segment_fallback);
+        }
+    }
+
+    private Disposable getProgressUpdateDisposable() {
+        return Observable.interval(PROGRESS_LOOP_INTERVAL_MILLIS, MILLISECONDS,
+                        AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(ignored -> triggerProgressUpdate(),
+                        error -> Log.e(TAG, "Progress update failure: ", error));
+    }
+
+    //endregion
+
+
+    /*//////////////////////////////////////////////////////////////////////////
+    // Playback states
+    //////////////////////////////////////////////////////////////////////////*/
+    //region Playback states
+    @Override
+    public void onPlayWhenReadyChanged(final boolean playWhenReady, final int reason) {
+        if (DEBUG) {
+            Log.d(TAG, "ExoPlayer - onPlayWhenReadyChanged() called with: "
+                    + "playWhenReady = [" + playWhenReady + "], "
+                    + "reason = [" + reason + "]");
+        }
+        final int playbackState = exoPlayerIsNull()
+                ? com.google.android.exoplayer2.Player.STATE_IDLE
+                : simpleExoPlayer.getPlaybackState();
+        updatePlaybackState(playWhenReady, playbackState);
+    }
+
+    @Override
+    public void onPlaybackStateChanged(final int playbackState) {
+        if (DEBUG) {
+            Log.d(TAG, "ExoPlayer - onPlaybackStateChanged() called with: "
+                    + "playbackState = [" + playbackState + "]");
+        }
+        updatePlaybackState(getPlayWhenReady(), playbackState);
+    }
+
+    private void updatePlaybackState(final boolean playWhenReady, final int playbackState) {
+        if (DEBUG) {
+            Log.d(TAG, "ExoPlayer - updatePlaybackState() called with: "
+                    + "playWhenReady = [" + playWhenReady + "], "
+                    + "playbackState = [" + playbackState + "]");
+        }
+
+        if (currentState == STATE_PAUSED_SEEK) {
+            if (DEBUG) {
+                Log.d(TAG, "updatePlaybackState() is currently blocked");
+            }
+            return;
+        }
+
+        switch (playbackState) {
+            case com.google.android.exoplayer2.Player.STATE_IDLE: // 1
+                isPrepared = false;
+                break;
+            case com.google.android.exoplayer2.Player.STATE_BUFFERING: // 2
+                if (isPrepared) {
+                    changeState(STATE_BUFFERING);
+                }
+                break;
+            case com.google.android.exoplayer2.Player.STATE_READY: //3
+                if (!isPrepared) {
+                    isPrepared = true;
+                    onPrepared(playWhenReady);
+                }
+                changeState(playWhenReady ? STATE_PLAYING : STATE_PAUSED);
+                break;
+            case com.google.android.exoplayer2.Player.STATE_ENDED: // 4
+                maybeFinishSleepTimerAtEndOfItem(currentQueueItem(), false);
+                changeState(STATE_COMPLETED);
+                saveStreamProgressStateCompleted();
+                isPrepared = false;
+                break;
+        }
+    }
+
+    @Override // exoplayer listener
+    public void onIsLoadingChanged(final boolean isLoading) {
+        if (!isLoading && currentState == STATE_PAUSED && isProgressLoopRunning()) {
+            stopProgressLoop();
+        } else if (isLoading && !isProgressLoopRunning()) {
+            startProgressLoop();
+        }
+    }
+
+    @Override // own playback listener
+    public void onPlaybackBlock() {
+        if (exoPlayerIsNull()) {
+            return;
+        }
+        if (DEBUG) {
+            Log.d(TAG, "Playback - onPlaybackBlock() called");
+        }
+
+        currentItem = null;
+        currentMetadata = null;
+        simpleExoPlayer.stop();
+        isPrepared = false;
+
+        changeState(STATE_BLOCKED);
+    }
+
+    @Override // own playback listener
+    public void onPlaybackUnblock(final MediaSource mediaSource) {
+        if (DEBUG) {
+            Log.d(TAG, "Playback - onPlaybackUnblock() called");
+        }
+
+        if (exoPlayerIsNull()) {
+            return;
+        }
+        if (currentState == STATE_BLOCKED) {
+            changeState(STATE_BUFFERING);
+        }
+        simpleExoPlayer.setMediaSource(mediaSource, false);
+        simpleExoPlayer.prepare();
+    }
+
+    public void changeState(final int state) {
+        if (DEBUG) {
+            Log.d(TAG, "changeState() called with: state = [" + state + "]");
+        }
+        currentState = state;
+        learningSessionTracker.update(currentItem, state == STATE_PLAYING,
+                audioPlayerSelected());
+        switch (state) {
+            case STATE_BLOCKED:
+                onBlocked();
+                break;
+            case STATE_PLAYING:
+                onPlaying();
+                break;
+            case STATE_BUFFERING:
+                onBuffering();
+                break;
+            case STATE_PAUSED:
+                onPaused();
+                break;
+            case STATE_PAUSED_SEEK:
+                onPausedSeek();
+                break;
+            case STATE_COMPLETED:
+                onCompleted();
+                break;
+        }
+        notifyPlaybackUpdateToListeners();
+    }
+
+    private void onPrepared(final boolean playWhenReady) {
+        if (DEBUG) {
+            Log.d(TAG, "onPrepared() called with: playWhenReady = [" + playWhenReady + "]");
+        }
+
+        UIs.call(PlayerUi::onPrepared);
+
+        if (playWhenReady && !isMuted()) {
+            audioReactor.requestAudioFocus();
+        }
+    }
+
+    private void onBlocked() {
+        if (DEBUG) {
+            Log.d(TAG, "onBlocked() called");
+        }
+        if (!isProgressLoopRunning()) {
+            startProgressLoop();
+        }
+
+        hideSponsorBlockManualSkipButton();
+        UIs.call(PlayerUi::onBlocked);
+    }
+
+    private void onPlaying() {
+        if (DEBUG) {
+            Log.d(TAG, "onPlaying() called");
+        }
+        if (!isProgressLoopRunning()) {
+            startProgressLoop();
+        }
+
+        UIs.call(PlayerUi::onPlaying);
+    }
+
+    private void onBuffering() {
+        if (DEBUG) {
+            Log.d(TAG, "onBuffering() called");
+        }
+
+        UIs.call(PlayerUi::onBuffering);
+    }
+
+    private void onPaused() {
+        if (DEBUG) {
+            Log.d(TAG, "onPaused() called");
+        }
+
+        if (isProgressLoopRunning()) {
+            stopProgressLoop();
+        }
+
+        hideSponsorBlockManualSkipButton();
+        UIs.call(PlayerUi::onPaused);
+    }
+
+    private void onPausedSeek() {
+        if (DEBUG) {
+            Log.d(TAG, "onPausedSeek() called");
+        }
+        UIs.call(PlayerUi::onPausedSeek);
+    }
+
+    private void onCompleted() {
+        if (DEBUG) {
+            Log.d(TAG, "onCompleted() called" + (playQueue == null ? ". playQueue is null" : ""));
+        }
+        if (playQueue == null) {
+            return;
+        }
+
+        hideSponsorBlockManualSkipButton();
+        UIs.call(PlayerUi::onCompleted);
+
+        if (playQueue.getIndex() < playQueue.size() - 1) {
+            playQueue.offsetIndex(+1);
+        }
+        if (isProgressLoopRunning()) {
+            stopProgressLoop();
+        }
+    }
+    //endregion
+
+
+
+    /*//////////////////////////////////////////////////////////////////////////
+    // Repeat and shuffle
+    //////////////////////////////////////////////////////////////////////////*/
+    //region Repeat and shuffle
+
+    @RepeatMode
+    public int getRepeatMode() {
+        return exoPlayerIsNull() ? REPEAT_MODE_OFF : simpleExoPlayer.getRepeatMode();
+    }
+
+    public void cycleNextRepeatMode() {
+        if (!exoPlayerIsNull()) {
+            @RepeatMode final int repeatMode;
+            switch (simpleExoPlayer.getRepeatMode()) {
+                case REPEAT_MODE_OFF:
+                    repeatMode = REPEAT_MODE_ONE;
+                    break;
+                case REPEAT_MODE_ONE:
+                    repeatMode = REPEAT_MODE_ALL;
+                    break;
+                case REPEAT_MODE_ALL:
+                default:
+                    repeatMode = REPEAT_MODE_OFF;
+                    break;
+            }
+            simpleExoPlayer.setRepeatMode(repeatMode);
+        }
+    }
+
+    @Override
+    public void onRepeatModeChanged(@RepeatMode final int repeatMode) {
+        if (DEBUG) {
+            Log.d(TAG, "ExoPlayer - onRepeatModeChanged() called with: "
+                    + "repeatMode = [" + repeatMode + "]");
+        }
+        UIs.call(playerUi -> playerUi.onRepeatModeChanged(repeatMode));
+        notifyPlaybackUpdateToListeners();
+    }
+
+    @Override
+    public void onShuffleModeEnabledChanged(final boolean shuffleModeEnabled) {
+        if (DEBUG) {
+            Log.d(TAG, "ExoPlayer - onShuffleModeEnabledChanged() called with: "
+                    + "mode = [" + shuffleModeEnabled + "]");
+        }
+
+        if (playQueue != null) {
+            if (shuffleModeEnabled) {
+                playQueue.shuffle();
+            } else {
+                playQueue.unshuffle();
+            }
+            if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE) {
+                sleepTimerQueueTarget = lastQueueItem();
+                sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
+                notifySleepTimerUpdateToListeners();
+            }
+        }
+
+        UIs.call(playerUi -> playerUi.onShuffleModeEnabledChanged(shuffleModeEnabled));
+        notifyPlaybackUpdateToListeners();
+    }
+
+    public void toggleShuffleModeEnabled() {
+        if (!exoPlayerIsNull()) {
+            simpleExoPlayer.setShuffleModeEnabled(!simpleExoPlayer.getShuffleModeEnabled());
+        }
+    }
+    //endregion
+
+
+
+    /*//////////////////////////////////////////////////////////////////////////
+    // Mute / Unmute
+    //////////////////////////////////////////////////////////////////////////*/
+    //region Mute / Unmute
+
+    public void toggleMute() {
+        if (exoPlayerIsNull() || audioReactor == null) {
+            return;
+        }
+        muted = !muted;
+        applyPlayerVolume();
+        if (!muted) {
+            audioReactor.requestAudioFocus();
+        } else {
+            audioReactor.abandonAudioFocus();
+        }
+        UIs.call(playerUi -> playerUi.onMuteUnmuteChanged(muted));
+        notifyPlaybackUpdateToListeners();
+    }
+
+    public boolean isMuted() {
+        return muted;
+    }
+
+    @NonNull
+    public EqualizerState getEqualizerState() {
+        return equalizerController.getState();
+    }
+
+    public boolean isEqualizerAvailable() {
+        return equalizerController.isAvailable();
+    }
+
+    public boolean isEqualizerOperational() {
+        return equalizerController.isOperational();
+    }
+
+    public void previewEqualizerState(@NonNull final EqualizerState state) {
+        applyEqualizerState(state, false);
+    }
+
+    public void updateEqualizerState(@NonNull final EqualizerState state) {
+        applyEqualizerState(state, true);
+    }
+
+    private void applyEqualizerState(@NonNull final EqualizerState state,
+                                     final boolean persist) {
+        final boolean enabledChanged =
+                equalizerController.getState().isEnabled() != state.isEnabled();
+        if (persist) {
+            equalizerController.updateState(state);
+        } else {
+            equalizerController.previewState(state);
+        }
+        applyPlayerVolume();
+        if (enabledChanged) {
+            updateAudioTunneling();
+        }
+        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
+                state, equalizerController.isOperational()));
+    }
+
+    private void updateAudioTunneling() {
+        final boolean tunnelingEnabled = !prefs.getBoolean(
+                context.getString(R.string.disable_media_tunneling_key), false)
+                && !equalizerController.getState().isEnabled();
+        trackSelector.setParameters(trackSelector.buildUponParameters()
+                .setTunnelingEnabled(tunnelingEnabled));
+    }
+
+    private void applyPlayerVolume() {
+        if (!exoPlayerIsNull()) {
+            final float equalizerHeadroom = equalizerController.getHeadroomMultiplier();
+            simpleExoPlayer.setVolume(muted
+                    ? 0.0f : sleepTimerVolumeMultiplier * equalizerHeadroom);
+        }
+    }
+    //endregion
+
+
+
+    /*//////////////////////////////////////////////////////////////////////////
+    // Sleep timer
+    //////////////////////////////////////////////////////////////////////////*/
+    //region Sleep timer
+
+    public void startSleepTimer(final long durationMillis, final boolean fadeOut) {
+        prepareSleepTimerStart();
+        sleepTimer.startDuration(durationMillis, fadeOut);
+        startSleepTimerUpdates();
+    }
+
+    public boolean startSleepTimerAtEndOfCurrent(final boolean fadeOut) {
+        final PlayQueueItem item = currentQueueItem();
+        if (item == null) {
+            return false;
+        }
+
+        prepareSleepTimerStart();
+        sleepTimerCurrentTarget = item;
+        sleepTimer.startEndOfCurrent(fadeOut);
+        startSleepTimerUpdates();
+        return true;
+    }
+
+    public boolean startSleepTimerAtEndOfQueue(final boolean fadeOut) {
+        final PlayQueueItem item = lastQueueItem();
+        if (item == null || playQueue == null) {
+            return false;
+        }
+
+        prepareSleepTimerStart();
+        sleepTimerQueueTarget = item;
+        sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
+        sleepTimer.startEndOfQueue(fadeOut);
+        startSleepTimerUpdates();
+        return true;
+    }
+
+    private void prepareSleepTimerStart() {
+        resetSleepTimerState();
+        setSleepTimerVolumeMultiplier(1.0f);
+    }
+
+    public void cancelSleepTimer() {
+        if (!sleepTimer.isActive()) {
+            return;
+        }
+        resetSleepTimerState();
+        setSleepTimerVolumeMultiplier(1.0f);
+        notifySleepTimerUpdateToListeners();
+    }
+
+    private void clearSleepTimer() {
+        resetSleepTimerState();
+        setSleepTimerVolumeMultiplier(1.0f);
+    }
+
+    private void resetSleepTimerState() {
+        sleepTimerHandler.removeCallbacks(sleepTimerTick);
+        sleepTimer.cancel();
+        sleepTimerCurrentTarget = null;
+        sleepTimerQueueTarget = null;
+        sleepTimerQueueTargetFollowsLoading = false;
+    }
+
+    private void startSleepTimerUpdates() {
+        sleepTimerHandler.removeCallbacks(sleepTimerTick);
+        sleepTimerHandler.post(sleepTimerTick);
+    }
+
+    private void onSleepTimerTick() {
+        if (!sleepTimer.isActive()) {
+            return;
+        }
+        if (sleepTimer.hasDurationExpired()) {
+            finishSleepTimer(true);
+            return;
+        }
+
+        updateSleepTimerFadeOut();
+        notifySleepTimerUpdateToListeners();
+        sleepTimerHandler.postDelayed(sleepTimerTick, SLEEP_TIMER_UPDATE_INTERVAL_MILLIS);
+    }
+
+    private void updateSleepTimerFadeOut() {
+        final float volumeMultiplier = sleepTimer.getFadeOutVolumeMultiplier(
+                getSleepTimerFadeOutRemainingMillis());
+        setSleepTimerVolumeMultiplier(volumeMultiplier);
+    }
+
+    private void setSleepTimerVolumeMultiplier(final float volumeMultiplier) {
+        final float clampedMultiplier = Math.max(0.0f, Math.min(1.0f, volumeMultiplier));
+        if (Math.abs(sleepTimerVolumeMultiplier - clampedMultiplier) < 0.001f) {
+            return;
+        }
+        sleepTimerVolumeMultiplier = clampedMultiplier;
+        applyPlayerVolume();
+    }
+
+    private void maybeFinishSleepTimerAtEndOfItem(@Nullable final PlayQueueItem endedItem,
+                                                   final boolean pausePlayback) {
+        if (endedItem == null || !sleepTimer.isActive()) {
+            return;
+        }
+
+        final boolean targetReached = (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
+                && isSameQueueItem(endedItem, sleepTimerCurrentTarget))
+                || (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE
+                && isSameQueueItem(endedItem, sleepTimerQueueTarget));
+        if (targetReached) {
+            finishSleepTimer(pausePlayback);
+        }
+    }
+
+    private void finishSleepTimer(final boolean pausePlayback) {
+        if (!sleepTimer.isActive()) {
+            return;
+        }
+
+        resetSleepTimerState();
+        if (pausePlayback && !exoPlayerIsNull() && getPlayWhenReady()) {
+            pause();
+        }
+        setSleepTimerVolumeMultiplier(1.0f);
+        notifySleepTimerUpdateToListeners();
+        Toast.makeText(context, R.string.sleep_timer_finished, Toast.LENGTH_SHORT).show();
+    }
+
+    private void retargetSleepTimerForNewQueue() {
+        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
+            sleepTimerCurrentTarget = currentQueueItem();
+            if (sleepTimerCurrentTarget == null) {
+                clearSleepTimer();
+            }
+        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE && playQueue != null) {
+            sleepTimerQueueTarget = lastQueueItem();
+            sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
+            if (sleepTimerQueueTarget == null) {
+                clearSleepTimer();
+            }
+        }
+    }
+
+    private void retargetEndOfCurrentSleepTimer() {
+        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
+            sleepTimerCurrentTarget = currentQueueItem();
+            notifySleepTimerUpdateToListeners();
+        }
+    }
+
+    private void validateSleepTimerTargetsAfterQueueEdit() {
+        if (playQueue == null) {
+            return;
+        }
+        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
+                && findQueueItemIndex(sleepTimerCurrentTarget) < 0) {
+            sleepTimerCurrentTarget = currentQueueItem();
+            if (sleepTimerCurrentTarget == null) {
+                clearSleepTimer();
+            }
+        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE
+                && (sleepTimerQueueTargetFollowsLoading
+                || findQueueItemIndex(sleepTimerQueueTarget) < 0)) {
+            sleepTimerQueueTarget = lastQueueItem();
+            sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
+            if (sleepTimerQueueTarget == null) {
+                clearSleepTimer();
+            }
+        }
+    }
+
+    private long getSleepTimerFadeOutRemainingMillis() {
+        if (sleepTimer.getMode() == SleepTimer.Mode.DURATION) {
+            return sleepTimer.getDurationRemainingMillis();
+        }
+        if ((sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
+                && isSameQueueItem(currentQueueItem(), sleepTimerCurrentTarget))
+                || (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE
+                && isSameQueueItem(currentQueueItem(), sleepTimerQueueTarget))) {
+            return getCurrentItemRemainingMillis();
+        }
+        return SleepTimer.REMAINING_TIME_UNSET;
+    }
+
+    public long getSleepTimerRemainingMillis() {
+        if (sleepTimer.getMode() == SleepTimer.Mode.DURATION) {
+            return sleepTimer.getDurationRemainingMillis();
+        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
+            return isSameQueueItem(currentQueueItem(), sleepTimerCurrentTarget)
+                    ? getCurrentItemRemainingMillis() : SleepTimer.REMAINING_TIME_UNSET;
+        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE) {
+            return getQueueTargetRemainingMillis();
+        }
+        return SleepTimer.REMAINING_TIME_UNSET;
+    }
+
+    private long getQueueTargetRemainingMillis() {
+        if (playQueue == null || exoPlayerIsNull()) {
             return SleepTimer.REMAINING_TIME_UNSET;
         }
         final int currentIndex = playQueue.getIndex();
