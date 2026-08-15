@@ -9,6 +9,9 @@ import android.view.View
 import android.widget.LinearLayout
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.lifecycleScope
+import java.text.DateFormat
+import java.text.NumberFormat
+import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -17,9 +20,6 @@ import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.stream.Description
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.util.Localization
-import java.text.DateFormat
-import java.text.NumberFormat
-import java.util.Date
 
 class LocalMediaDescriptionFragment : BaseDescriptionFragment() {
     private lateinit var item: PlayQueueItem
@@ -49,8 +49,9 @@ class LocalMediaDescriptionFragment : BaseDescriptionFragment() {
 
     override fun displayDescription(): Description = Description.EMPTY_DESCRIPTION
 
-    override fun getService(): StreamingService =
-        error("Local media descriptions do not use a streaming service")
+    override fun getService(): StreamingService = error(
+        "Local media descriptions do not use a streaming service"
+    )
 
     override fun getServiceId(): Int = PlayQueueItem.LOCAL_SERVICE_ID
 
@@ -124,7 +125,9 @@ class LocalMediaDescriptionFragment : BaseDescriptionFragment() {
             }
             when (metadata.audioChannelCount) {
                 1 -> add(getString(R.string.local_media_audio_mono))
+
                 2 -> add(getString(R.string.local_media_audio_stereo))
+
                 in 3..Int.MAX_VALUE -> add(
                     getString(
                         R.string.local_media_audio_channels,

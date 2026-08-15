@@ -8,11 +8,11 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import org.schabi.newpipe.player.playqueue.PlayQueueItem
 
 internal data class LocalMediaTechnicalMetadata(
     val width: Int = 0,
@@ -100,11 +100,14 @@ internal object LocalMediaMetadataReader {
         0L
     }
 
-    private fun MediaMetadataRetriever.intMetadata(key: Int): Int =
-        extractMetadata(key)?.toIntOrNull() ?: 0
+    private fun MediaMetadataRetriever.intMetadata(key: Int): Int = extractMetadata(key)
+        ?.toIntOrNull() ?: 0
 
-    private fun MediaFormat.intValue(key: String): Int =
-        if (containsKey(key)) getInteger(key) else 0
+    private fun MediaFormat.intValue(key: String): Int = if (containsKey(key)) {
+        getInteger(key)
+    } else {
+        0
+    }
 
     private fun parseMetadataDate(value: String?): Long {
         val compactDate = value?.take(8)?.takeIf { date -> date.all(Char::isDigit) }
