@@ -159,11 +159,27 @@ class YoutubeCommentsEUVMInfoItemExtractor implements CommentsInfoItemExtractor 
     @Nonnull
     @Override
     public String getUploaderAvatarUrl() throws ParsingException {
-        final List<Image> uploaderAvatars = getImagesFromThumbnailsArray(
-                commentEntityPayload.getObject("avatar")
-                .getObject("image")
-                .getArray("sources"));
-        return uploaderAvatars.isEmpty() ? "" : uploaderAvatars.get(0).getUrl();
+        // Older entity payloads contain a full image object at the root.
+        final JsonObject avatar = commentEntityPayload.getObject("avatar", null);
+        if (avatar != null) {
+            final List<Image> uploaderAvatars = getImagesFromThumbnailsArray(
+                    avatar.getObject("image").getArray("sources"));
+            if (!uploaderAvatars.isEmpty()) {
+                return uploaderAvatars.get(0).getUrl();
+            }
+        }
+
+        // Current YouTube entity payloads expose the avatar as a direct URL on the author.
+        final JsonObject author = commentEntityPayload.getObject(AUTHOR);
+        final String avatarThumbnailUrl = author.getString("avatarThumbnailUrl");
+        if (!isNullOrEmpty(avatarThumbnailUrl)) {
+            return avatarThumbnailUrl;
+        }
+
+        // Keep accepting the short-lived nested author shape used by some responses.
+        final List<Image> authorAvatars = getImagesFromThumbnailsArray(
+                author.getObject("avatar").getObject("image").getArray("sources"));
+        return authorAvatars.isEmpty() ? "" : authorAvatars.get(0).getUrl();
     }
 
     @Override
