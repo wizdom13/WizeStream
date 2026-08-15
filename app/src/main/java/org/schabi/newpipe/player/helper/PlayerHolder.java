@@ -21,6 +21,7 @@ import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerType;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceExtendedEventListener;
+import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.util.NavigationHelper;
 
@@ -348,6 +349,13 @@ public final class PlayerHolder {
                 public void onMetadataUpdate(final StreamInfo info, final PlayQueue queue) {
                     if (listener != null) {
                         listener.onMetadataUpdate(info, queue);
+                    }
+                }
+
+                @Override
+                public void onMetadataUpdate(final MediaItemTag tag, final PlayQueue queue) {
+                    if (listener != null) {
+                        listener.onMetadataUpdate(tag, queue);
                     }
                 }
 

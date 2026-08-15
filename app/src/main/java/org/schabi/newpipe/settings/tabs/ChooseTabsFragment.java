@@ -238,6 +238,7 @@ public class ChooseTabsFragment extends Fragment {
         addSingletonTabIfAvailable(context, localSections, Tab.Type.SUBSCRIPTIONS);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.BOOKMARKS);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.DOWNLOADS);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.LOCAL_MEDIA);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.HISTORY);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.BLANK);
         appendGroup(returnList, R.string.add_tab_local_sections, localSections);

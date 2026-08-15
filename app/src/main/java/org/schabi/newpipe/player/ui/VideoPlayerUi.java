@@ -66,6 +66,7 @@ import org.schabi.newpipe.databinding.PlayerBinding;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.ktx.AnimationType;
@@ -88,6 +89,7 @@ import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -1048,6 +1050,24 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.channelTextView.setText(info.getUploaderName());
 
         this.seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), info.getPreviewFrames());
+    }
+
+    @Override
+    public void onMetadataChanged(@NonNull final MediaItemTag tag) {
+        super.onMetadataChanged(tag);
+        binding.qualityTextView.setVisibility(View.GONE);
+        binding.audioTrackTextView.setVisibility(View.GONE);
+        binding.playbackLiveSync.setVisibility(View.GONE);
+        binding.playbackEndTime.setVisibility(View.VISIBLE);
+        binding.endScreen.setVisibility(tag.getStreamType() == StreamType.AUDIO_STREAM
+                ? View.VISIBLE : View.GONE);
+        binding.surfaceView.setVisibility(tag.getStreamType() == StreamType.AUDIO_STREAM
+                ? View.GONE : View.VISIBLE);
+        buildPlaybackSpeedMenu();
+        binding.playbackSpeed.setVisibility(View.VISIBLE);
+        binding.titleTextView.setText(tag.getTitle());
+        binding.channelTextView.setText(tag.getUploaderName());
+        seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), Collections.emptyList());
     }
 
     private void updateStreamRelatedViews() {
