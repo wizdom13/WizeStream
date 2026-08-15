@@ -26,13 +26,13 @@ let settings: SettingsManager | undefined;
 let embeddedAddonPath = '';
 let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
-  'health', 'services.list', 'search', 'stream.resolve', 'channel.resolve', 'library.summary',
+  'health', 'services.list', 'search', 'feed.subscriptions', 'stream.resolve', 'channel.resolve', 'library.summary',
   'library.subscriptions.list', 'library.subscriptions.save',
   'library.subscriptions.refresh-metadata', 'library.subscriptions.delete',
   'library.playlists.list', 'library.playlists.create', 'library.playlists.rename',
   'library.playlists.delete', 'library.playlists.items', 'library.playlists.add-item',
   'library.playlists.delete-item', 'library.history.list', 'library.history.record',
-  'library.history.delete', 'library.history.clear', 'library.learning.list',
+  'library.history.delete', 'library.history.clear', 'library.playback-state.list', 'library.learning.list',
   'library.search-history.list', 'library.search-history.record',
   'library.search-history.delete', 'library.search-history.clear',
   'library.learning.save', 'library.learning.delete',

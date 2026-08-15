@@ -2,6 +2,7 @@ export type BackendMethod =
   | 'health'
   | 'services.list'
   | 'search'
+  | 'feed.subscriptions'
   | 'stream.resolve'
   | 'channel.resolve'
   | 'library.summary'
@@ -20,6 +21,7 @@ export type BackendMethod =
   | 'library.history.record'
   | 'library.history.delete'
   | 'library.history.clear'
+  | 'library.playback-state.list'
   | 'library.search-history.list'
   | 'library.search-history.record'
   | 'library.search-history.delete'
@@ -53,7 +55,28 @@ export interface SearchItem {
   name: string;
   thumbnailUrl?: string;
   uploaderName?: string;
+  uploaderUrl?: string;
+  uploaderAvatarUrl?: string;
   duration?: number;
+  viewCount?: number | null;
+  publishedAt?: number | null;
+  textualUploadDate?: string;
+  streamType?: string;
+  shortForm?: boolean;
+}
+
+export interface SubscriptionFeed {
+  items: SearchItem[];
+  totalChannels: number;
+  failedChannels: number;
+  refreshedAt: number;
+}
+
+export interface PlaybackState {
+  serviceId: number;
+  url: string;
+  positionMillis: number;
+  updatedAt?: number;
 }
 
 export interface StreamVariant {

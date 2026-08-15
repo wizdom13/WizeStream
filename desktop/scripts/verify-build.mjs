@@ -19,6 +19,7 @@ assert.doesNotMatch(preloadSource, /^\s*import\s/m, 'sandboxed preload must not 
 assert.match(mainSource, /preload[\\/]index\.cjs/, 'main process must load the CommonJS preload');
 assert.match(mainSource, /library\.history\.record/, 'main process must allow Phase 3 library RPC');
 assert.match(mainSource, /channel\.resolve/, 'main process must allow internal channel navigation');
+assert.match(mainSource, /feed\.subscriptions/, 'main process must allow the subscription video feed');
 assert.match(mainSource, /downloads:start/, 'main process must expose Phase 4 downloads');
 assert.match(mainSource, /embeddedMpvAvailable/, 'main process must gate the embedded native renderer');
 
@@ -107,6 +108,9 @@ assert.match(rendererJavaScript, /Refresh channel details/, 'renderer must offer
 assert.match(rendererJavaScript, /subscription-grid/, 'renderer must display subscriptions in a grid');
 assert.match(rendererJavaScript, /Back to subscriptions/, 'renderer must include the internal channel view');
 assert.match(rendererJavaScript, /Recent videos/, 'renderer must show channel videos');
+assert.match(rendererJavaScript, /What.{0,12}s New/, 'renderer must include the subscription feed');
+assert.match(rendererJavaScript, /Partially watched/, 'renderer must include Android-aligned feed filters');
+assert.match(rendererJavaScript, /Refresh feed/, 'renderer must allow explicit feed refresh');
 assert.match(rendererJavaScript, /Backup and restore/, 'renderer must include Desktop backup tools');
 assert.match(rendererJavaScript, /Android JSON subscription export/, 'renderer must explain Android subscription compatibility');
 

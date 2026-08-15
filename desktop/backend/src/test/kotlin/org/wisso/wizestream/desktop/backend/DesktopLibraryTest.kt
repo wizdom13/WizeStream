@@ -51,6 +51,16 @@ class DesktopLibraryTest {
 
                 val history = library.recordHistory(stream)
                 assertEquals("Phase 3 fixture", library.history().single()["title"])
+                database.connection().prepareStatement(
+                    "INSERT INTO playback_state(service_id, url, position_millis, updated_at) VALUES (?, ?, ?, ?)"
+                ).use { statement ->
+                    statement.setInt(1, 0)
+                    statement.setString(2, "https://www.youtube.com/watch?v=phase3fixture")
+                    statement.setLong(3, 42_000)
+                    statement.setLong(4, 1_000)
+                    statement.executeUpdate()
+                }
+                assertEquals(42_000L, library.playbackStates().single()["positionMillis"])
                 val search = library.recordSearch(0, "Phase 3")
                 assertEquals("Phase 3", library.searchHistory().single()["query"])
 

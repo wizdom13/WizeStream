@@ -7,6 +7,12 @@ body { overflow-x: hidden; }
 .navigation-rail .MuiListItemIcon-root { min-width: 44px; }
 .content-column { margin-left: 228px; width: calc(100% - 228px); }
 .search-row { display: flex; gap: 12px; align-items: center; }
+.feed-filter-row { overflow-x: auto; padding-block: 2px; }
+.feed-filter-row > * { flex-shrink: 0; }
+.feed-video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; align-items: stretch; }
+.feed-video-card { height: 100%; }
+.feed-video-cover { position: relative; }
+.feed-video-badge { position: absolute !important; right: 8px; bottom: 8px; background: color-mix(in srgb, #000 82%, transparent) !important; color: #fff !important; }
 .result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
 .subscription-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
 .channel-banner { display: block; width: 100%; max-height: 260px; aspect-ratio: 16 / 4; object-fit: cover; background: #201c24; }
