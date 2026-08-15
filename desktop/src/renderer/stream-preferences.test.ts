@@ -16,6 +16,7 @@ const details: StreamDetails = {
   ],
   subtitles: [],
   relatedItems: [],
+  sponsorBlockSegments: [],
 };
 
 describe('desktop stream preferences', () => {

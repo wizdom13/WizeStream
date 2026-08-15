@@ -4,7 +4,7 @@ import {
   Checkbox, CircularProgress, Container, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, LinearProgress, List,
   ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, MenuItem,
-  Slider, Stack, Switch, Tab, Tabs, TextField, Toolbar, Tooltip, Typography,
+  Slider, Snackbar, Stack, Switch, Tab, Tabs, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
@@ -39,16 +39,21 @@ import type {
   ChannelDetails, CommentItem, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
   HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
   PlaybackState, SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
-  StreamComments, SubscriptionFeed,
+  SponsorBlockSegment, SponsorBlockSettings, StreamComments, SubscriptionFeed,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
   UpdateState,
 } from '../shared/contracts';
+import { loadSubscriptionFeedCache, saveSubscriptionFeedCache } from './feed-cache';
 import { SettingsPanel } from './SettingsPanel';
 import {
   historyResumePosition, matchesFeedFilter, playbackKey, publishedAgeLabel, viewCountLabel,
   type FeedFilter,
 } from './feed';
 import { subscriberCountLabel } from './subscriber-count';
+import {
+  activeSponsorBlockSegment, sponsorBlockCategoryColor, sponsorBlockCategoryTitle,
+  sponsorBlockSegmentKey, validSponsorBlockSegments,
+} from './sponsor-block';
 import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
 
 defineMpvVideoElement();
@@ -82,9 +87,10 @@ export function App() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchItem[]>([]);
   const [searchActive, setSearchActive] = useState(false);
-  const [subscriptionFeed, setSubscriptionFeed] = useState<SubscriptionFeed>({
-    items: [], totalChannels: 0, failedChannels: 0, refreshedAt: 0,
-  });
+  const [subscriptionFeed, setSubscriptionFeed] = useState<SubscriptionFeed>(() =>
+    loadSubscriptionFeedCache(window.localStorage) ?? {
+      items: [], totalChannels: 0, failedChannels: 0, refreshedAt: 0,
+    });
   const [playbackStates, setPlaybackStates] = useState<PlaybackState[]>([]);
   const [feedFilter, setFeedFilter] = useState<FeedFilter>('none');
   const [feedLoading, setFeedLoading] = useState(false);
@@ -109,7 +115,12 @@ export function App() {
       const states = await window.wizestream.backend.invoke<PlaybackState[]>('library.playback-state.list');
       setPlaybackStates(states);
       const feed = await window.wizestream.backend.invoke<SubscriptionFeed>('feed.subscriptions', { refresh });
+      if (feed.totalChannels > 0 && feed.failedChannels >= feed.totalChannels && feed.items.length === 0) {
+        setFeedError('The feed could not be refreshed. Showing the last cached videos.');
+        return;
+      }
       setSubscriptionFeed(feed);
+      saveSubscriptionFeedCache(window.localStorage, feed);
     } catch (reason) { setFeedError(errorMessage(reason)); } finally { setFeedLoading(false); }
   }, []);
 
@@ -196,7 +207,9 @@ export function App() {
   const resolveStream = useCallback(async (url: string, startPosition = 0) => {
     setLoading(true); setError(undefined);
     try {
-      const details = await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', { url });
+      const details = await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', {
+        url, sponsorBlock: settings.sponsorBlock,
+      });
       setSelected(details);
       const videoIndex = preferredVideoIndex(details, settings);
       const audioIndex = preferredAudioIndex(details, settings);
@@ -332,6 +345,7 @@ export function App() {
             {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>}
             {embeddedRequest && selected && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest}
               stream={selected} recordPlayback={settings.enableWatchHistory}
+              sponsorBlockSettings={settings.sponsorBlock}
               externalAvailable={Boolean(mpv.externalAvailable)} onError={setError} />}
             {selected && showPlayingInfo && <VideoInformationPanel details={selected}
               onOpen={resolveStream} onDownload={() => setSection('downloads')}
@@ -470,9 +484,9 @@ function FeedVideoCard({ item, onOpen }: { item: SearchItem; onOpen(): void }) {
   </Card>;
 }
 
-function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, onError }: {
+function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings, externalAvailable, onError }: {
   request: EmbeddedPlayerRequest & { title: string; nonce: number }; externalAvailable: boolean;
-  stream: StreamDetails; recordPlayback: boolean;
+  stream: StreamDetails; recordPlayback: boolean; sponsorBlockSettings: SponsorBlockSettings;
   onError(value: string): void;
 }) {
   const player = useRef<MpvVideoElement>(null);
@@ -480,7 +494,16 @@ function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, on
     audioTrack: 'auto', subtitleTrack: 'off' });
   const latestState = useRef(state);
   const lastPlaybackSave = useRef(0);
+  const skippedSponsorBlockSegments = useRef(new Set<string>());
+  const ignoredSponsorBlockSegment = useRef<string | undefined>(undefined);
+  const sponsorBlockSettingsRef = useRef(sponsorBlockSettings);
+  const sponsorBlockSegmentsRef = useRef(stream.sponsorBlockSegments ?? []);
   const [localError, setLocalError] = useState<string>();
+  const [manualSponsorBlockSegment, setManualSponsorBlockSegment] = useState<SponsorBlockSegment>();
+  const [sponsorBlockNotice, setSponsorBlockNotice] = useState<string>();
+
+  useEffect(() => { sponsorBlockSettingsRef.current = sponsorBlockSettings; }, [sponsorBlockSettings]);
+  useEffect(() => { sponsorBlockSegmentsRef.current = stream.sponsorBlockSegments ?? []; }, [stream.sponsorBlockSegments]);
 
   useEffect(() => {
     const element = player.current;
@@ -489,6 +512,10 @@ function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, on
       audioTrack: 'auto', subtitleTrack: 'off' };
     latestState.current = openingState; setState(openingState);
     lastPlaybackSave.current = 0;
+    skippedSponsorBlockSegments.current.clear();
+    ignoredSponsorBlockSegment.current = undefined;
+    setManualSponsorBlockSegment(undefined);
+    setSponsorBlockNotice(undefined);
     const savePosition = (time: number, force = false) => {
       if (!recordPlayback || !Number.isFinite(time) || time < 0) return;
       const now = Date.now();
@@ -501,6 +528,39 @@ function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, on
     const update = (event: Event) => {
       const next = (event as CustomEvent<typeof state>).detail;
       latestState.current = next; setState(next); savePosition(next.time);
+      const currentSettings = sponsorBlockSettingsRef.current;
+      const active = activeSponsorBlockSegment(
+        sponsorBlockSegmentsRef.current,
+        next.time,
+        currentSettings,
+        skippedSponsorBlockSegments.current,
+        ignoredSponsorBlockSegment.current,
+      );
+      if (ignoredSponsorBlockSegment.current) {
+        const ignored = sponsorBlockSegmentsRef.current.find((segment) =>
+          sponsorBlockSegmentKey(segment) === ignoredSponsorBlockSegment.current);
+        const positionMillis = next.time * 1_000;
+        if (!ignored || positionMillis < ignored.startTime || positionMillis >= ignored.endTime) {
+          ignoredSponsorBlockSegment.current = undefined;
+        }
+      }
+      if (!active) {
+        setManualSponsorBlockSegment(undefined);
+        return;
+      }
+      const preference = currentSettings.categories[active.category];
+      if (preference.behavior === 'manual') {
+        setManualSponsorBlockSegment(active);
+        return;
+      }
+      if (next.status !== 'Playing') return;
+      const key = sponsorBlockSegmentKey(active);
+      skippedSponsorBlockSegments.current.add(key);
+      setManualSponsorBlockSegment(undefined);
+      void element.seek(Math.max(0, active.endTime / 1_000));
+      if (currentSettings.notifications) {
+        setSponsorBlockNotice(`Skipped ${sponsorBlockCategoryTitle(active.category)}`);
+      }
     };
     const fail = (event: Event) => { const value = String((event as CustomEvent<unknown>).detail); setLocalError(value); onError(value); };
     element.addEventListener('mpv-state', update);
@@ -534,6 +594,34 @@ function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, on
     return () => window.removeEventListener('wizestream-stop-player', stop);
   }, []);
 
+  function seekManually(value: number) {
+    const settings = sponsorBlockSettingsRef.current;
+    const active = activeSponsorBlockSegment(
+      sponsorBlockSegmentsRef.current, value, settings, new Set(), undefined,
+    );
+    if (settings.gracedRewind) {
+      ignoredSponsorBlockSegment.current = active ? sponsorBlockSegmentKey(active) : undefined;
+    } else {
+      ignoredSponsorBlockSegment.current = undefined;
+      if (active) skippedSponsorBlockSegments.current.delete(sponsorBlockSegmentKey(active));
+    }
+    void player.current?.seek(value);
+  }
+
+  function skipManualSponsorBlockSegment() {
+    if (!manualSponsorBlockSegment) return;
+    skippedSponsorBlockSegments.current.add(sponsorBlockSegmentKey(manualSponsorBlockSegment));
+    void player.current?.seek(Math.max(0, manualSponsorBlockSegment.endTime / 1_000));
+    if (sponsorBlockSettingsRef.current.notifications) {
+      setSponsorBlockNotice(`Skipped ${sponsorBlockCategoryTitle(manualSponsorBlockSegment.category)}`);
+    }
+    setManualSponsorBlockSegment(undefined);
+  }
+
+  const markerSegments = validSponsorBlockSegments(
+    stream.sponsorBlockSegments ?? [], sponsorBlockSettings,
+  );
+
   return <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="embedded-player-frame">
     <mpv-video ref={player} render-mode="shared-texture" volume="80" title={request.title} />
   </Box><CardContent>{localError && <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" disabled={!externalAvailable} onClick={() => void window.wizestream.player.play({
@@ -547,15 +635,29 @@ function EmbeddedPlayer({ request, stream, recordPlayback, externalAvailable, on
         <IconButton aria-label="Stop" onClick={() => void player.current?.stop()}><StopRounded /></IconButton>
       </Stack>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.time)}</Typography>
-      <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
-        onChangeCommitted={(_event, value) => void player.current?.seek(Number(value))} />
+      <Box className="player-timeline">
+        <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
+          onChangeCommitted={(_event, value) => seekManually(Number(value))} />
+        {state.duration > 0 && <Box className="sponsor-block-markers" aria-hidden>
+          {markerSegments.map((segment) => <Box key={sponsorBlockSegmentKey(segment)} sx={{
+            left: `${Math.max(0, segment.startTime / 10 / state.duration)}%`,
+            width: `${Math.max(0.25, (segment.endTime - segment.startTime) / 10 / state.duration)}%`,
+            bgcolor: sponsorBlockCategoryColor(segment.category),
+          }} />)}
+        </Box>}
+      </Box>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.duration)}</Typography>
     </Box>
     <Stack direction="row" className="player-status-row" sx={{ mt: 1.5, gap: 1, flexWrap: 'wrap' }}>
+      {manualSponsorBlockSegment && <Button size="small" variant="contained" onClick={skipManualSponsorBlockSegment}>
+        {manualSponsorBlockSegment.category === 'sponsor' ? 'Skip sponsor' : 'Skip segment'}
+      </Button>}
       <Chip size="small" label={`Audio · ${request.audio?.title ?? state.audioTrack}`} />
       <Chip size="small" label={`Captions · ${request.subtitle?.title ?? state.subtitleTrack}`} />
       <Chip size="small" label={`${state.status} · ${state.rendererName}`} />
     </Stack>
+    <Snackbar open={Boolean(sponsorBlockNotice)} autoHideDuration={3_000}
+      onClose={() => setSponsorBlockNotice(undefined)} message={sponsorBlockNotice} />
   </CardContent></Card>;
 }
 

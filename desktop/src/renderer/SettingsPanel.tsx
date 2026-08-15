@@ -6,18 +6,26 @@ import {
 } from '@mui/material';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import BackupRounded from '@mui/icons-material/BackupRounded';
+import BlockRounded from '@mui/icons-material/BlockRounded';
 import CleaningServicesRounded from '@mui/icons-material/CleaningServicesRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
 import HomeRounded from '@mui/icons-material/HomeRounded';
+import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded';
 import PaletteRounded from '@mui/icons-material/PaletteRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import VideoSettingsRounded from '@mui/icons-material/VideoSettingsRounded';
-import type { BackupOperationResult, DesktopSettings, ServiceSummary } from '../shared/contracts';
+import { defaultSponsorBlockSettings } from '../shared/contracts';
+import type {
+  BackupOperationResult, DesktopSettings, ServiceSummary, SponsorBlockBehavior,
+  SponsorBlockCategoryId, SponsorBlockCategoryPreference, SponsorBlockSettings,
+} from '../shared/contracts';
+import { sponsorBlockCategories } from './sponsor-block';
 
-type Category = 'video' | 'download' | 'appearance' | 'history' | 'content' | 'updates' | 'backup' | 'sync' | 'learning';
+type Category = 'video' | 'download' | 'appearance' | 'history' | 'content' | 'sponsorblock'
+  | 'updates' | 'backup' | 'sync' | 'learning';
 
 const categories: Array<{ id: Category; title: string; summary: string; icon: React.ReactNode }> = [
   { id: 'video', title: 'Video and audio', summary: 'Playback, resolution, formats, and audio behavior', icon: <VideoSettingsRounded /> },
@@ -25,6 +33,7 @@ const categories: Array<{ id: Category; title: string; summary: string; icon: Re
   { id: 'appearance', title: 'Appearance', summary: 'Theme, colors, tabs, and layout', icon: <PaletteRounded /> },
   { id: 'history', title: 'History and cache', summary: 'Watch history, search history, and cached data', icon: <HistoryRounded /> },
   { id: 'content', title: 'Content', summary: 'Services, languages, regions, and content filters', icon: <HomeRounded /> },
+  { id: 'sponsorblock', title: 'SponsorBlock', summary: 'Skip sponsored segments and configure categories', icon: <BlockRounded /> },
   { id: 'updates', title: 'Updates', summary: 'Version, changelog, and update checks', icon: <SystemUpdateAltRounded /> },
   { id: 'backup', title: 'Backup and restore', summary: 'Export, import, and restore app data', icon: <BackupRounded /> },
   { id: 'sync', title: 'Device synchronization', summary: 'Securely pair trusted devices for private synchronization', icon: <DevicesRounded /> },
@@ -52,6 +61,20 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
     setMessage(undefined);
     try { await onUpdate(patch); }
     catch (reason) { setMessageSeverity('error'); setMessage(reason instanceof Error ? reason.message : String(reason)); }
+  }
+
+  function updateSponsorBlock(patch: Partial<SponsorBlockSettings>) {
+    void update({ sponsorBlock: { ...settings.sponsorBlock, ...patch } });
+  }
+
+  function updateSponsorBlockCategory(
+    id: SponsorBlockCategoryId,
+    patch: Partial<SponsorBlockCategoryPreference>,
+  ) {
+    updateSponsorBlock({ categories: {
+      ...settings.sponsorBlock.categories,
+      [id]: { ...settings.sponsorBlock.categories[id], ...patch },
+    } });
   }
 
   async function clear(method: 'library.history.clear' | 'library.search-history.clear', confirmation: string) {
@@ -124,6 +147,47 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
       {category === 'content' && <List disablePadding><SettingSelect title="Default content service" value={settings.defaultServiceId === null ? 'automatic' : String(settings.defaultServiceId)}
         onChange={(value) => void update({ defaultServiceId: value === 'automatic' ? null : Number(value) })}
         options={[['automatic', 'First available'], ...services.map((service) => [String(service.id), service.name] as [string, string])]} /></List>}
+      {category === 'sponsorblock' && <List disablePadding>
+        <SettingAction icon={<OpenInNewRounded />} title="SponsorBlock website" summary="Open SponsorBlock project website" action="Open"
+          onClick={() => window.open('https://sponsor.ajay.app', '_blank', 'noopener')} />
+        <Divider component="li" /><SettingAction icon={<OpenInNewRounded />} title="Privacy policy" summary="Open SponsorBlock privacy policy" action="Open"
+          onClick={() => window.open('https://wiki.sponsor.ajay.app/w/Privacy_Policy', '_blank', 'noopener')} />
+        <Divider component="li" /><SettingSwitch title="Enable SponsorBlock" summary="Skip or show controls for sponsored segments" checked={settings.sponsorBlock.enabled}
+          onChange={(enabled) => updateSponsorBlock({ enabled })} />
+        <Divider component="li" /><SettingSwitch title="Rewind after manual seek" summary="Allow skipped segments to play if you manually seek back into them" checked={settings.sponsorBlock.gracedRewind}
+          disabled={!settings.sponsorBlock.enabled} onChange={(gracedRewind) => updateSponsorBlock({ gracedRewind })} />
+        <Divider component="li" /><SettingSwitch title="Skip notifications" summary="Show a short message when a segment is skipped" checked={settings.sponsorBlock.notifications}
+          disabled={!settings.sponsorBlock.enabled} onChange={(notifications) => updateSponsorBlock({ notifications })} />
+        <Divider component="li" /><ListItem sx={{ py: 2, gap: 1, flexWrap: 'wrap' }}>
+          <ListItemText primary="Category presets" secondary="Choose which segment categories are requested and how they behave" />
+          <Button disabled={!settings.sponsorBlock.enabled} onClick={() => updateSponsorBlock({ categories: Object.fromEntries(
+            sponsorBlockCategories.map((item) => [item.id, { enabled: true, behavior: item.markerOnly ? 'dont_skip' : settings.sponsorBlock.categories[item.id].behavior }]),
+          ) as SponsorBlockSettings['categories'] })}>Activate all</Button>
+          <Button disabled={!settings.sponsorBlock.enabled} onClick={() => updateSponsorBlock({ categories: Object.fromEntries(
+            sponsorBlockCategories.map((item) => [item.id, { ...settings.sponsorBlock.categories[item.id], enabled: false }]),
+          ) as SponsorBlockSettings['categories'] })}>Deactivate all</Button>
+          <Button disabled={!settings.sponsorBlock.enabled} onClick={() => updateSponsorBlock({ categories: defaultSponsorBlockSettings.categories })}>Reset to defaults</Button>
+        </ListItem>
+        {sponsorBlockCategories.map((item) => <Box component="li" key={item.id} sx={{ listStyle: 'none' }}>
+          <Divider />
+          <ListItem sx={{ py: 2, gap: 2 }}>
+            <Box aria-hidden sx={{ width: 14, height: 38, borderRadius: 1, bgcolor: item.color, flexShrink: 0 }} />
+            <ListItemText primary={item.title} secondary={item.summary} />
+            <FormControlLabel sx={{ ml: 1 }} label={settings.sponsorBlock.categories[item.id].enabled ? 'On' : 'Off'} control={<Switch
+              checked={settings.sponsorBlock.categories[item.id].enabled} disabled={!settings.sponsorBlock.enabled}
+              onChange={(event) => updateSponsorBlockCategory(item.id, { enabled: event.target.checked })} />} />
+            <TextField select size="small" label="Behavior" value={settings.sponsorBlock.categories[item.id].behavior}
+              disabled={!settings.sponsorBlock.enabled || !settings.sponsorBlock.categories[item.id].enabled || item.markerOnly}
+              onChange={(event) => updateSponsorBlockCategory(item.id, { behavior: event.target.value as SponsorBlockBehavior })}
+              sx={{ minWidth: 145 }}>
+              <MenuItem value="skip">Skip</MenuItem><MenuItem value="manual">Manual</MenuItem><MenuItem value="dont_skip">Don&apos;t skip</MenuItem>
+            </TextField>
+          </ListItem>
+        </Box>)}
+        <Divider component="li" /><ListItem sx={{ py: 2.5 }}><ListItemIcon><BlockRounded /></ListItemIcon>
+          <ListItemText primary="Privacy" secondary="When enabled, WizeStream connects to SponsorBlock to request segments for videos you open. SponsorBlock can see your IP address." />
+        </ListItem>
+      </List>}
       {category === 'sync' && <SettingAction icon={<DevicesRounded />} title="Device synchronization" summary="Pair devices, choose data categories, and manage automatic local-network synchronization in Devices." action="Open Devices" onClick={onOpenDevices} />}
       {category === 'learning' && <List disablePadding>
         <SettingSwitch title="Enable Learning Mode" summary="Show optional learning tools without changing the normal WizeStream experience" checked={settings.learningMode} onChange={(checked) => void update({ learningMode: checked })} />
@@ -134,7 +198,7 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         <Button startIcon={<SystemUpdateAltRounded />} variant="outlined" onClick={onOpenUpdates}>Check for updates</Button>
       </Box>}
       {category === 'backup' && <List disablePadding>
-        <ListItem sx={{ py: 2.5 }}><ListItemIcon><BackupRounded /></ListItemIcon><ListItemText primary="What full backup includes" secondary="Full backup includes subscriptions, playlists, app settings, history, search history, and Learning Mode notes." /></ListItem>
+        <ListItem sx={{ py: 2.5 }}><ListItemIcon><BackupRounded /></ListItemIcon><ListItemText primary="What full backup includes" secondary="Full backup includes subscriptions, playlists, app settings including SponsorBlock, history, search history, and Learning Mode notes." /></ListItem>
         <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Import full backup" summary="Restore subscriptions, playlists, app settings, and local data from a ZIP backup." action="Import" disabled={busy} onClick={() => void backupAction('restoreFull')} />
         <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Export full backup" summary="Create a ZIP backup with subscriptions, playlists, app settings, and local data." action="Export" disabled={busy} onClick={() => void backupAction('exportFull')} />
         <Divider component="li" /><SettingAction icon={<CleaningServicesRounded />} title="Reset settings" summary="Reset all settings to their default values" action="Reset" disabled={busy} onClick={() => {

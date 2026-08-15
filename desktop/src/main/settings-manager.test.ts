@@ -34,6 +34,18 @@ describe('SettingsManager', () => {
     expect(JSON.parse(await readFile(filePath, 'utf8'))).toMatchObject({ theme: 'dark' });
   });
 
+  it('adds disabled SponsorBlock defaults to settings saved by older Desktop versions', async () => {
+    const filePath = await fixture();
+    const legacySettings: Record<string, unknown> = { ...defaultDesktopSettings };
+    delete legacySettings.sponsorBlock;
+    await writeFile(filePath, JSON.stringify(legacySettings));
+
+    const manager = new SettingsManager(filePath);
+    expect(await manager.initialize()).toMatchObject({
+      sponsorBlock: { enabled: false, gracedRewind: true, notifications: true },
+    });
+  });
+
   it('rejects unknown or invalid settings', async () => {
     const manager = new SettingsManager(await fixture());
     await manager.initialize();
@@ -56,5 +68,16 @@ describe('SettingsManager', () => {
     expect(manager.validate(restored)).toEqual(restored);
     expect(await manager.replace(restored)).toEqual(restored);
     await expect(manager.replace({ theme: 'dark' })).rejects.toThrow();
+  });
+
+  it('restores a complete legacy backup that predates SponsorBlock settings', async () => {
+    const manager = new SettingsManager(await fixture());
+    await manager.initialize();
+    const legacySettings: Record<string, unknown> = { ...defaultDesktopSettings };
+    delete legacySettings.sponsorBlock;
+
+    expect(await manager.replace(legacySettings)).toMatchObject({
+      sponsorBlock: { enabled: false, gracedRewind: true, notifications: true },
+    });
   });
 });

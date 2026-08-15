@@ -57,7 +57,8 @@ public final class DesktopBackend implements AutoCloseable {
                 case "search" -> extractor.search(requiredInt(params, "serviceId"), requiredText(params, "query"));
                 case "feed.subscriptions" -> extractor.subscriptionFeed(
                         library.subscriptions(), optionalBoolean(params, "refresh", false));
-                case "stream.resolve" -> extractor.resolve(requiredText(params, "url"));
+                case "stream.resolve" -> extractor.resolve(
+                        requiredText(params, "url"), params.path("sponsorBlock"));
                 case "stream.comments" -> extractor.comments(
                         requiredInt(params, "serviceId"), requiredText(params, "url"));
                 case "channel.resolve" -> extractor.channel(

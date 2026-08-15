@@ -130,6 +130,31 @@ export interface StreamDetails {
   videoStreams: StreamVariant[];
   audioStreams: StreamVariant[];
   subtitles: SubtitleVariant[];
+  sponsorBlockSegments: SponsorBlockSegment[];
+}
+
+export type SponsorBlockCategoryId = 'sponsor' | 'intro' | 'outro' | 'interaction'
+  | 'self_promo' | 'non_music' | 'preview' | 'filler' | 'highlight';
+export type SponsorBlockBehavior = 'skip' | 'manual' | 'dont_skip';
+
+export interface SponsorBlockSegment {
+  uuid?: string;
+  startTime: number;
+  endTime: number;
+  category: SponsorBlockCategoryId;
+  action: 'skip' | 'poi';
+}
+
+export interface SponsorBlockCategoryPreference {
+  enabled: boolean;
+  behavior: SponsorBlockBehavior;
+}
+
+export interface SponsorBlockSettings {
+  enabled: boolean;
+  gracedRewind: boolean;
+  notifications: boolean;
+  categories: Record<SponsorBlockCategoryId, SponsorBlockCategoryPreference>;
 }
 
 export interface CommentItem {
@@ -419,6 +444,7 @@ export interface DesktopSettings {
   enableSearchHistory: boolean;
   learningMode: boolean;
   learningNotes: boolean;
+  sponsorBlock: SponsorBlockSettings;
 }
 
 export interface BackupOperationResult {
@@ -436,6 +462,23 @@ export interface BackupOperationResult {
   source?: string;
 }
 
+export const defaultSponsorBlockSettings: SponsorBlockSettings = {
+  enabled: false,
+  gracedRewind: true,
+  notifications: true,
+  categories: {
+    sponsor: { enabled: true, behavior: 'skip' },
+    intro: { enabled: false, behavior: 'skip' },
+    outro: { enabled: false, behavior: 'skip' },
+    interaction: { enabled: false, behavior: 'skip' },
+    self_promo: { enabled: false, behavior: 'skip' },
+    non_music: { enabled: false, behavior: 'skip' },
+    preview: { enabled: false, behavior: 'skip' },
+    filler: { enabled: false, behavior: 'skip' },
+    highlight: { enabled: false, behavior: 'dont_skip' },
+  },
+};
+
 export const defaultDesktopSettings: DesktopSettings = {
   theme: 'system',
   defaultServiceId: null,
@@ -448,6 +491,7 @@ export const defaultDesktopSettings: DesktopSettings = {
   enableSearchHistory: true,
   learningMode: false,
   learningNotes: true,
+  sponsorBlock: defaultSponsorBlockSettings,
 };
 
 export interface DesktopApi {

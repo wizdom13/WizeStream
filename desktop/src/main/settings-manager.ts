@@ -17,6 +17,22 @@ const settingsSchema = z.object({
   enableSearchHistory: z.boolean(),
   learningMode: z.boolean(),
   learningNotes: z.boolean(),
+  sponsorBlock: z.object({
+    enabled: z.boolean(),
+    gracedRewind: z.boolean(),
+    notifications: z.boolean(),
+    categories: z.object({
+      sponsor: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      intro: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      outro: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      interaction: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      self_promo: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      non_music: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      preview: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      filler: z.object({ enabled: z.boolean(), behavior: z.enum(['skip', 'manual', 'dont_skip']) }).strict(),
+      highlight: z.object({ enabled: z.boolean(), behavior: z.literal('dont_skip') }).strict(),
+    }).strict(),
+  }).strict(),
 }).strict();
 
 const settingsPatchSchema = settingsSchema.partial();
@@ -44,7 +60,13 @@ export class SettingsManager {
   }
 
   validate(input: unknown): DesktopSettings {
-    return settingsSchema.parse(input);
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      return settingsSchema.parse(input);
+    }
+    return settingsSchema.parse({
+      sponsorBlock: defaultDesktopSettings.sponsorBlock,
+      ...(input as Record<string, unknown>),
+    });
   }
 
   async update(input: unknown): Promise<DesktopSettings> {

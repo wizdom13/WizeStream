@@ -7,6 +7,9 @@ import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem
 import org.schabi.newpipe.extractor.localization.DateWrapper
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockAction
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockCategory
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.AudioTrackType
 import org.schabi.newpipe.extractor.stream.Description
@@ -115,6 +118,10 @@ class ExtractorFacadeTest {
             textualUploadDate = "1 day ago"
             description = Description("Player description", Description.PLAIN_TEXT)
             relatedItems = listOf(related)
+            sponsorBlockSegments = arrayOf(SponsorBlockSegment(
+                "segment-1", 10_000.0, 20_000.0,
+                SponsorBlockCategory.SPONSOR, SponsorBlockAction.SKIP, 0
+            ))
         }
 
         val value = ExtractorFacade().streamDetails(info)
@@ -126,6 +133,10 @@ class ExtractorFacadeTest {
         assertEquals(731L, value["dislikeCount"])
         assertEquals("Player description", value["description"])
         assertEquals(1, (value["relatedItems"] as List<*>).size)
+        val sponsorBlock = value["sponsorBlockSegments"] as List<*>
+        assertEquals(1, sponsorBlock.size)
+        assertEquals("sponsor", (sponsorBlock.first() as Map<*, *>)["category"])
+        assertEquals("skip", (sponsorBlock.first() as Map<*, *>)["action"])
     }
 
     @Test

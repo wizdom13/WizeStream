@@ -126,7 +126,7 @@
         "deb"
       ],
       "category": "AudioVideo",
-      "icon": "../assets/wizestream_logo.svg",
+      "icon": "../assets/wizestream_logo_round.svg",
       "syncDesktopName": true
     },
     "win": {
@@ -135,7 +135,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "../assets/wizestream_logo.svg"
+      "icon": "../assets/wizestream_logo_round.svg"
     },
     "mac": {
       "artifactName": "${productName}-${version}-macos-${arch}.${ext}",
@@ -144,7 +144,7 @@
         "zip"
       ],
       "category": "public.app-category.video",
-      "icon": "../assets/wizestream_logo.svg",
+      "icon": "../assets/wizestream_logo_round.svg",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "notarize": true

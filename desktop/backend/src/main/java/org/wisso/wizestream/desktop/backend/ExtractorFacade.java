@@ -1,7 +1,9 @@
 package org.wisso.wizestream.desktop.backend;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
@@ -12,6 +14,8 @@ import org.schabi.newpipe.extractor.search.SearchInfo;
 import org.schabi.newpipe.extractor.search.filter.Filter;
 import org.schabi.newpipe.extractor.search.filter.FilterGroup;
 import org.schabi.newpipe.extractor.search.filter.FilterItem;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockApiSettings;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.extractor.stream.Stream;
@@ -131,11 +135,34 @@ final class ExtractorFacade {
         return Collections.emptyList();
     }
 
-    Map<String, Object> resolve(final String url) throws Exception {
+    Map<String, Object> resolve(final String url, final JsonNode sponsorBlock) throws Exception {
         if (url == null || url.length() > 4_096 || !(url.startsWith("https://") || url.startsWith("http://"))) {
             throw new IllegalArgumentException("Invalid stream URL");
         }
+        configureSponsorBlock(sponsorBlock);
         return streamDetails(StreamInfo.getInfo(url));
+    }
+
+    private void configureSponsorBlock(final JsonNode sponsorBlock) {
+        ServiceList.YouTube.setSponsorBlockApiSettings(null);
+        if (sponsorBlock == null || !sponsorBlock.path("enabled").asBoolean(false)) return;
+
+        final JsonNode categories = sponsorBlock.path("categories");
+        final SponsorBlockApiSettings value = new SponsorBlockApiSettings();
+        value.includeSponsorCategory = categoryEnabled(categories, "sponsor");
+        value.includeIntroCategory = categoryEnabled(categories, "intro");
+        value.includeOutroCategory = categoryEnabled(categories, "outro");
+        value.includeInteractionCategory = categoryEnabled(categories, "interaction");
+        value.includeSelfPromoCategory = categoryEnabled(categories, "self_promo");
+        value.includeMusicCategory = categoryEnabled(categories, "non_music");
+        value.includePreviewCategory = categoryEnabled(categories, "preview");
+        value.includeFillerCategory = categoryEnabled(categories, "filler");
+        value.includeHighlightCategory = categoryEnabled(categories, "highlight");
+        ServiceList.YouTube.setSponsorBlockApiSettings(value);
+    }
+
+    private static boolean categoryEnabled(final JsonNode categories, final String id) {
+        return categories.path(id).path("enabled").asBoolean(false);
     }
 
     Map<String, Object> streamDetails(final StreamInfo info) {
@@ -168,7 +195,38 @@ final class ExtractorFacade {
         value.put("videoStreams", videoStreams(info));
         value.put("audioStreams", audioStreams(info));
         value.put("subtitles", subtitles(info));
+        value.put("sponsorBlockSegments", sponsorBlockSegments(info));
         return value;
+    }
+
+    private List<Map<String, Object>> sponsorBlockSegments(final StreamInfo info) {
+        final SponsorBlockSegment[] segments = info.getSponsorBlockSegments();
+        if (segments == null) return List.of();
+        return java.util.Arrays.stream(segments).map(segment -> {
+            final Map<String, Object> value = new LinkedHashMap<>();
+            value.put("uuid", blankToNull(segment.uuid));
+            value.put("startTime", segment.startTime);
+            value.put("endTime", segment.endTime);
+            value.put("category", desktopSponsorBlockCategory(segment));
+            value.put("action", segment.action == null ? null : segment.action.getApiName());
+            return value;
+        }).filter(segment -> segment.get("category") != null && segment.get("action") != null).toList();
+    }
+
+    private String desktopSponsorBlockCategory(final SponsorBlockSegment segment) {
+        if (segment.category == null) return null;
+        return switch (segment.category) {
+            case SPONSOR -> "sponsor";
+            case INTRO -> "intro";
+            case OUTRO -> "outro";
+            case INTERACTION -> "interaction";
+            case SELF_PROMO -> "self_promo";
+            case NON_MUSIC -> "non_music";
+            case PREVIEW -> "preview";
+            case FILLER -> "filler";
+            case HIGHLIGHT -> "highlight";
+            default -> null;
+        };
     }
 
     Map<String, Object> comments(final int serviceId, final String url) throws Exception {
