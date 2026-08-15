@@ -15,6 +15,7 @@ const details: StreamDetails = {
     { id: 'descriptive', url: 'https://example.test/descriptive', format: 'M4A', audioTrackType: 'DESCRIPTIVE' },
   ],
   subtitles: [],
+  relatedItems: [],
 };
 
 describe('desktop stream preferences', () => {

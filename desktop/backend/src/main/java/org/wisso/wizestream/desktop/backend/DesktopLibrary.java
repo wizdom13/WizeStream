@@ -214,9 +214,12 @@ final class DesktopLibrary {
 
     List<Map<String, Object>> history() throws SQLException {
         return query("""
-                SELECT id, service_id, url, title, watched_at, position_seconds, stream_type,
-                       duration, uploader, uploader_url, thumbnail_url
-                FROM history ORDER BY watched_at DESC, rowid DESC LIMIT 1000
+                SELECT h.id, h.service_id, h.url, h.title, h.watched_at,
+                       MAX(h.position_seconds, COALESCE(p.position_millis / 1000, 0)),
+                       h.stream_type, h.duration, h.uploader, h.uploader_url, h.thumbnail_url
+                FROM history h LEFT JOIN playback_state p
+                  ON p.service_id=h.service_id AND p.url=h.url
+                ORDER BY h.watched_at DESC, h.rowid DESC LIMIT 1000
                 """, rows -> row(
                 "id", rows.getString(1),
                 "serviceId", rows.getInt(2),
@@ -242,6 +245,42 @@ final class DesktopLibrary {
                 "positionMillis", rows.getLong(3),
                 "updatedAt", rows.getLong(4)
         ));
+    }
+
+    Map<String, Object> savePlaybackState(
+            final int serviceId,
+            final String url,
+            final long positionMillis
+    ) throws SQLException {
+        if (serviceId < 0) throw new IllegalArgumentException("Invalid serviceId");
+        final String safeUrl = httpUrl(url, "url");
+        if (positionMillis < 0 || positionMillis > 7L * 24 * 60 * 60 * 1_000) {
+            throw new IllegalArgumentException("Invalid positionMillis");
+        }
+        final long now = System.currentTimeMillis();
+        synchronized (connection) {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    INSERT INTO playback_state(service_id, url, position_millis, updated_at)
+                    VALUES (?, ?, ?, ?) ON CONFLICT(service_id, url) DO UPDATE SET
+                    position_millis=excluded.position_millis, updated_at=excluded.updated_at
+                    """)) {
+                statement.setInt(1, serviceId);
+                statement.setString(2, safeUrl);
+                statement.setLong(3, positionMillis);
+                statement.setLong(4, now);
+                statement.executeUpdate();
+            }
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    UPDATE history SET position_seconds=? WHERE service_id=? AND url=?
+                    """)) {
+                statement.setLong(1, positionMillis / 1_000);
+                statement.setInt(2, serviceId);
+                statement.setString(3, safeUrl);
+                statement.executeUpdate();
+            }
+        }
+        return row("serviceId", serviceId, "url", safeUrl,
+                "positionMillis", positionMillis, "updatedAt", now);
     }
 
     Map<String, Object> recordHistory(final StreamInput stream) throws SQLException {
@@ -275,8 +314,10 @@ final class DesktopLibrary {
 
     void clearHistory() throws SQLException {
         synchronized (connection) {
-            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM history")) {
-                statement.executeUpdate();
+            try (PreparedStatement history = connection.prepareStatement("DELETE FROM history");
+                 PreparedStatement playback = connection.prepareStatement("DELETE FROM playback_state")) {
+                history.executeUpdate();
+                playback.executeUpdate();
             }
         }
     }

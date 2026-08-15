@@ -4,6 +4,7 @@ export type BackendMethod =
   | 'search'
   | 'feed.subscriptions'
   | 'stream.resolve'
+  | 'stream.comments'
   | 'channel.resolve'
   | 'library.summary'
   | 'library.subscriptions.list'
@@ -22,6 +23,7 @@ export type BackendMethod =
   | 'library.history.delete'
   | 'library.history.clear'
   | 'library.playback-state.list'
+  | 'library.playback-state.save'
   | 'library.search-history.list'
   | 'library.search-history.record'
   | 'library.search-history.delete'
@@ -109,9 +111,20 @@ export interface StreamDetails {
   url: string;
   name: string;
   uploaderName?: string;
+  uploaderUrl?: string;
+  uploaderAvatarUrl?: string;
+  uploaderSubscriberCount?: number | null;
   thumbnailUrl?: string;
   duration: number;
   streamType: string;
+  viewCount?: number | null;
+  likeCount?: number | null;
+  dislikeCount?: number | null;
+  publishedAt?: number | null;
+  textualUploadDate?: string;
+  description?: string;
+  descriptionType?: number;
+  relatedItems: SearchItem[];
   dashMpdUrl?: string;
   hlsUrl?: string;
   videoStreams: StreamVariant[];
@@ -119,11 +132,34 @@ export interface StreamDetails {
   subtitles: SubtitleVariant[];
 }
 
+export interface CommentItem {
+  id?: string;
+  text?: string;
+  uploaderName?: string;
+  uploaderAvatarUrl?: string;
+  uploaderUrl?: string;
+  publishedAt?: number | null;
+  textualUploadDate?: string;
+  likeCount?: number | null;
+  textualLikeCount?: string;
+  replyCount?: number | null;
+  streamPosition?: number | null;
+  uploaderVerified: boolean;
+  heartedByUploader: boolean;
+  pinned: boolean;
+}
+
+export interface StreamComments {
+  disabled: boolean;
+  items: CommentItem[];
+}
+
 export interface PlayerRequest {
   url: string;
   title?: string;
   audioUrl?: string;
   subtitleUrl?: string;
+  startSeconds?: number;
 }
 
 export interface PlayerTrack {
@@ -136,6 +172,7 @@ export interface EmbeddedPlayerRequest {
   source: string;
   audio?: PlayerTrack;
   subtitle?: PlayerTrack;
+  startSeconds?: number;
 }
 
 export interface PlayerStatus {

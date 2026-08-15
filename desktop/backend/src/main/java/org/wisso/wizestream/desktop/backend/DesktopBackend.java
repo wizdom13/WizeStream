@@ -58,6 +58,8 @@ public final class DesktopBackend implements AutoCloseable {
                 case "feed.subscriptions" -> extractor.subscriptionFeed(
                         library.subscriptions(), optionalBoolean(params, "refresh", false));
                 case "stream.resolve" -> extractor.resolve(requiredText(params, "url"));
+                case "stream.comments" -> extractor.comments(
+                        requiredInt(params, "serviceId"), requiredText(params, "url"));
                 case "channel.resolve" -> extractor.channel(
                         requiredInt(params, "serviceId"), requiredText(params, "url"));
                 case "library.summary" -> database.summary();
@@ -109,6 +111,9 @@ public final class DesktopBackend implements AutoCloseable {
                     yield Map.of("deleted", true);
                 }
                 case "library.playback-state.list" -> library.playbackStates();
+                case "library.playback-state.save" -> library.savePlaybackState(
+                        requiredInt(params, "serviceId"), requiredText(params, "url"),
+                        requiredLong(params, "positionMillis"));
                 case "library.search-history.list" -> library.searchHistory();
                 case "library.search-history.record" -> library.recordSearch(
                         requiredInt(params, "serviceId"), requiredText(params, "query"));

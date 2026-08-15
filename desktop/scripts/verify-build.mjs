@@ -20,6 +20,8 @@ assert.match(mainSource, /preload[\\/]index\.cjs/, 'main process must load the C
 assert.match(mainSource, /library\.history\.record/, 'main process must allow Phase 3 library RPC');
 assert.match(mainSource, /channel\.resolve/, 'main process must allow internal channel navigation');
 assert.match(mainSource, /feed\.subscriptions/, 'main process must allow the subscription video feed');
+assert.match(mainSource, /stream\.comments/, 'main process must allow lazy-loaded video comments');
+assert.match(mainSource, /library\.playback-state\.save/, 'main process must persist playback progress');
 assert.match(mainSource, /downloads:start/, 'main process must expose Phase 4 downloads');
 assert.match(mainSource, /embeddedMpvAvailable/, 'main process must gate the embedded native renderer');
 
@@ -111,6 +113,8 @@ assert.match(rendererJavaScript, /Recent videos/, 'renderer must show channel vi
 assert.match(rendererJavaScript, /What.{0,12}s New/, 'renderer must include the subscription feed');
 assert.match(rendererJavaScript, /Partially watched/, 'renderer must include Android-aligned feed filters');
 assert.match(rendererJavaScript, /Refresh feed/, 'renderer must allow explicit feed refresh');
+assert.match(rendererJavaScript, /Related items/, 'renderer must include Android-aligned video information tabs');
+assert.match(rendererJavaScript, /history-grid/, 'renderer must display watch history in a grid');
 assert.match(rendererJavaScript, /Backup and restore/, 'renderer must include Desktop backup tools');
 assert.match(rendererJavaScript, /Android JSON subscription export/, 'renderer must explain Android subscription compatibility');
 

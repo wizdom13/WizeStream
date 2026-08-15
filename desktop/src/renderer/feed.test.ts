@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SearchItem } from '../shared/contracts';
-import { matchesFeedFilter, publishedAgeLabel, viewCountLabel } from './feed';
+import { historyResumePosition, matchesFeedFilter, publishedAgeLabel, viewCountLabel } from './feed';
 
 const video: SearchItem = {
   type: 'STREAM', serviceId: 0, url: 'https://video.example/watch/1', name: 'Video',
@@ -30,5 +30,11 @@ describe("What's New feed presentation", () => {
       .toBe(true);
     expect(matchesFeedFilter(video, 'partially-watched', { serviceId: 0, url: video.url, positionMillis: 570_000 }))
       .toBe(false);
+  });
+
+  it('resumes unfinished history and restarts completed videos', () => {
+    expect(historyResumePosition(300, 600)).toBe(300);
+    expect(historyResumePosition(570, 600)).toBe(0);
+    expect(historyResumePosition(42, 0)).toBe(42);
   });
 });

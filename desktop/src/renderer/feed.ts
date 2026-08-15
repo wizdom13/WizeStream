@@ -48,6 +48,13 @@ export function playbackKey(serviceId: number, url: string): string {
   return `${serviceId}:${url}`;
 }
 
+export function historyResumePosition(positionSeconds: number, durationSeconds: number): number {
+  const position = Math.max(0, positionSeconds);
+  if (durationSeconds <= 0) return position;
+  const finished = position >= durationSeconds - 60 && position >= durationSeconds * 3 / 4;
+  return finished ? 0 : position;
+}
+
 function duration(item: SearchItem): number {
   return item.duration != null && item.duration > 0 ? item.duration : 0;
 }

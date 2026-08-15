@@ -26,13 +26,15 @@ let settings: SettingsManager | undefined;
 let embeddedAddonPath = '';
 let shutdownStarted = false;
 const backendMethods = new Set<BackendMethod>([
-  'health', 'services.list', 'search', 'feed.subscriptions', 'stream.resolve', 'channel.resolve', 'library.summary',
+  'health', 'services.list', 'search', 'feed.subscriptions', 'stream.resolve', 'stream.comments',
+  'channel.resolve', 'library.summary',
   'library.subscriptions.list', 'library.subscriptions.save',
   'library.subscriptions.refresh-metadata', 'library.subscriptions.delete',
   'library.playlists.list', 'library.playlists.create', 'library.playlists.rename',
   'library.playlists.delete', 'library.playlists.items', 'library.playlists.add-item',
   'library.playlists.delete-item', 'library.history.list', 'library.history.record',
-  'library.history.delete', 'library.history.clear', 'library.playback-state.list', 'library.learning.list',
+  'library.history.delete', 'library.history.clear', 'library.playback-state.list',
+  'library.playback-state.save', 'library.learning.list',
   'library.search-history.list', 'library.search-history.record',
   'library.search-history.delete', 'library.search-history.clear',
   'library.learning.save', 'library.learning.delete',
@@ -62,6 +64,7 @@ const playSchema = z.object({
   title: z.string().max(200).optional(),
   audioUrl: z.url().optional(),
   subtitleUrl: z.url().optional(),
+  startSeconds: z.number().finite().min(0).max(7 * 24 * 60 * 60).optional(),
 });
 const downloadSourceSchema = z.object({
   url: z.url(), kind: z.enum(['video', 'audio', 'caption']).optional(), id: z.string().max(500).optional(),
