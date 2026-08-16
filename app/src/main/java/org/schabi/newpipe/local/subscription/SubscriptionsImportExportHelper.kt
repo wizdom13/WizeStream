@@ -60,7 +60,7 @@ class SubscriptionsImportExportHelper(
 
         NoFileManagerSafeGuard.launchSafe(
             requestExportLauncher,
-            StoredFileHelper.getNewPicker(
+            StoredFileHelper.getNewSystemPicker(
                 context,
                 exportName,
                 JSON_MIME_TYPE,
@@ -74,7 +74,7 @@ class SubscriptionsImportExportHelper(
     fun onImportPreviousSelected() {
         NoFileManagerSafeGuard.launchSafe(
             requestImportLauncher,
-            StoredFileHelper.getPicker(context, JSON_MIME_TYPE),
+            StoredFileHelper.getSystemPicker(context, JSON_MIME_TYPE, null),
             TAG,
             context
         )
