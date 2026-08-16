@@ -372,12 +372,13 @@ Always keep a backup before importing data between builds.
 
 ### Nightly builds
 
-Automated nightly builds of the latest `pipe` commit are available here:
+Automated Android and Desktop builds of the latest `pipe` commit are available here:
 
 https://github.com/wizdom13/WizeStream_Nightly/releases
 
-Nightly builds are unstable testing versions and use the separate application ID
-`org.wisso.newpipematerial.nightly`, so they can be installed alongside the stable app.
+Android nightlies use the separate application ID `org.wisso.newpipematerial.nightly`, so they can
+be installed alongside the stable Android app. Desktop nightlies provide explicitly unsigned
+Windows, macOS and Linux packages with production automatic updates disabled.
 
 See [Nightly build documentation](docs/nightly-builds.md) for details.
 

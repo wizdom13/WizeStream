@@ -25,6 +25,19 @@ preview workflow, while the protected signed workflow skips them. The non-applic
 workflow is skipped. Any published Desktop tag containing `-beta` is marked as a GitHub
 **Pre-release**.
 
+## Desktop nightly builds
+
+The `Desktop Nightly release` workflow checks the latest `pipe` commit every day at 03:00 UTC and
+can also be started manually. When that commit has not already been published, the workflow runs
+the Desktop validation suite and creates unsigned packages for Windows x64, macOS x64/arm64 and
+Linux x64/arm64. It publishes them as a prerelease in
+[`wizdom13/WizeStream_Nightly`](https://github.com/wizdom13/WizeStream_Nightly/releases) with a
+`desktop-nightly-YYYYMMDD-<short-sha>` tag.
+
+Desktop nightlies keep production automatic updates disabled and publish no updater metadata. They
+use the existing `NIGHTLY_REPO_TOKEN`; no Windows or Apple signing credential is read. The newest
+14 Desktop nightlies are retained independently from the newest 14 Android nightlies.
+
 ## Future signed-release setup (postponed)
 
 1. Create the `desktop-release` environment in `wizdom13/WizeStream`. Require an explicit reviewer,

@@ -12,6 +12,7 @@ on:
       - '.github/workflows/desktop-ci.yml'
       - '.github/workflows/desktop-preview-release.yml'
       - '.github/workflows/desktop-release.yml'
+      - '.github/workflows/desktop-nightly.yml'
   pull_request:
     branches:
       - pipe
@@ -22,6 +23,7 @@ on:
       - '.github/workflows/desktop-ci.yml'
       - '.github/workflows/desktop-preview-release.yml'
       - '.github/workflows/desktop-release.yml'
+      - '.github/workflows/desktop-nightly.yml'
 
 concurrency:
   group: desktop-${{ github.workflow }}-${{ github.ref }}

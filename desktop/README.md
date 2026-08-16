@@ -92,6 +92,9 @@ the current preview channel.
 See [docs/preview-testing.md](docs/preview-testing.md) for the manual acceptance checklist.
 See [docs/releasing.md](docs/releasing.md) for the current unsigned-preview policy and the postponed
 future signing, updater-validation and rollback procedures.
+Automated unsigned Desktop nightlies are published for all five supported targets in the
+[WizeStream Nightly repository](https://github.com/wizdom13/WizeStream_Nightly/releases). See the
+[nightly build documentation](../docs/nightly-builds.md) for filenames, tags and verification.
 
 ## Security boundary
 

@@ -12,6 +12,7 @@ name: Workflows cleanup
           - CI
           - Build release
           - Nightly release
+          - Desktop Nightly release
           - Workflows cleanup
           - All
       delete_artifacts:
@@ -70,7 +71,7 @@ jobs:
           set -euo pipefail
 
           case "$TARGET_WORKFLOW" in
-            "CI"|"Build release"|"Nightly release"|"Workflows cleanup"|"All") ;;
+            "CI"|"Build release"|"Nightly release"|"Desktop Nightly release"|"Workflows cleanup"|"All") ;;
             *)
               echo "Unsupported workflow selection: $TARGET_WORKFLOW" >&2
               exit 1

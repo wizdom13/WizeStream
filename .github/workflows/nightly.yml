@@ -239,6 +239,7 @@ jobs:
               --arg current_tag "$CURRENT_NIGHTLY_TAG" \
               --argjson keep "$NIGHTLY_RETENTION_COUNT" \
               'add
+              | map(select(.tag_name | test("^nightly-[0-9]{8}-[0-9a-f]{7}$")))
               | sort_by(.published_at // .created_at) | reverse
               | (map(select(.tag_name == $current_tag))
                  + map(select(.tag_name != $current_tag)))
