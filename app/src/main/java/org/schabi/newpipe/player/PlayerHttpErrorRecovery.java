@@ -2,6 +2,8 @@ package org.schabi.newpipe.player;
 
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 
+import android.os.SystemClock;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -11,6 +13,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /** Utility methods for deciding whether a player media URL failure can be retried safely. */
 final class PlayerHttpErrorRecovery {
@@ -18,36 +21,70 @@ final class PlayerHttpErrorRecovery {
     }
 
     static final class RecoveryGuard {
-        private static final long RESET_AFTER_MILLIS = TimeUnit.MINUTES.toMillis(10);
+        static final int MAX_ATTEMPTS = 3;
+        static final long RESET_AFTER_MILLIS = TimeUnit.MINUTES.toMillis(10);
+        private static final long[] RETRY_DELAYS_MILLIS = {0, 1_000, 3_000};
 
+        @NonNull
+        private final LongSupplier elapsedRealtimeSupplier;
         @Nullable
         private String currentRecoveryKey;
-        @Nullable
-        private String lastRetriedRecoveryKey;
-        private long lastRetryAtMillis;
+        private int attemptCount;
+        private long lastAttemptAtMillis;
+
+        RecoveryGuard() {
+            this(SystemClock::elapsedRealtime);
+        }
+
+        RecoveryGuard(@NonNull final LongSupplier elapsedRealtimeSupplier) {
+            this.elapsedRealtimeSupplier = elapsedRealtimeSupplier;
+        }
 
         void reset() {
             currentRecoveryKey = null;
-            lastRetriedRecoveryKey = null;
-            lastRetryAtMillis = 0;
+            attemptCount = 0;
+            lastAttemptAtMillis = 0;
         }
 
-        boolean canRetry(@NonNull final String recoveryKey) {
-            final long now = System.currentTimeMillis();
-            if (now - lastRetryAtMillis > RESET_AFTER_MILLIS) {
+        @Nullable
+        RecoveryAttempt acquireAttempt(@NonNull final String recoveryKey) {
+            final long now = elapsedRealtimeSupplier.getAsLong();
+            if (attemptCount > 0
+                    && now - lastAttemptAtMillis >= RESET_AFTER_MILLIS) {
                 reset();
             }
 
             if (!recoveryKey.equals(currentRecoveryKey)) {
                 currentRecoveryKey = recoveryKey;
-                lastRetriedRecoveryKey = null;
+                attemptCount = 0;
             }
-            if (recoveryKey.equals(lastRetriedRecoveryKey)) {
-                return false;
+            if (attemptCount >= MAX_ATTEMPTS) {
+                return null;
             }
-            lastRetriedRecoveryKey = recoveryKey;
-            lastRetryAtMillis = now;
-            return true;
+
+            final RecoveryAttempt attempt = new RecoveryAttempt(attemptCount + 1,
+                    RETRY_DELAYS_MILLIS[attemptCount]);
+            attemptCount++;
+            lastAttemptAtMillis = now;
+            return attempt;
+        }
+    }
+
+    static final class RecoveryAttempt {
+        private final int number;
+        private final long delayMillis;
+
+        RecoveryAttempt(final int number, final long delayMillis) {
+            this.number = number;
+            this.delayMillis = delayMillis;
+        }
+
+        int getNumber() {
+            return number;
+        }
+
+        long getDelayMillis() {
+            return delayMillis;
         }
     }
 
