@@ -13,9 +13,9 @@ Windows, macOS and Linux. Desktop is integrated into the `pipe` branch and avail
 | Platform | Availability | Packages |
 | --- | --- | --- |
 | Android | Signed application releases | APK / IzzyOnDroid |
-| Windows x64 | Unsigned Desktop preview | Installer and portable `.exe` |
-| macOS x64 and arm64 | Unsigned Desktop preview | `.dmg` and `.zip` |
-| Linux x64 and arm64 | Unsigned Desktop preview | `.AppImage` and `.deb` |
+| Windows x64 | Unsigned Desktop preview and nightlies | Installer and portable `.exe` |
+| macOS x64 and arm64 | Unsigned Desktop preview and nightlies | `.dmg` and `.zip` |
+| Linux x64 and arm64 | Unsigned Desktop preview and nightlies | `.AppImage` and `.deb` |
 
 <p align="center">
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a>
@@ -198,6 +198,23 @@ mobile feature set documented below. The Desktop preview provides native Desktop
 playback, downloads, libraries, Learning Mode notes and trusted-device synchronization; see the
 [Desktop implementation guide](desktop/README.md) for its exact current scope.
 
+### Desktop preview highlights
+
+- A cached **What's New** video grid for subscribed channels, with channel avatars, views,
+  publication times, playback progress and filters for unwatched, live, Shorts and partially
+  watched videos
+- Responsive subscription cards with channel avatars and subscriber counts, plus internal channel
+  pages showing channel information and recent videos
+- Grid-based watch history with thumbnails, duration, progress, watched time and resume controls
+- Embedded playback with video, audio and caption selection, SponsorBlock support, and detailed
+  **Comments**, **Related items** and **Description** tabs
+- Video and channel information including views, likes, dislikes, channel avatars and subscriber
+  counts where the service provides them
+- Local video and audio playback, downloads, playlists, Learning Mode notes, device synchronization,
+  Android-aligned settings, Desktop backups and Android-compatible subscription import
+- A main-window **About & FAQ** destination with the current Desktop version, privacy information,
+  license details and common answers
+
 ### Streaming and discovery
 
 - Watch videos, live streams, and audio without signing in to a platform account
@@ -281,8 +298,14 @@ See [Device synchronization](#device-synchronization) for behavior, limitations,
   changelog preview, APK download progress, installation handoff, and update validation.
 - Desktop preview packages are downloaded and updated manually. Production automatic updates are
   disabled, and Windows/macOS packages are currently unsigned.
-- Independent semantic versioning, signed Android releases, and separately installable Android
-  nightly builds
+- Desktop CI validates the application and packages Windows x64, macOS x64/arm64 and Linux
+  x64/arm64 builds whenever relevant Desktop code or workflows change on `pipe`.
+- Desktop tags matching `desktop_v*.*.*` use the Desktop release workflows and publish to
+  `wizdom13/WizeStream`; tags containing `-beta` are published as GitHub prereleases.
+- Automated Android and unsigned Desktop nightlies are published separately in
+  [`wizdom13/WizeStream_Nightly`](https://github.com/wizdom13/WizeStream_Nightly/releases), with
+  checksums and short-lived workflow artifacts.
+- Independent semantic versioning and signed Android releases
 
 ---
 
@@ -341,9 +364,10 @@ Debug build:       org.wisso.newpipematerial.debug
 
 ### Desktop unsigned preview
 
-Download Windows, macOS or Linux packages from the
-[`desktop_v0.6.0-beta`](https://github.com/wizdom13/WizeStream/releases/tag/desktop_v0.6.0-beta)
-release. Verify the supplied `SHA256SUMS` before opening a package.
+Download the newest Windows, macOS or Linux Desktop prerelease from the official
+[WizeStream releases page](https://github.com/wizdom13/WizeStream/releases). Choose the package for
+your operating system and architecture, then verify it with the supplied `SHA256SUMS` before
+opening it.
 
 The Desktop preview is explicitly unsigned. Windows may show an unknown-publisher or SmartScreen
 warning, and macOS Gatekeeper may require deliberate approval. Production automatic updates are
@@ -494,6 +518,8 @@ Completed or in-progress areas include:
 - Release-signing workflow support
 - Integrated Windows, macOS and Linux Desktop application with five-target CI
 - Explicitly unsigned Desktop preview distribution with checksums and artifact attestations
+- Automated unsigned Desktop nightly releases with unique versions, checksums, attestations and
+  independent Android/Desktop retention
 
 High-risk areas receive dedicated QA before broad behavior changes.
 

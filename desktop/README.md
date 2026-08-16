@@ -21,16 +21,30 @@ The desktop architecture contains:
 
 ## What the Desktop app can do
 
-- Search and browse supported streaming services.
-- Play video and audio inside the application.
-- Choose available audio tracks and captions.
+- Browse a cached **What's New** grid of recent videos from subscribed channels. Cached cards are
+  shown immediately at startup while a manual or automatic refresh loads newer items.
+- Filter the feed by unwatched, live, Shorts or partially watched videos, or search a supported
+  streaming service.
+- Browse subscriptions in a responsive grid with channel avatars and subscriber counts, then open
+  a channel inside the app to see its information and recent videos.
+- Play video and audio inside the application, choose available video, audio and caption tracks,
+  and open supported local media files.
+- View comments, related items and descriptions while playing, together with video views, likes,
+  dislikes, channel avatars and subscriber counts where available.
+- Skip or mark supported SponsorBlock segments using per-category Desktop settings.
+- Browse watch history as video cards with thumbnails, duration, progress, watched time and resume
+  controls.
 - Download video, audio and captions, with pause and resume support.
-- Manage subscriptions, playlists, history and Learning Mode notes.
+- Manage subscriptions, playlists, watch and search history, and Learning Mode notes.
 - Pair with trusted WizeStream devices and synchronize selected data over the local network.
 - Adjust applicable playback, download, appearance, history, content, device and Learning Mode
   settings using the same familiar sections as the Android app.
 - Export and restore versioned Desktop ZIP backups. Subscription-only JSON exports use Android's
   schema, and Desktop can import subscriptions from Android JSON exports or Android full-backup ZIPs.
+- Open **About & FAQ** from the main navigation to see the Desktop version, privacy policy, license
+  information and common answers.
+- Recognize the app by the round WizeStream launcher and navigation logo; the navigation brand area
+  also displays **WizeStream Desktop** and the installed version.
 - Keep user data locally without requiring a WizeStream account.
 
 Synchronization can run manually or automatically while WizeStream Desktop is open. It works only
@@ -95,6 +109,19 @@ future signing, updater-validation and rollback procedures.
 Automated unsigned Desktop nightlies are published for all five supported targets in the
 [WizeStream Nightly repository](https://github.com/wizdom13/WizeStream_Nightly/releases). See the
 [nightly build documentation](../docs/nightly-builds.md) for filenames, tags and verification.
+
+## Automated workflows
+
+| Workflow | When it runs | Result |
+| --- | --- | --- |
+| **Desktop CI** | Relevant pushes and pull requests to `pipe`, or manual start | Validates the renderer, Electron main process, JVM backend, packaged startup, native media integration and production dependencies across all five targets |
+| **Desktop unsigned preview release** | A `desktop_v*.*.*` beta tag, or authorized manual start | Publishes an explicitly unsigned prerelease to [`wizdom13/WizeStream`](https://github.com/wizdom13/WizeStream/releases) |
+| **Desktop Nightly release** | Every day at 03:00 UTC, or manual start | Publishes an unsigned five-target prerelease to [`wizdom13/WizeStream_Nightly`](https://github.com/wizdom13/WizeStream_Nightly/releases) when the checked commit has not already been published as a Desktop nightly |
+| **Desktop signed beta release** | Protected manual or tag release after signing is configured | Publishes to `wizdom13/WizeStream`; this path remains postponed until trusted Windows and Apple signing identities are available |
+
+Published preview and nightly packages include `SHA256SUMS`, a release manifest and GitHub artifact
+attestations. Desktop nightlies use `desktop-nightly-YYYYMMDD-<short-sha>` tags and keep the newest
+14 releases independently from Android nightlies.
 
 ## Security boundary
 
