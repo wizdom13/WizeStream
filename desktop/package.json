@@ -1,6 +1,6 @@
 {
   "name": "wizestream-desktop",
-  "version": "0.6.0-beta.1",
+  "version": "0.6.0-beta",
   "private": true,
   "description": "Experimental cross-platform WizeStream desktop client",
   "author": {
@@ -77,7 +77,7 @@
       {
         "provider": "github",
         "owner": "wizdom13",
-        "repo": "WizeStream_Desktop",
+        "repo": "WizeStream",
         "releaseType": "prerelease",
         "channel": "beta"
       }

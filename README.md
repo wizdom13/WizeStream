@@ -342,7 +342,7 @@ Debug build:       org.wisso.newpipematerial.debug
 ### Desktop unsigned preview
 
 Download Windows, macOS or Linux packages from the
-[`v0.6.0-beta.1-unsigned-preview`](https://github.com/wizdom13/WizeStream/releases/tag/v0.6.0-beta.1-unsigned-preview)
+[`desktop_v0.6.0-beta`](https://github.com/wizdom13/WizeStream/releases/tag/desktop_v0.6.0-beta)
 release. Verify the supplied `SHA256SUMS` before opening a package.
 
 The Desktop preview is explicitly unsigned. Windows may show an unknown-publisher or SmartScreen

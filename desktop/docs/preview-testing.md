@@ -67,7 +67,7 @@ filename and exact reproduction steps.
 
 ## Release gate
 
-The existing `v0.6.0-beta.1-unsigned-preview` tag and assets are immutable. A second unsigned
+The existing `desktop_v0.6.0-beta` tag and assets are immutable. A second unsigned
 preview is justified only when one or more material fixes change the tested binaries. A new preview
 must use a higher beta version and a new tag; existing release assets must never be overwritten.
 

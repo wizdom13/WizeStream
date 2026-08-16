@@ -78,7 +78,7 @@ class DesktopBackupManagerTest {
                 assertEquals("Android export", library.subscriptions().single()["name"])
 
                 val output = directory.resolve("desktop-subscriptions.json")
-                manager.exportSubscriptions(output, "0.6.0-beta.1")
+                manager.exportSubscriptions(output, "0.6.0-beta")
                 val exported = json.readTree(output.toFile())
                 assertEquals(0, exported.path("subscriptions").first().path("service_id").intValue())
                 assertEquals("https://www.youtube.com/@android", exported.path("subscriptions").first().path("url").textValue())

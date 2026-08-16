@@ -3,12 +3,12 @@ import { readFile } from 'node:fs/promises';
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const failures = [];
 
-if (packageJson.version !== '0.6.0-beta.1') failures.push('desktop version must be 0.6.0-beta.1');
+if (packageJson.version !== '0.6.0-beta') failures.push('desktop version must be 0.6.0-beta');
 if (packageJson.dependencies?.['electron-updater'] !== '6.8.9') failures.push('electron-updater must be pinned');
 
 const publisher = packageJson.build?.publish?.[0];
 if (publisher?.provider !== 'github' || publisher.owner !== 'wizdom13'
-  || publisher.repo !== 'WizeStream_Desktop' || publisher.channel !== 'beta'
+  || publisher.repo !== 'WizeStream' || publisher.channel !== 'beta'
   || publisher.releaseType !== 'prerelease') {
   failures.push('GitHub beta publish configuration is incomplete');
 }

@@ -15,20 +15,22 @@ policy and configure protected, trusted signing identities.
 Use the checklist in [`preview-testing.md`](preview-testing.md) for feedback and manual testing.
 Preview failures must be reported through the dedicated Desktop issue form with the exact release
 tag, package filename, platform and architecture. The existing
-`v0.6.0-beta.1-unsigned-preview` release is immutable; publish a higher beta only after important
+`desktop_v0.6.0-beta` release is immutable; publish a higher beta only after important
 fixes pass the Android regression checks and the complete five-target Desktop matrix.
+
+Pushing a tag matching `desktop_v*.*.*` at the exact `pipe` head starts the appropriate Desktop
+release workflow. The current unsigned preview tag is `desktop_v0.6.0-beta`; its numeric version
+must match the base version in `desktop/package.json`. Tags ending in `-beta` select the unsigned
+preview workflow, while the protected signed workflow skips them. The non-applicable Desktop
+workflow is skipped. Any published Desktop tag containing `-beta` is marked as a GitHub
+**Pre-release**.
 
 ## Future signed-release setup (postponed)
 
-1. Create the public `wizdom13/WizeStream_Desktop` repository with a `main` branch. Its README must
-   link to `wizdom13/WizeStream` as the corresponding GPL source repository.
-2. Create the `desktop-release` environment in the source repository. Require an explicit reviewer,
+1. Create the `desktop-release` environment in `wizdom13/WizeStream`. Require an explicit reviewer,
    limit deployment branches to `pipe`, and prevent administrators from bypassing the
    gate where the organization policy permits it.
-3. Create a fine-grained GitHub token with Contents read/write access only to
-   `wizdom13/WizeStream_Desktop`. Store it as `WIZESTREAM_DESKTOP_RELEASE_TOKEN` in the protected
-   environment.
-4. Add the signing secrets below to the same protected environment. Never put certificate data,
+2. Add the signing secrets below to the same protected environment. Never put certificate data,
    private keys or passwords in an issue, pull request, workflow input, log, or chat.
 
 | Secret | Value |
@@ -70,9 +72,9 @@ npm test
 ## Future signed beta release (postponed)
 
 1. Confirm `pipe` is green and points at the intended source commit.
-2. Open **Desktop signed beta release** in Actions and enter exactly `v0.6.0-beta.1`.
+2. Open **Desktop signed beta release** in Actions and enter exactly `v0.6.0-beta`.
 3. Approve the `desktop-release` environment deployment.
-4. The gate verifies every protected credential and the separate release repository before any
+4. The gate verifies every protected signing credential and the WizeStream release repository before any
    package job starts.
 5. Native runners build all five targets. Windows validates every `.exe` Authenticode signature.
    macOS validates the packaged application signature, Gatekeeper assessment and stapled
@@ -85,7 +87,7 @@ public, or increment the beta version and publish a new immutable tag.
 
 ## Future signed updater contract (postponed)
 
-- Provider: public GitHub releases in `wizdom13/WizeStream_Desktop`.
+- Provider: public GitHub releases in `wizdom13/WizeStream`.
 - Channel: `beta`; prereleases are allowed and downgrades are disabled.
 - Metadata: `beta.yml` for Windows, combined `beta-mac.yml` for macOS,
   `beta-linux.yml` for Linux x64, and `beta-linux-arm64.yml` for Linux arm64.

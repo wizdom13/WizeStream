@@ -4,16 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Type v0.6.0-beta.1 to authorize the protected beta release
+        description: Type v0.6.0-beta to authorize the protected beta release
         required: true
         type: string
+  push:
+    tags:
+      - "desktop_v*.*.*"
 
 concurrency:
-  group: desktop-release-${{ inputs.release_tag }}
+  group: desktop-release-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
   artifact-metadata: write
@@ -21,12 +24,23 @@ permissions:
 jobs:
   source:
     name: Verify pipe release source
+    if: ${{ github.event_name == 'workflow_dispatch' || !endsWith(github.ref_name, '-beta') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require the integrated release branch
         shell: bash
-        run: test "$GITHUB_REF" = 'refs/heads/pipe'
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = 'push' ]; then
+            test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"
+            pipe_sha="$(git ls-remote https://github.com/${GITHUB_REPOSITORY}.git refs/heads/pipe | cut -f1)"
+            test -n "$pipe_sha"
+            test "$GITHUB_SHA" = "$pipe_sha"
+          else
+            test "$GITHUB_REF" = 'refs/heads/pipe'
+          fi
 
   gate:
     needs: source
@@ -44,19 +58,25 @@ jobs:
       APPLE_API_KEY_ID_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_API_KEY_ID }}
       APPLE_API_ISSUER_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_API_ISSUER }}
       APPLE_TEAM_ID_VALUE: ${{ secrets.WIZESTREAM_DESKTOP_APPLE_TEAM_ID }}
-      RELEASE_TOKEN: ${{ secrets.WIZESTREAM_DESKTOP_RELEASE_TOKEN }}
+      RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
     steps:
       - uses: actions/checkout@v6
-      - name: Require the exact beta tag
+      - name: Require the exact Desktop beta tag
         shell: bash
-        run: test '${{ inputs.release_tag }}' = 'v0.6.0-beta.1'
+        run: |
+          version="$(node -p "require('./desktop/package.json').version")"
+          if [ "$GITHUB_EVENT_NAME" = 'push' ]; then
+            test "$RELEASE_TAG" = "desktop_v${version}"
+          else
+            test "$RELEASE_TAG" = "v${version}"
+          fi
       - name: Fail closed when a release credential is absent
         shell: bash
         run: |
           missing=0
           for name in WINDOWS_CERTIFICATE WINDOWS_CERTIFICATE_PASSWORD WINDOWS_PUBLISHER \
             MACOS_CERTIFICATE MACOS_CERTIFICATE_PASSWORD APPLE_API_KEY_VALUE \
-            APPLE_API_KEY_ID_VALUE APPLE_API_ISSUER_VALUE APPLE_TEAM_ID_VALUE RELEASE_TOKEN; do
+            APPLE_API_KEY_ID_VALUE APPLE_API_ISSUER_VALUE APPLE_TEAM_ID_VALUE; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing protected Phase 7 credential: $name"
               missing=1
@@ -66,8 +86,8 @@ jobs:
       - name: Verify version and release repository
         shell: bash
         run: |
-          test "$(node -p "require('./desktop/package.json').version")" = '0.6.0-beta.1'
-          curl --fail --silent --show-error https://api.github.com/repos/wizdom13/WizeStream_Desktop >/dev/null
+          test "$(node -p "require('./desktop/package.json').version")" = '0.6.0-beta'
+          test "$GITHUB_REPOSITORY" = 'wizdom13/WizeStream'
 
   package:
     name: Sign and package ${{ matrix.name }}
@@ -212,15 +232,14 @@ jobs:
         uses: actions/attest@v4
         with:
           subject-path: desktop/release-ready/*
-      - name: Publish v0.6.0-beta.1 prerelease
+      - name: Publish v0.6.0-beta prerelease
         uses: softprops/action-gh-release@v3
         with:
-          repository: wizdom13/WizeStream_Desktop
-          token: ${{ secrets.WIZESTREAM_DESKTOP_RELEASE_TOKEN }}
-          tag_name: v0.6.0-beta.1
-          target_commitish: main
-          name: WizeStream Desktop 0.6.0 Beta 1
-          prerelease: true
+          repository: wizdom13/WizeStream
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+          target_commitish: ${{ github.sha }}
+          name: WizeStream Desktop 0.6.0 Beta
+          prerelease: ${{ contains(github.event_name == 'push' && github.ref_name || inputs.release_tag, '-beta') }}
           draft: false
           fail_on_unmatched_files: true
           body: |

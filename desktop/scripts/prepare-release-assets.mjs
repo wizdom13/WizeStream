@@ -55,7 +55,7 @@ for (const name of outputFiles) {
 }
 await writeFile(path.join(output, 'SHA256SUMS'), `${checksums.join('\n')}\n`);
 await writeFile(path.join(output, 'release-manifest.json'), `${JSON.stringify({
-  version: '0.6.0-beta.1', tag: 'v0.6.0-beta.1', prerelease: true,
+  version: '0.6.0-beta', tag: 'desktop_v0.6.0-beta', prerelease: true,
   assets: [...outputFiles, 'SHA256SUMS'],
 }, null, 2)}\n`);
 console.log(`WIZESTREAM_RELEASE_ASSETS_OK ${outputFiles.length + 2}`);

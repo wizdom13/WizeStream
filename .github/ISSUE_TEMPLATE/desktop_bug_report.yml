@@ -30,7 +30,7 @@ body:
     attributes:
       label: Preview release tag
       description: Enter the exact GitHub release tag you tested.
-      placeholder: v0.6.0-beta.1-unsigned-preview
+      placeholder: desktop_v0.6.0-beta
     validations:
       required: true
 
@@ -39,7 +39,7 @@ body:
     attributes:
       label: Package filename
       description: Enter the complete filename from GitHub Releases.
-      placeholder: WizeStream Desktop-0.6.0-beta.1-windows-x64-setup.exe
+      placeholder: WizeStream Desktop-0.6.0-beta-windows-x64-setup.exe
     validations:
       required: true
 

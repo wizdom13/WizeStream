@@ -19,6 +19,7 @@ import EditRounded from '@mui/icons-material/EditRounded';
 import FolderOpenRounded from '@mui/icons-material/FolderOpenRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
 import HomeRounded from '@mui/icons-material/HomeRounded';
+import InfoRounded from '@mui/icons-material/InfoRounded';
 import NoteAddRounded from '@mui/icons-material/NoteAddRounded';
 import PauseRounded from '@mui/icons-material/PauseRounded';
 import PlaylistAddRounded from '@mui/icons-material/PlaylistAddRounded';
@@ -34,6 +35,7 @@ import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import ThumbDownRounded from '@mui/icons-material/ThumbDownRounded';
 import ThumbUpRounded from '@mui/icons-material/ThumbUpRounded';
+import wizestreamLogo from '../../../assets/wizestream_logo_round.svg';
 import { defaultDesktopSettings } from '../shared/contracts';
 import type {
   ChannelDetails, CommentItem, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
@@ -44,6 +46,7 @@ import type {
   UpdateState,
 } from '../shared/contracts';
 import { loadSubscriptionFeedCache, saveSubscriptionFeedCache } from './feed-cache';
+import { AboutPanel } from './AboutPanel';
 import { SettingsPanel } from './SettingsPanel';
 import {
   historyResumePosition, matchesFeedFilter, playbackKey, publishedAgeLabel, viewCountLabel,
@@ -58,7 +61,7 @@ import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
 
 defineMpvVideoElement();
 
-type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'downloads' | 'sync' | 'settings';
+type Section = 'discover' | 'subscriptions' | 'playlists' | 'history' | 'learning' | 'downloads' | 'sync' | 'settings' | 'about';
 
 const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> = [
   { id: 'discover', label: "What's New", icon: <HomeRounded /> },
@@ -69,6 +72,7 @@ const navigation: Array<{ id: Section; label: string; icon: React.ReactNode }> =
   { id: 'downloads', label: 'Downloads', icon: <DownloadRounded /> },
   { id: 'sync', label: 'Devices', icon: <DevicesRounded /> },
   { id: 'settings', label: 'Settings', icon: <SettingsRounded /> },
+  { id: 'about', label: 'About & FAQ', icon: <InfoRounded /> },
 ];
 
 const attemptedSubscriptionMetadata = new Set<string>();
@@ -283,7 +287,15 @@ export function App() {
   return (
     <Box className="app-shell">
       <Box component="nav" className="navigation-rail">
-        <Avatar sx={{ width: 48, height: 48, mb: 2, bgcolor: 'primary.main' }}>W</Avatar>
+        <Stack direction="row" className="navigation-brand" sx={{ alignItems: 'center', gap: 1.25, mb: 2 }}>
+          <Avatar src={wizestreamLogo} alt="WizeStream" sx={{ width: 48, height: 48, flexShrink: 0 }} />
+          <Box className="navigation-brand-copy" sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle2" fontWeight={700} noWrap>WizeStream Desktop</Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              v{updateState?.currentVersion ?? '0.6.0-beta'}
+            </Typography>
+          </Box>
+        </Stack>
         <List sx={{ width: '100%' }}>
           {navigation.filter((item) => item.id !== 'learning' || settings.learningMode).map((item) => (
             <ListItemButton key={item.id} selected={section === item.id} onClick={() => {
@@ -409,14 +421,15 @@ export function App() {
                 : section === 'learning' ? <LearningPanel currentStream={selectedLibraryStream} onOpen={resolveStream} />
                   : section === 'downloads' ? <DownloadsPanel currentStream={selected} />
                     : section === 'sync' ? <SyncPanel sync={sync} onRefresh={() => void window.wizestream.backend.invoke<SyncStatus>('sync.status').then(setSync)} />
-                      : <SettingsPanel settings={settings} services={services} currentVersion={updateState?.currentVersion}
+                      : section === 'settings' ? <SettingsPanel settings={settings} services={services} currentVersion={updateState?.currentVersion}
                         onUpdate={saveSettings} onReset={resetSettings}
                         onOpenDownloads={() => void window.wizestream.downloads.openFolder()} onOpenDevices={() => setSection('sync')}
                         onOpenUpdates={() => void openUpdates()} onSettingsRestored={(restored) => {
                           setSettings(restored);
                           const preferred = services.find((service) => service.id === restored.defaultServiceId);
                           setServiceId(preferred?.id ?? services[0]?.id ?? 0);
-                        }} />}
+                        }} />
+                        : <AboutPanel currentVersion={updateState?.currentVersion} />}
         </Container>
       </Box>
       <Dialog open={updateDialogOpen} onClose={() => setUpdateDialogOpen(false)} fullWidth maxWidth="sm">

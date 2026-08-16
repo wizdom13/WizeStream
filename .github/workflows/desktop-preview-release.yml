@@ -4,12 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Type v0.6.0-beta.1-unsigned-preview to authorize this immutable preview
+        description: Type desktop_v0.6.0-beta to authorize this immutable preview
         required: true
         type: string
+  push:
+    tags:
+      - "desktop_v*.*.*"
 
 concurrency:
-  group: desktop-unsigned-preview-v0.6.0-beta.1
+  group: desktop-unsigned-preview-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
   cancel-in-progress: false
 
 permissions:
@@ -22,6 +25,7 @@ permissions:
 jobs:
   validate:
     name: Validate unsigned preview
+    if: ${{ github.event_name == 'workflow_dispatch' || endsWith(github.ref_name, '-beta') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     defaults:
@@ -32,13 +36,24 @@ jobs:
       - name: Require pipe and refuse to overwrite the published preview
         shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
         run: |
-          test "$GITHUB_REF" = 'refs/heads/pipe'
-          test "$RELEASE_TAG" = 'v0.6.0-beta.1-unsigned-preview'
-          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::Release tag $RELEASE_TAG already exists and is immutable"
-            exit 1
+          version="$(node -p "require('./package.json').version")"
+          base_version="${version%%-*}"
+          expected_tag="desktop_v${base_version}-beta"
+          if [ "$GITHUB_EVENT_NAME" = 'push' ]; then
+            test "$RELEASE_TAG" = "$expected_tag"
+            test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"
+            pipe_sha="$(git ls-remote origin refs/heads/pipe | cut -f1)"
+            test -n "$pipe_sha"
+            test "$GITHUB_SHA" = "$pipe_sha"
+          else
+            test "$GITHUB_REF" = 'refs/heads/pipe'
+            test "$RELEASE_TAG" = "$expected_tag"
+            if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "::error::Release tag $RELEASE_TAG already exists and is immutable"
+              exit 1
+            fi
           fi
       - uses: actions/setup-java@v5
         with:
@@ -159,6 +174,7 @@ jobs:
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
         run: |
           set -euo pipefail
           mkdir release-ready
@@ -175,7 +191,7 @@ jobs:
           test "$(find release-ready -maxdepth 1 -type f -name '*.dmg' | wc -l)" -eq 2
           test "$(find release-ready -maxdepth 1 -type f -name '*.AppImage' | wc -l)" -eq 2
           (cd release-ready && sha256sum * | sort -k2 > SHA256SUMS)
-          node -e "const fs=require('fs'); fs.writeFileSync('release-ready/release-manifest.json', JSON.stringify({version:'0.6.0-beta.1',tag:'v0.6.0-beta.1-unsigned-preview',prerelease:true,unsigned:true,productionUpdates:false,sourceCommit:process.env.SOURCE_SHA},null,2)+'\\n')"
+          node -e "const fs=require('fs'); fs.writeFileSync('release-ready/release-manifest.json', JSON.stringify({version:'0.6.0-beta',tag:process.env.RELEASE_TAG,prerelease:true,unsigned:true,productionUpdates:false,sourceCommit:process.env.SOURCE_SHA},null,2)+'\\n')"
       - name: Attest unsigned preview artifacts
         uses: actions/attest@v4
         with:
@@ -183,10 +199,11 @@ jobs:
       - name: Publish explicitly unsigned preview prerelease
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v0.6.0-beta.1-unsigned-preview
+          repository: wizdom13/WizeStream
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
           target_commitish: ${{ github.sha }}
-          name: WizeStream Desktop 0.6.0 Beta 1 — Unsigned Preview
-          prerelease: true
+          name: WizeStream Desktop 0.6.0 Beta — Unsigned Preview
+          prerelease: ${{ contains(github.event_name == 'push' && github.ref_name || inputs.release_tag, '-beta') }}
           draft: false
           make_latest: false
           fail_on_unmatched_files: true

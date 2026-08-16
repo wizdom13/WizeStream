@@ -19,7 +19,7 @@ describe('UpdateManager', () => {
   test('checks without downloading and waits for explicit confirmation', async () => {
     const updater = new FakeUpdater();
     const states: string[] = [];
-    const manager = new UpdateManager(updater as unknown as AppUpdater, '0.6.0-beta.1',
+    const manager = new UpdateManager(updater as unknown as AppUpdater, '0.6.0-beta',
       (state) => states.push(state.status));
     manager.initialize();
 
@@ -35,7 +35,7 @@ describe('UpdateManager', () => {
 
   test('installs only after the downloaded event and a separate user action', () => {
     const updater = new FakeUpdater();
-    const manager = new UpdateManager(updater as unknown as AppUpdater, '0.6.0-beta.1', () => undefined);
+    const manager = new UpdateManager(updater as unknown as AppUpdater, '0.6.0-beta', () => undefined);
     manager.initialize();
 
     manager.install();
@@ -50,7 +50,7 @@ describe('UpdateManager', () => {
   });
 
   test('is unavailable in development and packaged smoke tests', async () => {
-    const manager = new UpdateManager(undefined, '0.6.0-beta.1', () => undefined);
+    const manager = new UpdateManager(undefined, '0.6.0-beta', () => undefined);
     manager.initialize();
     expect((await manager.check()).status).toBe('unavailable');
   });
