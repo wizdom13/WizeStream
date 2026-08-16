@@ -228,6 +228,10 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerHttpErrorRecovery.RecoveryGuard mediaUrlRecoveryGuard =
         new PlayerHttpErrorRecovery.RecoveryGuard();
+    @NonNull
+    private final Handler mediaUrlRecoveryHandler = new Handler(Looper.getMainLooper());
+    @Nullable
+    private Runnable pendingMediaUrlRecovery;
 
     @NonNull
     private List<SponsorBlockSegment> sponsorBlockSegments = Collections.emptyList();
@@ -733,6 +737,8 @@ public final class Player implements PlaybackListener, Listener {
         if (DEBUG) {
             Log.d(TAG, "destroyPlayer() called");
         }
+        cancelPendingMediaUrlRecovery();
+        mediaUrlRecoveryGuard.reset();
         learningSessionTracker.stop();
         UIs.call(PlayerUi::destroyPlayer);
         equalizerController.releaseAudioSession();
@@ -2218,6 +2224,10 @@ public final class Player implements PlaybackListener, Listener {
 
         // Refresh the playback if there is a transition to the next video
         final int newIndex = newPosition.mediaItemIndex;
+        if (newIndex != oldPosition.mediaItemIndex) {
+            cancelPendingMediaUrlRecovery();
+            mediaUrlRecoveryGuard.reset();
+        }
         if (discontinuityReason == DISCONTINUITY_REASON_AUTO_TRANSITION) {
             maybeFinishSleepTimerAtEndOfItem(playQueue.getItem(oldPosition.mediaItemIndex), true);
         }
@@ -2391,19 +2401,62 @@ public final class Player implements PlaybackListener, Listener {
         }
 
         final String recoveryKey = item.getServiceId() + ":" + item.getUrl();
-        if (!mediaUrlRecoveryGuard.canRetry(recoveryKey)) {
-            return false;
-        }
-        if (DEBUG) {
-            Log.w(TAG, "Refreshing YouTube StreamInfo after a recoverable media URL failure");
+        final PlayerHttpErrorRecovery.RecoveryAttempt attempt =
+                mediaUrlRecoveryGuard.acquireAttempt(recoveryKey);
+        if (attempt == null) {
+            Log.w(TAG, "YouTube media URL recovery exhausted after "
+                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + " attempts");
+            cancelPendingMediaUrlRecovery();
+            InfoCache.getInstance()
+                    .removeInfo(item.getServiceId(), item.getUrl(), InfoCache.Type.STREAM);
+            mediaUrlRecoveryGuard.reset();
+            if (!exoPlayerIsNull()) {
+                simpleExoPlayer.pause();
+            }
+            changeState(STATE_PAUSED);
+            createErrorNotification(error);
+            if (fragmentListener != null) {
+                fragmentListener.onPlayerError(error, true);
+            }
+            return true;
         }
 
         setRecovery();
-        InfoCache.getInstance()
-                .removeInfo(item.getServiceId(), item.getUrl(), InfoCache.Type.STREAM);
-        reloadPlayQueueManager();
         onBuffering();
+        cancelPendingMediaUrlRecovery();
+
+        final Runnable recovery = () -> {
+            pendingMediaUrlRecovery = null;
+            if (playQueue == null) {
+                return;
+            }
+            final PlayQueueItem currentQueueItem = playQueue.getItem();
+            if (currentQueueItem == null
+                    || currentQueueItem.getServiceId() != item.getServiceId()
+                    || !currentQueueItem.getUrl().equals(item.getUrl())) {
+                return;
+            }
+
+            final Integer responseCode = PlayerHttpErrorRecovery.findInvalidResponseCode(error);
+            Log.w(TAG, "Refreshing YouTube StreamInfo after recoverable media URL failure"
+                    + " (status=" + (responseCode == null ? "network" : responseCode)
+                    + ", attempt=" + attempt.getNumber() + "/"
+                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + ")");
+            InfoCache.getInstance().removeInfo(item.getServiceId(), item.getUrl(),
+                    InfoCache.Type.STREAM);
+            reloadPlayQueueManager();
+        };
+        pendingMediaUrlRecovery = recovery;
+        mediaUrlRecoveryHandler.postDelayed(recovery, attempt.getDelayMillis());
         return true;
+    }
+
+    private void cancelPendingMediaUrlRecovery() {
+        if (pendingMediaUrlRecovery == null) {
+            return;
+        }
+        mediaUrlRecoveryHandler.removeCallbacks(pendingMediaUrlRecovery);
+        pendingMediaUrlRecovery = null;
     }
 
     private void createErrorNotification(@NonNull final PlaybackException error) {
