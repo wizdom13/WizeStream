@@ -506,6 +506,11 @@ public class StoredFileHelper implements Serializable {
      *
      * <p>Import and export operations must use this picker because their destination is chosen by
      * the user and is not part of WizeStream's configured download storage.</p>
+     *
+     * @param ctx context used to apply an initial document location
+     * @param mimeType MIME type accepted by the picker
+     * @param initialPath optional initial document location
+     * @return an implicit Android system document-picker intent
      */
     public static Intent getSystemPicker(@NonNull final Context ctx,
                                          @NonNull final String mimeType,
@@ -537,7 +542,15 @@ public class StoredFileHelper implements Serializable {
         return applyInitialPathToPickerIntent(ctx, i, initialPath, filename);
     }
 
-    /** Creates a system create-document intent independently of the download-storage preference. */
+    /**
+     * Creates a system create-document intent independently of the download-storage preference.
+     *
+     * @param ctx context used to apply an initial document location
+     * @param filename optional suggested file name
+     * @param mimeType MIME type assigned to the new document
+     * @param initialPath optional initial document location
+     * @return an implicit Android system create-document intent
+     */
     public static Intent getNewSystemPicker(@NonNull final Context ctx,
                                             @Nullable final String filename,
                                             @NonNull final String mimeType,
