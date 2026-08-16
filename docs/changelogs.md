@@ -2,6 +2,26 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## WizeStream 1.7.0 (`1007000`)
+
+### New features
+
+- Added local music and video browsing and playback, including search, filters, thumbnails, background playback, popup playback, and queue integration.
+- Added local media information such as format, resolution, duration, capture date, and audio quality.
+
+### Improvements
+
+- Improved recovery from temporary YouTube playback failures by refreshing media URLs with bounded retries while preserving playback position.
+
+### Fixes
+
+- Restored YouTube comment author avatars.
+- Fixed UTF-8 YouTube search queries.
+- Fixed the app-data export picker on Android 8.
+- Fixed bookmark removal before playlist loading completes.
+
+[View the complete changes since v1.6.0](https://github.com/wizdom13/WizeStream/compare/v1.6.0...v1.7.0)
+
 ## WizeStream 1.6.0 (`1006000`)
 
 ### New features

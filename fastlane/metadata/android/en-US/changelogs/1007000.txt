@@ -1,0 +1,6 @@
+WizeStream 1.7.0
+
+- Added local music and video browsing and playback with search, filters, thumbnails, background and popup playback, and detailed media information.
+- Improved recovery from temporary YouTube playback errors while preserving position.
+- Restored comment author avatars.
+- Fixed UTF-8 YouTube search, Android 8 app-data export, and bookmark removal before playlist loading.
