@@ -484,12 +484,7 @@ public class StoredFileHelper implements Serializable {
     public static Intent getPicker(@NonNull final Context ctx,
                                    @NonNull final String mimeType) {
         if (NewPipeSettings.useStorageAccessFramework(ctx)) {
-            return new Intent(Intent.ACTION_OPEN_DOCUMENT)
-                    .putExtra("android.content.extra.SHOW_ADVANCED", true)
-                    .setType(mimeType)
-                    .addCategory(Intent.CATEGORY_OPENABLE)
-                    .addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-                            | StoredDirectoryHelper.PERMISSION_FLAGS);
+            return getSystemPicker(ctx, mimeType, null);
         } else {
             return new Intent(ctx, FilePickerActivityHelper.class)
                     .putExtra(FilePickerActivityHelper.EXTRA_ALLOW_MULTIPLE, false)
@@ -506,21 +501,31 @@ public class StoredFileHelper implements Serializable {
         return applyInitialPathToPickerIntent(ctx, getPicker(ctx, mimeType), initialPath, null);
     }
 
+    /**
+     * Creates a system document picker intent regardless of the download-storage preference.
+     *
+     * <p>Import and export operations must use this picker because their destination is chosen by
+     * the user and is not part of WizeStream's configured download storage.</p>
+     */
+    public static Intent getSystemPicker(@NonNull final Context ctx,
+                                         @NonNull final String mimeType,
+                                         @Nullable final Uri initialPath) {
+        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT)
+                .putExtra("android.content.extra.SHOW_ADVANCED", true)
+                .setType(mimeType)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                        | StoredDirectoryHelper.PERMISSION_FLAGS);
+        return applyInitialPathToPickerIntent(ctx, intent, initialPath, null, true);
+    }
+
     public static Intent getNewPicker(@NonNull final Context ctx,
                                       @Nullable final String filename,
                                       @NonNull final String mimeType,
                                       @Nullable final Uri initialPath) {
         final Intent i;
         if (NewPipeSettings.useStorageAccessFramework(ctx)) {
-            i = new Intent(Intent.ACTION_CREATE_DOCUMENT)
-                    .putExtra("android.content.extra.SHOW_ADVANCED", true)
-                    .setType(mimeType)
-                    .addCategory(Intent.CATEGORY_OPENABLE)
-                    .addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-                            | StoredDirectoryHelper.PERMISSION_FLAGS);
-            if (filename != null) {
-                i.putExtra(Intent.EXTRA_TITLE, filename);
-            }
+            return getNewSystemPicker(ctx, filename, mimeType, initialPath);
         } else {
             i = new Intent(ctx, FilePickerActivityHelper.class)
                     .putExtra(FilePickerActivityHelper.EXTRA_ALLOW_MULTIPLE, false)
@@ -532,12 +537,38 @@ public class StoredFileHelper implements Serializable {
         return applyInitialPathToPickerIntent(ctx, i, initialPath, filename);
     }
 
+    /** Creates a system create-document intent independently of the download-storage preference. */
+    public static Intent getNewSystemPicker(@NonNull final Context ctx,
+                                            @Nullable final String filename,
+                                            @NonNull final String mimeType,
+                                            @Nullable final Uri initialPath) {
+        final Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
+                .putExtra("android.content.extra.SHOW_ADVANCED", true)
+                .setType(mimeType)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                        | StoredDirectoryHelper.PERMISSION_FLAGS);
+        if (filename != null) {
+            intent.putExtra(Intent.EXTRA_TITLE, filename);
+        }
+        return applyInitialPathToPickerIntent(ctx, intent, initialPath, filename, true);
+    }
+
     private static Intent applyInitialPathToPickerIntent(@NonNull final Context ctx,
                                                          @NonNull final Intent intent,
                                                          @Nullable final Uri initialPath,
                                                          @Nullable final String filename) {
+        return applyInitialPathToPickerIntent(ctx, intent, initialPath, filename,
+                NewPipeSettings.useStorageAccessFramework(ctx));
+    }
 
-        if (NewPipeSettings.useStorageAccessFramework(ctx)) {
+    private static Intent applyInitialPathToPickerIntent(@NonNull final Context ctx,
+                                                         @NonNull final Intent intent,
+                                                         @Nullable final Uri initialPath,
+                                                         @Nullable final String filename,
+                                                         final boolean useStorageAccessFramework) {
+
+        if (useStorageAccessFramework) {
             if (initialPath == null) {
                 return intent; // nothing to do, no initial path provided
             }
