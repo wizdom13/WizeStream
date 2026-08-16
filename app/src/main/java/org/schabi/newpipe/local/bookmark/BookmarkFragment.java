@@ -391,20 +391,45 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         if (itemListAdapter == null) {
             return;
         }
+
+        if (item instanceof PlaylistRemoteEntity) {
+            deleteRemoteBookmark((PlaylistRemoteEntity) item);
+            return;
+        }
+
         itemListAdapter.removeItem(item);
 
         if (item instanceof PlaylistMetadataEntry) {
             deletedItems.add(new Pair<>(item.getUid(),
                     LocalItem.LocalItemType.PLAYLIST_LOCAL_ITEM));
-        } else if (item instanceof PlaylistRemoteEntity) {
-            deletedItems.add(new Pair<>(item.getUid(),
-                    LocalItem.LocalItemType.PLAYLIST_REMOTE_ITEM));
         }
 
         if (debounceSaver != null) {
             debounceSaver.setHasChangesToSave();
             saveImmediate();
         }
+    }
+
+    private void deleteRemoteBookmark(final PlaylistRemoteEntity item) {
+        if (remotePlaylistManager == null || disposables == null) {
+            return;
+        }
+
+        disposables.add(remotePlaylistManager.deletePlaylist(item.getUid())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(ignored -> {
+                    // The database Flowable refreshes the list. Removing here also gives immediate
+                    // feedback if that refresh is queued behind another emission.
+                    if (itemListAdapter != null) {
+                        itemListAdapter.removeItem(item);
+                    }
+                    completePlaylists = completePlaylists.stream()
+                            .filter(playlist -> playlist.getUid() != item.getUid()
+                                    || playlist.getLocalItemType()
+                                    != LocalItem.LocalItemType.PLAYLIST_REMOTE_ITEM)
+                            .collect(java.util.stream.Collectors.toList());
+                }, throwable -> showError(new ErrorInfo(throwable,
+                        UserAction.REQUESTED_BOOKMARK, "Deleting playlist bookmark"))));
     }
 
     @Override
