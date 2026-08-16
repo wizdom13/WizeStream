@@ -6,16 +6,16 @@
 
 WizeStream combines its established Android application with a real Desktop client built for
 Windows, macOS and Linux. Desktop is integrated into the `pipe` branch and available as an
-**explicitly unsigned preview**; it is not an Android compatibility wrapper. See the
+**explicitly unsigned beta**; it is not an Android compatibility wrapper. See the
 [Desktop implementation guide](desktop/README.md) and
-[Desktop preview testing guide](desktop/docs/preview-testing.md).
+[Desktop beta testing guide](desktop/docs/beta-testing.md).
 
 | Platform | Availability | Packages |
 | --- | --- | --- |
 | Android | Signed application releases | APK / IzzyOnDroid |
-| Windows x64 | Unsigned Desktop preview and nightlies | Installer and portable `.exe` |
-| macOS x64 and arm64 | Unsigned Desktop preview and nightlies | `.dmg` and `.zip` |
-| Linux x64 and arm64 | Unsigned Desktop preview and nightlies | `.AppImage` and `.deb` |
+| Windows x64 | Unsigned Desktop beta and nightlies | Installer and portable `.exe` |
+| macOS x64 and arm64 | Unsigned Desktop beta and nightlies | `.dmg` and `.zip` |
+| Linux x64 and arm64 | Unsigned Desktop beta and nightlies | `.AppImage` and `.deb` |
 
 <p align="center">
   <a href="https://apt.izzysoft.de/packages/org.wisso.newpipematerial"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a>
@@ -194,11 +194,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 ## Features
 
 Feature availability differs between the Android and Desktop interfaces. Android provides the full
-mobile feature set documented below. The Desktop preview provides native Desktop browsing,
+mobile feature set documented below. The Desktop beta provides native Desktop browsing,
 playback, downloads, libraries, Learning Mode notes and trusted-device synchronization; see the
 [Desktop implementation guide](desktop/README.md) for its exact current scope.
 
-### Desktop preview highlights
+### Desktop beta highlights
 
 - A cached **What's New** video grid for subscribed channels, with channel avatars, views,
   publication times, playback progress and filters for unwatched, live, Shorts and partially
@@ -296,7 +296,7 @@ See [Device synchronization](#device-synchronization) for behavior, limitations,
 
 - Android supports manual and optional background checks for signed WizeStream releases, with
   changelog preview, APK download progress, installation handoff, and update validation.
-- Desktop preview packages are downloaded and updated manually. Production automatic updates are
+- Desktop beta packages are downloaded and updated manually. Production automatic updates are
   disabled, and Windows/macOS packages are currently unsigned.
 - Desktop CI validates the application and packages Windows x64, macOS x64/arm64 and Linux
   x64/arm64 builds whenever relevant Desktop code or workflows change on `pipe`.
@@ -362,17 +362,17 @@ WizeStream:        org.wisso.newpipematerial
 Debug build:       org.wisso.newpipematerial.debug
 ```
 
-### Desktop unsigned preview
+### Desktop unsigned beta
 
 Download the newest Windows, macOS or Linux Desktop prerelease from the official
 [WizeStream releases page](https://github.com/wizdom13/WizeStream/releases). Choose the package for
 your operating system and architecture, then verify it with the supplied `SHA256SUMS` before
 opening it.
 
-The Desktop preview is explicitly unsigned. Windows may show an unknown-publisher or SmartScreen
+The Desktop beta is explicitly unsigned. Windows may show an unknown-publisher or SmartScreen
 warning, and macOS Gatekeeper may require deliberate approval. Production automatic updates are
-disabled, so Desktop preview upgrades are installed manually. See the
-[Desktop preview testing guide](desktop/docs/preview-testing.md) for package and verification
+disabled, so Desktop beta upgrades are installed manually. See the
+[Desktop beta testing guide](desktop/docs/beta-testing.md) for package and verification
 details.
 
 ### GitHub Store
@@ -463,7 +463,7 @@ details.
 ## Release signing
 
 The environment variables below sign Android releases. Desktop Windows signing and macOS
-signing/notarization are postponed; the current Desktop preview remains explicitly unsigned. See
+signing/notarization are postponed; the current Desktop beta remains explicitly unsigned. See
 [Desktop release operations](desktop/docs/releasing.md) for that policy.
 
 Configure release signing with the WizeStream environment-variable names:
@@ -517,7 +517,7 @@ Completed or in-progress areas include:
 - Dialog, snackbar, settings, video-detail, and download UI polish
 - Release-signing workflow support
 - Integrated Windows, macOS and Linux Desktop application with five-target CI
-- Explicitly unsigned Desktop preview distribution with checksums and artifact attestations
+- Explicitly unsigned Desktop beta distribution with checksums and artifact attestations
 - Automated unsigned Desktop nightly releases with unique versions, checksums, attestations and
   independent Android/Desktop retention
 

@@ -23,7 +23,7 @@ WizeStream focuses on:
 * Reliable support for multiple streaming platforms
 * Consistent Android, Windows, macOS and Linux project identity
 * Maintained, integrated extractor and service compatibility
-* Release-ready signed Android builds and verified Desktop previews
+* Release-ready signed Android builds and verified Desktop betas
 * Clear fork attribution
 * Preserving compatible NewPipe behavior and data migration where practical
 * Safe, reviewable, well-scoped changes
@@ -55,7 +55,7 @@ Good contribution types include:
 * Release-readiness fixes
 * Accessibility improvements
 * Build, CI, and signing workflow fixes
-* Desktop preview testing and platform-specific fixes
+* Desktop beta testing and platform-specific fixes
 * Small refactors that reduce risk or improve maintainability
 * QA reports with screenshots, device info, and reproduction steps
 
@@ -174,7 +174,7 @@ For Android/device-sensitive changes, also run or request device QA.
 
 For Desktop changes, run the checks documented in
 [`desktop/README.md`](../desktop/README.md#validate) and request platform QA using the
-[`desktop/docs/preview-testing.md`](../desktop/docs/preview-testing.md) checklist. Desktop changes
+[`desktop/docs/beta-testing.md`](../desktop/docs/beta-testing.md) checklist. Desktop changes
 must pass the complete Windows x64, macOS x64/arm64 and Linux x64/arm64 CI matrix.
 
 Recommended manual QA for UI changes:

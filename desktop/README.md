@@ -2,7 +2,7 @@
 
 WizeStream is a multi-platform application for Android, Windows, macOS and Linux. WizeStream
 Desktop is its real desktop client for Windows, macOS and Linux, currently distributed as an
-explicitly unsigned preview. It is not an Android compatibility wrapper and does not share the
+explicitly unsigned beta. It is not an Android compatibility wrapper and does not share the
 Android user interface.
 
 The desktop architecture contains:
@@ -16,7 +16,7 @@ The desktop architecture contains:
 - The existing WizeStream v1 signed pairing messages and authenticated libp2p transport.
 - An inline libmpv renderer on supported native packages, with a shell-free mpv process fallback.
 - Resumable video, audio and caption downloads stored in a fixed WizeStream Downloads directory.
-- Native preview packages produced on native Windows, Intel/Apple Silicon macOS, and
+- Native beta packages produced on native Windows, Intel/Apple Silicon macOS, and
   x86_64/aarch64 Linux runners, plus a protected signed-beta release path.
 
 ## What the Desktop app can do
@@ -54,7 +54,7 @@ hotspot, WizeStream can find it again but still verifies the saved device identi
 Downloads are checked before they are marked complete. When separate video and audio tracks are
 needed, WizeStream combines them without lowering their quality.
 
-The current Desktop packages are explicitly unsigned previews. They are built and tested for
+The current Desktop packages are explicitly unsigned betas. They are built and tested for
 Windows x64, macOS x64/arm64 and Linux x64/arm64. Updates are installed manually.
 
 ## Requirements
@@ -98,13 +98,13 @@ Run the package task on the target operating system:
 npm run dist
 ```
 
-Preview packages are unsigned. Production updates are disabled and updater metadata is intentionally
-omitted, so preview upgrades are installed manually. Windows signing and macOS
+Beta packages are unsigned. Production updates are disabled and updater metadata is intentionally
+omitted, so beta upgrades are installed manually. Windows signing and macOS
 signing/notarization are postponed future release gates, not requirements for architecture CI or
-the current preview channel.
+the current beta channel.
 
-See [docs/preview-testing.md](docs/preview-testing.md) for the manual acceptance checklist.
-See [docs/releasing.md](docs/releasing.md) for the current unsigned-preview policy and the postponed
+See [docs/beta-testing.md](docs/beta-testing.md) for the manual acceptance checklist.
+See [docs/releasing.md](docs/releasing.md) for the current unsigned-beta policy and the postponed
 future signing, updater-validation and rollback procedures.
 Automated unsigned Desktop nightlies are published for all five supported targets in the
 [WizeStream Nightly repository](https://github.com/wizdom13/WizeStream_Nightly/releases). See the
@@ -115,11 +115,11 @@ Automated unsigned Desktop nightlies are published for all five supported target
 | Workflow | When it runs | Result |
 | --- | --- | --- |
 | **Desktop CI** | Relevant pushes and pull requests to `pipe`, or manual start | Validates the renderer, Electron main process, JVM backend, packaged startup, native media integration and production dependencies across all five targets |
-| **Desktop unsigned preview release** | A `desktop_v*.*.*` beta tag, or authorized manual start | Publishes an explicitly unsigned prerelease to [`wizdom13/WizeStream`](https://github.com/wizdom13/WizeStream/releases) |
+| **Desktop unsigned beta release** | A `desktop_v*.*.*` beta tag, or authorized manual start | Publishes an explicitly unsigned prerelease to [`wizdom13/WizeStream`](https://github.com/wizdom13/WizeStream/releases) |
 | **Desktop Nightly release** | Every day at 03:00 UTC, or manual start | Publishes an unsigned five-target prerelease to [`wizdom13/WizeStream_Nightly`](https://github.com/wizdom13/WizeStream_Nightly/releases) when the checked commit has not already been published as a Desktop nightly |
 | **Desktop signed beta release** | Protected manual or tag release after signing is configured | Publishes to `wizdom13/WizeStream`; this path remains postponed until trusted Windows and Apple signing identities are available |
 
-Published preview and nightly packages include `SHA256SUMS`, a release manifest and GitHub artifact
+Published beta and nightly packages include `SHA256SUMS`, a release manifest and GitHub artifact
 attestations. Desktop nightlies use `desktop-nightly-YYYYMMDD-<short-sha>` tags and keep the newest
 14 releases independently from Android nightlies.
 
@@ -140,7 +140,7 @@ attestations. Desktop nightlies use `desktop-nightly-YYYYMMDD-<short-sha>` tags 
 ## Maintenance status
 
 WizeStream Desktop is integrated into the main project. Ongoing work is regular maintenance:
-testing the supported platforms, reviewing preview reports and fixing reproducible problems.
+testing the supported platforms, reviewing beta reports and fixing reproducible problems.
 Changes must pass the Android and complete Desktop test matrices before they are merged. A higher
 unsigned beta is published only when important fixes change the application. Signed public
 releases and production automatic updates remain postponed.

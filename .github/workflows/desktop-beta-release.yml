@@ -1,10 +1,10 @@
-name: Desktop unsigned preview release
+name: Desktop unsigned beta release
 
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Type desktop_v0.6.0-beta to authorize this immutable preview
+        description: Type desktop_v0.6.0-beta to authorize this immutable beta
         required: true
         type: string
   push:
@@ -12,7 +12,7 @@ on:
       - "desktop_v*.*.*"
 
 concurrency:
-  group: desktop-unsigned-preview-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+  group: desktop-unsigned-beta-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
   cancel-in-progress: false
 
 permissions:
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate unsigned preview
+    name: Validate unsigned beta
     if: ${{ github.event_name == 'workflow_dispatch' || endsWith(github.ref_name, '-beta') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -33,7 +33,7 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@v6
-      - name: Require pipe and refuse to overwrite the published preview
+      - name: Require pipe and refuse to overwrite the published beta
         shell: bash
         env:
           RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
@@ -68,7 +68,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Verify Phase 7 package contract
         run: npm run release:verify
-      - name: Verify production updates are disabled in preview builds
+      - name: Verify production updates are disabled in beta builds
         shell: bash
         run: test "${WIZESTREAM_ENABLE_PRODUCTION_UPDATES:-0}" != '1'
       - run: npm run media-tools:setup
@@ -79,7 +79,7 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
 
   package:
-    name: Package unsigned preview ${{ matrix.name }}
+    name: Package unsigned beta ${{ matrix.name }}
     needs: validate
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
@@ -140,7 +140,7 @@ jobs:
         run: npx electron-builder --dir --publish never
       - name: Smoke-test packaged application
         run: npm run package:smoke
-      - name: Create unsigned preview packages
+      - name: Create unsigned beta packages
         run: npx electron-builder ${{ matrix.target }} --publish never
       - name: Verify both Windows package types exist
         if: runner.os == 'Windows'
@@ -150,7 +150,7 @@ jobs:
           if (-not (Test-Path 'release/*-portable.exe')) { throw 'Missing Windows portable package' }
       - uses: actions/upload-artifact@v7
         with:
-          name: wizestream-unsigned-preview-${{ matrix.name }}
+          name: wizestream-unsigned-beta-${{ matrix.name }}
           path: |
             desktop/release/*.AppImage
             desktop/release/*.deb
@@ -161,14 +161,14 @@ jobs:
           retention-days: 30
 
   publish:
-    name: Attest and publish unsigned preview
+    name: Attest and publish unsigned beta
     needs: package
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: wizestream-unsigned-preview-*
+          pattern: wizestream-unsigned-beta-*
           path: release-input
       - name: Prepare installers and checksums without updater metadata
         shell: bash
@@ -192,28 +192,28 @@ jobs:
           test "$(find release-ready -maxdepth 1 -type f -name '*.AppImage' | wc -l)" -eq 2
           (cd release-ready && sha256sum * | sort -k2 > SHA256SUMS)
           node -e "const fs=require('fs'); fs.writeFileSync('release-ready/release-manifest.json', JSON.stringify({version:'0.6.0-beta',tag:process.env.RELEASE_TAG,prerelease:true,unsigned:true,productionUpdates:false,sourceCommit:process.env.SOURCE_SHA},null,2)+'\\n')"
-      - name: Attest unsigned preview artifacts
+      - name: Attest unsigned beta artifacts
         uses: actions/attest@v4
         with:
           subject-path: release-ready/*
-      - name: Publish explicitly unsigned preview prerelease
+      - name: Publish explicitly unsigned beta prerelease
         uses: softprops/action-gh-release@v3
         with:
           repository: wizdom13/WizeStream
           tag_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
           target_commitish: ${{ github.sha }}
-          name: WizeStream Desktop 0.6.0 Beta — Unsigned Preview
+          name: WizeStream Desktop 0.6.0 Beta — Unsigned
           prerelease: ${{ contains(github.event_name == 'push' && github.ref_name || inputs.release_tag, '-beta') }}
           draft: false
           make_latest: false
           fail_on_unmatched_files: true
           body: |
             > [!WARNING]
-            > This is an explicitly unsigned preview for testing. It is not a signed public release.
+            > This is an explicitly unsigned beta for testing. It is not a signed public release.
 
-            Windows will show an unknown-publisher or SmartScreen warning. macOS Gatekeeper may block the app unless the tester deliberately allows it. Only install this preview if you understand and accept those warnings.
+            Windows will show an unknown-publisher or SmartScreen warning. macOS Gatekeeper may block the app unless the tester deliberately allows it. Only install this beta if you understand and accept those warnings.
 
-            Production automatic updates are disabled in these builds, and updater metadata is intentionally not published. Install future previews manually.
+            Production automatic updates are disabled in these builds, and updater metadata is intentionally not published. Install future betas manually.
 
             Included platforms:
             - Windows x64 installer and portable executable

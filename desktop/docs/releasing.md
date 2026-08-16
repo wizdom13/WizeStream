@@ -1,27 +1,27 @@
 # Desktop release operations
 
-## Current unsigned preview policy
+## Current unsigned beta policy
 
 WizeStream Desktop releases are unsigned open-source builds produced by GitHub Actions. Users
 should download them only from the official repository and verify the supplied `SHA256SUMS` and
 GitHub artifact attestations. Production automatic updates are not provided.
 
-Preview upgrades are installed manually. Windows may show an unknown-publisher or SmartScreen
+Beta upgrades are installed manually. Windows may show an unknown-publisher or SmartScreen
 warning, and macOS Gatekeeper may require explicit user approval; these warnings are expected for
 unsigned packages. Signed public releases and production automatic updates are postponed. The
 future signing procedures below remain inactive unless the maintainers explicitly change this
 policy and configure protected, trusted signing identities.
 
-Use the checklist in [`preview-testing.md`](preview-testing.md) for feedback and manual testing.
-Preview failures must be reported through the dedicated Desktop issue form with the exact release
+Use the checklist in [`beta-testing.md`](beta-testing.md) for feedback and manual testing.
+Beta failures must be reported through the dedicated Desktop issue form with the exact release
 tag, package filename, platform and architecture. The existing
 `desktop_v0.6.0-beta` release is immutable; publish a higher beta only after important
 fixes pass the Android regression checks and the complete five-target Desktop matrix.
 
 Pushing a tag matching `desktop_v*.*.*` at the exact `pipe` head starts the appropriate Desktop
-release workflow. The current unsigned preview tag is `desktop_v0.6.0-beta`; its numeric version
+release workflow. The current unsigned beta tag is `desktop_v0.6.0-beta`; its numeric version
 must match the base version in `desktop/package.json`. Tags ending in `-beta` select the unsigned
-preview workflow, while the protected signed workflow skips them. The non-applicable Desktop
+beta workflow, while the protected signed workflow skips them. The non-applicable Desktop
 workflow is skipped. Any published Desktop tag containing `-beta` is marked as a GitHub
 **Pre-release**.
 

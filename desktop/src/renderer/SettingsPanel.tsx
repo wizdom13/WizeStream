@@ -194,7 +194,7 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         <Divider component="li" /><SettingSwitch title="Timestamped notes" summary="Create notes linked to exact positions in videos" checked={settings.learningNotes} disabled={!settings.learningMode} onChange={(checked) => void update({ learningNotes: checked })} />
       </List>}
       {category === 'updates' && <Box sx={{ p: 4 }}><Typography variant="h6">WizeStream Desktop {currentVersion ?? ''}</Typography>
-        <Alert severity="info" sx={{ my: 2 }}>Preview builds are explicitly unsigned. Updates remain manual until signed public releases are available.</Alert>
+        <Alert severity="info" sx={{ my: 2 }}>Beta builds are explicitly unsigned. Updates remain manual until signed public releases are available.</Alert>
         <Button startIcon={<SystemUpdateAltRounded />} variant="outlined" onClick={onOpenUpdates}>Check for updates</Button>
       </Box>}
       {category === 'backup' && <List disablePadding>

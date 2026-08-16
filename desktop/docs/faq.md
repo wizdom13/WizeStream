@@ -23,17 +23,17 @@ No. WizeStream is independently maintained and is not affiliated with, sponsored
 by the official NewPipe project, TeamNewPipe, or NewPipe e.V. WizeStream is built from NewPipe and
 preserves its libre software license, upstream credits, and third-party notices.
 
-## Why does my computer warn me before opening a preview?
+## Why does my computer warn me before opening a beta?
 
-Current Desktop previews are explicitly unsigned. Windows may show an unknown-publisher or
+Current Desktop betas are explicitly unsigned. Windows may show an unknown-publisher or
 SmartScreen warning, and macOS Gatekeeper may block the app until you deliberately allow it.
-Download previews only from the official WizeStream GitHub repository, verify `SHA256SUMS`, and
+Download betas only from the official WizeStream GitHub repository, verify `SHA256SUMS`, and
 install them only if you understand and accept these warnings.
 
-## How do Desktop preview updates work?
+## How do Desktop beta updates work?
 
-Preview updates are manual. Production automatic updates and updater metadata are disabled for
-unsigned previews. Download a newer preview from the official GitHub release and install it using
+Beta updates are manual. Production automatic updates and updater metadata are disabled for
+unsigned betas. Download a newer beta from the official GitHub release and install it using
 the normal method for your operating system. Your local WizeStream data should remain available,
 but keeping a recent backup is recommended.
 
@@ -85,7 +85,7 @@ backup files in a public issue.
 
 Use the [WizeStream issue forms](https://github.com/wizdom13/WizeStream/issues/new/choose). Include
 your operating system, WizeStream version, package type, clear reproduction steps, and any safe
-error message. For preview-package problems, also include the exact release tag and filename.
+error message. For beta-package problems, also include the exact release tag and filename.
 
 ## Where can I read the privacy policy and license?
 

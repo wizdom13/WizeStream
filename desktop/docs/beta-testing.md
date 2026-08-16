@@ -1,14 +1,14 @@
-# Desktop unsigned-preview testing
+# Desktop unsigned beta testing
 
-This checklist helps testers confirm that the WizeStream Desktop preview works on every supported
+This checklist helps testers confirm that the WizeStream Desktop beta works on every supported
 platform. It supplements automated testing; it does not replace it.
 
 ## Safety and authenticity
 
-1. Download the preview and `SHA256SUMS` only from the official
+1. Download the beta and `SHA256SUMS` only from the official
    [`wizdom13/WizeStream` releases page](https://github.com/wizdom13/WizeStream/releases).
-2. Confirm that the release tag ends in `-unsigned-preview` and that the release notes identify the
-   packages as explicitly unsigned.
+2. Confirm that the release tag ends in `-beta` and that the release notes identify the packages as
+   explicitly unsigned.
 3. Verify the downloaded package before opening it:
 
    - Windows PowerShell: `Get-FileHash -Algorithm SHA256 '<package>'`
@@ -20,7 +20,7 @@ platform. It supplements automated testing; it does not replace it.
    a failed test. Do not run the package.
 
 Windows unknown-publisher or SmartScreen warnings and macOS Gatekeeper approval are expected for
-the current unsigned preview. They are not evidence of a broken download when the SHA-256 value
+the current unsigned beta. They are not evidence of a broken download when the SHA-256 value
 matches the official manifest.
 
 ## Supported test matrix
@@ -58,7 +58,7 @@ For each platform and architecture:
 
 ## Reporting a failure
 
-Open a **Desktop preview bug report** in this repository and complete every required field. One
+Open a **Desktop beta bug report** in this repository and complete every required field. One
 issue should describe one reproducible problem.
 
 Never attach access tokens, private keys, pairing invitations, signed media URLs, or unredacted
@@ -68,7 +68,7 @@ filename and exact reproduction steps.
 ## Release gate
 
 The existing `desktop_v0.6.0-beta` tag and assets are immutable. A second unsigned
-preview is justified only when one or more material fixes change the tested binaries. A new preview
+beta is justified only when one or more material fixes change the tested binaries. A new beta
 must use a higher beta version and a new tag; existing release assets must never be overwritten.
 
 Signed public releases and production automatic updates remain postponed until maintainers adopt a

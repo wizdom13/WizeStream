@@ -15,7 +15,7 @@ function StartupFailure() {
         <Typography variant="h4" gutterBottom>WizeStream could not start</Typography>
         <Alert severity="error">
           The secure desktop bridge did not load. Please reinstall the latest WizeStream Desktop
-          preview. If the problem continues, attach the application startup log to a bug report.
+          beta. If the problem continues, attach the application startup log to a bug report.
         </Alert>
       </Box>
     </Box>

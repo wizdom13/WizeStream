@@ -1,5 +1,5 @@
-name: Desktop preview bug report
-description: Report a problem with an unsigned WizeStream Desktop preview
+name: Desktop beta bug report
+description: Report a problem with an unsigned WizeStream Desktop beta
 labels: [bug, needs triage]
 body:
   - type: markdown
@@ -7,7 +7,7 @@ body:
       value: |
         Thank you for testing WizeStream Desktop.
 
-        Download previews only from the official `wizdom13/WizeStream` GitHub Releases page and verify the supplied `SHA256SUMS` before testing. These packages are explicitly unsigned, so Windows unknown-publisher or SmartScreen warnings and macOS Gatekeeper approval are expected.
+        Download betas only from the official `wizdom13/WizeStream` GitHub Releases page and verify the supplied `SHA256SUMS` before testing. These packages are explicitly unsigned, so Windows unknown-publisher or SmartScreen warnings and macOS Gatekeeper approval are expected.
 
         Never paste access tokens, private keys, pairing invitations, signed media URLs, or other secrets into an issue or log.
 
@@ -16,7 +16,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: "I can reproduce the problem with the latest WizeStream Desktop preview from the official repository."
+        - label: "I can reproduce the problem with the latest WizeStream Desktop beta from the official repository."
           required: true
         - label: "I verified the downloaded package against the release's `SHA256SUMS`."
           required: true
@@ -28,7 +28,7 @@ body:
   - type: input
     id: release-tag
     attributes:
-      label: Preview release tag
+      label: Beta release tag
       description: Enter the exact GitHub release tag you tested.
       placeholder: desktop_v0.6.0-beta
     validations:

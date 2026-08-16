@@ -10,7 +10,7 @@ on:
       - 'app/src/main/java/org/schabi/newpipe/extractor/**'
       - 'app/src/main/java/org/schabi/newpipe/sync/**'
       - '.github/workflows/desktop-ci.yml'
-      - '.github/workflows/desktop-preview-release.yml'
+      - '.github/workflows/desktop-beta-release.yml'
       - '.github/workflows/desktop-release.yml'
       - '.github/workflows/desktop-nightly.yml'
   pull_request:
@@ -21,7 +21,7 @@ on:
       - 'app/src/main/java/org/schabi/newpipe/extractor/**'
       - 'app/src/main/java/org/schabi/newpipe/sync/**'
       - '.github/workflows/desktop-ci.yml'
-      - '.github/workflows/desktop-preview-release.yml'
+      - '.github/workflows/desktop-beta-release.yml'
       - '.github/workflows/desktop-release.yml'
       - '.github/workflows/desktop-nightly.yml'
 
