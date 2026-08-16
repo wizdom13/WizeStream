@@ -77,7 +77,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         importDataPreference.setOnPreferenceClickListener((Preference p) -> {
             NoFileManagerSafeGuard.launchSafe(
                     requestImportPathLauncher,
-                    StoredFileHelper.getPicker(requireContext(),
+                    StoredFileHelper.getSystemPicker(requireContext(),
                             ZIP_MIME_TYPE, getImportExportDataUri()),
                     TAG,
                     getContext()
@@ -90,7 +90,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         exportDataPreference.setOnPreferenceClickListener((final Preference p) -> {
             NoFileManagerSafeGuard.launchSafe(
                     requestExportPathLauncher,
-                    StoredFileHelper.getNewPicker(requireContext(),
+                    StoredFileHelper.getNewSystemPicker(requireContext(),
                             "WizeStreamData-" + exportDateFormat.format(new Date()) + ".zip",
                             ZIP_MIME_TYPE, getImportExportDataUri()),
                     TAG,

@@ -71,7 +71,7 @@
         <item name="colorAccent">@color/light_settings_accent_color</item>
 
         <item name="actionColor">@color/white</item>
-        <item name="nnf_toolbarTheme">@style/ToolbarTheme</item>
+        <item name="nnf_toolbarTheme">@style/FilePickerToolbarTheme</item>
 
         <item name="android:windowBackground">@color/light_background_color</item>
         <item name="nnf_separator_color">@color/light_separator_color</item>
@@ -85,7 +85,7 @@
         <item name="colorAccent">@color/dark_settings_accent_color</item>
 
         <item name="actionColor">@color/white</item>
-        <item name="nnf_toolbarTheme">@style/ToolbarTheme</item>
+        <item name="nnf_toolbarTheme">@style/FilePickerToolbarTheme</item>
 
         <item name="android:windowBackground">@color/dark_background_color</item>
         <item name="nnf_separator_color">@color/black_separator_color</item>
@@ -103,6 +103,19 @@
         <item name="colorPrimary">@color/dark_youtube_primary_color</item>
         <item name="colorPrimaryDark">@color/dark_youtube_primary_color</item>
         <item name="colorAccent">@color/dark_settings_accent_color</item>
+    </style>
+
+    <!--
+        NoNonsense-FilePicker inflates an AppCompat action-bar title inside this overlay. Keep the
+        overlay AppCompat-based and define the framework text colors explicitly so Android 8 can
+        resolve TextView's textColor attributes during inflation.
+    -->
+    <style name="FilePickerToolbarTheme" parent="ThemeOverlay.AppCompat.ActionBar">
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/white_secondary</item>
+        <item name="actionMenuTextColor">@color/white</item>
+        <item name="android:colorControlNormal">@color/white</item>
+        <item name="colorControlNormal">@color/white</item>
     </style>
 
     <style name="PlayQueueItemTextTheme">
