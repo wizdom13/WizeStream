@@ -73,7 +73,6 @@ import java.util.stream.Collectors;
 
 import coil3.util.CoilUtils;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -86,6 +85,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     private AtomicBoolean isBookmarkButtonReady;
     private final BookmarkActionGuard bookmarkActionGuard = new BookmarkActionGuard();
     private Disposable streamStateWorker;
+    private Disposable bookmarkMetadataUpdater;
 
     private RemotePlaylistManager remotePlaylistManager;
     private PlaylistRemoteEntity playlistEntity;
@@ -175,6 +175,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         // Is mini variant still relevant?
         // Only the remote playlist screen uses it now
         infoListAdapter.setUseMiniVariant(true);
+
+        observeBookmark();
     }
 
     private PlayQueue getPlayQueueStartingAt(final StreamInfoItem infoItem) {
@@ -238,6 +240,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         bookmarkReactor = null;
         streamStateWorker = null;
+        bookmarkMetadataUpdater = null;
         bookmarkActionGuard.finish();
     }
 
@@ -420,11 +423,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                     result.getUrl(), result));
         }
 
-        remotePlaylistManager.getPlaylist(result)
-                .flatMap(lists -> getUpdateProcessor(lists, result), (lists, id) -> lists)
-                .onBackpressureLatest()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(getPlaylistBookmarkSubscriber());
+        updateBookmarkMetadataIfNeeded();
+        updateBookmarkButtons();
 
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
         refreshStreamStatesAfterPageLoad();
@@ -570,20 +570,34 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     // Utils
     //////////////////////////////////////////////////////////////////////////*/
 
-    private Flowable<Integer> getUpdateProcessor(
-            @NonNull final List<PlaylistRemoteEntity> playlists,
-            @NonNull final PlaylistInfo result) {
-        final Flowable<Integer> noItemToUpdate = Flowable.just(/*noItemToUpdate=*/-1);
-        if (playlists.isEmpty()) {
-            return noItemToUpdate;
+    private void observeBookmark() {
+        if (remotePlaylistManager == null || url == null || isBookmarkButtonReady == null) {
+            return;
         }
 
-        final PlaylistRemoteEntity playlistRemoteEntity = playlists.get(0);
-        if (playlistRemoteEntity.isIdenticalTo(result)) {
-            return noItemToUpdate;
+        isBookmarkButtonReady.set(false);
+        updateBookmarkButtons();
+        remotePlaylistManager.getPlaylist(serviceId, url)
+                .onBackpressureLatest()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(getPlaylistBookmarkSubscriber());
+    }
+
+    private void updateBookmarkMetadataIfNeeded() {
+        if (remotePlaylistManager == null || currentInfo == null || playlistEntity == null
+                || playlistEntity.isIdenticalTo(currentInfo)
+                || bookmarkMetadataUpdater != null && !bookmarkMetadataUpdater.isDisposed()) {
+            return;
         }
 
-        return remotePlaylistManager.onUpdate(playlists.get(0).getUid(), result).toFlowable();
+        final long playlistUid = playlistEntity.getUid();
+        bookmarkMetadataUpdater = remotePlaylistManager.onUpdate(playlistUid, currentInfo)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(ignored -> { /* The database observer refreshes the entity. */ },
+                        throwable -> showError(new ErrorInfo(throwable,
+                                UserAction.REQUESTED_BOOKMARK,
+                                "Updating playlist bookmark")));
+        disposables.add(bookmarkMetadataUpdater);
     }
 
     private Subscriber<List<PlaylistRemoteEntity>> getPlaylistBookmarkSubscriber() {
@@ -601,8 +615,9 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
             public void onNext(final List<PlaylistRemoteEntity> playlist) {
                 playlistEntity = playlist.isEmpty() ? null : playlist.get(0);
 
-                updateBookmarkButtons();
                 isBookmarkButtonReady.set(true);
+                updateBookmarkMetadataIfNeeded();
+                updateBookmarkButtons();
 
                 if (bookmarkReactor != null) {
                     bookmarkReactor.request(1);
@@ -611,6 +626,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
             @Override
             public void onError(final Throwable throwable) {
+                isBookmarkButtonReady.set(false);
+                updateBookmarkButtons();
                 showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                         "Get playlist bookmarks"));
             }
@@ -630,7 +647,9 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
     private void onBookmarkClicked() {
         if (isBookmarkButtonReady == null || !isBookmarkButtonReady.get()
-                || remotePlaylistManager == null || !bookmarkActionGuard.tryStart()) {
+                || remotePlaylistManager == null
+                || (playlistEntity == null && currentInfo == null)
+                || !bookmarkActionGuard.tryStart()) {
             return;
         }
 
@@ -645,12 +664,16 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                             showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                                     "Adding playlist bookmark")));
         } else if (playlistEntity != null) {
+            final boolean returnToBookmarks = cancelPlaylistLoadingForRemoval();
             action = remotePlaylistManager.deletePlaylist(playlistEntity.getUid())
                     .observeOn(AndroidSchedulers.mainThread())
                     .doFinally(this::finishBookmarkAction)
                     .subscribe(ignored -> {
                         playlistEntity = null;
                         updateBookmarkButtons();
+                        if (returnToBookmarks && isAdded()) {
+                            getFM().popBackStack();
+                        }
                     }, throwable ->
                             showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                                     "Deleting playlist bookmark")));
@@ -660,6 +683,28 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         }
 
         disposables.add(action);
+    }
+
+    /**
+     * Stops an expensive playlist extraction before deleting its small database bookmark row.
+     * This makes removal available even when the remote playlist itself cannot be opened within
+     * the process heap limit.
+     *
+     * @return whether the initial playlist load was cancelled and the fragment should return to
+     *         the bookmarks screen after a successful deletion
+     */
+    private boolean cancelPlaylistLoadingForRemoval() {
+        final boolean initialLoadWasRunning = currentInfo == null && currentWorker != null;
+        if (currentWorker != null) {
+            currentWorker.dispose();
+            currentWorker = null;
+        }
+        if (streamStateWorker != null) {
+            streamStateWorker.dispose();
+            streamStateWorker = null;
+        }
+        isLoading.set(false);
+        return initialLoadWasRunning;
     }
 
     private void finishBookmarkAction() {
@@ -680,8 +725,11 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         playlistBookmarkButton.setIcon(drawable);
         playlistBookmarkButton.setTitle(titleRes);
-        playlistBookmarkButton.setEnabled(isBookmarkButtonReady != null
-                && isBookmarkButtonReady.get() && !bookmarkActionGuard.isRunning());
+        playlistBookmarkButton.setEnabled(BookmarkButtonState.isEnabled(
+                isBookmarkButtonReady != null && isBookmarkButtonReady.get(),
+                playlistEntity != null,
+                currentInfo != null,
+                bookmarkActionGuard.isRunning()));
     }
 
     private void setStreamCountAndOverallDuration(final List<StreamInfoItem> list,

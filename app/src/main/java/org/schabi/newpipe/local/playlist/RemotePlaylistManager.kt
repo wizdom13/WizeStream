@@ -24,7 +24,11 @@ class RemotePlaylistManager(private val database: AppDatabase) {
     }
 
     fun getPlaylist(info: PlaylistInfo): Flowable<MutableList<PlaylistRemoteEntity>> {
-        return playlistRemoteTable.getPlaylist(info.serviceId.toLong(), info.url)
+        return getPlaylist(info.serviceId, info.url)
+    }
+
+    fun getPlaylist(serviceId: Int, url: String?): Flowable<MutableList<PlaylistRemoteEntity>> {
+        return playlistRemoteTable.getPlaylist(serviceId.toLong(), url)
             .subscribeOn(Schedulers.io())
     }
 
