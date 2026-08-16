@@ -290,7 +290,7 @@ export function App() {
         <Stack direction="row" className="navigation-brand" sx={{ alignItems: 'center', gap: 1.25, mb: 2 }}>
           <Avatar src={wizestreamLogo} alt="WizeStream" sx={{ width: 48, height: 48, flexShrink: 0 }} />
           <Box className="navigation-brand-copy" sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle2" fontWeight={700} noWrap>WizeStream Desktop</Typography>
+            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>WizeStream Desktop</Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
               v{updateState?.currentVersion ?? '0.6.0-beta'}
             </Typography>
