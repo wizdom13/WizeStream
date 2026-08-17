@@ -40,6 +40,8 @@ export type MpvPlayerSession = {
     stop(): Promise<void>;
     seek(seconds: number): Promise<void>;
     setVolume(value: number): Promise<void>;
+    setEqualizer(gains?: number[]): Promise<void>;
+    setPlaybackParameters(speed: number, pitch: number, skipSilence: boolean): Promise<void>;
     setRenderSize(width: number, height: number): Promise<void>;
     setRenderMode(mode: RenderMode): Promise<void>;
     destroy(): Promise<void>;

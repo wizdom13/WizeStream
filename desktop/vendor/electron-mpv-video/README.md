@@ -261,6 +261,8 @@ await video.play()
 await video.pause()
 await video.seek(30)
 await video.setVolume(70)
+await video.setEqualizer([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+await video.setPlaybackParameters(1.25, 1, false)
 ```
 
 Switching between the `shared-texture` and `software(webgl/canvas2d)` pipelines recreates the native player and restores:
@@ -268,6 +270,7 @@ Switching between the `shared-texture` and `software(webgl/canvas2d)` pipelines 
 - media source
 - current playback time
 - volume
+- equalizer and playback speed, pitch, and silence-skipping parameters
 - paused or playing state
 - stopped state
 
@@ -296,6 +299,8 @@ Methods:
 - `stop()`
 - `seek(seconds)`
 - `setVolume(value)`
+- `setEqualizer(gains)` (ten half-decibel steps; omit `gains` to disable)
+- `setPlaybackParameters(speed, pitch, skipSilence)` (speed and pitch range: 0.1–3)
 - `setRenderMode(mode)`
 - `destroy()`
 

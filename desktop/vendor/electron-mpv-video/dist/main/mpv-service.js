@@ -15,6 +15,8 @@ const IPC_CHANNELS = [
     'player:stop',
     'player:seek',
     'player:set-volume',
+    'player:set-equalizer',
+    'player:set-playback-parameters',
     'player:set-render-size',
     'player:set-render-pipeline',
     'player:destroy',
@@ -55,6 +57,24 @@ function normalizePlayerId(value) {
         throw new TypeError('playerId must be a non-empty string');
     }
     return value;
+}
+function normalizeEqualizerGains(value) {
+    if (value === undefined || value === null)
+        return undefined;
+    if (!Array.isArray(value) || value.length !== 10)
+        throw new TypeError('equalizer gains must contain exactly ten bands');
+    return value.map((gain, index) => {
+        const normalized = finiteNumber(gain, `equalizer gains[${index}]`);
+        if (!Number.isInteger(normalized) || normalized < -24 || normalized > 24)
+            throw new RangeError(`equalizer gains[${index}] must be an integer from -24 to 24`);
+        return normalized;
+    });
+}
+function normalizePlaybackParameter(value, name) {
+    const normalized = finiteNumber(value, name);
+    if (normalized < 0.1 || normalized > 3)
+        throw new RangeError(`${name} must be between 0.1 and 3`);
+    return Math.round(normalized * 100) / 100;
 }
 function normalizeSource(value) {
     if (typeof value !== 'string' || value.trim().length === 0) {
@@ -111,6 +131,10 @@ class PlayerSession {
     mediaRequest = null;
     currentTime = 0;
     volume = 100;
+    equalizerGains = null;
+    playbackSpeed = 1;
+    playbackPitch = 1;
+    skipSilence = false;
     paused = true;
     stopped = true;
     constructor(window, ownerWebContentsId, nativeModule, onDestroyed, options) {
@@ -192,6 +216,18 @@ class PlayerSession {
         this.player.setVolume(nextVolume);
         this.volume = nextVolume;
     }
+    setEqualizer(gains) {
+        this.assertAlive();
+        this.player.setEqualizer(gains ?? null);
+        this.equalizerGains = gains ? [...gains] : null;
+    }
+    setPlaybackParameters(speed, pitch, skipSilence) {
+        this.assertAlive();
+        this.player.setPlaybackParameters(speed, pitch, skipSilence);
+        this.playbackSpeed = speed;
+        this.playbackPitch = pitch;
+        this.skipSilence = skipSilence;
+    }
     setRenderSize(size) {
         this.assertAlive();
         this.renderSize = size;
@@ -213,6 +249,8 @@ class PlayerSession {
         try {
             replacement = new this.nativeModule.MpvPlayer({ mode: nextPipeline });
             replacement.setVolume(this.volume);
+            replacement.setEqualizer(this.equalizerGains);
+            replacement.setPlaybackParameters(this.playbackSpeed, this.playbackPitch, this.skipSilence);
             if (this.source && !this.stopped) {
                 if (this.mediaRequest)
                     replacement.openMedia(this.mediaRequest);
@@ -527,6 +565,12 @@ class MpvMainService {
         electron.ipcMain.handle(channel('player:stop'), async (event, id) => this.getOwnedSession(event, id).stop());
         electron.ipcMain.handle(channel('player:seek'), async (event, id, seconds) => this.getOwnedSession(event, id).seek(finiteNumber(seconds, 'seconds')));
         electron.ipcMain.handle(channel('player:set-volume'), async (event, id, value) => this.getOwnedSession(event, id).setVolume(finiteNumber(value, 'volume')));
+        electron.ipcMain.handle(channel('player:set-equalizer'), async (event, id, gains) => this.getOwnedSession(event, id).setEqualizer(normalizeEqualizerGains(gains)));
+        electron.ipcMain.handle(channel('player:set-playback-parameters'), async (event, id, speed, pitch, skipSilence) => {
+            if (typeof skipSilence !== 'boolean')
+                throw new TypeError('skipSilence must be a boolean');
+            this.getOwnedSession(event, id).setPlaybackParameters(normalizePlaybackParameter(speed, 'speed'), normalizePlaybackParameter(pitch, 'pitch'), skipSilence);
+        });
         electron.ipcMain.handle(channel('player:set-render-size'), async (event, id, size) => this.getOwnedSession(event, id).setRenderSize(normalizeRenderSize(size)));
         electron.ipcMain.handle(channel('player:set-render-pipeline'), async (event, id, pipeline) => this.getOwnedSession(event, id).setRenderPipeline(normalizePipeline(pipeline)));
         electron.ipcMain.handle(channel('player:destroy'), async (event, id) => this.getOwnedSession(event, id).destroy());

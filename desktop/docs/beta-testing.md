@@ -45,6 +45,8 @@ For each platform and architecture:
 - [ ] Closing and reopening the application preserves local data.
 - [ ] Search returns results and opening a result loads its details.
 - [ ] Video and audio playback start, pause, seek and stop correctly.
+- [ ] Mute, volume, equalizer, playback speed, pitch, silence skipping and the sleep timer work
+      without replacing one another's audio settings.
 - [ ] Available audio and subtitle tracks can be selected without restarting the application.
 - [ ] A progressive download completes to a valid playable file.
 - [ ] An adaptive video-only download requires an audio choice, combines both components, and

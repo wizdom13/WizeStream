@@ -4,7 +4,7 @@ import {
   Checkbox, CircularProgress, Container, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, FormControlLabel, IconButton, InputAdornment, LinearProgress, List,
   ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, MenuItem,
-  Slider, Snackbar, Stack, Switch, Tab, Tabs, TextField, Toolbar, Tooltip, Typography,
+  Radio, RadioGroup, Slider, Snackbar, Stack, Switch, Tab, Tabs, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
@@ -12,10 +12,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import AddRounded from '@mui/icons-material/AddRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
+import BedtimeRounded from '@mui/icons-material/BedtimeRounded';
 import DeleteOutlineRounded from '@mui/icons-material/DeleteOutlineRounded';
 import DescriptionRounded from '@mui/icons-material/DescriptionRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
+import EqualizerRounded from '@mui/icons-material/EqualizerRounded';
 import EditRounded from '@mui/icons-material/EditRounded';
 import FolderOpenRounded from '@mui/icons-material/FolderOpenRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
@@ -31,17 +33,20 @@ import QueuePlayNextRounded from '@mui/icons-material/QueuePlayNextRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import SettingsRounded from '@mui/icons-material/SettingsRounded';
+import SpeedRounded from '@mui/icons-material/SpeedRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import ThumbDownRounded from '@mui/icons-material/ThumbDownRounded';
 import ThumbUpRounded from '@mui/icons-material/ThumbUpRounded';
+import VolumeOffRounded from '@mui/icons-material/VolumeOffRounded';
+import VolumeUpRounded from '@mui/icons-material/VolumeUpRounded';
 import wizestreamLogo from '../../../assets/wizestream_logo_round.svg';
 import { defaultDesktopSettings } from '../shared/contracts';
 import type {
-  ChannelDetails, CommentItem, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest,
+  ChannelDetails, CommentItem, DesktopSettings, DownloadJob, DownloadSource, EmbeddedPlayerRequest, EqualizerSettings,
   HistoryItem, LearningNote, LibraryStream, PlayerStatus, PlaylistItem, PlaylistSummary,
-  PlaybackState, SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
+  PlaybackParameterSettings, PlaybackState, SearchHistoryItem, SearchItem, ServiceSummary, StreamDetails, StreamVariant, SubtitleVariant,
   SponsorBlockSegment, SponsorBlockSettings, StreamComments, SubscriptionFeed,
   AutomaticSyncPolicy, SubscriptionItem, SyncRunLog, SyncRunResult, SyncStatus,
   UpdateState,
@@ -59,6 +64,14 @@ import {
   sponsorBlockSegmentKey, validSponsorBlockSegments,
 } from './sponsor-block';
 import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
+import { EqualizerDialog } from './EqualizerDialog';
+import { equalizerHeadroomMultiplier, equalizerPresetLabel } from './equalizer';
+import { PlaybackParametersDialog } from './PlaybackParametersDialog';
+import { formatPlaybackSpeed } from './playback-parameters';
+import {
+  inactiveSleepTimer, sleepTimerFadeMultiplier, sleepTimerRemainingMillis, sleepTimerStatus,
+  type SleepTimerState,
+} from './sleep-timer';
 
 defineMpvVideoElement();
 
@@ -83,6 +96,12 @@ const feedFilters: Array<{ id: Exclude<FeedFilter, 'none'>; label: string }> = [
   { id: 'shorts', label: 'Shorts' },
   { id: 'partially-watched', label: 'Partially watched' },
 ];
+type SleepTimerChoice = '15' | '30' | '45' | '60' | 'end_current' | 'custom';
+
+function loadPlayerVolume() {
+  const stored = Number(window.localStorage.getItem('wizestream.desktop.player.volume.v1'));
+  return Number.isFinite(stored) && stored >= 0 && stored <= 100 ? stored : 80;
+}
 
 export function App() {
   const { setMode } = useColorScheme();
@@ -359,6 +378,10 @@ export function App() {
             {embeddedRequest && selected && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest}
               stream={selected} recordPlayback={settings.enableWatchHistory}
               sponsorBlockSettings={settings.sponsorBlock}
+              equalizerSettings={settings.equalizer}
+              onEqualizerChange={(equalizer) => saveSettings({ equalizer })}
+              playbackParameters={settings.playbackParameters}
+              onPlaybackParametersChange={(playbackParameters) => saveSettings({ playbackParameters })}
               externalAvailable={Boolean(mpv.externalAvailable)} onError={setError} />}
             {selected && showPlayingInfo && <VideoInformationPanel details={selected}
               onOpen={resolveStream} onDownload={() => setSection('downloads')}
@@ -367,7 +390,7 @@ export function App() {
             {selected && !showPlayingInfo && <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="details-card">
               {selected.thumbnailUrl && <Box component="img" src={selected.thumbnailUrl} alt="" className="details-thumbnail" />}
               <CardContent sx={{ p: 4 }}><Chip label={selected.streamType} size="small" /><Typography variant="h4" sx={{ mt: 2 }}>{selected.name}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{selected.uploaderName}</Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 3, flexWrap: 'wrap' }}><Chip label={`${selected.videoStreams.length} video variants`} /><Chip label={`${selected.audioStreams.length} audio variants`} /><Chip label={`${selected.subtitles.length} captions`} /><Chip label={`${Math.round(selected.duration / 60)} min`} /></Stack>
+                <Stack direction="row" sx={{ mt: 3, gap: 1, flexWrap: 'wrap' }}><Chip label={`${selected.videoStreams.length} video variants`} /><Chip label={`${selected.audioStreams.length} audio variants`} /><Chip label={`${selected.subtitles.length} captions`} /><Chip label={`${Math.round(selected.duration / 60)} min`} /></Stack>
                 <Box className="stream-selectors" sx={{ mt: 3 }}>
                   <TextField select label="Video" value={videoChoice} onChange={(event) => setVideoChoice(event.target.value)}>
                     <MenuItem value="auto">Automatic</MenuItem>
@@ -396,7 +419,7 @@ export function App() {
                   </TextField>
                 </Box>
                 {playbackVideo?.videoOnly && !effectiveAudio && <Alert severity="warning" sx={{ mt: 2 }}>This video-only variant requires an audio track.</Alert>}
-                <Stack direction="row" spacing={1} sx={{ mt: 4, flexWrap: 'wrap' }}>
+                <Stack direction="row" sx={{ mt: 4, gap: 1, flexWrap: 'wrap' }}>
                   <Button startIcon={<PlayArrowRounded />} variant="contained" size="large"
                     disabled={!selectedPlaybackUrl || (playbackVideo?.videoOnly && !effectiveAudio)
                       || (!embeddedSelection && !mpv?.externalAvailable)} onClick={() => void playSelected()}>{embeddedSelection ? 'Play embedded' : 'Play with mpv'}</Button>
@@ -498,9 +521,14 @@ function FeedVideoCard({ item, onOpen }: { item: SearchItem; onOpen(): void }) {
   </Card>;
 }
 
-function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings, externalAvailable, onError }: {
+function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings, equalizerSettings,
+  onEqualizerChange, playbackParameters, onPlaybackParametersChange, externalAvailable, onError }: {
   request: EmbeddedPlayerRequest & { title: string; nonce: number }; externalAvailable: boolean;
   stream: StreamDetails; recordPlayback: boolean; sponsorBlockSettings: SponsorBlockSettings;
+  equalizerSettings: EqualizerSettings;
+  onEqualizerChange(value: EqualizerSettings): Promise<void>;
+  playbackParameters: PlaybackParameterSettings;
+  onPlaybackParametersChange(value: PlaybackParameterSettings): Promise<void>;
   onError(value: string): void;
 }) {
   const player = useRef<MpvVideoElement>(null);
@@ -515,9 +543,62 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   const [localError, setLocalError] = useState<string>();
   const [manualSponsorBlockSegment, setManualSponsorBlockSegment] = useState<SponsorBlockSegment>();
   const [sponsorBlockNotice, setSponsorBlockNotice] = useState<string>();
+  const [volume, setVolume] = useState(loadPlayerVolume);
+  const lastAudibleVolume = useRef(volume > 0 ? volume : 80);
+  const [muted, setMuted] = useState(false);
+  const [liveEqualizer, setLiveEqualizer] = useState(equalizerSettings);
+  const liveEqualizerRef = useRef(liveEqualizer);
+  const [equalizerOpen, setEqualizerOpen] = useState(false);
+  const [livePlaybackParameters, setLivePlaybackParameters] = useState(playbackParameters);
+  const livePlaybackParametersRef = useRef(livePlaybackParameters);
+  const [playbackParametersOpen, setPlaybackParametersOpen] = useState(false);
+  const [sleepTimer, setSleepTimer] = useState<SleepTimerState>(inactiveSleepTimer);
+  const [sleepTimerNow, setSleepTimerNow] = useState(Date.now());
+  const [sleepFade, setSleepFade] = useState(1);
+  const sleepFadeWindow = useRef(0);
+  const [sleepTimerOpen, setSleepTimerOpen] = useState(false);
+  const [sleepTimerChoice, setSleepTimerChoice] = useState<SleepTimerChoice>('30');
+  const [customSleepMinutes, setCustomSleepMinutes] = useState('90');
+  const [customSleepError, setCustomSleepError] = useState<string>();
+  const [sleepTimerNotice, setSleepTimerNotice] = useState<string>();
+  const effectiveVolume = (muted ? 0 : volume) * equalizerHeadroomMultiplier(liveEqualizer) * sleepFade;
+  const effectiveVolumeRef = useRef(effectiveVolume);
+  const mediaControlsReady = useRef(false);
 
   useEffect(() => { sponsorBlockSettingsRef.current = sponsorBlockSettings; }, [sponsorBlockSettings]);
   useEffect(() => { sponsorBlockSegmentsRef.current = stream.sponsorBlockSegments ?? []; }, [stream.sponsorBlockSegments]);
+  useEffect(() => {
+    if (!equalizerOpen) setLiveEqualizer(equalizerSettings);
+  }, [equalizerOpen, equalizerSettings]);
+  useEffect(() => {
+    if (!playbackParametersOpen) setLivePlaybackParameters(playbackParameters);
+  }, [playbackParameters, playbackParametersOpen]);
+
+  useEffect(() => {
+    liveEqualizerRef.current = liveEqualizer;
+    const element = player.current;
+    if (!element || !mediaControlsReady.current) return;
+    void element.setEqualizer(liveEqualizer.enabled ? liveEqualizer.gains : undefined)
+      .catch((reason: unknown) => onError(`Equalizer: ${errorMessage(reason)}`));
+  }, [liveEqualizer, onError]);
+
+  useEffect(() => {
+    livePlaybackParametersRef.current = livePlaybackParameters;
+    const element = player.current;
+    if (!element || !mediaControlsReady.current) return;
+    void element.setPlaybackParameters(
+      livePlaybackParameters.speed,
+      livePlaybackParameters.pitch,
+      livePlaybackParameters.skipSilence,
+    ).catch((reason: unknown) => onError(`Playback speed: ${errorMessage(reason)}`));
+  }, [livePlaybackParameters, onError]);
+
+  useEffect(() => {
+    effectiveVolumeRef.current = effectiveVolume;
+    if (!mediaControlsReady.current) return;
+    void player.current?.setVolume(effectiveVolume)
+      .catch((reason: unknown) => onError(`Volume: ${errorMessage(reason)}`));
+  }, [effectiveVolume, onError]);
 
   useEffect(() => {
     const element = player.current;
@@ -525,6 +606,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     const openingState = { status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv',
       audioTrack: 'auto', subtitleTrack: 'off' };
     latestState.current = openingState; setState(openingState);
+    mediaControlsReady.current = false;
     lastPlaybackSave.current = 0;
     skippedSponsorBlockSegments.current.clear();
     ignoredSponsorBlockSegment.current = undefined;
@@ -583,10 +665,27 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     void element.openMedia(request).then(async () => {
       if (request.startSeconds && request.startSeconds > 0) await element.seek(request.startSeconds);
       await element.play();
+      mediaControlsReady.current = true;
+
+      // Audio enhancements are optional. Apply them only after playback starts so an
+      // unavailable native filter or an older addon can never block the video itself.
+      const equalizer = liveEqualizerRef.current;
+      if (equalizer.enabled) {
+        void element.setEqualizer(equalizer.gains)
+          .catch((reason: unknown) => onError(`Equalizer: ${errorMessage(reason)}`));
+      }
+      const parameters = livePlaybackParametersRef.current;
+      if (parameters.speed !== 1 || parameters.pitch !== 1 || parameters.skipSilence) {
+        void element.setPlaybackParameters(parameters.speed, parameters.pitch, parameters.skipSilence)
+          .catch((reason: unknown) => onError(`Playback speed: ${errorMessage(reason)}`));
+      }
+      void element.setVolume(effectiveVolumeRef.current)
+        .catch((reason: unknown) => onError(`Volume: ${errorMessage(reason)}`));
     }).catch((reason: unknown) => {
       const value = errorMessage(reason); setLocalError(value); onError(value);
     });
     return () => {
+      mediaControlsReady.current = false;
       if (latestState.current.time > 0) savePosition(latestState.current.time, true);
       element.removeEventListener('mpv-state', update); element.removeEventListener('mpv-error', fail);
     };
@@ -603,10 +702,47 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   }, [request.subtitle?.url, onError]);
 
   useEffect(() => {
-    const stop = () => { void player.current?.stop(); };
+    const stop = () => {
+      void player.current?.stop();
+      setSleepTimer(inactiveSleepTimer);
+      setSleepFade(1);
+    };
     window.addEventListener('wizestream-stop-player', stop);
     return () => window.removeEventListener('wizestream-stop-player', stop);
   }, []);
+
+  useEffect(() => {
+    if (sleepTimer.mode === 'none') {
+      setSleepFade(1);
+      sleepFadeWindow.current = 0;
+      return;
+    }
+    const tick = () => {
+      const now = Date.now();
+      const playback = latestState.current;
+      const playbackRemaining = playback.duration > 0 ? playback.duration - playback.time : -1;
+      const remaining = sleepTimerRemainingMillis(sleepTimer, now, playbackRemaining);
+      setSleepTimerNow(now);
+      if (remaining > 0 && remaining < 30_000 && sleepFadeWindow.current === 0) {
+        sleepFadeWindow.current = remaining;
+      } else if (remaining >= 30_000) {
+        sleepFadeWindow.current = 0;
+      }
+      setSleepFade(sleepTimerFadeMultiplier(sleepTimer, remaining,
+        sleepFadeWindow.current || 30_000));
+      const finished = (sleepTimer.mode === 'duration' && remaining === 0)
+        || (sleepTimer.mode === 'end_current' && playback.status === 'Ended');
+      if (finished) {
+        void player.current?.stop();
+        setSleepTimer(inactiveSleepTimer);
+        setSleepFade(1);
+        setSleepTimerNotice('Sleep timer finished');
+      }
+    };
+    tick();
+    const timer = window.setInterval(tick, 1_000);
+    return () => window.clearInterval(timer);
+  }, [sleepTimer]);
 
   function seekManually(value: number) {
     const settings = sponsorBlockSettingsRef.current;
@@ -632,6 +768,59 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     setManualSponsorBlockSegment(undefined);
   }
 
+  function updateVolume(value: number) {
+    const next = Math.max(0, Math.min(100, value));
+    setVolume(next);
+    if (next > 0) {
+      lastAudibleVolume.current = next;
+      setMuted(false);
+    }
+    window.localStorage.setItem('wizestream.desktop.player.volume.v1', String(next));
+  }
+
+  function toggleMute() {
+    if (muted || volume === 0) {
+      if (volume === 0) updateVolume(lastAudibleVolume.current);
+      setMuted(false);
+      return;
+    }
+    setMuted(true);
+  }
+
+  function stopPlayback() {
+    void player.current?.stop();
+    setSleepTimer(inactiveSleepTimer);
+    setSleepFade(1);
+  }
+
+  function openSleepTimer() {
+    setCustomSleepError(undefined);
+    if (sleepTimer.mode === 'end_current') setSleepTimerChoice('end_current');
+    else if (sleepTimer.mode === 'duration') {
+      const minutes = Math.max(1, Math.ceil(sleepTimerRemainingMillis(sleepTimer, Date.now(), -1) / 60_000));
+      const preset = [15, 30, 45, 60].includes(minutes) ? String(minutes) as SleepTimerChoice : 'custom';
+      setSleepTimerChoice(preset);
+      if (preset === 'custom') setCustomSleepMinutes(String(minutes));
+    } else setSleepTimerChoice('30');
+    setSleepTimerOpen(true);
+  }
+
+  function startSleepTimer() {
+    sleepFadeWindow.current = 0;
+    if (sleepTimerChoice === 'end_current') {
+      setSleepTimer({ mode: 'end_current', fadeOut: sleepTimer.fadeOut });
+    } else {
+      const minutes = sleepTimerChoice === 'custom' ? Number(customSleepMinutes) : Number(sleepTimerChoice);
+      if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1_440) {
+        setCustomSleepError('Enter a duration from 1 to 1440 minutes');
+        return;
+      }
+      setSleepTimer({ mode: 'duration', deadline: Date.now() + minutes * 60_000, fadeOut: sleepTimer.fadeOut });
+    }
+    setSleepTimerNow(Date.now());
+    setSleepTimerOpen(false);
+  }
+
   const markerSegments = validSponsorBlockSegments(
     stream.sponsorBlockSegments ?? [], sponsorBlockSettings,
   );
@@ -646,7 +835,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       <Stack direction="row" spacing={0.5}>
         <IconButton aria-label="Play" onClick={() => void player.current?.play()}><PlayArrowRounded /></IconButton>
         <IconButton aria-label="Pause" onClick={() => void player.current?.pause()}><PauseRounded /></IconButton>
-        <IconButton aria-label="Stop" onClick={() => void player.current?.stop()}><StopRounded /></IconButton>
+        <IconButton aria-label="Stop" onClick={stopPlayback}><StopRounded /></IconButton>
       </Stack>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.time)}</Typography>
       <Box className="player-timeline">
@@ -662,6 +851,28 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       </Box>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.duration)}</Typography>
     </Box>
+    <Box className="player-tools-row" sx={{ mt: 1.5 }}>
+      <Stack direction="row" className="player-audio-controls" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Tooltip title={muted || volume === 0 ? 'Unmute' : 'Mute'}>
+          <IconButton aria-label={muted || volume === 0 ? 'Unmute' : 'Mute'} onClick={toggleMute}>
+            {muted || volume === 0 ? <VolumeOffRounded /> : <VolumeUpRounded />}
+          </IconButton>
+        </Tooltip>
+        <Slider className="player-volume-slider" min={0} max={100} value={volume}
+          aria-label="Volume" valueLabelDisplay="auto" valueLabelFormat={(value) => `${value}%`}
+          onChange={(_event, value) => updateVolume(Number(value))} />
+        <Typography className="mono player-volume-label" variant="body2">{Math.round(volume)}%</Typography>
+        <Button startIcon={<EqualizerRounded />} variant={liveEqualizer.enabled ? 'contained' : 'outlined'}
+          onClick={() => setEqualizerOpen(true)}>Equalizer · {equalizerPresetLabel(liveEqualizer.preset)}</Button>
+        <Button startIcon={<SpeedRounded />} variant={livePlaybackParameters.speed === 1
+          && livePlaybackParameters.pitch === 1 && !livePlaybackParameters.skipSilence ? 'outlined' : 'contained'}
+          onClick={() => setPlaybackParametersOpen(true)}>Speed · {formatPlaybackSpeed(livePlaybackParameters.speed)}</Button>
+        <Button startIcon={<BedtimeRounded />} variant={sleepTimer.mode === 'none' ? 'outlined' : 'contained'}
+          onClick={openSleepTimer}>{sleepTimer.mode === 'none' ? 'Sleep timer'
+            : sleepTimerStatus(sleepTimer, sleepTimerRemainingMillis(sleepTimer, sleepTimerNow,
+              state.duration > 0 ? state.duration - state.time : -1))}</Button>
+      </Stack>
+    </Box>
     <Stack direction="row" className="player-status-row" sx={{ mt: 1.5, gap: 1, flexWrap: 'wrap' }}>
       {manualSponsorBlockSegment && <Button size="small" variant="contained" onClick={skipManualSponsorBlockSegment}>
         {manualSponsorBlockSegment.category === 'sponsor' ? 'Skip sponsor' : 'Skip segment'}
@@ -672,6 +883,52 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     </Stack>
     <Snackbar open={Boolean(sponsorBlockNotice)} autoHideDuration={3_000}
       onClose={() => setSponsorBlockNotice(undefined)} message={sponsorBlockNotice} />
+    <Snackbar open={Boolean(sleepTimerNotice)} autoHideDuration={3_000}
+      onClose={() => setSleepTimerNotice(undefined)} message={sleepTimerNotice} />
+    <EqualizerDialog open={equalizerOpen} value={liveEqualizer} appliesLive
+      onPreview={setLiveEqualizer} onCommit={(value) => {
+        setLiveEqualizer(value);
+        void onEqualizerChange(value).catch((reason: unknown) => onError(`Equalizer settings: ${errorMessage(reason)}`));
+      }} onClose={() => setEqualizerOpen(false)} />
+    <PlaybackParametersDialog open={playbackParametersOpen} value={livePlaybackParameters}
+      onPreview={setLivePlaybackParameters} onCommit={(value) => {
+        setLivePlaybackParameters(value);
+        void onPlaybackParametersChange(value)
+          .catch((reason: unknown) => onError(`Playback speed settings: ${errorMessage(reason)}`));
+      }} onClose={() => setPlaybackParametersOpen(false)} />
+    <Dialog open={sleepTimerOpen} onClose={() => setSleepTimerOpen(false)} fullWidth maxWidth="xs">
+      <DialogTitle>Sleep timer</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {sleepTimer.mode !== 'none' && <Alert severity="info">Active · {sleepTimerStatus(sleepTimer,
+            sleepTimerRemainingMillis(sleepTimer, sleepTimerNow, state.duration > 0 ? state.duration - state.time : -1))}</Alert>}
+          <RadioGroup value={sleepTimerChoice} onChange={(event) => {
+            setSleepTimerChoice(event.target.value as SleepTimerChoice); setCustomSleepError(undefined);
+          }}>
+            <FormControlLabel value="15" control={<Radio />} label="15 minutes" />
+            <FormControlLabel value="30" control={<Radio />} label="30 minutes" />
+            <FormControlLabel value="45" control={<Radio />} label="45 minutes" />
+            <FormControlLabel value="60" control={<Radio />} label="60 minutes" />
+            <FormControlLabel value="end_current" control={<Radio />} label="End of current video" />
+            <FormControlLabel value="custom" control={<Radio />} label="Custom duration" />
+          </RadioGroup>
+          {sleepTimerChoice === 'custom' && <TextField label="Minutes (1–1440)" value={customSleepMinutes}
+            type="number" error={Boolean(customSleepError)} helperText={customSleepError}
+            onChange={(event) => { setCustomSleepMinutes(event.target.value); setCustomSleepError(undefined); }}
+            slotProps={{ htmlInput: { min: 1, max: 1_440 } }} />}
+          <FormControlLabel label="Fade out during the final 30 seconds" control={<Switch checked={sleepTimer.fadeOut}
+            onChange={(event) => setSleepTimer((current) => ({ ...current, fadeOut: event.target.checked }))} />} />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        {sleepTimer.mode !== 'none' && <Button color="error" onClick={() => {
+          setSleepTimer(inactiveSleepTimer); setSleepFade(1); setSleepTimerOpen(false);
+        }}>Turn off</Button>}
+        <Box sx={{ flexGrow: 1 }} />
+        <Button onClick={() => setSleepTimerOpen(false)}>Cancel</Button>
+        <Button variant="contained" onClick={startSleepTimer}>Start</Button>
+      </DialogActions>
+    </Dialog>
   </CardContent></Card>;
 }
 
@@ -1035,7 +1292,7 @@ function PlaylistsPanel({ currentStream, onOpen }: { currentStream?: LibraryStre
               <Typography color="text.secondary" sx={{ mt: 0.5 }}>{playlistItemCountLabel(selectedPlaylist.itemCount)}</Typography>
               {currentStream && <Typography color="text.secondary" variant="body2" className="two-lines" sx={{ mt: 1.5 }}>Ready to add: {currentStream.title}</Typography>}
             </Box>
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
               <Tooltip title="Rename"><IconButton aria-label="Rename playlist" onClick={() => showEditor('rename', selectedPlaylist)}><EditRounded /></IconButton></Tooltip>
               <Tooltip title="Delete playlist"><IconButton aria-label="Delete playlist" onClick={() => void deletePlaylist(selectedPlaylist)}><DeleteOutlineRounded /></IconButton></Tooltip>
               <Button startIcon={<PlaylistAddRounded />} variant="contained" disabled={!currentStream} onClick={() => void addCurrent()}>Add current</Button>

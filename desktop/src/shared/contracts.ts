@@ -430,6 +430,25 @@ export interface UpdateState {
 export type DesktopTheme = 'system' | 'light' | 'dark';
 export type PreferredVideoFormat = 'video_mp4' | 'video_webm' | 'video_3gp';
 export type PreferredAudioFormat = 'audio_m4a' | 'audio_webm';
+export type EqualizerPresetId = 'flat' | 'bass_boost' | 'vocal' | 'acoustic' | 'rock' | 'custom';
+
+export interface EqualizerSettings {
+  enabled: boolean;
+  preset: EqualizerPresetId;
+  /** Ten half-decibel gain steps from 32 Hz through 16 kHz. */
+  gains: number[];
+}
+
+export type PlaybackPitchMode = 'percent' | 'semitone';
+
+export interface PlaybackParameterSettings {
+  speed: number;
+  pitch: number;
+  skipSilence: boolean;
+  unhook: boolean;
+  adjustmentStep: 0.01 | 0.05 | 0.1 | 0.25 | 1;
+  pitchMode: PlaybackPitchMode;
+}
 
 export interface DesktopSettings {
   theme: DesktopTheme;
@@ -444,6 +463,8 @@ export interface DesktopSettings {
   enableSearchHistory: boolean;
   learningMode: boolean;
   learningNotes: boolean;
+  equalizer: EqualizerSettings;
+  playbackParameters: PlaybackParameterSettings;
   sponsorBlock: SponsorBlockSettings;
 }
 
@@ -491,6 +512,19 @@ export const defaultDesktopSettings: DesktopSettings = {
   enableSearchHistory: true,
   learningMode: false,
   learningNotes: true,
+  equalizer: {
+    enabled: false,
+    preset: 'flat',
+    gains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  },
+  playbackParameters: {
+    speed: 1,
+    pitch: 1,
+    skipSilence: false,
+    unhook: true,
+    adjustmentStep: 0.25,
+    pitchMode: 'percent',
+  },
   sponsorBlock: defaultSponsorBlockSettings,
 };
 

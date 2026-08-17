@@ -10,6 +10,7 @@ import BlockRounded from '@mui/icons-material/BlockRounded';
 import CleaningServicesRounded from '@mui/icons-material/CleaningServicesRounded';
 import DevicesRounded from '@mui/icons-material/DevicesRounded';
 import DownloadRounded from '@mui/icons-material/DownloadRounded';
+import EqualizerRounded from '@mui/icons-material/EqualizerRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
 import HomeRounded from '@mui/icons-material/HomeRounded';
 import OpenInNewRounded from '@mui/icons-material/OpenInNewRounded';
@@ -19,10 +20,12 @@ import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import VideoSettingsRounded from '@mui/icons-material/VideoSettingsRounded';
 import { defaultSponsorBlockSettings } from '../shared/contracts';
 import type {
-  BackupOperationResult, DesktopSettings, ServiceSummary, SponsorBlockBehavior,
+  BackupOperationResult, DesktopSettings, EqualizerSettings, ServiceSummary, SponsorBlockBehavior,
   SponsorBlockCategoryId, SponsorBlockCategoryPreference, SponsorBlockSettings,
 } from '../shared/contracts';
 import { sponsorBlockCategories } from './sponsor-block';
+import { EqualizerDialog } from './EqualizerDialog';
+import { equalizerPresetLabel } from './equalizer';
 
 type Category = 'video' | 'download' | 'appearance' | 'history' | 'content' | 'sponsorblock'
   | 'updates' | 'backup' | 'sync' | 'learning';
@@ -56,6 +59,7 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
   const [message, setMessage] = useState<string>();
   const [messageSeverity, setMessageSeverity] = useState<'success' | 'error' | 'info'>('info');
   const [busy, setBusy] = useState(false);
+  const [equalizerOpen, setEqualizerOpen] = useState(false);
 
   async function update(patch: Partial<DesktopSettings>) {
     setMessage(undefined);
@@ -134,6 +138,9 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
           options={[['audio_m4a', 'M4A'], ['audio_webm', 'WebM']]} />
         <Divider component="li" /><SettingSwitch title="Prefer original audio" summary="Select the original audio track regardless of the language" checked={settings.preferOriginalAudio} onChange={(checked) => void update({ preferOriginalAudio: checked })} />
         <Divider component="li" /><SettingSwitch title="Prefer descriptive audio" summary="Select an audio track with descriptions for visually impaired people if available" checked={settings.preferDescriptiveAudio} onChange={(checked) => void update({ preferDescriptiveAudio: checked })} />
+        <Divider component="li" /><SettingAction icon={<EqualizerRounded />} title="Equalizer"
+          summary={`${settings.equalizer.enabled ? 'On' : 'Off'} · ${equalizerPresetLabel(settings.equalizer.preset)} · Five presets and one custom curve`}
+          action="Open" onClick={() => setEqualizerOpen(true)} />
       </List>}
       {category === 'download' && <SettingAction icon={<DownloadRounded />} title="Download folder" summary="Media and captions are stored in the WizeStream folder inside your system Downloads folder." action="Open folder" onClick={onOpenDownloads} />}
       {category === 'appearance' && <List disablePadding><SettingSelect title="Theme" value={settings.theme} onChange={(value) => void update({ theme: value as DesktopSettings['theme'] })}
@@ -198,7 +205,7 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         <Button startIcon={<SystemUpdateAltRounded />} variant="outlined" onClick={onOpenUpdates}>Check for updates</Button>
       </Box>}
       {category === 'backup' && <List disablePadding>
-        <ListItem sx={{ py: 2.5 }}><ListItemIcon><BackupRounded /></ListItemIcon><ListItemText primary="What full backup includes" secondary="Full backup includes subscriptions, playlists, app settings including SponsorBlock, history, search history, and Learning Mode notes." /></ListItem>
+        <ListItem sx={{ py: 2.5 }}><ListItemIcon><BackupRounded /></ListItemIcon><ListItemText primary="What full backup includes" secondary="Full backup includes subscriptions, playlists, app settings including SponsorBlock, equalizer, and playback speed, history, search history, and Learning Mode notes." /></ListItem>
         <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Import full backup" summary="Restore subscriptions, playlists, app settings, and local data from a ZIP backup." action="Import" disabled={busy} onClick={() => void backupAction('restoreFull')} />
         <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Export full backup" summary="Create a ZIP backup with subscriptions, playlists, app settings, and local data." action="Export" disabled={busy} onClick={() => void backupAction('exportFull')} />
         <Divider component="li" /><SettingAction icon={<CleaningServicesRounded />} title="Reset settings" summary="Reset all settings to their default values" action="Reset" disabled={busy} onClick={() => {
@@ -212,6 +219,9 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         <Divider component="li" /><SettingAction icon={<BackupRounded />} title="Import subscriptions only" summary="Import an Android JSON subscription export or subscriptions from an Android full-backup ZIP. Existing subscriptions are merged." action="Import" disabled={busy} onClick={() => void backupAction('importSubscriptions')} />
       </List>}
     </CardContent></Card>
+    <EqualizerDialog open={equalizerOpen} value={settings.equalizer}
+      onCommit={(equalizer: EqualizerSettings) => void update({ equalizer })}
+      onClose={() => setEqualizerOpen(false)} />
   </Stack>;
 }
 

@@ -87,6 +87,8 @@ function createPlayerSession(id) {
         stop: () => electron.ipcRenderer.invoke(channel('player:stop'), id),
         seek: (seconds) => electron.ipcRenderer.invoke(channel('player:seek'), id, seconds),
         setVolume: (value) => electron.ipcRenderer.invoke(channel('player:set-volume'), id, value),
+        setEqualizer: (gains) => electron.ipcRenderer.invoke(channel('player:set-equalizer'), id, gains),
+        setPlaybackParameters: (speed, pitch, skipSilence) => electron.ipcRenderer.invoke(channel('player:set-playback-parameters'), id, speed, pitch, skipSilence),
         setRenderSize: (width, height) => electron.ipcRenderer.invoke(channel('player:set-render-size'), id, { width, height }),
         setRenderMode: (mode) => electron.ipcRenderer.invoke(channel('player:set-render-pipeline'), id, pipelineForRenderMode(mode)),
         destroy: async () => {

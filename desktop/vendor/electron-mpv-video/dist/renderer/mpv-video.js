@@ -431,6 +431,14 @@ export class MpvVideoElement extends HTMLElement {
         }
         await this.player?.setVolume(volume);
     }
+    async setEqualizer(gains) {
+        await this.ensureReady();
+        await this.player?.setEqualizer(gains);
+    }
+    async setPlaybackParameters(speed, pitch, skipSilence) {
+        await this.ensureReady();
+        await this.player?.setPlaybackParameters(speed, pitch, skipSilence);
+    }
     async setRenderMode(mode) {
         await this.ensureReady();
         const nextMode = this.resolveRenderMode(mode);

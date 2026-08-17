@@ -46,6 +46,33 @@ describe('SettingsManager', () => {
     });
   });
 
+  it('adds the Android-compatible flat equalizer to older Desktop settings', async () => {
+    const filePath = await fixture();
+    const legacySettings: Record<string, unknown> = { ...defaultDesktopSettings };
+    delete legacySettings.equalizer;
+    await writeFile(filePath, JSON.stringify(legacySettings));
+
+    const manager = new SettingsManager(filePath);
+    expect(await manager.initialize()).toMatchObject({
+      equalizer: { enabled: false, preset: 'flat', gains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    });
+  });
+
+  it('adds Android-compatible playback parameters to older Desktop settings', async () => {
+    const filePath = await fixture();
+    const legacySettings: Record<string, unknown> = { ...defaultDesktopSettings };
+    delete legacySettings.playbackParameters;
+    await writeFile(filePath, JSON.stringify(legacySettings));
+
+    const manager = new SettingsManager(filePath);
+    expect(await manager.initialize()).toMatchObject({
+      playbackParameters: {
+        speed: 1, pitch: 1, skipSilence: false, unhook: true,
+        adjustmentStep: 0.25, pitchMode: 'percent',
+      },
+    });
+  });
+
   it('rejects unknown or invalid settings', async () => {
     const manager = new SettingsManager(await fixture());
     await manager.initialize();
@@ -75,9 +102,13 @@ describe('SettingsManager', () => {
     await manager.initialize();
     const legacySettings: Record<string, unknown> = { ...defaultDesktopSettings };
     delete legacySettings.sponsorBlock;
+    delete legacySettings.equalizer;
+    delete legacySettings.playbackParameters;
 
     expect(await manager.replace(legacySettings)).toMatchObject({
       sponsorBlock: { enabled: false, gracedRewind: true, notifications: true },
+      equalizer: { enabled: false, preset: 'flat' },
+      playbackParameters: { speed: 1, pitch: 1, skipSilence: false, unhook: true },
     });
   });
 });

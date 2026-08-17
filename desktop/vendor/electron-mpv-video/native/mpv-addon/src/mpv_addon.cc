@@ -37,9 +37,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -262,6 +264,8 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       InstanceMethod("stop", &MpvPlayer::Stop),
       InstanceMethod("seek", &MpvPlayer::Seek),
       InstanceMethod("setVolume", &MpvPlayer::SetVolume),
+      InstanceMethod("setEqualizer", &MpvPlayer::SetEqualizer),
+      InstanceMethod("setPlaybackParameters", &MpvPlayer::SetPlaybackParameters),
       InstanceMethod("setUpdateCallback", &MpvPlayer::SetUpdateCallback),
       InstanceMethod("setEventCallback", &MpvPlayer::SetEventCallback),
       InstanceMethod("renderFrame", &MpvPlayer::RenderFrame),
@@ -608,6 +612,120 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     double volume = std::clamp(info[0].As<Napi::Number>().DoubleValue(), 0.0, 100.0);
     int ret = mpv_set_property(handle_, "volume", MPV_FORMAT_DOUBLE, &volume);
     if (ret < 0) throw_mpv_error(env, "setVolume", ret);
+    return env.Undefined();
+  }
+
+  int apply_audio_filters() {
+    std::vector<std::string> filters;
+    if (skip_silence_) {
+      filters.push_back("lavfi=[silenceremove=stop_periods=-1:stop_duration=0.1:"
+                        "stop_threshold=-30dB:stop_silence=0.02:detection=peak]");
+    }
+    if (equalizer_gains_.size() == 10) {
+      static const int frequencies[] = {32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000};
+      std::ostringstream entries;
+      for (size_t index = 0; index < equalizer_gains_.size(); index++) {
+        if (index > 0) entries << "; ";
+        entries << "entry(" << frequencies[index] << "," << equalizer_gains_[index] / 2.0 << ")";
+      }
+      filters.push_back("lavfi=[firequalizer=gain_entry='" + entries.str() + "':scale=loglog]");
+    }
+    if (pitch_uses_filter_ && std::abs(playback_pitch_ - 1.0) > 0.0001) {
+      std::ostringstream filter;
+      filter << "rubberband=pitch-scale=" << playback_pitch_;
+      filters.push_back(filter.str());
+    }
+    std::ostringstream chain;
+    for (size_t index = 0; index < filters.size(); index++) {
+      if (index > 0) chain << ",";
+      chain << filters[index];
+    }
+    return mpv_set_property_string(handle_, "af", chain.str().c_str());
+  }
+
+  Napi::Value SetEqualizer(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    if (info.Length() < 1 || info[0].IsNull() || info[0].IsUndefined()) {
+      equalizer_gains_.clear();
+      int ret = apply_audio_filters();
+      if (ret < 0) throw_mpv_error(env, "setEqualizer", ret);
+      return env.Undefined();
+    }
+    if (!info[0].IsArray()) {
+      Napi::TypeError::New(env, "setEqualizer(gains) requires ten half-decibel gain steps")
+          .ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+    Napi::Array gains = info[0].As<Napi::Array>();
+    if (gains.Length() != 10) {
+      Napi::RangeError::New(env, "setEqualizer(gains) requires exactly ten bands")
+          .ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+    std::vector<double> next_gains;
+    next_gains.reserve(10);
+    for (uint32_t index = 0; index < gains.Length(); index++) {
+      Napi::Value value = gains.Get(index);
+      if (!value.IsNumber()) {
+        Napi::TypeError::New(env, "Equalizer gains must be numbers").ThrowAsJavaScriptException();
+        return env.Undefined();
+      }
+      double gain_step = value.As<Napi::Number>().DoubleValue();
+      if (!std::isfinite(gain_step) || std::floor(gain_step) != gain_step
+          || gain_step < -24.0 || gain_step > 24.0) {
+        Napi::RangeError::New(env, "Equalizer gains must be between -24 and 24 half-decibel steps")
+            .ThrowAsJavaScriptException();
+        return env.Undefined();
+      }
+      next_gains.push_back(gain_step);
+    }
+    equalizer_gains_ = std::move(next_gains);
+    int ret = apply_audio_filters();
+    if (ret < 0) throw_mpv_error(env, "setEqualizer", ret);
+    return env.Undefined();
+  }
+
+  Napi::Value SetPlaybackParameters(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    if (info.Length() < 3 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsBoolean()) {
+      Napi::TypeError::New(env, "setPlaybackParameters(speed, pitch, skipSilence) requires two numbers and a boolean")
+          .ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+    double speed = info[0].As<Napi::Number>().DoubleValue();
+    double pitch = info[1].As<Napi::Number>().DoubleValue();
+    if (!std::isfinite(speed) || speed < 0.1 || speed > 3.0
+        || !std::isfinite(pitch) || pitch < 0.1 || pitch > 3.0) {
+      Napi::RangeError::New(env, "Playback speed and pitch must be between 0.1 and 3")
+          .ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+    int pitch_correction = 1;
+    int ret = mpv_set_property(handle_, "audio-pitch-correction", MPV_FORMAT_FLAG, &pitch_correction);
+    if (ret < 0) {
+      throw_mpv_error(env, "setPlaybackParameters(audio-pitch-correction)", ret);
+      return env.Undefined();
+    }
+    ret = mpv_set_property(handle_, "speed", MPV_FORMAT_DOUBLE, &speed);
+    if (ret < 0) {
+      throw_mpv_error(env, "setPlaybackParameters(speed)", ret);
+      return env.Undefined();
+    }
+    const bool previous_pitch_uses_filter = pitch_uses_filter_;
+    const double previous_pitch = playback_pitch_;
+    const bool previous_skip_silence = skip_silence_;
+    const int pitch_ret = mpv_set_property(handle_, "pitch", MPV_FORMAT_DOUBLE, &pitch);
+    pitch_uses_filter_ = pitch_ret < 0;
+    playback_pitch_ = pitch;
+    skip_silence_ = info[2].As<Napi::Boolean>().Value();
+    const bool filters_changed = previous_pitch_uses_filter != pitch_uses_filter_
+        || (pitch_uses_filter_ && std::abs(previous_pitch - playback_pitch_) > 0.0001)
+        || previous_skip_silence != skip_silence_;
+    ret = filters_changed ? apply_audio_filters() : 0;
+    if (ret < 0) {
+      throw_mpv_error(env, pitch_uses_filter_ ? "setPlaybackParameters(audio filters)"
+                                             : "setPlaybackParameters(skip silence)", ret);
+    }
     return env.Undefined();
   }
 
@@ -1408,6 +1526,10 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
   bool loaded_ = false;
   bool pending_audio_ = false;
   bool pending_subtitle_ = false;
+  bool skip_silence_ = false;
+  bool pitch_uses_filter_ = false;
+  double playback_pitch_ = 1.0;
+  std::vector<double> equalizer_gains_;
   std::string pending_audio_url_;
   std::string pending_audio_title_;
   std::string pending_audio_language_;

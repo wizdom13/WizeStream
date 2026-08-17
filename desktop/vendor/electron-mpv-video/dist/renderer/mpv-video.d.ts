@@ -44,6 +44,8 @@ export declare class MpvVideoElement extends HTMLElement {
     stop(): Promise<void>;
     seek(seconds: number): Promise<void>;
     setVolume(value: number): Promise<void>;
+    setEqualizer(gains?: number[]): Promise<void>;
+    setPlaybackParameters(speed: number, pitch: number, skipSilence: boolean): Promise<void>;
     setRenderMode(mode: RenderMode): Promise<void>;
     destroy(): Promise<void>;
     private destroyInternal;

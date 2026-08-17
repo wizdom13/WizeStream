@@ -34,9 +34,14 @@ try {
   const base = `http://127.0.0.1:${fixture.port}`;
   addon = require(path.join(nativeDirectory, 'mpv_addon.node'));
   player = new addon.MpvPlayer({ mode: 'software' });
+  player.setVolume(80);
+  player.setEqualizer(null);
+  player.setPlaybackParameters(1.2, 1, false);
   player.openMedia({ source: `${base}/video`, audio: { url: `${base}/audio`, title: 'Fixture audio', language: 'en' },
     subtitle: { url: `${base}/caption`, title: 'Fixture captions', language: 'en' } });
   await waitForFile(player);
+  player.setEqualizer([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  player.setPlaybackParameters(1, 1, false);
   player.setAudioFile({ url: `${base}/audio`, title: 'Switched audio', language: 'en' });
   player.setSubtitleFile(null);
   player.setSubtitleFile({ url: `${base}/caption`, title: 'Switched captions', language: 'en' });

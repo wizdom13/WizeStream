@@ -17,6 +17,21 @@ const settingsSchema = z.object({
   enableSearchHistory: z.boolean(),
   learningMode: z.boolean(),
   learningNotes: z.boolean(),
+  equalizer: z.object({
+    enabled: z.boolean(),
+    preset: z.enum(['flat', 'bass_boost', 'vocal', 'acoustic', 'rock', 'custom']),
+    gains: z.array(z.number().int().min(-24).max(24)).length(10),
+  }).strict(),
+  playbackParameters: z.object({
+    speed: z.number().min(0.1).max(3),
+    pitch: z.number().min(0.1).max(3),
+    skipSilence: z.boolean(),
+    unhook: z.boolean(),
+    adjustmentStep: z.union([
+      z.literal(0.01), z.literal(0.05), z.literal(0.1), z.literal(0.25), z.literal(1),
+    ]),
+    pitchMode: z.enum(['percent', 'semitone']),
+  }).strict(),
   sponsorBlock: z.object({
     enabled: z.boolean(),
     gracedRewind: z.boolean(),
@@ -64,6 +79,8 @@ export class SettingsManager {
       return settingsSchema.parse(input);
     }
     return settingsSchema.parse({
+      equalizer: defaultDesktopSettings.equalizer,
+      playbackParameters: defaultDesktopSettings.playbackParameters,
       sponsorBlock: defaultDesktopSettings.sponsorBlock,
       ...(input as Record<string, unknown>),
     });

@@ -206,7 +206,8 @@ playback, downloads, libraries, Learning Mode notes and trusted-device synchroni
 - Responsive subscription cards with channel avatars and subscriber counts, plus internal channel
   pages showing channel information and recent videos
 - Grid-based watch history with thumbnails, duration, progress, watched time and resume controls
-- Embedded playback with video, audio and caption selection, SponsorBlock support, and detailed
+- Embedded playback with video, audio and caption selection, volume and mute controls, equalizer,
+  Android-style speed and pitch controls, a sleep timer, SponsorBlock support, and detailed
   **Comments**, **Related items** and **Description** tabs
 - Video and channel information including views, likes, dislikes, channel avatars and subscriber
   counts where the service provides them

@@ -51,9 +51,10 @@ full-backup ZIP. Existing subscriptions are merged rather than replaced.
 
 ## What does a full Desktop backup include?
 
-A full backup includes subscriptions, playlists, settings, SponsorBlock preferences, history,
-search history, and Learning Mode notes. Use **Settings > Backup and restore** to export or restore
-a ZIP backup. Keep the original backup until you have verified the restored data.
+A full backup includes subscriptions, playlists, settings, SponsorBlock preferences, equalizer and
+playback-speed preferences, history, search history, and Learning Mode notes. Use
+**Settings > Backup and restore** to export or restore a ZIP backup. Keep the original backup until
+you have verified the restored data.
 
 ## How does device synchronization work?
 

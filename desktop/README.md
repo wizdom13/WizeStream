@@ -28,7 +28,8 @@ The desktop architecture contains:
 - Browse subscriptions in a responsive grid with channel avatars and subscriber counts, then open
   a channel inside the app to see its information and recent videos.
 - Play video and audio inside the application, choose available video, audio and caption tracks,
-  and open supported local media files.
+  adjust volume, mute, equalizer, speed and pitch, skip silence, use a sleep timer, and open
+  supported local media files.
 - View comments, related items and descriptions while playing, together with video views, likes,
   dislikes, channel avatars and subscriber counts where available.
 - Skip or mark supported SponsorBlock segments using per-category Desktop settings.
