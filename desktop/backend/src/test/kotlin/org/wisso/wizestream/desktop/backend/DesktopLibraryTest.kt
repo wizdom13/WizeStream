@@ -48,6 +48,10 @@ class DesktopLibraryTest {
                 val item = library.addPlaylistItem(playlistId, stream)
                 assertEquals("Phase 3 fixture", library.playlistItems(playlistId).single()["title"])
                 assertEquals(1L, library.playlists().single()["itemCount"])
+                assertEquals(
+                    "https://i.ytimg.com/vi/phase3fixture/hqdefault.jpg",
+                    library.playlists().single()["thumbnailUrl"]
+                )
 
                 val history = library.recordHistory(stream)
                 assertEquals("Phase 3 fixture", library.history().single()["title"])

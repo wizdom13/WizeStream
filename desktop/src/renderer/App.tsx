@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { defineMpvVideoElement, type MpvVideoElement } from 'electron-mpv-video/renderer';
+import { QRCodeSVG } from 'qrcode.react';
 import AddRounded from '@mui/icons-material/AddRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
@@ -965,16 +966,19 @@ function PlaylistsPanel({ currentStream, onOpen }: { currentStream?: LibraryStre
   const [selectedId, setSelectedId] = useState<string>();
   const [items, setItems] = useState<PlaylistItem[]>([]);
   const [dialog, setDialog] = useState<'create' | 'rename'>();
+  const [editingId, setEditingId] = useState<string>();
   const [name, setName] = useState('');
   const [error, setError] = useState<string>();
   const loadPlaylists = useCallback(async () => {
     try {
       const value = await window.wizestream.backend.invoke<PlaylistSummary[]>('library.playlists.list');
-      setPlaylists(value); setSelectedId((current) => current && value.some((item) => item.id === current) ? current : value[0]?.id);
+      setPlaylists(value);
+      setSelectedId((current) => current && value.some((item) => item.id === current) ? current : undefined);
     } catch (reason) { setError(errorMessage(reason)); }
   }, []);
   const loadItems = useCallback(async (id?: string) => {
     if (!id) { setItems([]); return; }
+    setItems([]);
     try { setItems(await window.wizestream.backend.invoke<PlaylistItem[]>('library.playlists.items', { playlistId: id })); }
     catch (reason) { setError(errorMessage(reason)); }
   }, []);
@@ -985,14 +989,17 @@ function PlaylistsPanel({ currentStream, onOpen }: { currentStream?: LibraryStre
   async function savePlaylist() {
     try {
       if (dialog === 'create') await window.wizestream.backend.invoke('library.playlists.create', { name });
-      else if (selectedId) await window.wizestream.backend.invoke('library.playlists.rename', { id: selectedId, name });
-      setDialog(undefined); setName(''); await loadPlaylists();
+      else if (editingId) await window.wizestream.backend.invoke('library.playlists.rename', { id: editingId, name });
+      setDialog(undefined); setEditingId(undefined); setName(''); await loadPlaylists();
     } catch (reason) { setError(errorMessage(reason)); }
   }
-  async function deletePlaylist() {
-    if (!selectedId) return;
-    if (!window.confirm(`Delete ${selectedPlaylist?.name ?? 'this playlist'} and all of its items?`)) return;
-    try { await window.wizestream.backend.invoke('library.playlists.delete', { id: selectedId }); setSelectedId(undefined); await loadPlaylists(); }
+  async function deletePlaylist(playlist: PlaylistSummary) {
+    if (!window.confirm(`Delete ${playlist.name} and all of its items?`)) return;
+    try {
+      await window.wizestream.backend.invoke('library.playlists.delete', { id: playlist.id });
+      if (selectedId === playlist.id) setSelectedId(undefined);
+      await loadPlaylists();
+    }
     catch (reason) { setError(errorMessage(reason)); }
   }
   async function addCurrent() {
@@ -1006,14 +1013,97 @@ function PlaylistsPanel({ currentStream, onOpen }: { currentStream?: LibraryStre
     try { await window.wizestream.backend.invoke('library.playlists.delete-item', { playlistId: selectedId, itemId }); await Promise.all([loadItems(selectedId), loadPlaylists()]); }
     catch (reason) { setError(errorMessage(reason)); }
   }
-  return <Stack spacing={3}><PanelHeader title="Playlists" description="Create local playlists and edit their synchronized items." action={<Button startIcon={<AddRounded />} variant="contained" onClick={() => { setName(''); setDialog('create'); }}>New playlist</Button>} />
+  function showEditor(mode: 'create' | 'rename', playlist?: PlaylistSummary) {
+    setEditingId(playlist?.id);
+    setName(playlist?.name ?? '');
+    setDialog(mode);
+  }
+  return <Stack spacing={3}><PanelHeader title="Playlists" description="Create local playlists and edit their synchronized items." action={<Button startIcon={<AddRounded />} variant="contained" onClick={() => showEditor('create')}>New playlist</Button>} />
     {error && <Alert severity="error">{error}</Alert>}
-    <Box className="library-split"><Card variant="outlined"><List disablePadding>{playlists.length === 0 ? <ListItem><ListItemText primary="No playlists yet" /></ListItem> : playlists.map((playlist) => <ListItemButton key={playlist.id} selected={playlist.id === selectedId} onClick={() => setSelectedId(playlist.id)}><ListItemIcon><PlaylistPlayRounded /></ListItemIcon><ListItemText primary={playlist.name} secondary={`${playlist.itemCount} item${playlist.itemCount === 1 ? '' : 's'}`} /></ListItemButton>)}</List></Card>
-      <Card variant="outlined"><CardContent><Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}><Box sx={{ flexGrow: 1 }}><Typography variant="h6">{selectedPlaylist?.name ?? 'Choose a playlist'}</Typography>{currentStream && <Typography color="text.secondary" variant="body2">Ready to add: {currentStream.title}</Typography>}</Box>{selectedPlaylist && <><Tooltip title="Rename"><IconButton onClick={() => { setName(selectedPlaylist.name); setDialog('rename'); }}><EditRounded /></IconButton></Tooltip><Tooltip title="Delete playlist"><IconButton onClick={() => void deletePlaylist()}><DeleteOutlineRounded /></IconButton></Tooltip></>}<Button startIcon={<PlaylistAddRounded />} variant="contained" disabled={!selectedId || !currentStream} onClick={() => void addCurrent()}>Add current</Button></Stack></CardContent><Divider />
-        {items.length === 0 ? <CardContent><Typography color="text.secondary">This playlist is empty. Select a stream in What&apos;s New, then return here to add it.</Typography></CardContent> : <List disablePadding>{items.map((item, index) => <Box key={item.itemId}>{index > 0 && <Divider />}<ListItemButton onClick={() => void onOpen(item.url)}><ListItemAvatar><Avatar variant="rounded" src={item.thumbnailUrl}><PlayArrowRounded /></Avatar></ListItemAvatar><ListItemText primary={item.title} secondary={item.uploader} /><IconButton aria-label="Remove playlist item" onClick={(event) => { event.stopPropagation(); void removeItem(item.itemId); }}><DeleteOutlineRounded /></IconButton></ListItemButton></Box>)}</List>}
-      </Card></Box>
-    <Dialog open={Boolean(dialog)} onClose={() => setDialog(undefined)} fullWidth maxWidth="xs"><DialogTitle>{dialog === 'rename' ? 'Rename playlist' : 'New playlist'}</DialogTitle><DialogContent><TextField autoFocus fullWidth label="Name" value={name} onChange={(event) => setName(event.target.value)} sx={{ mt: 1 }} /></DialogContent><DialogActions><Button onClick={() => setDialog(undefined)}>Cancel</Button><Button variant="contained" disabled={!name.trim()} onClick={() => void savePlaylist()}>Save</Button></DialogActions></Dialog>
+    {!selectedPlaylist
+      ? playlists.length === 0 ? <LibraryEmpty text="No playlists yet. Create one to start collecting videos." />
+        : <Box className="playlist-grid">{playlists.map((playlist) => <PlaylistCard key={playlist.id}
+          playlist={playlist} onOpen={() => setSelectedId(playlist.id)} onRename={() => showEditor('rename', playlist)}
+          onDelete={() => void deletePlaylist(playlist)} />)}</Box>
+      : <Stack spacing={3}>
+        <Button startIcon={<ArrowBackRounded />} onClick={() => setSelectedId(undefined)} sx={{ alignSelf: 'flex-start' }}>Back to playlists</Button>
+        <Card variant="outlined"><CardContent>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
+            <PlaylistCover playlist={selectedPlaylist} compact />
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="h4" className="two-lines">{selectedPlaylist.name}</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.5 }}>{playlistItemCountLabel(selectedPlaylist.itemCount)}</Typography>
+              {currentStream && <Typography color="text.secondary" variant="body2" className="two-lines" sx={{ mt: 1.5 }}>Ready to add: {currentStream.title}</Typography>}
+            </Box>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+              <Tooltip title="Rename"><IconButton aria-label="Rename playlist" onClick={() => showEditor('rename', selectedPlaylist)}><EditRounded /></IconButton></Tooltip>
+              <Tooltip title="Delete playlist"><IconButton aria-label="Delete playlist" onClick={() => void deletePlaylist(selectedPlaylist)}><DeleteOutlineRounded /></IconButton></Tooltip>
+              <Button startIcon={<PlaylistAddRounded />} variant="contained" disabled={!currentStream} onClick={() => void addCurrent()}>Add current</Button>
+            </Stack>
+          </Stack>
+        </CardContent></Card>
+        {items.length === 0 ? <LibraryEmpty text="This playlist is empty. Select a stream in What's New, then return here to add it." />
+          : <Box className="playlist-item-grid">{items.map((item) => <PlaylistItemCard key={item.itemId} item={item}
+            onOpen={() => void onOpen(item.url)} onRemove={() => void removeItem(item.itemId)} />)}</Box>}
+      </Stack>}
+    <Dialog open={Boolean(dialog)} onClose={() => { setDialog(undefined); setEditingId(undefined); }} fullWidth maxWidth="xs"><DialogTitle>{dialog === 'rename' ? 'Rename playlist' : 'New playlist'}</DialogTitle><DialogContent><TextField autoFocus fullWidth label="Name" value={name} onChange={(event) => setName(event.target.value)} sx={{ mt: 1 }} /></DialogContent><DialogActions><Button onClick={() => { setDialog(undefined); setEditingId(undefined); }}>Cancel</Button><Button variant="contained" disabled={!name.trim()} onClick={() => void savePlaylist()}>Save</Button></DialogActions></Dialog>
   </Stack>;
+}
+
+function PlaylistCard({ playlist, onOpen, onRename, onDelete }: {
+  playlist: PlaylistSummary; onOpen(): void; onRename(): void; onDelete(): void;
+}) {
+  return <Card variant="outlined" className="playlist-card">
+    <CardActionArea onClick={onOpen} aria-label={`Open ${playlist.name}`}>
+      <PlaylistCover playlist={playlist} />
+      <CardContent>
+        <Typography variant="h6" className="two-lines">{playlist.name}</Typography>
+        <Typography color="text.secondary" sx={{ mt: 0.5 }}>{playlistItemCountLabel(playlist.itemCount)}</Typography>
+      </CardContent>
+    </CardActionArea>
+    <Divider />
+    <Stack direction="row" sx={{ p: 1, alignItems: 'center' }}>
+      <Button startIcon={<PlaylistPlayRounded />} onClick={onOpen}>Open</Button>
+      <Box sx={{ flexGrow: 1 }} />
+      <Tooltip title="Rename"><IconButton aria-label={`Rename ${playlist.name}`} onClick={onRename}><EditRounded /></IconButton></Tooltip>
+      <Tooltip title="Delete"><IconButton aria-label={`Delete ${playlist.name}`} onClick={onDelete}><DeleteOutlineRounded /></IconButton></Tooltip>
+    </Stack>
+  </Card>;
+}
+
+function PlaylistCover({ playlist, compact = false }: { playlist: PlaylistSummary; compact?: boolean }) {
+  return <Box className={`playlist-cover${compact ? ' playlist-cover-compact' : ''}`}>
+    {playlist.thumbnailUrl
+      ? <Box component="img" src={playlist.thumbnailUrl} alt="" className="playlist-cover-image" />
+      : <PlaylistPlayRounded className="playlist-cover-placeholder" />}
+    <Chip size="small" icon={<PlaylistPlayRounded />} label={playlistItemCountLabel(playlist.itemCount)} className="playlist-count-badge" />
+  </Box>;
+}
+
+function PlaylistItemCard({ item, onOpen, onRemove }: { item: PlaylistItem; onOpen(): void; onRemove(): void }) {
+  return <Card variant="outlined" className="playlist-item-card">
+    <CardActionArea onClick={onOpen} aria-label={`Play ${item.title}`}>
+      <Box className="feed-video-cover">
+        {item.thumbnailUrl ? <Box component="img" src={item.thumbnailUrl} alt="" className="result-thumbnail" />
+          : <Box className="result-thumbnail playlist-item-placeholder"><PlayArrowRounded /></Box>}
+        {item.duration > 0 && <Chip size="small" label={formatTimestamp(item.duration)} className="feed-video-badge" />}
+      </Box>
+      <CardContent>
+        <Typography variant="h6" className="two-lines">{item.title}</Typography>
+        <Typography color="text.secondary" className="two-lines" sx={{ mt: 0.5 }}>{item.uploader || 'Unknown channel'}</Typography>
+      </CardContent>
+    </CardActionArea>
+    <Divider />
+    <Stack direction="row" sx={{ p: 1, alignItems: 'center' }}>
+      <Button startIcon={<PlayArrowRounded />} onClick={onOpen}>Play</Button>
+      <Box sx={{ flexGrow: 1 }} />
+      <Tooltip title="Remove from playlist"><IconButton aria-label="Remove playlist item" onClick={onRemove}><DeleteOutlineRounded /></IconButton></Tooltip>
+    </Stack>
+  </Card>;
+}
+
+function playlistItemCountLabel(count: number) {
+  return `${count} item${count === 1 ? '' : 's'}`;
 }
 
 function HistoryPanel({ onOpen }: { onOpen(url: string, startPosition?: number): Promise<void> }) {
@@ -1234,7 +1324,7 @@ function SyncPanel({ sync, onRefresh }: { sync?: SyncStatus; onRefresh(): void }
       <Divider sx={{ my: 3 }} />
       {sync.trustedPeers.length === 0 ? <Typography color="text.secondary">No trusted devices yet. Generate a code on either device and enter it on the other.</Typography> : sync.trustedPeers.map((peer) => <Box key={peer.peerId} sx={{ py: 1 }}><Typography sx={{ fontWeight: 650 }}>{peer.deviceName}</Typography><Typography className="mono" color="text.secondary">{peer.peerId}</Typography>{peer.lastSyncError && <Typography color="error" variant="body2">{peer.lastSyncError}</Typography>}{peer.automaticRetry?.nextRetryAtEpochMillis && <Typography color="warning.main" variant="body2">Automatic retry {new Date(peer.automaticRetry.nextRetryAtEpochMillis).toLocaleString()}</Typography>}</Box>)}
     </CardContent></Card>
-    <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Pair a device</Typography><Stack spacing={2} sx={{ mt: 2 }}><Button variant="outlined" disabled={busy} onClick={() => void createInvitation()}>Generate pairing code</Button>{invitation && <TextField label="This desktop's one-time pairing code" value={invitation} multiline minRows={3} slotProps={{ input: { readOnly: true } }} />}<TextField label="Code from another WizeStream device" value={pairingCode} multiline minRows={3} onChange={(event) => setPairingCode(event.target.value)} /><Button variant="contained" disabled={busy || !pairingCode.trim()} onClick={() => void pairDevice()}>Pair device</Button></Stack></CardContent></Card>
+    <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Pair a device</Typography><Stack spacing={2} sx={{ mt: 2 }}><Button variant="outlined" disabled={busy} onClick={() => void createInvitation()}>Show pairing code</Button><TextField label="Code from another WizeStream device" value={pairingCode} multiline minRows={3} onChange={(event) => setPairingCode(event.target.value)} /><Button variant="contained" disabled={busy || !pairingCode.trim()} onClick={() => void pairDevice()}>Pair device</Button></Stack></CardContent></Card>
     <Card variant="outlined"><CardContent sx={{ p: 4 }}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 2 }}><Box><Typography variant="h6">Automatic synchronization</Typography><Typography color="text.secondary">Runs while WizeStream Desktop is open, on a private local network only.</Typography></Box><FormControlLabel label={automaticDraft.enabled ? 'Enabled' : 'Disabled'} control={<Switch checked={automaticDraft.enabled} onChange={(event) => setAutomaticDraft({ ...automaticDraft, enabled: event.target.checked })} />} /></Stack>
       <Stack direction={{ xs: 'column', md: 'row' }} sx={{ mt: 3, gap: 3, alignItems: 'start' }}>
@@ -1250,7 +1340,30 @@ function SyncPanel({ sync, onRefresh }: { sync?: SyncStatus; onRefresh(): void }
     </CardContent></Card>
     <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Sync selected now</Typography><Typography color="text.secondary">Manual synchronization remains available even when automatic synchronization is disabled.</Typography><Box className="sync-category-grid" sx={{ my: 2 }}>{sync.categories.map((category) => <FormControlLabel key={category} control={<Checkbox checked={selectedCategories.includes(category)} onChange={(event) => setSelectedCategories((current) => event.target.checked ? [...current, category] : current.filter((value) => value !== category))} />} label={syncCategoryLabels[category] ?? category} />)}</Box><Button variant="contained" disabled={busy || sync.activeRun.running || sync.trustedPeers.length === 0 || selectedCategories.length === 0} onClick={() => void synchronize()}>{busy ? 'Working…' : 'Sync selected'}</Button>{result && <Alert severity={result.failed === 0 ? 'success' : 'warning'} sx={{ mt: 2 }}>Synchronization finished: {result.succeeded} device(s) succeeded, {result.failed} failed.</Alert>}</CardContent></Card>
     <Card variant="outlined"><CardContent sx={{ p: 4 }}><Typography variant="h6">Recent synchronization activity</Typography>{runs.length === 0 ? <Typography color="text.secondary" sx={{ mt: 1 }}>No synchronization attempts recorded yet.</Typography> : <List disablePadding sx={{ mt: 2 }}>{runs.map((run, index) => <Box key={run.runId}>{index > 0 && <Divider />}<ListItem><ListItemText primary={`${run.trigger === 'automatic' ? 'Automatic' : 'Manual'} · ${run.outcome.replaceAll('_', ' ')}`} secondary={`${new Date(run.startedAtEpochMillis).toLocaleString()} · ${run.succeeded} succeeded, ${run.failed} failed${run.error ? ` · ${run.error}` : ''}`} /></ListItem></Box>)}</List>}</CardContent></Card>
+    <Dialog open={Boolean(invitation)} onClose={() => setInvitation('')} fullWidth maxWidth="sm">
+      <DialogTitle>Show pairing code</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ alignItems: 'center', pt: 1 }}>
+          {invitation && <Box className="pairing-qr-surface">
+            <QRCodeSVG value={invitation} size={360} level="M" marginSize={4} bgColor="#FFFFFF" fgColor="#000000"
+              title="One-time device pairing QR code" className="pairing-qr-code" />
+          </Box>}
+          <Typography>PeerID: <Box component="span" className="mono">{abbreviatePeerId(sync.peerId)}</Box></Typography>
+          <Typography color="text.secondary" variant="body2" sx={{ textAlign: 'center', maxWidth: 480 }}>
+            Keep this window open while the other device scans. This code expires after five minutes and can be used only once.
+          </Typography>
+          <TextField fullWidth label="One-time pairing code for manual copy" value={invitation} multiline minRows={3}
+            slotProps={{ input: { readOnly: true } }} />
+        </Stack>
+      </DialogContent>
+      <DialogActions><Button onClick={() => setInvitation('')}>Close</Button></DialogActions>
+    </Dialog>
   </Stack>;
+}
+
+function abbreviatePeerId(peerId: string) {
+  if (peerId.length <= 16) return peerId;
+  return `${peerId.slice(0, 8)}…${peerId.slice(-8)}`;
 }
 
 function PanelHeader({ title, description, action }: { title: string; description: string; action: React.ReactNode }) {

@@ -34,6 +34,20 @@ body { overflow-x: hidden; }
 .history-video-card .MuiCardActionArea-root { flex-grow: 1; }
 .history-progress { position: absolute !important; inset: auto 0 0; height: 5px !important; }
 .history-time { white-space: nowrap; }
+.playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; align-items: stretch; }
+.playlist-card, .playlist-item-card { display: flex; flex-direction: column; height: 100%; }
+.playlist-card .MuiCardActionArea-root, .playlist-item-card .MuiCardActionArea-root { flex-grow: 1; }
+.playlist-cover { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: color-mix(in srgb, var(--mui-palette-primary-main) 18%, var(--mui-palette-background-paper)); }
+.playlist-cover-compact { width: min(280px, 100%); flex: 0 0 min(280px, 100%); border-radius: 16px; }
+.playlist-cover-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+.playlist-cover-placeholder { font-size: 72px !important; color: var(--mui-palette-primary-main); opacity: 0.72; }
+.playlist-count-badge { position: absolute !important; right: 10px; bottom: 10px; background: color-mix(in srgb, #000 82%, transparent) !important; color: #fff !important; }
+.playlist-count-badge .MuiChip-icon { color: inherit; }
+.playlist-item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; align-items: stretch; }
+.playlist-item-placeholder { display: grid; place-items: center; color: #fff; }
+.playlist-item-placeholder svg { font-size: 54px; opacity: 0.8; }
+.pairing-qr-surface { display: grid; place-items: center; width: min(100%, 420px); padding: 12px; box-sizing: border-box; border-radius: 18px; background: #fff; }
+.pairing-qr-code { display: block; width: 100%; height: auto; max-width: 360px; }
 .two-lines { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; white-space: nowrap; }
 .sync-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }

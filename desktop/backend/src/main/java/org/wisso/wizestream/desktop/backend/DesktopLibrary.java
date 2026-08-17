@@ -106,7 +106,17 @@ final class DesktopLibrary {
 
     List<Map<String, Object>> playlists() throws SQLException {
         return query("""
-                SELECT p.id, p.name, p.thumbnail_url, p.display_index, COUNT(i.position)
+                SELECT p.id, p.name,
+                       COALESCE(p.thumbnail_url, (
+                           SELECT preview.thumbnail_url
+                           FROM playlist_items preview
+                           WHERE preview.playlist_id=p.id
+                             AND preview.thumbnail_url IS NOT NULL
+                             AND preview.thumbnail_url<>''
+                           ORDER BY preview.position
+                           LIMIT 1
+                       )),
+                       p.display_index, COUNT(i.position)
                 FROM playlists p LEFT JOIN playlist_items i ON i.playlist_id=p.id
                 GROUP BY p.id ORDER BY p.display_index, p.created_at, p.id
                 """, rows -> row(
