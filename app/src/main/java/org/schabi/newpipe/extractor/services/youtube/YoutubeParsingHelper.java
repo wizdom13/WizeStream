@@ -259,6 +259,8 @@ YoutubeParsingHelper {
             "https://www.youtube.com/feeds/videos.xml?channel_id=";
     private static final String FEED_BASE_USER = "https://www.youtube.com/feeds/videos.xml?user=";
     private static final Pattern C_WEB_PATTERN = Pattern.compile("&c=WEB");
+    private static final Pattern C_SAFARI_VERSION_PATTERN = Pattern.compile(
+            "[?&]cver=" + Pattern.quote(SAFARI_CLIENT_VERSION) + "(?:[&#]|$)");
     private static final Pattern C_TVHTML5_SIMPLY_EMBEDDED_PLAYER_PATTERN =
             Pattern.compile("&c=TVHTML5_SIMPLY_EMBEDDED_PLAYER");
     private static final Pattern C_ANDROID_PATTERN = Pattern.compile("&c=(?:ANDROID|ANDROID_VR)");
@@ -2362,6 +2364,31 @@ YoutubeParsingHelper {
      */
     public static boolean isWebStreamingUrl(@Nonnull final String url) {
         return Parser.isMatch(C_WEB_PATTERN, url);
+    }
+
+    /**
+     * Check if the streaming URL was issued to the Safari-flavoured {@code WEB} client.
+     *
+     * <p>The Safari fallback identifies itself as {@code WEB}, so the client version is required
+     * to distinguish its URLs from regular desktop WEB URLs. Googlevideo can bind stream URLs to
+     * the user agent used to request them, and replaying a Safari URL with the app's default
+     * Firefox user agent can result in HTTP 403 responses.</p>
+     *
+     * @param url the streaming URL to be checked
+     * @return true if this is a Safari WEB-client streaming URL, false otherwise
+     */
+    public static boolean isSafariStreamingUrl(@Nonnull final String url) {
+        return isWebStreamingUrl(url) && Parser.isMatch(C_SAFARI_VERSION_PATTERN, url);
+    }
+
+    /**
+     * Return the user agent used when requesting Safari player responses.
+     *
+     * @return the Safari player user agent
+     */
+    @Nonnull
+    public static String getSafariUserAgent() {
+        return SAFARI_USER_AGENT;
     }
 
     /**

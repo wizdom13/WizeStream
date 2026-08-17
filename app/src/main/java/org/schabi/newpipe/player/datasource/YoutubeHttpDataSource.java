@@ -14,8 +14,10 @@ import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Util.castNonNull;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getAndroidUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getIosUserAgent;
+import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getSafariUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isAndroidStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isIosStreamingUrl;
+import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isSafariStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isWebStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isTvHtml5SimplyEmbeddedPlayerStreamingUrl;
 import static java.lang.Math.min;
@@ -670,20 +672,8 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
 
         httpURLConnection.setRequestProperty(HttpHeaders.TE, "trailers");
 
-        final boolean isAndroidStreamingUrl = isAndroidStreamingUrl(requestUrl);
-        final boolean isIosStreamingUrl = isIosStreamingUrl(requestUrl);
-        if (isAndroidStreamingUrl) {
-            // Improvement which may be done: find the content country used to request YouTube
-            // contents to add it in the user agent instead of using the default
-            httpURLConnection.setRequestProperty(HttpHeaders.USER_AGENT,
-                    getAndroidUserAgent(null));
-        } else if (isIosStreamingUrl) {
-            httpURLConnection.setRequestProperty(HttpHeaders.USER_AGENT,
-                    getIosUserAgent(null));
-        } else {
-            // non-mobile user agent
-            httpURLConnection.setRequestProperty(HttpHeaders.USER_AGENT, DownloaderImpl.USER_AGENT);
-        }
+        httpURLConnection.setRequestProperty(HttpHeaders.USER_AGENT,
+                resolveUserAgent(requestUrl));
 
         httpURLConnection.setRequestProperty(HttpHeaders.ACCEPT_ENCODING,
                 allowGzip ? "gzip" : "identity");
@@ -699,6 +689,24 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         os.close();
 
         return httpURLConnection;
+    }
+
+    @NonNull
+    static String resolveUserAgent(@NonNull final String requestUrl) {
+        // Safari fallback URLs still identify as c=WEB. Check their client version first so they
+        // are not replayed with WizeStream's default Firefox user agent, which YouTube may reject.
+        if (isSafariStreamingUrl(requestUrl)) {
+            return getSafariUserAgent();
+        }
+        if (isAndroidStreamingUrl(requestUrl)) {
+            // Improvement which may be done: find the content country used to request YouTube
+            // contents to add it in the user agent instead of using the default
+            return getAndroidUserAgent(null);
+        }
+        if (isIosStreamingUrl(requestUrl)) {
+            return getIosUserAgent(null);
+        }
+        return DownloaderImpl.USER_AGENT;
     }
 
     /**
@@ -1006,4 +1014,3 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         }
     }
 }
-
