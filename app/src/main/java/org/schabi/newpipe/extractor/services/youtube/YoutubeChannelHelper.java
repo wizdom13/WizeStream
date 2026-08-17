@@ -1,7 +1,9 @@
 package org.schabi.newpipe.extractor.services.youtube;
 
+import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonWriter;
+import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
@@ -12,6 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.defaultAlertsCheck;
@@ -335,6 +338,51 @@ public final class YoutubeChannelHelper {
         } else {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Get a channel's avatars from any supported YouTube channel header.
+     *
+     * @param channelHeader the parsed channel header
+     * @return the channel avatar images
+     * @throws ParsingException if the channel header does not contain avatars
+     */
+    @Nonnull
+    public static List<Image> getChannelAvatars(
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+            @Nonnull final Optional<ChannelHeader> channelHeader) throws ParsingException {
+        return channelHeader.map(header -> {
+                    switch (header.headerType) {
+                        case PAGE:
+                            final JsonObject image = header.json.getObject(CONTENT)
+                                    .getObject(PAGE_HEADER_VIEW_MODEL)
+                                    .getObject("image");
+
+                            if (image.has("contentPreviewImageViewModel")) {
+                                return image.getObject("contentPreviewImageViewModel")
+                                        .getObject("image")
+                                        .getArray("sources");
+                            }
+
+                            if (image.has("decoratedAvatarViewModel")) {
+                                return image.getObject("decoratedAvatarViewModel")
+                                        .getObject("avatar")
+                                        .getObject("avatarViewModel")
+                                        .getObject("image")
+                                        .getArray("sources");
+                            }
+
+                            return new JsonArray();
+                        case INTERACTIVE_TABBED:
+                            return header.json.getObject("boxArt").getArray("thumbnails");
+                        case C4_TABBED:
+                        case CAROUSEL:
+                        default:
+                            return header.json.getObject("avatar").getArray("thumbnails");
+                    }
+                })
+                .map(YoutubeParsingHelper::getImagesFromThumbnailsArray)
+                .orElseThrow(() -> new ParsingException("Could not get avatars"));
     }
 
     /**
