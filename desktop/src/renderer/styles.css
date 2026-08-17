@@ -23,7 +23,7 @@ body { overflow-x: hidden; }
 .stream-selectors { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 12px; }
 .embedded-player-frame { width: 100%; aspect-ratio: 16 / 9; min-height: 320px; background: #000; }
 .embedded-player-frame mpv-video { display: block; width: 100%; height: 100%; }
-.player-controls-primary { display: grid; grid-template-columns: auto auto minmax(160px, 1fr) auto; gap: 14px; align-items: center; }
+.player-controls-primary { display: grid; grid-template-columns: auto auto minmax(160px, 1fr) auto auto; gap: 14px; align-items: center; }
 .player-time { min-width: 72px; text-align: center; white-space: nowrap; }
 .player-timeline { position: relative; min-width: 0; }
 .sponsor-block-markers { position: absolute; inset: 50% 0 auto; height: 6px; transform: translateY(-50%); pointer-events: none; overflow: hidden; border-radius: 3px; }
@@ -33,6 +33,10 @@ body { overflow-x: hidden; }
 .player-audio-controls { min-width: 0; }
 .player-volume-slider { width: 150px !important; flex: 0 0 150px; }
 .player-volume-label { min-width: 40px; }
+.embedded-player-card:fullscreen { width: 100vw; height: 100vh; max-width: none; margin: 0 !important; border-radius: 0; display: flex; flex-direction: column; background: var(--mui-palette-background-paper); }
+.embedded-player-card:fullscreen::backdrop { background: #000; }
+.embedded-player-card:fullscreen .embedded-player-frame { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
+.embedded-player-card:fullscreen .MuiCardContent-root { flex: 0 0 auto; max-height: 48vh; overflow-y: auto; }
 .equalizer-band-list { display: grid; gap: 5px; }
 .equalizer-band-row { display: grid; grid-template-columns: 62px minmax(120px, 1fr) 72px; gap: 14px; align-items: center; }
 .equalizer-band-row .MuiTypography-root:last-child { text-align: right; }
@@ -63,4 +67,4 @@ body { overflow-x: hidden; }
 .note-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
 .settings-category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
 @media (max-width: 1050px) { .navigation-rail { width: 92px; } .navigation-brand-copy, .navigation-rail .MuiListItemText-root { display: none; } .content-column { margin-left: 92px; width: calc(100% - 92px); } .details-card, .library-split { grid-template-columns: 1fr; } .stream-selectors { grid-template-columns: 1fr; } }
-@media (max-width: 760px) { .player-controls-primary { grid-template-columns: auto 1fr auto; } .player-controls-primary > :first-child { grid-column: 1 / -1; } .player-status-row { justify-content: flex-start; } .player-volume-slider { width: 120px !important; flex-basis: 120px; } .equalizer-band-row { grid-template-columns: 58px minmax(90px, 1fr) 68px; gap: 9px; } .playback-parameter-control { grid-template-columns: 1fr 1fr; } .playback-parameter-control > :nth-child(2) { grid-column: 1 / -1; grid-row: 1; } }
+@media (max-width: 760px) { .player-controls-primary { grid-template-columns: auto 1fr auto auto; } .player-controls-primary > :first-child { grid-column: 1 / -1; } .player-status-row { justify-content: flex-start; } .player-volume-slider { width: 120px !important; flex-basis: 120px; } .equalizer-band-row { grid-template-columns: 58px minmax(90px, 1fr) 68px; gap: 9px; } .playback-parameter-control { grid-template-columns: 1fr 1fr; } .playback-parameter-control > :nth-child(2) { grid-column: 1 / -1; grid-row: 1; } }

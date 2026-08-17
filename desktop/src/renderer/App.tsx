@@ -20,6 +20,8 @@ import DownloadRounded from '@mui/icons-material/DownloadRounded';
 import EqualizerRounded from '@mui/icons-material/EqualizerRounded';
 import EditRounded from '@mui/icons-material/EditRounded';
 import FolderOpenRounded from '@mui/icons-material/FolderOpenRounded';
+import FullscreenExitRounded from '@mui/icons-material/FullscreenExitRounded';
+import FullscreenRounded from '@mui/icons-material/FullscreenRounded';
 import HistoryRounded from '@mui/icons-material/HistoryRounded';
 import HomeRounded from '@mui/icons-material/HomeRounded';
 import InfoRounded from '@mui/icons-material/InfoRounded';
@@ -68,6 +70,7 @@ import { EqualizerDialog } from './EqualizerDialog';
 import { equalizerHeadroomMultiplier, equalizerPresetLabel } from './equalizer';
 import { PlaybackParametersDialog } from './PlaybackParametersDialog';
 import { formatPlaybackSpeed } from './playback-parameters';
+import { resolvePlaybackSelection } from './playback-selection';
 import {
   inactiveSleepTimer, sleepTimerFadeMultiplier, sleepTimerRemainingMillis, sleepTimerStatus,
   type SleepTimerState,
@@ -179,25 +182,14 @@ export function App() {
     });
   }, []);
 
-  const selectedVideo = selected && videoChoice !== 'auto'
-    ? selected.videoStreams[Number(videoChoice)] : undefined;
-  const selectedAudio = selected && audioChoice !== 'auto'
-    ? selected.audioStreams[Number(audioChoice)] : undefined;
-  const selectedSubtitle = selected && subtitleChoice !== 'none'
-    ? selected.subtitles[Number(subtitleChoice)] : undefined;
-  const automaticVideo = selected && !selected.hlsUrl && !selected.dashMpdUrl
-    ? selected.videoStreams.find((stream) => !stream.videoOnly) ?? selected.videoStreams[0]
-    : undefined;
-  const playbackVideo = selectedVideo ?? automaticVideo;
-  const selectedPlaybackUrl = useMemo(() => selectedVideo?.url ?? selected?.hlsUrl
-    ?? selected?.dashMpdUrl
-    ?? automaticVideo?.url
-    ?? selected?.audioStreams[0]?.url, [selected, selectedVideo, automaticVideo]);
+  const playbackSelection = useMemo(() => selected
+    ? resolvePlaybackSelection(selected, videoChoice, audioChoice, subtitleChoice)
+    : undefined, [selected, videoChoice, audioChoice, subtitleChoice]);
+  const playbackVideo = playbackSelection?.video;
+  const selectedPlaybackUrl = playbackSelection?.source;
+  const selectedSubtitle = playbackSelection?.subtitle;
   const selectedLibraryStream = useMemo(() => selected ? detailsToLibraryStream(selected) : undefined, [selected]);
-  const effectiveAudio = playbackVideo?.videoOnly
-    ? selectedAudio ?? selected?.audioStreams.find((stream) => !playbackVideo.audioTrackId
-      || stream.audioTrackId === playbackVideo.audioTrackId) ?? selected?.audioStreams[0]
-    : selectedAudio;
+  const effectiveAudio = playbackSelection?.audio;
   const embeddedSelection = Boolean(mpv?.embeddedAvailable && selectedPlaybackUrl);
   const showPlayingInfo = Boolean(selected && (embeddedRequest || mpv?.running));
   const playbackByStream = useMemo(() => new Map(playbackStates.map((state) => [
@@ -273,6 +265,42 @@ export function App() {
       setResumePosition(0);
       setMpv(await window.wizestream.player.status());
     } catch (reason) { setError(errorMessage(reason)); }
+  }
+
+  function changeVideoChoice(value: string, positionSeconds?: number) {
+    setVideoChoice(value);
+    if (!selected || !embeddedRequest || positionSeconds === undefined) return;
+    const next = resolvePlaybackSelection(selected, value, audioChoice, subtitleChoice);
+    if (!next.source) return;
+    const source = next.source;
+    setEmbeddedRequest((current) => current ? {
+      ...current,
+      source,
+      audio: next.audio ? playerTrack(next.audio, audioLabel(next.audio)) : undefined,
+      subtitle: next.subtitle ? playerTrack(next.subtitle, subtitleLabel(next.subtitle)) : undefined,
+      startSeconds: Math.max(0, positionSeconds),
+      nonce: Date.now(),
+    } : current);
+  }
+
+  function changeAudioChoice(value: string) {
+    setAudioChoice(value);
+    if (!selected) return;
+    const next = resolvePlaybackSelection(selected, videoChoice, value, subtitleChoice);
+    setEmbeddedRequest((current) => current ? {
+      ...current,
+      audio: next.audio ? playerTrack(next.audio, audioLabel(next.audio)) : undefined,
+    } : current);
+  }
+
+  function changeSubtitleChoice(value: string) {
+    setSubtitleChoice(value);
+    if (!selected) return;
+    const next = resolvePlaybackSelection(selected, videoChoice, audioChoice, value);
+    setEmbeddedRequest((current) => current ? {
+      ...current,
+      subtitle: next.subtitle ? playerTrack(next.subtitle, subtitleLabel(next.subtitle)) : undefined,
+    } : current);
   }
 
   async function stopAllPlayback() {
@@ -377,6 +405,9 @@ export function App() {
             {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>}
             {embeddedRequest && selected && mpv?.embeddedAvailable && <EmbeddedPlayer request={embeddedRequest}
               stream={selected} recordPlayback={settings.enableWatchHistory}
+              videoChoice={videoChoice} audioChoice={audioChoice} subtitleChoice={subtitleChoice}
+              onVideoChoiceChange={changeVideoChoice} onAudioChoiceChange={changeAudioChoice}
+              onSubtitleChoiceChange={changeSubtitleChoice}
               sponsorBlockSettings={settings.sponsorBlock}
               equalizerSettings={settings.equalizer}
               onEqualizerChange={(equalizer) => saveSettings({ equalizer })}
@@ -392,28 +423,17 @@ export function App() {
               <CardContent sx={{ p: 4 }}><Chip label={selected.streamType} size="small" /><Typography variant="h4" sx={{ mt: 2 }}>{selected.name}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{selected.uploaderName}</Typography>
                 <Stack direction="row" sx={{ mt: 3, gap: 1, flexWrap: 'wrap' }}><Chip label={`${selected.videoStreams.length} video variants`} /><Chip label={`${selected.audioStreams.length} audio variants`} /><Chip label={`${selected.subtitles.length} captions`} /><Chip label={`${Math.round(selected.duration / 60)} min`} /></Stack>
                 <Box className="stream-selectors" sx={{ mt: 3 }}>
-                  <TextField select label="Video" value={videoChoice} onChange={(event) => setVideoChoice(event.target.value)}>
+                  <TextField select label="Video" value={videoChoice} onChange={(event) => changeVideoChoice(event.target.value)}>
                     <MenuItem value="auto">Automatic</MenuItem>
                     {selected.videoStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{videoLabel(stream)}</MenuItem>)}
                   </TextField>
-                  <TextField select label="Audio" value={audioChoice} onChange={(event) => {
-                    const value = event.target.value; setAudioChoice(value);
-                    const stream = value === 'auto' && playbackVideo?.videoOnly
-                      ? selected.audioStreams.find((item) => !playbackVideo.audioTrackId
-                        || item.audioTrackId === playbackVideo.audioTrackId) ?? selected.audioStreams[0]
-                      : value === 'auto' ? undefined : selected.audioStreams[Number(value)];
-                    setEmbeddedRequest((current) => current ? { ...current,
-                      audio: stream ? playerTrack(stream, audioLabel(stream)) : undefined } : current);
-                  }}>
+                  <TextField select label="Audio" value={audioChoice}
+                    onChange={(event) => changeAudioChoice(event.target.value)}>
                     <MenuItem value="auto">Automatic</MenuItem>
                     {selected.audioStreams.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{audioLabel(stream)}</MenuItem>)}
                   </TextField>
-                  <TextField select label="Captions" value={subtitleChoice} onChange={(event) => {
-                    const value = event.target.value; setSubtitleChoice(value);
-                    const stream = value === 'none' ? undefined : selected.subtitles[Number(value)];
-                    setEmbeddedRequest((current) => current ? { ...current,
-                      subtitle: stream ? playerTrack(stream, subtitleLabel(stream)) : undefined } : current);
-                  }}>
+                  <TextField select label="Captions" value={subtitleChoice}
+                    onChange={(event) => changeSubtitleChoice(event.target.value)}>
                     <MenuItem value="none">Off</MenuItem>
                     {selected.subtitles.map((stream, index) => <MenuItem key={`${stream.id}:${index}`} value={String(index)}>{subtitleLabel(stream)}</MenuItem>)}
                   </TextField>
@@ -521,10 +541,15 @@ function FeedVideoCard({ item, onOpen }: { item: SearchItem; onOpen(): void }) {
   </Card>;
 }
 
-function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings, equalizerSettings,
+function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings, videoChoice, audioChoice,
+  subtitleChoice, onVideoChoiceChange, onAudioChoiceChange, onSubtitleChoiceChange, equalizerSettings,
   onEqualizerChange, playbackParameters, onPlaybackParametersChange, externalAvailable, onError }: {
   request: EmbeddedPlayerRequest & { title: string; nonce: number }; externalAvailable: boolean;
   stream: StreamDetails; recordPlayback: boolean; sponsorBlockSettings: SponsorBlockSettings;
+  videoChoice: string; audioChoice: string; subtitleChoice: string;
+  onVideoChoiceChange(value: string, positionSeconds: number): void;
+  onAudioChoiceChange(value: string): void;
+  onSubtitleChoiceChange(value: string): void;
   equalizerSettings: EqualizerSettings;
   onEqualizerChange(value: EqualizerSettings): Promise<void>;
   playbackParameters: PlaybackParameterSettings;
@@ -532,6 +557,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   onError(value: string): void;
 }) {
   const player = useRef<MpvVideoElement>(null);
+  const fullscreenContainer = useRef<HTMLDivElement>(null);
   const [state, setState] = useState({ status: 'Opening', time: 0, duration: 0, rendererName: 'libmpv',
     audioTrack: 'auto', subtitleTrack: 'off' });
   const latestState = useRef(state);
@@ -561,12 +587,19 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   const [customSleepMinutes, setCustomSleepMinutes] = useState('90');
   const [customSleepError, setCustomSleepError] = useState<string>();
   const [sleepTimerNotice, setSleepTimerNotice] = useState<string>();
+  const [fullscreen, setFullscreen] = useState(false);
   const effectiveVolume = (muted ? 0 : volume) * equalizerHeadroomMultiplier(liveEqualizer) * sleepFade;
   const effectiveVolumeRef = useRef(effectiveVolume);
   const mediaControlsReady = useRef(false);
 
   useEffect(() => { sponsorBlockSettingsRef.current = sponsorBlockSettings; }, [sponsorBlockSettings]);
   useEffect(() => { sponsorBlockSegmentsRef.current = stream.sponsorBlockSegments ?? []; }, [stream.sponsorBlockSegments]);
+  useEffect(() => {
+    const updateFullscreen = () => setFullscreen(document.fullscreenElement === fullscreenContainer.current);
+    document.addEventListener('fullscreenchange', updateFullscreen);
+    updateFullscreen();
+    return () => document.removeEventListener('fullscreenchange', updateFullscreen);
+  }, []);
   useEffect(() => {
     if (!equalizerOpen) setLiveEqualizer(equalizerSettings);
   }, [equalizerOpen, equalizerSettings]);
@@ -793,6 +826,15 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     setSleepFade(1);
   }
 
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await fullscreenContainer.current?.requestFullscreen();
+    } catch (reason) {
+      onError(`Fullscreen: ${errorMessage(reason)}`);
+    }
+  }
+
   function openSleepTimer() {
     setCustomSleepError(undefined);
     if (sleepTimer.mode === 'end_current') setSleepTimerChoice('end_current');
@@ -825,7 +867,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     stream.sponsorBlockSegments ?? [], sponsorBlockSettings,
   );
 
-  return <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="embedded-player-frame">
+  return <Card ref={fullscreenContainer} className="embedded-player-card" sx={{ mt: 4, overflow: 'hidden' }}><Box className="embedded-player-frame">
     <mpv-video ref={player} render-mode="shared-texture" volume="80" title={request.title} />
   </Box><CardContent>{localError && <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" disabled={!externalAvailable} onClick={() => void window.wizestream.player.play({
     url: request.source, title: request.title, audioUrl: request.audio?.url, subtitleUrl: request.subtitle?.url,
@@ -850,6 +892,34 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
         </Box>}
       </Box>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.duration)}</Typography>
+      <Tooltip title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+        <IconButton aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'} onClick={() => void toggleFullscreen()}>
+          {fullscreen ? <FullscreenExitRounded /> : <FullscreenRounded />}
+        </IconButton>
+      </Tooltip>
+    </Box>
+    <Box className="stream-selectors player-stream-selectors" sx={{ mt: 1.5 }}>
+      <TextField select size="small" label="Video" value={videoChoice}
+        onChange={(event) => onVideoChoiceChange(event.target.value, latestState.current.time)}>
+        <MenuItem value="auto">Automatic</MenuItem>
+        {stream.videoStreams.map((item, index) => <MenuItem key={`${item.id}:${index}`} value={String(index)}>
+          {videoLabel(item)}
+        </MenuItem>)}
+      </TextField>
+      <TextField select size="small" label="Audio" value={audioChoice}
+        onChange={(event) => onAudioChoiceChange(event.target.value)}>
+        <MenuItem value="auto">Automatic</MenuItem>
+        {stream.audioStreams.map((item, index) => <MenuItem key={`${item.id}:${index}`} value={String(index)}>
+          {audioLabel(item)}
+        </MenuItem>)}
+      </TextField>
+      <TextField select size="small" label="Captions" value={subtitleChoice}
+        onChange={(event) => onSubtitleChoiceChange(event.target.value)}>
+        <MenuItem value="none">Off</MenuItem>
+        {stream.subtitles.map((item, index) => <MenuItem key={`${item.id}:${index}`} value={String(index)}>
+          {subtitleLabel(item)}
+        </MenuItem>)}
+      </TextField>
     </Box>
     <Box className="player-tools-row" sx={{ mt: 1.5 }}>
       <Stack direction="row" className="player-audio-controls" sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
