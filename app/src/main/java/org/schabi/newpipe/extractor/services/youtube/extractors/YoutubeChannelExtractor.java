@@ -172,42 +172,7 @@ public class YoutubeChannelExtractor extends ChannelExtractor {
                     .orElseThrow(() -> new ParsingException("Could not get avatars"));
         }
 
-        return channelHeader.map(header -> {
-                    switch (header.headerType) {
-                        case PAGE:
-                            final JsonObject imageObj = header.json.getObject(CONTENT)
-                                    .getObject(PAGE_HEADER_VIEW_MODEL)
-                                    .getObject(IMAGE);
-
-                            if (imageObj.has(CONTENT_PREVIEW_IMAGE_VIEW_MODEL)) {
-                                return imageObj.getObject(CONTENT_PREVIEW_IMAGE_VIEW_MODEL)
-                                        .getObject(IMAGE)
-                                        .getArray(SOURCES);
-                            }
-
-                            if (imageObj.has("decoratedAvatarViewModel")) {
-                                return imageObj.getObject("decoratedAvatarViewModel")
-                                        .getObject(AVATAR)
-                                        .getObject("avatarViewModel")
-                                        .getObject(IMAGE)
-                                        .getArray(SOURCES);
-                            }
-
-                            // Return an empty avatar array as a fallback
-                            return new JsonArray();
-                        case INTERACTIVE_TABBED:
-                            return header.json.getObject("boxArt")
-                                    .getArray(THUMBNAILS);
-
-                        case C4_TABBED:
-                        case CAROUSEL:
-                        default:
-                            return header.json.getObject(AVATAR)
-                                    .getArray(THUMBNAILS);
-                    }
-                })
-                .map(YoutubeParsingHelper::getImagesFromThumbnailsArray)
-                .orElseThrow(() -> new ParsingException("Could not get avatars"));
+        return YoutubeChannelHelper.getChannelAvatars(channelHeader);
     }
 
     @Nonnull

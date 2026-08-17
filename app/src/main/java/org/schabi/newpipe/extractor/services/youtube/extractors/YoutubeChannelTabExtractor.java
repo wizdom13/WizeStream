@@ -143,6 +143,7 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
             channelIds.add(getChannelName());
             channelIds.add(YoutubeChannelLinkHandlerFactory.getInstance()
                     .getUrl("channel/" + getId()));
+            channelIds.add(getChannelAvatarUrl());
             final JsonObject continuation = collectItemsFrom(collector, items, channelIds);
 
             nextPage = getNextPageFrom(continuation, channelIds);
@@ -423,6 +424,11 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
                     public String getUploaderUrl() {
                         return channelIds.get(1);
                     }
+
+                    @Override
+                    public String getUploaderAvatarUrl() throws ParsingException {
+                        return resolveUploaderAvatarUrl(super.getUploaderAvatarUrl(), channelIds);
+                    }
                 });
 
         if (item.has("gridVideoRenderer")) {
@@ -444,6 +450,11 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
                     @Override
                     public String getUploaderName() {
                         return channelIds.get(0);
+                    }
+
+                    @Override
+                    public String getUploaderAvatarUrl() throws ParsingException {
+                        return resolveUploaderAvatarUrl(super.getUploaderAvatarUrl(), channelIds);
                     }
                 });
             } else if (richItem.has("lockupViewModel")) {
@@ -554,8 +565,38 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
                 public String getUploaderUrl() {
                     return channelIds.get(1);
                 }
+
+                @Override
+                public String getUploaderAvatarUrl() throws ParsingException {
+                    return resolveUploaderAvatarUrl(super.getUploaderAvatarUrl(), channelIds);
+                }
             });
         }
+    }
+
+    @Nonnull
+    private String getChannelAvatarUrl() {
+        try {
+            return YoutubeChannelHelper.getChannelAvatars(channelHeader).stream()
+                    .findFirst()
+                    .map(Image::getUrl)
+                    .orElse("");
+        } catch (final Exception ignored) {
+            return "";
+        }
+    }
+
+    @Nullable
+    static String resolveUploaderAvatarUrl(@Nullable final String itemAvatarUrl,
+                                           @Nullable final List<String> channelIds) {
+        if (!isNullOrEmpty(itemAvatarUrl)) {
+            return itemAvatarUrl;
+        }
+        if (channelIds == null || channelIds.size() < 3) {
+            return itemAvatarUrl;
+        }
+        final String channelAvatarUrl = channelIds.get(2);
+        return isNullOrEmpty(channelAvatarUrl) ? itemAvatarUrl : channelAvatarUrl;
     }
 
     @Nonnull
