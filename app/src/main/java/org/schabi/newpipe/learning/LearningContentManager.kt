@@ -24,6 +24,7 @@ class LearningContentManager private constructor(context: Context) {
     private val database = NewPipeDatabase.getInstance(context.applicationContext)
     private val dao = database.learningContentDAO()
     private val disposables = CompositeDisposable()
+
     @Volatile
     private var eligibleStreamKeys: Set<String> = emptySet()
 
@@ -49,17 +50,13 @@ class LearningContentManager private constructor(context: Context) {
         )
     }
 
-    fun isStreamLearning(serviceId: Int, url: String): Boolean =
-        eligibleStreamKeys.contains(streamKey(serviceId, url))
+    fun isStreamLearning(serviceId: Int, url: String): Boolean = eligibleStreamKeys.contains(streamKey(serviceId, url))
 
-    fun isStreamSourceMarked(serviceId: Int, url: String): Boolean =
-        markedSourceIds.contains(streamSourceId(serviceId, url))
+    fun isStreamSourceMarked(serviceId: Int, url: String): Boolean = markedSourceIds.contains(streamSourceId(serviceId, url))
 
-    fun isLocalPlaylistMarked(playlistId: Long): Boolean =
-        markedSourceIds.contains(localPlaylistSourceId(playlistId))
+    fun isLocalPlaylistMarked(playlistId: Long): Boolean = markedSourceIds.contains(localPlaylistSourceId(playlistId))
 
-    fun isRemotePlaylistMarked(serviceId: Int, url: String): Boolean =
-        markedSourceIds.contains(remotePlaylistSourceId(serviceId, url))
+    fun isRemotePlaylistMarked(serviceId: Int, url: String): Boolean = markedSourceIds.contains(remotePlaylistSourceId(serviceId, url))
 
     fun setStreamMarked(stream: StreamEntity, marked: Boolean): Completable = databaseAction {
         val sourceId = streamSourceId(stream.serviceId, stream.url)
@@ -83,24 +80,23 @@ class LearningContentManager private constructor(context: Context) {
         }
     }
 
-    fun setLocalPlaylistMarked(playlistId: Long, title: String, marked: Boolean): Completable =
-        databaseAction {
-            val sourceId = localPlaylistSourceId(playlistId)
-            if (marked) {
-                dao.upsertSource(
-                    LearningContentSourceEntity(
-                        sourceId = sourceId,
-                        sourceType = LearningContentSourceEntity.TYPE_LOCAL_PLAYLIST,
-                        localPlaylistId = playlistId,
-                        title = title
-                    )
+    fun setLocalPlaylistMarked(playlistId: Long, title: String, marked: Boolean): Completable = databaseAction {
+        val sourceId = localPlaylistSourceId(playlistId)
+        if (marked) {
+            dao.upsertSource(
+                LearningContentSourceEntity(
+                    sourceId = sourceId,
+                    sourceType = LearningContentSourceEntity.TYPE_LOCAL_PLAYLIST,
+                    localPlaylistId = playlistId,
+                    title = title
                 )
-                dao.updateSourceMetadata(sourceId, title, null)
-                dao.markLocalPlaylistSessionsDesignated(playlistId)
-            } else {
-                dao.deleteSource(sourceId)
-            }
+            )
+            dao.updateSourceMetadata(sourceId, title, null)
+            dao.markLocalPlaylistSessionsDesignated(playlistId)
+        } else {
+            dao.deleteSource(sourceId)
         }
+    }
 
     fun setRemotePlaylistMarked(
         serviceId: Int,
@@ -171,8 +167,7 @@ class LearningContentManager private constructor(context: Context) {
         fun localPlaylistSourceId(playlistId: Long) = "local-playlist:$playlistId"
 
         @JvmStatic
-        fun remotePlaylistSourceId(serviceId: Int, url: String) =
-            "remote-playlist:$serviceId:$url"
+        fun remotePlaylistSourceId(serviceId: Int, url: String) = "remote-playlist:$serviceId:$url"
 
         private fun streamKey(serviceId: Int, url: String) = "$serviceId\n$url"
     }

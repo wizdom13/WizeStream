@@ -15,9 +15,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
+import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
-import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
