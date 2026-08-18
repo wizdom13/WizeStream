@@ -82,6 +82,15 @@ function normalizeSource(value) {
     }
     return value;
 }
+function normalizeTrustedPath(value, name) {
+    if (value === undefined || value === null)
+        return undefined;
+    if (typeof value !== 'string' || value.length === 0 || value.length > 4096 || value.includes('\0'))
+        throw new TypeError(`${name} is invalid`);
+    if (!path.isAbsolute(value))
+        throw new TypeError(`${name} must be an absolute path`);
+    return path.normalize(value);
+}
 function normalizeHttpSource(value, name = 'source') {
     const source = normalizeSource(value);
     if (source.length > 16384)
@@ -188,7 +197,8 @@ class PlayerSession {
             this.pipeline = 'software';
         }
         this.renderSize = options.renderSize;
-        this.player = new this.nativeModule.MpvPlayer({ mode: this.pipeline });
+        this.tlsCaFile = options.tlsCaFile;
+        this.player = new this.nativeModule.MpvPlayer({ mode: this.pipeline, tlsCaFile: this.tlsCaFile });
         this.startCallbacks();
     }
     belongsTo(sender) {
@@ -288,7 +298,7 @@ class PlayerSession {
         let replacement = null;
         let restoredEvents = [];
         try {
-            replacement = new this.nativeModule.MpvPlayer({ mode: nextPipeline });
+            replacement = new this.nativeModule.MpvPlayer({ mode: nextPipeline, tlsCaFile: this.tlsCaFile });
             replacement.setVolume(this.volume);
             replacement.setEqualizer(this.equalizerGains);
             replacement.setPlaybackParameters(this.playbackSpeed, this.playbackPitch, this.skipSilence);
@@ -521,7 +531,10 @@ class MpvMainService {
     nativeModule = null;
     disposed = false;
     constructor(options) {
-        this.options = options;
+        this.options = {
+            ...options,
+            tlsCaFile: normalizeTrustedPath(options.tlsCaFile, 'tlsCaFile'),
+        };
         this.registerIpc();
     }
     attachWindow(window) {
@@ -601,6 +614,7 @@ class MpvMainService {
             const session = new PlayerSession(owner, owner.webContents.id, this.getNativeModule(), (id) => this.sessions.delete(id), {
                 pipeline: normalizePipeline(options.pipeline ?? 'software'),
                 renderSize: normalizeRenderSize(options.renderSize ?? { width: 960, height: 540 }),
+                tlsCaFile: this.options.tlsCaFile,
             });
             this.sessions.set(session.id, session);
             return session.id;

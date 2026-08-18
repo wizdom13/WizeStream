@@ -87,6 +87,16 @@ describe('mpv media readiness', () => {
     await expect(wait.promise).rejects.toThrow('loading failed (HTTP error 403)');
   });
 
+  it('keeps a TLS failure instead of the generic failed-to-open message', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvLog('tls: certificate verify failed'));
+    target.dispatchEvent(mpvLog('Failed to open https://example.test/media'));
+    target.dispatchEvent(mpvEvent('end-file', 'loading failed', 'error'));
+    await expect(wait.promise).rejects.toThrow('loading failed (tls: certificate verify failed)');
+  });
+
   it('times out instead of leaving a silent black player', async () => {
     vi.useFakeTimers();
     const wait = waitForMpvMediaReady(new EventTarget(), 250);

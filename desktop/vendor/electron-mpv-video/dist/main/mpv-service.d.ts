@@ -1,6 +1,7 @@
 import type { BrowserWindow } from 'electron';
 export type MpvMainOptions = {
     addonPath?: string;
+    tlsCaFile?: string;
 };
 export type MpvMain = {
     attachWindow(window: BrowserWindow): void;

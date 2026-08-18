@@ -9,6 +9,7 @@ import type { BackupOperationResult, BackendMethod, DownloadKind, DownloadSource
 import { BackendClient } from './backend-client.js';
 import { DownloadManager } from './download-manager.js';
 import { embeddedMpvAddonPath, embeddedMpvAvailable } from './embedded-mpv.js';
+import { ensureMpvCaBundle } from './mpv-ca-bundle.js';
 import { MpvController } from './mpv-controller.js';
 import { SettingsManager } from './settings-manager.js';
 import { UpdateManager } from './update-manager.js';
@@ -128,7 +129,8 @@ app.whenReady().then(async () => {
   settings = new SettingsManager(path.join(app.getPath('userData'), 'settings.json'));
   await settings.initialize();
   embeddedAddonPath = embeddedMpvAddonPath(process.resourcesPath, app.getAppPath(), app.isPackaged);
-  embeddedPlayer = createMpvMain({ addonPath: embeddedAddonPath });
+  const mpvCaFile = await ensureMpvCaBundle(app.getPath('userData'));
+  embeddedPlayer = createMpvMain({ addonPath: embeddedAddonPath, tlsCaFile: mpvCaFile });
   downloads = new DownloadManager(
     path.join(app.getPath('downloads'), 'WizeStream'),
     path.join(app.getPath('userData'), 'downloads.json'),

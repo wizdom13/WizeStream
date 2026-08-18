@@ -40,7 +40,8 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
     if (detail.type === 'log-message' && typeof detail.data === 'string'
       && (detail.level === 'error' || detail.level === 'fatal' || detail.level === 'warn')) {
       const diagnostic = detail.data.trim().replace(/\s+/g, ' ').slice(0, 300);
-      const priority = /HTTP error\s+\d{3}/i.test(diagnostic) ? 3
+      const priority = /tls:|certificate verify|SSL routines/i.test(diagnostic) ? 4
+        : /HTTP error\s+\d{3}/i.test(diagnostic) ? 3
         : /failed to open/i.test(diagnostic) ? 2
           : /subprocess|youtube-dl/i.test(diagnostic) ? 0 : 1;
       if (diagnostic && priority >= lastLoadDiagnosticPriority) {

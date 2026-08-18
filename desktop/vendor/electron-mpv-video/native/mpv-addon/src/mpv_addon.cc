@@ -296,6 +296,9 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       if (options.Has("mode") && options.Get("mode").IsString()) {
         mode_ = options.Get("mode").As<Napi::String>().Utf8Value();
       }
+      if (options.Has("tlsCaFile") && options.Get("tlsCaFile").IsString()) {
+        tls_ca_file_ = options.Get("tlsCaFile").As<Napi::String>().Utf8Value();
+      }
     }
 
     bool reused_handle = false;
@@ -319,6 +322,7 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       // WizeStream resolves media itself. Do not invoke an unbundled youtube-dl
       // subprocess when a resolved URL reports a network error.
       set_option("ytdl", "no");
+      if (!tls_ca_file_.empty()) set_option("tls-ca-file", tls_ca_file_.c_str());
       const char* hwdec = std::getenv("MPV_HWDEC");
 #ifdef _WIN32
       set_option("hwdec", hwdec && hwdec[0] ? hwdec : "no");
@@ -350,6 +354,8 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     }
     if (reused_handle) {
       while (mpv_wait_event(handle_, 0)->event_id != MPV_EVENT_NONE) {}
+      if (!tls_ca_file_.empty())
+        mpv_set_property_string(handle_, "tls-ca-file", tls_ca_file_.c_str());
     }
     set_mpv_wakeup_callback(handle_, on_mpv_wakeup, this);
 
@@ -1653,6 +1659,7 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
   MediaNetworkProfile pending_audio_network_;
   MediaNetworkProfile pending_subtitle_network_;
   std::string mode_ = "software";
+  std::string tls_ca_file_;
   int64_t timestamp_us_ = 0;
 #ifdef __APPLE__
   CGLContextObj gl_context_ = nullptr;
