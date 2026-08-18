@@ -154,6 +154,20 @@
             </com.google.android.material.card.MaterialCardView>
 
             <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/learning_dashboard_content_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/learning_dashboard_content"
+                android:textAppearance="@android:style/TextAppearance.Medium" />
+
+            <LinearLayout
+                android:id="@+id/learning_dashboard_content_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <org.schabi.newpipe.views.NewPipeTextView
                 android:id="@+id/learning_dashboard_continue_title"
                 android:textAppearance="@android:style/TextAppearance.Medium"
                 android:layout_width="match_parent"

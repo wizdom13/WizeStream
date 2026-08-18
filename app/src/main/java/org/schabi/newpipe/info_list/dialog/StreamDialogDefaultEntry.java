@@ -7,6 +7,7 @@ import static org.schabi.newpipe.util.SparseItemUtil.fetchUploaderUrlIfSparse;
 
 import android.content.Context;
 import android.net.Uri;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
@@ -20,6 +21,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.dialog.PlaylistAppendDialog;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
@@ -137,6 +139,32 @@ public enum StreamDialogDefaultEntry {
 
     OPEN_IN_BROWSER(R.string.open_in_browser, (fragment, item) ->
             ShareUtils.openUrlInBrowser(fragment.requireContext(), item.getUrl())),
+
+    MARK_AS_LEARNING(R.string.learning_mark_content, (fragment, item) ->
+        LearningContentManager.getInstance(fragment.requireContext())
+                .setStreamMarked(new StreamEntity(item), true)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> Toast.makeText(fragment.requireContext(),
+                                R.string.learning_content_added, Toast.LENGTH_SHORT).show(),
+                        error -> Toast.makeText(fragment.requireContext(),
+                                R.string.learning_content_update_error,
+                                Toast.LENGTH_SHORT).show()
+                )
+    ),
+
+    REMOVE_FROM_LEARNING(R.string.learning_remove_content, (fragment, item) ->
+        LearningContentManager.getInstance(fragment.requireContext())
+                .setStreamMarked(new StreamEntity(item), false)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> Toast.makeText(fragment.requireContext(),
+                                R.string.learning_content_removed, Toast.LENGTH_SHORT).show(),
+                        error -> Toast.makeText(fragment.requireContext(),
+                                R.string.learning_content_update_error,
+                                Toast.LENGTH_SHORT).show()
+                )
+    ),
 
 
     MARK_AS_WATCHED(R.string.mark_as_watched, (fragment, item) ->

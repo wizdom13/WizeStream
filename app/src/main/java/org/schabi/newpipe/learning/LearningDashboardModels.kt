@@ -14,7 +14,7 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
 
 data class LearningPlaylistSummary(
     @ColumnInfo(name = "playlist_id")
-    val playlistId: Long,
+    val playlistId: Long?,
     @ColumnInfo(name = "playlist_name")
     val playlistName: String?,
     @ColumnInfo(name = "thumbnail_url")
@@ -22,7 +22,11 @@ data class LearningPlaylistSummary(
     @ColumnInfo(name = "eligible_count")
     val eligibleCount: Int,
     @ColumnInfo(name = "completed_count")
-    val completedCount: Int
+    val completedCount: Int,
+    @ColumnInfo(name = "service_id")
+    val serviceId: Int? = null,
+    @ColumnInfo(name = "playlist_url")
+    val playlistUrl: String? = null
 ) {
     val percentage: Int
         get() = if (eligibleCount == 0) 0 else completedCount * 100 / eligibleCount
@@ -115,6 +119,7 @@ data class LearningCalendarDay(
 
 data class LearningDashboardSnapshot(
     val playlists: List<LearningPlaylistSummary>,
+    val learningContent: List<LearningDashboardStream>,
     val continueLearning: List<LearningDashboardStream>,
     val recentlyAnnotated: List<LearningDashboardStream>,
     val studyStatistics: LearningStudyStatistics = LearningStudyStatistics.from(emptyList())
@@ -136,6 +141,7 @@ data class LearningDashboardSnapshot(
 
     val isEmpty: Boolean
         get() = playlists.none { it.eligibleCount > 0 } &&
-            continueLearning.isEmpty() && recentlyAnnotated.isEmpty() &&
+            learningContent.isEmpty() && continueLearning.isEmpty() &&
+            recentlyAnnotated.isEmpty() &&
             studyStatistics.allTimeMillis == 0L
 }

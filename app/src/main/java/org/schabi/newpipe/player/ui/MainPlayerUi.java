@@ -57,6 +57,7 @@ import org.schabi.newpipe.info_list.StreamSegmentAdapter;
 import org.schabi.newpipe.info_list.StreamSegmentItem;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningNoteDialog;
 import org.schabi.newpipe.learning.LearningNoteManager;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
@@ -1137,12 +1138,16 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private void updateLearningNoteButtonVisibility(@Nullable final StreamInfo info) {
         binding.learningNoteButton.setVisibility(shouldShowLearningNoteButton(
-                LearningMode.areNotesEnabled(context), info) ? View.VISIBLE : View.GONE);
+                LearningMode.areNotesEnabled(context),
+                info != null && LearningContentManager.getInstance(context)
+                        .isStreamLearning(info.getServiceId(), info.getUrl()),
+                info) ? View.VISIBLE : View.GONE);
     }
 
     static boolean shouldShowLearningNoteButton(final boolean notesEnabled,
+                                                final boolean learningContent,
                                                 @Nullable final StreamInfo info) {
-        return notesEnabled && info != null
+        return notesEnabled && learningContent && info != null
                 && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(info.getStreamType());
     }
     //endregion

@@ -18,6 +18,7 @@ class LearningDashboardSnapshotTest {
                 playlist(2, 3, 3),
                 playlist(3, 0, 0)
             ),
+            learningContent = emptyList(),
             continueLearning = emptyList(),
             recentlyAnnotated = emptyList()
         )

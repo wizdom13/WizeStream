@@ -264,14 +264,28 @@ playback, downloads, libraries, Learning Mode notes and trusted-device synchroni
 
 ### Learning Mode
 
-Learning Mode is optional and disabled by default. When enabled, it adds:
+Learning Mode is optional and disabled by default. Enable it under **Settings > Learning Mode**.
+Learning tools then appear in the app, but normal playback is not treated as study activity. Use a
+video's context menu or a local or remote playlist menu to **Mark as Learning**. Only explicitly
+designated videos and videos contained in designated playlists contribute to learning progress,
+study time, statistics, and streaks.
+
+When enabled, Learning Mode adds:
 
 - Timestamped notes linked to exact positions in non-live videos
-- Completion progress and learning controls for local playlists, including mark-all-watched and reset
-- A learning dashboard for active and completed playlists, recently annotated videos, and continue
-  learning shortcuts
+- Completion progress and learning controls for designated local playlists, including
+  mark-all-watched and reset
+- A learning dashboard for designated content, active and completed playlists, recently annotated
+  videos, and continue learning shortcuts
 - Study-time statistics, current and longest streaks, and a 28-day activity calendar
 - A setting to include or exclude background listening from study statistics
+
+Content can be removed from Learning later. A video remains designated while it is still included by
+another marked source, such as a marked playlist. Existing videos with timestamped learning notes are
+designated automatically when upgrading, so previous learning data remains available.
+
+See the [Learning Mode guide](docs/learning-mode.md) for setup, content selection, dashboard behavior,
+data migration, and synchronization details.
 
 ### Interface and customization
 

@@ -49,7 +49,10 @@ data class LearningSessionEntity(
     val localDate: String,
 
     @ColumnInfo(name = BACKGROUND_PLAYBACK)
-    val backgroundPlayback: Boolean
+    val backgroundPlayback: Boolean,
+
+    @ColumnInfo(name = IS_DESIGNATED, defaultValue = "0")
+    val designatedLearningContent: Boolean = false
 ) {
     companion object {
         const val TABLE_NAME = "learning_sessions"
@@ -60,5 +63,6 @@ data class LearningSessionEntity(
         const val WATCHED_DURATION_MS = "watched_duration_ms"
         const val LOCAL_DATE = "local_date"
         const val BACKGROUND_PLAYBACK = "background_playback"
+        const val IS_DESIGNATED = "is_designated"
     }
 }

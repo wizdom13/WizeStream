@@ -57,6 +57,7 @@ import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.BaseLocalListFragment;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.learning.LearningPlaylistProgress;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
@@ -104,6 +105,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private Snackbar swipeRemovalSnackbar;
 
     private LocalPlaylistManager playlistManager;
+    private LearningContentManager learningContentManager;
     private Subscription databaseSubscription;
 
     private CompositeDisposable disposables;
@@ -136,6 +138,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         playlistManager = new LocalPlaylistManager(NewPipeDatabase.getInstance(requireContext()));
+        learningContentManager = LearningContentManager.getInstance(requireContext());
 
         disposables = new CompositeDisposable();
 
@@ -291,9 +294,15 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     @Override
     public void onPrepareOptionsMenu(@NonNull final Menu menu) {
         super.onPrepareOptionsMenu(menu);
-        final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext());
+        final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext())
+                && learningContentManager.isLocalPlaylistMarked(playlistId);
         menu.findItem(R.id.menu_item_mark_all_watched).setVisible(enabled);
         menu.findItem(R.id.menu_item_reset_learning_progress).setVisible(enabled);
+        final MenuItem learningItem = menu.findItem(R.id.menu_item_learning_content);
+        final boolean learningEnabled = LearningMode.isEnabled(requireContext());
+        learningItem.setVisible(learningEnabled);
+        learningItem.setTitle(learningContentManager.isLocalPlaylistMarked(playlistId)
+                ? R.string.learning_remove_content : R.string.learning_mark_content);
     }
 
     @Override
@@ -404,10 +413,32 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             confirmBulkProgressChange(true);
         } else if (item.getItemId() == R.id.menu_item_reset_learning_progress) {
             confirmBulkProgressChange(false);
+        } else if (item.getItemId() == R.id.menu_item_learning_content) {
+            toggleLearningPlaylist();
         } else {
             return super.onOptionsItemSelected(item);
         }
         return true;
+    }
+
+    private void toggleLearningPlaylist() {
+        final boolean marked = learningContentManager.isLocalPlaylistMarked(playlistId);
+        disposables.add(learningContentManager
+                .setLocalPlaylistMarked(playlistId, name, !marked)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            requireActivity().invalidateOptionsMenu();
+                            startLoading(false);
+                            Toast.makeText(requireContext(), marked
+                                            ? R.string.learning_content_removed
+                                            : R.string.learning_content_added,
+                                    Toast.LENGTH_SHORT).show();
+                        },
+                        error -> Toast.makeText(requireContext(),
+                                R.string.learning_content_update_error,
+                                Toast.LENGTH_SHORT).show()
+                ));
     }
 
     /**
@@ -892,11 +923,23 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     protected void showInfoItemDialog(final PlaylistStreamEntry item) {
         if (item.getStreamEntity().isLocalMedia()) {
-            final String[] actions = {
-                    getString(R.string.play),
-                    getString(R.string.local_media_play_background),
-                    getString(R.string.delete)
-            };
+            final boolean learningEnabled = LearningMode.isEnabled(requireContext());
+            final boolean marked = learningContentManager.isStreamSourceMarked(
+                    item.getStreamEntity().getServiceId(), item.getStreamEntity().getUrl());
+            final String[] actions = learningEnabled
+                    ? new String[] {
+                        getString(R.string.play),
+                        getString(R.string.local_media_play_background),
+                        getString(marked
+                                ? R.string.learning_remove_content
+                                : R.string.learning_mark_content),
+                        getString(R.string.delete)
+                    }
+                    : new String[] {
+                        getString(R.string.play),
+                        getString(R.string.local_media_play_background),
+                        getString(R.string.delete)
+                    };
             new AlertDialog.Builder(requireContext())
                     .setTitle(item.getStreamEntity().getTitle())
                     .setItems(actions, (dialog, which) -> {
@@ -906,7 +949,20 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                         } else if (which == 1) {
                             NavigationHelper.playOnBackgroundPlayer(requireContext(),
                                     getPlayQueueStartingAt(item), true);
-                        } else if (which == 2) {
+                        } else if (learningEnabled && which == 2) {
+                            disposables.add(learningContentManager
+                                    .setStreamMarked(item.getStreamEntity(), !marked)
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(
+                                            () -> Toast.makeText(requireContext(), marked
+                                                            ? R.string.learning_content_removed
+                                                            : R.string.learning_content_added,
+                                                    Toast.LENGTH_SHORT).show(),
+                                            error -> Toast.makeText(requireContext(),
+                                                    R.string.learning_content_update_error,
+                                                    Toast.LENGTH_SHORT).show()
+                                    ));
+                        } else if (which == (learningEnabled ? 3 : 2)) {
                             deleteItem(item);
                         }
                     })
@@ -975,7 +1031,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         if (headerBinding == null) {
             return;
         }
-        final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext());
+        final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext())
+                && learningContentManager.isLocalPlaylistMarked(playlistId);
         headerBinding.playlistLearningProgressContainer.getRoot().setVisibility(
                 enabled ? View.VISIBLE : View.GONE);
         if (!enabled) {
