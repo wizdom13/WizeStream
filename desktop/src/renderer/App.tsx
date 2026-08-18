@@ -88,6 +88,7 @@ import {
 } from './playback-queue';
 import { previewFrameAt } from './stream-preview';
 import { PlaybackQueueDialog } from './PlaybackQueueDialog';
+import { waitForMpvMediaReady } from './mpv-readiness';
 
 defineMpvVideoElement();
 
@@ -865,9 +866,13 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     element.addEventListener('mpv-state', update);
     element.addEventListener('mpv-error', fail);
     setLocalError(undefined);
-    void element.openMedia(request).then(async () => {
+    let cancelled = false;
+    const mediaReady = waitForMpvMediaReady(element);
+    void Promise.all([element.openMedia(request), mediaReady.promise]).then(async () => {
+      if (cancelled) return;
       if (request.startSeconds && request.startSeconds > 0) await element.seek(request.startSeconds);
       await element.play();
+      if (cancelled) return;
       mediaControlsReady.current = true;
       if (startFullscreenRef.current && !document.fullscreenElement) {
         void fullscreenContainer.current?.requestFullscreen().catch(() => undefined);
@@ -888,9 +893,12 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       void element.setVolume(effectiveVolumeRef.current)
         .catch((reason: unknown) => onError(`Volume: ${errorMessage(reason)}`));
     }).catch((reason: unknown) => {
+      if (cancelled) return;
       const value = errorMessage(reason); setLocalError(value); onError(value);
     });
     return () => {
+      cancelled = true;
+      mediaReady.cancel();
       mediaControlsReady.current = false;
       if (latestState.current.time > 0) savePosition(latestState.current.time, true);
       element.removeEventListener('mpv-state', update); element.removeEventListener('mpv-error', fail);

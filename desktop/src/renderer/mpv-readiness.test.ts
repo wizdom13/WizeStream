@@ -1,0 +1,44 @@
+import { describe, expect, it, vi } from 'vitest';
+import { waitForMpvMediaReady } from './mpv-readiness';
+
+function mpvEvent(type: string, error?: string) {
+  const event = new Event('mpv-event') as CustomEvent<{ type: string; error?: string }>;
+  Object.defineProperty(event, 'detail', { value: { type, error } });
+  return event;
+}
+
+describe('mpv media readiness', () => {
+  it('waits for the native file-loaded event', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    let finished = false;
+    void wait.promise.then(() => { finished = true; });
+    await Promise.resolve();
+    expect(finished).toBe(false);
+    target.dispatchEvent(mpvEvent('file-loaded'));
+    await expect(wait.promise).resolves.toBeUndefined();
+  });
+
+  it('reports native loading and external-track failures', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('file-loaded', 'audio-add failed'));
+    await expect(wait.promise).rejects.toThrow('audio-add failed');
+  });
+
+  it('times out instead of leaving a silent black player', async () => {
+    vi.useFakeTimers();
+    const wait = waitForMpvMediaReady(new EventTarget(), 250);
+    const assertion = expect(wait.promise).rejects.toThrow('Timed out while loading media');
+    await vi.advanceTimersByTimeAsync(250);
+    await assertion;
+    vi.useRealTimers();
+  });
+
+  it('can be cancelled during a source change', async () => {
+    const wait = waitForMpvMediaReady(new EventTarget(), 1_000);
+    wait.cancel();
+    await expect(wait.promise).resolves.toBeUndefined();
+  });
+});
