@@ -2,6 +2,7 @@ import * as electron from 'electron';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { YoutubeMediaProxy } from './youtube-media-proxy.js';
 const CHANNEL_PREFIX = 'electron-mpv-video:v1';
 const channel = (name) => `${CHANNEL_PREFIX}:${name}`;
 const IPC_CHANNELS = [
@@ -516,6 +517,7 @@ class MpvMainService {
     windows = new Map();
     nativeModule = null;
     disposed = false;
+    mediaProxy = new YoutubeMediaProxy();
     constructor(options) {
         this.options = {
             ...options,
@@ -554,6 +556,7 @@ class MpvMainService {
         for (const name of IPC_CHANNELS)
             electron.ipcMain.removeHandler(channel(name));
         await Promise.all(Array.from(this.sessions.values(), (session) => session.destroy()));
+        await this.mediaProxy.close();
         if (activeService === this)
             activeService = null;
     }
@@ -606,8 +609,14 @@ class MpvMainService {
             return session.id;
         });
         electron.ipcMain.handle(channel('player:open'), async (event, id, source) => this.getOwnedSession(event, id).open(normalizeHttpSource(source)));
-        electron.ipcMain.handle(channel('player:open-media'), async (event, id, request) => this.getOwnedSession(event, id).openMedia(normalizeMediaRequest(request)));
-        electron.ipcMain.handle(channel('player:set-audio-track'), async (event, id, track) => this.getOwnedSession(event, id).setAudioTrack(normalizeTrack(track, 'audio')));
+        electron.ipcMain.handle(channel('player:open-media'), async (event, id, request) => {
+            const session = this.getOwnedSession(event, id);
+            session.openMedia(await this.mediaProxy.rewriteMediaRequest(normalizeMediaRequest(request)));
+        });
+        electron.ipcMain.handle(channel('player:set-audio-track'), async (event, id, track) => {
+            const session = this.getOwnedSession(event, id);
+            session.setAudioTrack(await this.mediaProxy.rewriteTrack(normalizeTrack(track, 'audio')));
+        });
         electron.ipcMain.handle(channel('player:set-subtitle-track'), async (event, id, track) => this.getOwnedSession(event, id).setSubtitleTrack(normalizeTrack(track, 'subtitle')));
         electron.ipcMain.handle(channel('player:play'), async (event, id) => this.getOwnedSession(event, id).play());
         electron.ipcMain.handle(channel('player:pause'), async (event, id) => this.getOwnedSession(event, id).pause());
