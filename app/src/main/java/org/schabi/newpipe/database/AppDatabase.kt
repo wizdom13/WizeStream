@@ -19,9 +19,12 @@ import org.schabi.newpipe.database.history.dao.SearchHistoryDAO
 import org.schabi.newpipe.database.history.dao.StreamHistoryDAO
 import org.schabi.newpipe.database.history.model.SearchHistoryEntry
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
+import org.schabi.newpipe.database.learning.dao.LearningContentDAO
 import org.schabi.newpipe.database.learning.dao.LearningDashboardDAO
 import org.schabi.newpipe.database.learning.dao.LearningNoteDAO
 import org.schabi.newpipe.database.learning.dao.LearningSessionDAO
+import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
+import org.schabi.newpipe.database.learning.model.LearningContentStreamEntity
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.playlist.dao.PlaylistDAO
@@ -62,7 +65,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_20,
+    version = Migrations.DB_VER_21,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -96,7 +99,9 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
         StructuredPreferenceSyncFeedGroupMapEntity::class,
         StructuredPreferenceSyncLocalStateEntity::class,
         LearningNoteEntity::class,
-        LearningSessionEntity::class
+        LearningSessionEntity::class,
+        LearningContentSourceEntity::class,
+        LearningContentStreamEntity::class
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -115,6 +120,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun historySyncDAO(): HistorySyncDAO
     abstract fun structuredPreferenceSyncDAO(): StructuredPreferenceSyncDAO
     abstract fun learningDashboardDAO(): LearningDashboardDAO
+    abstract fun learningContentDAO(): LearningContentDAO
     abstract fun learningNoteDAO(): LearningNoteDAO
     abstract fun learningSessionDAO(): LearningSessionDAO
 

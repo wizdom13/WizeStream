@@ -40,6 +40,7 @@ object Migrations {
     const val DB_VER_18 = 18
     const val DB_VER_19 = 19
     const val DB_VER_20 = 20
+    const val DB_VER_21 = 21
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -738,5 +739,66 @@ object Migrations {
         db.execSQL("ALTER TABLE streams ADD COLUMN local_media_id INTEGER")
         db.execSQL("ALTER TABLE streams ADD COLUMN local_album TEXT")
         db.execSQL("ALTER TABLE streams ADD COLUMN local_folder TEXT")
+    }
+
+    val MIGRATION_20_21 = Migration(DB_VER_20, DB_VER_21) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `learning_content_sources` (" +
+                "`source_id` TEXT NOT NULL, `source_type` TEXT NOT NULL, " +
+                "`local_playlist_id` INTEGER, `service_id` INTEGER, `url` TEXT, " +
+                "`title` TEXT, `thumbnail_url` TEXT, `created_at` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`source_id`), FOREIGN KEY(`local_playlist_id`) " +
+                "REFERENCES `playlists`(`uid`) ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_content_sources_local_playlist_id` " +
+                "ON `learning_content_sources` (`local_playlist_id`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_content_sources_source_type` " +
+                "ON `learning_content_sources` (`source_type`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_content_sources_service_id_url` " +
+                "ON `learning_content_sources` (`service_id`, `url`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `learning_content_streams` (" +
+                "`source_id` TEXT NOT NULL, `stream_id` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`source_id`, `stream_id`), " +
+                "FOREIGN KEY(`source_id`) REFERENCES `learning_content_sources`(`source_id`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE, " +
+                "FOREIGN KEY(`stream_id`) REFERENCES `streams`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_learning_content_streams_stream_id` " +
+                "ON `learning_content_streams` (`stream_id`)"
+        )
+        db.execSQL(
+            "ALTER TABLE `learning_sessions` ADD COLUMN `is_designated` " +
+                "INTEGER NOT NULL DEFAULT 0"
+        )
+
+        // Existing notes are an unambiguous indication that a stream was used for learning.
+        db.execSQL(
+            "INSERT OR IGNORE INTO learning_content_sources " +
+                "(source_id, source_type, service_id, url, title, thumbnail_url, created_at) " +
+                "SELECT 'stream:' || streams.service_id || ':' || streams.url, 'STREAM', " +
+                "streams.service_id, streams.url, streams.title, streams.thumbnail_url, " +
+                "CAST(strftime('%s','now') AS INTEGER) * 1000 " +
+                "FROM streams INNER JOIN learning_notes ON streams.uid = learning_notes.stream_id " +
+                "GROUP BY streams.uid"
+        )
+        db.execSQL(
+            "INSERT OR IGNORE INTO learning_content_streams (source_id, stream_id) " +
+                "SELECT 'stream:' || streams.service_id || ':' || streams.url, streams.uid " +
+                "FROM streams INNER JOIN learning_notes ON streams.uid = learning_notes.stream_id " +
+                "GROUP BY streams.uid"
+        )
+        db.execSQL(
+            "UPDATE learning_sessions SET is_designated = 1 WHERE stream_id IN " +
+                "(SELECT stream_id FROM learning_content_streams)"
+        )
     }
 }

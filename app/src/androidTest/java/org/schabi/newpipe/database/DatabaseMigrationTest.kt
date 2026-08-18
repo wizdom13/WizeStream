@@ -757,6 +757,37 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom20to21AddsLearningContentSelection() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_20
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_21,
+            true,
+            Migrations.MIGRATION_20_21
+        )
+        migrated.query("PRAGMA table_info(learning_content_sources)").use { cursor ->
+            assertEquals(8, cursor.count)
+        }
+        migrated.query("PRAGMA table_info(learning_content_streams)").use { cursor ->
+            assertEquals(2, cursor.count)
+        }
+        migrated.query("PRAGMA table_info(learning_sessions)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            var foundDesignatedColumn = false
+            while (cursor.moveToNext()) {
+                foundDesignatedColumn = foundDesignatedColumn ||
+                    cursor.getString(nameIndex) == "is_designated"
+            }
+            assertTrue(foundDesignatedColumn)
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -770,7 +801,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_16_17,
                 Migrations.MIGRATION_17_18,
                 Migrations.MIGRATION_18_19,
-                Migrations.MIGRATION_19_20
+                Migrations.MIGRATION_19_20,
+                Migrations.MIGRATION_20_21
             )
             .build()
         testHelper.closeWhenFinished(database)
