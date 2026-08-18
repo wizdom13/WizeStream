@@ -76,8 +76,13 @@ function prepareUpstreamRequest(entry, rangeHeader, requestNumber) {
     const range = parseRange(rangeHeader);
     if (range) {
         if (isAdaptiveStream(url, entry)) {
-            source += `&range=${range.start}-${range.end}`;
-            url = new URL(source);
+            // Match YoutubeHttpDataSource.buildRangeParameter(): requesting the
+            // whole resource from byte zero must not add an open-ended range
+            // query. YouTube rejects `range=0-` for some ANDROID_VR streams.
+            if (range.start !== '0' || range.end !== '') {
+                source += `&range=${range.start}-${range.end}`;
+                url = new URL(source);
+            }
         }
         else
             headers.Range = `bytes=${range.start}-${range.end}`;

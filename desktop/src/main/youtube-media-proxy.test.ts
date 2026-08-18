@@ -43,6 +43,18 @@ describe('YoutubeMediaProxy', () => {
     expect(prepared.headers['User-Agent']).toBe('android-client');
   });
 
+  it('omits Android range parameters for an initial unbounded read', () => {
+    const prepared = youtubeMediaProxyInternals.prepareUpstreamRequest({
+      source: 'https://r1---sn.example.googlevideo.com/videoplayback?itag=298&c=ANDROID_VR',
+      profile: { userAgent: 'android-client' },
+      rangeMode: 'query',
+    }, 'bytes=0-', 3);
+
+    expect(prepared.url.searchParams.get('rn')).toBe('3');
+    expect(prepared.url.searchParams.has('range')).toBe(false);
+    expect(prepared.headers.Range).toBeUndefined();
+  });
+
   it('matches Android HttpURLConnection POST headers and YouTube referrer', () => {
     const headers = youtubeMediaProxyInternals.requestHeaders({
       referrer: 'https://www.youtube.com/',
