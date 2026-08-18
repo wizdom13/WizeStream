@@ -2,8 +2,6 @@ export interface MediaNetworkProfile {
   userAgent?: string;
   referrer?: string;
   httpHeaders?: string[];
-  httpMethod?: 'POST';
-  httpPostDataHex?: string;
 }
 
 const FIREFOX_USER_AGENT =
@@ -58,9 +56,5 @@ export function mediaNetworkProfile(source: string): MediaNetworkProfile {
       'TE: trailers',
       'Accept-Encoding: identity',
     ],
-    // Android's YoutubeHttpDataSource uses this two-byte body for every
-    // YouTube media request, including range requests and redirects.
-    httpMethod: 'POST',
-    httpPostDataHex: '7800',
   };
 }

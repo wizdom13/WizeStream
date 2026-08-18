@@ -214,8 +214,6 @@ export interface PlayerTrack {
   userAgent?: string;
   referrer?: string;
   httpHeaders?: string[];
-  httpMethod?: 'POST';
-  httpPostDataHex?: string;
 }
 
 export interface EmbeddedPlayerRequest {
@@ -226,8 +224,6 @@ export interface EmbeddedPlayerRequest {
   userAgent?: string;
   referrer?: string;
   httpHeaders?: string[];
-  httpMethod?: 'POST';
-  httpPostDataHex?: string;
 }
 
 export interface PlayerStatus {

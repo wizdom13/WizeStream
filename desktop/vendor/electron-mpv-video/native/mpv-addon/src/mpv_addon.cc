@@ -50,8 +50,6 @@ struct MediaNetworkProfile {
   std::string user_agent = "WizeStream Desktop/0.6";
   std::string referrer;
   std::string http_headers;
-  std::string method;
-  std::string post_data_hex;
 };
 
 #ifdef __linux__
@@ -468,24 +466,15 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
         profile.http_headers += value.As<Napi::String>().Utf8Value();
       }
     }
-    if (request.Has("httpMethod") && request.Get("httpMethod").IsString())
-      profile.method = request.Get("httpMethod").As<Napi::String>().Utf8Value();
-    if (request.Has("httpPostDataHex") && request.Get("httpPostDataHex").IsString())
-      profile.post_data_hex = request.Get("httpPostDataHex").As<Napi::String>().Utf8Value();
     return profile;
   }
 
   int apply_network_profile(const MediaNetworkProfile& profile) {
-    const bool post = profile.method == "POST";
-    // Newer mpv builds prefer curl for HTTP, but FFmpeg's HTTP protocol is
-    // needed for a POST body. Older mpv builds already use FFmpeg and do not
-    // expose curl-enabled, so PROPERTY_NOT_FOUND is intentionally ignored.
-    int ret = mpv_set_property_string(handle_, "curl-enabled", post ? "no" : "yes");
+    // Keep mpv's seekable libcurl transport enabled so byte-range requests are
+    // generated correctly. FFmpeg suppresses automatic Range headers for POST.
+    int ret = mpv_set_property_string(handle_, "curl-enabled", "yes");
     if (ret < 0 && ret != MPV_ERROR_PROPERTY_NOT_FOUND) return ret;
-    const std::string lavf_options = post
-        ? "method=POST,post_data=" + profile.post_data_hex
-        : "";
-    ret = mpv_set_property_string(handle_, "stream-lavf-o", lavf_options.c_str());
+    ret = mpv_set_property_string(handle_, "stream-lavf-o", "");
     if (ret < 0) return ret;
     ret = mpv_set_property_string(handle_, "user-agent", profile.user_agent.c_str());
     if (ret < 0) return ret;

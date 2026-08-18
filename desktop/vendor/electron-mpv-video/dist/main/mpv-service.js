@@ -130,24 +130,10 @@ function normalizeHttpHeaders(value) {
     });
 }
 function normalizeNetworkProfile(request) {
-    const httpMethod = request.httpMethod;
-    if (httpMethod !== undefined && httpMethod !== 'POST')
-        throw new TypeError('httpMethod must be POST when supplied');
-    const httpPostDataHex = request.httpPostDataHex;
-    if (httpPostDataHex !== undefined
-        && (typeof httpPostDataHex !== 'string' || httpPostDataHex.length > 4096
-            || httpPostDataHex.length % 2 !== 0 || !/^[0-9A-Fa-f]+$/.test(httpPostDataHex)))
-        throw new TypeError('httpPostDataHex must contain an even number of hexadecimal characters');
-    if (httpPostDataHex !== undefined && httpMethod !== 'POST')
-        throw new TypeError('httpPostDataHex requires httpMethod POST');
-    if (httpMethod === 'POST' && httpPostDataHex === undefined)
-        throw new TypeError('httpMethod POST requires httpPostDataHex');
     return {
         userAgent: normalizeOptionalText(request.userAgent, 'userAgent', 512),
         referrer: request.referrer === undefined ? undefined : normalizeHttpSource(request.referrer, 'referrer'),
         httpHeaders: normalizeHttpHeaders(request.httpHeaders),
-        httpMethod,
-        httpPostDataHex,
     };
 }
 function normalizeMediaRequest(value) {

@@ -27,8 +27,6 @@ export type MediaTrack = {
     userAgent?: string;
     referrer?: string;
     httpHeaders?: string[];
-    httpMethod?: 'POST';
-    httpPostDataHex?: string;
 };
 export type MediaRequest = {
     source: string;
@@ -37,8 +35,6 @@ export type MediaRequest = {
     userAgent?: string;
     referrer?: string;
     httpHeaders?: string[];
-    httpMethod?: 'POST';
-    httpPostDataHex?: string;
 };
 export type Dispose = () => void;
 export type MpvPlayerSession = {
