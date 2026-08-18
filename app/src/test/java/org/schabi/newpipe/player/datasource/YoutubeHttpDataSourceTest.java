@@ -65,11 +65,11 @@ public class YoutubeHttpDataSourceTest {
     @Test
     public void rejectedRequestDiagnosticExcludesSignedUrlData() {
         final String url = STREAM_URL + "&c=VISIONOS&cver=1.02"
-                + "&itag=140&sig=secret-signature";
+                + "&sig=secret-signature";
 
         final String diagnostic = YoutubeHttpDataSource.buildSafeRequestDiagnostic(url);
 
-        assertEquals("client=VISIONOS, cver=1.02, itag=140, userAgent=VISIONOS",
+        assertEquals("client=VISIONOS, cver=1.02, itag=18, userAgent=VISIONOS",
                 diagnostic);
         assertFalse(diagnostic.contains("secret-signature"));
         assertFalse(diagnostic.contains("googlevideo.com"));
