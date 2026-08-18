@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 import {
   YoutubeMediaProxy,
   youtubeMediaProxyInternals,
@@ -41,6 +43,52 @@ describe('YoutubeMediaProxy', () => {
     expect(prepared.headers['User-Agent']).toBe('android-client');
   });
 
+  it('matches Android HttpURLConnection POST headers and YouTube referrer', () => {
+    const headers = youtubeMediaProxyInternals.requestHeaders({
+      referrer: 'https://www.youtube.com/',
+    });
+    const postHeaders = youtubeMediaProxyInternals.postHeaders(headers);
+
+    expect(postHeaders.Referer).toBe('https://www.youtube.com');
+    expect(postHeaders['Content-Type']).toBe('application/x-www-form-urlencoded');
+    expect(postHeaders['Content-Length']).toBe('2');
+  });
+
+  it('sends Android-compatible headers and the exact two-byte body on the wire', async () => {
+    let received: { method?: string; contentType?: string; body?: Buffer } = {};
+    const server = createServer((request, response) => {
+      const chunks: Buffer[] = [];
+      request.on('data', (chunk: Buffer) => chunks.push(chunk));
+      request.on('end', () => {
+        received = {
+          method: request.method,
+          contentType: request.headers['content-type'],
+          body: Buffer.concat(chunks),
+        };
+        response.writeHead(200).end('ok');
+      });
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('Missing test server address');
+
+    try {
+      const response = await youtubeMediaProxyInternals.upstreamRequest(
+        new URL(`http://127.0.0.1:${address.port}/videoplayback`),
+        { headers: { 'User-Agent': 'android-client' } },
+      );
+      response.resume();
+      await once(response, 'end');
+
+      expect(received.method).toBe('POST');
+      expect(received.contentType).toBe('application/x-www-form-urlencoded');
+      expect([...(received.body ?? [])]).toEqual([0x78, 0x00]);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('keeps progressive reads in the HTTP Range header', () => {
     const prepared = youtubeMediaProxyInternals.prepareUpstreamRequest({
       source: 'https://r1---sn.example.googlevideo.com/videoplayback?itag=18&c=ANDROID',
@@ -71,5 +119,17 @@ describe('YoutubeMediaProxy', () => {
     expect(youtubeMediaProxyInternals.isGoogleVideoPlayback(
       'https://r1---sn.example.googlevideo.com/not-playback?itag=18',
     )).toBe(false);
+  });
+
+  it('produces useful diagnostics without signed URL data', () => {
+    const url = new URL(
+      'https://r1---sn.example.googlevideo.com/videoplayback?itag=137&c=ANDROID&sig=secret',
+    );
+    const realContext = youtubeMediaProxyInternals.safeContext(
+      url, { source: url.toString(), profile: {}, rangeMode: 'query' }, 'bytes=0-1023',
+    );
+
+    expect(realContext).toBe('client=ANDROID, itag=137, range=query');
+    expect(realContext).not.toContain('secret');
   });
 });

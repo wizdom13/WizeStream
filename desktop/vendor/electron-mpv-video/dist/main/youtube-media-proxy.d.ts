@@ -33,10 +33,17 @@ export declare const youtubeMediaProxyInternals: {
     isGoogleVideoPlayback(value: string | URL): boolean;
     isAdaptiveStream(url: URL, entry: ProxySource): boolean;
     parseRange(value: unknown): { start: string; end: string } | undefined;
+    postHeaders(headers: Record<string, string>): Record<string, string>;
     prepareUpstreamRequest(
         entry: ProxySource,
         rangeHeader: string | undefined,
         requestNumber: number,
     ): { url: URL; headers: Record<string, string> };
     requestHeaders(profile: NetworkProfile): Record<string, string>;
+    safeContext(url: URL, entry: ProxySource, rangeHeader: string | undefined): string;
+    upstreamRequest(
+        url: URL,
+        options: { headers: Record<string, string> },
+        redirects?: number,
+    ): Promise<import('node:http').IncomingMessage>;
 };

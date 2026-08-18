@@ -36,8 +36,12 @@ function requestHeaders(profile) {
     }
     if (profile.userAgent)
         headers.set('user-agent', { name: 'User-Agent', value: profile.userAgent });
-    if (profile.referrer)
-        headers.set('referer', { name: 'Referer', value: profile.referrer });
+    if (profile.referrer) {
+        const referrer = profile.referrer === 'https://www.youtube.com/'
+            ? 'https://www.youtube.com'
+            : profile.referrer;
+        headers.set('referer', { name: 'Referer', value: referrer });
+    }
     if (!headers.has('accept'))
         headers.set('accept', { name: 'Accept', value: '*/*' });
     if (!headers.has('accept-encoding'))
@@ -81,15 +85,34 @@ function prepareUpstreamRequest(entry, rangeHeader, requestNumber) {
     return { url, headers };
 }
 
+function postHeaders(headers) {
+    return {
+        ...headers,
+        // Android's HttpURLConnection supplies this default when setDoOutput(true)
+        // is used without an explicit content type. Preserve that wire-level parity
+        // together with the two-byte body.
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': String(REQUEST_BODY.length),
+    };
+}
+
+function safeContext(url, entry, rangeHeader) {
+    const safe = (value, fallback = 'unknown') => typeof value === 'string'
+        && /^[A-Za-z0-9_.-]{1,48}$/.test(value) ? value : fallback;
+    const range = parseRange(rangeHeader);
+    return [
+        `client=${safe(url.searchParams.get('c'))}`,
+        `itag=${safe(url.searchParams.get('itag'))}`,
+        `range=${range ? (isAdaptiveStream(url, entry) ? 'query' : 'header') : 'none'}`,
+    ].join(', ');
+}
+
 function upstreamRequest(url, options, redirects = 0) {
     return new Promise((resolve, reject) => {
         const transport = url.protocol === 'https:' ? https : http;
         const request = transport.request(url, {
             method: 'POST',
-            headers: {
-                ...options.headers,
-                'Content-Length': String(REQUEST_BODY.length),
-            },
+            headers: postHeaders(options.headers),
         }, (response) => {
             const status = response.statusCode ?? 0;
             const location = response.headers.location;
@@ -218,6 +241,9 @@ export class YoutubeMediaProxy {
             upstreamUrl = prepared.url;
             const headers = prepared.headers;
             const upstream = await upstreamRequest(upstreamUrl, { headers });
+            if ((upstream.statusCode ?? 0) >= 400) {
+                console.warn(`[media-proxy] Upstream HTTP ${upstream.statusCode} (${safeContext(upstreamUrl, entry, request.headers.range)})`);
+            }
             copyResponseHeaders(upstream, response);
             response.writeHead(upstream.statusCode ?? 502);
             if (request.method === 'HEAD') {
@@ -252,6 +278,9 @@ export const youtubeMediaProxyInternals = {
     isGoogleVideoPlayback,
     isAdaptiveStream,
     parseRange,
+    postHeaders,
     prepareUpstreamRequest,
     requestHeaders,
+    safeContext,
+    upstreamRequest,
 };
