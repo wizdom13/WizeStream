@@ -27,6 +27,23 @@ describe('mpv media readiness', () => {
     await expect(wait.promise).rejects.toThrow('audio-add failed');
   });
 
+  it('ignores the previous source ending before the replacement starts', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('end-file', 'old source stopped'));
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvEvent('file-loaded'));
+    await expect(wait.promise).resolves.toBeUndefined();
+  });
+
+  it('reports a replacement source that ends after it starts loading', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvEvent('end-file', 'network error'));
+    await expect(wait.promise).rejects.toThrow('network error');
+  });
+
   it('times out instead of leaving a silent black player', async () => {
     vi.useFakeTimers();
     const wait = waitForMpvMediaReady(new EventTarget(), 250);

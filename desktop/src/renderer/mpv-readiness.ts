@@ -10,6 +10,7 @@ export interface MpvReadinessWait {
 
 export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000): MpvReadinessWait {
   let settled = false;
+  let newMediaStarted = false;
   let resolvePromise!: () => void;
   let rejectPromise!: (reason: Error) => void;
   const promise = new Promise<void>((resolve, reject) => {
@@ -31,12 +32,18 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
   };
   const onLifecycleEvent = (event: Event) => {
     const detail = (event as CustomEvent<MpvLifecycleEvent>).detail ?? {};
-    if (detail.error) {
+    if (detail.type === 'start-file') {
+      newMediaStarted = true;
+    } else if (detail.type === 'file-loaded' && detail.error) {
       finish(new Error(`Media failed to load: ${detail.error}`));
     } else if (detail.type === 'file-loaded') {
       finish();
-    } else if (detail.type === 'end-file') {
-      finish(new Error('Media ended before it finished loading'));
+    } else if (detail.type === 'end-file' && newMediaStarted) {
+      finish(new Error(detail.error
+        ? `Media failed to load: ${detail.error}`
+        : 'Media ended before it finished loading'));
+    } else if (detail.error && newMediaStarted) {
+      finish(new Error(`Media failed to load: ${detail.error}`));
     }
   };
   const onPlayerError = (event: Event) => {
