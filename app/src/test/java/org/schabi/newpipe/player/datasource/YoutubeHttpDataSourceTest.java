@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getAndroidUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getIosUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getSafariUserAgent;
+import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getVisionOsUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isSafariStreamingUrl;
 
 import org.junit.Test;
@@ -52,5 +53,25 @@ public class YoutubeHttpDataSourceTest {
         final String url = STREAM_URL + "&c=IOS&cver=19.45.4";
 
         assertEquals(getIosUserAgent(null), YoutubeHttpDataSource.resolveUserAgent(url));
+    }
+
+    @Test
+    public void visionOsStreamKeepsVisionOsUserAgent() {
+        final String url = STREAM_URL + "&c=VISIONOS&cver=1.02";
+
+        assertEquals(getVisionOsUserAgent(null), YoutubeHttpDataSource.resolveUserAgent(url));
+    }
+
+    @Test
+    public void rejectedRequestDiagnosticExcludesSignedUrlData() {
+        final String url = STREAM_URL + "&c=VISIONOS&cver=1.02"
+                + "&itag=140&sig=secret-signature";
+
+        final String diagnostic = YoutubeHttpDataSource.buildSafeRequestDiagnostic(url);
+
+        assertEquals("client=VISIONOS, cver=1.02, itag=140, userAgent=VISIONOS",
+                diagnostic);
+        assertFalse(diagnostic.contains("secret-signature"));
+        assertFalse(diagnostic.contains("googlevideo.com"));
     }
 }
