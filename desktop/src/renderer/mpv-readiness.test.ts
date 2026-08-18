@@ -77,6 +77,16 @@ describe('mpv media readiness', () => {
     await expect(wait.promise).rejects.toThrow('loading failed (HTTP error 403 Forbidden)');
   });
 
+  it('keeps an HTTP failure instead of a later youtube-dl fallback warning', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvLog('HTTP error 403'));
+    target.dispatchEvent(mpvLog('Subprocess failed: init'));
+    target.dispatchEvent(mpvEvent('end-file', 'loading failed', 'error'));
+    await expect(wait.promise).rejects.toThrow('loading failed (HTTP error 403)');
+  });
+
   it('times out instead of leaving a silent black player', async () => {
     vi.useFakeTimers();
     const wait = waitForMpvMediaReady(new EventTarget(), 250);

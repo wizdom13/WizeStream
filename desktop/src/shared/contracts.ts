@@ -211,6 +211,11 @@ export interface PlayerTrack {
   url: string;
   title?: string;
   language?: string;
+  userAgent?: string;
+  referrer?: string;
+  httpHeaders?: string[];
+  httpMethod?: 'POST';
+  httpPostDataHex?: string;
 }
 
 export interface EmbeddedPlayerRequest {
@@ -221,6 +226,8 @@ export interface EmbeddedPlayerRequest {
   userAgent?: string;
   referrer?: string;
   httpHeaders?: string[];
+  httpMethod?: 'POST';
+  httpPostDataHex?: string;
 }
 
 export interface PlayerStatus {

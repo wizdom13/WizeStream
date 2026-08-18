@@ -46,6 +46,14 @@
 
 namespace {
 
+struct MediaNetworkProfile {
+  std::string user_agent = "WizeStream Desktop/0.6";
+  std::string referrer;
+  std::string http_headers;
+  std::string method;
+  std::string post_data_hex;
+};
+
 #ifdef __linux__
 void linux_module_anchor() {}
 
@@ -308,6 +316,9 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       set_option("audio-display", "no");
       set_option("pause", "yes");
       set_option("keep-open", "yes");
+      // WizeStream resolves media itself. Do not invoke an unbundled youtube-dl
+      // subprocess when a resolved URL reports a network error.
+      set_option("ytdl", "no");
       const char* hwdec = std::getenv("MPV_HWDEC");
 #ifdef _WIN32
       set_option("hwdec", hwdec && hwdec[0] ? hwdec : "no");
@@ -436,6 +447,47 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     return mpv_command(handle_, c_args.data());
   }
 
+  MediaNetworkProfile network_profile(const Napi::Object& request) {
+    MediaNetworkProfile profile;
+    if (request.Has("userAgent") && request.Get("userAgent").IsString())
+      profile.user_agent = request.Get("userAgent").As<Napi::String>().Utf8Value();
+    if (request.Has("referrer") && request.Get("referrer").IsString())
+      profile.referrer = request.Get("referrer").As<Napi::String>().Utf8Value();
+    if (request.Has("httpHeaders") && request.Get("httpHeaders").IsArray()) {
+      Napi::Array headers = request.Get("httpHeaders").As<Napi::Array>();
+      for (uint32_t index = 0; index < headers.Length(); index++) {
+        Napi::Value value = headers.Get(index);
+        if (!value.IsString()) continue;
+        if (!profile.http_headers.empty()) profile.http_headers += ",";
+        profile.http_headers += value.As<Napi::String>().Utf8Value();
+      }
+    }
+    if (request.Has("httpMethod") && request.Get("httpMethod").IsString())
+      profile.method = request.Get("httpMethod").As<Napi::String>().Utf8Value();
+    if (request.Has("httpPostDataHex") && request.Get("httpPostDataHex").IsString())
+      profile.post_data_hex = request.Get("httpPostDataHex").As<Napi::String>().Utf8Value();
+    return profile;
+  }
+
+  int apply_network_profile(const MediaNetworkProfile& profile) {
+    const bool post = profile.method == "POST";
+    // Newer mpv builds prefer curl for HTTP, but FFmpeg's HTTP protocol is
+    // needed for a POST body. Older mpv builds already use FFmpeg and do not
+    // expose curl-enabled, so PROPERTY_NOT_FOUND is intentionally ignored.
+    int ret = mpv_set_property_string(handle_, "curl-enabled", post ? "no" : "yes");
+    if (ret < 0 && ret != MPV_ERROR_PROPERTY_NOT_FOUND) return ret;
+    const std::string lavf_options = post
+        ? "method=POST,post_data=" + profile.post_data_hex
+        : "";
+    ret = mpv_set_property_string(handle_, "stream-lavf-o", lavf_options.c_str());
+    if (ret < 0) return ret;
+    ret = mpv_set_property_string(handle_, "user-agent", profile.user_agent.c_str());
+    if (ret < 0) return ret;
+    ret = mpv_set_property_string(handle_, "referrer", profile.referrer.c_str());
+    if (ret < 0) return ret;
+    return mpv_set_property_string(handle_, "http-header-fields", profile.http_headers.c_str());
+  }
+
   static void call_js_no_args(Napi::Env env, Napi::Function callback) {
     callback.Call({});
   }
@@ -464,7 +516,12 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     loaded_ = false;
     pending_audio_ = false;
     pending_subtitle_ = false;
-    int ret = command({"loadfile", path, "replace"});
+    int ret = apply_network_profile(MediaNetworkProfile{});
+    if (ret < 0) {
+      throw_mpv_error(env, "reset media request", ret);
+      return env.Undefined();
+    }
+    ret = command({"loadfile", path, "replace"});
     if (ret < 0) throw_mpv_error(env, "loadfile", ret);
     has_external_audio_ = false;
     has_external_subtitle_ = false;
@@ -486,23 +543,7 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     loaded_ = false;
     pending_audio_ = false;
     pending_subtitle_ = false;
-    const std::string user_agent = request.Has("userAgent") && request.Get("userAgent").IsString()
-        ? request.Get("userAgent").As<Napi::String>().Utf8Value() : "WizeStream Desktop/0.6";
-    const std::string referrer = request.Has("referrer") && request.Get("referrer").IsString()
-        ? request.Get("referrer").As<Napi::String>().Utf8Value() : "";
-    std::string http_headers;
-    if (request.Has("httpHeaders") && request.Get("httpHeaders").IsArray()) {
-      Napi::Array headers = request.Get("httpHeaders").As<Napi::Array>();
-      for (uint32_t index = 0; index < headers.Length(); index++) {
-        Napi::Value value = headers.Get(index);
-        if (!value.IsString()) continue;
-        if (!http_headers.empty()) http_headers += ",";
-        http_headers += value.As<Napi::String>().Utf8Value();
-      }
-    }
-    int ret = mpv_set_property_string(handle_, "user-agent", user_agent.c_str());
-    if (ret >= 0) ret = mpv_set_property_string(handle_, "referrer", referrer.c_str());
-    if (ret >= 0) ret = mpv_set_property_string(handle_, "http-header-fields", http_headers.c_str());
+    int ret = apply_network_profile(network_profile(request));
     if (ret < 0) {
       throw_mpv_error(env, "configure media request", ret);
       return env.Undefined();
@@ -541,19 +582,27 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
         ? track.Get("title").As<Napi::String>().Utf8Value() : "";
     const std::string language = track.Has("language") && track.Get("language").IsString()
         ? track.Get("language").As<Napi::String>().Utf8Value() : "";
+    const MediaNetworkProfile profile = network_profile(track);
     if (!loaded_) {
       if (audio) {
         pending_audio_ = true;
         pending_audio_url_ = url;
         pending_audio_title_ = title;
         pending_audio_language_ = language;
+        pending_audio_network_ = profile;
       } else {
         pending_subtitle_ = true;
         pending_subtitle_url_ = url;
         pending_subtitle_title_ = title;
         pending_subtitle_language_ = language;
+        pending_subtitle_network_ = profile;
       }
       return true;
+    }
+    const int profile_ret = apply_network_profile(profile);
+    if (profile_ret < 0) {
+      throw_mpv_error(env, audio ? "configure audio request" : "configure subtitle request", profile_ret);
+      return false;
     }
     const char* action = audio ? "audio-add" : "sub-add";
     const int ret = command({action, url, "select", title, language});
@@ -1076,15 +1125,17 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       if (event->event_id == MPV_EVENT_FILE_LOADED) {
         loaded_ = true;
         if (pending_audio_) {
-          const int ret = command({"audio-add", pending_audio_url_, "select",
-                                   pending_audio_title_, pending_audio_language_});
+          int ret = apply_network_profile(pending_audio_network_);
+          if (ret >= 0) ret = command({"audio-add", pending_audio_url_, "select",
+                                      pending_audio_title_, pending_audio_language_});
           pending_audio_ = false;
           if (ret < 0) item.Set("error", "audio-add failed: " + mpv_error_text(ret));
           else has_external_audio_ = true;
         }
         if (pending_subtitle_) {
-          const int ret = command({"sub-add", pending_subtitle_url_, "select",
-                                   pending_subtitle_title_, pending_subtitle_language_});
+          int ret = apply_network_profile(pending_subtitle_network_);
+          if (ret >= 0) ret = command({"sub-add", pending_subtitle_url_, "select",
+                                      pending_subtitle_title_, pending_subtitle_language_});
           pending_subtitle_ = false;
           if (ret < 0) item.Set("error", "sub-add failed: " + mpv_error_text(ret));
           else has_external_subtitle_ = true;
@@ -1599,6 +1650,8 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
   std::string pending_subtitle_url_;
   std::string pending_subtitle_title_;
   std::string pending_subtitle_language_;
+  MediaNetworkProfile pending_audio_network_;
+  MediaNetworkProfile pending_subtitle_network_;
   std::string mode_ = "software";
   int64_t timestamp_us_ = 0;
 #ifdef __APPLE__

@@ -11,6 +11,8 @@ describe('mediaNetworkProfile', () => {
     expect(profile.userAgent).toContain('Version/15.5 Safari/605.1.15');
     expect(profile.referrer).toBe('https://www.youtube.com/');
     expect(profile.httpHeaders).toContain('Origin: https://www.youtube.com');
+    expect(profile.httpMethod).toBe('POST');
+    expect(profile.httpPostDataHex).toBe('7800');
   });
 
   it('uses the normal desktop identity for regular WEB streams', () => {
@@ -29,6 +31,7 @@ describe('mediaNetworkProfile', () => {
 
     expect(profile.userAgent).toContain(expectedUserAgent);
     expect(profile.referrer).toBeUndefined();
+    expect(profile.httpMethod).toBe('POST');
   });
 
   it('does not attach YouTube headers to unrelated sources', () => {

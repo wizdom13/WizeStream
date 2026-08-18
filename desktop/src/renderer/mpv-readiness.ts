@@ -15,6 +15,7 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
   let settled = false;
   let newMediaStarted = false;
   let lastLoadDiagnostic: string | undefined;
+  let lastLoadDiagnosticPriority = 0;
   let resolvePromise!: () => void;
   let rejectPromise!: (reason: Error) => void;
   const promise = new Promise<void>((resolve, reject) => {
@@ -38,7 +39,14 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
     const detail = (event as CustomEvent<MpvLifecycleEvent>).detail ?? {};
     if (detail.type === 'log-message' && typeof detail.data === 'string'
       && (detail.level === 'error' || detail.level === 'fatal' || detail.level === 'warn')) {
-      lastLoadDiagnostic = detail.data.trim().replace(/\s+/g, ' ').slice(0, 300) || undefined;
+      const diagnostic = detail.data.trim().replace(/\s+/g, ' ').slice(0, 300);
+      const priority = /HTTP error\s+\d{3}/i.test(diagnostic) ? 3
+        : /failed to open/i.test(diagnostic) ? 2
+          : /subprocess|youtube-dl/i.test(diagnostic) ? 0 : 1;
+      if (diagnostic && priority >= lastLoadDiagnosticPriority) {
+        lastLoadDiagnostic = diagnostic;
+        lastLoadDiagnosticPriority = priority;
+      }
     } else if (detail.type === 'start-file') {
       newMediaStarted = true;
     } else if (detail.type === 'file-loaded' && detail.error) {

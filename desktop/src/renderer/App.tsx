@@ -1985,7 +1985,12 @@ function mimeType(format: string | undefined, kind: 'video' | 'audio' | 'caption
 }
 
 function playerTrack(stream: StreamVariant | SubtitleVariant, title: string) {
-  return { url: stream.url, title, language: 'languageTag' in stream ? stream.languageTag : stream.audioLocale };
+  return {
+    url: stream.url,
+    title,
+    language: 'languageTag' in stream ? stream.languageTag : stream.audioLocale,
+    ...mediaNetworkProfile(stream.url),
+  };
 }
 
 function downloadSource(stream: StreamVariant | SubtitleVariant, kind: 'video' | 'audio' | 'caption'): DownloadSource {
