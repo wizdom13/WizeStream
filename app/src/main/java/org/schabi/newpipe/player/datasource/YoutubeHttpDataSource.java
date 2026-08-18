@@ -719,11 +719,32 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
 
     @NonNull
     static String buildSafeRequestDiagnostic(@NonNull final String requestUrl) {
-        final Uri uri = Uri.parse(requestUrl);
-        return "client=" + safeDiagnosticValue(uri.getQueryParameter("c"))
-                + ", cver=" + safeDiagnosticValue(uri.getQueryParameter("cver"))
-                + ", itag=" + safeDiagnosticValue(uri.getQueryParameter("itag"))
+        return "client=" + safeDiagnosticValue(getQueryParameter(requestUrl, "c"))
+                + ", cver=" + safeDiagnosticValue(getQueryParameter(requestUrl, "cver"))
+                + ", itag=" + safeDiagnosticValue(getQueryParameter(requestUrl, "itag"))
                 + ", userAgent=" + resolveUserAgentFamily(requestUrl);
+    }
+
+    @Nullable
+    private static String getQueryParameter(@NonNull final String requestUrl,
+                                            @NonNull final String name) {
+        try {
+            final String query = new URL(requestUrl).getQuery();
+            if (query == null) {
+                return null;
+            }
+            for (final String parameter : query.split("&")) {
+                final int separator = parameter.indexOf('=');
+                final String parameterName = separator < 0
+                        ? parameter : parameter.substring(0, separator);
+                if (name.equals(parameterName)) {
+                    return separator < 0 ? "" : parameter.substring(separator + 1);
+                }
+            }
+        } catch (final MalformedURLException ignored) {
+            // Diagnostics must never interfere with playback error handling.
+        }
+        return null;
     }
 
     @NonNull
