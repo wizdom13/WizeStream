@@ -204,10 +204,10 @@ class PlayerSession {
         this.paused = true;
         this.stopped = true;
     }
-    seek(seconds) {
+    seek(seconds, exact = true) {
         this.assertAlive();
         const nextTime = Math.max(0, finiteNumber(seconds, 'seconds'));
-        this.player.seek(nextTime);
+        this.player.seek(nextTime, exact);
         this.currentTime = nextTime;
     }
     setVolume(value) {
@@ -563,7 +563,11 @@ class MpvMainService {
         electron.ipcMain.handle(channel('player:play'), async (event, id) => this.getOwnedSession(event, id).play());
         electron.ipcMain.handle(channel('player:pause'), async (event, id) => this.getOwnedSession(event, id).pause());
         electron.ipcMain.handle(channel('player:stop'), async (event, id) => this.getOwnedSession(event, id).stop());
-        electron.ipcMain.handle(channel('player:seek'), async (event, id, seconds) => this.getOwnedSession(event, id).seek(finiteNumber(seconds, 'seconds')));
+        electron.ipcMain.handle(channel('player:seek'), async (event, id, seconds, exact = true) => {
+            if (typeof exact !== 'boolean')
+                throw new TypeError('exact must be a boolean');
+            this.getOwnedSession(event, id).seek(finiteNumber(seconds, 'seconds'), exact);
+        });
         electron.ipcMain.handle(channel('player:set-volume'), async (event, id, value) => this.getOwnedSession(event, id).setVolume(finiteNumber(value, 'volume')));
         electron.ipcMain.handle(channel('player:set-equalizer'), async (event, id, gains) => this.getOwnedSession(event, id).setEqualizer(normalizeEqualizerGains(gains)));
         electron.ipcMain.handle(channel('player:set-playback-parameters'), async (event, id, speed, pitch, skipSilence) => {

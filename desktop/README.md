@@ -30,6 +30,12 @@ The desktop architecture contains:
 - Play video and audio inside the application, choose available video, audio and caption tracks,
   adjust volume, mute, equalizer, speed and pitch, skip silence, use a sleep timer, and open
   supported local media files.
+- Keep a persistent playback queue with next and previous navigation, reordering, repeat, shuffle,
+  autoplay and optional related-video enqueueing.
+- Navigate available chapters and preview storyboard thumbnails while seeking, with configurable
+  seek steps and exact or faster keyframe seeking.
+- Remember quality, audio, captions and playback speed for each channel, including optional live
+  stream speed retention.
 - View comments, related items and descriptions while playing, together with video views, likes,
   dislikes, channel avatars and subscriber counts where available.
 - Skip or mark supported SponsorBlock segments using per-category Desktop settings.

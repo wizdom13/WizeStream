@@ -73,6 +73,36 @@ describe('SettingsManager', () => {
     });
   });
 
+  it('adds Milestone 1 playback defaults to older Desktop settings', async () => {
+    const filePath = await fixture();
+    const legacySettings: Record<string, unknown> = { ...defaultDesktopSettings };
+    delete legacySettings.autoplayNext;
+    delete legacySettings.autoQueueRelated;
+    delete legacySettings.clearQueueConfirmation;
+    delete legacySettings.seekDurationSeconds;
+    delete legacySettings.useInexactSeek;
+    delete legacySettings.startPlayerFullscreen;
+    delete legacySettings.preferredOpenAction;
+    delete legacySettings.perChannelPlaybackProfiles;
+    delete legacySettings.rememberLiveStreamSpeed;
+    delete legacySettings.channelPlaybackProfiles;
+    await writeFile(filePath, JSON.stringify(legacySettings));
+
+    const manager = new SettingsManager(filePath);
+    expect(await manager.initialize()).toMatchObject({
+      autoplayNext: true,
+      autoQueueRelated: true,
+      clearQueueConfirmation: true,
+      seekDurationSeconds: 10,
+      useInexactSeek: false,
+      startPlayerFullscreen: false,
+      preferredOpenAction: 'details',
+      perChannelPlaybackProfiles: true,
+      rememberLiveStreamSpeed: true,
+      channelPlaybackProfiles: {},
+    });
+  });
+
   it('rejects unknown or invalid settings', async () => {
     const manager = new SettingsManager(await fixture());
     await manager.initialize();

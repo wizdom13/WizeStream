@@ -1,4 +1,6 @@
-import type { DesktopSettings, StreamDetails, StreamVariant } from '../shared/contracts';
+import type {
+  ChannelPlaybackProfile, DesktopSettings, StreamDetails, StreamVariant,
+} from '../shared/contracts';
 
 const videoFormats: Record<DesktopSettings['defaultVideoFormat'], string[]> = {
   video_mp4: ['mp4', 'mpeg-4', 'mpeg4'],
@@ -17,6 +19,13 @@ function formatMatches(stream: StreamVariant, formats: string[]): boolean {
 }
 
 export function preferredVideoIndex(details: StreamDetails, settings: DesktopSettings): number | undefined {
+  const profile = channelPlaybackProfile(details, settings);
+  if (profile?.videoResolution || profile?.videoFormat) {
+    const index = details.videoStreams.findIndex((stream) =>
+      (!profile.videoResolution || stream.resolution === profile.videoResolution)
+      && (!profile.videoFormat || stream.format === profile.videoFormat));
+    if (index >= 0) return index;
+  }
   const formats = videoFormats[settings.defaultVideoFormat];
   const preferredResolution = settings.defaultResolution.toLowerCase();
   const preferredHeight = preferredResolution.match(/\d+p/)?.[0];
@@ -37,6 +46,13 @@ export function preferredVideoIndex(details: StreamDetails, settings: DesktopSet
 }
 
 export function preferredAudioIndex(details: StreamDetails, settings: DesktopSettings): number | undefined {
+  const profile = channelPlaybackProfile(details, settings);
+  if (profile?.audioTrackId || profile?.audioLocale) {
+    const index = details.audioStreams.findIndex((stream) =>
+      (!profile.audioTrackId || stream.audioTrackId === profile.audioTrackId)
+      && (!profile.audioLocale || stream.audioLocale === profile.audioLocale));
+    if (index >= 0) return index;
+  }
   const formats = audioFormats[settings.defaultAudioFormat];
   let bestScore = 0;
   let bestIndex: number | undefined;
@@ -47,4 +63,36 @@ export function preferredAudioIndex(details: StreamDetails, settings: DesktopSet
     if (score > bestScore) { bestScore = score; bestIndex = index; }
   });
   return bestIndex;
+}
+
+export function preferredSubtitleIndex(details: StreamDetails, settings: DesktopSettings): number | undefined {
+  const profile = channelPlaybackProfile(details, settings);
+  if (!profile || profile.subtitleLanguageTag == null) return undefined;
+  const index = details.subtitles.findIndex((subtitle) => subtitle.languageTag === profile.subtitleLanguageTag);
+  return index >= 0 ? index : undefined;
+}
+
+export function channelProfileKey(details: Pick<StreamDetails, 'serviceId' | 'uploaderUrl' | 'uploaderName'>) {
+  const identity = details.uploaderUrl?.trim() || details.uploaderName?.trim();
+  return identity ? `${details.serviceId}:${identity}` : undefined;
+}
+
+export function channelPlaybackProfile(details: StreamDetails, settings: DesktopSettings) {
+  if (!settings.perChannelPlaybackProfiles) return undefined;
+  const key = channelProfileKey(details);
+  return key ? settings.channelPlaybackProfiles[key] : undefined;
+}
+
+export function updatedChannelProfile(
+  details: StreamDetails,
+  settings: DesktopSettings,
+  patch: Partial<ChannelPlaybackProfile>,
+): Record<string, ChannelPlaybackProfile> | undefined {
+  if (!settings.perChannelPlaybackProfiles) return undefined;
+  const key = channelProfileKey(details);
+  if (!key) return undefined;
+  return {
+    ...settings.channelPlaybackProfiles,
+    [key]: { ...settings.channelPlaybackProfiles[key], ...patch, updatedAt: Date.now() },
+  };
 }

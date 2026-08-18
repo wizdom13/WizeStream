@@ -85,7 +85,7 @@ function createPlayerSession(id) {
         play: () => electron.ipcRenderer.invoke(channel('player:play'), id),
         pause: () => electron.ipcRenderer.invoke(channel('player:pause'), id),
         stop: () => electron.ipcRenderer.invoke(channel('player:stop'), id),
-        seek: (seconds) => electron.ipcRenderer.invoke(channel('player:seek'), id, seconds),
+        seek: (seconds, exact = true) => electron.ipcRenderer.invoke(channel('player:seek'), id, seconds, exact),
         setVolume: (value) => electron.ipcRenderer.invoke(channel('player:set-volume'), id, value),
         setEqualizer: (gains) => electron.ipcRenderer.invoke(channel('player:set-equalizer'), id, gains),
         setPlaybackParameters: (speed, pitch, skipSilence) => electron.ipcRenderer.invoke(channel('player:set-playback-parameters'), id, speed, pitch, skipSilence),

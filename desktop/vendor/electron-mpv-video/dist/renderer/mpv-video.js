@@ -419,9 +419,9 @@ export class MpvVideoElement extends HTMLElement {
         await this.ensureReady();
         await this.player?.stop();
     }
-    async seek(seconds) {
+    async seek(seconds, exact = true) {
         await this.ensureReady();
-        await this.player?.seek(seconds);
+        await this.player?.seek(seconds, exact);
     }
     async setVolume(value) {
         await this.ensureReady();

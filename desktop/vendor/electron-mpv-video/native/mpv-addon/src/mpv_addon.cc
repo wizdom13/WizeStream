@@ -598,7 +598,13 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
       return env.Undefined();
     }
     double seconds = info[0].As<Napi::Number>().DoubleValue();
-    int ret = command({"seek", std::to_string(seconds), "absolute"});
+    const bool exact = info.Length() < 2 || info[1].IsUndefined()
+        || (info[1].IsBoolean() && info[1].As<Napi::Boolean>().Value());
+    if (info.Length() >= 2 && !info[1].IsUndefined() && !info[1].IsBoolean()) {
+      Napi::TypeError::New(env, "seek exact flag must be a boolean").ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+    int ret = command({"seek", std::to_string(seconds), exact ? "absolute+exact" : "absolute"});
     if (ret < 0) throw_mpv_error(env, "seek", ret);
     return env.Undefined();
   }

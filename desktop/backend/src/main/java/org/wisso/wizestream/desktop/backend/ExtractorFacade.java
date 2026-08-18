@@ -18,9 +18,11 @@ import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockApiSettings;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Description;
+import org.schabi.newpipe.extractor.stream.Frameset;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+import org.schabi.newpipe.extractor.stream.StreamSegment;
 import org.schabi.newpipe.extractor.stream.SubtitlesStream;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 
@@ -195,7 +197,31 @@ final class ExtractorFacade {
         value.put("videoStreams", videoStreams(info));
         value.put("audioStreams", audioStreams(info));
         value.put("subtitles", subtitles(info));
+        value.put("chapters", info.getStreamSegments().stream().map(this::chapter).toList());
+        value.put("previewFrames", info.getPreviewFrames().stream().map(this::previewFrameset).toList());
         value.put("sponsorBlockSegments", sponsorBlockSegments(info));
+        return value;
+    }
+
+    private Map<String, Object> chapter(final StreamSegment segment) {
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("title", segment.getTitle());
+        value.put("startTimeSeconds", segment.getStartTimeSeconds());
+        value.put("channelName", blankToNull(segment.getChannelName()));
+        value.put("url", blankToNull(segment.getUrl()));
+        value.put("previewUrl", blankToNull(segment.getPreviewUrl()));
+        return value;
+    }
+
+    private Map<String, Object> previewFrameset(final Frameset frameset) {
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("urls", frameset.getUrls());
+        value.put("frameWidth", frameset.getFrameWidth());
+        value.put("frameHeight", frameset.getFrameHeight());
+        value.put("totalCount", frameset.getTotalCount());
+        value.put("durationPerFrame", frameset.getDurationPerFrame());
+        value.put("framesPerPageX", frameset.getFramesPerPageX());
+        value.put("framesPerPageY", frameset.getFramesPerPageY());
         return value;
     }
 

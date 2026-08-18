@@ -42,7 +42,7 @@ export declare class MpvVideoElement extends HTMLElement {
     play(): Promise<void>;
     pause(): Promise<void>;
     stop(): Promise<void>;
-    seek(seconds: number): Promise<void>;
+    seek(seconds: number, exact?: boolean): Promise<void>;
     setVolume(value: number): Promise<void>;
     setEqualizer(gains?: number[]): Promise<void>;
     setPlaybackParameters(speed: number, pitch: number, skipSilence: boolean): Promise<void>;

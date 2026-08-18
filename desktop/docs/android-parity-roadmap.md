@@ -8,17 +8,20 @@ supported build targets.
 
 ## Milestone 1 — Playback foundation
 
-- Implement a persistent playback queue.
-- Add next, previous, reorder, remove and clear controls.
-- Add repeat-one, repeat-all and shuffle.
-- Add autoplay and automatic related-video enqueueing.
-- Extend the sleep timer with end-of-video and end-of-queue modes.
-- Add chapter navigation.
-- Add seek-bar preview thumbnails.
-- Add configurable seek duration and precise or inexact seeking.
-- Remember speed for live streams.
-- Add per-channel profiles for quality, audio, captions and playback speed.
-- Add configurable start-fullscreen and preferred opening actions.
+Status: implemented in the Desktop client. Release validation remains part of the normal Desktop CI
+and beta acceptance process.
+
+- [x] Implement a persistent playback queue.
+- [x] Add next, previous, reorder, remove and clear controls.
+- [x] Add repeat-one, repeat-all and shuffle.
+- [x] Add autoplay and automatic related-video enqueueing.
+- [x] Extend the sleep timer with end-of-video and end-of-queue modes.
+- [x] Add chapter navigation.
+- [x] Add seek-bar preview thumbnails.
+- [x] Add configurable seek duration and precise or inexact seeking.
+- [x] Remember speed for live streams.
+- [x] Add per-channel profiles for quality, audio, captions and playback speed.
+- [x] Add configurable start-fullscreen and preferred opening actions.
 
 ## Milestone 2 — Desktop playback modes
 

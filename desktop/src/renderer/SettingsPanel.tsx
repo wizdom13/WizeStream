@@ -141,6 +141,24 @@ export function SettingsPanel({ settings, services, currentVersion, onUpdate, on
         <Divider component="li" /><SettingAction icon={<EqualizerRounded />} title="Equalizer"
           summary={`${settings.equalizer.enabled ? 'On' : 'Off'} · ${equalizerPresetLabel(settings.equalizer.preset)} · Five presets and one custom curve`}
           action="Open" onClick={() => setEqualizerOpen(true)} />
+        <Divider component="li" /><SettingSwitch title="Autoplay next video" summary="Continue with the next item in the playback queue" checked={settings.autoplayNext} onChange={(checked) => void update({ autoplayNext: checked })} />
+        <Divider component="li" /><SettingSwitch title="Auto-queue related videos" summary="Add a related video when the queue reaches its end" checked={settings.autoQueueRelated} onChange={(checked) => void update({ autoQueueRelated: checked })} />
+        <Divider component="li" /><SettingSelect title="Preferred open action" value={settings.preferredOpenAction}
+          onChange={(value) => void update({ preferredOpenAction: value as DesktopSettings['preferredOpenAction'] })}
+          options={[["details", "Show video details"], ["play", "Play immediately"], ["enqueue", "Add to queue"]]} />
+        <Divider component="li" /><SettingSwitch title="Start player fullscreen" summary="Request fullscreen when embedded playback starts" checked={settings.startPlayerFullscreen} onChange={(checked) => void update({ startPlayerFullscreen: checked })} />
+        <Divider component="li" /><SettingSelect title="Seek duration" value={String(settings.seekDurationSeconds)}
+          onChange={(value) => void update({ seekDurationSeconds: Number(value) as DesktopSettings['seekDurationSeconds'] })}
+          options={[["5", "5 seconds"], ["10", "10 seconds"], ["15", "15 seconds"], ["30", "30 seconds"], ["60", "60 seconds"]]} />
+        <Divider component="li" /><SettingSwitch title="Use inexact seeking" summary="Seek to nearby keyframes for faster navigation on slower streams" checked={settings.useInexactSeek} onChange={(checked) => void update({ useInexactSeek: checked })} />
+        <Divider component="li" /><SettingSwitch title="Confirm before clearing queue" summary="Ask before removing every queued item" checked={settings.clearQueueConfirmation} onChange={(checked) => void update({ clearQueueConfirmation: checked })} />
+        <Divider component="li" /><SettingSwitch title="Per-channel playback profiles" summary="Remember quality, audio, captions and speed for each channel" checked={settings.perChannelPlaybackProfiles} onChange={(checked) => void update({ perChannelPlaybackProfiles: checked })} />
+        <Divider component="li" /><SettingSwitch title="Remember speed for live streams" summary="Retain the selected playback speed when opening another live stream" checked={settings.rememberLiveStreamSpeed} onChange={(checked) => void update({ rememberLiveStreamSpeed: checked })} />
+        <Divider component="li" /><SettingAction icon={<CleaningServicesRounded />} title="Clear channel playback profiles"
+          summary={`${Object.keys(settings.channelPlaybackProfiles).length} saved channel profile(s)`} action="Clear"
+          disabled={Object.keys(settings.channelPlaybackProfiles).length === 0} onClick={() => {
+            if (window.confirm('Clear all saved channel playback profiles?')) void update({ channelPlaybackProfiles: {} });
+          }} />
       </List>}
       {category === 'download' && <SettingAction icon={<DownloadRounded />} title="Download folder" summary="Media and captions are stored in the WizeStream folder inside your system Downloads folder." action="Open folder" onClick={onOpenDownloads} />}
       {category === 'appearance' && <List disablePadding><SettingSelect title="Theme" value={settings.theme} onChange={(value) => void update({ theme: value as DesktopSettings['theme'] })}

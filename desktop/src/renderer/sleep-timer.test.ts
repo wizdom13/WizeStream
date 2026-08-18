@@ -16,6 +16,12 @@ describe('desktop sleep timer', () => {
     expect(sleepTimerStatus(timer, 91_000)).toBe('Ends after the current video · 1:31 remaining');
   });
 
+  it('shows current-video time while waiting for the end of the queue', () => {
+    const timer: SleepTimerState = { mode: 'end_queue', fadeOut: true };
+    expect(sleepTimerRemainingMillis(timer, 0, 20)).toBe(20_000);
+    expect(sleepTimerStatus(timer, -1)).toBe('Ends after the queue');
+  });
+
   it('fades linearly during the final thirty seconds', () => {
     const timer: SleepTimerState = { mode: 'duration', deadline: 20_000, fadeOut: true };
     expect(sleepTimerFadeMultiplier(timer, 30_000)).toBe(1);

@@ -32,11 +32,14 @@ import PlaylistPlayRounded from '@mui/icons-material/PlaylistPlayRounded';
 import PlayArrowRounded from '@mui/icons-material/PlayArrowRounded';
 import ReplayRounded from '@mui/icons-material/ReplayRounded';
 import QueuePlayNextRounded from '@mui/icons-material/QueuePlayNextRounded';
+import QueueMusicRounded from '@mui/icons-material/QueueMusicRounded';
 import SchoolRounded from '@mui/icons-material/SchoolRounded';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import SettingsRounded from '@mui/icons-material/SettingsRounded';
 import SpeedRounded from '@mui/icons-material/SpeedRounded';
 import StopRounded from '@mui/icons-material/StopRounded';
+import SkipNextRounded from '@mui/icons-material/SkipNextRounded';
+import SkipPreviousRounded from '@mui/icons-material/SkipPreviousRounded';
 import SubscriptionsRounded from '@mui/icons-material/SubscriptionsRounded';
 import SystemUpdateAltRounded from '@mui/icons-material/SystemUpdateAltRounded';
 import ThumbDownRounded from '@mui/icons-material/ThumbDownRounded';
@@ -65,7 +68,10 @@ import {
   activeSponsorBlockSegment, sponsorBlockCategoryColor, sponsorBlockCategoryTitle,
   sponsorBlockSegmentKey, validSponsorBlockSegments,
 } from './sponsor-block';
-import { preferredAudioIndex, preferredVideoIndex } from './stream-preferences';
+import {
+  channelPlaybackProfile, preferredAudioIndex, preferredSubtitleIndex, preferredVideoIndex,
+  updatedChannelProfile,
+} from './stream-preferences';
 import { EqualizerDialog } from './EqualizerDialog';
 import { equalizerHeadroomMultiplier, equalizerPresetLabel } from './equalizer';
 import { PlaybackParametersDialog } from './PlaybackParametersDialog';
@@ -75,6 +81,13 @@ import {
   inactiveSleepTimer, sleepTimerFadeMultiplier, sleepTimerRemainingMillis, sleepTimerStatus,
   type SleepTimerState,
 } from './sleep-timer';
+import {
+  adjacentQueueIndex, emptyPlaybackQueue, enqueue, loadPlaybackQueue, moveQueueItem,
+  playNext, playNow, removeQueueItem, savePlaybackQueue, searchItemToLibraryStream,
+  type PlaybackQueueState,
+} from './playback-queue';
+import { previewFrameAt } from './stream-preview';
+import { PlaybackQueueDialog } from './PlaybackQueueDialog';
 
 defineMpvVideoElement();
 
@@ -99,7 +112,7 @@ const feedFilters: Array<{ id: Exclude<FeedFilter, 'none'>; label: string }> = [
   { id: 'shorts', label: 'Shorts' },
   { id: 'partially-watched', label: 'Partially watched' },
 ];
-type SleepTimerChoice = '15' | '30' | '45' | '60' | 'end_current' | 'custom';
+type SleepTimerChoice = '15' | '30' | '45' | '60' | 'end_current' | 'end_queue' | 'custom';
 
 function loadPlayerVolume() {
   const stored = Number(window.localStorage.getItem('wizestream.desktop.player.volume.v1'));
@@ -135,6 +148,8 @@ export function App() {
   const [updateState, setUpdateState] = useState<UpdateState>();
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [settings, setSettings] = useState<DesktopSettings>(defaultDesktopSettings);
+  const [queue, setQueue] = useState<PlaybackQueueState>(() => loadPlaybackQueue(window.localStorage));
+  const [queueOpen, setQueueOpen] = useState(false);
 
   const loadSubscriptionFeed = useCallback(async (refresh = false) => {
     setFeedLoading(true); setFeedError(undefined);
@@ -171,6 +186,8 @@ export function App() {
 
   useEffect(() => { setMode(settings.theme); }, [setMode, settings.theme]);
 
+  useEffect(() => { savePlaybackQueue(window.localStorage, queue); }, [queue]);
+
   useEffect(() => {
     void window.wizestream.updates.state().then((state) => {
       setUpdateState(state);
@@ -189,6 +206,13 @@ export function App() {
   const selectedPlaybackUrl = playbackSelection?.source;
   const selectedSubtitle = playbackSelection?.subtitle;
   const selectedLibraryStream = useMemo(() => selected ? detailsToLibraryStream(selected) : undefined, [selected]);
+  const selectedPlaybackParameters = useMemo(() => {
+    if (!selected) return settings.playbackParameters;
+    const profile = channelPlaybackProfile(selected, settings);
+    const speed = isLiveStream(selected) && !settings.rememberLiveStreamSpeed
+      ? 1 : profile?.speed ?? settings.playbackParameters.speed;
+    return { ...settings.playbackParameters, speed };
+  }, [selected, settings]);
   const effectiveAudio = playbackSelection?.audio;
   const embeddedSelection = Boolean(mpv?.embeddedAvailable && selectedPlaybackUrl);
   const showPlayingInfo = Boolean(selected && (embeddedRequest || mpv?.running));
@@ -220,7 +244,36 @@ export function App() {
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
   }
 
-  const resolveStream = useCallback(async (url: string, startPosition = 0) => {
+  async function startResolvedPlayback(
+    details: StreamDetails,
+    choices: { video: string; audio: string; subtitle: string },
+    startPosition = 0,
+    ensureQueued = true,
+  ) {
+    const selection = resolvePlaybackSelection(details, choices.video, choices.audio, choices.subtitle);
+    if (!selection.source) throw new Error('No playable stream is available');
+    const libraryStream = detailsToLibraryStream(details);
+    if (ensureQueued) setQueue((current) => playNow(current, libraryStream));
+    if (mpv?.embeddedAvailable) {
+      setEmbeddedRequest({
+        source: selection.source, title: details.name, nonce: Date.now(), startSeconds: startPosition,
+        audio: selection.audio ? playerTrack(selection.audio, audioLabel(selection.audio)) : undefined,
+        subtitle: selection.subtitle ? playerTrack(selection.subtitle, subtitleLabel(selection.subtitle)) : undefined,
+      });
+    } else {
+      await window.wizestream.player.play({
+        url: selection.source, title: details.name, audioUrl: selection.audio?.url,
+        subtitleUrl: selection.subtitle?.url, startSeconds: startPosition,
+      });
+    }
+    if (settings.enableWatchHistory) {
+      await window.wizestream.backend.invoke('library.history.record', { ...libraryStream });
+    }
+    setResumePosition(0);
+    setMpv(await window.wizestream.player.status());
+  }
+
+  async function resolveStream(url: string, startPosition = 0, options?: { play?: boolean; queueIndex?: number }) {
     setLoading(true); setError(undefined);
     try {
       const details = await window.wizestream.backend.invoke<StreamDetails>('stream.resolve', {
@@ -229,46 +282,49 @@ export function App() {
       setSelected(details);
       const videoIndex = preferredVideoIndex(details, settings);
       const audioIndex = preferredAudioIndex(details, settings);
-      setVideoChoice(videoIndex === undefined ? 'auto' : String(videoIndex));
-      setAudioChoice(audioIndex === undefined ? 'auto' : String(audioIndex));
-      setSubtitleChoice('none'); setResumePosition(Math.max(0, startPosition)); setEmbeddedRequest(undefined);
+      const subtitleIndex = preferredSubtitleIndex(details, settings);
+      const choices = {
+        video: videoIndex === undefined ? 'auto' : String(videoIndex),
+        audio: audioIndex === undefined ? 'auto' : String(audioIndex),
+        subtitle: subtitleIndex === undefined ? 'none' : String(subtitleIndex),
+      };
+      setVideoChoice(choices.video); setAudioChoice(choices.audio); setSubtitleChoice(choices.subtitle);
+      setResumePosition(Math.max(0, startPosition)); setEmbeddedRequest(undefined);
+      if (options?.queueIndex !== undefined) {
+        setQueue((current) => ({ ...current, currentIndex: options.queueIndex! }));
+      }
       setSection('discover');
+      if (options?.play) await startResolvedPlayback(details, choices, Math.max(0, startPosition),
+        options.queueIndex === undefined);
     } catch (reason) { setError(errorMessage(reason)); } finally { setLoading(false); }
-  }, [settings]);
+  }
 
   async function openResult(item: SearchItem) {
-    if (item.type === 'STREAM') await resolveStream(item.url);
+    if (item.type !== 'STREAM') return;
+    if (settings.preferredOpenAction === 'enqueue') {
+      setQueue((current) => enqueue(current, searchItemToLibraryStream(item)));
+      setQueueOpen(true);
+      return;
+    }
+    await resolveStream(item.url, 0, { play: settings.preferredOpenAction === 'play' });
   }
 
   async function playSelected() {
     if (!selectedPlaybackUrl || !selected || !selectedLibraryStream) return;
     try {
-      if (embeddedSelection) {
-        setEmbeddedRequest({
-          source: selectedPlaybackUrl, title: selected.name, nonce: Date.now(),
-          startSeconds: resumePosition,
-          audio: effectiveAudio ? playerTrack(effectiveAudio, audioLabel(effectiveAudio)) : undefined,
-          subtitle: selectedSubtitle ? playerTrack(selectedSubtitle, subtitleLabel(selectedSubtitle)) : undefined,
-        });
-      } else {
-        await window.wizestream.player.play({
-          url: selectedPlaybackUrl,
-          title: selected.name,
-          audioUrl: effectiveAudio?.url,
-          subtitleUrl: selectedSubtitle?.url,
-          startSeconds: resumePosition,
-        });
-      }
-      if (settings.enableWatchHistory) {
-        await window.wizestream.backend.invoke('library.history.record', { ...selectedLibraryStream });
-      }
-      setResumePosition(0);
-      setMpv(await window.wizestream.player.status());
+      await startResolvedPlayback(selected, { video: videoChoice, audio: audioChoice, subtitle: subtitleChoice }, resumePosition);
     } catch (reason) { setError(errorMessage(reason)); }
   }
 
   function changeVideoChoice(value: string, positionSeconds?: number) {
     setVideoChoice(value);
+    if (selected) {
+      const stream = value === 'auto' ? undefined : selected.videoStreams[Number(value)];
+      const profiles = updatedChannelProfile(selected, settings, {
+        videoResolution: stream?.resolution, videoFormat: stream?.format,
+      });
+      if (profiles) void saveSettings({ channelPlaybackProfiles: profiles });
+    }
     if (!selected || !embeddedRequest || positionSeconds === undefined) return;
     const next = resolvePlaybackSelection(selected, value, audioChoice, subtitleChoice);
     if (!next.source) return;
@@ -286,6 +342,11 @@ export function App() {
   function changeAudioChoice(value: string) {
     setAudioChoice(value);
     if (!selected) return;
+    const stream = value === 'auto' ? undefined : selected.audioStreams[Number(value)];
+    const profiles = updatedChannelProfile(selected, settings, {
+      audioTrackId: stream?.audioTrackId, audioLocale: stream?.audioLocale,
+    });
+    if (profiles) void saveSettings({ channelPlaybackProfiles: profiles });
     const next = resolvePlaybackSelection(selected, videoChoice, value, subtitleChoice);
     setEmbeddedRequest((current) => current ? {
       ...current,
@@ -296,6 +357,11 @@ export function App() {
   function changeSubtitleChoice(value: string) {
     setSubtitleChoice(value);
     if (!selected) return;
+    const subtitle = value === 'none' ? undefined : selected.subtitles[Number(value)];
+    const profiles = updatedChannelProfile(selected, settings, {
+      subtitleLanguageTag: subtitle?.languageTag ?? null,
+    });
+    if (profiles) void saveSettings({ channelPlaybackProfiles: profiles });
     const next = resolvePlaybackSelection(selected, videoChoice, audioChoice, value);
     setEmbeddedRequest((current) => current ? {
       ...current,
@@ -308,6 +374,50 @@ export function App() {
     await window.wizestream.player.stop();
     setEmbeddedRequest(undefined);
     setMpv(await window.wizestream.player.status());
+  }
+
+  async function playQueueIndex(index: number) {
+    const item = queue.items[index];
+    if (!item) return;
+    await resolveStream(item.url, 0, { play: true, queueIndex: index });
+  }
+
+  async function advanceQueue(direction: 'next' | 'previous') {
+    const index = adjacentQueueIndex(queue, direction);
+    if (index !== undefined) {
+      await playQueueIndex(index);
+      return;
+    }
+    if (direction !== 'next' || !settings.autoQueueRelated || !selected) return;
+    const queued = new Set(queue.items.map((item) => `${item.serviceId}:${item.url}`));
+    const related = selected.relatedItems.find((item) => item.type === 'STREAM'
+      && !queued.has(`${item.serviceId}:${item.url}`));
+    if (!related) return;
+    const nextQueue = enqueue(queue, searchItemToLibraryStream(related));
+    const nextIndex = nextQueue.items.length - 1;
+    setQueue({ ...nextQueue, currentIndex: nextIndex });
+    await resolveStream(related.url, 0, { play: true, queueIndex: nextIndex });
+  }
+
+  function addSelectedToQueue(mode: 'next' | 'end') {
+    if (!selectedLibraryStream) return;
+    setQueue((current) => mode === 'next' ? playNext(current, selectedLibraryStream)
+      : enqueue(current, selectedLibraryStream));
+    setQueueOpen(true);
+  }
+
+  function clearQueue() {
+    if (settings.clearQueueConfirmation && !window.confirm('Clear the entire playback queue?')) return;
+    setQueue({ ...emptyPlaybackQueue, repeatMode: queue.repeatMode, shuffle: queue.shuffle });
+  }
+
+  async function savePlaybackParameters(value: PlaybackParameterSettings) {
+    let channelPlaybackProfiles = settings.channelPlaybackProfiles;
+    if (selected && (!isLiveStream(selected) || settings.rememberLiveStreamSpeed)) {
+      channelPlaybackProfiles = updatedChannelProfile(selected, settings, { speed: value.speed })
+        ?? channelPlaybackProfiles;
+    }
+    await saveSettings({ playbackParameters: value, channelPlaybackProfiles });
   }
 
   async function openUpdates() {
@@ -364,6 +474,9 @@ export function App() {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>WizeStream Desktop</Typography>
             <Chip color={mpv?.embeddedAvailable || mpv?.externalAvailable ? 'success' : 'default'}
               label={mpv?.embeddedAvailable ? 'embedded libmpv' : mpv?.externalAvailable ? 'external mpv fallback' : 'mpv unavailable'} />
+            <Button startIcon={<QueueMusicRounded />} variant="text" onClick={() => setQueueOpen(true)}>
+              Queue · {queue.items.length}
+            </Button>
             <Tooltip title={updateState?.status === 'downloaded' ? 'Update ready to install'
               : updateState?.status === 'available' ? 'Update available' : 'Check for updates'}>
               <IconButton color={['available', 'downloaded'].includes(updateState?.status ?? '') ? 'primary' : 'default'}
@@ -411,12 +524,21 @@ export function App() {
               sponsorBlockSettings={settings.sponsorBlock}
               equalizerSettings={settings.equalizer}
               onEqualizerChange={(equalizer) => saveSettings({ equalizer })}
-              playbackParameters={settings.playbackParameters}
-              onPlaybackParametersChange={(playbackParameters) => saveSettings({ playbackParameters })}
+              playbackParameters={selectedPlaybackParameters}
+              onPlaybackParametersChange={savePlaybackParameters}
+              seekDurationSeconds={settings.seekDurationSeconds} exactSeeking={!settings.useInexactSeek}
+              startFullscreen={settings.startPlayerFullscreen}
+              hasPrevious={adjacentQueueIndex(queue, 'previous') !== undefined}
+              hasNext={adjacentQueueIndex(queue, 'next') !== undefined || settings.autoQueueRelated}
+              hasLinearQueueNext={queue.currentIndex >= 0 && queue.currentIndex < queue.items.length - 1}
+              onPrevious={() => void advanceQueue('previous')} onNext={() => void advanceQueue('next')}
+              onEnded={() => { if (settings.autoplayNext) void advanceQueue('next'); }}
+              onOpenQueue={() => setQueueOpen(true)}
               externalAvailable={Boolean(mpv.externalAvailable)} onError={setError} />}
             {selected && showPlayingInfo && <VideoInformationPanel details={selected}
               onOpen={resolveStream} onDownload={() => setSection('downloads')}
               onAddToPlaylist={() => setSection('playlists')}
+              onPlayNext={() => addSelectedToQueue('next')} onAddToQueue={() => addSelectedToQueue('end')}
               onAddNote={settings.learningMode && settings.learningNotes ? () => setSection('learning') : undefined} />}
             {selected && !showPlayingInfo && <Card sx={{ mt: 4, overflow: 'hidden' }}><Box className="details-card">
               {selected.thumbnailUrl && <Box component="img" src={selected.thumbnailUrl} alt="" className="details-thumbnail" />}
@@ -445,6 +567,8 @@ export function App() {
                       || (!embeddedSelection && !mpv?.externalAvailable)} onClick={() => void playSelected()}>{embeddedSelection ? 'Play embedded' : 'Play with mpv'}</Button>
                   <Button startIcon={<DownloadRounded />} variant="outlined" size="large" onClick={() => setSection('downloads')}>Download</Button>
                   <Button startIcon={<PlaylistAddRounded />} variant="outlined" size="large" onClick={() => setSection('playlists')}>Add to playlist</Button>
+                  <Button startIcon={<QueuePlayNextRounded />} variant="outlined" size="large" onClick={() => addSelectedToQueue('next')}>Play next</Button>
+                  <Button startIcon={<QueueMusicRounded />} variant="outlined" size="large" onClick={() => addSelectedToQueue('end')}>Add to queue</Button>
                   {settings.learningMode && settings.learningNotes && <Button startIcon={<NoteAddRounded />} variant="outlined" size="large" onClick={() => setSection('learning')}>Add note</Button>}
                 </Stack>
               </CardContent>
@@ -476,6 +600,13 @@ export function App() {
                         : <AboutPanel currentVersion={updateState?.currentVersion} />}
         </Container>
       </Box>
+      <PlaybackQueueDialog open={queueOpen} queue={queue} onClose={() => setQueueOpen(false)}
+        onPlay={(index) => void playQueueIndex(index)}
+        onMove={(from, to) => setQueue((current) => moveQueueItem(current, from, to))}
+        onRemove={(index) => setQueue((current) => removeQueueItem(current, index))}
+        onClear={clearQueue}
+        onRepeatMode={(repeatMode) => setQueue((current) => ({ ...current, repeatMode }))}
+        onShuffle={(shuffle) => setQueue((current) => ({ ...current, shuffle }))} />
       <Dialog open={updateDialogOpen} onClose={() => setUpdateDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>WizeStream Desktop updates</DialogTitle>
         <DialogContent>
@@ -543,7 +674,9 @@ function FeedVideoCard({ item, onOpen }: { item: SearchItem; onOpen(): void }) {
 
 function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings, videoChoice, audioChoice,
   subtitleChoice, onVideoChoiceChange, onAudioChoiceChange, onSubtitleChoiceChange, equalizerSettings,
-  onEqualizerChange, playbackParameters, onPlaybackParametersChange, externalAvailable, onError }: {
+  onEqualizerChange, playbackParameters, onPlaybackParametersChange, seekDurationSeconds, exactSeeking,
+  startFullscreen, hasPrevious, hasNext, hasLinearQueueNext, onPrevious, onNext, onEnded, onOpenQueue,
+  externalAvailable, onError }: {
   request: EmbeddedPlayerRequest & { title: string; nonce: number }; externalAvailable: boolean;
   stream: StreamDetails; recordPlayback: boolean; sponsorBlockSettings: SponsorBlockSettings;
   videoChoice: string; audioChoice: string; subtitleChoice: string;
@@ -554,6 +687,16 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   onEqualizerChange(value: EqualizerSettings): Promise<void>;
   playbackParameters: PlaybackParameterSettings;
   onPlaybackParametersChange(value: PlaybackParameterSettings): Promise<void>;
+  seekDurationSeconds: number;
+  exactSeeking: boolean;
+  startFullscreen: boolean;
+  hasPrevious: boolean;
+  hasNext: boolean;
+  hasLinearQueueNext: boolean;
+  onPrevious(): void;
+  onNext(): void;
+  onEnded(): void;
+  onOpenQueue(): void;
   onError(value: string): void;
 }) {
   const player = useRef<MpvVideoElement>(null);
@@ -588,12 +731,24 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   const [customSleepError, setCustomSleepError] = useState<string>();
   const [sleepTimerNotice, setSleepTimerNotice] = useState<string>();
   const [fullscreen, setFullscreen] = useState(false);
+  const [seekPreviewTime, setSeekPreviewTime] = useState<number>();
   const effectiveVolume = (muted ? 0 : volume) * equalizerHeadroomMultiplier(liveEqualizer) * sleepFade;
   const effectiveVolumeRef = useRef(effectiveVolume);
   const mediaControlsReady = useRef(false);
+  const endedHandled = useRef(false);
+  const sleepTimerRef = useRef(sleepTimer);
+  const hasLinearQueueNextRef = useRef(hasLinearQueueNext);
+  const onEndedRef = useRef(onEnded);
+  const exactSeekingRef = useRef(exactSeeking);
+  const startFullscreenRef = useRef(startFullscreen);
 
   useEffect(() => { sponsorBlockSettingsRef.current = sponsorBlockSettings; }, [sponsorBlockSettings]);
   useEffect(() => { sponsorBlockSegmentsRef.current = stream.sponsorBlockSegments ?? []; }, [stream.sponsorBlockSegments]);
+  useEffect(() => { sleepTimerRef.current = sleepTimer; }, [sleepTimer]);
+  useEffect(() => { hasLinearQueueNextRef.current = hasLinearQueueNext; }, [hasLinearQueueNext]);
+  useEffect(() => { onEndedRef.current = onEnded; }, [onEnded]);
+  useEffect(() => { exactSeekingRef.current = exactSeeking; }, [exactSeeking]);
+  useEffect(() => { startFullscreenRef.current = startFullscreen; }, [startFullscreen]);
   useEffect(() => {
     const updateFullscreen = () => setFullscreen(document.fullscreenElement === fullscreenContainer.current);
     document.addEventListener('fullscreenchange', updateFullscreen);
@@ -640,6 +795,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       audioTrack: 'auto', subtitleTrack: 'off' };
     latestState.current = openingState; setState(openingState);
     mediaControlsReady.current = false;
+    endedHandled.current = false;
     lastPlaybackSave.current = 0;
     skippedSponsorBlockSegments.current.clear();
     ignoredSponsorBlockSegment.current = undefined;
@@ -657,6 +813,20 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     const update = (event: Event) => {
       const next = (event as CustomEvent<typeof state>).detail;
       latestState.current = next; setState(next); savePosition(next.time);
+      if (next.status === 'Ended' && !endedHandled.current) {
+        endedHandled.current = true;
+        const timer = sleepTimerRef.current;
+        const stopForTimer = timer.mode === 'end_current'
+          || (timer.mode === 'end_queue' && !hasLinearQueueNextRef.current);
+        if (stopForTimer) {
+          void element.stop();
+          setSleepTimer(inactiveSleepTimer);
+          setSleepFade(1);
+          setSleepTimerNotice('Sleep timer finished');
+        } else {
+          onEndedRef.current();
+        }
+      }
       const currentSettings = sponsorBlockSettingsRef.current;
       const active = activeSponsorBlockSegment(
         sponsorBlockSegmentsRef.current,
@@ -699,6 +869,9 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       if (request.startSeconds && request.startSeconds > 0) await element.seek(request.startSeconds);
       await element.play();
       mediaControlsReady.current = true;
+      if (startFullscreenRef.current && !document.fullscreenElement) {
+        void fullscreenContainer.current?.requestFullscreen().catch(() => undefined);
+      }
 
       // Audio enhancements are optional. Apply them only after playback starts so an
       // unavailable native filter or an older addon can never block the video itself.
@@ -753,7 +926,8 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     const tick = () => {
       const now = Date.now();
       const playback = latestState.current;
-      const playbackRemaining = playback.duration > 0 ? playback.duration - playback.time : -1;
+      const playbackRemaining = sleepTimer.mode === 'end_queue' && hasLinearQueueNext
+        ? -1 : playback.duration > 0 ? playback.duration - playback.time : -1;
       const remaining = sleepTimerRemainingMillis(sleepTimer, now, playbackRemaining);
       setSleepTimerNow(now);
       if (remaining > 0 && remaining < 30_000 && sleepFadeWindow.current === 0) {
@@ -763,8 +937,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       }
       setSleepFade(sleepTimerFadeMultiplier(sleepTimer, remaining,
         sleepFadeWindow.current || 30_000));
-      const finished = (sleepTimer.mode === 'duration' && remaining === 0)
-        || (sleepTimer.mode === 'end_current' && playback.status === 'Ended');
+      const finished = sleepTimer.mode === 'duration' && remaining === 0;
       if (finished) {
         void player.current?.stop();
         setSleepTimer(inactiveSleepTimer);
@@ -775,7 +948,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
     tick();
     const timer = window.setInterval(tick, 1_000);
     return () => window.clearInterval(timer);
-  }, [sleepTimer]);
+  }, [hasLinearQueueNext, sleepTimer]);
 
   function seekManually(value: number) {
     const settings = sponsorBlockSettingsRef.current;
@@ -788,7 +961,14 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
       ignoredSponsorBlockSegment.current = undefined;
       if (active) skippedSponsorBlockSegments.current.delete(sponsorBlockSegmentKey(active));
     }
-    void player.current?.seek(value);
+    void player.current?.seek(value, exactSeekingRef.current);
+  }
+
+  function seekRelative(delta: number) {
+    const duration = latestState.current.duration;
+    const target = Math.max(0, duration > 0
+      ? Math.min(duration, latestState.current.time + delta) : latestState.current.time + delta);
+    seekManually(target);
   }
 
   function skipManualSponsorBlockSegment() {
@@ -838,6 +1018,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   function openSleepTimer() {
     setCustomSleepError(undefined);
     if (sleepTimer.mode === 'end_current') setSleepTimerChoice('end_current');
+    else if (sleepTimer.mode === 'end_queue') setSleepTimerChoice('end_queue');
     else if (sleepTimer.mode === 'duration') {
       const minutes = Math.max(1, Math.ceil(sleepTimerRemainingMillis(sleepTimer, Date.now(), -1) / 60_000));
       const preset = [15, 30, 45, 60].includes(minutes) ? String(minutes) as SleepTimerChoice : 'custom';
@@ -849,8 +1030,8 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
 
   function startSleepTimer() {
     sleepFadeWindow.current = 0;
-    if (sleepTimerChoice === 'end_current') {
-      setSleepTimer({ mode: 'end_current', fadeOut: sleepTimer.fadeOut });
+    if (sleepTimerChoice === 'end_current' || sleepTimerChoice === 'end_queue') {
+      setSleepTimer({ mode: sleepTimerChoice, fadeOut: sleepTimer.fadeOut });
     } else {
       const minutes = sleepTimerChoice === 'custom' ? Number(customSleepMinutes) : Number(sleepTimerChoice);
       if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1_440) {
@@ -866,6 +1047,11 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   const markerSegments = validSponsorBlockSegments(
     stream.sponsorBlockSegments ?? [], sponsorBlockSettings,
   );
+  const chapters = stream.chapters ?? [];
+  const currentChapter = chapters.reduce((active, chapter, index) =>
+    chapter.startTimeSeconds <= state.time ? index : active, -1);
+  const seekPreview = seekPreviewTime === undefined ? undefined
+    : previewFrameAt(stream.previewFrames ?? [], seekPreviewTime);
 
   return <Card ref={fullscreenContainer} className="embedded-player-card" sx={{ mt: 4, overflow: 'hidden' }}><Box className="embedded-player-frame">
     <mpv-video ref={player} render-mode="shared-texture" volume="80" title={request.title} />
@@ -875,14 +1061,29 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
   })}>Open with external mpv</Button>}>{localError}</Alert>}
     <Box className="player-controls-primary">
       <Stack direction="row" spacing={0.5}>
+        <IconButton aria-label="Previous queued video" disabled={!hasPrevious} onClick={onPrevious}><SkipPreviousRounded /></IconButton>
         <IconButton aria-label="Play" onClick={() => void player.current?.play()}><PlayArrowRounded /></IconButton>
         <IconButton aria-label="Pause" onClick={() => void player.current?.pause()}><PauseRounded /></IconButton>
         <IconButton aria-label="Stop" onClick={stopPlayback}><StopRounded /></IconButton>
+        <IconButton aria-label="Next queued video" disabled={!hasNext} onClick={onNext}><SkipNextRounded /></IconButton>
       </Stack>
+      <Button size="small" onClick={() => seekRelative(-seekDurationSeconds)}>-{seekDurationSeconds}s</Button>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.time)}</Typography>
       <Box className="player-timeline">
         <Slider min={0} max={Math.max(1, state.duration)} value={Math.min(state.time, Math.max(1, state.duration))}
-          onChangeCommitted={(_event, value) => seekManually(Number(value))} />
+          onChange={(_event, value) => setSeekPreviewTime(Number(value))}
+          onChangeCommitted={(_event, value) => { seekManually(Number(value)); setSeekPreviewTime(undefined); }} />
+        {seekPreviewTime !== undefined && <Box className="seek-preview" sx={{
+          left: `${state.duration > 0 ? Math.max(0, Math.min(100, seekPreviewTime / state.duration * 100)) : 0}%`,
+        }}>
+          {seekPreview && <Box className="seek-preview-image" sx={{
+            width: seekPreview.width, height: seekPreview.height,
+            backgroundImage: `url(${JSON.stringify(seekPreview.url)})`,
+            backgroundPosition: `-${seekPreview.left}px -${seekPreview.top}px`,
+            backgroundSize: `${seekPreview.pageWidth}px ${seekPreview.pageHeight}px`,
+          }} />}
+          <Typography className="mono" variant="caption">{formatTimestamp(seekPreviewTime)}</Typography>
+        </Box>}
         {state.duration > 0 && <Box className="sponsor-block-markers" aria-hidden>
           {markerSegments.map((segment) => <Box key={sponsorBlockSegmentKey(segment)} sx={{
             left: `${Math.max(0, segment.startTime / 10 / state.duration)}%`,
@@ -892,12 +1093,20 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
         </Box>}
       </Box>
       <Typography className="mono player-time" variant="body2">{formatTimestamp(state.duration)}</Typography>
+      <Button size="small" onClick={() => seekRelative(seekDurationSeconds)}>+{seekDurationSeconds}s</Button>
       <Tooltip title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
         <IconButton aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'} onClick={() => void toggleFullscreen()}>
           {fullscreen ? <FullscreenExitRounded /> : <FullscreenRounded />}
         </IconButton>
       </Tooltip>
     </Box>
+    {chapters.length > 0 && <TextField select fullWidth size="small" label="Chapter"
+      value={currentChapter < 0 ? '' : String(currentChapter)} sx={{ mt: 1.5 }}
+      onChange={(event) => seekManually(chapters[Number(event.target.value)].startTimeSeconds)}>
+      {chapters.map((chapter, index) => <MenuItem key={`${chapter.startTimeSeconds}:${index}`} value={String(index)}>
+        {formatTimestamp(chapter.startTimeSeconds)} · {chapter.title}
+      </MenuItem>)}
+    </TextField>}
     <Box className="stream-selectors player-stream-selectors" sx={{ mt: 1.5 }}>
       <TextField select size="small" label="Video" value={videoChoice}
         onChange={(event) => onVideoChoiceChange(event.target.value, latestState.current.time)}>
@@ -940,7 +1149,9 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
         <Button startIcon={<BedtimeRounded />} variant={sleepTimer.mode === 'none' ? 'outlined' : 'contained'}
           onClick={openSleepTimer}>{sleepTimer.mode === 'none' ? 'Sleep timer'
             : sleepTimerStatus(sleepTimer, sleepTimerRemainingMillis(sleepTimer, sleepTimerNow,
-              state.duration > 0 ? state.duration - state.time : -1))}</Button>
+              sleepTimer.mode === 'end_queue' && hasLinearQueueNext
+                ? -1 : state.duration > 0 ? state.duration - state.time : -1))}</Button>
+        <Button startIcon={<QueueMusicRounded />} variant="outlined" onClick={onOpenQueue}>Queue · Open</Button>
       </Stack>
     </Box>
     <Stack direction="row" className="player-status-row" sx={{ mt: 1.5, gap: 1, flexWrap: 'wrap' }}>
@@ -980,6 +1191,7 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
             <FormControlLabel value="45" control={<Radio />} label="45 minutes" />
             <FormControlLabel value="60" control={<Radio />} label="60 minutes" />
             <FormControlLabel value="end_current" control={<Radio />} label="End of current video" />
+            <FormControlLabel value="end_queue" control={<Radio />} label="End of queue" />
             <FormControlLabel value="custom" control={<Radio />} label="Custom duration" />
           </RadioGroup>
           {sleepTimerChoice === 'custom' && <TextField label="Minutes (1–1440)" value={customSleepMinutes}
@@ -1004,11 +1216,14 @@ function EmbeddedPlayer({ request, stream, recordPlayback, sponsorBlockSettings,
 
 type VideoInfoTab = 'comments' | 'related' | 'description';
 
-function VideoInformationPanel({ details, onOpen, onDownload, onAddToPlaylist, onAddNote }: {
+function VideoInformationPanel({ details, onOpen, onDownload, onAddToPlaylist, onPlayNext,
+  onAddToQueue, onAddNote }: {
   details: StreamDetails;
   onOpen(url: string): Promise<void>;
   onDownload(): void;
   onAddToPlaylist(): void;
+  onPlayNext(): void;
+  onAddToQueue(): void;
   onAddNote?: () => void;
 }) {
   const [tab, setTab] = useState<VideoInfoTab>('related');
@@ -1063,6 +1278,8 @@ function VideoInformationPanel({ details, onOpen, onDownload, onAddToPlaylist, o
       </Stack>
       <Stack direction="row" sx={{ mt: 3, gap: 1, flexWrap: 'wrap' }}>
         <Button startIcon={<PlaylistAddRounded />} variant="outlined" onClick={onAddToPlaylist}>Add to playlist</Button>
+        <Button startIcon={<QueuePlayNextRounded />} variant="outlined" onClick={onPlayNext}>Play next</Button>
+        <Button startIcon={<QueueMusicRounded />} variant="outlined" onClick={onAddToQueue}>Add to queue</Button>
         <Button startIcon={<DownloadRounded />} variant="outlined" onClick={onDownload}>Download</Button>
         {onAddNote && <Button startIcon={<NoteAddRounded />} variant="outlined" onClick={onAddNote}>Add note</Button>}
       </Stack>
@@ -1705,6 +1922,10 @@ function detailsToLibraryStream(value: StreamDetails): LibraryStream {
   return { serviceId: value.serviceId, url: value.url, title: value.name, duration: value.duration,
     streamType: value.streamType, uploader: value.uploaderName, uploaderUrl: value.uploaderUrl,
     thumbnailUrl: value.thumbnailUrl };
+}
+
+function isLiveStream(value: Pick<StreamDetails, 'streamType'>) {
+  return value.streamType === 'LIVE_STREAM' || value.streamType === 'AUDIO_LIVE_STREAM';
 }
 
 function compactMetric(value?: number | null): string | undefined {

@@ -1,4 +1,4 @@
-export type SleepTimerMode = 'none' | 'duration' | 'end_current';
+export type SleepTimerMode = 'none' | 'duration' | 'end_current' | 'end_queue';
 
 export interface SleepTimerState {
   mode: SleepTimerMode;
@@ -12,6 +12,9 @@ export const sleepTimerFadeDurationMillis = 30_000;
 export function sleepTimerRemainingMillis(timer: SleepTimerState, now: number, playbackRemainingSeconds: number) {
   if (timer.mode === 'duration') return Math.max(0, (timer.deadline ?? now) - now);
   if (timer.mode === 'end_current' && Number.isFinite(playbackRemainingSeconds) && playbackRemainingSeconds >= 0) {
+    return Math.max(0, playbackRemainingSeconds * 1_000);
+  }
+  if (timer.mode === 'end_queue' && Number.isFinite(playbackRemainingSeconds) && playbackRemainingSeconds >= 0) {
     return Math.max(0, playbackRemainingSeconds * 1_000);
   }
   return -1;
@@ -30,6 +33,7 @@ export function sleepTimerFadeMultiplier(
 export function sleepTimerStatus(timer: SleepTimerState, remainingMillis: number) {
   if (timer.mode === 'none') return 'Sleep timer';
   if (timer.mode === 'end_current' && remainingMillis < 0) return 'Ends after the current video';
+  if (timer.mode === 'end_queue' && remainingMillis < 0) return 'Ends after the queue';
   if (remainingMillis < 0) return 'Sleep timer';
   const seconds = Math.ceil(remainingMillis / 1_000);
   const hours = Math.floor(seconds / 3_600);
@@ -38,5 +42,7 @@ export function sleepTimerStatus(timer: SleepTimerState, remainingMillis: number
   const countdown = hours > 0
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
     : `${minutes}:${String(remainder).padStart(2, '0')}`;
-  return timer.mode === 'end_current' ? `Ends after the current video · ${countdown} remaining` : `${countdown} remaining`;
+  if (timer.mode === 'end_current') return `Ends after the current video · ${countdown} remaining`;
+  if (timer.mode === 'end_queue') return `Ends after the queue · ${countdown} in this video`;
+  return `${countdown} remaining`;
 }

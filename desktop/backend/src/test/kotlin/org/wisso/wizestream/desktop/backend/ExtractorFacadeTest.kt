@@ -13,8 +13,10 @@ import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.AudioTrackType
 import org.schabi.newpipe.extractor.stream.Description
+import org.schabi.newpipe.extractor.stream.Frameset
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.extractor.stream.StreamSegment
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
 import java.time.OffsetDateTime
@@ -122,6 +124,12 @@ class ExtractorFacadeTest {
                 "segment-1", 10_000.0, 20_000.0,
                 SponsorBlockCategory.SPONSOR, SponsorBlockAction.SKIP, 0
             ))
+            streamSegments = listOf(StreamSegment("Introduction", 12).apply {
+                previewUrl = "https://video.example/chapter.jpg"
+            })
+            previewFrames = listOf(Frameset(
+                listOf("https://video.example/storyboard.jpg"), 160, 90, 20, 5_000, 5, 4
+            ))
         }
 
         val value = ExtractorFacade().streamDetails(info)
@@ -137,6 +145,12 @@ class ExtractorFacadeTest {
         assertEquals(1, sponsorBlock.size)
         assertEquals("sponsor", (sponsorBlock.first() as Map<*, *>)["category"])
         assertEquals("skip", (sponsorBlock.first() as Map<*, *>)["action"])
+        val chapter = (value["chapters"] as List<*>).first() as Map<*, *>
+        assertEquals("Introduction", chapter["title"])
+        assertEquals(12, chapter["startTimeSeconds"])
+        val frameset = (value["previewFrames"] as List<*>).first() as Map<*, *>
+        assertEquals(160, frameset["frameWidth"])
+        assertEquals(5_000, frameset["durationPerFrame"])
     }
 
     @Test

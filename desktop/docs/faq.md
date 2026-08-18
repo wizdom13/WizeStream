@@ -1,5 +1,16 @@
 # WizeStream Desktop FAQ
 
+## Does Desktop have a playback queue?
+
+Yes. The queue is restored after restarting WizeStream Desktop and supports next and previous
+navigation, reordering, removal, repeat-one, repeat-all and shuffle. Autoplay can continue through
+the queue and optionally add a related video when it reaches the end.
+
+## Can Desktop remember playback choices for each channel?
+
+Yes. Per-channel playback profiles can remember video quality and format, audio track, captions and
+speed. They can be disabled or cleared from **Settings → Video and audio**.
+
 ## What is WizeStream Desktop?
 
 WizeStream Desktop is the Windows, macOS, and Linux version of WizeStream. It provides
