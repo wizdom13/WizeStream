@@ -11,6 +11,7 @@ export type PlayerEvent = {
     type: string;
     name?: string;
     data?: unknown;
+    reason?: string;
     error?: string;
 };
 export type PlayerCreateOptions = {

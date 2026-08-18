@@ -335,6 +335,7 @@ class PlayerSession {
             type: event.type,
             name: event.name,
             data: event.data,
+            reason: event.reason,
             error: event.error,
         });
     }

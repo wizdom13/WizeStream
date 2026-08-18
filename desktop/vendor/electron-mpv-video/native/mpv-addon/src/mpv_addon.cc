@@ -1016,6 +1016,31 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
         item.Set("error", mpv_error_text(event->error));
       }
 
+      if (event->event_id == MPV_EVENT_END_FILE && event->data) {
+        mpv_event_end_file* end = static_cast<mpv_event_end_file*>(event->data);
+        switch (end->reason) {
+          case MPV_END_FILE_REASON_EOF:
+            item.Set("reason", "eof");
+            break;
+          case MPV_END_FILE_REASON_STOP:
+            item.Set("reason", "stop");
+            break;
+          case MPV_END_FILE_REASON_QUIT:
+            item.Set("reason", "quit");
+            break;
+          case MPV_END_FILE_REASON_ERROR:
+            item.Set("reason", "error");
+            if (end->error < 0) item.Set("error", mpv_error_text(end->error));
+            break;
+          case MPV_END_FILE_REASON_REDIRECT:
+            item.Set("reason", "redirect");
+            break;
+          default:
+            item.Set("reason", "unknown");
+            break;
+        }
+      }
+
       if (event->event_id == MPV_EVENT_FILE_LOADED) {
         loaded_ = true;
         if (pending_audio_) {

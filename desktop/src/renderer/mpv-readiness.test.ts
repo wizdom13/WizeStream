@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { waitForMpvMediaReady } from './mpv-readiness';
 
-function mpvEvent(type: string, error?: string) {
-  const event = new Event('mpv-event') as CustomEvent<{ type: string; error?: string }>;
-  Object.defineProperty(event, 'detail', { value: { type, error } });
+function mpvEvent(type: string, error?: string, reason?: string) {
+  const event = new Event('mpv-event') as CustomEvent<{ type: string; error?: string; reason?: string }>;
+  Object.defineProperty(event, 'detail', { value: { type, error, reason } });
   return event;
 }
 
@@ -36,11 +36,29 @@ describe('mpv media readiness', () => {
     await expect(wait.promise).resolves.toBeUndefined();
   });
 
-  it('reports a replacement source that ends after it starts loading', async () => {
+  it('ignores a non-error end event that arrives after the replacement starts', async () => {
     const target = new EventTarget();
     const wait = waitForMpvMediaReady(target, 1_000);
     target.dispatchEvent(mpvEvent('start-file'));
-    target.dispatchEvent(mpvEvent('end-file', 'network error'));
+    target.dispatchEvent(mpvEvent('end-file', undefined, 'stop'));
+    target.dispatchEvent(mpvEvent('file-loaded'));
+    await expect(wait.promise).resolves.toBeUndefined();
+  });
+
+  it('ignores an unclassified end event from an older native addon', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvEvent('end-file'));
+    target.dispatchEvent(mpvEvent('file-loaded'));
+    await expect(wait.promise).resolves.toBeUndefined();
+  });
+
+  it('reports a replacement source that ends with an mpv load error', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvEvent('end-file', 'network error', 'error'));
     await expect(wait.promise).rejects.toThrow('network error');
   });
 

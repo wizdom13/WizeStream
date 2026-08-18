@@ -1,5 +1,6 @@
 interface MpvLifecycleEvent {
   type?: string;
+  reason?: string;
   error?: string;
 }
 
@@ -38,10 +39,11 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
       finish(new Error(`Media failed to load: ${detail.error}`));
     } else if (detail.type === 'file-loaded') {
       finish();
-    } else if (detail.type === 'end-file' && newMediaStarted) {
+    } else if (detail.type === 'end-file' && newMediaStarted
+      && (detail.reason === 'error' || detail.error)) {
       finish(new Error(detail.error
         ? `Media failed to load: ${detail.error}`
-        : 'Media ended before it finished loading'));
+        : 'Media failed to load'));
     } else if (detail.error && newMediaStarted) {
       finish(new Error(`Media failed to load: ${detail.error}`));
     }
