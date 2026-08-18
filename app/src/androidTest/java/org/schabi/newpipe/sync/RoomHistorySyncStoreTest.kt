@@ -15,6 +15,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -135,6 +136,53 @@ class RoomHistorySyncStoreTest {
 
         assertTrue(phoneDatabase.streamStateDAO().getAllDirect().isEmpty())
         assertTrue(tabletDatabase.streamStateDAO().getAllDirect().isEmpty())
+    }
+
+    @Test
+    fun localMediaHistoryStaysDeviceLocalAndDoesNotBlockRemoteSynchronization() {
+        val phoneStore = RoomHistorySyncStore(phoneDatabase, newPeerId())
+        val tabletStore = RoomHistorySyncStore(tabletDatabase, newPeerId())
+        val phone = HistorySyncEngine(phoneStore)
+        val tablet = HistorySyncEngine(tabletStore)
+        val localStreamId = phoneDatabase.streamDAO().upsert(localMediaStream())
+        val remoteStreamId = phoneDatabase.streamDAO().upsert(testStream())
+        phoneDatabase.streamHistoryDAO().insertAll(
+            listOf(
+                StreamHistoryEntity(localStreamId, dateTime(1_000), 1),
+                StreamHistoryEntity(remoteStreamId, dateTime(2_000), 2)
+            )
+        )
+        phoneDatabase.streamStateDAO().upsert(StreamStateEntity(localStreamId, 15_000))
+        phoneDatabase.streamStateDAO().upsert(StreamStateEntity(remoteStreamId, 90_000))
+
+        phoneStore.recordWatchEvent(localStreamId, 3_000, 1)
+        phoneStore.recordProgress(localStreamId, 20_000, 3_000)
+        phoneStore.recordWatchStreamDelete(localStreamId)
+
+        synchronize(
+            HistorySyncCategory.WATCH,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            listOf(SERVICE_ID),
+            tabletDatabase.streamDAO().getAll().blockingFirst().map(StreamEntity::serviceId)
+        )
+        assertNull(
+            tabletDatabase.streamDAO().getStreamDirect(LOCAL_SERVICE_ID, LOCAL_STREAM_URL)
+        )
+        assertEquals(2L, tabletDatabase.streamHistoryDAO().getAllDirect().single().repeatCount)
+        assertEquals(90_000L, tabletDatabase.streamStateDAO().getAllDirect().single().progressMillis)
+
+        assertTrue(phoneDatabase.streamHistoryDAO().getLatestEntry(localStreamId) != null)
+        assertTrue(phoneDatabase.streamStateDAO().getAllDirect().any { it.streamUid == localStreamId })
+        phoneDatabase.streamHistoryDAO().deleteStreamHistory(localStreamId)
+        phoneDatabase.streamStateDAO().deleteState(localStreamId)
+        assertNull(phoneDatabase.streamHistoryDAO().getLatestEntry(localStreamId))
+        assertTrue(phoneDatabase.streamStateDAO().getAllDirect().none { it.streamUid == localStreamId })
     }
 
     @Test
@@ -358,8 +406,20 @@ class RoomHistorySyncStoreTest {
         uploader = "Uploader"
     )
 
+    private fun localMediaStream() = StreamEntity(
+        serviceId = LOCAL_SERVICE_ID,
+        url = LOCAL_STREAM_URL,
+        title = "Local history test",
+        streamType = StreamType.VIDEO_STREAM,
+        duration = 60,
+        uploader = "On this device",
+        sourceType = StreamEntity.SOURCE_TYPE_LOCAL
+    )
+
     companion object {
         private const val SERVICE_ID = 0
         private const val STREAM_URL = "https://example.com/watch/history"
+        private const val LOCAL_SERVICE_ID = -1
+        private const val LOCAL_STREAM_URL = "content://media/external/video/media/42"
     }
 }
