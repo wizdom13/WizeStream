@@ -56,6 +56,7 @@ struct LinuxMpvApi {
   decltype(&::mpv_error_string) mpv_error_string_fn = nullptr;
   decltype(&::mpv_event_name) mpv_event_name_fn = nullptr;
   decltype(&::mpv_initialize) mpv_initialize_fn = nullptr;
+  decltype(&::mpv_request_log_messages) mpv_request_log_messages_fn = nullptr;
   decltype(&::mpv_observe_property) mpv_observe_property_fn = nullptr;
   decltype(&::mpv_render_context_create) mpv_render_context_create_fn = nullptr;
   decltype(&::mpv_render_context_free) mpv_render_context_free_fn = nullptr;
@@ -103,6 +104,7 @@ LinuxMpvApi load_linux_mpv_api() {
   LOAD_MPV_SYMBOL(mpv_error_string)
   LOAD_MPV_SYMBOL(mpv_event_name)
   LOAD_MPV_SYMBOL(mpv_initialize)
+  LOAD_MPV_SYMBOL(mpv_request_log_messages)
   LOAD_MPV_SYMBOL(mpv_observe_property)
   LOAD_MPV_SYMBOL(mpv_render_context_create)
   LOAD_MPV_SYMBOL(mpv_render_context_free)
@@ -145,6 +147,7 @@ void recycle_linux_handle(mpv_handle* handle) {
 #define mpv_error_string linux_mpv_api().mpv_error_string_fn
 #define mpv_event_name linux_mpv_api().mpv_event_name_fn
 #define mpv_initialize linux_mpv_api().mpv_initialize_fn
+#define mpv_request_log_messages linux_mpv_api().mpv_request_log_messages_fn
 #define mpv_observe_property linux_mpv_api().mpv_observe_property_fn
 #define mpv_render_context_create linux_mpv_api().mpv_render_context_create_fn
 #define mpv_render_context_free linux_mpv_api().mpv_render_context_free_fn
@@ -321,6 +324,7 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
         throw_mpv_error(env, "mpv_initialize", ret);
         return;
       }
+      mpv_request_log_messages(handle_, "warn");
 
       observe("time-pos", MPV_FORMAT_DOUBLE);
       observe("duration", MPV_FORMAT_DOUBLE);
@@ -482,7 +486,28 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
     loaded_ = false;
     pending_audio_ = false;
     pending_subtitle_ = false;
-    int ret = command({"loadfile", source, "replace"});
+    const std::string user_agent = request.Has("userAgent") && request.Get("userAgent").IsString()
+        ? request.Get("userAgent").As<Napi::String>().Utf8Value() : "WizeStream Desktop/0.6";
+    const std::string referrer = request.Has("referrer") && request.Get("referrer").IsString()
+        ? request.Get("referrer").As<Napi::String>().Utf8Value() : "";
+    std::string http_headers;
+    if (request.Has("httpHeaders") && request.Get("httpHeaders").IsArray()) {
+      Napi::Array headers = request.Get("httpHeaders").As<Napi::Array>();
+      for (uint32_t index = 0; index < headers.Length(); index++) {
+        Napi::Value value = headers.Get(index);
+        if (!value.IsString()) continue;
+        if (!http_headers.empty()) http_headers += ",";
+        http_headers += value.As<Napi::String>().Utf8Value();
+      }
+    }
+    int ret = mpv_set_property_string(handle_, "user-agent", user_agent.c_str());
+    if (ret >= 0) ret = mpv_set_property_string(handle_, "referrer", referrer.c_str());
+    if (ret >= 0) ret = mpv_set_property_string(handle_, "http-header-fields", http_headers.c_str());
+    if (ret < 0) {
+      throw_mpv_error(env, "configure media request", ret);
+      return env.Undefined();
+    }
+    ret = command({"loadfile", source, "replace"});
     if (ret < 0) {
       throw_mpv_error(env, "loadfile", ret);
       return env.Undefined();
@@ -1014,6 +1039,13 @@ class MpvPlayer : public Napi::ObjectWrap<MpvPlayer> {
 
       if (event->error < 0) {
         item.Set("error", mpv_error_text(event->error));
+      }
+
+      if (event->event_id == MPV_EVENT_LOG_MESSAGE && event->data) {
+        mpv_event_log_message* message = static_cast<mpv_event_log_message*>(event->data);
+        item.Set("name", message->prefix ? message->prefix : "mpv");
+        item.Set("level", message->level ? message->level : "warn");
+        item.Set("data", message->text ? message->text : "");
       }
 
       if (event->event_id == MPV_EVENT_END_FILE && event->data) {

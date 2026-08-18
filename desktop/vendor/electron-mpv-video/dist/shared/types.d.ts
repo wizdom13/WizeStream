@@ -13,6 +13,7 @@ export type PlayerEvent = {
     data?: unknown;
     reason?: string;
     error?: string;
+    level?: string;
 };
 export type PlayerCreateOptions = {
     renderMode?: RenderMode;
@@ -28,6 +29,9 @@ export type MediaRequest = {
     source: string;
     audio?: MediaTrack;
     subtitle?: MediaTrack;
+    userAgent?: string;
+    referrer?: string;
+    httpHeaders?: string[];
 };
 export type Dispose = () => void;
 export type MpvPlayerSession = {

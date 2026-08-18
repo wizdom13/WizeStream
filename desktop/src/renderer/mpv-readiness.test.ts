@@ -7,6 +7,12 @@ function mpvEvent(type: string, error?: string, reason?: string) {
   return event;
 }
 
+function mpvLog(data: string, level = 'error') {
+  const event = new Event('mpv-event') as CustomEvent<{ type: string; data: string; level: string }>;
+  Object.defineProperty(event, 'detail', { value: { type: 'log-message', data, level } });
+  return event;
+}
+
 describe('mpv media readiness', () => {
   it('waits for the native file-loaded event', async () => {
     const target = new EventTarget();
@@ -60,6 +66,15 @@ describe('mpv media readiness', () => {
     target.dispatchEvent(mpvEvent('start-file'));
     target.dispatchEvent(mpvEvent('end-file', 'network error', 'error'));
     await expect(wait.promise).rejects.toThrow('network error');
+  });
+
+  it('includes the sanitized native network diagnostic in a load error', async () => {
+    const target = new EventTarget();
+    const wait = waitForMpvMediaReady(target, 1_000);
+    target.dispatchEvent(mpvEvent('start-file'));
+    target.dispatchEvent(mpvLog('HTTP error 403 Forbidden'));
+    target.dispatchEvent(mpvEvent('end-file', 'loading failed', 'error'));
+    await expect(wait.promise).rejects.toThrow('loading failed (HTTP error 403 Forbidden)');
   });
 
   it('times out instead of leaving a silent black player', async () => {

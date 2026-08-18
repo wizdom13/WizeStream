@@ -101,6 +101,25 @@ function normalizeTrack(value, name) {
     const language = typeof track.language === 'string' ? track.language.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 35) : '';
     return { url: normalizeHttpSource(track.url, `${name}.url`), title, language };
 }
+function normalizeOptionalText(value, name, maxLength) {
+    if (value === undefined || value === null)
+        return undefined;
+    if (typeof value !== 'string' || value.length === 0 || value.length > maxLength || /[\0\r\n]/.test(value))
+        throw new TypeError(`${name} is invalid`);
+    return value;
+}
+function normalizeHttpHeaders(value) {
+    if (value === undefined || value === null)
+        return undefined;
+    if (!Array.isArray(value) || value.length > 16)
+        throw new TypeError('httpHeaders must be an array with at most 16 entries');
+    return value.map((entry, index) => {
+        if (typeof entry !== 'string' || entry.length > 512
+            || !/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+:\s*[^\0\r\n]*$/.test(entry))
+            throw new TypeError(`httpHeaders[${index}] is invalid`);
+        return entry;
+    });
+}
 function normalizeMediaRequest(value) {
     if (!value || typeof value !== 'object')
         throw new TypeError('media request must be an object');
@@ -109,6 +128,9 @@ function normalizeMediaRequest(value) {
         source: normalizeHttpSource(request.source),
         audio: normalizeTrack(request.audio, 'audio'),
         subtitle: normalizeTrack(request.subtitle, 'subtitle'),
+        userAgent: normalizeOptionalText(request.userAgent, 'userAgent', 512),
+        referrer: request.referrer === undefined ? undefined : normalizeHttpSource(request.referrer, 'referrer'),
+        httpHeaders: normalizeHttpHeaders(request.httpHeaders),
     };
 }
 class PlayerSession {
@@ -327,6 +349,12 @@ class PlayerSession {
         }
     }
     sendEvent(event) {
+        const eventData = event.type === 'log-message' && typeof event.data === 'string'
+            ? event.data.replace(/https?:\/\/\S+/gi, '[media URL]').trim().slice(0, 1000)
+            : event.data;
+        if (event.type === 'log-message' && eventData) {
+            console.warn(`[mpv:${event.name ?? event.level ?? 'warn'}] ${eventData}`);
+        }
         this.trackEvent(event);
         if (this.window.isDestroyed())
             return;
@@ -334,9 +362,10 @@ class PlayerSession {
             playerId: this.id,
             type: event.type,
             name: event.name,
-            data: event.data,
+            data: eventData,
             reason: event.reason,
             error: event.error,
+            level: event.level,
         });
     }
     sendError(type, error) {
@@ -483,7 +512,7 @@ class MpvMainService {
             return;
         const onClosed = () => {
             this.windows.delete(id);
-            void this.destroyWindowSessions(window);
+            void this.destroyWindowSessions(id);
         };
         this.windows.set(id, { window, onClosed });
         window.once('closed', onClosed);
@@ -540,7 +569,7 @@ class MpvMainService {
         return session;
     }
     async destroyWindowSessions(window) {
-        const ownerWebContentsId = window.webContents.id;
+        const ownerWebContentsId = typeof window === 'number' ? window : window.webContents.id;
         const owned = Array.from(this.sessions.values()).filter((session) => session.belongsTo(ownerWebContentsId));
         await Promise.all(owned.map((session) => session.destroy()));
     }

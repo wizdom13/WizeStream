@@ -218,6 +218,9 @@ export interface EmbeddedPlayerRequest {
   audio?: PlayerTrack;
   subtitle?: PlayerTrack;
   startSeconds?: number;
+  userAgent?: string;
+  referrer?: string;
+  httpHeaders?: string[];
 }
 
 export interface PlayerStatus {

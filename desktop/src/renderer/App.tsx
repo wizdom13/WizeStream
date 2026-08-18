@@ -77,6 +77,7 @@ import { equalizerHeadroomMultiplier, equalizerPresetLabel } from './equalizer';
 import { PlaybackParametersDialog } from './PlaybackParametersDialog';
 import { formatPlaybackSpeed } from './playback-parameters';
 import { resolvePlaybackSelection } from './playback-selection';
+import { mediaNetworkProfile } from './media-network';
 import {
   inactiveSleepTimer, sleepTimerFadeMultiplier, sleepTimerRemainingMillis, sleepTimerStatus,
   type SleepTimerState,
@@ -258,6 +259,7 @@ export function App() {
     if (mpv?.embeddedAvailable) {
       setEmbeddedRequest({
         source: selection.source, title: details.name, nonce: Date.now(), startSeconds: startPosition,
+        ...mediaNetworkProfile(selection.source),
         audio: selection.audio ? playerTrack(selection.audio, audioLabel(selection.audio)) : undefined,
         subtitle: selection.subtitle ? playerTrack(selection.subtitle, subtitleLabel(selection.subtitle)) : undefined,
       });
@@ -333,6 +335,7 @@ export function App() {
     setEmbeddedRequest((current) => current ? {
       ...current,
       source,
+      ...mediaNetworkProfile(source),
       audio: next.audio ? playerTrack(next.audio, audioLabel(next.audio)) : undefined,
       subtitle: next.subtitle ? playerTrack(next.subtitle, subtitleLabel(next.subtitle)) : undefined,
       startSeconds: Math.max(0, positionSeconds),

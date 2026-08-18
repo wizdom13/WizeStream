@@ -1,5 +1,7 @@
 interface MpvLifecycleEvent {
   type?: string;
+  data?: unknown;
+  level?: string;
   reason?: string;
   error?: string;
 }
@@ -12,6 +14,7 @@ export interface MpvReadinessWait {
 export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000): MpvReadinessWait {
   let settled = false;
   let newMediaStarted = false;
+  let lastLoadDiagnostic: string | undefined;
   let resolvePromise!: () => void;
   let rejectPromise!: (reason: Error) => void;
   const promise = new Promise<void>((resolve, reject) => {
@@ -33,7 +36,10 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
   };
   const onLifecycleEvent = (event: Event) => {
     const detail = (event as CustomEvent<MpvLifecycleEvent>).detail ?? {};
-    if (detail.type === 'start-file') {
+    if (detail.type === 'log-message' && typeof detail.data === 'string'
+      && (detail.level === 'error' || detail.level === 'fatal' || detail.level === 'warn')) {
+      lastLoadDiagnostic = detail.data.trim().replace(/\s+/g, ' ').slice(0, 300) || undefined;
+    } else if (detail.type === 'start-file') {
       newMediaStarted = true;
     } else if (detail.type === 'file-loaded' && detail.error) {
       finish(new Error(`Media failed to load: ${detail.error}`));
@@ -42,8 +48,8 @@ export function waitForMpvMediaReady(target: EventTarget, timeoutMillis = 30_000
     } else if (detail.type === 'end-file' && newMediaStarted
       && (detail.reason === 'error' || detail.error)) {
       finish(new Error(detail.error
-        ? `Media failed to load: ${detail.error}`
-        : 'Media failed to load'));
+        ? `Media failed to load: ${detail.error}${lastLoadDiagnostic ? ` (${lastLoadDiagnostic})` : ''}`
+        : `Media failed to load${lastLoadDiagnostic ? `: ${lastLoadDiagnostic}` : ''}`));
     } else if (detail.error && newMediaStarted) {
       finish(new Error(`Media failed to load: ${detail.error}`));
     }
