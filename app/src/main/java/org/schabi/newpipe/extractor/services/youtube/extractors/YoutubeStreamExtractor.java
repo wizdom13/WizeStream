@@ -817,6 +817,24 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     private boolean streamsCached = false;
 
     /**
+     * Returns direct stream responses in reliability order.
+     *
+     * <p>VISIONOS is preferred because YouTube can expose ANDROID_VR adaptive URLs that start
+     * successfully but return HTTP 403 on a later byte-range request. Android remains the final
+     * fallback for content unavailable through the other clients.</p>
+     */
+    @Nonnull
+    private java.util.stream.Stream<Pair<JsonObject, String>>
+            getPreferredStreamingData() {
+        return java.util.stream.Stream.of(
+                new Pair<>(visionOsStreamingData, visionOsCpn),
+                new Pair<>(safariStreamingData, safariCpn),
+                new Pair<>(iosStreamingData, iosCpn),
+                new Pair<>(tvHtml5SimplyEmbedStreamingData, tvHtml5SimplyEmbedCpn),
+                new Pair<>(androidStreamingData, androidCpn));
+    }
+
+    /**
      * Pre-fetch and batch-process all streams in a single API call.
      * This method collects all audio, video, and video-only streams,
      * then performs batch deobfuscation in one request.
@@ -837,13 +855,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
         try {
             // Collect audio streams
-            java.util.stream.Stream.of(
-                    new Pair<>(safariStreamingData, safariCpn),
-                    new Pair<>(androidStreamingData, androidCpn),
-                    new Pair<>(visionOsStreamingData, visionOsCpn),
-                    new Pair<>(iosStreamingData, iosCpn),
-                    new Pair<>(tvHtml5SimplyEmbedStreamingData, tvHtml5SimplyEmbedCpn)
-            )
+            getPreferredStreamingData()
                     .flatMap(pair -> getStreamsFromStreamingDataKey(videoId, pair.getFirst(),
                             ADAPTIVE_FORMATS, ItagItem.ItagType.AUDIO, pair.getSecond()))
                     .forEachOrdered(allItagInfos::add);
@@ -851,13 +863,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             videoStartIndex = allItagInfos.size();
 
             // Collect video streams
-            java.util.stream.Stream.of(
-                    new Pair<>(safariStreamingData, safariCpn),
-                    new Pair<>(androidStreamingData, androidCpn),
-                    new Pair<>(visionOsStreamingData, visionOsCpn),
-                    new Pair<>(iosStreamingData, iosCpn),
-                    new Pair<>(tvHtml5SimplyEmbedStreamingData, tvHtml5SimplyEmbedCpn)
-            )
+            getPreferredStreamingData()
                     .flatMap(pair -> getStreamsFromStreamingDataKey(videoId, pair.getFirst(),
                             FORMATS, ItagItem.ItagType.VIDEO, pair.getSecond()))
                     .forEachOrdered(allItagInfos::add);
@@ -865,13 +871,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             videoOnlyStartIndex = allItagInfos.size();
 
             // Collect video-only streams
-            java.util.stream.Stream.of(
-                    new Pair<>(safariStreamingData, safariCpn),
-                    new Pair<>(androidStreamingData, androidCpn),
-                    new Pair<>(visionOsStreamingData, visionOsCpn),
-                    new Pair<>(iosStreamingData, iosCpn),
-                    new Pair<>(tvHtml5SimplyEmbedStreamingData, tvHtml5SimplyEmbedCpn)
-            )
+            getPreferredStreamingData()
                     .flatMap(pair -> getStreamsFromStreamingDataKey(videoId, pair.getFirst(),
                             ADAPTIVE_FORMATS, ItagItem.ItagType.VIDEO_ONLY, pair.getSecond()))
                     .forEachOrdered(allItagInfos::add);
@@ -2069,23 +2069,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             // First pass: collect all ItagInfo objects without deobfuscating URLs
             final List<ItagInfo> itagInfoList = new ArrayList<>();
 
-            java.util.stream.Stream.of(
-                     /*
-                    Use the iosStreamingData object first because there is no n param and no
-                    signatureCiphers in streaming URLs of the iOS client
-                    The androidStreamingData is used as second way as it isn't used on livestreams,
-                    it doesn't return all available streams, and the Android client extraction is
-                    more likely to break
-                    As age-restricted videos are not common, use tvHtml5SimplyEmbedStreamingData
-                    last, which will be the only one not empty for age-restricted content
-                     */
-                    new Pair<>(safariStreamingData, safariCpn),
-                    new Pair<>(androidStreamingData, androidCpn),
-                    new Pair<>(visionOsStreamingData, visionOsCpn),
-                    new Pair<>(iosStreamingData, iosCpn),
-                    new Pair<>(tvHtml5SimplyEmbedStreamingData, tvHtml5SimplyEmbedCpn)
-
-            )
+            getPreferredStreamingData()
                     .flatMap(pair -> getStreamsFromStreamingDataKey(videoId, pair.getFirst(),
                             streamingDataKey, itagTypeWanted, pair.getSecond()))
                     .forEachOrdered(itagInfoList::add);

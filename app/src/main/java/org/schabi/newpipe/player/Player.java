@@ -2407,14 +2407,15 @@ public final class Player implements PlaybackListener, Listener {
             Log.w(TAG, "YouTube media URL recovery exhausted after "
                     + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + " attempts");
             cancelPendingMediaUrlRecovery();
-            InfoCache.getInstance()
-                    .removeInfo(item.getServiceId(), item.getUrl(), InfoCache.Type.STREAM);
+            invalidateYouTubeMediaCaches(item);
             mediaUrlRecoveryGuard.reset();
             if (!exoPlayerIsNull()) {
                 simpleExoPlayer.pause();
             }
             changeState(STATE_PAUSED);
-            createErrorNotification(error);
+            createErrorNotification(error, "recovery=exhausted, attempts="
+                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + "/"
+                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS);
             if (fragmentListener != null) {
                 fragmentListener.onPlayerError(error, true);
             }
@@ -2442,8 +2443,7 @@ public final class Player implements PlaybackListener, Listener {
                     + " (status=" + (responseCode == null ? "network" : responseCode)
                     + ", attempt=" + attempt.getNumber() + "/"
                     + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + ")");
-            InfoCache.getInstance().removeInfo(item.getServiceId(), item.getUrl(),
-                    InfoCache.Type.STREAM);
+            invalidateYouTubeMediaCaches(item);
             reloadPlayQueueManager();
         };
         pendingMediaUrlRecovery = recovery;
@@ -2459,16 +2459,37 @@ public final class Player implements PlaybackListener, Listener {
         pendingMediaUrlRecovery = null;
     }
 
+    private static void invalidateYouTubeMediaCaches(@NonNull final PlayQueueItem item) {
+        PlayerDataSource.invalidateYoutubeManifestCaches();
+        InfoCache.getInstance().removeInfo(item.getServiceId(), item.getUrl(),
+                InfoCache.Type.STREAM);
+    }
+
     private void createErrorNotification(@NonNull final PlaybackException error) {
+        createErrorNotification(error, null);
+    }
+
+    private void createErrorNotification(@NonNull final PlaybackException error,
+                                         @Nullable final String recoveryDiagnostic) {
+        final String safeErrorContext = PlayerHttpErrorRecovery.buildSafeErrorContext(error);
+        final StringBuilder diagnosticSuffix = new StringBuilder();
+        if (safeErrorContext != null) {
+            diagnosticSuffix.append(" [").append(safeErrorContext).append(']');
+        }
+        if (recoveryDiagnostic != null) {
+            diagnosticSuffix.append(" [").append(recoveryDiagnostic).append(']');
+        }
+
         final ErrorInfo errorInfo;
         if (currentMetadata == null) {
             errorInfo = new ErrorInfo(error, UserAction.PLAY_STREAM,
                     "Player error[type=" + error.getErrorCodeName()
-                            + "] occurred, currentMetadata is null");
+                            + "] occurred, currentMetadata is null" + diagnosticSuffix);
         } else {
             errorInfo = new ErrorInfo(error, UserAction.PLAY_STREAM,
                     "Player error[type=" + error.getErrorCodeName()
-                            + "] occurred while playing " + currentMetadata.getStreamUrl(),
+                            + "] occurred while playing " + currentMetadata.getStreamUrl()
+                            + diagnosticSuffix,
                     currentMetadata.getServiceId(), currentMetadata.getStreamUrl());
         }
         ErrorUtil.createNotification(context, errorInfo);
