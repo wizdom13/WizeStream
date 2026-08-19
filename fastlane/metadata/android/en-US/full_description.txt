@@ -1,4 +1,4 @@
-WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern Material 3 Expressive interface with privacy-friendly playback, useful local-first features, and support for multiple streaming platforms.
+WizeStream is an independent, NewPipe-based streaming client for Android. It combines a modern interface with privacy-friendly playback, useful local-first features, and support for multiple streaming platforms.
 
 WizeStream retains NewPipe's lightweight, privacy-friendly approach. It requires no platform account, Google framework libraries, or Google Play Services.
 
@@ -7,11 +7,10 @@ Supported services include YouTube, YouTube Music, Bilibili, Niconico, PeerTube,
 Core features include:
 
 - Watch videos and live streams from supported services
-- Background playback
-- Popup playback
+- Background and popup playback
 - Local playlists
-- Subscriptions without signing in to a platform account, kept separate for each service
-- Service-specific channel groups and What's New feeds with independent refresh states, including separate YouTube and YouTube Music scopes
+- Subscriptions without a platform account, kept separate for each service
+- Service-specific channel groups and What's New feeds with independent refresh states
 - Search and browse supported services
 - Video details, related videos, and comments where available
 - Download video, audio, and captions where available
@@ -22,34 +21,34 @@ Additional WizeStream features:
 - Material 3-inspired surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors and manual theme color presets
 - Bottom navigation with a configurable default main tab
-- Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, watch and search history, playback progress, selected settings, channel playback profiles, and completed-download metadata
-- Manual and automatic background synchronization between trusted devices on the same Wi-Fi or Ethernet network
-- "Download on this device" for synchronized download metadata whose media file is missing locally; media files are not transferred between devices
+- Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, history, playback progress, selected settings, channel playback profiles, and completed-download metadata
+- Manual and automatic background synchronization between trusted devices on the same local network
+- "Download on this device" for synchronized download records whose media file is missing locally; media files are not transferred
 - Search filters and sorting
 - Latest, popular, and oldest sorting for channel videos
 - Podcast tabs on supported channels
 - Per-channel playback profiles
 - Multi-audio track selection with original, dubbed, descriptive, and secondary labels
-- SponsorBlock integration for skipping configured sponsor and other marked segments
+- SponsorBlock integration
 - YouTube dislike count support
-- Enhanced player gestures: swipe to seek, fullscreen swipe controls, and hold to temporarily speed up playback
-- Swipe down on the video player to return to the miniplayer
-- Optional keep-video-visible mode while scrolling the video details page
+- Player gestures for seeking, fullscreen controls, and temporary speed-up
+- Swipe down to return to the miniplayer
+- Optional keep-video-visible mode while scrolling video details
 - Playback-speed retention for live streams
-- A separate application ID, allowing side-by-side installation with official NewPipe
+- A separate application ID for side-by-side installation with official NewPipe
 
-WizeStream is independently maintained and uses its own release signing key. It maintains both its application and its integrated extractor changes. Problems encountered in WizeStream, including service and extractor failures, should be reported to WizeStream first. Releases are available through GitHub and IzzyOnDroid.
+WizeStream maintains its application and integrated extractor changes. Problems encountered in WizeStream, including service and extractor failures, should be reported to WizeStream first. Releases are available through GitHub and IzzyOnDroid.
 
 Storage permissions:
 
-On Android 6-9, WizeStream can optionally use a legacy storage backend instead of Android's Storage Access Framework. This mode is also used on some Fire TV devices because of a platform-specific SAF issue. In legacy mode, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE allow the app to read existing files and save downloaded video, audio, captions, and exported backups. On Android 10 and newer, SAF is always used, and these storage permissions are not requested.
+On Android 6-9, WizeStream can optionally use a legacy storage backend instead of Android's Storage Access Framework. This mode is also used on some Fire TV devices because of a platform-specific SAF issue. In legacy mode, this allows the app to read existing files and save downloaded video, audio, captions, and exported backups. On Android 10 and newer, SAF is always used, and these storage permissions are not requested.
 
 Camera permission:
 
-WizeStream optionally uses the CAMERA permission only when the user selects Scan pairing code for local device synchronization. It allows one WizeStream device to scan the one-time QR code displayed by another device for secure pairing. The permission is requested only when the QR-code scanner is opened. WizeStream does not capture, store, or upload camera images, and camera hardware is declared optional.
+WizeStream optionally uses the CAMERA permission only when the user selects Scan pairing code for local device synchronization. It lets one device scan the one-time QR code displayed by another for secure pairing. The permission is requested only when the scanner opens. WizeStream does not capture, store, or upload camera images, and camera hardware is optional.
 
 Important project notice:
 
-WizeStream is independently maintained. It is based on NewPipe but is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
+WizeStream is based on NewPipe but is not affiliated with, sponsored by, or endorsed by the official NewPipe project, TeamNewPipe, or NewPipe e.V.
 
-WizeStream is free software based on NewPipe and distributed under the GNU General Public License version 3 or later. It preserves upstream NewPipe credits, license notices, and third-party license information.
+WizeStream is free software distributed under the GNU General Public License version 3 or later. It preserves upstream NewPipe credits, license notices, and third-party license information.
