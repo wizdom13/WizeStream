@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-// jvm-libp2p's CompletableFuture API is backported by coreLibraryDesugaring.
-@file:android.annotation.SuppressLint("NewApi")
+// jvm-libp2p's CompletableFuture API is backported by coreLibraryDesugaring on Android.
+@file:Suppress("NewApi")
 
 package org.schabi.newpipe.sync
 
@@ -876,6 +876,10 @@ class Libp2pSyncNode(
 
     private fun ephemeralListenAddress(address: String): String {
         return listenAddressWithPort(address, 0)
+    }
+
+    private fun tcpPortFromMultiaddress(address: Multiaddr): Int? {
+        return TCP_PORT_VALUE.find(address.toString())?.value?.toIntOrNull()
     }
 
     private fun listenAddressWithPort(address: String, port: Int): String {
