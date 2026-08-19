@@ -358,6 +358,14 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
     }
 
+    @Override
+    public void onViewRecycled(@NonNull final RecyclerView.ViewHolder holder) {
+        if (holder instanceof InfoItemHolder) {
+            ((InfoItemHolder) holder).recycle();
+        }
+        super.onViewRecycled(holder);
+    }
+
     public GridLayoutManager.SpanSizeLookup getSpanSizeLookup(final int spanCount) {
         return new GridLayoutManager.SpanSizeLookup() {
             @Override
