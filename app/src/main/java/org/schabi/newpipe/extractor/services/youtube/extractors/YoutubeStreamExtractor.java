@@ -817,11 +817,6 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     private boolean streamsCached = false;
 
     /**
-     * Pre-fetch and batch-process all streams in a single API call.
-     * This method collects all audio, video, and video-only streams,
-     * then performs batch deobfuscation in one request.
-     */
-    /**
      * Returns direct stream responses in reliability order.
      *
      * <p>VISIONOS is preferred because YouTube can expose ANDROID_VR adaptive URLs that start
@@ -839,6 +834,11 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                 new Pair<>(androidStreamingData, androidCpn));
     }
 
+    /**
+     * Pre-fetch and batch-process all streams in a single API call.
+     * This method collects all audio, video, and video-only streams,
+     * then performs batch deobfuscation in one request.
+     */
     private void ensureStreamsAreCached() throws ExtractionException {
         if (streamsCached) {
             return;
