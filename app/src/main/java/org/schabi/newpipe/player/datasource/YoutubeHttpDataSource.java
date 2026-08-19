@@ -15,9 +15,11 @@ import static com.google.android.exoplayer2.util.Util.castNonNull;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getAndroidUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getIosUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getSafariUserAgent;
+import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getVisionOsUserAgent;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isAndroidStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isIosStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isSafariStreamingUrl;
+import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isVisionOsStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isWebStreamingUrl;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.isTvHtml5SimplyEmbeddedPlayerStreamingUrl;
 import static java.lang.Math.min;
@@ -418,10 +420,13 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
                 errorResponseBody = Util.EMPTY_BYTE_ARRAY;
             }
 
+            final String requestDiagnostic = buildSafeRequestDiagnostic(
+                    httpURLConnection.getURL().toString());
+            Log.w(TAG, "YouTube media request rejected: " + requestDiagnostic);
             closeConnectionQuietly();
             final IOException cause = responseCode == 416 ? new DataSourceException(
                     PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE)
-                    : null;
+                    : new IOException("YouTube media request diagnostic: " + requestDiagnostic);
             throw new InvalidResponseCodeException(responseCode, responseMessage, cause, headers,
                     dataSpec, errorResponseBody);
         }
@@ -706,7 +711,66 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         if (isIosStreamingUrl(requestUrl)) {
             return getIosUserAgent(null);
         }
+        if (isVisionOsStreamingUrl(requestUrl)) {
+            return getVisionOsUserAgent(null);
+        }
         return DownloaderImpl.USER_AGENT;
+    }
+
+    @NonNull
+    static String buildSafeRequestDiagnostic(@NonNull final String requestUrl) {
+        return "client=" + safeDiagnosticValue(getQueryParameter(requestUrl, "c"))
+                + ", cver=" + safeDiagnosticValue(getQueryParameter(requestUrl, "cver"))
+                + ", itag=" + safeDiagnosticValue(getQueryParameter(requestUrl, "itag"))
+                + ", userAgent=" + resolveUserAgentFamily(requestUrl);
+    }
+
+    @Nullable
+    private static String getQueryParameter(@NonNull final String requestUrl,
+                                            @NonNull final String name) {
+        try {
+            final String query = new URL(requestUrl).getQuery();
+            if (query == null) {
+                return null;
+            }
+            for (final String parameter : query.split("&")) {
+                final int separator = parameter.indexOf('=');
+                final String parameterName = separator < 0
+                        ? parameter : parameter.substring(0, separator);
+                if (name.equals(parameterName)) {
+                    return separator < 0 ? "" : parameter.substring(separator + 1);
+                }
+            }
+        } catch (final MalformedURLException ignored) {
+            // Diagnostics must never interfere with playback error handling.
+        }
+        return null;
+    }
+
+    @NonNull
+    private static String resolveUserAgentFamily(@NonNull final String requestUrl) {
+        if (isSafariStreamingUrl(requestUrl)) {
+            return "SAFARI";
+        }
+        if (isAndroidStreamingUrl(requestUrl)) {
+            return "ANDROID";
+        }
+        if (isIosStreamingUrl(requestUrl)) {
+            return "IOS";
+        }
+        if (isVisionOsStreamingUrl(requestUrl)) {
+            return "VISIONOS";
+        }
+        return "DEFAULT";
+    }
+
+    @NonNull
+    private static String safeDiagnosticValue(@Nullable final String value) {
+        if (value == null || value.isEmpty()) {
+            return "unknown";
+        }
+        final String sanitized = value.replaceAll("[^A-Za-z0-9._-]", "?");
+        return sanitized.length() <= 32 ? sanitized : sanitized.substring(0, 32);
     }
 
     /**
