@@ -63,6 +63,21 @@ public class YoutubeHttpDataSourceTest {
     }
 
     @Test
+    public void pathEncodedClientMarkersUseMatchingUserAgents() {
+        final String pathStreamUrl =
+                "https://rr1---sn.example.googlevideo.com/videoplayback/itag/18";
+
+        assertEquals(getSafariUserAgent(), YoutubeHttpDataSource.resolveUserAgent(
+                pathStreamUrl + "/c/WEB/cver/2.20260114.08.00"));
+        assertEquals(getAndroidUserAgent(null), YoutubeHttpDataSource.resolveUserAgent(
+                pathStreamUrl + "/c/ANDROID/cver/21.03.36"));
+        assertEquals(getIosUserAgent(null), YoutubeHttpDataSource.resolveUserAgent(
+                pathStreamUrl + "/c/IOS/cver/19.45.4"));
+        assertEquals(getVisionOsUserAgent(null), YoutubeHttpDataSource.resolveUserAgent(
+                pathStreamUrl + "/c/VISIONOS/cver/1.02"));
+    }
+
+    @Test
     public void rejectedRequestDiagnosticExcludesSignedUrlData() {
         final String url = STREAM_URL + "&c=VISIONOS&cver=1.02"
                 + "&sig=secret-signature";
@@ -71,6 +86,18 @@ public class YoutubeHttpDataSourceTest {
 
         assertEquals("client=VISIONOS, cver=1.02, itag=18, userAgent=VISIONOS",
                 diagnostic);
+        assertFalse(diagnostic.contains("secret-signature"));
+        assertFalse(diagnostic.contains("googlevideo.com"));
+    }
+
+    @Test
+    public void rejectedRequestDiagnosticReadsPathEncodedParameters() {
+        final String url = "https://rr1---sn.example.googlevideo.com/videoplayback"
+                + "/itag/18/c/VISIONOS/cver/1.02/sig/secret-signature";
+
+        final String diagnostic = YoutubeHttpDataSource.buildSafeRequestDiagnostic(url);
+
+        assertEquals("client=VISIONOS, cver=1.02, itag=18, userAgent=VISIONOS", diagnostic);
         assertFalse(diagnostic.contains("secret-signature"));
         assertFalse(diagnostic.contains("googlevideo.com"));
     }

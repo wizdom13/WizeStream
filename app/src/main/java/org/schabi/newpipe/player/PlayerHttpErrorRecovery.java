@@ -17,6 +17,9 @@ import java.util.function.LongSupplier;
 
 /** Utility methods for deciding whether a player media URL failure can be retried safely. */
 final class PlayerHttpErrorRecovery {
+    private static final String REQUEST_DIAGNOSTIC_PREFIX =
+            "YouTube media request diagnostic: ";
+
     private PlayerHttpErrorRecovery() {
     }
 
@@ -132,5 +135,39 @@ final class PlayerHttpErrorRecovery {
             current = current.getCause();
         }
         return false;
+    }
+
+    @Nullable
+    static String findSafeRequestDiagnostic(@NonNull final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            final String message = current.getMessage();
+            if (message != null && message.startsWith(REQUEST_DIAGNOSTIC_PREFIX)) {
+                return message.substring(REQUEST_DIAGNOSTIC_PREFIX.length());
+            }
+            current = current.getCause();
+        }
+        return null;
+    }
+
+    @Nullable
+    static String buildSafeErrorContext(@NonNull final Throwable error) {
+        final Integer responseCode = findInvalidResponseCode(error);
+        final String requestDiagnostic = findSafeRequestDiagnostic(error);
+        if (responseCode == null && requestDiagnostic == null) {
+            return null;
+        }
+
+        final StringBuilder context = new StringBuilder();
+        if (responseCode != null) {
+            context.append("status=").append(responseCode);
+        }
+        if (requestDiagnostic != null) {
+            if (context.length() > 0) {
+                context.append(", ");
+            }
+            context.append(requestDiagnostic);
+        }
+        return context.toString();
     }
 }

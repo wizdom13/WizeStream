@@ -52,6 +52,17 @@ public class PlayerHttpErrorRecoveryTest {
     }
 
     @Test
+    public void buildsSafeErrorContextFromNestedRequestDiagnostic() {
+        final IOException diagnostic = new IOException("YouTube media request diagnostic: "
+                + "client=VISIONOS, cver=1.02, itag=18, userAgent=VISIONOS");
+        final Throwable error = new RuntimeException("source",
+                invalidResponseCodeException(403, diagnostic));
+
+        assertEquals("status=403, client=VISIONOS, cver=1.02, itag=18, userAgent=VISIONOS",
+                PlayerHttpErrorRecovery.buildSafeErrorContext(error));
+    }
+
+    @Test
     public void retryGuardBoundsAttemptsAndAppliesBackoff() {
         final AtomicLong elapsedRealtime = new AtomicLong(1);
         final PlayerHttpErrorRecovery.RecoveryGuard guard =
@@ -110,7 +121,7 @@ public class PlayerHttpErrorRecoveryTest {
         assertTrue(recoveryMethod.contains("setRecovery();"));
         assertTrue(recoveryMethod.indexOf("setRecovery();")
                 < recoveryMethod.indexOf("postDelayed"));
-        assertTrue(recoveryMethod.contains("InfoCache.getInstance()"));
+        assertTrue(recoveryMethod.contains("invalidateYouTubeMediaCaches(item)"));
         assertTrue(recoveryMethod.contains("changeState(STATE_PAUSED);"));
         assertFalse(recoveryMethod.contains("playQueue.error()"));
     }
@@ -124,8 +135,14 @@ public class PlayerHttpErrorRecoveryTest {
 
     private static HttpDataSource.InvalidResponseCodeException invalidResponseCodeException(
             final int responseCode) {
+        return invalidResponseCodeException(responseCode, new IOException("HTTP error"));
+    }
+
+    private static HttpDataSource.InvalidResponseCodeException invalidResponseCodeException(
+            final int responseCode,
+            final IOException cause) {
         return new HttpDataSource.InvalidResponseCodeException(responseCode, "HTTP error",
-                new IOException("HTTP error"), Collections.emptyMap(), null, new byte[0]);
+                cause, Collections.emptyMap(), null, new byte[0]);
     }
 
     private static void assertAttempt(

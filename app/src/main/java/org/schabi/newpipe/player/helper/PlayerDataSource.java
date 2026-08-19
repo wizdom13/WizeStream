@@ -200,6 +200,20 @@ public class PlayerDataSource {
         return new DefaultDashChunkSource.Factory(dataSourceFactory);
     }
 
+    /**
+     * Invalidates generated YouTube manifests after a media URL is rejected.
+     *
+     * <p>Refreshing {@code StreamInfo} alone is not sufficient for generated progressive, OTF,
+     * or post-live DASH manifests: their cached XML can still reference the rejected redirected
+     * CDN URL. Clearing these small in-memory caches ensures that the next recovery rebuilds the
+     * manifest from the refreshed extractor response.</p>
+     */
+    public static void invalidateYoutubeManifestCaches() {
+        YoutubeProgressiveDashManifestCreator.getCache().clear();
+        YoutubeOtfDashManifestCreator.getCache().clear();
+        YoutubePostLiveStreamDvrDashManifestCreator.getCache().clear();
+    }
+
     private static YoutubeHttpDataSource.Factory getYoutubeHttpDataSourceFactory(
             final boolean rangeParameterEnabled,
             final boolean rnParameterEnabled) {

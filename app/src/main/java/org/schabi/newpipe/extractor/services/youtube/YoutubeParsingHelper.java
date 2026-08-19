@@ -258,14 +258,21 @@ YoutubeParsingHelper {
     private static final String FEED_BASE_CHANNEL_ID =
             "https://www.youtube.com/feeds/videos.xml?channel_id=";
     private static final String FEED_BASE_USER = "https://www.youtube.com/feeds/videos.xml?user=";
-    private static final Pattern C_WEB_PATTERN = Pattern.compile("&c=WEB");
+    private static final Pattern C_WEB_PATTERN = Pattern.compile(
+            "(?:[?&]c=WEB(?:[&#]|$)|/c/WEB(?:/|[?#]|$))");
     private static final Pattern C_SAFARI_VERSION_PATTERN = Pattern.compile(
-            "[?&]cver=" + Pattern.quote(SAFARI_CLIENT_VERSION) + "(?:[&#]|$)");
+            "(?:[?&]cver=" + Pattern.quote(SAFARI_CLIENT_VERSION) + "(?:[&#]|$)"
+                    + "|/cver/" + Pattern.quote(SAFARI_CLIENT_VERSION) + "(?:/|[?#]|$))");
     private static final Pattern C_TVHTML5_SIMPLY_EMBEDDED_PLAYER_PATTERN =
-            Pattern.compile("&c=TVHTML5_SIMPLY_EMBEDDED_PLAYER");
-    private static final Pattern C_ANDROID_PATTERN = Pattern.compile("&c=(?:ANDROID|ANDROID_VR)");
-    private static final Pattern C_IOS_PATTERN = Pattern.compile("&c=IOS");
-    private static final Pattern C_VISIONOS_PATTERN = Pattern.compile("&c=VISIONOS");
+            Pattern.compile("(?:[?&]c=TVHTML5_SIMPLY_EMBEDDED_PLAYER(?:[&#]|$)"
+                    + "|/c/TVHTML5_SIMPLY_EMBEDDED_PLAYER(?:/|[?#]|$))");
+    private static final Pattern C_ANDROID_PATTERN = Pattern.compile(
+            "(?:[?&]c=(?:ANDROID|ANDROID_VR)(?:[&#]|$)"
+                    + "|/c/(?:ANDROID|ANDROID_VR)(?:/|[?#]|$))");
+    private static final Pattern C_IOS_PATTERN = Pattern.compile(
+            "(?:[?&]c=IOS(?:[&#]|$)|/c/IOS(?:/|[?#]|$))");
+    private static final Pattern C_VISIONOS_PATTERN = Pattern.compile(
+            "(?:[?&]c=VISIONOS(?:[&#]|$)|/c/VISIONOS(?:/|[?#]|$))");
 
     private static final Set<String> GOOGLE_URLS = Set.of("google.", "m.google.", "www.google.");
     private static final Set<String> INVIDIOUS_URLS = Set.of("invidio.us", "dev.invidio.us",

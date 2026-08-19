@@ -719,26 +719,33 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
 
     @NonNull
     static String buildSafeRequestDiagnostic(@NonNull final String requestUrl) {
-        return "client=" + safeDiagnosticValue(getQueryParameter(requestUrl, "c"))
-                + ", cver=" + safeDiagnosticValue(getQueryParameter(requestUrl, "cver"))
-                + ", itag=" + safeDiagnosticValue(getQueryParameter(requestUrl, "itag"))
+        return "client=" + safeDiagnosticValue(getUrlParameter(requestUrl, "c"))
+                + ", cver=" + safeDiagnosticValue(getUrlParameter(requestUrl, "cver"))
+                + ", itag=" + safeDiagnosticValue(getUrlParameter(requestUrl, "itag"))
                 + ", userAgent=" + resolveUserAgentFamily(requestUrl);
     }
 
     @Nullable
-    private static String getQueryParameter(@NonNull final String requestUrl,
-                                            @NonNull final String name) {
+    private static String getUrlParameter(@NonNull final String requestUrl,
+                                          @NonNull final String name) {
         try {
-            final String query = new URL(requestUrl).getQuery();
-            if (query == null) {
-                return null;
+            final URL url = new URL(requestUrl);
+            final String query = url.getQuery();
+            if (query != null) {
+                for (final String parameter : query.split("&")) {
+                    final int separator = parameter.indexOf('=');
+                    final String parameterName = separator < 0
+                            ? parameter : parameter.substring(0, separator);
+                    if (name.equals(parameterName)) {
+                        return separator < 0 ? "" : parameter.substring(separator + 1);
+                    }
+                }
             }
-            for (final String parameter : query.split("&")) {
-                final int separator = parameter.indexOf('=');
-                final String parameterName = separator < 0
-                        ? parameter : parameter.substring(0, separator);
-                if (name.equals(parameterName)) {
-                    return separator < 0 ? "" : parameter.substring(separator + 1);
+
+            final String[] pathSegments = url.getPath().split("/");
+            for (int i = 0; i + 1 < pathSegments.length; i++) {
+                if (name.equals(pathSegments[i])) {
+                    return pathSegments[i + 1];
                 }
             }
         } catch (final MalformedURLException ignored) {
