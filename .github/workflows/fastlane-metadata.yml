@@ -1,0 +1,45 @@
+name: Fastlane metadata
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - pipe
+    paths:
+      - 'fastlane/metadata/android/**/full_description.txt'
+      - '.github/workflows/fastlane-metadata.yml'
+  push:
+    branches:
+      - pipe
+    paths:
+      - 'fastlane/metadata/android/**/full_description.txt'
+      - '.github/workflows/fastlane-metadata.yml'
+
+jobs:
+  validate-full-descriptions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check Fastlane full-description lengths
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          readonly safe_limit=3700
+          failed=0
+
+          while IFS= read -r -d '' file; do
+            character_count="$(wc -m < "$file")"
+            character_count="${character_count//[[:space:]]/}"
+            echo "$file: $character_count characters"
+
+            if (( character_count > safe_limit )); then
+              echo "::error file=$file::Full description has $character_count characters; safe limit is $safe_limit."
+              failed=1
+            fi
+          done < <(find fastlane/metadata/android -type f -name full_description.txt -print0)
+
+          exit "$failed"
