@@ -24,6 +24,7 @@ import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
@@ -296,6 +297,18 @@ public final class InfoItemDialog {
             return this;
         }
 
+        public Builder addLearningContentEntryIfNeeded() {
+            if (LearningMode.isEnabled(context)) {
+                final LearningContentManager learningContent =
+                        LearningContentManager.getInstance(context);
+                addEntry(learningContent.isStreamSourceMarked(
+                        infoItem.getServiceId(), infoItem.getUrl())
+                        ? StreamDialogDefaultEntry.REMOVE_FROM_LEARNING
+                        : StreamDialogDefaultEntry.MARK_AS_LEARNING);
+            }
+            return this;
+        }
+
         /**
          * Adds the {@link StreamDialogDefaultEntry#PLAY_WITH_KODI} entry if it is needed.
          * @return the current {@link Builder} instance
@@ -332,6 +345,7 @@ public final class InfoItemDialog {
                     StreamDialogDefaultEntry.OPEN_IN_BROWSER
             );
             addPlayWithKodiEntryIfNeeded();
+            addLearningContentEntryIfNeeded();
             addMarkAsWatchedEntryIfNeeded();
             addEntry(StreamDialogDefaultEntry.SHOW_CHANNEL_DETAILS);
             return this;

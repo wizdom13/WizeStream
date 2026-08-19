@@ -86,6 +86,7 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
             } else {
                 emptyList()
             },
+            learningContent = result.learningContent,
             continueLearning = if (LearningMode.isPlaylistProgressEnabled(requireContext())) {
                 result.continueLearning
             } else {
@@ -116,6 +117,13 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
             R.string.learning_dashboard_playlists_format,
             visibleResult.activePlaylists.size,
             visibleResult.completedPlaylists.size
+        )
+
+        renderStreamSection(
+            binding.learningDashboardContentTitle,
+            binding.learningDashboardContentList,
+            visibleResult.learningContent,
+            false
         )
 
         renderStreamSection(
@@ -228,11 +236,20 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
             item.learningDashboardItemProgress.setProgressCompat(playlist.percentage, false)
             CoilHelper.loadPlaylistThumbnail(item.learningDashboardThumbnail, playlist.thumbnailUrl)
             item.root.setOnClickListener {
-                NavigationHelper.openLocalPlaylistFragment(
-                    fm,
-                    playlist.playlistId,
-                    playlist.playlistName.orEmpty()
-                )
+                if (playlist.playlistId != null) {
+                    NavigationHelper.openLocalPlaylistFragment(
+                        fm,
+                        playlist.playlistId,
+                        playlist.playlistName.orEmpty()
+                    )
+                } else if (playlist.serviceId != null && playlist.playlistUrl != null) {
+                    NavigationHelper.openPlaylistFragment(
+                        fm,
+                        playlist.serviceId,
+                        playlist.playlistUrl,
+                        playlist.playlistName.orEmpty()
+                    )
+                }
             }
             container.addView(item.root)
         }

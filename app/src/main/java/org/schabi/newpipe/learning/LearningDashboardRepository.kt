@@ -11,12 +11,14 @@ import org.schabi.newpipe.database.learning.dao.LearningDashboardDAO
 class LearningDashboardRepository(private val dao: LearningDashboardDAO) {
     fun observe(limit: Int = DEFAULT_SECTION_LIMIT): Flowable<LearningDashboardSnapshot> = Flowable.combineLatest(
         dao.observePlaylistSummaries(),
+        dao.observeLearningContent(limit),
         dao.observeContinueLearning(limit),
         dao.observeRecentlyAnnotated(limit),
         dao.observeDailyStudyActivity()
-    ) { playlists, continueLearning, recentlyAnnotated, dailyActivity ->
+    ) { playlists, learningContent, continueLearning, recentlyAnnotated, dailyActivity ->
         LearningDashboardSnapshot(
             playlists,
+            learningContent,
             continueLearning,
             recentlyAnnotated,
             LearningStudyStatistics.from(dailyActivity)

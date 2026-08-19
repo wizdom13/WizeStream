@@ -22,6 +22,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem
 class LearningSessionTracker(context: Context) {
     private val appContext = context.applicationContext
     private val database = NewPipeDatabase.getInstance(appContext)
+    private val learningContent = LearningContentManager.getInstance(appContext)
     private var active: ActiveSession? = null
 
     @Synchronized
@@ -31,6 +32,7 @@ class LearningSessionTracker(context: Context) {
         accrue(nowEpochMillis, nowElapsedMillis)
 
         val eligible = item != null && playing && LearningMode.isEnabled(appContext) &&
+            learningContent.isStreamLearning(item.serviceId, item.url) &&
             (!backgroundPlayback || LearningMode.shouldCountBackgroundPlayback(appContext))
         val current = active
         val localDate = localDate(nowEpochMillis)
@@ -125,7 +127,8 @@ class LearningSessionTracker(context: Context) {
             endedAtEpochMillis = endedAtEpochMillis,
             watchedDurationMillis = watchedDurationMillis,
             localDate = localDate,
-            backgroundPlayback = backgroundPlayback
+            backgroundPlayback = backgroundPlayback,
+            designatedLearningContent = true
         )
     }
 

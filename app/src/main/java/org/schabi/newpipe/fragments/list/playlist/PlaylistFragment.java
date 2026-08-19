@@ -15,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,6 +41,7 @@ import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.ListExtractor;
+import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo;
 import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper;
@@ -48,6 +50,8 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
+import org.schabi.newpipe.learning.LearningContentManager;
+import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
@@ -76,6 +80,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, PlaylistInfo>
         implements PlaylistControlViewHolder {
@@ -88,6 +93,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     private Disposable bookmarkMetadataUpdater;
 
     private RemotePlaylistManager remotePlaylistManager;
+    private LearningContentManager learningContentManager;
     private PlaylistRemoteEntity playlistEntity;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -132,6 +138,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         isBookmarkButtonReady = new AtomicBoolean(false);
         remotePlaylistManager = new RemotePlaylistManager(NewPipeDatabase
                 .getInstance(requireContext()));
+        learningContentManager = LearningContentManager.getInstance(requireContext());
     }
 
     @Override
@@ -214,6 +221,21 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         playlistBookmarkButton = menu.findItem(R.id.menu_item_bookmark);
         updateBookmarkButtons();
+    }
+
+    @Override
+    public void onPrepareOptionsMenu(@NonNull final Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        final MenuItem learningItem = menu.findItem(R.id.menu_item_learning_content);
+        if (learningItem == null) {
+            return;
+        }
+        final boolean visible = LearningMode.isEnabled(requireContext()) && currentInfo != null;
+        learningItem.setVisible(visible);
+        if (visible) {
+            learningItem.setTitle(learningContentManager.isRemotePlaylistMarked(serviceId, url)
+                    ? R.string.learning_remove_content : R.string.learning_mark_content);
+        }
     }
 
     @Override
@@ -307,10 +329,42 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                         dialog -> dialog.show(getFM(), TAG)
                 ));
             }
+        } else if (itemId == R.id.menu_item_learning_content) {
+            toggleLearningPlaylist();
         } else {
             return super.onOptionsItemSelected(item);
         }
         return true;
+    }
+
+    private void toggleLearningPlaylist() {
+        if (currentInfo == null) {
+            return;
+        }
+        final boolean marked = learningContentManager.isRemotePlaylistMarked(serviceId, url);
+        final List<StreamEntity> streams = unfilteredItems.stream()
+                .map(StreamEntity::new)
+                .collect(Collectors.toList());
+        disposables.add(learningContentManager.setRemotePlaylistMarked(
+                        serviceId, url, currentInfo.getName(),
+                        new PlaylistRemoteEntity(currentInfo).getThumbnailUrl(),
+                        streams, !marked)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            requireActivity().invalidateOptionsMenu();
+                            Toast.makeText(requireContext(), marked
+                                            ? R.string.learning_content_removed
+                                            : R.string.learning_content_added,
+                                    Toast.LENGTH_SHORT).show();
+                            if (!marked) {
+                                indexRemainingLearningPlaylistItems(currentInfo.getNextPage());
+                            }
+                        },
+                        error -> Toast.makeText(requireContext(),
+                                R.string.learning_content_update_error,
+                                Toast.LENGTH_SHORT).show()
+                ));
     }
 
 
@@ -332,6 +386,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     public void handleNextItems(final ListExtractor.InfoItemsPage<StreamInfoItem> result) {
         super.handleNextItems(result);
         unfilteredItems.addAll(result.getItems());
+        indexLearningPlaylistItems(result.getItems());
         refreshStreamStatesAfterPageLoad();
         setStreamCountAndOverallDuration(result.getItems(), !result.hasNextPage());
         continueLoadingPlaylistForSorting();
@@ -342,6 +397,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         super.handleResult(result);
         unfilteredItems.clear();
         unfilteredItems.addAll(result.getRelatedItems());
+        indexLearningPlaylistItems(result.getRelatedItems());
 
         animate(headerBinding.getRoot(), true, 100);
         animate(headerBinding.uploaderLayout, true, 300);
@@ -425,10 +481,47 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
         updateBookmarkMetadataIfNeeded();
         updateBookmarkButtons();
+        requireActivity().invalidateOptionsMenu();
 
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
         refreshStreamStatesAfterPageLoad();
         continueLoadingPlaylistForSorting();
+    }
+
+    private void indexLearningPlaylistItems(final List<StreamInfoItem> items) {
+        if (!learningContentManager.isRemotePlaylistMarked(serviceId, url) || items.isEmpty()) {
+            return;
+        }
+        disposables.add(learningContentManager.addRemotePlaylistStreams(
+                        serviceId,
+                        url,
+                        items.stream().map(StreamEntity::new).collect(Collectors.toList()))
+                .subscribe(
+                        () -> { },
+                        error -> Log.w(TAG, "Unable to index Learning playlist items", error)
+                ));
+    }
+
+    private void indexRemainingLearningPlaylistItems(@Nullable final Page nextPage) {
+        if (nextPage == null
+                || !learningContentManager.isRemotePlaylistMarked(serviceId, url)) {
+            return;
+        }
+        disposables.add(ExtractorHelper.getMorePlaylistItems(serviceId, url, nextPage)
+                .subscribeOn(Schedulers.io())
+                .flatMap(page -> learningContentManager.addRemotePlaylistStreams(
+                                serviceId,
+                                url,
+                                page.getItems().stream()
+                                        .map(StreamEntity::new)
+                                        .collect(Collectors.toList()))
+                        .andThen(Single.just(page)))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        page -> indexRemainingLearningPlaylistItems(
+                                page.hasNextPage() ? page.getNextPage() : null),
+                        error -> Log.w(TAG, "Unable to finish indexing Learning playlist", error)
+                ));
     }
 
     private void refreshStreamStatesAfterPageLoad() {

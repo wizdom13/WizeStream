@@ -15,6 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
+import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
@@ -51,6 +52,14 @@ class LearningDashboardDaoTest {
                 PlaylistStreamEntity(playlistId, completedId, 1)
             )
         )
+        database.learningContentDAO().upsertSource(
+            LearningContentSourceEntity(
+                sourceId = "local-playlist:$playlistId",
+                sourceType = LearningContentSourceEntity.TYPE_LOCAL_PLAYLIST,
+                localPlaylistId = playlistId,
+                title = "Course"
+            )
+        )
         database.streamStateDAO().insert(StreamStateEntity(partialId, 300_000))
         database.streamStateDAO().insert(StreamStateEntity(completedId, 600_000))
         database.streamHistoryDAO().insert(
@@ -67,7 +76,8 @@ class LearningDashboardDaoTest {
                 61_001,
                 60_000,
                 "2026-08-05",
-                false
+                false,
+                true
             )
         )
         database.learningSessionDAO().upsert(
@@ -78,6 +88,7 @@ class LearningDashboardDaoTest {
                 122_002,
                 120_000,
                 "2026-08-05",
+                true,
                 true
             )
         )

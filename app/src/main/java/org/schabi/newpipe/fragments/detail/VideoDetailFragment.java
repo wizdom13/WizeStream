@@ -1112,7 +1112,9 @@ public final class VideoDetailFragment
             pageAdapter.addFragment(EmptyFragment.newInstance(false), DESCRIPTION_TAB_TAG);
         }
 
-        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())) {
+        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())
+                && org.schabi.newpipe.learning.LearningContentManager.getInstance(requireContext())
+                        .isStreamLearning(serviceId, url)) {
             pageAdapter.addFragment(EmptyFragment.newInstance(false), NOTES_TAB_TAG);
         }
 
@@ -1172,7 +1174,9 @@ public final class VideoDetailFragment
             pageAdapter.updateItem(DESCRIPTION_TAB_TAG, new DescriptionFragment(info));
         }
 
-        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())) {
+        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())
+                && org.schabi.newpipe.learning.LearningContentManager.getInstance(requireContext())
+                        .isStreamLearning(info.getServiceId(), info.getUrl())) {
             pageAdapter.updateItem(
                     NOTES_TAB_TAG,
                     LearningNotesFragment.getInstance(info.getServiceId(), info.getUrl()));
