@@ -1,0 +1,4 @@
+WizeStream 1.7.1
+
+- Fixed YouTube playback stopping with HTTP 403, including streams failing around the one-minute mark.
+- Improved recovery and client fallback for expiring or rejected YouTube media URLs.
