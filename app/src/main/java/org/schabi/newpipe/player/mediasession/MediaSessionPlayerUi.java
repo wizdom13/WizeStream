@@ -22,6 +22,7 @@ import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.notification.NotificationActionData;
 import org.schabi.newpipe.player.notification.NotificationConstants;
 import org.schabi.newpipe.player.ui.PlayerUi;
@@ -159,9 +160,9 @@ public class MediaSessionPlayerUi extends PlayerUi
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, player.getUploaderName());
 
         // set duration (-1 for livestreams or if unknown, see the METADATA_KEY_DURATION docs)
-        final long duration = player.getCurrentStreamInfo()
-                .filter(info -> !StreamTypeUtil.isLiveStream(info.getStreamType()))
-                .map(info -> info.getDuration() * 1000L)
+        final long duration = Optional.ofNullable(player.getCurrentMetadata())
+                .filter(tag -> !StreamTypeUtil.isLiveStream(tag.getStreamType()))
+                .map(tag -> tag.getDurationSeconds() * 1000L)
                 .orElse(-1L);
         builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
 
@@ -279,6 +280,12 @@ public class MediaSessionPlayerUi extends PlayerUi
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        updateMediaSessionActions();
+    }
+
+    @Override
+    public void onMetadataChanged(@NonNull final MediaItemTag tag) {
+        super.onMetadataChanged(tag);
         updateMediaSessionActions();
     }
 

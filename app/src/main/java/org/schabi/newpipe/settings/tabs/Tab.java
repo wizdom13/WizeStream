@@ -27,6 +27,7 @@ import org.schabi.newpipe.fragments.list.playlist.PlaylistFragment;
 import org.schabi.newpipe.local.bookmark.BookmarkFragment;
 import org.schabi.newpipe.local.feed.FeedFragment;
 import org.schabi.newpipe.local.history.StatisticsPlaylistFragment;
+import org.schabi.newpipe.local.media.LocalMediaFragment;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.local.subscription.SubscriptionFragment;
 import org.schabi.newpipe.util.KioskTranslator;
@@ -167,7 +168,8 @@ public abstract class Tab {
         CHANNEL(new ChannelTab()),
         PLAYLIST(new PlaylistTab()),
         FEEDGROUP(new FeedGroupTab()),
-        DOWNLOADS(new DownloadsTab());
+        DOWNLOADS(new DownloadsTab()),
+        LOCAL_MEDIA(new LocalMediaTab());
 
         private final Tab tab;
 
@@ -332,6 +334,31 @@ public abstract class Tab {
         @Override
         public DownloadsTabFragment getFragment(final Context context) {
             return new DownloadsTabFragment();
+        }
+    }
+
+    public static class LocalMediaTab extends Tab {
+        public static final int ID = 11;
+
+        @Override
+        public int getTabId() {
+            return ID;
+        }
+
+        @Override
+        public String getTabName(final Context context) {
+            return context.getString(R.string.local_media);
+        }
+
+        @DrawableRes
+        @Override
+        public int getTabIconRes(final Context context) {
+            return R.drawable.ic_music_note;
+        }
+
+        @Override
+        public LocalMediaFragment getFragment(final Context context) {
+            return new LocalMediaFragment();
         }
     }
 

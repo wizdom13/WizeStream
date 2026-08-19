@@ -69,7 +69,22 @@ data class StreamEntity(
     var uploaderAvatarUrl: String? = null,
 
     @ColumnInfo(name = STREAM_REQUIRES_MEMBERSHIP, defaultValue = "0")
-    var requiresMembership: Boolean = false
+    var requiresMembership: Boolean = false,
+
+    @ColumnInfo(name = STREAM_SOURCE_TYPE, defaultValue = "'REMOTE'")
+    var sourceType: String = SOURCE_TYPE_REMOTE,
+
+    @ColumnInfo(name = STREAM_MIME_TYPE)
+    var mimeType: String? = null,
+
+    @ColumnInfo(name = STREAM_LOCAL_MEDIA_ID)
+    var localMediaId: Long? = null,
+
+    @ColumnInfo(name = STREAM_LOCAL_ALBUM)
+    var localAlbum: String? = null,
+
+    @ColumnInfo(name = STREAM_LOCAL_FOLDER)
+    var localFolder: String? = null
 ) : Serializable {
     @Ignore
     constructor(item: StreamInfoItem) : this(
@@ -108,8 +123,20 @@ data class StreamEntity(
         duration = item.duration,
         uploader = item.uploader,
         uploaderUrl = item.uploaderUrl,
-        thumbnailUrl = ImageStrategy.imageListToDbUrl(item.getThumbnails())
+        thumbnailUrl = if (item.isLocalMedia) {
+            item.localThumbnailUrl
+        } else {
+            ImageStrategy.imageListToDbUrl(item.getThumbnails())
+        },
+        sourceType = item.sourceType.name,
+        mimeType = item.mimeType,
+        localMediaId = item.localMediaId.takeIf { it >= 0 },
+        localAlbum = item.album,
+        localFolder = item.folder
     )
+
+    val isLocalMedia: Boolean
+        get() = sourceType == SOURCE_TYPE_LOCAL
 
     fun toStreamInfoItem(): StreamInfoItem {
         val item = StreamInfoItem(serviceId, url, title, streamType)
@@ -132,6 +159,23 @@ data class StreamEntity(
         return item
     }
 
+    fun toPlayQueueItem(): PlayQueueItem = if (isLocalMedia) {
+        PlayQueueItem.localMedia(
+            title,
+            url,
+            duration,
+            uploader,
+            localAlbum,
+            localFolder,
+            mimeType,
+            localMediaId ?: -1L,
+            streamType == StreamType.VIDEO_STREAM,
+            thumbnailUrl
+        )
+    } else {
+        PlayQueueItem(toStreamInfoItem())
+    }
+
     companion object {
         const val STREAM_TABLE = "streams"
         const val STREAM_ID = "uid"
@@ -144,7 +188,15 @@ data class StreamEntity(
         const val STREAM_UPLOADER_URL = "uploader_url"
         const val STREAM_UPLOADER_AVATAR_URL = "uploader_avatar_url"
         const val STREAM_REQUIRES_MEMBERSHIP = "requires_membership"
+        const val STREAM_SOURCE_TYPE = "source_type"
+        const val STREAM_MIME_TYPE = "mime_type"
+        const val STREAM_LOCAL_MEDIA_ID = "local_media_id"
+        const val STREAM_LOCAL_ALBUM = "local_album"
+        const val STREAM_LOCAL_FOLDER = "local_folder"
         const val STREAM_THUMBNAIL_URL = "thumbnail_url"
+
+        const val SOURCE_TYPE_REMOTE = "REMOTE"
+        const val SOURCE_TYPE_LOCAL = "LOCAL"
 
         const val STREAM_VIEWS = "view_count"
         const val STREAM_TEXTUAL_UPLOAD_DATE = "textual_upload_date"

@@ -71,12 +71,15 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
 
     private String getStreamInfoDetailLine(final StreamStatisticsEntry entry,
                                            final DateTimeFormatter dateTimeFormatter) {
+        final String sourceName = entry.getStreamEntity().isLocalMedia()
+                ? itemBuilder.getContext().getString(R.string.local_media_on_device)
+                : ServiceHelper.getNameOfServiceById(entry.getStreamEntity().getServiceId());
         return Localization.concatenateStrings(
                 // watchCount
                 Localization.shortViewCount(itemBuilder.getContext(), entry.getWatchCount()),
                 dateTimeFormatter.format(entry.getLatestAccessDate()),
                 // serviceName
-                ServiceHelper.getNameOfServiceById(entry.getStreamEntity().getServiceId()));
+                sourceName);
     }
 
     @Override
