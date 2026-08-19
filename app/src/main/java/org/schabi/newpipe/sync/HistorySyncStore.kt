@@ -106,8 +106,11 @@ internal class RoomHistorySyncStore internal constructor(
         repeatCount: Long
     ) {
         database.runInTransaction {
-            ensureInitialized(HistorySyncCategory.WATCH)
             val stream = requireStream(streamId)
+            if (stream.isDeviceLocalHistoryStream()) {
+                return@runInTransaction
+            }
+            ensureInitialized(HistorySyncCategory.WATCH)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
                 recordId = HistoryRecordId.watchEvent(),
@@ -130,8 +133,12 @@ internal class RoomHistorySyncStore internal constructor(
         updatedAtEpochMillis: Long
     ) {
         database.runInTransaction {
+            val entity = requireStream(streamId)
+            if (entity.isDeviceLocalHistoryStream()) {
+                return@runInTransaction
+            }
             ensureInitialized(HistorySyncCategory.WATCH)
-            val stream = SyncedHistoryStream.from(requireStream(streamId))
+            val stream = SyncedHistoryStream.from(entity)
             val recordId = HistoryRecordId.progress(stream.identity)
             val current = syncDao.getRecord(HistorySyncCategory.WATCH.name, recordId)
             val currentProgress = current?.takeUnless(HistorySyncRecordEntity::isDeleted)
@@ -158,8 +165,12 @@ internal class RoomHistorySyncStore internal constructor(
 
     override fun recordWatchStreamDelete(streamId: Long) {
         database.runInTransaction {
+            val entity = requireStream(streamId)
+            if (entity.isDeviceLocalHistoryStream()) {
+                return@runInTransaction
+            }
             ensureInitialized(HistorySyncCategory.WATCH)
-            val stream = SyncedHistoryStream.from(requireStream(streamId))
+            val stream = SyncedHistoryStream.from(entity)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
                 recordId = HistoryRecordId.watchStreamTombstone(stream.identity),
@@ -470,6 +481,9 @@ internal class RoomHistorySyncStore internal constructor(
     private fun initializeWatchHistory() {
         streamHistoryDao.getAllDirect().forEach { history ->
             val stream = streamDao.getStreamDirect(history.streamUid) ?: return@forEach
+            if (stream.isDeviceLocalHistoryStream()) {
+                return@forEach
+            }
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
                 recordId = HistoryRecordId.watchEvent(),
@@ -486,6 +500,9 @@ internal class RoomHistorySyncStore internal constructor(
         }
         streamStateDao.getAllDirect().forEach { state ->
             val stream = streamDao.getStreamDirect(state.streamUid) ?: return@forEach
+            if (stream.isDeviceLocalHistoryStream()) {
+                return@forEach
+            }
             val syncedStream = SyncedHistoryStream.from(stream)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
@@ -735,6 +752,10 @@ internal class RoomHistorySyncStore internal constructor(
     private fun requireStream(streamId: Long): StreamEntity {
         return streamDao.getStreamDirect(streamId)
             ?: throw HistorySyncException("The history stream no longer exists")
+    }
+
+    private fun StreamEntity.isDeviceLocalHistoryStream(): Boolean {
+        return isLocalMedia || serviceId < 0
     }
 
     private fun incrementVersion(value: Long): Long {
