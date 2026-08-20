@@ -381,6 +381,41 @@
     <string name="background_player_playing_toast">Playing in background</string>
     <string name="popup_playing_toast">Playing in popup mode</string>
     <string name="content">Content</string>
+    <string name="content_blocking_settings_key" translatable="false">content_blocking_settings</string>
+    <string name="content_blocking_enabled_key" translatable="false">content_blocking_enabled</string>
+    <string name="blocked_videos_key" translatable="false">blocked_videos</string>
+    <string name="blocked_channels_key" translatable="false">blocked_channels</string>
+    <string name="blocked_keywords_key" translatable="false">blocked_keywords</string>
+    <string name="manage_blocked_channels_key" translatable="false">manage_blocked_channels</string>
+    <string name="manage_blocked_videos_key" translatable="false">manage_blocked_videos</string>
+    <string name="clear_blocked_content_key" translatable="false">clear_blocked_content</string>
+    <string name="content_blocking_title">Blocked content</string>
+    <string name="content_blocking_summary">Hide videos, channels, and posts using your blocking rules</string>
+    <string name="content_blocking_enabled_title">Enable content blocking</string>
+    <string name="content_blocking_enabled_summary">Apply blocked videos, channels, and keywords to remote content lists</string>
+    <string name="blocked_keywords_title">Blocked keywords</string>
+    <string name="manage_blocked_channels_title">Blocked channels</string>
+    <string name="manage_blocked_videos_title">Blocked videos</string>
+    <string name="clear_blocked_content_title">Clear all blocking rules</string>
+    <string name="clear_blocked_content_summary">Remove every blocked video, channel, and keyword</string>
+    <string name="clear_blocked_content_confirmation">Remove all content-blocking rules?</string>
+    <string name="block_video">Block this video</string>
+    <string name="block_channel">Block this channel</string>
+    <string name="video_blocked">Video blocked</string>
+    <string name="channel_blocked">Channel blocked</string>
+    <string name="blocked_content_empty">Nothing is blocked in this list</string>
+    <plurals name="blocked_channels_count">
+        <item quantity="one">%d blocked channel</item>
+        <item quantity="other">%d blocked channels</item>
+    </plurals>
+    <plurals name="blocked_videos_count">
+        <item quantity="one">%d blocked video</item>
+        <item quantity="other">%d blocked videos</item>
+    </plurals>
+    <plurals name="blocked_keywords_count">
+        <item quantity="one">%d blocked keyword</item>
+        <item quantity="other">%d blocked keywords</item>
+    </plurals>
     <string name="show_age_restricted_content_title">Show age restricted content</string>
     <string name="show_age_restricted_content_summary">Show content possibly unsuitable for children because it has an age limit (like 18+)</string>
     <string name="youtube_restricted_mode_enabled_title">Turn on YouTube\'s \"Restricted Mode\"</string>
