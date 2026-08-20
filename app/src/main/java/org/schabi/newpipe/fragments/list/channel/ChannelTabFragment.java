@@ -344,7 +344,9 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
     }
 
     private void applyStreamFilter() {
-        if (!ChannelTabHelper.isStreamsTab(tabHandler) || infoListAdapter == null) {
+        if (!ChannelTabHelper.isStreamsTab(tabHandler)
+                || infoListAdapter == null
+                || currentInfo == null) {
             return;
         }
         final List<InfoItem> displayedItems = unfilteredItems.stream()

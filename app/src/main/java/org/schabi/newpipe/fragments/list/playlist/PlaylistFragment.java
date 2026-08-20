@@ -641,7 +641,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     }
 
     private void applyStreamFilter() {
-        if (infoListAdapter == null) {
+        if (infoListAdapter == null || currentInfo == null || playlistControlBinding == null) {
             return;
         }
         final List<StreamInfoItem> sortedItems = PlaylistSortHelper.itemsForDisplay(

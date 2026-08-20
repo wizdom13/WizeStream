@@ -19,6 +19,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Embedded title, uploader, genre, upload date, and source URL metadata in generated M4A, MP4, and Opus downloads.
 
+### Fixes
+
+- Fixed channel and playlist search crashing when restored before the initial content load completed.
+
 [View the complete changes since v1.7.1](https://github.com/wizdom13/WizeStream/compare/v1.7.1...v1.8.0)
 
 ## WizeStream 1.7.1 (`1007001`)

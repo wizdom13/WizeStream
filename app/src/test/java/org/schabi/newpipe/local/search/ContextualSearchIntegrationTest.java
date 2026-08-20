@@ -154,6 +154,15 @@ public class ContextualSearchIntegrationTest {
         assertSearchMenu("menu/menu_local_playlist.xml");
     }
 
+    @Test
+    public void remoteSearchWaitsForInitialResultBeforeFiltering() throws Exception {
+        assertSourceContains("org/schabi/newpipe/fragments/list/channel/ChannelTabFragment.java",
+                "|| currentInfo == null");
+        assertSourceContains("org/schabi/newpipe/fragments/list/playlist/PlaylistFragment.java",
+                "infoListAdapter == null || currentInfo == null"
+                        + " || playlistControlBinding == null");
+    }
+
     private void assertSearchMenu(final String relativePath) throws Exception {
         final String menu = readResource(relativePath);
         assertTrue(menu.contains("android:id=\"@+id/menu_item_search_content\""));

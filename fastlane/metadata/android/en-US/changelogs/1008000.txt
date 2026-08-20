@@ -6,3 +6,4 @@ WizeStream 1.8.0
 - Added optional DeArrow titles and thumbnails.
 - Added FCast and compatible TV casting on Android 8+.
 - Added metadata to M4A, MP4, and Opus downloads.
+- Fixed channel and playlist search during initial loading.
