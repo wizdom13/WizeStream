@@ -53,8 +53,15 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_switch_main"
+        android:id="@+id/action_download_queue"
+        android:icon="@drawable/ic_file_download"
         android:orderInCategory="3"
+        android:title="@string/download_queue"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_switch_main"
+        android:orderInCategory="4"
         android:title="@string/switch_to_main"
         app:showAsAction="never" />
 </menu>

@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,6 +29,8 @@ import com.google.android.exoplayer2.PlaybackParameters;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.ActivityPlayerQueueControlBinding;
+import org.schabi.newpipe.download.BulkDownloadDialog;
+import org.schabi.newpipe.download.BulkDownloadItem;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.fragments.OnScrollBelowItemsListener;
@@ -51,6 +54,7 @@ import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public final class PlayQueueActivity extends AppCompatActivity
         implements PlayerEventListener, SeekBar.OnSeekBarChangeListener,
@@ -155,6 +159,9 @@ public final class PlayQueueActivity extends AppCompatActivity
         } else if (itemId == R.id.action_system_audio) {
             startActivity(new Intent(Settings.ACTION_SOUND_SETTINGS));
             return true;
+        } else if (itemId == R.id.action_download_queue) {
+            showBulkDownloadDialog();
+            return true;
         } else if (itemId == R.id.action_switch_main) {
             this.player.setRecovery();
             NavigationHelper.playOnMainPlayer(this, player.getPlayQueue(), true);
@@ -177,6 +184,22 @@ public final class PlayQueueActivity extends AppCompatActivity
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showBulkDownloadDialog() {
+        if (player == null || player.getPlayQueue() == null) {
+            return;
+        }
+        final List<BulkDownloadItem> items = player.getPlayQueue().getStreams().stream()
+                .filter(item -> !item.isLocalMedia())
+                .map(BulkDownloadItem::from)
+                .collect(Collectors.toList());
+        if (items.isEmpty()) {
+            Toast.makeText(this, R.string.bulk_download_empty, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BulkDownloadDialog.newInstance(items)
+                .show(getSupportFragmentManager(), "bulkDownloadDialog");
     }
 
     @Override
