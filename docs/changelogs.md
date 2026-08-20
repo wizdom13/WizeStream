@@ -1,5 +1,11 @@
 # WizeStream changelogs
 
+## Unreleased
+
+### New features
+
+- Added optional DeArrow titles and thumbnails for YouTube lists and video details, with request deduplication, in-memory caching, and automatic fallback to original metadata.
+
 Release history is listed newest first. The number beside each release is its Android version code.
 
 ## Unreleased

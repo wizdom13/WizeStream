@@ -1322,6 +1322,15 @@
     <string name="sponsor_block_category_highlight_title">Highlight</string>
     <string name="sponsor_block_category_highlight_summary">Point-of-interest markers; not skipped automatically</string>
 
+    <!-- DeArrow -->
+    <string name="dearrow_settings_category_title">DeArrow</string>
+    <string name="dearrow_enable_title">Enable DeArrow</string>
+    <string name="dearrow_enable_summary">Use community-contributed titles and thumbnails for YouTube videos</string>
+    <string name="dearrow_titles_title">Replace titles</string>
+    <string name="dearrow_titles_summary">Show approved descriptive titles instead of sensational titles</string>
+    <string name="dearrow_thumbnails_title">Replace thumbnails</string>
+    <string name="dearrow_thumbnails_summary">Show approved thumbnail frames instead of original thumbnails</string>
+
     <string name="sponsor_block_category_presets_title">Category presets</string>
     <string name="sponsor_block_categories_group_title">Categories</string>
     <string name="sponsor_block_activate_all_title">Activate all</string>

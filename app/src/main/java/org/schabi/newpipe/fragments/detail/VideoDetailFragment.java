@@ -66,6 +66,7 @@ import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.databinding.FragmentVideoDetailBinding;
+import org.schabi.newpipe.dearrow.DeArrowService;
 import org.schabi.newpipe.download.DownloadDialog;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
@@ -1924,6 +1925,23 @@ public final class VideoDetailFragment
         LocalMediaThumbnailLoader.INSTANCE.clear(binding.detailThumbnailImageView);
         CoilHelper.INSTANCE.loadDetailsThumbnail(binding.detailThumbnailImageView,
                 ExtractorImageCompat.thumbnailImages(info));
+        disposables.add(DeArrowService.getBranding(requireContext(), info)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(branding -> {
+                    if (currentInfo != info
+                            || !DeArrowService.applyBranding(requireContext(), info, branding)) {
+                        return;
+                    }
+                    title = info.getName();
+                    binding.detailVideoTitleView.setText(title);
+                    LocalMediaThumbnailLoader.INSTANCE.clear(binding.detailThumbnailImageView);
+                    CoilHelper.INSTANCE.loadDetailsThumbnail(binding.detailThumbnailImageView,
+                            ExtractorImageCompat.thumbnailImages(info));
+                    if (!isPlayerAvailable() || player.isStopped()) {
+                        updateOverlayData(info.getName(), info.getUploaderName(),
+                                ExtractorImageCompat.thumbnailImages(info));
+                    }
+                }, throwable -> Log.w(TAG, "Unable to load DeArrow branding", throwable)));
         showMetaInfoInTextView(info.getMetaInfo(), binding.detailMetaInfoTextView,
                 binding.detailMetaInfoSeparator, disposables);
 

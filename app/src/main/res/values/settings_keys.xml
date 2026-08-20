@@ -1622,6 +1622,9 @@
     <string name="sponsor_block_graced_rewind_key">sponsor_block_graced_rewind</string>
     <string name="sponsor_block_show_manual_skip_key">sponsor_block_show_manual_skip</string>
     <string name="sponsor_block_user_id_key">sponsor_block_user_id</string>
+    <string name="dearrow_enable_key">dearrow_enable</string>
+    <string name="dearrow_titles_key">dearrow_titles</string>
+    <string name="dearrow_thumbnails_key">dearrow_thumbnails</string>
     <string name="sponsor_block_category_sponsor_key">sponsor_block_category_sponsor</string>
     <string name="sponsor_block_category_intro_key">sponsor_block_category_intro</string>
     <string name="sponsor_block_category_outro_key">sponsor_block_category_outro</string>

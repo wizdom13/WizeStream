@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.databinding.PignateFooterBinding;
+import org.schabi.newpipe.dearrow.DeArrowService;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
@@ -41,6 +42,8 @@ import org.schabi.newpipe.util.OnClickGesture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 
 /*
  * Created by Christian Schabesberger on 01.08.16.
@@ -153,6 +156,12 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
         infoItemList.addAll(visibleData);
 
+        for (final InfoItem item : visibleData) {
+            if (item instanceof StreamInfoItem) {
+                loadDeArrowBranding((StreamInfoItem) item);
+            }
+        }
+
         if (DEBUG) {
             Log.d(TAG, "addInfoItemList() after > offsetStart = " + offsetStart + ", "
                     + "infoItemList.size() = " + infoItemList.size() + ", "
@@ -172,6 +181,21 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                         + " to " + footerNow);
             }
         }
+    }
+
+    private void loadDeArrowBranding(@NonNull final StreamInfoItem item) {
+        DeArrowService.getBranding(infoItemBuilder.getContext(), item)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(branding -> {
+                    if (!DeArrowService.applyBranding(infoItemBuilder.getContext(), item,
+                            branding)) {
+                        return;
+                    }
+                    final int index = infoItemList.indexOf(item);
+                    if (index >= 0) {
+                        notifyItemChanged(index + (hasHeader() ? 1 : 0));
+                    }
+                }, throwable -> Log.w(TAG, "Unable to load DeArrow branding", throwable));
     }
 
     public void clearStreamItemList() {
