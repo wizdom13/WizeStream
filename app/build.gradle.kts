@@ -249,6 +249,9 @@ dependencies {
     implementation("com.github.spotbugs:spotbugs-annotations:4.8.3")
     compileOnly("org.json:json:20231013")
 
+    // Open casting support for FCast and Chromecast-compatible receivers
+    implementation("org.fcast:sender-sdk:0.5.0")
+
     // Checkstyle
     checkstyle(libs.puppycrawl.checkstyle)
     ktlint(libs.pinterest.ktlint)

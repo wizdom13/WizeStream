@@ -1,11 +1,5 @@
 # WizeStream changelogs
 
-## Unreleased
-
-### New features
-
-- Added optional DeArrow titles and thumbnails for YouTube lists and video details, with request deduplication, in-memory caching, and automatic fallback to original metadata.
-
 Release history is listed newest first. The number beside each release is its Android version code.
 
 ## Unreleased
@@ -15,6 +9,9 @@ Release history is listed newest first. The number beside each release is its An
 - Added bulk video and audio downloads for complete playlists and loaded play queues, with default-quality selection, collision-safe filenames, and optional track-number prefixes.
 - Added local content blocking for individual videos, channels, and title/uploader keywords, with long-press actions and a dedicated management screen.
 - Added in-page search for channel tabs, remote playlists, and local playlists.
+- Added optional DeArrow titles and thumbnails for YouTube lists and video details, with request deduplication, in-memory caching, and automatic fallback to original metadata.
+- Added TV casting to discovered FCast and Chromecast-compatible receivers from video details on
+  Android 8 and newer.
 
 ### Improvements
 
