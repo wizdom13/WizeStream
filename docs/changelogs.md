@@ -2,6 +2,12 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## Unreleased
+
+### New features
+
+- Added bulk video and audio downloads for complete playlists and loaded play queues, with default-quality selection, collision-safe filenames, and optional track-number prefixes.
+
 ## WizeStream 1.7.0 (`1007000`)
 
 ### New features

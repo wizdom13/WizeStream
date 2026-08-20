@@ -36,6 +36,8 @@ import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.databinding.FragmentPlaylistBinding;
 import org.schabi.newpipe.databinding.PlaylistControlBinding;
 import org.schabi.newpipe.databinding.PlaylistHeaderBinding;
+import org.schabi.newpipe.download.BulkDownloadDialog;
+import org.schabi.newpipe.download.BulkDownloadItem;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
@@ -112,6 +114,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
     @State
     protected PlaylistSortOrder selectedPlaylistSort = PlaylistSortOrder.PLAYLIST_ORDER;
+    @State
+    protected boolean bulkDownloadPending;
     private final List<StreamInfoItem> unfilteredItems = new ArrayList<>();
     private final Map<String, StreamStateEntity> streamStates = new HashMap<>();
     private HistoryRecordManager historyRecordManager;
@@ -329,6 +333,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                         dialog -> dialog.show(getFM(), TAG)
                 ));
             }
+        } else if (itemId == R.id.menu_item_download_playlist) {
+            beginBulkDownload();
         } else if (itemId == R.id.menu_item_learning_content) {
             toggleLearningPlaylist();
         } else {
@@ -390,6 +396,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         refreshStreamStatesAfterPageLoad();
         setStreamCountAndOverallDuration(result.getItems(), !result.hasNextPage());
         continueLoadingPlaylistForSorting();
+        continueBulkDownloadAfterPageLoad();
     }
 
     @Override
@@ -486,6 +493,51 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
         refreshStreamStatesAfterPageLoad();
         continueLoadingPlaylistForSorting();
+    }
+
+    private void beginBulkDownload() {
+        if (currentInfo == null || unfilteredItems.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.bulk_download_empty,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (hasMoreItems()) {
+            bulkDownloadPending = true;
+            Toast.makeText(requireContext(), R.string.bulk_download_loading_playlist,
+                    Toast.LENGTH_SHORT).show();
+            if (!isLoading.get()) {
+                loadMoreItems();
+            }
+            return;
+        }
+        showBulkDownloadDialog();
+    }
+
+    private void continueBulkDownloadAfterPageLoad() {
+        if (!bulkDownloadPending) {
+            return;
+        }
+        if (hasMoreItems()) {
+            if (!isLoading.get()) {
+                loadMoreItems();
+            }
+            return;
+        }
+        bulkDownloadPending = false;
+        showBulkDownloadDialog();
+    }
+
+    private void showBulkDownloadDialog() {
+        final List<BulkDownloadItem> downloadItems = unfilteredItems.stream()
+                .map(BulkDownloadItem::from)
+                .collect(Collectors.toList());
+        if (downloadItems.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.bulk_download_empty,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BulkDownloadDialog.newInstance(downloadItems)
+                .show(getChildFragmentManager(), "bulkDownloadDialog");
     }
 
     private void indexLearningPlaylistItems(final List<StreamInfoItem> items) {

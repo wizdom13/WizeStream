@@ -86,6 +86,24 @@
     <string name="open_with">Open with</string>
     <string name="share">Share</string>
     <string name="download">Download</string>
+    <string name="bulk_download_title">Bulk download</string>
+    <string name="download_playlist">Download playlist</string>
+    <string name="download_queue">Download loaded queue</string>
+    <string name="bulk_download_number_files">Add track numbers to filenames</string>
+    <plurals name="bulk_download_summary">
+        <item quantity="one">Queue %d item using the default quality for each stream.</item>
+        <item quantity="other">Queue %d items using the default quality for each stream.</item>
+    </plurals>
+    <string name="bulk_download_progress">%1$d/%2$d</string>
+    <plurals name="bulk_download_queued">
+        <item quantity="one">Queued %d download</item>
+        <item quantity="other">Queued %d downloads</item>
+    </plurals>
+    <string name="bulk_download_partial_result">Queued %1$d downloads; %2$d failed</string>
+    <string name="bulk_download_loading_playlist">Loading the complete playlist before downloading…</string>
+    <string name="bulk_download_empty">There are no downloadable streams in this list</string>
+    <string name="bulk_download_ask_path_error">Bulk download needs a default download folder. Turn off “Ask where to download” in Download settings.</string>
+    <string name="bulk_download_folder_error">Choose a valid default download folder in Download settings first.</string>
     <string name="controls_download_desc">Download stream file</string>
     <string name="search">Search</string>
     <string name="search_filters">Search filters</string>

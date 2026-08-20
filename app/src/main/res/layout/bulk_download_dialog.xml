@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/bulk_download_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+    <RadioGroup
+        android:id="@+id/bulk_download_media_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/bulk_download_video"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/video" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/bulk_download_audio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/audio" />
+    </RadioGroup>
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/bulk_download_number_files"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="@string/bulk_download_number_files" />
+
+    <LinearLayout
+        android:id="@+id/bulk_download_progress_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/bulk_download_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:indeterminate="false" />
+
+        <TextView
+            android:id="@+id/bulk_download_progress_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textAppearance="?attr/textAppearanceLabelMedium" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/bulk_download_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="?attr/colorError"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:visibility="gone" />
+
+</LinearLayout>

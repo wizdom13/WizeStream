@@ -36,8 +36,15 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/menu_item_learning_content"
+        android:id="@+id/menu_item_download_playlist"
+        android:icon="@drawable/ic_file_download"
         android:orderInCategory="4"
+        android:title="@string/download_playlist"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_item_learning_content"
+        android:orderInCategory="5"
         android:title="@string/learning_mark_content"
         android:visible="false"
         app:showAsAction="never" />
