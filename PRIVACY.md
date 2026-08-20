@@ -1,6 +1,6 @@
 # WizeStream Privacy Policy
 
-Last updated: July 27, 2026
+Last updated: August 20, 2026
 
 WizeStream is an independently maintained, open-source Android streaming application. It does not require a WizeStream account and does not include advertising, analytics, or tracking SDKs.
 
@@ -9,6 +9,12 @@ WizeStream is an independently maintained, open-source Android streaming applica
 WizeStream connects directly to the media services you choose to use. Those services and your network provider can receive ordinary connection information such as your IP address, request details, and cookies required for the selected service. Their own privacy policies apply to that activity.
 
 When update checks are enabled or manually requested, WizeStream contacts the GitHub Releases API for `wizdom13/WizeStream`. The app does not add a WizeStream account identifier or advertising identifier to those requests.
+
+DeArrow is optional and disabled by default. When enabled for YouTube, WizeStream sends the video's
+public YouTube identifier to the community-operated DeArrow endpoints at `sponsor.ajay.app` and
+`dearrow-thumb.ajay.app` to request accepted replacement titles and thumbnail frames. DeArrow
+requests do not include a WizeStream account identifier or advertising identifier. The service and
+your network provider receive ordinary connection information such as your IP address.
 
 ## Device synchronization
 
@@ -30,6 +36,16 @@ periodically attempts to reach paired devices when the device has sufficient bat
 connected through Wi-Fi or Ethernet. Clearing trusted devices removes their authorization and
 requires them to pair again.
 
+## TV casting
+
+TV casting is initiated by the user. On Android 8 and newer, WizeStream can discover FCast and
+Chromecast-compatible receivers on the local network. After you choose a receiver, WizeStream sends
+that receiver the selected media URL and content type, together with the WizeStream version and the
+Android device manufacturer and model used to identify the sender. The receiver then requests the
+media directly from its original service, so that service and the receiver's network provider can
+receive the receiver's ordinary connection information. WizeStream does not use Google Play
+Services for discovery or casting.
+
 ## Crash and error reports
 
 WizeStream does not upload crash reports automatically. The error screen lets you copy a report or explicitly choose to send it through an email application or GitHub. Before sending, you can review and edit your comment. A report can include the requested URL, service, app language, content country and language, package and app version, Android version, timestamp, exception details, and your comment.
@@ -38,11 +54,18 @@ Email providers and GitHub process information according to their own privacy po
 
 ## Data stored on your device
 
-Subscriptions, playlists, history, settings, cookies, downloads, and backups are stored locally on your device or in a location you select. WizeStream only exports data when you choose an export action. Removing the app or clearing its storage removes app-private data, subject to Android and your backup provider's behavior.
+Subscriptions, playlists, history, settings, cookies, content-blocking rules, downloads, and backups
+are stored locally on your device or in a location you select. WizeStream only exports data when you
+choose an export action. Supported downloaded media can contain the public title, uploader, genre,
+upload date, and original source URL as embedded file metadata. Removing the app or clearing its
+storage removes app-private data, subject to Android and your backup provider's behavior.
 
 ## Permissions
 
-WizeStream requests Android permissions only for features you use, such as notifications, background playback, overlay playback, network access, camera access for scanning a device-pairing QR code, and legacy file access on supported older Android versions. Android settings can be used to revoke optional permissions.
+WizeStream requests Android permissions only for features you use, such as notifications,
+background playback, overlay playback, network and local-receiver discovery, camera access for
+scanning a device-pairing QR code, and legacy file access on supported older Android versions.
+Android settings can be used to revoke optional permissions.
 
 ## Changes and contact
 

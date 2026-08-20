@@ -107,6 +107,11 @@ Project highlights:
 - Main, background, and popup playback with advanced gestures, a sleep timer, multi-audio selection,
   and per-channel playback profiles
 - SponsorBlock, YouTube dislike counts, and clear handling for members-only videos
+- Local blocking for videos, channels, and title or uploader keywords, plus contextual search inside
+  channel tabs and playlists
+- Bulk playlist and queue downloads with embedded media metadata
+- Optional DeArrow titles and thumbnails, and open TV casting to FCast and Chromecast-compatible
+  receivers on Android 8 and newer
 - Optional Learning Mode with timestamped notes, playlist progress, study statistics, and a dashboard
 - Secure peer-to-peer synchronization between trusted WizeStream devices, manually or automatically
   over Wi-Fi or Ethernet
@@ -182,18 +187,24 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Browse all [supported services](#supported-services), with dedicated YouTube Music and YouTube
   Shorts destinations
 - Search with service-provided content, date, duration, feature, and sorting filters
+- Search within channel tabs and remote or local playlists without leaving the current screen
 - Filter channel, feed, and playlist lists by unwatched, partially watched, live, or Shorts content
+- Block individual videos or channels from their context menus, and hide content by title or uploader
+  keywords using locally stored rules under **Settings > Content > Blocked content**
 - Browse video details, related content, comments, playlists, and channel tabs where supported
 - Sort channel videos by latest, popular, or oldest, and use podcast tabs on supported channels
 - See channel avatars directly in stream lists, open channels from their identity areas, and view
   view or subscriber counts where the service provides them
 - View YouTube dislike counts where available
+- Optionally replace YouTube titles and thumbnails with accepted community contributions from DeArrow
 - Identify membership-restricted videos with a **Members only** badge, receive a clear explanation
   instead of an unplayable native request, or hide those videos from content lists
 
 ### Playback
 
 - Main, background, popup, external-player, and Kodi playback
+- Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
+  newer, with play, pause, stop, and receiver-switching controls
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
 - Select available video resolutions and formats, including higher adaptive qualities when exposed by
   the service
@@ -220,6 +231,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   query into the selected service's online search
 - Store watch history, search history, and playback progress locally under user-controlled settings
 - Download video, audio, and captions where supported, with resumable downloads and queue controls
+- Bulk-download complete remote playlists or the current play queue as video or audio, optionally
+  prefixing filenames with track numbers
+- Embed title, uploader, genre, upload date, and source URL metadata in generated M4A, MP4, and Opus
+  downloads
 - Import and export compatible app data for migration and backup
 
 ### Learning Mode

@@ -51,6 +51,40 @@ Use the same source from which you installed it whenever possible. IzzyOnDroid u
 Service support comes from the extractor source integrated into each WizeStream build. See the
 main [README](../README.md#supported-services) for the current list.
 
+## How do bulk downloads work?
+
+Open a remote playlist's menu and choose **Download playlist**, or open the play queue and choose
+its download action. WizeStream loads the complete remote playlist, then lets you choose video or
+audio once for the batch. Each item uses its default available quality and audio track. Track-number
+prefixes are optional, and duplicate filenames are made unique automatically.
+
+Bulk downloading requires valid default video and audio folders. Disable **Ask where to download**
+and choose the folders under **Settings > Download** before starting a batch. Local files in a play
+queue are skipped.
+
+## How does content blocking work?
+
+Long-press a video to block that video or its channel. Under **Settings > Content > Blocked
+content**, you can enable or disable filtering, add title or uploader keywords, review blocked
+videos and channels, remove individual rules, or clear everything. Matching remote videos,
+channels, posts, playlists, feeds, search results, and related content are hidden locally. Blocking
+does not unsubscribe from channels, delete history, or report anything to a service.
+
+## What is DeArrow support?
+
+DeArrow is an optional community service that provides descriptive YouTube titles and alternative
+thumbnail frames. It is disabled by default. Enable it under **Settings > SponsorBlock > DeArrow**,
+where title and thumbnail replacement can be controlled separately. If no accepted contribution is
+available or the request fails, WizeStream keeps the original title and thumbnail.
+
+## How do I cast to a TV?
+
+On Android 8 or newer, open a compatible video's details and select **Cast to TV**. WizeStream
+discovers FCast and Chromecast-compatible receivers on the local network, sends the selected media
+URL to the receiver, and provides play, pause, stop, and receiver-switching controls. Casting is
+separate from Kodi support and does not require Google Play Services. Some streams cannot be cast
+when the service does not expose a compatible HLS, DASH, or progressive media URL.
+
 ## Does WizeStream use NewPipeExtractor or PipePipeExtractor?
 
 WizeStream uses extractor source integrated directly into its app module. That source is derived
