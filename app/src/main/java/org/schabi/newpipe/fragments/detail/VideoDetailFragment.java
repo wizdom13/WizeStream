@@ -64,6 +64,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.cast.FCastManager;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.databinding.FragmentVideoDetailBinding;
 import org.schabi.newpipe.dearrow.DeArrowService;
@@ -548,6 +549,8 @@ public final class VideoDetailFragment
                         ExtractorImageCompat.thumbnailImages(info))));
         binding.detailControlsOpenInBrowser.setOnClickListener(makeOnClickListener(info ->
                 ShareUtils.openUrlInBrowser(requireContext(), info.getUrl())));
+        binding.detailControlsCast.setOnClickListener(makeOnClickListener(info ->
+                FCastManager.showDevicePicker(requireContext(), info)));
         binding.detailControlsPlayWithKodi.setOnClickListener(makeOnClickListener(info ->
                 KoreUtils.playWithKore(requireContext(), Uri.parse(info.getUrl()))));
         if (DEBUG) {
@@ -699,6 +702,7 @@ public final class VideoDetailFragment
                         ? View.VISIBLE
                         : View.GONE
         );
+        binding.detailControlsCast.setVisibility(View.GONE);
         binding.detailControlsCrashThePlayer.setVisibility(
                 DEBUG && PreferenceManager.getDefaultSharedPreferences(getContext())
                         .getBoolean(getString(R.string.show_crash_the_player_key), false)
@@ -984,6 +988,7 @@ public final class VideoDetailFragment
         binding.detailControlsDownload.setVisibility(View.GONE);
         binding.detailControlsShare.setVisibility(View.GONE);
         binding.detailControlsOpenInBrowser.setVisibility(View.GONE);
+        binding.detailControlsCast.setVisibility(View.GONE);
         binding.detailControlsPlayWithKodi.setVisibility(View.GONE);
 
         final StringBuilder metadata = new StringBuilder(
@@ -1867,6 +1872,10 @@ public final class VideoDetailFragment
         binding.detailsPanel.setVisibility(View.VISIBLE);
         binding.detailControlsShare.setVisibility(View.VISIBLE);
         binding.detailControlsOpenInBrowser.setVisibility(View.VISIBLE);
+        binding.detailControlsCast.setVisibility(
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        && FCastManager.canCast(requireContext(), info)
+                        ? View.VISIBLE : View.GONE);
         binding.detailControlsPlayWithKodi.setVisibility(
                 KoreUtils.shouldShowPlayWithKodi(requireContext(), info.getServiceId())
                         ? View.VISIBLE : View.GONE);
@@ -2538,6 +2547,7 @@ public final class VideoDetailFragment
             binding.detailControlsDownload.setBackgroundColor(transparent);
             binding.detailControlsShare.setBackgroundColor(transparent);
             binding.detailControlsOpenInBrowser.setBackgroundColor(transparent);
+            binding.detailControlsCast.setBackgroundColor(transparent);
             binding.detailControlsPlayWithKodi.setBackgroundColor(transparent);
         }
         if (DeviceUtils.isDesktopMode(getContext())) {

@@ -1283,6 +1283,20 @@
     <string name="hold_to_speed_summary">Temporarily speed up playback while holding the video</string>
     <string name="hold_to_speed_off">Off</string>
 
+    <!-- TV casting -->
+    <string name="cast">Cast</string>
+    <string name="cast_to_tv">Cast to TV</string>
+    <string name="cast_searching">Searching for TVs…</string>
+    <string name="cast_receiver_help">Get receiver</string>
+    <string name="cast_connecting">Connecting to %1$s…</string>
+    <string name="cast_connected">Casting to %1$s</string>
+    <string name="casting_to">Casting to %1$s</string>
+    <string name="stop_casting">Stop casting</string>
+    <string name="change_tv">Change TV</string>
+    <string name="cast_failed">Could not connect to %1$s</string>
+    <string name="cast_playback_failed">The TV could not play this stream</string>
+    <string name="cast_no_compatible_stream">No TV-compatible stream is available for this video</string>
+
     <!-- SponsorBlock -->
     <string name="sponsor_block_settings_title">SponsorBlock</string>
     <string name="sponsor_block_settings_summary">Skip sponsored segments and configure categories</string>
