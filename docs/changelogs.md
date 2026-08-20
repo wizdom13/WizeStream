@@ -10,6 +10,10 @@ Release history is listed newest first. The number beside each release is its An
 - Added local content blocking for individual videos, channels, and title/uploader keywords, with long-press actions and a dedicated management screen.
 - Added in-page search for channel tabs, remote playlists, and local playlists.
 
+### Improvements
+
+- Embedded title, uploader, genre, upload date, and source URL metadata in generated M4A, MP4, and Opus downloads.
+
 ## WizeStream 1.7.0 (`1007000`)
 
 ### New features

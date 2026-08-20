@@ -47,6 +47,7 @@ public class Mp4FromDashWriter {
     private Mp4DashChunk[] readersChunks;
 
     private int overrideMainBrand = 0x00;
+    private MediaTagMetadata metadata;
 
     private final ArrayList<Integer> compatibleBrands = new ArrayList<>(5);
 
@@ -114,6 +115,10 @@ public class Mp4FromDashWriter {
 
     public void setMainBrand(final int brand) {
         overrideMainBrand = brand;
+    }
+
+    public void setMetadata(final MediaTagMetadata mediaMetadata) {
+        metadata = mediaMetadata;
     }
 
     public boolean isDone() {
@@ -718,6 +723,10 @@ public class Mp4FromDashWriter {
                     new RuntimeException("bad track matrix length (expected 36) in track n°" + i);
             }
             makeTrak(i, durations[i], defaultMediaTime[i], tablesInfo[i], is64);
+        }
+
+        if (metadata != null) {
+            auxWrite(Mp4MetadataWriter.makeUdta(metadata));
         }
 
         return lengthFor(start);

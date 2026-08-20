@@ -291,14 +291,16 @@ public class OggFromWebMWriter implements Closeable {
         if ("A_OPUS".equals(webmTrack.codecId)) {
             final var metadata = new ArrayList<Pair<String, String>>();
             if (streamInfo != null) {
-                metadata.add(Pair.create("COMMENT", streamInfo.getUrl()));
-                metadata.add(Pair.create("GENRE", streamInfo.getCategory()));
-                metadata.add(Pair.create("ARTIST", streamInfo.getUploaderName()));
-                metadata.add(Pair.create("TITLE", streamInfo.getName()));
-                metadata.add(Pair.create("DATE", streamInfo
-                        .getUploadDate()
-                        .offsetDateTime()
-                        .format(DateTimeFormatter.ISO_DATE)));
+                addMetadata(metadata, "COMMENT", streamInfo.getUrl());
+                addMetadata(metadata, "GENRE", streamInfo.getCategory());
+                addMetadata(metadata, "ARTIST", streamInfo.getUploaderName());
+                addMetadata(metadata, "TITLE", streamInfo.getName());
+                if (streamInfo.getUploadDate() != null) {
+                    addMetadata(metadata, "DATE", streamInfo
+                            .getUploadDate()
+                            .offsetDateTime()
+                            .format(DateTimeFormatter.ISO_DATE));
+                }
             }
 
             if (DEBUG) {
@@ -320,6 +322,14 @@ public class OggFromWebMWriter implements Closeable {
 
         // not implemented for the desired codec
         return null;
+    }
+
+    private static void addMetadata(@NonNull final List<Pair<String, String>> metadata,
+                                    @NonNull final String key,
+                                    @Nullable final String value) {
+        if (value != null && !value.trim().isEmpty()) {
+            metadata.add(Pair.create(key, value.trim()));
+        }
     }
 
     /**
