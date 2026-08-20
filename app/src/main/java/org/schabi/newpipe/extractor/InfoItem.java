@@ -26,7 +26,7 @@ public abstract class InfoItem implements Serializable {
     private final InfoType infoType;
     private final int serviceId;
     private final String url;
-    private final String name;
+    private String name;
     private String thumbnailUrl;
 
     public InfoItem(final InfoType infoType,
@@ -53,6 +53,10 @@ public abstract class InfoItem implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(final String name) {
+        this.name = name;
     }
 
     public void setThumbnailUrl(final String thumbnailUrl) {
