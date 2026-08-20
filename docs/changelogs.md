@@ -18,6 +18,7 @@ Release history is listed newest first. The number beside each release is its An
 ### Improvements
 
 - Embedded title, uploader, genre, upload date, and source URL metadata in generated M4A, MP4, and Opus downloads.
+- Improved subscription group management with an Import shortcut and a clearer Material 3 creation and editing dialog with guided validation.
 
 ### Fixes
 

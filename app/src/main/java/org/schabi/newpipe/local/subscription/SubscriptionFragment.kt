@@ -45,6 +45,8 @@ import org.schabi.newpipe.local.subscription.item.FeedGroupAddNewItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardGridItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCarouselItem
+import org.schabi.newpipe.local.subscription.item.FeedGroupImportGridItem
+import org.schabi.newpipe.local.subscription.item.FeedGroupImportItem
 import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
@@ -233,6 +235,9 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
                     is FeedGroupAddNewGridItem ->
                         FeedGroupDialog.newInstance().show(fm, null)
+
+                    is FeedGroupImportItem, is FeedGroupImportGridItem ->
+                        importExportHelper.onImportPreviousSelected()
                 }
             }
             carouselAdapter.setOnItemLongClickListener { item, _ ->
@@ -410,9 +415,11 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                 clear()
                 if (listViewMode) {
                     add(FeedGroupAddNewItem())
+                    add(FeedGroupImportItem())
                     add(FeedGroupCardItem(GROUP_ALL_ID, getString(R.string.all), FeedGroupIcon.WHATS_NEW))
                 } else {
                     add(FeedGroupAddNewGridItem())
+                    add(FeedGroupImportGridItem())
                     add(FeedGroupCardGridItem(GROUP_ALL_ID, getString(R.string.all), FeedGroupIcon.WHATS_NEW))
                 }
                 addAll(groups)

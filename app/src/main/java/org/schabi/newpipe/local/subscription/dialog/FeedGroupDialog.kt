@@ -1,6 +1,8 @@
 package org.schabi.newpipe.local.subscription.dialog
 
 import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.LayoutInflater
@@ -127,6 +129,11 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+    }
+
     override fun onPause() {
         super.onPause()
 
@@ -239,6 +246,7 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
             if (feedGroupCreateBinding.groupNameInputContainer.isErrorEnabled && !text.isNullOrBlank()) {
                 feedGroupCreateBinding.groupNameInputContainer.error = null
             }
+            updateConfirmButtonState()
         }
 
         feedGroupCreateBinding.confirmButton.setOnClickListener { handlePositiveButton() }
@@ -328,11 +336,12 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
         groupSortOrder = feedGroupEntity?.sortOrder ?: -1
 
         val feedGroupIcon = selectedIcon ?: icon
-        feedGroupCreateBinding.iconPreview.setImageResource(feedGroupIcon.getDrawableRes())
+        feedGroupCreateBinding.iconPreview.setIconResource(feedGroupIcon.getDrawableRes())
 
         if (feedGroupCreateBinding.groupNameInput.text.isNullOrBlank()) {
             feedGroupCreateBinding.groupNameInput.setText(name)
         }
+        updateConfirmButtonState()
     }
 
     private val subscriptionPickerItemListener = OnItemClickListener { item, view ->
@@ -394,6 +403,7 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
         )
         feedGroupCreateBinding.selectedSubscriptionCountView.text = selectedCountText
         feedGroupCreateBinding.subscriptionsHeaderInfo.text = selectedCountText
+        updateConfirmButtonState()
     }
 
     private fun setupIconPicker() {
@@ -414,7 +424,7 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
             when (item) {
                 is PickerIconItem -> {
                     selectedIcon = item.icon
-                    feedGroupCreateBinding.iconPreview.setImageResource(item.iconRes)
+                    feedGroupCreateBinding.iconPreview.setIconResource(item.iconRes)
 
                     showScreen(InitialScreen)
                 }
@@ -427,7 +437,7 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
 
         if (groupId == NO_GROUP_SELECTED) {
             val icon = selectedIcon ?: FeedGroupIcon.ALL
-            feedGroupCreateBinding.iconPreview.setImageResource(icon.getDrawableRes())
+            feedGroupCreateBinding.iconPreview.setIconResource(icon.getDrawableRes())
         }
     }
 
@@ -446,17 +456,56 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
         feedGroupCreateBinding.separator.onlyVisibleIn(SubscriptionsPickerScreen, IconPickerScreen)
         feedGroupCreateBinding.cancelButton.onlyVisibleIn(InitialScreen, DeleteScreen)
 
+        feedGroupCreateBinding.dialogTitle.setText(
+            when (currentScreen) {
+                InitialScreen -> if (groupId == NO_GROUP_SELECTED) {
+                    R.string.feed_group_dialog_create_title
+                } else {
+                    R.string.feed_group_dialog_edit_title
+                }
+
+                IconPickerScreen -> R.string.feed_group_dialog_choose_icon_title
+
+                SubscriptionsPickerScreen -> R.string.feed_group_dialog_select_subscriptions
+
+                DeleteScreen -> R.string.feed_group_dialog_delete_title
+            }
+        )
+        feedGroupCreateBinding.dialogDescription.apply {
+            isVisible = currentScreen == InitialScreen
+            if (isVisible) {
+                setText(
+                    if (groupId == NO_GROUP_SELECTED) {
+                        R.string.feed_group_dialog_create_description
+                    } else {
+                        R.string.feed_group_dialog_edit_description
+                    }
+                )
+            }
+        }
+
         feedGroupCreateBinding.confirmButton.setText(
-            when {
-                currentScreen == InitialScreen && groupId == NO_GROUP_SELECTED -> R.string.create
-                else -> R.string.ok
+            when (currentScreen) {
+                InitialScreen -> if (groupId == NO_GROUP_SELECTED) R.string.create else R.string.save
+                DeleteScreen -> R.string.delete
+                else -> R.string.done
             }
         )
 
         feedGroupCreateBinding.deleteButton.isGone = currentScreen != InitialScreen || groupId == NO_GROUP_SELECTED
+        updateConfirmButtonState()
 
         hideKeyboard()
         hideSearch()
+    }
+
+    private fun updateConfirmButtonState() {
+        if (_feedGroupCreateBinding == null) return
+
+        val hasName = feedGroupCreateBinding.groupNameInput.text?.isNotBlank() == true
+        val hasSubscriptions = selectedSubscriptions.isNotEmpty()
+        feedGroupCreateBinding.confirmButton.isEnabled =
+            currentScreen != InitialScreen || hasName && hasSubscriptions
     }
 
     private fun View.onlyVisibleIn(vararg screens: ScreenState) {

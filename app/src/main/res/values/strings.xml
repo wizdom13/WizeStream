@@ -1067,6 +1067,14 @@
     <string name="feed_processing_message">Processing feed…</string>
     <string name="feed_new_items">New feed items</string>
     <string name="feed_group_dialog_select_subscriptions">Select subscriptions</string>
+    <string name="feed_group_dialog_create_title">Create channel group</string>
+    <string name="feed_group_dialog_edit_title">Edit channel group</string>
+    <string name="feed_group_dialog_create_description">Give the group a name, choose an icon, and select at least one subscription.</string>
+    <string name="feed_group_dialog_edit_description">Update the group name, icon, or included subscriptions.</string>
+    <string name="feed_group_dialog_name_hint">Group name</string>
+    <string name="feed_group_dialog_choose_icon">Choose group icon</string>
+    <string name="feed_group_dialog_choose_icon_title">Choose an icon</string>
+    <string name="feed_group_dialog_delete_title">Delete channel group</string>
     <string name="feed_group_dialog_empty_selection">No subscription selected</string>
     <plurals name="feed_group_dialog_selection_count">
         <item quantity="one">%d selected</item>
