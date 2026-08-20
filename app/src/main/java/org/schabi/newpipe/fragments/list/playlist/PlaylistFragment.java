@@ -57,9 +57,12 @@ import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlaylistPlayQueue;
 import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.ExpandableSearchViewHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
@@ -85,7 +88,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, PlaylistInfo>
-        implements PlaylistControlViewHolder {
+        implements PlaylistControlViewHolder, ContextualSearchable {
 
     private CompositeDisposable disposables;
     private Subscription bookmarkReactor;
@@ -116,6 +119,10 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     protected PlaylistSortOrder selectedPlaylistSort = PlaylistSortOrder.PLAYLIST_ORDER;
     @State
     protected boolean bulkDownloadPending;
+    @State
+    protected String contextualSearchQuery = "";
+    @State
+    protected boolean standaloneSearchExpanded;
     private final List<StreamInfoItem> unfilteredItems = new ArrayList<>();
     private final Map<String, StreamStateEntity> streamStates = new HashMap<>();
     private HistoryRecordManager historyRecordManager;
@@ -222,6 +229,18 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         }
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.menu_playlist, menu);
+
+        final MenuItem searchItem = menu.findItem(R.id.menu_item_search_content);
+        searchItem.setVisible(!useAsFrontPage);
+        if (!useAsFrontPage) {
+            ExpandableSearchViewHelper.configure(
+                    searchItem,
+                    getString(R.string.contextual_search_hint, name),
+                    contextualSearchQuery,
+                    standaloneSearchExpanded,
+                    this::setContextualSearchQuery,
+                    expanded -> standaloneSearchExpanded = expanded);
+        }
 
         playlistBookmarkButton = menu.findItem(R.id.menu_item_bookmark);
         updateBookmarkButtons();
@@ -579,6 +598,9 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     private void refreshStreamStatesAfterPageLoad() {
         if (selectedStreamFilter == StreamListFilter.NONE
                 && selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER) {
+            if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                applyStreamFilter();
+            }
             return;
         }
         refreshStreamStates();
@@ -622,19 +644,31 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         if (infoListAdapter == null) {
             return;
         }
-        final List<StreamInfoItem> displayedItems = PlaylistSortHelper.itemsForDisplay(
+        final List<StreamInfoItem> sortedItems = PlaylistSortHelper.itemsForDisplay(
                 unfilteredItems, selectedStreamFilter, streamStates, selectedPlaylistSort);
+        final List<StreamInfoItem> displayedItems = ContextualSearchHelper.filter(
+                sortedItems, contextualSearchQuery,
+                item -> new String[]{item.getName(), item.getUploaderName()});
         infoListAdapter.clearStreamItemList();
         infoListAdapter.addInfoItemList(displayedItems);
         showListFooter(hasMoreItems());
         final boolean isEmpty = infoListAdapter.getItemsList().isEmpty();
         playlistControlBinding.getRoot().setVisibility(
                 isEmpty ? View.GONE : View.VISIBLE);
-        if (isEmpty) {
+        if (isEmpty && !hasMoreItems()) {
             showEmptyState();
+            if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                setEmptyStateMessage(R.string.search_no_results);
+            }
         } else {
             hideLoading();
         }
+    }
+
+    @Override
+    public void setContextualSearchQuery(@NonNull final String query) {
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(query);
+        applyStreamFilter();
     }
 
     private void showPlaylistSortDialog() {
@@ -705,6 +739,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                 currentInfo.getServiceId(),
                 currentInfo.getUrl(),
                 selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER
+                        && !ContextualSearchHelper.isActive(contextualSearchQuery)
                         ? currentInfo.getNextPage() : null,
                 infoItems,
                 index

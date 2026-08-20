@@ -57,6 +57,8 @@ import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.BaseLocalListFragment;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.learning.LearningPlaylistProgress;
@@ -65,6 +67,7 @@ import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.util.ExpandableSearchViewHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
@@ -88,7 +91,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistStreamEntry>, Void>
-        implements PlaylistControlViewHolder, DebounceSavable {
+        implements PlaylistControlViewHolder, DebounceSavable, ContextualSearchable {
 
     private static final int MINIMUM_INITIAL_DRAG_VELOCITY = 12;
     @State
@@ -97,6 +100,10 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     protected String name;
     @State
     Parcelable itemsListState;
+    @State
+    protected String contextualSearchQuery = "";
+    @State
+    protected boolean standaloneSearchExpanded;
 
     private LocalPlaylistHeaderBinding headerBinding;
     private PlaylistControlBinding playlistControlBinding;
@@ -116,6 +123,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private DebounceSaver debounceSaver;
     /** Flag to prevent simultaneous rewrites of the playlist. */
     private boolean isRewritingPlaylist = false;
+    private final List<PlaylistStreamEntry> unfilteredItems = new ArrayList<>();
 
     /**
      * The pager adapter that the fragment is created from when it is used as frontpage, i.e.
@@ -289,6 +297,18 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.menu_local_playlist, menu);
+
+        final MenuItem searchItem = menu.findItem(R.id.menu_item_search_content);
+        searchItem.setVisible(!useAsFrontPage);
+        if (!useAsFrontPage) {
+            ExpandableSearchViewHelper.configure(
+                    searchItem,
+                    getString(R.string.contextual_search_hint, name),
+                    contextualSearchQuery,
+                    standaloneSearchExpanded,
+                    this::setContextualSearchQuery,
+                    expanded -> standaloneSearchExpanded = expanded);
+        }
     }
 
     @Override
@@ -535,8 +555,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                     final List<PlaylistStreamEntry> itemsToKeep = flow.first;
                     final boolean thumbnailVideoRemoved = flow.second;
 
-                    itemListAdapter.clearStreamItemList();
-                    itemListAdapter.addItems(itemsToKeep);
+                    replaceUnfilteredItems(itemsToKeep);
+                    applyPlaylistSearch();
                     debounceSaver.setHasChangesToSave();
                     saveImmediate();
 
@@ -544,13 +564,12 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                         updateThumbnailUrl();
                     }
 
-                    final long videoCount = itemListAdapter.getItemsList().size();
-                    setStreamCountAndOverallDuration(itemListAdapter.getItemsList());
+                    final long videoCount = unfilteredItems.size();
+                    setStreamCountAndOverallDuration(unfilteredItems);
                     if (videoCount == 0) {
                         showEmptyState();
                     }
 
-                    hideLoading();
                     isRewritingPlaylist = false;
                 }, throwable -> showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                         "Removing watched videos, partially watched=" + removePartiallyWatched))));
@@ -565,22 +584,77 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
         itemListAdapter.clearStreamItemList();
         updateLearningProgress(result);
+        unfilteredItems.clear();
+        unfilteredItems.addAll(result);
 
         if (result.isEmpty()) {
             showEmptyState();
             return;
         }
 
-        itemListAdapter.addItems(result);
+        applyPlaylistSearch();
         if (itemsListState != null) {
             itemsList.getLayoutManager().onRestoreInstanceState(itemsListState);
             itemsListState = null;
         }
-        setStreamCountAndOverallDuration(itemListAdapter.getItemsList());
+        setStreamCountAndOverallDuration(result);
 
         PlayButtonHelper.initPlaylistControlClickListener(activity, playlistControlBinding, this);
+    }
 
-        hideLoading();
+    @Override
+    public void setContextualSearchQuery(@NonNull final String query) {
+        final String normalizedQuery = ContextualSearchHelper.normalizeQuery(query);
+        if (!ContextualSearchHelper.isActive(contextualSearchQuery)
+                && ContextualSearchHelper.isActive(normalizedQuery)) {
+            captureUnfilteredItemsFromAdapter();
+        }
+        contextualSearchQuery = normalizedQuery;
+        applyPlaylistSearch();
+    }
+
+    private void captureUnfilteredItemsFromAdapter() {
+        if (itemListAdapter == null) {
+            return;
+        }
+        unfilteredItems.clear();
+        itemListAdapter.getItemsList().stream()
+                .filter(PlaylistStreamEntry.class::isInstance)
+                .map(PlaylistStreamEntry.class::cast)
+                .forEach(unfilteredItems::add);
+    }
+
+    private void replaceUnfilteredItems(
+            @NonNull final List<PlaylistStreamEntry> items) {
+        unfilteredItems.clear();
+        unfilteredItems.addAll(items);
+    }
+
+    private void applyPlaylistSearch() {
+        if (itemListAdapter == null) {
+            return;
+        }
+        final List<PlaylistStreamEntry> displayedItems = ContextualSearchHelper.filter(
+                unfilteredItems, contextualSearchQuery,
+                item -> new String[]{item.getStreamEntity().getTitle(),
+                        item.getStreamEntity().getUploader(),
+                        item.getStreamEntity().getLocalAlbum(),
+                        item.getStreamEntity().getLocalFolder()});
+        itemListAdapter.clearStreamItemList();
+        itemListAdapter.addItems(displayedItems);
+
+        final boolean searchActive = ContextualSearchHelper.isActive(contextualSearchQuery);
+        if (itemTouchHelper != null) {
+            itemTouchHelper.attachToRecyclerView(searchActive ? null : itemsList);
+        }
+        if (displayedItems.isEmpty()) {
+            showEmptyState();
+            if (searchActive) {
+                setEmptyStateMessage(R.string.search_no_results);
+            }
+        } else {
+            hideLoading();
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -672,8 +746,10 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
         final long thumbnailStreamId;
 
-        if (!itemListAdapter.getItemsList().isEmpty()) {
-            thumbnailStreamId = ((PlaylistStreamEntry) itemListAdapter.getItemsList().get(0))
+        final List<? extends LocalItem> items = ContextualSearchHelper.isActive(
+                contextualSearchQuery) ? unfilteredItems : itemListAdapter.getItemsList();
+        if (!items.isEmpty()) {
+            thumbnailStreamId = ((PlaylistStreamEntry) items.get(0))
                     .getStreamEntity().getUid();
         } else {
             thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID;
@@ -706,13 +782,12 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         disposables.add(streamsMaybe.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(itemsToKeep -> {
-                    itemListAdapter.clearStreamItemList();
-                    itemListAdapter.addItems(itemsToKeep);
-                    setStreamCountAndOverallDuration(itemListAdapter.getItemsList());
+                    replaceUnfilteredItems(itemsToKeep);
+                    applyPlaylistSearch();
+                    setStreamCountAndOverallDuration(unfilteredItems);
                     debounceSaver.setHasChangesToSave();
                     saveImmediate();
 
-                    hideLoading();
                     isRewritingPlaylist = false;
                 }, throwable -> showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
                         "Removing duplicated streams"))));
@@ -723,12 +798,20 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             return;
         }
 
+        final boolean searchActive = ContextualSearchHelper.isActive(contextualSearchQuery);
+        if (searchActive) {
+            unfilteredItems.remove(item);
+        }
         itemListAdapter.removeItem(item);
         if (playlistManager.getPlaylistThumbnailStreamId(playlistId) == item.getStreamId()) {
             updateThumbnailUrl();
         }
+        if (searchActive) {
+            applyPlaylistSearch();
+        }
 
-        setStreamCountAndOverallDuration(itemListAdapter.getItemsList());
+        setStreamCountAndOverallDuration(
+                searchActive ? unfilteredItems : itemListAdapter.getItemsList());
         debounceSaver.setHasChangesToSave();
         saveImmediate();
     }
@@ -750,7 +833,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             return;
         }
 
-        final List<LocalItem> items = itemListAdapter.getItemsList();
+        final List<? extends LocalItem> items = ContextualSearchHelper.isActive(
+                contextualSearchQuery) ? unfilteredItems : itemListAdapter.getItemsList();
         final List<Long> streamIds = new ArrayList<>(items.size());
         for (final LocalItem item : items) {
             if (item instanceof PlaylistStreamEntry entry) {
@@ -1009,7 +1093,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         this.name = !TextUtils.isEmpty(title) ? title : "";
     }
 
-    private void setStreamCountAndOverallDuration(final ArrayList<LocalItem> itemsList) {
+    private void setStreamCountAndOverallDuration(
+            final List<? extends LocalItem> itemsList) {
         if (activity != null && headerBinding != null) {
             final long streamCount = itemsList.size();
             final long playlistOverallDurationSeconds = itemsList.stream()

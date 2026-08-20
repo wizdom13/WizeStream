@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+import org.schabi.newpipe.extractor.stream.StreamType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +45,17 @@ public class ContextualSearchHelperTest {
 
         assertEquals(Arrays.asList(first, third), filtered);
         assertEquals(Arrays.asList(first, second, third), items);
+    }
+
+    @Test
+    public void matchesRemoteInfoItemsByTitleOrUploader() {
+        final StreamInfoItem item = new StreamInfoItem(
+                0, "https://example.com/watch", "Quiet documentary", StreamType.VIDEO_STREAM);
+        item.setUploaderName("Science Channel");
+
+        assertTrue(ContextualSearchHelper.matchesInfoItem("documentary", item));
+        assertTrue(ContextualSearchHelper.matchesInfoItem("SCIENCE", item));
+        assertFalse(ContextualSearchHelper.matchesInfoItem("cooking", item));
     }
 
     private static final class SearchItem {

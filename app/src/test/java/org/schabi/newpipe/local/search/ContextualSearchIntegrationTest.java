@@ -138,6 +138,30 @@ public class ContextualSearchIntegrationTest {
         assertTrue(menu.contains("app:showAsAction=\"always|collapseActionView\""));
     }
 
+    @Test
+    public void channelsAndPlaylistsExposeInPageSearch() throws Exception {
+        assertSourceContains("org/schabi/newpipe/fragments/list/channel/ChannelTabFragment.java",
+                "implements PlaylistControlViewHolder, ContextualSearchable");
+        assertSourceContains("org/schabi/newpipe/fragments/list/playlist/PlaylistFragment.java",
+                "implements PlaylistControlViewHolder, ContextualSearchable");
+        assertSourceContains("org/schabi/newpipe/local/playlist/LocalPlaylistFragment.java",
+                "DebounceSavable, ContextualSearchable");
+        assertSourceContains("org/schabi/newpipe/fragments/list/channel/ChannelFragment.java",
+                "applySearchToCurrentTab()");
+
+        assertSearchMenu("menu/menu_channel.xml");
+        assertSearchMenu("menu/menu_playlist.xml");
+        assertSearchMenu("menu/menu_local_playlist.xml");
+    }
+
+    private void assertSearchMenu(final String relativePath) throws Exception {
+        final String menu = readResource(relativePath);
+        assertTrue(menu.contains("android:id=\"@+id/menu_item_search_content\""));
+        assertTrue(menu.contains(
+                "app:actionViewClass=\"androidx.appcompat.widget.SearchView\""));
+        assertTrue(menu.contains("app:showAsAction=\"always|collapseActionView\""));
+    }
+
     private void assertSourceContains(final String relativePath, final String expected)
             throws Exception {
         assertTrue(relativePath, read(relativePath).contains(expected));

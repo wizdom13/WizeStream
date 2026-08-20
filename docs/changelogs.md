@@ -8,6 +8,7 @@ Release history is listed newest first. The number beside each release is its An
 
 - Added bulk video and audio downloads for complete playlists and loaded play queues, with default-quality selection, collision-safe filenames, and optional track-number prefixes.
 - Added local content blocking for individual videos, channels, and title/uploader keywords, with long-press actions and a dedicated management screen.
+- Added in-page search for channel tabs, remote playlists, and local playlists.
 
 ## WizeStream 1.7.0 (`1007000`)
 

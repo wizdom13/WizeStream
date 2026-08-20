@@ -3,6 +3,11 @@ package org.schabi.newpipe.local.search;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.schabi.newpipe.extractor.InfoItem;
+import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem;
+import org.schabi.newpipe.extractor.post.PostInfoItem;
+import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +46,26 @@ public final class ContextualSearchHelper {
             }
         }
         return false;
+    }
+
+    public static boolean matchesInfoItem(@Nullable final CharSequence query,
+                                          @Nullable final InfoItem item) {
+        if (item == null) {
+            return false;
+        }
+        if (item instanceof StreamInfoItem) {
+            final StreamInfoItem stream = (StreamInfoItem) item;
+            return matches(query, stream.getName(), stream.getUploaderName());
+        }
+        if (item instanceof PlaylistInfoItem) {
+            final PlaylistInfoItem playlist = (PlaylistInfoItem) item;
+            return matches(query, playlist.getName(), playlist.getUploaderName());
+        }
+        if (item instanceof PostInfoItem) {
+            final PostInfoItem post = (PostInfoItem) item;
+            return matches(query, post.getName(), post.getContent(), post.getUploaderName());
+        }
+        return matches(query, item.getName());
     }
 
     @NonNull
