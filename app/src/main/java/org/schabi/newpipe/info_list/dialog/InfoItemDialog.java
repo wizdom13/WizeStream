@@ -342,7 +342,9 @@ public final class InfoItemDialog {
                     StreamDialogDefaultEntry.DOWNLOAD,
                     StreamDialogDefaultEntry.APPEND_PLAYLIST,
                     StreamDialogDefaultEntry.SHARE,
-                    StreamDialogDefaultEntry.OPEN_IN_BROWSER
+                    StreamDialogDefaultEntry.OPEN_IN_BROWSER,
+                    StreamDialogDefaultEntry.BLOCK_VIDEO,
+                    StreamDialogDefaultEntry.BLOCK_CHANNEL
             );
             addPlayWithKodiEntryIfNeeded();
             addLearningContentEntryIfNeeded();

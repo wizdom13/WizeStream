@@ -33,6 +33,7 @@ import org.schabi.newpipe.info_list.holder.StreamGridInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamMiniInfoItemHolder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.FallbackViewHolder;
 import org.schabi.newpipe.util.MembersOnlyContentHelper;
 import org.schabi.newpipe.util.OnClickGesture;
@@ -139,9 +140,14 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         final List<InfoItem> visibleData = new ArrayList<>(data.size());
         final boolean hideMembersOnly = MembersOnlyContentHelper.shouldHide(
                 infoItemBuilder.getContext());
+        final ContentBlockingHelper.Rules blockingRules = ContentBlockingHelper.getRules(
+                infoItemBuilder.getContext());
         for (final InfoItem item : data) {
             if (!hideMembersOnly || !(item instanceof StreamInfoItem)
                     || !((StreamInfoItem) item).requiresMembership()) {
+                if (blockingRules.isBlocked(item)) {
+                    continue;
+                }
                 visibleData.add(item);
             }
         }

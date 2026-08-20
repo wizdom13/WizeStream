@@ -15,6 +15,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,6 +24,7 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.BaseStateFragment;
 import org.schabi.newpipe.fragments.OnScrollBelowItemsListener;
@@ -30,6 +32,7 @@ import org.schabi.newpipe.info_list.InfoListAdapter;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -268,13 +271,32 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
             }
         });
 
-        infoListAdapter.setOnChannelSelectedListener(selectedItem -> {
-            try {
-                onItemSelected(selectedItem);
-                NavigationHelper.openChannelFragment(getFM(), selectedItem.getServiceId(),
-                        selectedItem.getUrl(), selectedItem.getName());
-            } catch (final Exception e) {
-                ErrorUtil.showUiErrorSnackbar(this, "Opening channel fragment", e);
+        infoListAdapter.setOnChannelSelectedListener(new OnClickGesture<>() {
+            @Override
+            public void selected(final ChannelInfoItem selectedItem) {
+                try {
+                    onItemSelected(selectedItem);
+                    NavigationHelper.openChannelFragment(getFM(), selectedItem.getServiceId(),
+                            selectedItem.getUrl(), selectedItem.getName());
+                } catch (final Exception e) {
+                    ErrorUtil.showUiErrorSnackbar(BaseListFragment.this,
+                            "Opening channel fragment", e);
+                }
+            }
+
+            @Override
+            public void held(final ChannelInfoItem selectedItem) {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle(selectedItem.getName())
+                        .setItems(new String[]{getString(R.string.block_channel)},
+                                (dialog, which) -> {
+                                    ContentBlockingHelper.blockChannel(requireContext(),
+                                            selectedItem.getUrl(), selectedItem.getName());
+                                    android.widget.Toast.makeText(requireContext(),
+                                            R.string.channel_blocked,
+                                            android.widget.Toast.LENGTH_SHORT).show();
+                                })
+                        .show();
             }
         });
 
@@ -489,6 +511,8 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
                                           final String key) {
         if (getString(R.string.list_view_mode_key).equals(key)) {
             updateFlags |= LIST_MODE_UPDATE_FLAG;
+        } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
+            reloadContent();
         }
     }
 

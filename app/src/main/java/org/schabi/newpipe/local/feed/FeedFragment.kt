@@ -82,6 +82,7 @@ import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
+import org.schabi.newpipe.util.ContentBlockingHelper
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.MembersOnlyContentHelper
@@ -145,6 +146,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         onSettingsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (getString(R.string.list_view_mode_key).equals(key)) {
                 updateListViewModeOnResume = true
+            } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
+                latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
         }
         PreferenceManager.getDefaultSharedPreferences(activity)
@@ -520,12 +523,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
 
         val hideMembersOnly = MembersOnlyContentHelper.shouldHide(requireContext())
+        val blockingRules = ContentBlockingHelper.getRules(requireContext())
         val streamFilteredItems = loadedState.items.filter { item ->
             val streamWithState = item.streamWithState
             if (hideMembersOnly && streamWithState.stream.requiresMembership) {
                 return@filter false
             }
             val stream = streamWithState.stream.toStreamInfoItem()
+            if (blockingRules.isBlocked(stream)) {
+                return@filter false
+            }
             val state = streamWithState.stateProgressMillis?.let {
                 StreamStateEntity(streamWithState.stream.uid, it)
             }

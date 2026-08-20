@@ -22,6 +22,7 @@ import org.schabi.newpipe.local.dialog.PlaylistAppendDialog;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.learning.LearningContentManager;
+import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
@@ -136,6 +137,21 @@ public enum StreamDialogDefaultEntry {
                         }
                     })
     ),
+
+    BLOCK_VIDEO(R.string.block_video, (fragment, item) -> {
+        ContentBlockingHelper.blockVideo(fragment.requireContext(), item);
+        Toast.makeText(fragment.requireContext(), R.string.video_blocked,
+                Toast.LENGTH_SHORT).show();
+    }),
+
+    BLOCK_CHANNEL(R.string.block_channel, (fragment, item) ->
+            fetchUploaderUrlIfSparse(fragment.requireContext(), item.getServiceId(), item.getUrl(),
+                    item.getUploaderUrl(), url -> {
+                        ContentBlockingHelper.blockChannel(fragment.requireContext(), url,
+                                item.getUploaderName());
+                        Toast.makeText(fragment.requireContext(), R.string.channel_blocked,
+                                Toast.LENGTH_SHORT).show();
+                    })),
 
     OPEN_IN_BROWSER(R.string.open_in_browser, (fragment, item) ->
             ShareUtils.openUrlInBrowser(fragment.requireContext(), item.getUrl())),
