@@ -32,6 +32,8 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.fragments.list.playlist.PlaylistControlViewHolder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.ChannelTabPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.util.ChannelTabHelper;
@@ -53,7 +55,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.Disposable;
 
 public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTabInfo>
-        implements PlaylistControlViewHolder {
+        implements PlaylistControlViewHolder, ContextualSearchable {
 
     // states must be protected and not private for State being able to access them
     @State
@@ -64,6 +66,8 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
     protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
     @State
     protected String selectedChannelVideoSort;
+    @State
+    protected String contextualSearchQuery = "";
 
     private FragmentChannelTabBinding binding;
     private PlaylistControlBinding playlistControlBinding;
@@ -317,6 +321,7 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
 
     private void refreshStreamStates() {
         if (!ChannelTabHelper.isStreamsTab(tabHandler)) {
+            applyStreamFilter();
             return;
         }
         final List<InfoItem> snapshot = new ArrayList<>(unfilteredItems);
@@ -347,13 +352,18 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
                         || item instanceof StreamInfoItem
                         && StreamListFilter.matches(selectedStreamFilter,
                                 (StreamInfoItem) item, streamStates.get(item.getUrl())))
+                .filter(item -> ContextualSearchHelper.matchesInfoItem(
+                        contextualSearchQuery, item))
                 .collect(Collectors.toList());
         infoListAdapter.clearStreamItemList();
         infoListAdapter.addInfoItemList(displayedItems);
         showListFooter(hasMoreItems());
         final boolean isEmpty = infoListAdapter.getItemsList().isEmpty();
-        if (isEmpty) {
+        if (isEmpty && !hasMoreItems()) {
             showEmptyState();
+            if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                setEmptyStateMessage(R.string.search_no_results);
+            }
         } else {
             hideLoading();
         }
@@ -364,6 +374,12 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
     }
 
     @Override
+    public void setContextualSearchQuery(@NonNull final String query) {
+        contextualSearchQuery = ContextualSearchHelper.normalizeQuery(query);
+        applyStreamFilter();
+    }
+
+    @Override
     public PlayQueue getPlayQueue() {
         final List<StreamInfoItem> streamItems = infoListAdapter.getItemsList().stream()
                 .filter(StreamInfoItem.class::isInstance)
@@ -371,6 +387,8 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
                 .collect(Collectors.toList());
 
         return new ChannelTabPlayQueue(currentInfo.getServiceId(), tabHandler,
-                currentInfo.getNextPage(), streamItems, 0);
+                ContextualSearchHelper.isActive(contextualSearchQuery)
+                        ? null : currentInfo.getNextPage(),
+                streamItems, 0);
     }
 }

@@ -24,6 +24,7 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.view.MenuProvider;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
+import androidx.viewpager.widget.ViewPager;
 
 import com.evernote.android.state.State;
 import com.google.android.material.snackbar.Snackbar;
@@ -44,11 +45,14 @@ import org.schabi.newpipe.fragments.BaseStateFragment;
 import org.schabi.newpipe.fragments.detail.TabAdapter;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.local.feed.notifications.NotificationHelper;
+import org.schabi.newpipe.local.search.ContextualSearchHelper;
+import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.local.subscription.SubscriptionManager;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.ExpandableSearchViewHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.StateSaver;
@@ -85,6 +89,10 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     protected String url;
     @State
     protected String selectedChannelVideoSort;
+    @State
+    protected String channelSearchQuery = "";
+    @State
+    protected boolean channelSearchExpanded;
 
     private ChannelInfo currentInfo;
     private Disposable currentWorker;
@@ -145,6 +153,18 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
             public void onCreateMenu(@NonNull final Menu menu,
                                      @NonNull final MenuInflater inflater) {
                 inflater.inflate(R.menu.menu_channel, menu);
+
+                final MenuItem searchItem = menu.findItem(R.id.menu_item_search_content);
+                ExpandableSearchViewHelper.configure(
+                        searchItem,
+                        getString(R.string.contextual_search_hint, name),
+                        channelSearchQuery,
+                        channelSearchExpanded,
+                        query -> {
+                            channelSearchQuery = ContextualSearchHelper.normalizeQuery(query);
+                            applySearchToCurrentTab();
+                        },
+                        expanded -> channelSearchExpanded = expanded);
 
                 if (DEBUG) {
                     Log.d(TAG, "onCreateOptionsMenu() called with: "
@@ -228,6 +248,12 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         };
         binding.subChannelAvatarView.setOnClickListener(openSubChannel);
         binding.subChannelTitleView.setOnClickListener(openSubChannel);
+        binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(final int position) {
+                applySearchToTab(position);
+            }
+        });
     }
 
     @Override
@@ -484,6 +510,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                                     name,
                                     selectedChannelVideoSort);
                     channelTabFragment.useAsFrontPage(useAsFrontPage);
+                    channelTabFragment.setContextualSearchQuery(channelSearchQuery);
                     tabAdapter.addFragment(channelTabFragment,
                             context.getString(ChannelTabHelper.getTranslationKey(tab)));
                 }
@@ -507,6 +534,23 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         final TabLayout.Tab ltab = binding.tabLayout.getTabAt(lastTab);
         if (ltab != null) {
             binding.tabLayout.selectTab(ltab);
+        }
+        applySearchToCurrentTab();
+    }
+
+    private void applySearchToCurrentTab() {
+        if (binding != null) {
+            applySearchToTab(binding.viewPager.getCurrentItem());
+        }
+    }
+
+    private void applySearchToTab(final int position) {
+        if (tabAdapter == null || position < 0 || position >= tabAdapter.getCount()) {
+            return;
+        }
+        final androidx.fragment.app.Fragment fragment = tabAdapter.getItem(position);
+        if (fragment instanceof ContextualSearchable) {
+            ((ContextualSearchable) fragment).setContextualSearchQuery(channelSearchQuery);
         }
     }
 

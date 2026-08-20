@@ -18,6 +18,14 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/menu_item_search_content"
+        android:icon="@drawable/ic_search"
+        android:title="@string/search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="always|collapseActionView"
+        tools:ignore="AlwaysShowAction" />
+
+    <item
         android:id="@+id/menu_item_notify"
         android:checkable="true"
         android:orderInCategory="1"
