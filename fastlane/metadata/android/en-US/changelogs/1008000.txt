@@ -1,0 +1,8 @@
+WizeStream 1.8.0
+
+- Added bulk playlist and queue downloads.
+- Added local blocking for videos, channels, and keywords.
+- Added search within channels and playlists.
+- Added optional DeArrow titles and thumbnails.
+- Added FCast and compatible TV casting on Android 8+.
+- Added metadata to M4A, MP4, and Opus downloads.

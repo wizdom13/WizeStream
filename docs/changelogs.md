@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.8.0 (`1008000`)
+
 ### New features
 
 - Added bulk video and audio downloads for complete playlists and loaded play queues, with default-quality selection, collision-safe filenames, and optional track-number prefixes.
@@ -16,6 +18,21 @@ Release history is listed newest first. The number beside each release is its An
 ### Improvements
 
 - Embedded title, uploader, genre, upload date, and source URL metadata in generated M4A, MP4, and Opus downloads.
+
+[View the complete changes since v1.7.1](https://github.com/wizdom13/WizeStream/compare/v1.7.1...v1.8.0)
+
+## WizeStream 1.7.1 (`1007001`)
+
+### Improvements
+
+- Improved recovery and client fallback for expiring or rejected YouTube media URLs.
+
+### Fixes
+
+- Fixed YouTube playback stopping with HTTP 403, including streams failing around the one-minute mark.
+- Fixed media.ccc.de live streams failing to open.
+
+[View the complete changes since v1.7.0](https://github.com/wizdom13/WizeStream/compare/v1.7.0...v1.7.1)
 
 ## WizeStream 1.7.0 (`1007000`)
 
