@@ -293,6 +293,8 @@ public final class Player implements PlaybackListener, Listener {
     // audio only mode does not mean that player type is background, but that the player was
     // minimized to background but will resume automatically to the original player type
     private boolean isAudioOnly = false;
+    @NonNull
+    private PlaybackPresentationMode playbackPresentationMode = PlaybackPresentationMode.VIDEO;
     private boolean isPrepared = false;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -439,6 +441,11 @@ public final class Player implements PlaybackListener, Listener {
         }
         initUIsForCurrentPlayerType();
         isAudioOnly = audioPlayerSelected();
+        if (playerIntentType != PlayerIntentType.TimestampChange) {
+            playbackPresentationMode = audioPlayerSelected()
+                    ? PlaybackPresentationMode.AUDIO_BACKGROUND
+                    : PlaybackPresentationMode.VIDEO;
+        }
 
         if (intent.hasExtra(PLAYBACK_QUALITY)) {
             videoResolver.setPlaybackQuality(intent.getStringExtra(PLAYBACK_QUALITY));
@@ -3318,6 +3325,16 @@ public final class Player implements PlaybackListener, Listener {
                 .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, !videoAndSubtitlesEnabled));
     }
 
+    public void setPlaybackPresentationMode(
+            @NonNull final PlaybackPresentationMode newMode) {
+        if (playbackPresentationMode == newMode) {
+            return;
+        }
+        playbackPresentationMode = newMode;
+        useVideoAndSubtitles(newMode.rendersVideo());
+        UIs.call(playerUi -> playerUi.onPlaybackPresentationModeChanged(newMode));
+    }
+
     /**
      * Return whether the play queue manager needs to be reloaded when switching player type.
      *
@@ -3503,6 +3520,11 @@ public final class Player implements PlaybackListener, Listener {
 
     public boolean isAudioOnly() {
         return isAudioOnly;
+    }
+
+    @NonNull
+    public PlaybackPresentationMode getPlaybackPresentationMode() {
+        return playbackPresentationMode;
     }
 
     @NonNull

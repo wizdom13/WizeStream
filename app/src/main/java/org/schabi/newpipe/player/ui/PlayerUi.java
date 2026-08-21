@@ -16,6 +16,7 @@ import com.google.android.exoplayer2.video.VideoSize;
 import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.helper.SleepTimer;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
@@ -71,6 +72,13 @@ public abstract class PlayerUi {
      * will therefore always be not null.
      */
     public void initPlayback() {
+    }
+
+    /**
+     * @param mode the new video, listening, background, or car presentation mode
+     */
+    public void onPlaybackPresentationModeChanged(
+            @NonNull final PlaybackPresentationMode mode) {
     }
 
     /**

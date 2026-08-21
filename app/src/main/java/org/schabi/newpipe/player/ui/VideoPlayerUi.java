@@ -1072,7 +1072,18 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), Collections.emptyList());
     }
 
-    private void updateStreamRelatedViews() {
+    protected void updateStreamRelatedViews() {
+        if (!player.getPlaybackPresentationMode().rendersVideo()) {
+            binding.qualityTextView.setVisibility(View.GONE);
+            binding.audioTrackTextView.setVisibility(View.GONE);
+            binding.surfaceView.setVisibility(View.GONE);
+            binding.endScreen.setVisibility(View.VISIBLE);
+            binding.playbackLiveSync.setVisibility(View.GONE);
+            binding.playbackEndTime.setVisibility(View.VISIBLE);
+            buildPlaybackSpeedMenu();
+            binding.playbackSpeed.setVisibility(View.VISIBLE);
+            return;
+        }
         player.getCurrentStreamInfo().ifPresent(info -> {
             binding.qualityTextView.setVisibility(View.GONE);
             binding.audioTrackTextView.setVisibility(View.GONE);

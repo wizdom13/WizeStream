@@ -6,6 +6,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### New features
 
+- Added a first-class Listen mode that switches videos to audio-only playback without losing the
+  queue or playback position and keeps the normal player controls available.
 - Added continuous pinch-to-zoom from 100% to 400% and two-finger panning in the main player while
   preserving the existing vertical two-finger playback-speed gesture.
 - Added opt-in native Android picture-in-picture for visible video playback on Android 8 and newer,
