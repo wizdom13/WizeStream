@@ -2,6 +2,7 @@ package org.schabi.newpipe.util
 
 import androidx.annotation.IdRes
 import org.schabi.newpipe.R
+import org.schabi.newpipe.database.stream.StreamStatisticsEntry
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
@@ -36,6 +37,16 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
             PARTIALLY_WATCHED -> state?.isValid(stream.duration) == true &&
                 !state.isFinished(stream.duration)
         }
+
+        @JvmStatic
+        fun matches(
+            filter: StreamListFilter,
+            historyEntry: StreamStatisticsEntry
+        ): Boolean = matches(
+            filter,
+            historyEntry.toStreamInfoItem(),
+            StreamStateEntity(historyEntry.streamId, historyEntry.progressMillis)
+        )
 
         private fun isShort(stream: StreamInfoItem): Boolean {
             return !StreamTypeUtil.isLiveStream(stream.streamType) &&
