@@ -54,6 +54,16 @@
         tools:ignore="ContentDescription"
         tools:visibility="visible" />
 
+    <org.schabi.newpipe.views.AudioVisualizerView
+        android:id="@+id/audioVisualizer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginVertical="72dp"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
     <View
         android:id="@+id/playbackControlsShadow"
         android:layout_width="match_parent"
