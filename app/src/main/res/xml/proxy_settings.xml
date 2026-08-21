@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/proxy_settings_title">
+
+    <PreferenceCategory
+        android:layout="@layout/settings_category_header_layout"
+        android:title="@string/proxy_settings_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false">
+
+        <ListPreference
+            android:defaultValue="@string/proxy_mode_disabled_value"
+            android:entries="@array/proxy_mode_entries"
+            android:entryValues="@array/proxy_mode_values"
+            android:key="@string/proxy_mode_key"
+            android:title="@string/proxy_mode_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="@string/proxy_host_key"
+            android:title="@string/proxy_host_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:defaultValue="8080"
+            android:inputType="number"
+            android:key="@string/proxy_port_key"
+            android:title="@string/proxy_port_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="@string/proxy_username_key"
+            android:title="@string/proxy_username_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:dialogMessage="@string/proxy_password_dialog_message"
+            android:key="@string/proxy_password_key"
+            android:persistent="false"
+            android:title="@string/proxy_password_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:selectable="false"
+            android:summary="@string/proxy_privacy_notice"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

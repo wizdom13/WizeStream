@@ -1433,4 +1433,28 @@
     <string name="local_media_audio_stereo">Stereo</string>
     <string name="local_media_audio_channels">%1$d channels</string>
     <string name="local_media_audio_bitrate">%1$d kbps</string>
+
+    <!-- Proxy -->
+    <string name="proxy_settings_title">Proxy</string>
+    <string name="proxy_settings_summary">Route remote network requests through an HTTP or SOCKS5 proxy</string>
+    <string name="proxy_mode_title">Proxy type</string>
+    <string name="proxy_disabled">Disabled</string>
+    <string name="proxy_http">HTTP</string>
+    <string name="proxy_socks">SOCKS5</string>
+    <string-array name="proxy_mode_entries">
+        <item>@string/proxy_disabled</item>
+        <item>@string/proxy_http</item>
+        <item>@string/proxy_socks</item>
+    </string-array>
+    <string name="proxy_host_title">Proxy host</string>
+    <string name="proxy_port_title">Proxy port</string>
+    <string name="proxy_username_title">Proxy username (optional)</string>
+    <string name="proxy_password_title">Proxy password (optional)</string>
+    <string name="proxy_password_dialog_message">Enter a new password, or leave it blank to clear the saved password.</string>
+    <string name="proxy_password_configured">Password saved securely</string>
+    <string name="proxy_password_not_configured">No password saved</string>
+    <string name="proxy_password_save_error">Could not securely save the proxy password</string>
+    <string name="proxy_invalid_host">Enter a host name or IP address without a URL scheme</string>
+    <string name="proxy_invalid_port">Enter a port from 1 to 65535</string>
+    <string name="proxy_privacy_notice">Changes apply to new connections. Local and LAN addresses bypass the proxy. Passwords are encrypted with Android Keystore and excluded from backup. HTTP Basic and SOCKS5 username/password authentication are supported.</string>
 </resources>

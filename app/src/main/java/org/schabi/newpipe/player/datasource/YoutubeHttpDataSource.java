@@ -49,6 +49,7 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 
 import org.schabi.newpipe.DownloaderImpl;
+import org.schabi.newpipe.network.AppProxySelector;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -787,7 +788,7 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
      * @return an {@link HttpURLConnection} created with the {@code url}
      */
     private HttpURLConnection openConnection(@NonNull final URL url) throws IOException {
-        return (HttpURLConnection) url.openConnection();
+        return AppProxySelector.openConnection(url);
     }
 
     /**

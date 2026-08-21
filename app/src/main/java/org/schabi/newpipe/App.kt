@@ -27,6 +27,7 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketException
 import java.util.concurrent.Executors
+import okhttp3.OkHttpClient
 import org.acra.ACRA.init
 import org.acra.ACRA.isACRASenderServiceProcess
 import org.acra.config.CoreConfigurationBuilder
@@ -34,6 +35,7 @@ import org.schabi.newpipe.error.ReCaptchaActivity
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.ktx.hasAssignableCause
+import org.schabi.newpipe.network.AppProxySelector
 import org.schabi.newpipe.settings.NewPipeSettings
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncManager
@@ -172,7 +174,12 @@ open class App :
         }.build()
 
     protected open fun getDownloader(): Downloader {
-        val downloader = DownloaderImpl.init(null)
+        val proxySelector = AppProxySelector.install(this)
+        val downloader = DownloaderImpl.init(
+            OkHttpClient.Builder()
+                .proxySelector(proxySelector)
+                .proxyAuthenticator(proxySelector.okHttpAuthenticator)
+        )
         setCookiesToDownloader(downloader)
         return downloader
     }

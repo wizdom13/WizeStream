@@ -70,6 +70,20 @@ videos and channels, remove individual rules, or clear everything. Matching remo
 channels, posts, playlists, feeds, search results, and related content are hidden locally. Blocking
 does not unsubscribe from channels, delete history, or report anything to a service.
 
+## How do proxy settings work?
+
+Open **Settings > Proxy** and select **HTTP** or **SOCKS5**, then enter the proxy host and port.
+The setting applies to new remote browsing, image, playback, download, update, and community-service
+connections. Existing connections are closed when the configuration changes.
+
+Localhost, private IP addresses, and local host names bypass the proxy so TV casting and device
+synchronization remain reachable on the LAN. HTTPS content stays encrypted in transit, but the proxy
+operator can still see destination hosts. Optional HTTP Basic and SOCKS5 username/password
+authentication is supported. The password is encrypted with Android Keystore in app-private,
+non-backed-up storage and is never included in WizeStream exports. HTTP Basic credentials are not
+encrypted between the device and a plain HTTP proxy, so use only a proxy and network you trust. A
+failed configured proxy does not silently expose the request through a direct connection.
+
 ## What is DeArrow support?
 
 DeArrow is an optional community service that provides descriptive YouTube titles and alternative
