@@ -11,6 +11,9 @@ Release history is listed newest first. The number beside each release is its An
 - Added opt-in native Android picture-in-picture for visible video playback on Android 8 and newer,
   with automatic Android 12+ entry, media-session controls, and popup-player fallback on older
   devices.
+- Added app-wide HTTP and SOCKS5 proxy configuration for remote browsing, playback, images, and
+  downloads, including securely stored proxy authentication and automatic local-network bypass
+  for casting and device synchronization.
 
 ### Improvements
 

@@ -1626,6 +1626,21 @@
     <string name="dearrow_enable_key">dearrow_enable</string>
     <string name="dearrow_titles_key">dearrow_titles</string>
     <string name="dearrow_thumbnails_key">dearrow_thumbnails</string>
+
+    <!-- Proxy -->
+    <string name="proxy_mode_key">proxy_mode</string>
+    <string name="proxy_host_key">proxy_host</string>
+    <string name="proxy_port_key">proxy_port</string>
+    <string name="proxy_username_key">proxy_username</string>
+    <string name="proxy_password_key">proxy_password</string>
+    <string name="proxy_mode_disabled_value">disabled</string>
+    <string name="proxy_mode_http_value">http</string>
+    <string name="proxy_mode_socks_value">socks5</string>
+    <string-array name="proxy_mode_values">
+        <item>@string/proxy_mode_disabled_value</item>
+        <item>@string/proxy_mode_http_value</item>
+        <item>@string/proxy_mode_socks_value</item>
+    </string-array>
     <string name="sponsor_block_category_sponsor_key">sponsor_block_category_sponsor</string>
     <string name="sponsor_block_category_intro_key">sponsor_block_category_intro</string>
     <string name="sponsor_block_category_outro_key">sponsor_block_category_outro</string>
