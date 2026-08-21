@@ -53,14 +53,14 @@ main [README](../README.md#supported-services) for the current list.
 
 ## How do bulk downloads work?
 
-Open a remote playlist's menu and choose **Download playlist**, or open the play queue and choose
-its download action. WizeStream loads the complete remote playlist, then lets you choose video or
-audio once for the batch. Each item uses its default available quality and audio track. Track-number
-prefixes are optional, and duplicate filenames are made unique automatically.
+Open a remote or local playlist's menu and choose **Download playlist**, or open the play queue and
+choose its download action. WizeStream loads the complete remote playlist when needed, then lets you
+choose video or audio once for the batch. Each item uses its default available quality and audio
+track. Track-number prefixes are optional, duplicate filenames are made unique automatically, and
+entries that already point to local media files are skipped.
 
 Bulk downloading requires valid default video and audio folders. Disable **Ask where to download**
-and choose the folders under **Settings > Download** before starting a batch. Local files in a play
-queue are skipped.
+and choose the folders under **Settings > Download** before starting a batch.
 
 ## How does content blocking work?
 

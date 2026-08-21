@@ -48,6 +48,8 @@ import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.databinding.DialogEditTextBinding;
 import org.schabi.newpipe.databinding.LocalPlaylistHeaderBinding;
 import org.schabi.newpipe.databinding.PlaylistControlBinding;
+import org.schabi.newpipe.download.BulkDownloadDialog;
+import org.schabi.newpipe.download.BulkDownloadItem;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
@@ -419,6 +421,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     public boolean onOptionsItemSelected(final MenuItem item) {
         if (item.getItemId() == R.id.menu_item_share_playlist) {
             createShareConfirmationDialog();
+        } else if (item.getItemId() == R.id.menu_item_download_playlist) {
+            showBulkDownloadDialog();
         } else if (item.getItemId() == R.id.menu_item_rename_playlist) {
             createRenameDialog();
         } else if (item.getItemId() == R.id.menu_item_remove_watched) {
@@ -439,6 +443,18 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             return super.onOptionsItemSelected(item);
         }
         return true;
+    }
+
+    private void showBulkDownloadDialog() {
+        final List<BulkDownloadItem> downloadItems =
+                LocalPlaylistBulkDownloadMapper.from(unfilteredItems);
+        if (downloadItems.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.bulk_download_empty,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BulkDownloadDialog.newInstance(downloadItems)
+                .show(getChildFragmentManager(), "bulkDownloadDialog");
     }
 
     private void toggleLearningPlaylist() {
