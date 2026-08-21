@@ -53,6 +53,10 @@ public final class VisualizerAudioProcessor extends BaseAudioProcessor {
 
     @Override
     public void queueInput(final ByteBuffer inputBuffer) {
+        if (!inputBuffer.hasRemaining()) {
+            return;
+        }
+
         final int size = inputBuffer.remaining();
         if (enabled && size >= 2) {
             captureWaveform(inputBuffer);
