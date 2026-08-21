@@ -1388,6 +1388,8 @@
     <string name="sponsor_block_skip_button_content_description">Skip SponsorBlock segment</string>
     <!-- Equalizer -->
     <string name="equalizer">Equalizer</string>
+    <string name="enter_listen_mode">Listen without video</string>
+    <string name="exit_listen_mode">Return to video</string>
     <string name="equalizer_settings_key" translatable="false">equalizer_settings</string>
     <string name="equalizer_enable">Enable equalizer</string>
     <string name="equalizer_preset">Preset</string>
