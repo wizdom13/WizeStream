@@ -18,6 +18,12 @@
         tools:ignore="AlwaysShowAction" />
 
     <item
+        android:id="@+id/menu_item_download_playlist"
+        android:icon="@drawable/ic_file_download"
+        android:title="@string/download_playlist"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_item_rename_playlist"
         android:title="@string/rename_playlist"
         app:showAsAction="never" />

@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Improvements
+
+- Added bulk video and audio downloads directly from local playlists; entries that already point to
+  local media files are skipped.
+
 ## WizeStream 1.8.0 (`1008000`)
 
 ### New features
