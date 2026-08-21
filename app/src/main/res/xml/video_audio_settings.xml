@@ -98,6 +98,16 @@
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
 
+        <ListPreference
+            android:defaultValue="@string/default_visualizer_style_value"
+            android:entries="@array/visualizer_style_entries"
+            android:entryValues="@array/visualizer_style_values"
+            android:key="@string/visualizer_style_key"
+            android:title="@string/visualizer_style_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/use_external_video_player_key"
