@@ -190,6 +190,7 @@ public final class Player implements PlaybackListener, Listener {
     public static final String RESUME_PLAYBACK = "resume_playback";
     public static final String PLAY_WHEN_READY = "play_when_ready";
     public static final String PLAYER_TYPE = "player_type";
+    public static final String PLAYBACK_PRESENTATION_MODE = "playback_presentation_mode";
     public static final String PLAYER_INTENT_TYPE = "player_intent_type";
     public static final String PLAYER_INTENT_DATA = "player_intent_data";
 
@@ -447,9 +448,14 @@ public final class Player implements PlaybackListener, Listener {
         initUIsForCurrentPlayerType();
         isAudioOnly = audioPlayerSelected();
         if (playerIntentType != PlayerIntentType.TimestampChange) {
-            playbackPresentationMode = audioPlayerSelected()
-                    ? PlaybackPresentationMode.AUDIO_BACKGROUND
-                    : PlaybackPresentationMode.VIDEO;
+            final PlaybackPresentationMode requestedMode = IntentCompat.getSerializableExtra(
+                    intent, PLAYBACK_PRESENTATION_MODE, PlaybackPresentationMode.class);
+            playbackPresentationMode = requestedMode != null
+                    ? requestedMode
+                    : audioPlayerSelected()
+                            ? PlaybackPresentationMode.AUDIO_BACKGROUND
+                            : PlaybackPresentationMode.VIDEO;
+            visualizerAudioProcessor.setEnabled(playbackPresentationMode.allowsVisualizer());
         }
 
         if (intent.hasExtra(PLAYBACK_QUALITY)) {

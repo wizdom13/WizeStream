@@ -63,6 +63,7 @@ import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerIntentType;
 import org.schabi.newpipe.player.PlayerService;
 import org.schabi.newpipe.player.PlayerType;
+import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.TimestampChangeData;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.PlayerHolder;
@@ -166,6 +167,25 @@ public final class NavigationHelper {
         final Intent intent = getPlayerIntent(context, PlayerService.class, queue,
                 PlayerIntentType.AllOthers)
                 .putExtra(Player.PLAYER_TYPE, PlayerType.AUDIO)
+                .putExtra(Player.RESUME_PLAYBACK, resumePlayback);
+        ContextCompat.startForegroundService(context, intent);
+    }
+
+    /**
+     * Start audio-only playback requested by an automotive media surface.
+     *
+     * @param context application or service context
+     * @param queue queue selected in the car browser
+     * @param resumePlayback whether playback should start immediately
+     */
+    public static void playOnCarAudioPlayer(final Context context,
+                                            final PlayQueue queue,
+                                            final boolean resumePlayback) {
+        final Intent intent = getPlayerIntent(context, PlayerService.class, queue,
+                PlayerIntentType.AllOthers)
+                .putExtra(Player.PLAYER_TYPE, PlayerType.AUDIO)
+                .putExtra(Player.PLAYBACK_PRESENTATION_MODE,
+                        PlaybackPresentationMode.CAR_AUDIO)
                 .putExtra(Player.RESUME_PLAYBACK, resumePlayback);
         ContextCompat.startForegroundService(context, intent);
     }
