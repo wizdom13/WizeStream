@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### New features
+
+- Added continuous pinch-to-zoom from 100% to 400% and two-finger panning in the main player while
+  preserving the existing vertical two-finger playback-speed gesture.
+
 ### Improvements
 
 - Added bulk video and audio downloads directly from local playlists; entries that already point to
