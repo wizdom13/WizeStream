@@ -38,14 +38,12 @@ class ChannelHeaderLayoutTest {
         val root = LayoutInflater.from(context)
             .inflate(R.layout.fragment_channel, FrameLayout(context), false)
         val banner = root.findViewById<ImageView>(R.id.channel_banner_image)
-        if (!showBanner) {
-            banner.setImageDrawable(null)
-        }
 
-        val width = View.MeasureSpec.makeMeasureSpec(widthPixels, View.MeasureSpec.EXACTLY)
-        val height = View.MeasureSpec.makeMeasureSpec(heightPixels, View.MeasureSpec.EXACTLY)
-        root.measure(width, height)
-        root.layout(0, 0, root.measuredWidth, root.measuredHeight)
+        measureAndLayout(root, widthPixels, heightPixels)
+        if (!showBanner) {
+            banner.visibility = View.GONE
+            measureAndLayout(root, widthPixels, heightPixels)
+        }
 
         val metadata = root.findViewById<View>(R.id.channel_metadata)
         val metadataRow = root.findViewById<View>(R.id.channel_metadata_row)
@@ -54,13 +52,28 @@ class ChannelHeaderLayoutTest {
         val subscriberCount = root.findViewById<View>(R.id.channel_subscriber_view)
         val subscribeButton = root.findViewById<View>(R.id.channel_subscribe_button)
 
-        assertTrue(metadataRow.top >= banner.bottom)
+        if (showBanner) {
+            assertVisibleAndMeasured(banner)
+            assertTrue(metadataRow.top >= banner.bottom)
+        } else {
+            assertEquals(View.GONE, banner.visibility)
+            assertEquals(0, metadataRow.top)
+            assertEquals(metadataRow.height, metadata.height)
+        }
+
         assertTrue(metadataRow.bottom <= metadata.height)
 
         listOf(avatar, title, subscriberCount, subscribeButton).forEach {
             assertVisibleAndMeasured(it)
             assertContainedIn(metadataRow, it)
         }
+    }
+
+    private fun measureAndLayout(root: View, widthPixels: Int, heightPixels: Int) {
+        val width = View.MeasureSpec.makeMeasureSpec(widthPixels, View.MeasureSpec.EXACTLY)
+        val height = View.MeasureSpec.makeMeasureSpec(heightPixels, View.MeasureSpec.EXACTLY)
+        root.measure(width, height)
+        root.layout(0, 0, root.measuredWidth, root.measuredHeight)
     }
 
     private fun assertVisibleAndMeasured(view: View) {

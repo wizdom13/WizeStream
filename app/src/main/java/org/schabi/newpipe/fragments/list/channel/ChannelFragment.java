@@ -225,7 +225,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         binding.channelTitleView.setText(name);
         if (!ImageStrategy.shouldLoadImages()) {
             // do not waste space for the banner if it is not going to be loaded
-            binding.channelBannerImage.setImageDrawable(null);
+            binding.channelBannerImage.setVisibility(View.GONE);
         }
     }
 
@@ -648,10 +648,13 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         setInitialData(result.getServiceId(), result.getOriginalUrl(), result.getName());
 
         if (ImageStrategy.shouldLoadImages() && !result.getBanners().isEmpty()) {
+            binding.channelBannerImage.setVisibility(View.VISIBLE);
             CoilHelper.INSTANCE.loadBanner(binding.channelBannerImage, result.getBanners());
         } else {
             // do not waste space for the banner, if the user disabled images or there is not one
+            CoilUtils.dispose(binding.channelBannerImage);
             binding.channelBannerImage.setImageDrawable(null);
+            binding.channelBannerImage.setVisibility(View.GONE);
         }
 
         CoilHelper.INSTANCE.loadAvatar(binding.channelAvatarView, result.getAvatars());

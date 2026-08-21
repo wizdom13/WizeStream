@@ -32,6 +32,7 @@ Release history is listed newest first. The number beside each release is its An
 ### Fixes
 
 - Fixed a crash when opening video details in landscape on large-screen devices.
+- Fixed channel metadata and Subscribe controls disappearing on channels without banners.
 
 ## WizeStream 1.8.0 (`1008000`)
 
