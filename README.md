@@ -41,6 +41,7 @@
   <a href="#screenshots">Screenshots</a> •
   <a href="#supported-services">Services</a> •
   <a href="#features">Features</a> •
+  <a href="#android-auto">Android Auto</a> •
   <a href="#device-synchronization">Device sync</a> •
   <a href="#installation">Installation</a> •
   <a href="#building-from-source">Build</a> •
@@ -202,7 +203,12 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 ### Playback
 
-- Main, background, popup, external-player, and Kodi playback
+- Main, Listen, background, popup, external-player, and Kodi playback
+- Switch a video to audio-only Listen mode without losing the queue or playback position, and choose
+  from 15 waveform, spectrum, meter, radial, and particle visualizers under **Settings > Video and
+  audio > Visualizer style**
+- Browse and resume audio safely through Android Auto, including voice search and a bounded
+  **Continue listening** section; video and visualizers are never shown on the driving surface
 - Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
   newer, with play, pause, stop, and receiver-switching controls
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
@@ -212,8 +218,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   for original or descriptive audio
 - Save playback speed, quality, and caption choices in per-channel playback profiles
 - Retain playback speed for live streams
-- Use swipe seeking, fullscreen volume and brightness swipes, hold-to-speed-up, an optional two-finger
-  playback-speed gesture, and swipe down to the miniplayer
+- Use swipe seeking, fullscreen volume and brightness swipes, hold-to-speed-up, configurable
+  pinch-to-zoom and two-finger panning, an optional two-finger playback-speed gesture, and swipe down
+  to the miniplayer
+- Optionally keep visible video playback in Android's native picture-in-picture window on Android 8
+  and newer
 - Optionally keep the video visible while scrolling its details page
 - Set a sleep timer using presets, a custom duration, the end of the current video, or the end of the
   queue, with optional fade-out
@@ -289,6 +298,21 @@ See [Device synchronization](#device-synchronization) for behavior, limitations,
 - Update validation for checksum, package identity, version, and signing certificate
 - Independent semantic versioning, release signing, stable builds, and separately installable nightly
   builds
+
+---
+
+## Android Auto
+
+WizeStream can appear as an audio media app in Android Auto. It provides car-safe browsing, voice
+search, playback controls, media resumption, and recent listening content. Video and Listen-mode
+visualizers remain on the phone and are not sent to the vehicle display.
+
+Stable builds installed from a trusted source should appear normally. When testing a debug, nightly,
+CI, or other sideloaded APK, Android Auto hides the app until **Unknown sources** is enabled in
+Android Auto's own developer settings. This is separate from Android's general app-install setting.
+
+See the [Android Auto guide](docs/android-auto.md) for setup, sideloaded-build testing, safety
+behavior, and troubleshooting.
 
 ---
 

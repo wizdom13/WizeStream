@@ -1,11 +1,13 @@
-WizeStream is an independent, NewPipe-based Android streaming client with a modern interface, privacy-friendly playback, local-first features, and support for multiple services. It requires no platform account, Google framework libraries, or Google Play Services.
+WizeStream is an independent, privacy-friendly NewPipe-based Android client with a modern interface, local-first features, and multiple services. It requires no platform account or Google Play Services.
 
-Supported services include YouTube, YouTube Music, Bilibili, Niconico, PeerTube, Bandcamp, SoundCloud, and media.ccc.de.
+Services include YouTube, YouTube Music, Bilibili, Niconico, PeerTube, Bandcamp, SoundCloud, and media.ccc.de.
 
 Core features include:
 
 - Watch videos and live streams from supported services
+- Audio-only Listen mode with 15 visualizers
 - Background and popup playback
+- Android Auto browsing, voice search, controls, and resumption
 - Local playlists
 - Subscriptions without a platform account, kept separate for each service
 - Service-specific channel groups and What's New feeds with independent refresh states
@@ -20,23 +22,24 @@ Additional WizeStream features:
 - Material 3-inspired surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors and manual theme color presets
 - Bottom navigation with a configurable default main tab
-- Secure peer-to-peer synchronization for subscriptions, feed groups, playlists, history, playback progress, selected settings, channel playback profiles, and completed-download metadata
-- Manual and automatic background synchronization between trusted devices on the same local network
+- Secure peer-to-peer synchronization for subscriptions, groups, playlists, history, progress, selected settings, playback profiles, and download metadata
+- Manual and automatic synchronization between trusted devices on the same network
 - "Download on this device" for synchronized download records whose media file is missing locally; media files are not transferred
 - Search filters, channel sorting, and search within channel tabs and local or remote playlists
 - Local blocking for videos, channels, and title or uploader keywords
 - Podcast tabs, per-channel playback profiles, and labeled multi-audio tracks
 - SponsorBlock, optional DeArrow titles and thumbnails, and YouTube dislike counts
 - FCast and Chromecast-compatible TV casting on Android 8 and newer
-- Player gestures, swipe-down miniplayer, optional visible-video mode, and live-speed retention
+- Player gestures, configurable pinch-to-zoom and panning, swipe-down miniplayer, optional
+  visible-video mode, native picture-in-picture, and live-speed retention
 - Embedded metadata in generated M4A, MP4, and Opus downloads
 - A separate application ID for side-by-side installation with official NewPipe
 
-WizeStream maintains its application and integrated extractor. Report WizeStream service and extractor failures to WizeStream first. Releases are available through GitHub and IzzyOnDroid.
+WizeStream maintains its app and integrated extractor. Report service and extractor failures to WizeStream first. Releases are available through GitHub and IzzyOnDroid.
 
 Storage permissions:
 
-On Android 6-9, WizeStream can optionally use a legacy storage backend instead of Android's Storage Access Framework. This mode is also used on some Fire TV devices because of a platform-specific SAF issue. In legacy mode, this allows the app to read existing files and save downloaded video, audio, captions, and exported backups. On Android 10 and newer, SAF is always used, and these storage permissions are not requested.
+On Android 6-9, WizeStream can optionally use legacy storage instead of Android's Storage Access Framework. Some Fire TV devices also use it because of a platform SAF issue. It allows reading existing files and saving downloads and backups. On Android 10 and newer, SAF is always used and these permissions are not requested.
 
 Camera permission:
 

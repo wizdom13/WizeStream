@@ -96,7 +96,29 @@ available or the request fails, WizeStream keeps the original title and thumbnai
 Pinch with two fingers over the main player to zoom continuously from 100% to 400%. Once enlarged,
 drag with two fingers to move around the video. Pinch back to 100% or tap the Fit/Fill/Zoom control
 to reset the custom zoom. A vertical two-finger swipe still changes playback speed when that gesture
-is enabled and the video has not already been enlarged.
+is enabled and the video has not already been enlarged. Pinch-to-zoom is enabled by default and can
+be turned off under **Settings > Video and audio > Behavior > Pinch to zoom**.
+
+## What is Listen mode and how do I change its visualizer?
+
+Tap the waveform Listen action on a video's details page to continue the same item as
+audio-only playback without losing its queue or position. The video is replaced by the selected
+visualizer while the normal player controls remain available. Choose among 15 styles under
+**Settings > Video and audio > Visualizer style**. The visualizer reads decoded player audio and
+does not require microphone permission.
+
+## Why is WizeStream missing from Android Auto?
+
+Android Auto support is available in builds newer than WizeStream 1.8.0. A stable build installed
+from a trusted source should appear as a media app. Android Auto hides debug, nightly, CI, and other
+sideloaded APKs unless its developer-only **Unknown sources** option is enabled.
+
+Open Android Auto settings, open **About**, tap **Version and permission info** 10 times, and approve
+developer mode. Then open the overflow menu, choose **Developer settings**, and enable **Unknown
+sources**. Reconnect the vehicle after changing the option. This setting belongs to Android Auto and
+is separate from Android's general permission to install unknown apps.
+
+See the [Android Auto guide](android-auto.md) for complete setup and troubleshooting steps.
 
 ## How do I cast to a TV?
 
