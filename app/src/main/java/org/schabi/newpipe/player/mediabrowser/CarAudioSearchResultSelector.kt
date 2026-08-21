@@ -9,6 +9,7 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 internal object CarAudioSearchResultSelector {
-    fun firstPlayable(items: List<InfoItem>): StreamInfoItem? =
-        items.filterIsInstance<StreamInfoItem>().firstOrNull()
+    fun firstPlayable(items: List<InfoItem>): StreamInfoItem? = items
+        .filterIsInstance<StreamInfoItem>()
+        .firstOrNull()
 }
