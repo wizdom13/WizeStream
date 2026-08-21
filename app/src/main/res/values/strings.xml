@@ -243,6 +243,8 @@
     <string name="left_gesture_control_title">Left gesture action</string>
     <string name="right_gesture_control_summary">Choose gesture for right half of player screen</string>
     <string name="right_gesture_control_title">Right gesture action</string>
+    <string name="pinch_to_zoom_gesture_title">Pinch to zoom</string>
+    <string name="pinch_to_zoom_gesture_summary">Pinch with two fingers to zoom and pan the video</string>
     <string name="two_finger_speed_gesture_title">Two-finger speed gesture</string>
     <string name="two_finger_speed_gesture_summary">Swipe vertically with two fingers to change playback speed</string>
     <string name="brightness">Brightness</string>

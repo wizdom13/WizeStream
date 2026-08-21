@@ -266,6 +266,14 @@
             app:iconSpaceReserved="false" />
 
         <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/pinch_to_zoom_gesture_control_key"
+            android:summary="@string/pinch_to_zoom_gesture_summary"
+            android:title="@string/pinch_to_zoom_gesture_title"
+            app:singleLineTitle="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/two_finger_speed_gesture_control_key"
             android:summary="@string/two_finger_speed_gesture_summary"

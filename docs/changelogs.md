@@ -14,8 +14,8 @@ Release history is listed newest first. The number beside each release is its An
   and visualization intentionally excluded from the driving surface.
 - Added Android Auto media resumption, a bounded Continue listening section, car-friendly content
   style hints, and time-limited browse requests for a more reliable driving experience.
-- Added continuous pinch-to-zoom from 100% to 400% and two-finger panning in the main player while
-  preserving the existing vertical two-finger playback-speed gesture.
+- Added continuous pinch-to-zoom from 100% to 400% and two-finger panning in the main player, with
+  a default-enabled Behavior setting, while preserving the vertical two-finger speed gesture.
 - Added opt-in native Android picture-in-picture for visible video playback on Android 8 and newer,
   with automatic Android 12+ entry, media-session controls, and popup-player fallback on older
   devices.
