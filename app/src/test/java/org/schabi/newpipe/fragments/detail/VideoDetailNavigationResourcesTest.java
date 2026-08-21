@@ -27,6 +27,13 @@ public class VideoDetailNavigationResourcesTest {
     }
 
     @Test
+    public void phoneAndLargeLandscapeLayoutsExposeCastControl() throws Exception {
+        assertViewIdExists("layout/fragment_video_detail.xml", "@+id/detail_controls_cast");
+        assertViewIdExists("layout-large-land/fragment_video_detail.xml",
+                "@+id/detail_controls_cast");
+    }
+
+    @Test
     public void navigationMenuHasStableLocalizedDestinations() throws Exception {
         final Document document = parse("menu/video_detail_navigation.xml");
         final var items = document.getElementsByTagName("item");
@@ -79,6 +86,19 @@ public class VideoDetailNavigationResourcesTest {
                                 final String title) {
         assertEquals(id, item.getAttribute("android:id"));
         assertEquals(title, item.getAttribute("android:title"));
+    }
+
+    private void assertViewIdExists(final String layoutPath,
+                                    final String id) throws Exception {
+        final Document document = parse(layoutPath);
+        final var elements = document.getElementsByTagName("*");
+        int matches = 0;
+        for (int index = 0; index < elements.getLength(); index++) {
+            if (id.equals(((Element) elements.item(index)).getAttribute("android:id"))) {
+                matches++;
+            }
+        }
+        assertEquals(layoutPath, 1, matches);
     }
 
     private Document parse(final String relativePath) throws Exception {
