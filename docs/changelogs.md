@@ -25,6 +25,7 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Improvements
 
+- Fixed History filter chips not updating the displayed watched-video list.
 - Added bulk video and audio downloads directly from local playlists; entries that already point to
   local media files are skipped.
 

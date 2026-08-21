@@ -24,6 +24,7 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.database.stream.StreamStatisticsEntry;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
+import org.schabi.newpipe.databinding.FragmentPlaylistBinding;
 import org.schabi.newpipe.databinding.PlaylistControlBinding;
 import org.schabi.newpipe.databinding.StatisticPlaylistControlBinding;
 import org.schabi.newpipe.error.ErrorInfo;
@@ -43,6 +44,7 @@ import org.schabi.newpipe.settings.HistorySettingsFragment;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.PlayButtonHelper;
+import org.schabi.newpipe.util.StreamListFilter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,6 +66,8 @@ public class StatisticsPlaylistFragment
     private StatisticSortMode sortMode = StatisticSortMode.LAST_PLAYED;
     private List<StreamStatisticsEntry> completeHistory = Collections.emptyList();
     private String contextualSearchQuery = "";
+    @State
+    StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
 
     private StatisticPlaylistControlBinding headerBinding;
     private PlaylistControlBinding playlistControlBinding;
@@ -127,6 +131,17 @@ public class StatisticsPlaylistFragment
     @Override
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
+        final FragmentPlaylistBinding binding = FragmentPlaylistBinding.bind(rootView);
+        if (selectedStreamFilter != StreamListFilter.NONE) {
+            binding.streamFilterChips.streamFilterChipGroup
+                    .check(selectedStreamFilter.getChipId());
+        }
+        binding.streamFilterChips.streamFilterChipGroup
+                .setOnCheckedStateChangeListener((group, checkedIds) -> {
+                    selectedStreamFilter = StreamListFilter.fromChipId(
+                            checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
+                    showFilteredHistory();
+                });
         if (!useAsFrontPage) {
             setTitle(getString(R.string.title_last_played));
         }
@@ -283,8 +298,15 @@ public class StatisticsPlaylistFragment
         setEmptyStateMessage(ContextualSearchHelper.isActive(contextualSearchQuery)
                 ? R.string.search_no_results : R.string.empty_view_no_videos);
 
+        final List<StreamStatisticsEntry> historyMatchingFilter = new ArrayList<>();
+        for (final StreamStatisticsEntry item : completeHistory) {
+            if (StreamListFilter.matches(selectedStreamFilter, item)) {
+                historyMatchingFilter.add(item);
+            }
+        }
+
         final List<StreamStatisticsEntry> filteredHistory = ContextualSearchHelper.filter(
-                completeHistory,
+                historyMatchingFilter,
                 contextualSearchQuery,
                 item -> new String[]{
                         item.getStreamEntity().getTitle(),
