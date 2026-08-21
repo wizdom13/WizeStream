@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 33196)
-Total output lines: 3053
-
 package org.schabi.newpipe.fragments.detail;
 
 import static android.text.TextUtils.isEmpty;
@@ -1413,7 +1410,286 @@ public final class VideoDetailFragment
             return;
         }
 
-    …3196 tokens truncated… contentParams.topMargin = desiredContentTopMargin;
+        final PlayQueue queue = setupPlayQueueForIntent(false);
+        tryAddVideoPlayerView();
+
+        final Context context = requireContext();
+        final Intent playerIntent =
+                NavigationHelper.getPlayerIntent(context, PlayerService.class, queue,
+                                PlayerIntentType.AllOthers)
+                        .putExtra(Player.PLAY_WHEN_READY, autoPlayEnabled)
+                        .putExtra(Player.RESUME_PLAYBACK, true);
+        ContextCompat.startForegroundService(activity, playerIntent);
+    }
+
+    /**
+     * When the video detail fragment is already showing details for a video and the user opens a
+     * new one, the video detail fragment changes all of its old data to the new stream, so if there
+     * is a video player currently open it should be hidden. This method does exactly that. If
+     * autoplay is enabled, the underlying player is not stopped completely, since it is going to
+     * be reused in a few milliseconds and the flickering would be annoying.
+     */
+    private void hideMainPlayerOnLoadingNewStream() {
+        final var root = getRoot();
+        if (!isPlayerServiceAvailable() || root.isEmpty() || !player.videoPlayerSelected()) {
+            return;
+        }
+
+        removeVideoPlayerView();
+        if (isAutoplayEnabled()) {
+            playerService.stopForImmediateReusing();
+            root.ifPresent(view -> view.setVisibility(View.GONE));
+        } else {
+            playerHolder.stopService();
+        }
+    }
+
+    private PlayQueue setupPlayQueueForIntent(final boolean append) {
+        if (append) {
+            if (currentLocalItem != null) {
+                return new LocalMediaPlayQueue(List.of(currentLocalItem), 0);
+            }
+            return new SinglePlayQueue(currentInfo);
+        }
+
+        PlayQueue queue = playQueue;
+        // Size can be 0 because queue removes bad stream automatically when error occurs
+        if (queue == null || queue.isEmpty()) {
+            queue = currentLocalItem == null
+                    ? new SinglePlayQueue(currentInfo)
+                    : new LocalMediaPlayQueue(List.of(currentLocalItem), 0);
+        }
+
+        return queue;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+    // Utils
+    //////////////////////////////////////////////////////////////////////////*/
+
+    public void setAutoPlay(final boolean autoPlay) {
+        this.autoPlayEnabled = autoPlay;
+    }
+
+    private void startOnExternalPlayer(@NonNull final Context context,
+                                       @NonNull final StreamInfo info,
+                                       @NonNull final Stream selectedStream) {
+        NavigationHelper.playOnExternalPlayer(context, currentInfo.getName(),
+                currentInfo.getSubChannelName(), selectedStream);
+
+        final HistoryRecordManager recordManager = new HistoryRecordManager(requireContext());
+        disposables.add(recordManager.onViewed(info).onErrorComplete()
+                .subscribe(
+                        ignored -> { /* successful */ },
+                        error -> showSnackBarError(
+                                new ErrorInfo(
+                                        error,
+                                        UserAction.PLAY_STREAM,
+                                        "Got an error when modifying history on viewed"
+                                )
+                        )
+                ));
+    }
+
+    private boolean isExternalPlayerEnabled() {
+        return PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .getBoolean(getString(R.string.use_external_video_player_key), false);
+    }
+
+    // This method overrides default behaviour when setAutoPlay() is called.
+    // Don't auto play if the user selected an external player or disabled it in settings
+    private boolean isAutoplayEnabled() {
+        return autoPlayEnabled
+                && !isExternalPlayerEnabled()
+                && (!isPlayerAvailable() || player.videoPlayerSelected())
+                && bottomSheetState != BottomSheetBehavior.STATE_HIDDEN
+                && PlayerHelper.isAutoplayAllowedByUser(requireContext());
+    }
+
+    private void tryAddVideoPlayerView() {
+        if (isPlayerAvailable() && getView() != null) {
+            // Setup the surface view height, so that it fits the video correctly; this is done also
+            // here, and not only in the Handler, to avoid a choppy fullscreen rotation animation.
+            setHeightThumbnail();
+        }
+
+        // do all the null checks in the posted lambda, too, since the player, the binding and the
+        // view could be set or unset before the lambda gets executed on the next main thread cycle
+        new Handler(Looper.getMainLooper()).post(() -> {
+            if (!isPlayerAvailable() || getView() == null) {
+                return;
+            }
+
+            // setup the surface view height, so that it fits the video correctly
+            setHeightThumbnail();
+
+            player.UIs().get(MainPlayerUi.class).ifPresent(playerUi -> {
+                // sometimes binding would be null here, even though getView() != null above u.u
+                if (binding != null) {
+                    // prevent from re-adding a view multiple times
+                    playerUi.removeViewFromParent();
+                    binding.playerPlaceholder.addView(playerUi.getBinding().getRoot());
+                    playerUi.setupVideoSurfaceIfNeeded();
+                    updatePinnedPlayerLayout();
+                }
+            });
+        });
+    }
+
+    private void removeVideoPlayerView() {
+        makeDefaultHeightForVideoPlaceholder();
+
+        if (player != null) {
+            player.UIs().get(VideoPlayerUi.class).ifPresent(VideoPlayerUi::removeViewFromParent);
+        }
+        updatePinnedPlayerLayout();
+    }
+
+    private void makeDefaultHeightForVideoPlaceholder() {
+        if (getView() == null) {
+            return;
+        }
+
+        binding.playerPlaceholder.getLayoutParams().height = FrameLayout.LayoutParams.MATCH_PARENT;
+        binding.playerPlaceholder.requestLayout();
+    }
+
+    private final ViewTreeObserver.OnPreDrawListener preDrawListener =
+            new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    final DisplayMetrics metrics = getResources().getDisplayMetrics();
+
+                    if (getView() != null) {
+                        final int height = (DeviceUtils.isInMultiWindow(activity)
+                                ? requireView()
+                                : activity.getWindow().getDecorView()).getHeight();
+                        setHeightThumbnail(height, metrics);
+                        getView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+                    }
+                    return false;
+                }
+            };
+
+    /**
+     * Method which controls the size of thumbnail and the size of main player inside
+     * a layout with thumbnail. It decides what height the player should have in both
+     * screen orientations. It knows about multiWindow feature
+     * and about videos with aspectRatio ZOOM (the height for them will be a bit higher,
+     * {@link #MAX_PLAYER_HEIGHT})
+     */
+    private void setHeightThumbnail() {
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+        final boolean isPortrait = metrics.heightPixels > metrics.widthPixels;
+        requireView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+
+        if (isFullscreen()) {
+            final int height = (DeviceUtils.isInMultiWindow(activity)
+                    ? requireView()
+                    : activity.getWindow().getDecorView()).getHeight();
+            // Height is zero when the view is not yet displayed like after orientation change
+            if (height != 0) {
+                setHeightThumbnail(height, metrics);
+            } else {
+                requireView().getViewTreeObserver().addOnPreDrawListener(preDrawListener);
+            }
+        } else {
+            final int height = (int) (isPortrait
+                    ? metrics.widthPixels / (16.0f / 9.0f)
+                    : metrics.heightPixels / 2.0f);
+            setHeightThumbnail(height, metrics);
+        }
+    }
+
+    private void setHeightThumbnail(final int newHeight, final DisplayMetrics metrics) {
+        binding.detailThumbnailImageView.setLayoutParams(
+                new FrameLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
+        binding.detailThumbnailImageView.setMinimumHeight(newHeight);
+        updatePinnedPlayerLayout(newHeight);
+        if (isPlayerAvailable()) {
+            final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
+            player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
+                    ui.getBinding().surfaceView.setHeights(newHeight,
+                            ui.isFullscreen() ? newHeight : maxHeight));
+        }
+    }
+
+    static boolean isPhoneDetailLayout(final boolean hasRelatedItemsLayout) {
+        return !hasRelatedItemsLayout;
+    }
+
+    static int getContentTopMargin(final boolean phoneDetailLayout,
+                                   final int thumbnailHeight) {
+        return phoneDetailLayout && thumbnailHeight > 0 ? thumbnailHeight : 0;
+    }
+
+    static int resolveThumbnailHeight(final int requestedHeight,
+                                      final int layoutHeight,
+                                      final int measuredHeight) {
+        return requestedHeight > 0
+                ? requestedHeight
+                : layoutHeight > 0
+                        ? layoutHeight
+                        : Math.max(measuredHeight, 0);
+    }
+
+    static boolean shouldUsePinnedPlayerLayout(final boolean preferenceEnabled,
+                                               final boolean videoPlayerSelected,
+                                               final boolean playerAttached,
+                                               final boolean fullscreen,
+                                               final boolean phoneDetailLayout,
+                                               final boolean tvLayout,
+                                               final boolean tabletLayout) {
+        return preferenceEnabled
+                && videoPlayerSelected
+                && playerAttached
+                && !fullscreen
+                && phoneDetailLayout
+                && !tvLayout
+                && !tabletLayout;
+    }
+
+    private void updatePinnedPlayerLayout() {
+        updatePinnedPlayerLayout(0);
+    }
+
+    private void updatePinnedPlayerLayout(final int requestedThumbnailHeight) {
+        if (binding == null || getView() == null) {
+            return;
+        }
+
+        final boolean playerAttached = getRoot()
+                .map(root -> root.getParent() == binding.playerPlaceholder)
+                .orElse(false);
+        final boolean phoneDetailLayout = isPhoneDetailLayout(binding.relatedItemsLayout != null);
+        final boolean usePinnedMode = shouldUsePinnedPlayerLayout(
+                pinVideoWhileScrolling,
+                isPlayerAvailable() && player.videoPlayerSelected(), playerAttached,
+                isFullscreen(), phoneDetailLayout,
+                DeviceUtils.isTv(requireContext()), DeviceUtils.isTablet(requireContext()));
+        final int layoutHeight = binding.detailThumbnailImageView.getLayoutParams().height;
+        final int thumbnailHeight = resolveThumbnailHeight(requestedThumbnailHeight, layoutHeight,
+                binding.detailThumbnailImageView.getHeight());
+        final int playerHeight = usePinnedMode ? thumbnailHeight : 0;
+        final int collapseMode = usePinnedMode
+                ? PINNED_PLAYER_COLLAPSE_MODE : LEGACY_PLAYER_COLLAPSE_MODE;
+        final int scrollFlags = usePinnedMode
+                ? PINNED_DETAIL_SCROLL_FLAGS : LEGACY_DETAIL_SCROLL_FLAGS;
+
+        final AppBarLayout.LayoutParams appBarParams =
+                (AppBarLayout.LayoutParams) binding.detailCollapsingToolbarLayout.getLayoutParams();
+        boolean changed = false;
+        if (appBarParams.getScrollFlags() != scrollFlags) {
+            appBarParams.setScrollFlags(scrollFlags);
+            binding.detailCollapsingToolbarLayout.setLayoutParams(appBarParams);
+            changed = true;
+        }
+        final int desiredContentTopMargin = getContentTopMargin(phoneDetailLayout, thumbnailHeight);
+        final ViewGroup.MarginLayoutParams contentParams =
+                (ViewGroup.MarginLayoutParams) binding.detailContentRootLayout.getLayoutParams();
+        if (contentParams.topMargin != desiredContentTopMargin) {
+            contentParams.topMargin = desiredContentTopMargin;
             binding.detailContentRootLayout.setLayoutParams(contentParams);
             changed = true;
         }
