@@ -17,6 +17,7 @@ import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import org.schabi.newpipe.MainActivity.DEBUG
 import org.schabi.newpipe.NewPipeDatabase
@@ -60,6 +61,16 @@ class MediaBrowserImpl(
         disposables.add(
             getMergedPlaylists().subscribe { notifyChildrenChanged.accept(ID_BOOKMARKS) }
         )
+        disposables.add(
+            database.streamHistoryDAO().history.subscribe(
+                {
+                    notifyChildrenChanged.accept(ID_CONTINUE)
+                    notifyChildrenChanged.accept(ID_RECENT)
+                    notifyChildrenChanged.accept(ID_HISTORY)
+                },
+                { throwable -> Log.e(TAG, "History observation failed", throwable) }
+            )
+        )
     }
 
     //region Cleanup
@@ -84,17 +95,25 @@ class MediaBrowserImpl(
         }
 
         if (rootHints?.getBoolean(EXTRA_RECENT, false) == true) {
-            // the system is asking for a root to do media resumption, but we can't handle that yet,
-            // see https://developer.android.com/media/implement/surfaces/mobile#mediabrowserservice_implementation
-            return null
+            return MediaBrowserServiceCompat.BrowserRoot(ID_RECENT, createRootExtras(true))
         }
 
-        val extras = Bundle()
-        extras.putBoolean(
-            MediaConstants.BROWSER_SERVICE_EXTRAS_KEY_SEARCH_SUPPORTED,
-            true
+        return MediaBrowserServiceCompat.BrowserRoot(ID_ROOT, createRootExtras())
+    }
+
+    private fun createRootExtras(recent: Boolean = false): Bundle = Bundle().apply {
+        putBoolean(MediaConstants.BROWSER_SERVICE_EXTRAS_KEY_SEARCH_SUPPORTED, true)
+        if (recent) {
+            putBoolean(EXTRA_RECENT, true)
+        }
+        putInt(
+            MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+            MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_CATEGORY_GRID_ITEM
         )
-        return MediaBrowserServiceCompat.BrowserRoot(ID_ROOT, extras)
+        putInt(
+            MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+            MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
+        )
     }
     //endregion
 
@@ -107,6 +126,8 @@ class MediaBrowserImpl(
         result.detach() // allows sendResult() to happen later
         disposables.add(
             onLoadChildren(parentId)
+                .timeout(CarBrowsePolicy.LOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
                 .subscribe(
                     { result.sendResult(it) },
                     { throwable ->
@@ -126,6 +147,11 @@ class MediaBrowserImpl(
             if (path.isEmpty()) {
                 return Single.just(
                     listOf(
+                        createRootMediaItem(
+                            ID_CONTINUE,
+                            context.resources.getString(R.string.continue_listening),
+                            R.drawable.ic_history_white
+                        ),
                         createRootMediaItem(
                             ID_BOOKMARKS,
                             context.resources.getString(R.string.tab_bookmarks_short),
@@ -160,6 +186,10 @@ class MediaBrowserImpl(
 
                 ID_HISTORY -> return populateHistory()
 
+                ID_CONTINUE -> return populateContinueListening()
+
+                ID_RECENT -> return populateResumption()
+
                 else -> throw parseError(parentId)
             }
         } catch (e: ContentNotAvailableException) {
@@ -175,15 +205,7 @@ class MediaBrowserImpl(
         val builder = MediaDescriptionCompat.Builder()
         builder.setMediaId(mediaId)
         builder.setTitle(folderName)
-        val resources = context.resources
-        builder.setIconUri(
-            Uri.Builder()
-                .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
-                .authority(resources.getResourcePackageName(iconResId))
-                .appendPath(resources.getResourceTypeName(iconResId))
-                .appendPath(resources.getResourceEntryName(iconResId))
-                .build()
-        )
+        builder.setIconUri(resourceUri(iconResId))
 
         val extras = Bundle()
         extras.putString(
@@ -320,7 +342,19 @@ class MediaBrowserImpl(
     private fun populateHistory(): Single<List<MediaBrowserCompat.MediaItem>> {
         val history = database.streamHistoryDAO().history.firstOrError()
         return history.map { items ->
-            items.map { this.createHistoryMediaItem(it) }
+            CarBrowsePolicy.browse(items).map { this.createHistoryMediaItem(it) }
+        }
+    }
+
+    private fun populateContinueListening(): Single<List<MediaBrowserCompat.MediaItem>> {
+        return database.streamHistoryDAO().history.firstOrError().map { items ->
+            CarBrowsePolicy.continueListening(items).map(this::createHistoryMediaItem)
+        }
+    }
+
+    private fun populateResumption(): Single<List<MediaBrowserCompat.MediaItem>> {
+        return database.streamHistoryDAO().history.firstOrError().map { items ->
+            CarBrowsePolicy.resumption(items).map(this::createHistoryMediaItem)
         }
     }
 
@@ -331,9 +365,18 @@ class MediaBrowserImpl(
             .appendPath(streamHistoryEntry.streamId.toString())
             .build().toString()
         builder.setMediaId(mediaId)
-            .setTitle(streamHistoryEntry.streamEntity.title)
-            .setSubtitle(streamHistoryEntry.streamEntity.uploader)
-            .setIconUri(imageUriOrNullIfDisabled(streamHistoryEntry.streamEntity.thumbnailUrl))
+            .setTitle(
+                streamHistoryEntry.streamEntity.title.takeUnless { it.isBlank() }
+                    ?: context.getString(R.string.app_name)
+            )
+            .setSubtitle(
+                streamHistoryEntry.streamEntity.uploader.takeUnless { it.isNullOrBlank() }
+                    ?: context.getString(R.string.app_name)
+            )
+            .setIconUri(
+                imageUriOrNullIfDisabled(streamHistoryEntry.streamEntity.thumbnailUrl)
+                    ?: resourceUri(R.drawable.ic_headset)
+            )
 
         return MediaBrowserCompat.MediaItem(
             builder.build(),
@@ -351,14 +394,14 @@ class MediaBrowserImpl(
     private fun populateBookmarks(): Single<List<MediaBrowserCompat.MediaItem>> {
         val playlists = getMergedPlaylists().firstOrError()
         return playlists.map { playlist ->
-            playlist.map { this.createPlaylistMediaItem(it) }
+            CarBrowsePolicy.browse(playlist).map { this.createPlaylistMediaItem(it) }
         }
     }
 
     private fun populateLocalPlaylist(playlistId: Long): Single<List<MediaBrowserCompat.MediaItem>> {
         val playlist = LocalPlaylistManager(database).getPlaylistStreams(playlistId).firstOrError()
         return playlist.map { items ->
-            items.mapIndexed { index, item ->
+            CarBrowsePolicy.browse(items).mapIndexed { index, item ->
                 createLocalPlaylistStreamMediaItem(playlistId, item, index)
             }
         }
@@ -370,7 +413,7 @@ class MediaBrowserImpl(
             .map {
                 // ignore it.errors, i.e. ignore errors about specific items, since there would
                 // be no way to show the error properly in Android Auto anyway
-                it.relatedItems.mapIndexed { index, item ->
+                CarBrowsePolicy.browse(it.relatedItems).mapIndexed { index, item ->
                     createRemotePlaylistStreamMediaItem(playlistId, item, index)
                 }
             }
@@ -391,7 +434,10 @@ class MediaBrowserImpl(
             searchMusicBySongTitle(query)
                 // ignore it.errors, i.e. ignore errors about specific items, since there would
                 // be no way to show the error properly in Android Auto anyway
-                .map { it.relatedItems.mapNotNull(this::createInfoItemMediaItem) }
+                .map {
+                    CarBrowsePolicy.search(it.relatedItems)
+                        .mapNotNull(this::createInfoItemMediaItem)
+                }
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                     { result.sendResult(it) },
@@ -420,5 +466,15 @@ class MediaBrowserImpl(
                 null
             }
         }
+    }
+
+    private fun resourceUri(@DrawableRes resourceId: Int): Uri {
+        val resources = context.resources
+        return Uri.Builder()
+            .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+            .authority(resources.getResourcePackageName(resourceId))
+            .appendPath(resources.getResourceTypeName(resourceId))
+            .appendPath(resources.getResourceEntryName(resourceId))
+            .build()
     }
 }
