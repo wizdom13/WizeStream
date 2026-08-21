@@ -5,24 +5,25 @@
 
 package org.schabi.newpipe.player;
 
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.Test;
 
 public class PlaybackPresentationModeTest {
     @Test
     public void onlyVideoModeRendersVideo() {
-        assertThat(PlaybackPresentationMode.VIDEO.rendersVideo()).isTrue();
-        assertThat(PlaybackPresentationMode.LISTEN_VISUALIZER.rendersVideo()).isFalse();
-        assertThat(PlaybackPresentationMode.AUDIO_BACKGROUND.rendersVideo()).isFalse();
-        assertThat(PlaybackPresentationMode.CAR_AUDIO.rendersVideo()).isFalse();
+        assertTrue(PlaybackPresentationMode.VIDEO.rendersVideo());
+        assertFalse(PlaybackPresentationMode.LISTEN_VISUALIZER.rendersVideo());
+        assertFalse(PlaybackPresentationMode.AUDIO_BACKGROUND.rendersVideo());
+        assertFalse(PlaybackPresentationMode.CAR_AUDIO.rendersVideo());
     }
 
     @Test
     public void visualizerIsLimitedToVisibleListenMode() {
-        assertThat(PlaybackPresentationMode.LISTEN_VISUALIZER.allowsVisualizer()).isTrue();
-        assertThat(PlaybackPresentationMode.VIDEO.allowsVisualizer()).isFalse();
-        assertThat(PlaybackPresentationMode.AUDIO_BACKGROUND.allowsVisualizer()).isFalse();
-        assertThat(PlaybackPresentationMode.CAR_AUDIO.allowsVisualizer()).isFalse();
+        assertTrue(PlaybackPresentationMode.LISTEN_VISUALIZER.allowsVisualizer());
+        assertFalse(PlaybackPresentationMode.VIDEO.allowsVisualizer());
+        assertFalse(PlaybackPresentationMode.AUDIO_BACKGROUND.allowsVisualizer());
+        assertFalse(PlaybackPresentationMode.CAR_AUDIO.allowsVisualizer());
     }
 }
