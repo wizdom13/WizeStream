@@ -360,6 +360,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.equalizerButton.setVisibility(View.VISIBLE);
         binding.equalizerButton.setActivated(player.getEqualizerState().isEnabled());
         binding.listenModeButton.setVisibility(View.VISIBLE);
+        binding.audioVisualizer.setAudioProcessor(player.getVisualizerAudioProcessor());
         updateListenModeUi(player.getPlaybackPresentationMode());
         updateLearningNoteButtonVisibility(player.getCurrentStreamInfo().orElse(null));
         binding.switchMute.setVisibility(View.VISIBLE);
@@ -390,6 +391,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private void updateListenModeUi(@NonNull final PlaybackPresentationMode mode) {
         final boolean listening = mode == PlaybackPresentationMode.LISTEN_VISUALIZER;
         binding.listenModeButton.setActivated(listening);
+        binding.audioVisualizer.setVisibility(listening ? View.VISIBLE : View.GONE);
+        if (listening) {
+            binding.endScreen.setVisibility(View.GONE);
+        }
         binding.listenModeButton.setContentDescription(context.getString(listening
                 ? R.string.exit_listen_mode : R.string.enter_listen_mode));
     }

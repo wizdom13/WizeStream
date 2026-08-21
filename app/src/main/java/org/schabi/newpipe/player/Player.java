@@ -134,6 +134,7 @@ import org.schabi.newpipe.player.ui.PlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUiList;
 import org.schabi.newpipe.player.ui.PopupPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
+import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.InfoCache;
@@ -259,6 +260,8 @@ public final class Player implements PlaybackListener, Listener {
     private final LoadController loadController;
     @NonNull
     private final DefaultRenderersFactory renderFactory;
+    @NonNull
+    private final VisualizerAudioProcessor visualizerAudioProcessor;
 
     @NonNull
     private final VideoPlaybackResolver videoResolver;
@@ -364,10 +367,12 @@ public final class Player implements PlaybackListener, Listener {
                 new DefaultBandwidthMeter.Builder(context).build());
         loadController = new LoadController();
 
-        renderFactory = prefs.getBoolean(
+        visualizerAudioProcessor = new VisualizerAudioProcessor();
+        final boolean useCustomVideoRenderer = prefs.getBoolean(
                 context.getString(
-                        R.string.always_use_exoplayer_set_output_surface_workaround_key), false)
-                ? new CustomRenderersFactory(context) : new DefaultRenderersFactory(context);
+                        R.string.always_use_exoplayer_set_output_surface_workaround_key), false);
+        renderFactory = new CustomRenderersFactory(context, useCustomVideoRenderer,
+                visualizerAudioProcessor);
 
         renderFactory.setEnableDecoderFallback(
                 prefs.getBoolean(
@@ -1794,7 +1799,8 @@ public final class Player implements PlaybackListener, Listener {
     private void updateAudioTunneling() {
         final boolean tunnelingEnabled = !prefs.getBoolean(
                 context.getString(R.string.disable_media_tunneling_key), false)
-                && !equalizerController.getState().isEnabled();
+                && !equalizerController.getState().isEnabled()
+                && !playbackPresentationMode.allowsVisualizer();
         trackSelector.setParameters(trackSelector.buildUponParameters()
                 .setTunnelingEnabled(tunnelingEnabled));
     }
@@ -3331,7 +3337,9 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
         playbackPresentationMode = newMode;
+        visualizerAudioProcessor.setEnabled(newMode.allowsVisualizer());
         useVideoAndSubtitles(newMode.rendersVideo());
+        updateAudioTunneling();
         UIs.call(playerUi -> playerUi.onPlaybackPresentationModeChanged(newMode));
     }
 
@@ -3525,6 +3533,11 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     public PlaybackPresentationMode getPlaybackPresentationMode() {
         return playbackPresentationMode;
+    }
+
+    @NonNull
+    public VisualizerAudioProcessor getVisualizerAudioProcessor() {
+        return visualizerAudioProcessor;
     }
 
     @NonNull
