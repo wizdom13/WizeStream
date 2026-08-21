@@ -25,6 +25,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Improvements
 
+- Added 15 selectable Listen-mode visualizers and a distinct waveform icon so Listen mode is no
+  longer confused with the Background player action.
 - Fixed History filter chips not updating the displayed watched-video list.
 - Added bulk video and audio downloads directly from local playlists; entries that already point to
   local media files are skipped.

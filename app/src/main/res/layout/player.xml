@@ -430,7 +430,7 @@
                         android:focusable="true"
                         android:padding="@dimen/player_main_buttons_padding"
                         android:scaleType="fitCenter"
-                        android:src="@drawable/ic_headset"
+                        android:src="@drawable/ic_waveform"
                         app:tint="@color/white" />
 
                     <androidx.appcompat.widget.AppCompatImageButton

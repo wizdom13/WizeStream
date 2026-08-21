@@ -1584,6 +1584,44 @@
     <string name="streams_notifications_channels_key">streams_notifications_channels</string>
     <string name="player_notification_screen_key">player_notification_screen</string>
 
+    <!-- Listen mode visualizer -->
+    <string name="visualizer_style_key">visualizer_style</string>
+    <string name="default_visualizer_style_value">centered_bars</string>
+    <string-array name="visualizer_style_entries">
+        <item>@string/visualizer_style_centered_bars</item>
+        <item>@string/visualizer_style_classic_bars</item>
+        <item>@string/visualizer_style_mirrored_bars</item>
+        <item>@string/visualizer_style_waveform</item>
+        <item>@string/visualizer_style_filled_waveform</item>
+        <item>@string/visualizer_style_oscilloscope</item>
+        <item>@string/visualizer_style_spectrum_line</item>
+        <item>@string/visualizer_style_mountain</item>
+        <item>@string/visualizer_style_circular_spectrum</item>
+        <item>@string/visualizer_style_radial_waveform</item>
+        <item>@string/visualizer_style_equalizer_blocks</item>
+        <item>@string/visualizer_style_particles</item>
+        <item>@string/visualizer_style_pulse_rings</item>
+        <item>@string/visualizer_style_vu_meters</item>
+        <item>@string/visualizer_style_neon_dots</item>
+    </string-array>
+    <string-array name="visualizer_style_values">
+        <item>centered_bars</item>
+        <item>classic_bars</item>
+        <item>mirrored_bars</item>
+        <item>waveform</item>
+        <item>filled_waveform</item>
+        <item>oscilloscope</item>
+        <item>spectrum_line</item>
+        <item>mountain</item>
+        <item>circular_spectrum</item>
+        <item>radial_waveform</item>
+        <item>equalizer_blocks</item>
+        <item>particles</item>
+        <item>pulse_rings</item>
+        <item>vu_meters</item>
+        <item>neon_dots</item>
+    </string-array>
+
     <!-- ExoPlayer settings -->
     <string name="exoplayer_settings_key">exoplayer_settings_key</string>
     <string name="disable_media_tunneling_key">disable_media_tunneling_key</string>

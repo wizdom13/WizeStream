@@ -1391,6 +1391,22 @@
     <string name="equalizer">Equalizer</string>
     <string name="enter_listen_mode">Listen without video</string>
     <string name="exit_listen_mode">Return to video</string>
+    <string name="visualizer_style_title">Visualizer style</string>
+    <string name="visualizer_style_centered_bars">Centered spectrum</string>
+    <string name="visualizer_style_classic_bars">Classic bars</string>
+    <string name="visualizer_style_mirrored_bars">Mirrored bars</string>
+    <string name="visualizer_style_waveform">Waveform</string>
+    <string name="visualizer_style_filled_waveform">Filled waveform</string>
+    <string name="visualizer_style_oscilloscope">Oscilloscope</string>
+    <string name="visualizer_style_spectrum_line">Spectrum line</string>
+    <string name="visualizer_style_mountain">Mountain</string>
+    <string name="visualizer_style_circular_spectrum">Circular spectrum</string>
+    <string name="visualizer_style_radial_waveform">Radial waveform</string>
+    <string name="visualizer_style_equalizer_blocks">Equalizer blocks</string>
+    <string name="visualizer_style_particles">Particles</string>
+    <string name="visualizer_style_pulse_rings">Pulse rings</string>
+    <string name="visualizer_style_vu_meters">VU meters</string>
+    <string name="visualizer_style_neon_dots">Neon dots</string>
     <string name="equalizer_settings_key" translatable="false">equalizer_settings</string>
     <string name="equalizer_enable">Enable equalizer</string>
     <string name="equalizer_preset">Preset</string>
