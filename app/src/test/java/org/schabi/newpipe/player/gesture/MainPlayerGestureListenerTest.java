@@ -49,19 +49,39 @@ public class MainPlayerGestureListenerTest {
     @Test
     public void verticalTwoFingerMovementLocksSpeedGesture() {
         assertEquals(MainPlayerGestureListener.TwoFingerGestureState.SPEED,
-                MainPlayerGestureListener.classifyTwoFingerGesture(60f, 5f, 8f, 12f));
+                MainPlayerGestureListener.classifyTwoFingerGesture(
+                        60f, 5f, 8f, 12f, false));
     }
 
     @Test
     public void spanDominantMovementIsTreatedAsPinch() {
-        assertEquals(MainPlayerGestureListener.TwoFingerGestureState.IGNORED,
-                MainPlayerGestureListener.classifyTwoFingerGesture(20f, 2f, 50f, 12f));
+        assertEquals(MainPlayerGestureListener.TwoFingerGestureState.ZOOM,
+                MainPlayerGestureListener.classifyTwoFingerGesture(
+                        20f, 2f, 50f, 12f, false));
     }
 
     @Test
     public void twoFingerGestureWaitsForClearIntent() {
         assertEquals(MainPlayerGestureListener.TwoFingerGestureState.PENDING,
-                MainPlayerGestureListener.classifyTwoFingerGesture(8f, 4f, 3f, 12f));
+                MainPlayerGestureListener.classifyTwoFingerGesture(
+                        8f, 4f, 3f, 12f, false));
+    }
+
+    @Test
+    public void twoFingerMovementPansWhileAlreadyZoomed() {
+        assertEquals(MainPlayerGestureListener.TwoFingerGestureState.ZOOM,
+                MainPlayerGestureListener.classifyTwoFingerGesture(
+                        60f, 4f, 2f, 12f, true));
+    }
+
+    @Test
+    public void pinchZoomIsScaledAndClamped() {
+        assertEquals(2f, MainPlayerGestureListener.calculateZoomScale(1f, 200f, 100f),
+                FLOAT_TOLERANCE);
+        assertEquals(4f, MainPlayerGestureListener.calculateZoomScale(3f, 200f, 100f),
+                FLOAT_TOLERANCE);
+        assertEquals(1f, MainPlayerGestureListener.calculateZoomScale(2f, 20f, 100f),
+                FLOAT_TOLERANCE);
     }
 
     @Test

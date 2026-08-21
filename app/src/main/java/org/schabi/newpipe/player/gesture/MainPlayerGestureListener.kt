@@ -58,9 +58,13 @@ class MainPlayerGestureListener(
     private var twoFingerStartSpeed = 1f
     private var twoFingerSpeedStep = PlaybackParameterPreferences.DEFAULT_ADJUSTMENT_STEP
     private var lastGestureSpeed = 1f
+    private var twoFingerStartZoom = 1f
+    private var lastGestureZoom = 1f
+    private var twoFingerStartTranslationX = 0f
+    private var twoFingerStartTranslationY = 0f
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        if (handleTwoFingerSpeedGesture(v, event)) {
+        if (handleTwoFingerGesture(v, event)) {
             return true
         }
 
@@ -130,12 +134,12 @@ class MainPlayerGestureListener(
         }
     }
 
-    private fun handleTwoFingerSpeedGesture(v: View, event: MotionEvent): Boolean {
+    private fun handleTwoFingerGesture(v: View, event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_POINTER_DOWN &&
             event.pointerCount == 2 &&
-            PlayerHelper.isTwoFingerSpeedGestureEnabled(player.context) &&
             !player.exoPlayerIsNull() &&
-            player.currentState != Player.STATE_COMPLETED
+            player.currentState != Player.STATE_COMPLETED &&
+            binding.surfaceView.isVisible
         ) {
             cancelSingleFingerGesture(event)
             restoreHoldToSpeed()
@@ -154,6 +158,10 @@ class MainPlayerGestureListener(
             twoFingerStartSpeed = player.playbackSpeed
             twoFingerSpeedStep = PlaybackParameterPreferences.getAdjustmentStep(player.context)
             lastGestureSpeed = twoFingerStartSpeed
+            twoFingerStartZoom = binding.surfaceView.userZoomScale
+            lastGestureZoom = twoFingerStartZoom
+            twoFingerStartTranslationX = binding.surfaceView.userTranslationX
+            twoFingerStartTranslationY = binding.surfaceView.userTranslationY
             twoFingerGestureState = TwoFingerGestureState.PENDING
             suppressSingleTouchUntilUp = true
             v.parent?.requestDisallowInterceptTouchEvent(true)
@@ -167,14 +175,14 @@ class MainPlayerGestureListener(
         when (event.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
                 if (event.pointerCount >= 2) {
-                    updateTwoFingerSpeedGesture(v, event)
+                    updateTwoFingerGesture(v, event)
                 }
             }
 
-            MotionEvent.ACTION_POINTER_UP -> finishTwoFingerSpeedGesture()
+            MotionEvent.ACTION_POINTER_UP -> finishTwoFingerGesture()
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                finishTwoFingerSpeedGesture()
+                finishTwoFingerGesture()
                 suppressSingleTouchUntilUp = false
                 v.parent?.requestDisallowInterceptTouchEvent(false)
             }
@@ -189,7 +197,7 @@ class MainPlayerGestureListener(
         cancelEvent.recycle()
     }
 
-    private fun updateTwoFingerSpeedGesture(v: View, event: MotionEvent) {
+    private fun updateTwoFingerGesture(v: View, event: MotionEvent) {
         val verticalMovement = twoFingerInitialCenterY - centerY(event)
         val horizontalMovement = centerX(event) - twoFingerInitialCenterX
         val spanChange = abs(pointerSpan(event) - twoFingerInitialSpan)
@@ -201,8 +209,14 @@ class MainPlayerGestureListener(
                 verticalMovement,
                 horizontalMovement,
                 spanChange,
-                lockThreshold
+                lockThreshold,
+                twoFingerStartZoom > 1f
             )
+            if (twoFingerGestureState == TwoFingerGestureState.SPEED &&
+                !PlayerHelper.isTwoFingerSpeedGestureEnabled(player.context)
+            ) {
+                twoFingerGestureState = TwoFingerGestureState.IGNORED
+            }
             if (twoFingerGestureState == TwoFingerGestureState.SPEED) {
                 binding.speedGestureDisplay.text =
                     PlayerHelper.formatSpeed(twoFingerStartSpeed.toDouble())
@@ -211,13 +225,24 @@ class MainPlayerGestureListener(
                     150,
                     AnimationType.SCALE_AND_ALPHA
                 )
+            } else if (twoFingerGestureState == TwoFingerGestureState.ZOOM) {
+                binding.speedGestureDisplay.text = formatZoom(twoFingerStartZoom)
+                binding.speedGestureDisplay.animate(
+                    true,
+                    150,
+                    AnimationType.SCALE_AND_ALPHA
+                )
             }
         }
 
-        if (twoFingerGestureState != TwoFingerGestureState.SPEED) {
-            return
+        when (twoFingerGestureState) {
+            TwoFingerGestureState.SPEED -> updateTwoFingerSpeed(v, verticalMovement)
+            TwoFingerGestureState.ZOOM -> updateTwoFingerZoom(v, event)
+            else -> Unit
         }
+    }
 
+    private fun updateTwoFingerSpeed(v: View, verticalMovement: Float) {
         val pixelsPerStep = TWO_FINGER_SPEED_STEP_DP *
             player.context.resources.displayMetrics.density
         val newSpeed = calculatePlaybackSpeed(
@@ -238,10 +263,28 @@ class MainPlayerGestureListener(
         lastGestureSpeed = newSpeed
     }
 
-    private fun finishTwoFingerSpeedGesture() {
-        if (twoFingerGestureState == TwoFingerGestureState.SPEED &&
-            binding.speedGestureDisplay.isVisible
-        ) {
+    private fun updateTwoFingerZoom(v: View, event: MotionEvent) {
+        val newZoom = calculateZoomScale(
+            twoFingerStartZoom,
+            pointerSpan(event),
+            twoFingerInitialSpan
+        )
+        binding.surfaceView.setUserTransform(
+            newZoom,
+            twoFingerStartTranslationX + centerX(event) - twoFingerInitialCenterX,
+            twoFingerStartTranslationY + centerY(event) - twoFingerInitialCenterY
+        )
+        binding.speedGestureDisplay.text = formatZoom(binding.surfaceView.userZoomScale)
+        if (binding.surfaceView.userZoomScale == 1f && lastGestureZoom != 1f) {
+            v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+        lastGestureZoom = binding.surfaceView.userZoomScale
+    }
+
+    private fun finishTwoFingerGesture() {
+        val wasActive = twoFingerGestureState == TwoFingerGestureState.SPEED ||
+            twoFingerGestureState == TwoFingerGestureState.ZOOM
+        if (wasActive && binding.speedGestureDisplay.isVisible) {
             binding.speedGestureDisplay.animate(
                 false,
                 200,
@@ -251,6 +294,8 @@ class MainPlayerGestureListener(
         }
         twoFingerGestureState = TwoFingerGestureState.IDLE
     }
+
+    private fun formatZoom(zoomScale: Float): String = "${round(zoomScale * 100).toInt()}%"
 
     private fun centerX(event: MotionEvent): Float = (event.getX(0) + event.getX(1)) / 2f
 
@@ -556,18 +601,38 @@ class MainPlayerGestureListener(
             verticalMovement: Float,
             horizontalMovement: Float,
             spanChange: Float,
-            threshold: Float
+            threshold: Float,
+            alreadyZoomed: Boolean
         ): TwoFingerGestureState {
             val vertical = abs(verticalMovement)
             val horizontal = abs(horizontalMovement)
             if (vertical < threshold && horizontal < threshold && spanChange < threshold) {
                 return TwoFingerGestureState.PENDING
             }
-            return if (vertical > horizontal * 1.25f && vertical > spanChange * 1.25f) {
-                TwoFingerGestureState.SPEED
-            } else {
-                TwoFingerGestureState.IGNORED
+            return when {
+                spanChange > vertical * 1.25f && spanChange > horizontal * 1.25f ->
+                    TwoFingerGestureState.ZOOM
+
+                alreadyZoomed && (vertical >= threshold || horizontal >= threshold) ->
+                    TwoFingerGestureState.ZOOM
+
+                vertical > horizontal * 1.25f && vertical > spanChange * 1.25f ->
+                    TwoFingerGestureState.SPEED
+
+                else -> TwoFingerGestureState.IGNORED
             }
+        }
+
+        @JvmStatic
+        fun calculateZoomScale(
+            startZoom: Float,
+            currentSpan: Float,
+            initialSpan: Float
+        ): Float {
+            if (initialSpan <= 0f || !initialSpan.isFinite() || !currentSpan.isFinite()) {
+                return startZoom.coerceIn(1f, 4f)
+            }
+            return (startZoom * currentSpan / initialSpan).coerceIn(1f, 4f)
         }
 
         @JvmStatic
@@ -606,6 +671,7 @@ class MainPlayerGestureListener(
         IDLE,
         PENDING,
         SPEED,
+        ZOOM,
         IGNORED
     }
 }

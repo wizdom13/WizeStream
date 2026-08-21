@@ -77,6 +77,13 @@ thumbnail frames. It is disabled by default. Enable it under **Settings > Sponso
 where title and thumbnail replacement can be controlled separately. If no accepted contribution is
 available or the request fails, WizeStream keeps the original title and thumbnail.
 
+## How do I zoom a video?
+
+Pinch with two fingers over the main player to zoom continuously from 100% to 400%. Once enlarged,
+drag with two fingers to move around the video. Pinch back to 100% or tap the Fit/Fill/Zoom control
+to reset the custom zoom. A vertical two-finger swipe still changes playback speed when that gesture
+is enabled and the video has not already been enlarged.
+
 ## How do I cast to a TV?
 
 On Android 8 or newer, open a compatible video's details and select **Cast to TV**. WizeStream

@@ -1043,6 +1043,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        binding.surfaceView.resetUserTransform();
 
         updateStreamRelatedViews();
 
@@ -1055,6 +1056,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
+        binding.surfaceView.resetUserTransform();
         binding.qualityTextView.setVisibility(View.GONE);
         binding.audioTrackTextView.setVisibility(View.GONE);
         binding.playbackLiveSync.setVisibility(View.GONE);
@@ -1570,6 +1572,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     void onResizeClicked() {
+        binding.surfaceView.resetUserTransform();
         setResizeMode(nextResizeModeAndSaveToPrefs(player, binding.surfaceView.getResizeMode()));
     }
 
