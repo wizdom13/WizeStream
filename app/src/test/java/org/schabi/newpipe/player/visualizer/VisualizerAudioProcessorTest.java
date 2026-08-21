@@ -13,6 +13,18 @@ import java.nio.ByteOrder;
 
 public class VisualizerAudioProcessorTest {
     @Test
+    public void processorAcceptsSharedEmptyInput() throws Exception {
+        final VisualizerAudioProcessor processor = new VisualizerAudioProcessor();
+        processor.configure(new AudioProcessor.AudioFormat(48_000, 2,
+                C.ENCODING_PCM_16BIT));
+        processor.flush();
+
+        processor.queueInput(AudioProcessor.EMPTY_BUFFER);
+
+        assertEquals(0, processor.getOutput().remaining());
+    }
+
+    @Test
     public void processorPassesAudioThroughAndCapturesWaveform() throws Exception {
         final VisualizerAudioProcessor processor = new VisualizerAudioProcessor();
         processor.setEnabled(true);
