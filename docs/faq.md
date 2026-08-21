@@ -92,6 +92,14 @@ URL to the receiver, and provides play, pause, stop, and receiver-switching cont
 separate from Kodi support and does not require Google Play Services. Some streams cannot be cast
 when the service does not expose a compatible HLS, DASH, or progressive media URL.
 
+## How does Android picture-in-picture work?
+
+On Android 8 or newer, enable **Android picture-in-picture** under **Settings > Video and audio**.
+When a visible video is playing or paused, leaving WizeStream moves it into the system PiP window.
+The media session supplies play, pause, previous, and next controls. Returning to WizeStream restores
+the prior player layout. The existing popup player remains available separately and continues to be
+the supported floating-player option on Android 6 and 7.
+
 ## Does WizeStream use NewPipeExtractor or PipePipeExtractor?
 
 WizeStream uses extractor source integrated directly into its app module. That source is derived

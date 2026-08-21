@@ -108,6 +108,14 @@
 
         <SwitchPreferenceCompat
             android:defaultValue="false"
+            android:key="@string/native_pip_key"
+            android:summary="@string/native_pip_summary"
+            android:title="@string/native_pip_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
             android:key="@string/use_external_audio_player_key"
             android:title="@string/use_external_audio_player_title"
             app:singleLineTitle="false"

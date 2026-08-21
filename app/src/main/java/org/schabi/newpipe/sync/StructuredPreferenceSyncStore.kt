@@ -1046,6 +1046,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         ),
         portableSetting(PortableSettingId.AUTOPLAY, R.string.autoplay_key),
         portableSetting(PortableSettingId.MINIMIZE_ON_EXIT, R.string.minimize_on_exit_key),
+        portableSetting(PortableSettingId.NATIVE_PIP, R.string.native_pip_key),
         portableSetting(PortableSettingId.SEEK_DURATION, R.string.seek_duration_key),
         portableSetting(
             PortableSettingId.SEEK_PREVIEW_QUALITY,
