@@ -553,7 +553,7 @@ public final class VideoDetailFragment
         binding.detailControlsOpenInBrowser.setOnClickListener(makeOnClickListener(info ->
                 ShareUtils.openUrlInBrowser(requireContext(), info.getUrl())));
         binding.detailControlsCast.setOnClickListener(makeOnClickListener(info ->
-                FCastManager.showDevicePicker(requireContext(), info)));
+                FCastManager.showDevicePicker(requireContext(), info, player)));
         binding.detailControlsPlayWithKodi.setOnClickListener(makeOnClickListener(info ->
                 KoreUtils.playWithKore(requireContext(), Uri.parse(info.getUrl()))));
         if (DEBUG) {

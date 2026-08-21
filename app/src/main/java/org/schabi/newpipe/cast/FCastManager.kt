@@ -32,7 +32,9 @@ import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.VideoStream
+import org.schabi.newpipe.player.Player
 import org.schabi.newpipe.util.ListHelper
+import org.schabi.newpipe.util.StreamTypeUtil
 import org.schabi.newpipe.util.external_communication.ShareUtils
 
 /** Application-scoped discovery and playback handoff for FCast-compatible TV receivers. */
@@ -62,7 +64,7 @@ object FCastManager {
     fun canCast(context: Context, info: StreamInfo): Boolean = isAvailable() && selectSource(context, info) != null
 
     @JvmStatic
-    fun showDevicePicker(context: Context, info: StreamInfo) {
+    fun showDevicePicker(context: Context, info: StreamInfo, localPlayer: Player?) {
         if (!isAvailable()) return
         val connectedDevice = activeDevice
         val connectedName = activeDeviceName
@@ -70,10 +72,10 @@ object FCastManager {
             showActiveControls(context, info, connectedDevice, connectedName)
             return
         }
-        showAvailableDevices(context, info)
+        showAvailableDevices(context, info, localPlayer)
     }
 
-    private fun showAvailableDevices(context: Context, info: StreamInfo) {
+    private fun showAvailableDevices(context: Context, info: StreamInfo, localPlayer: Player?) {
         val source = selectSource(context, info)
         if (source == null) {
             Toast.makeText(context, R.string.cast_no_compatible_stream, Toast.LENGTH_LONG).show()
@@ -88,7 +90,9 @@ object FCastManager {
         val dialog = MaterialAlertDialogBuilder(context)
             .setTitle(R.string.cast_to_tv)
             .setAdapter(adapter) { _, position ->
-                availableDevices.getOrNull(position)?.let { connect(context, it, source) }
+                availableDevices.getOrNull(position)?.let {
+                    connect(context, it, source, createPlaybackHandoff(info, localPlayer))
+                }
             }
             .setNeutralButton(R.string.cast_receiver_help) { _, _ ->
                 ShareUtils.openUrlInApp(context, RECEIVER_URL)
@@ -152,7 +156,12 @@ object FCastManager {
     @Synchronized
     private fun snapshot(): List<DeviceInfo> = devices.values.sortedBy { it.name.lowercase() }
 
-    private fun connect(context: Context, deviceInfo: DeviceInfo, source: CastSource) {
+    private fun connect(
+        context: Context,
+        deviceInfo: DeviceInfo,
+        source: CastSource,
+        handoff: PlaybackHandoff?
+    ) {
         Toast.makeText(
             context,
             context.getString(R.string.cast_connecting, deviceInfo.name),
@@ -161,7 +170,13 @@ object FCastManager {
         runCatching {
             activeDevice?.disconnect()
             val device = castContext.createDeviceFromInfo(deviceInfo)
-            val handler = playbackHandler(context.applicationContext, device, deviceInfo, source)
+            val handler = playbackHandler(
+                context.applicationContext,
+                device,
+                deviceInfo,
+                source,
+                handoff
+            )
             activeDevice = device
             activeDeviceName = deviceInfo.name
             activePlaying = false
@@ -176,6 +191,7 @@ object FCastManager {
                 1000uL
             )
         }.onFailure {
+            handoff?.cancel()
             Log.e(TAG, "Unable to connect to casting receiver", it)
             clearActiveDevice()
             showToast(context, context.getString(R.string.cast_failed, deviceInfo.name))
@@ -208,7 +224,7 @@ object FCastManager {
                     2 -> {
                         runCatching { device.disconnect() }
                         clearActiveDevice()
-                        showAvailableDevices(context, info)
+                        showAvailableDevices(context, info, null)
                     }
                 }
             }
@@ -220,32 +236,46 @@ object FCastManager {
         context: Context,
         device: CastingDevice,
         deviceInfo: DeviceInfo,
-        source: CastSource
+        source: CastSource,
+        handoff: PlaybackHandoff?
     ): DeviceEventHandler = object : DeviceEventHandler {
+        private var pendingHandoff = handoff
+
         override fun connectionStateChanged(state: DeviceConnectionState) {
             when (state) {
                 is DeviceConnectionState.Connected -> {
                     showToast(context, context.getString(R.string.cast_connected, deviceInfo.name))
-                    runCatching {
-                        device.load(
-                            LoadRequest.Video(
-                                contentType = source.contentType,
-                                url = source.url,
-                                resumePosition = 0.0,
-                                speed = null,
-                                volume = null,
-                                metadata = null,
-                                requestHeaders = null
-                            ),
-                            500uL
-                        )
-                    }.onFailure {
-                        Log.e(TAG, "Unable to load cast media", it)
-                        showToast(context, context.getString(R.string.cast_failed, deviceInfo.name))
+                    mainHandler.post {
+                        if (activeDevice !== device) {
+                            cancelHandoff()
+                            return@post
+                        }
+                        runCatching {
+                            device.load(
+                                LoadRequest.Video(
+                                    contentType = source.contentType,
+                                    url = source.url,
+                                    resumePosition = pendingHandoff?.resumePositionSeconds() ?: 0.0,
+                                    speed = null,
+                                    volume = null,
+                                    metadata = null,
+                                    requestHeaders = null
+                                ),
+                                500uL
+                            )
+                        }.onFailure {
+                            cancelHandoff()
+                            Log.e(TAG, "Unable to load cast media", it)
+                            showToast(
+                                context,
+                                context.getString(R.string.cast_failed, deviceInfo.name)
+                            )
+                        }
                     }
                 }
 
                 DeviceConnectionState.Disconnected -> {
+                    cancelHandoff()
                     if (activeDevice === device) clearActiveDevice()
                 }
 
@@ -259,24 +289,73 @@ object FCastManager {
         override fun playbackStateChanged(state: PlaybackState) {
             if (activeDevice === device) {
                 activePlaying = state == PlaybackState.PLAYING
+                if (activePlaying) confirmHandoff()
             }
         }
         override fun durationChanged(duration: Double) = Unit
         override fun speedChanged(speed: Double) = Unit
         override fun sourceChanged(source: Source) = Unit
         override fun playbackError(message: String) {
+            cancelHandoff()
             Log.e(TAG, "Receiver playback error: $message")
             showToast(context, context.getString(R.string.cast_playback_failed))
         }
         override fun tracksAvailable(tracks: List<MediaTrack>) = Unit
         override fun trackSelected(id: UInt?, typ: MediaTrackType) = Unit
-        override fun playbackStopped() = Unit
+        override fun playbackStopped() = cancelHandoff()
         override fun tracksChanged(tracks: TrackList) = Unit
         override fun queueChanged(queue: QueueState) = Unit
         override fun commandError(error: ReceiverError) {
+            cancelHandoff()
             Log.e(TAG, "Receiver command error: $error")
         }
+
+        private fun confirmHandoff() {
+            val currentHandoff = synchronized(this) {
+                pendingHandoff.also { pendingHandoff = null }
+            } ?: return
+            mainHandler.post {
+                if (activeDevice === device) {
+                    currentHandoff.confirmRemotePlayback()
+                } else {
+                    currentHandoff.cancel()
+                }
+            }
+        }
+
+        private fun cancelHandoff() {
+            synchronized(this) {
+                pendingHandoff?.cancel()
+                pendingHandoff = null
+            }
+        }
     }
+
+    private fun createPlaybackHandoff(info: StreamInfo, player: Player?): PlaybackHandoff? {
+        if (player == null || !isSameStream(player, info)) return null
+
+        return PlaybackHandoff(
+            resumePositionProvider = {
+                if (!StreamTypeUtil.isLiveStream(info.streamType) &&
+                    isSameStream(player, info) &&
+                    !player.exoPlayerIsNull()
+                ) {
+                    player.exoPlayer.currentPosition.coerceAtLeast(0L) / 1000.0
+                } else {
+                    0.0
+                }
+            },
+            remotePlaybackStarted = {
+                if (isSameStream(player, info) && player.isPlaying) player.pause()
+            }
+        )
+    }
+
+    private fun isSameStream(player: Player, info: StreamInfo): Boolean = player.currentStreamInfo
+        .filter { current ->
+            current.serviceId == info.serviceId && current.url == info.url
+        }
+        .isPresent
 
     private fun selectSource(context: Context, info: StreamInfo): CastSource? {
         if (info.hlsUrl.isNotBlank()) {
