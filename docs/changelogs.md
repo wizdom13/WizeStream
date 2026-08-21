@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.9.0 (`1009000`)
+
 ### New features
 
 - Added a first-class Listen mode that switches videos to audio-only playback without losing the
@@ -38,6 +40,8 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed a crash when opening video details in landscape on large-screen devices.
 - Fixed channel metadata and Subscribe controls disappearing on channels without banners.
 - Fixed playback failing with an audio visualizer runtime error on newer Android versions.
+
+[View the complete changes since v1.8.0](https://github.com/wizdom13/WizeStream/compare/v1.8.0...v1.9.0)
 
 ## WizeStream 1.8.0 (`1008000`)
 

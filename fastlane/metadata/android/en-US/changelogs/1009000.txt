@@ -1,0 +1,9 @@
+WizeStream 1.9.0
+
+- Added audio-only Listen mode with 15 visualizers.
+- Added Android Auto browsing, voice search, controls, and resumption.
+- Added pinch-to-zoom, two-finger panning, and native picture-in-picture.
+- Added authenticated HTTP and SOCKS5 proxy support.
+- Added bulk downloads from local playlists.
+- Restored automatic landscape fullscreen.
+- Fixed landscape crashes, missing channel controls, History filters, and visualizer playback crashes.
