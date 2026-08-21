@@ -12,6 +12,8 @@ Release history is listed newest first. The number beside each release is its An
   audio without microphone access.
 - Added Android Auto media browsing and voice-search playback for audio-only listening, with video
   and visualization intentionally excluded from the driving surface.
+- Added Android Auto media resumption, a bounded Continue listening section, car-friendly content
+  style hints, and time-limited browse requests for a more reliable driving experience.
 - Added continuous pinch-to-zoom from 100% to 400% and two-finger panning in the main player while
   preserving the existing vertical two-finger playback-speed gesture.
 - Added opt-in native Android picture-in-picture for visible video playback on Android 8 and newer,
