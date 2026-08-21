@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -279,17 +280,7 @@ public final class VideoDetailFragment
             return;
         }
 
-        if (DeviceUtils.isLandscape(requireContext())) {
-            // If the video is playing but orientation changed
-            // let's make the video in fullscreen again
-            checkLandscape();
-        } else if (playerUi.map(ui -> ui.isFullscreen() && !ui.isVerticalVideo()).orElse(false)
-                // Tablet UI has orientation-independent fullscreen
-                && !DeviceUtils.isTablet(activity)) {
-            // Device is in portrait orientation after rotation but UI is in fullscreen.
-            // Return back to non-fullscreen state
-            playerUi.ifPresent(MainPlayerUi::toggleFullscreen);
-        }
+        syncFullscreenWithOrientation(playerUi);
 
         if (playAfterConnect
                 || ((currentInfo != null || currentLocalItem != null)
@@ -415,6 +406,33 @@ public final class VideoDetailFragment
         // Check if it was loading when the fragment was stopped/paused
         if (wasLoading.getAndSet(false) && !wasCleared()) {
             startLoading(false);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull final Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (binding == null || player == null) {
+            return;
+        }
+        // MainActivity handles orientation changes for native PiP, so the fragment is no longer
+        // recreated. Wait until the updated layout is applied, then restore the same fullscreen
+        // transition that previously ran when the player reconnected after rotation.
+        binding.getRoot().post(() -> {
+            if (binding != null && player != null && isAdded()) {
+                syncFullscreenWithOrientation(player.UIs().get(MainPlayerUi.class));
+            }
+        });
+    }
+
+    private void syncFullscreenWithOrientation(
+            @NonNull final Optional<MainPlayerUi> playerUi) {
+        if (DeviceUtils.isLandscape(requireContext())) {
+            checkLandscape();
+        } else if (playerUi.map(ui -> ui.isFullscreen() && !ui.isVerticalVideo()).orElse(false)
+                // Tablet UI has orientation-independent fullscreen.
+                && !DeviceUtils.isTablet(activity)) {
+            playerUi.ifPresent(MainPlayerUi::toggleFullscreen);
         }
     }
 

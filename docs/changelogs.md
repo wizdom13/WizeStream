@@ -31,6 +31,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Fixed rotating a playing video to landscape no longer entering fullscreen after native
+  picture-in-picture configuration handling was added.
 - Fixed a crash when opening video details in landscape on large-screen devices.
 - Fixed channel metadata and Subscribe controls disappearing on channels without banners.
 - Fixed playback failing with an audio visualizer runtime error on newer Android versions.
