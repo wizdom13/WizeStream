@@ -10,6 +10,8 @@ Release history is listed newest first. The number beside each release is its An
   queue or playback position and keeps the normal player controls available.
 - Added a permission-free spectrum visualizer for Listen mode, driven directly by decoded player
   audio without microphone access.
+- Added Android Auto media browsing and voice-search playback for audio-only listening, with video
+  and visualization intentionally excluded from the driving surface.
 - Added continuous pinch-to-zoom from 100% to 400% and two-finger panning in the main player while
   preserving the existing vertical two-finger playback-speed gesture.
 - Added opt-in native Android picture-in-picture for visible video playback on Android 8 and newer,

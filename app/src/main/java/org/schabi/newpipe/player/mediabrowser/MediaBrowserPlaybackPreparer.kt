@@ -32,6 +32,7 @@ import org.schabi.newpipe.player.playqueue.SinglePlayQueue
 import org.schabi.newpipe.util.ChannelTabHelper
 import org.schabi.newpipe.util.ExtractorHelper
 import org.schabi.newpipe.util.NavigationHelper
+import org.schabi.newpipe.util.ServiceHelper
 
 /**
  * This class is used to cleanly separate the Service implementation (in
@@ -62,7 +63,8 @@ class MediaBrowserPlaybackPreparer(
 
     //region Overrides
     override fun getSupportedPrepareActions(): Long {
-        return PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID
+        return PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
+            PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
     }
 
     override fun onPrepare(playWhenReady: Boolean) {
@@ -81,7 +83,7 @@ class MediaBrowserPlaybackPreparer(
             .subscribe(
                 { playQueue ->
                     clearMediaSessionError.run()
-                    NavigationHelper.playOnBackgroundPlayer(context, playQueue, playWhenReady)
+                    NavigationHelper.playOnCarAudioPlayer(context, playQueue, playWhenReady)
                 },
                 { throwable ->
                     Log.e(TAG, "Failed to start playback of media ID [$mediaId]", throwable)
@@ -91,7 +93,34 @@ class MediaBrowserPlaybackPreparer(
     }
 
     override fun onPrepareFromSearch(query: String, playWhenReady: Boolean, extras: Bundle?) {
-        onUnsupportedError()
+        if (query.isBlank()) {
+            onContentNotFoundError()
+            return
+        }
+
+        disposable?.dispose()
+        val serviceId = ServiceHelper.getSelectedServiceId(context)
+        disposable = ExtractorHelper.searchFor(serviceId, query, listOf(), "")
+            .map { searchInfo ->
+                CarAudioSearchResultSelector.firstPlayable(searchInfo.relatedItems)
+                    ?: throw ContentNotAvailableException("No playable result for: $query")
+            }
+            .flatMap { item ->
+                ExtractorHelper.getStreamInfo(item.serviceId, item.url, false)
+            }
+            .map { info -> SinglePlayQueue(info) as PlayQueue }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { playQueue ->
+                    clearMediaSessionError.run()
+                    NavigationHelper.playOnCarAudioPlayer(context, playQueue, playWhenReady)
+                },
+                { throwable ->
+                    Log.e(TAG, "Failed to start voice search [$query]", throwable)
+                    onPrepareError(throwable)
+                }
+            )
     }
 
     override fun onPrepareFromUri(uri: Uri, playWhenReady: Boolean, extras: Bundle?) {
@@ -113,6 +142,13 @@ class MediaBrowserPlaybackPreparer(
         setMediaSessionError.accept(
             ContextCompat.getString(context, R.string.content_not_supported),
             PlaybackStateCompat.ERROR_CODE_NOT_SUPPORTED
+        )
+    }
+
+    private fun onContentNotFoundError() {
+        setMediaSessionError.accept(
+            ContextCompat.getString(context, R.string.search_no_results),
+            PlaybackStateCompat.ERROR_CODE_APP_ERROR
         )
     }
 
