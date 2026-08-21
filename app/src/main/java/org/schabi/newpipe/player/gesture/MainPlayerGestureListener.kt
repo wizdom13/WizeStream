@@ -205,18 +205,18 @@ class MainPlayerGestureListener(
             player.context.resources.displayMetrics.density
 
         if (twoFingerGestureState == TwoFingerGestureState.PENDING) {
-            twoFingerGestureState = classifyTwoFingerGesture(
-                verticalMovement,
-                horizontalMovement,
-                spanChange,
-                lockThreshold,
-                twoFingerStartZoom > 1f
+            val pinchToZoomEnabled = PlayerHelper.isPinchToZoomGestureEnabled(player.context)
+            twoFingerGestureState = applyGestureSettings(
+                classifyTwoFingerGesture(
+                    verticalMovement,
+                    horizontalMovement,
+                    spanChange,
+                    lockThreshold,
+                    twoFingerStartZoom > 1f && pinchToZoomEnabled
+                ),
+                pinchToZoomEnabled,
+                PlayerHelper.isTwoFingerSpeedGestureEnabled(player.context)
             )
-            if (twoFingerGestureState == TwoFingerGestureState.SPEED &&
-                !PlayerHelper.isTwoFingerSpeedGestureEnabled(player.context)
-            ) {
-                twoFingerGestureState = TwoFingerGestureState.IGNORED
-            }
             if (twoFingerGestureState == TwoFingerGestureState.SPEED) {
                 binding.speedGestureDisplay.text =
                     PlayerHelper.formatSpeed(twoFingerStartSpeed.toDouble())
@@ -620,6 +620,29 @@ class MainPlayerGestureListener(
                     TwoFingerGestureState.SPEED
 
                 else -> TwoFingerGestureState.IGNORED
+            }
+        }
+
+        @JvmStatic
+        fun applyGestureSettings(
+            classifiedGesture: TwoFingerGestureState,
+            pinchToZoomEnabled: Boolean,
+            twoFingerSpeedEnabled: Boolean
+        ): TwoFingerGestureState {
+            return when (classifiedGesture) {
+                TwoFingerGestureState.ZOOM -> if (pinchToZoomEnabled) {
+                    classifiedGesture
+                } else {
+                    TwoFingerGestureState.IGNORED
+                }
+
+                TwoFingerGestureState.SPEED -> if (twoFingerSpeedEnabled) {
+                    classifiedGesture
+                } else {
+                    TwoFingerGestureState.IGNORED
+                }
+
+                else -> classifiedGesture
             }
         }
 

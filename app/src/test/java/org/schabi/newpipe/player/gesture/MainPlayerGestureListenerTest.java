@@ -75,6 +75,33 @@ public class MainPlayerGestureListenerTest {
     }
 
     @Test
+    public void disabledPinchSettingIgnoresZoomGesture() {
+        assertEquals(MainPlayerGestureListener.TwoFingerGestureState.IGNORED,
+                MainPlayerGestureListener.applyGestureSettings(
+                        MainPlayerGestureListener.TwoFingerGestureState.ZOOM,
+                        false,
+                        true));
+    }
+
+    @Test
+    public void disabledPinchSettingKeepsEnabledSpeedGesture() {
+        assertEquals(MainPlayerGestureListener.TwoFingerGestureState.SPEED,
+                MainPlayerGestureListener.applyGestureSettings(
+                        MainPlayerGestureListener.TwoFingerGestureState.SPEED,
+                        false,
+                        true));
+    }
+
+    @Test
+    public void enabledPinchSettingKeepsZoomGesture() {
+        assertEquals(MainPlayerGestureListener.TwoFingerGestureState.ZOOM,
+                MainPlayerGestureListener.applyGestureSettings(
+                        MainPlayerGestureListener.TwoFingerGestureState.ZOOM,
+                        true,
+                        false));
+    }
+
+    @Test
     public void pinchZoomIsScaledAndClamped() {
         assertEquals(2f, MainPlayerGestureListener.calculateZoomScale(1f, 200f, 100f),
                 FLOAT_TOLERANCE);
