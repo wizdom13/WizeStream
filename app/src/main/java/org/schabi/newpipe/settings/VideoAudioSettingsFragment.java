@@ -2,6 +2,7 @@ package org.schabi.newpipe.settings;
 
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.format.DateUtils;
@@ -32,6 +33,8 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
         updateSeekOptions();
         updateResolutionOptions();
         setupEqualizerPreference();
+        requirePreference(R.string.native_pip_key)
+                .setVisible(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
         listener = (sharedPreferences, key) -> {
 
             // on M and above, if user chooses to minimise to popup player on exit

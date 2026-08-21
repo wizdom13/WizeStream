@@ -228,6 +228,9 @@ public final class VideoDetailFragment
     int bottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
     int lastStableBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
+    private boolean nativePipPrepared;
+    private boolean nativePipForcedFullscreen;
+    private int nativePipPreviousBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
     protected boolean autoPlayEnabled = true;
     private boolean forceFullscreen = false;
@@ -2487,6 +2490,83 @@ public final class VideoDetailFragment
     private boolean isFullscreen() {
         return isPlayerAvailable() && player.UIs().get(VideoPlayerUi.class)
                 .map(VideoPlayerUi::isFullscreen).orElse(false);
+    }
+
+    public boolean isNativePipEligible() {
+        if (!isPlayerAvailable() || binding == null || !player.videoPlayerSelected()
+                || player.isAudioOnly()) {
+            return false;
+        }
+        final int state = player.getCurrentState();
+        return bottomSheetBehavior != null
+                && bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_HIDDEN
+                && (state == Player.STATE_PLAYING
+                || state == Player.STATE_BUFFERING
+                || state == Player.STATE_PAUSED
+                || state == Player.STATE_PAUSED_SEEK);
+    }
+
+    public boolean isNativePipPlaying() {
+        return isPlayerAvailable() && (player.isPlaying() || player.isLoading());
+    }
+
+    public float getNativePipAspectRatio() {
+        return player == null ? 0.0f : player.UIs().get(MainPlayerUi.class)
+                .map(ui -> ui.getBinding().surfaceView.getVideoAspectRatio())
+                .orElse(0.0f);
+    }
+
+    @NonNull
+    public Rect getNativePipSourceRect() {
+        final Rect sourceRect = new Rect();
+        if (player != null) {
+            player.UIs().get(MainPlayerUi.class)
+                    .ifPresent(ui -> ui.getBinding().surfaceView.getGlobalVisibleRect(sourceRect));
+        }
+        return sourceRect;
+    }
+
+    public void prepareNativePipEntry() {
+        if (nativePipPrepared || !isNativePipEligible()) {
+            return;
+        }
+        final MainPlayerUi ui = player.UIs().get(MainPlayerUi.class).orElse(null);
+        if (ui == null) {
+            return;
+        }
+        nativePipPrepared = true;
+        nativePipPreviousBottomSheetState = bottomSheetBehavior.getState();
+        if (nativePipPreviousBottomSheetState != BottomSheetBehavior.STATE_EXPANDED) {
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        }
+        nativePipForcedFullscreen = !ui.isFullscreen();
+        if (nativePipForcedFullscreen) {
+            ui.toggleFullscreen();
+        }
+        ui.closeItemsList();
+        ui.hideControls(0, 0);
+        player.useVideoAndSubtitles(true);
+    }
+
+    public void onNativePipModeChanged(final boolean inPictureInPictureMode) {
+        if (inPictureInPictureMode) {
+            prepareNativePipEntry();
+            return;
+        }
+        if (player == null) {
+            return;
+        }
+        player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
+            if (nativePipForcedFullscreen && ui.isFullscreen()) {
+                ui.toggleFullscreen();
+            }
+            if (bottomSheetBehavior != null
+                    && nativePipPreviousBottomSheetState == BottomSheetBehavior.STATE_COLLAPSED) {
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            }
+        });
+        nativePipForcedFullscreen = false;
+        nativePipPrepared = false;
     }
 
     private boolean playerIsNotStopped() {

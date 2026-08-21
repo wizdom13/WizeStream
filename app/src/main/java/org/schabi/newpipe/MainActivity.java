@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -82,6 +83,7 @@ import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.helper.PlayerHolder;
+import org.schabi.newpipe.player.pip.NativePipController;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.settings.UpdateSettingsFragment;
 import org.schabi.newpipe.settings.tabs.HomeDestinationKey;
@@ -149,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
+    private NativePipController nativePipController;
     /*//////////////////////////////////////////////////////////////////////////
     // Activity's LifeCycle
     //////////////////////////////////////////////////////////////////////////*/
@@ -187,6 +190,10 @@ public class MainActivity extends AppCompatActivity {
                 .getHeaderView(0));
         toolbarLayoutBinding = mainBinding.toolbarLayout;
         setContentView(mainBinding.getRoot());
+        nativePipController = new NativePipController(this);
+        mainBinding.fragmentPlayerHolder.addOnLayoutChangeListener(
+                (view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                        nativePipController.updatePictureInPictureParams());
 
         if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
             initFragments();
@@ -245,6 +252,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, false).apply();
         Log.d(TAG, "App moved to foreground");
+        nativePipController.updatePictureInPictureParams();
     }
 
     @Override
@@ -253,6 +261,20 @@ public class MainActivity extends AppCompatActivity {
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, true).apply();
         Log.d(TAG, "App moved to background");
     }
+
+    @Override
+    public void onUserLeaveHint() {
+        nativePipController.onUserLeaveHint();
+        super.onUserLeaveHint();
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(final boolean isInPictureInPictureMode,
+                                              @NonNull final Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        nativePipController.onPictureInPictureModeChanged(isInPictureInPictureMode);
+    }
+
     private void setupDrawer() throws ExtractionException {
         addDrawerMenuForCurrentService();
 

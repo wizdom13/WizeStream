@@ -149,6 +149,10 @@ public class ExpandableSurfaceView extends SurfaceView {
         return userTranslationY;
     }
 
+    public float getVideoAspectRatio() {
+        return videoAspectRatio;
+    }
+
     public void setAspectRatio(final float aspectRatio) {
         if (videoAspectRatio == aspectRatio || aspectRatio == 0 || !Float.isFinite(aspectRatio)) {
             return;
