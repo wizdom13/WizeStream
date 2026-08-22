@@ -15,35 +15,30 @@
         app:elevation="0dp">
 
         <org.schabi.newpipe.views.CustomCollapsingToolbarLayout
+            android:id="@+id/channel_banner_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fitsSystemWindows="true"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
-            <LinearLayout
-                android:id="@+id/channel_metadata"
+            <ImageView
+                android:id="@+id/channel_banner_image"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fitsSystemWindows="true"
-                android:orientation="vertical"
-                app:layout_collapseMode="parallax">
+                android:adjustViewBounds="true"
+                android:maxHeight="70dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/placeholder_channel_banner"
+                app:layout_collapseMode="parallax"
+                app:tint="@null"
+                tools:ignore="ContentDescription" />
+        </org.schabi.newpipe.views.CustomCollapsingToolbarLayout>
 
-                <ImageView
-                    android:id="@+id/channel_banner_image"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:adjustViewBounds="true"
-                    android:maxHeight="70dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/placeholder_channel_banner"
-                    app:tint="@null"
-                    tools:ignore="ContentDescription" />
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/channel_metadata_row"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="86dp">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/channel_metadata_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="86dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/channel_avatar_view"
@@ -135,9 +130,7 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </LinearLayout>
-        </org.schabi.newpipe.views.CustomCollapsingToolbarLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
     <RelativeLayout

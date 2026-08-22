@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Fixes
+
+- Kept channel metadata and Subscribe controls reachable while the banner collapses, including in
+  landscape and on channels without banners.
+
 ## WizeStream 1.9.0 (`1009000`)
 
 ### New features
