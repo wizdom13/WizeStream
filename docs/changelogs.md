@@ -11,6 +11,7 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed YouTube Android VR AV1/HFR streams repeatedly failing with HTTP 403 by temporarily falling
   back to the nearest available stream without changing the saved quality preference.
 - Fixed duplicate global and contextual search actions appearing together on channel pages.
+- Fixed channel names and avatars not opening their channels from History and local playlists.
 
 ## WizeStream 1.9.0 (`1009000`)
 
