@@ -175,6 +175,14 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
             @Override
             public void onPrepareMenu(@NonNull final Menu menu) {
+                // MainFragment remains resumed underneath detail fragments and contributes its
+                // global search action to the same activity menu. A channel has its own contextual
+                // search, so showing both actions is ambiguous and the global action can navigate
+                // away to SearchFragment unexpectedly.
+                final MenuItem globalSearchItem = menu.findItem(R.id.action_search);
+                if (globalSearchItem != null) {
+                    globalSearchItem.setVisible(false);
+                }
                 menuRssButton = menu.findItem(R.id.menu_item_rss);
                 menuNotifyButton = menu.findItem(R.id.menu_item_notify);
                 updateRssButton();

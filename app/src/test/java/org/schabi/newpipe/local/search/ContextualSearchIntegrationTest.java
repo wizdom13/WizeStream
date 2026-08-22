@@ -155,6 +155,16 @@ public class ContextualSearchIntegrationTest {
     }
 
     @Test
+    public void channelContextualSearchSuppressesTheUnderlyingGlobalAction() throws Exception {
+        final String channelFragment = read(
+                "org/schabi/newpipe/fragments/list/channel/ChannelFragment.java");
+
+        assertTrue(channelFragment.contains(
+                "final MenuItem globalSearchItem = menu.findItem(R.id.action_search);"));
+        assertTrue(channelFragment.contains("globalSearchItem.setVisible(false);"));
+    }
+
+    @Test
     public void remoteSearchWaitsForInitialResultBeforeFiltering() throws Exception {
         assertSourceContains("org/schabi/newpipe/fragments/list/channel/ChannelTabFragment.java",
                 "|| currentInfo == null");
