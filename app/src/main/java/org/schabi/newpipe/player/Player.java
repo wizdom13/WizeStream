@@ -2462,6 +2462,11 @@ public final class Player implements PlaybackListener, Listener {
                     + " (status=" + (responseCode == null ? "network" : responseCode)
                     + ", attempt=" + attempt.getNumber() + "/"
                     + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + ")");
+            getSelectedVideoStream()
+                    .filter(stream -> PlayerHttpErrorRecovery
+                            .shouldAvoidAndroidVrAv1HfrStream(error, stream))
+                    .ifPresent(stream -> videoResolver.rejectVideoStreamOnce(
+                            item.getUrl(), stream.getItag()));
             invalidateYouTubeMediaCaches(item);
             reloadPlayQueueManager();
         };

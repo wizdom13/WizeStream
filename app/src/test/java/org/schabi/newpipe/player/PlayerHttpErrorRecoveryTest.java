@@ -9,7 +9,10 @@ import static org.junit.Assert.assertTrue;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 
 import org.junit.Test;
+import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.services.youtube.ItagItem;
+import org.schabi.newpipe.extractor.stream.VideoStream;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -60,6 +63,30 @@ public class PlayerHttpErrorRecoveryTest {
 
         assertEquals("status=403, client=VISIONOS, cver=1.02, itag=18, userAgent=VISIONOS",
                 PlayerHttpErrorRecovery.buildSafeErrorContext(error));
+    }
+
+    @Test
+    public void avoidsOnlyRejectedAndroidVrAv1HfrStreams() throws Exception {
+        final VideoStream av1Hfr = new VideoStream.Builder()
+                .setId("398")
+                .setContent("https://media.example.com/video", true)
+                .setMediaFormat(MediaFormat.MPEG_4)
+                .setResolution("720p HFR")
+                .setCodec("av01.0.08M.08")
+                .setFps(60)
+                .setIsVideoOnly(true)
+                .setItagItem(ItagItem.getItag(398))
+                .build();
+        final IOException androidVrDiagnostic = new IOException(
+                "YouTube media request diagnostic: client=ANDROID_VR, itag=398");
+        final Throwable rejected = invalidResponseCodeException(403, androidVrDiagnostic);
+
+        assertTrue(PlayerHttpErrorRecovery.shouldAvoidAndroidVrAv1HfrStream(rejected, av1Hfr));
+        assertFalse(PlayerHttpErrorRecovery.shouldAvoidAndroidVrAv1HfrStream(
+                invalidResponseCodeException(404, androidVrDiagnostic), av1Hfr));
+        assertFalse(PlayerHttpErrorRecovery.shouldAvoidAndroidVrAv1HfrStream(
+                invalidResponseCodeException(403, new IOException(
+                        "YouTube media request diagnostic: client=VISIONOS, itag=398")), av1Hfr));
     }
 
     @Test
@@ -122,6 +149,7 @@ public class PlayerHttpErrorRecoveryTest {
         assertTrue(recoveryMethod.indexOf("setRecovery();")
                 < recoveryMethod.indexOf("postDelayed"));
         assertTrue(recoveryMethod.contains("invalidateYouTubeMediaCaches(item)"));
+        assertTrue(recoveryMethod.contains("rejectVideoStreamOnce"));
         assertTrue(recoveryMethod.contains("changeState(STATE_PAUSED);"));
         assertFalse(recoveryMethod.contains("playQueue.error()"));
     }

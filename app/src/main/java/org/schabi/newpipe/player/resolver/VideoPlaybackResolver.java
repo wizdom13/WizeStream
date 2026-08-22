@@ -26,6 +26,7 @@ import org.schabi.newpipe.util.ListHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.android.exoplayer2.C.TIME_UNSET;
 import static org.schabi.newpipe.util.ListHelper.getFilteredAudioStreams;
@@ -47,6 +48,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     private String playbackQuality;
     @Nullable
     private String audioTrack;
+    @Nullable
+    private RejectedVideoStream rejectedVideoStream;
 
     public enum SourceType {
         LIVE_STREAM,
@@ -87,9 +90,16 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         final List<MediaSource> mediaSources = new ArrayList<>();
 
         // Create video stream source
+        final Integer rejectedItag = consumeRejectedItag(info.getUrl());
+        final List<VideoStream> playableVideoStreams = withoutRejectedItag(
+                getPlayableStreams(info.getVideoStreams(), info.getServiceId()), rejectedItag);
+        final List<VideoStream> playableVideoOnlyStreams = withoutRejectedItag(
+                getPlayableStreams(info.getVideoOnlyStreams(), info.getServiceId()), rejectedItag);
         final List<VideoStream> videoStreamsList = ListHelper.getSortedStreamVideosList(context,
-                getPlayableStreams(info.getVideoStreams(), info.getServiceId()),
-                getPlayableStreams(info.getVideoOnlyStreams(), info.getServiceId()), false, true);
+                playableVideoStreams, playableVideoOnlyStreams, false, true);
+        if (rejectedItag != null) {
+            Log.w(TAG, "Falling back from rejected YouTube video itag " + rejectedItag);
+        }
         final List<AudioStream> audioStreamsList =
                 getFilteredAudioStreams(context, info.getAudioStreams());
 
@@ -207,6 +217,45 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     public void setAudioTrack(@Nullable final String audioLanguage) {
         this.audioTrack = audioLanguage;
+    }
+
+    public synchronized void rejectVideoStreamOnce(@NonNull final String streamUrl,
+                                                    final int itag) {
+        rejectedVideoStream = new RejectedVideoStream(streamUrl, itag);
+    }
+
+    @Nullable
+    private synchronized Integer consumeRejectedItag(@NonNull final String streamUrl) {
+        if (rejectedVideoStream == null || !rejectedVideoStream.streamUrl.equals(streamUrl)) {
+            return null;
+        }
+
+        final int itag = rejectedVideoStream.itag;
+        rejectedVideoStream = null;
+        return itag;
+    }
+
+    @NonNull
+    private static List<VideoStream> withoutRejectedItag(
+            @NonNull final List<VideoStream> streams,
+            @Nullable final Integer rejectedItag) {
+        if (rejectedItag == null) {
+            return streams;
+        }
+        return streams.stream()
+                .filter(stream -> stream.getItag() != rejectedItag)
+                .collect(Collectors.toList());
+    }
+
+    private static final class RejectedVideoStream {
+        @NonNull
+        private final String streamUrl;
+        private final int itag;
+
+        private RejectedVideoStream(@NonNull final String streamUrl, final int itag) {
+            this.streamUrl = streamUrl;
+            this.itag = itag;
+        }
     }
 
     public interface QualityResolver {
