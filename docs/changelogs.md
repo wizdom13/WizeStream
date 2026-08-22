@@ -8,6 +8,8 @@ Release history is listed newest first. The number beside each release is its An
 
 - Kept channel metadata and Subscribe controls reachable while the banner collapses, including in
   landscape and on channels without banners.
+- Fixed YouTube Android VR AV1/HFR streams repeatedly failing with HTTP 403 by temporarily falling
+  back to the nearest available stream without changing the saved quality preference.
 
 ## WizeStream 1.9.0 (`1009000`)
 

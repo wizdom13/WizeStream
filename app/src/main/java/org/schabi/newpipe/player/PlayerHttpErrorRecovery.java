@@ -9,9 +9,11 @@ import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 
+import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
 import java.net.UnknownHostException;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
@@ -135,6 +137,24 @@ final class PlayerHttpErrorRecovery {
             current = current.getCause();
         }
         return false;
+    }
+
+    static boolean shouldAvoidAndroidVrAv1HfrStream(@NonNull final Throwable error,
+                                                     @Nullable final VideoStream stream) {
+        if (stream == null || stream.getFps() <= 30) {
+            return false;
+        }
+
+        final String codec = stream.getCodec();
+        final String normalizedCodec = codec == null ? "" : codec.toLowerCase(Locale.ROOT);
+        if (!normalizedCodec.contains("av01") && !normalizedCodec.contains("av1")) {
+            return false;
+        }
+
+        final String diagnostic = findSafeRequestDiagnostic(error);
+        return Integer.valueOf(403).equals(findInvalidResponseCode(error))
+                && diagnostic != null
+                && diagnostic.contains("client=ANDROID_VR");
     }
 
     @Nullable
