@@ -1,0 +1,6 @@
+WizeStream 1.9.1
+
+- Kept channel details and Subscribe controls accessible when banners collapse.
+- Improved YouTube AV1/HFR recovery after Android VR HTTP 403 failures.
+- Removed duplicate search actions from channel pages.
+- Restored channel navigation from History and local playlists.

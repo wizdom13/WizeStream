@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.9.1 (`1009001`)
+
 ### Fixes
 
 - Kept channel metadata and Subscribe controls reachable while the banner collapses, including in
@@ -12,6 +14,8 @@ Release history is listed newest first. The number beside each release is its An
   back to the nearest available stream without changing the saved quality preference.
 - Fixed duplicate global and contextual search actions appearing together on channel pages.
 - Fixed channel names and avatars not opening their channels from History and local playlists.
+
+[View the complete changes since v1.9.0](https://github.com/wizdom13/WizeStream/compare/v1.9.0...v1.9.1)
 
 ## WizeStream 1.9.0 (`1009000`)
 
