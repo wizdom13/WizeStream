@@ -74,6 +74,7 @@
         android:id="@+id/itemUploaderRoot"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:minHeight="@dimen/stream_item_uploader_touch_target"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/itemHandle"
