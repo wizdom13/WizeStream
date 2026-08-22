@@ -5,6 +5,8 @@ import android.content.Context;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.util.OnClickGesture;
 
+import java.util.function.Consumer;
+
 /*
  * Created by Christian Schabesberger on 26.09.16.
  * <p>
@@ -29,6 +31,7 @@ public class LocalItemBuilder {
     private final Context context;
 
     private OnClickGesture<LocalItem> onSelectedListener;
+    private Consumer<LocalItem> onUploaderSelectedListener;
 
     public LocalItemBuilder(final Context context) {
         this.context = context;
@@ -44,5 +47,13 @@ public class LocalItemBuilder {
 
     public void setOnItemSelectedListener(final OnClickGesture<LocalItem> listener) {
         this.onSelectedListener = listener;
+    }
+
+    public Consumer<LocalItem> getOnUploaderSelectedListener() {
+        return onUploaderSelectedListener;
+    }
+
+    public void setOnUploaderSelectedListener(final Consumer<LocalItem> listener) {
+        onUploaderSelectedListener = listener;
     }
 }

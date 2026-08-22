@@ -1,10 +1,13 @@
 package org.schabi.newpipe.local.holder;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.local.LocalItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
@@ -38,6 +41,28 @@ public abstract class LocalItemHolder extends RecyclerView.ViewHolder {
                            final ViewGroup parent) {
         super(LayoutInflater.from(itemBuilder.getContext()).inflate(layoutId, parent, false));
         this.itemBuilder = itemBuilder;
+    }
+
+    protected void bindUploaderNavigation(@NonNull final View uploaderRoot,
+                                          @NonNull final LocalItem item,
+                                          final boolean enabled,
+                                          @NonNull final String uploaderName) {
+        if (enabled && itemBuilder.getOnUploaderSelectedListener() != null) {
+            uploaderRoot.setClickable(true);
+            uploaderRoot.setFocusable(true);
+            uploaderRoot.setContentDescription(itemBuilder.getContext().getString(
+                    R.string.open_channel, uploaderName));
+            uploaderRoot.setOnClickListener(view -> {
+                if (itemBuilder.getOnUploaderSelectedListener() != null) {
+                    itemBuilder.getOnUploaderSelectedListener().accept(item);
+                }
+            });
+        } else {
+            uploaderRoot.setOnClickListener(null);
+            uploaderRoot.setClickable(false);
+            uploaderRoot.setFocusable(false);
+            uploaderRoot.setContentDescription(null);
+        }
     }
 
     public abstract void updateFromItem(LocalItem item, HistoryRecordManager historyRecordManager,

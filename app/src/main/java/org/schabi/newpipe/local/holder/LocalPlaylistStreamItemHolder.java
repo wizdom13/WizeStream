@@ -14,6 +14,7 @@ import org.schabi.newpipe.database.playlist.PlaylistStreamEntry;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.local.LocalItemBuilder;
+import org.schabi.newpipe.local.LocalUploaderNavigation;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
@@ -29,6 +30,7 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
     public final ImageView itemThumbnailView;
     public final TextView itemVideoTitleView;
     private final ImageView itemUploaderAvatarView;
+    private final View itemUploaderRoot;
     private final TextView itemUploaderView;
     private final TextView itemAdditionalDetailsView;
     public final TextView itemDurationView;
@@ -43,6 +45,7 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
         itemThumbnailView = itemView.findViewById(R.id.itemThumbnailView);
         itemVideoTitleView = itemView.findViewById(R.id.itemVideoTitleView);
         itemUploaderAvatarView = itemView.findViewById(R.id.itemUploaderAvatarView);
+        itemUploaderRoot = itemView.findViewById(R.id.itemUploaderRoot);
         itemUploaderView = itemView.findViewById(R.id.itemUploaderView);
         itemAdditionalDetailsView = itemView.findViewById(R.id.itemAdditionalDetails);
         itemDurationView = itemView.findViewById(R.id.itemDurationView);
@@ -71,6 +74,9 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
                 ? View.VISIBLE : View.GONE);
         CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatarView,
                 item.getStreamEntity().getUploaderAvatarUrl());
+        bindUploaderNavigation(itemUploaderRoot, item,
+                LocalUploaderNavigation.canOpenChannel(item.getStreamEntity()),
+                item.getStreamEntity().getUploader());
 
         final String sourceName = item.getStreamEntity().isLocalMedia()
                 ? itemBuilder.getContext().getString(R.string.local_media_on_device)

@@ -34,6 +34,7 @@ import org.schabi.newpipe.fragments.list.playlist.PlaylistControlViewHolder;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.BaseLocalListFragment;
+import org.schabi.newpipe.local.LocalUploaderNavigation;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
@@ -160,6 +161,13 @@ public class StatisticsPlaylistFragment
     protected void initListeners() {
         super.initListeners();
 
+        itemListAdapter.setUploaderSelectedListener(selectedItem -> {
+            if (selectedItem instanceof StreamStatisticsEntry) {
+                LocalUploaderNavigation.openChannel(this,
+                        ((StreamStatisticsEntry) selectedItem).getStreamEntity());
+            }
+        });
+
         itemListAdapter.setSelectedListener(new OnClickGesture<>() {
             @Override
             public void selected(final LocalItem selectedItem) {
@@ -221,11 +229,12 @@ public class StatisticsPlaylistFragment
 
     @Override
     public void onDestroyView() {
-        super.onDestroyView();
-
         if (itemListAdapter != null) {
             itemListAdapter.unsetSelectedListener();
+            itemListAdapter.unsetUploaderSelectedListener();
         }
+
+        super.onDestroyView();
 
         headerBinding = null;
         playlistControlBinding = null;

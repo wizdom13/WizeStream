@@ -58,6 +58,7 @@ import org.schabi.newpipe.fragments.list.playlist.PlaylistControlViewHolder;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.local.BaseLocalListFragment;
+import org.schabi.newpipe.local.LocalUploaderNavigation;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
@@ -197,6 +198,13 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     protected void initListeners() {
         super.initListeners();
 
+        itemListAdapter.setUploaderSelectedListener(selectedItem -> {
+            if (selectedItem instanceof PlaylistStreamEntry) {
+                LocalUploaderNavigation.openChannel(this,
+                        ((PlaylistStreamEntry) selectedItem).getStreamEntity());
+            }
+        });
+
         headerBinding.playlistTitleView.setOnClickListener(view -> createRenameDialog());
 
         itemTouchHelper = new ItemTouchHelper(getItemTouchCallback());
@@ -333,11 +341,12 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             swipeRemovalSnackbar.dismiss();
             swipeRemovalSnackbar = null;
         }
-        super.onDestroyView();
-
         if (itemListAdapter != null) {
             itemListAdapter.unsetSelectedListener();
+            itemListAdapter.unsetUploaderSelectedListener();
         }
+
+        super.onDestroyView();
 
         headerBinding = null;
         playlistControlBinding = null;

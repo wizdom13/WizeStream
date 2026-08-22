@@ -37,6 +37,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /*
@@ -109,6 +110,14 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     public void unsetSelectedListener() {
         localItemBuilder.setOnItemSelectedListener(null);
+    }
+
+    public void setUploaderSelectedListener(final Consumer<LocalItem> listener) {
+        localItemBuilder.setOnUploaderSelectedListener(listener);
+    }
+
+    public void unsetUploaderSelectedListener() {
+        localItemBuilder.setOnUploaderSelectedListener(null);
     }
 
     public void addItems(@Nullable final List<? extends LocalItem> data) {
