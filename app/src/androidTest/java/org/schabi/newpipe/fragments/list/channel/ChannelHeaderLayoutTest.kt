@@ -8,6 +8,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.android.material.appbar.AppBarLayout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,15 +38,16 @@ class ChannelHeaderLayoutTest {
     ) {
         val root = LayoutInflater.from(context)
             .inflate(R.layout.fragment_channel, FrameLayout(context), false)
+        val appBar = root.findViewById<AppBarLayout>(R.id.app_bar_layout)
+        val bannerContainer = root.findViewById<View>(R.id.channel_banner_container)
         val banner = root.findViewById<ImageView>(R.id.channel_banner_image)
 
         measureAndLayout(root, widthPixels, heightPixels)
         if (!showBanner) {
-            banner.visibility = View.GONE
+            bannerContainer.visibility = View.GONE
             measureAndLayout(root, widthPixels, heightPixels)
         }
 
-        val metadata = root.findViewById<View>(R.id.channel_metadata)
         val metadataRow = root.findViewById<View>(R.id.channel_metadata_row)
         val avatar = root.findViewById<View>(R.id.channel_avatar_view)
         val title = root.findViewById<View>(R.id.channel_title_view)
@@ -54,14 +56,18 @@ class ChannelHeaderLayoutTest {
 
         if (showBanner) {
             assertVisibleAndMeasured(banner)
-            assertTrue(metadataRow.top >= banner.bottom)
+            assertVisibleAndMeasured(bannerContainer)
+            assertTrue(metadataRow.top >= bannerContainer.bottom)
         } else {
-            assertEquals(View.GONE, banner.visibility)
+            assertEquals(View.GONE, bannerContainer.visibility)
             assertEquals(0, metadataRow.top)
-            assertEquals(metadataRow.height, metadata.height)
         }
 
-        assertTrue(metadataRow.bottom <= metadata.height)
+        val metadataLayoutParams = metadataRow.layoutParams as AppBarLayout.LayoutParams
+        assertEquals(0, metadataLayoutParams.scrollFlags)
+        assertTrue(appBar.totalScrollRange <= bannerContainer.height)
+        assertTrue(appBar.height - appBar.totalScrollRange >= metadataRow.height)
+        assertTrue(metadataRow.bottom <= appBar.height)
 
         listOf(avatar, title, subscriberCount, subscribeButton).forEach {
             assertVisibleAndMeasured(it)
