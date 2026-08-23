@@ -25,6 +25,7 @@ import org.schabi.newpipe.R;
 
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
+import java.util.function.Consumer;
 
 public final class HistoryDateFastScroller extends View {
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -46,6 +47,8 @@ public final class HistoryDateFastScroller extends View {
     private IntConsumer onPositionChangedListener;
     @Nullable
     private IntFunction<String> labelProvider;
+    @Nullable
+    private Consumer<Boolean> onDragStateChangedListener;
     @Nullable
     private PopupWindow bubblePopup;
     @Nullable
@@ -92,6 +95,15 @@ public final class HistoryDateFastScroller extends View {
         updateAccessibilityDescription();
     }
 
+    public void setOnDragStateChangedListener(
+            @Nullable final Consumer<Boolean> onDragStateChangedListener) {
+        this.onDragStateChangedListener = onDragStateChangedListener;
+    }
+
+    public boolean isDragging() {
+        return dragging;
+    }
+
     public void setItemCount(final int itemCount) {
         this.itemCount = Math.max(0, itemCount);
         setPosition(Math.min(position, Math.max(0, this.itemCount - 1)));
@@ -112,7 +124,7 @@ public final class HistoryDateFastScroller extends View {
     }
 
     public void dismissBubble() {
-        dragging = false;
+        setDragging(false);
         if (bubblePopup != null) {
             bubblePopup.dismiss();
         }
@@ -146,7 +158,7 @@ public final class HistoryDateFastScroller extends View {
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                dragging = true;
+                setDragging(true);
                 requestParentDisallowIntercept(true);
                 updateFromTouch(event.getY());
                 return true;
@@ -199,6 +211,16 @@ public final class HistoryDateFastScroller extends View {
     protected void onDetachedFromWindow() {
         dismissBubble();
         super.onDetachedFromWindow();
+    }
+
+    private void setDragging(final boolean dragging) {
+        if (this.dragging == dragging) {
+            return;
+        }
+        this.dragging = dragging;
+        if (onDragStateChangedListener != null) {
+            onDragStateChangedListener.accept(dragging);
+        }
     }
 
     private void requestParentDisallowIntercept(final boolean disallowIntercept) {
