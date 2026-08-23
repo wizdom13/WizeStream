@@ -525,6 +525,10 @@ public class DownloadMission extends Mission {
      */
     @Override
     public boolean delete() {
+        running = false;
+        for (final Thread thread : threads) {
+            thread.interrupt();
+        }
         if (psAlgorithm != null) psAlgorithm.cleanupTemporalDir();
 
         notify(DownloadManagerService.MESSAGE_DELETED);
@@ -607,6 +611,10 @@ public class DownloadMission extends Mission {
      */
     public boolean isPsRunning() {
         return psAlgorithm != null && (psState == 1 || psState == 3);
+    }
+
+    public boolean isConvertingToMp3() {
+        return isPsRunning() && psAlgorithm.isMp3Conversion();
     }
 
     /**

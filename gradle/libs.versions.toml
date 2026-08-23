@@ -25,6 +25,7 @@ espresso = "3.7.0"
 exoplayer = "2.19.1"
 fragment = "1.8.9"
 groupie = "2.10.1"
+javaLame = "1.0.0"
 jsoup = "1.22.2"
 junit = "4.13.2"
 junit-ext = "1.3.0"
@@ -146,6 +147,7 @@ newpipe-filepicker = { module = "com.github.TeamNewPipe:NoNonsense-FilePicker", 
 newpipe-nanojson = { module = "com.github.TeamNewPipe:nanojson", version.ref = "teamnewpipe-nanojson" }
 noties-markwon-core = { module = "io.noties.markwon:core", version.ref = "markwon" }
 noties-markwon-linkify = { module = "io.noties.markwon:linkify", version.ref = "markwon" }
+ntbl-lame = { module = "co.ntbl:lame", version.ref = "javaLame" }
 ocpsoft-prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
 pinterest-ktlint = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 puppycrawl-checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }

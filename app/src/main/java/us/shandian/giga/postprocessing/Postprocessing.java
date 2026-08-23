@@ -30,6 +30,7 @@ public abstract class Postprocessing implements Serializable {
     public transient static final String ALGORITHM_MP4_FROM_DASH_MUXER = "mp4D-mp4";
     public transient static final String ALGORITHM_M4A_NO_DASH = "mp4D-m4a";
     public transient static final String ALGORITHM_OGG_FROM_WEBM_DEMUXER = "webm-ogg-d";
+    public transient static final String ALGORITHM_MP3_FROM_AUDIO = "audio-mp3";
 
     public static Postprocessing getAlgorithm(@NonNull String algorithmName, String[] args,
                                               StreamInfo streamInfo) {
@@ -50,6 +51,9 @@ public abstract class Postprocessing implements Serializable {
                 break;
             case ALGORITHM_OGG_FROM_WEBM_DEMUXER:
                 instance = new OggFromWebmDemuxer();
+                break;
+            case ALGORITHM_MP3_FROM_AUDIO:
+                instance = new Mp3FromAudio();
                 break;
             /*case "example-algorithm":
                 instance = new ExampleAlgorithm();*/
@@ -84,6 +88,18 @@ public abstract class Postprocessing implements Serializable {
     private transient DownloadMission mission;
 
     private transient File tempFile;
+
+    protected final DownloadMission getMission() {
+        return mission;
+    }
+
+    protected final File getTemporalFile() {
+        return tempFile;
+    }
+
+    public final boolean isMp3Conversion() {
+        return ALGORITHM_MP3_FROM_AUDIO.equals(name);
+    }
 
     Postprocessing(boolean reserveSpace, boolean worksOnSameFile, String algorithmName) {
         this.reserveSpace = reserveSpace;

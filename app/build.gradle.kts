@@ -288,6 +288,7 @@ dependencies {
     // Third-party libraries
     implementation(libs.livefront.bridge)
     implementation(libs.evernote.statesaver.core)
+    implementation(libs.ntbl.lame)
     kapt(libs.evernote.statesaver.compiler)
 
     // HTML parser

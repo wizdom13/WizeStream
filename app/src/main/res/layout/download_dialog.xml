@@ -8,11 +8,21 @@
         android:id="@+id/toolbar_layout"
         layout="@layout/toolbar_layout" />
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar_layout"
+        android:fillViewport="true">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
     <org.schabi.newpipe.views.NewPipeTextView
         android:id="@+id/file_name_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/toolbar_layout"
+        android:layout_alignParentTop="true"
         android:layout_marginLeft="24dp"
         android:layout_marginTop="12dp"
         android:layout_marginRight="24dp"
@@ -105,10 +115,54 @@
         tools:visibility="gone" />
 
     <org.schabi.newpipe.views.NewPipeTextView
+        android:id="@+id/audio_output_format_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/audio_stream_spinner"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:text="@string/audio_output_format"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:visibility="gone" />
+
+    <Spinner
+        android:id="@+id/audio_output_format_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/audio_output_format_label"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="12dp"
+        android:minWidth="150dp"
+        tools:visibility="gone" />
+
+    <org.schabi.newpipe.views.NewPipeTextView
+        android:id="@+id/mp3_bitrate_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/audio_output_format_spinner"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:text="@string/mp3_quality"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:visibility="gone" />
+
+    <Spinner
+        android:id="@+id/mp3_bitrate_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/mp3_bitrate_label"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="12dp"
+        android:minWidth="150dp"
+        tools:visibility="gone" />
+
+    <org.schabi.newpipe.views.NewPipeTextView
         android:id="@+id/audio_track_present_in_video_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/audio_stream_spinner"
+        android:layout_below="@+id/mp3_bitrate_spinner"
         android:layout_marginLeft="24dp"
         android:layout_marginRight="24dp"
         android:layout_marginBottom="12dp"
@@ -171,5 +225,8 @@
         android:text="@string/streams_not_yet_supported_removed"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="12sp" />
+
+        </RelativeLayout>
+    </ScrollView>
 
 </RelativeLayout>
