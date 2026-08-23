@@ -369,6 +369,7 @@
     </string-array>
 
     <!-- Content & History -->
+    <string name="disable_channel_swipe_on_main_key">disable_channel_swipe_on_main</string>
     <string name="show_channel_tabs_key">channel_tabs</string>
     <string name="show_channel_tabs_videos">show_channel_tabs_videos</string>
     <string name="show_channel_tabs_tracks">show_channel_tabs_tracks</string>

@@ -221,6 +221,12 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         activity.addMenuProvider(menuProvider, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
+    @Override
+    public void useAsFrontPage(final boolean value) {
+        super.useAsFrontPage(value);
+        updateSwipeState();
+    }
+
     @Override // called from onViewCreated in BaseFragment.onViewCreated
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
@@ -228,6 +234,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         tabAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(tabAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
+        updateSwipeState();
 
         setTitle(name);
         binding.channelTitleView.setText(name);
@@ -235,6 +242,23 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
             // do not waste space for the banner if it is not going to be loaded
             binding.channelBannerContainer.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateSwipeState();
+    }
+
+    private void updateSwipeState() {
+        if (binding == null || binding.viewPager == null || getContext() == null) {
+            return;
+        }
+        final boolean disableSwipeOnMain = PreferenceManager
+                .getDefaultSharedPreferences(requireContext())
+                .getBoolean(getString(R.string.disable_channel_swipe_on_main_key), false);
+        final boolean swipeEnabled = !(useAsFrontPage && disableSwipeOnMain);
+        binding.viewPager.setSwipeEnabled(swipeEnabled);
     }
 
     @Override

@@ -1236,6 +1236,8 @@
     <string name="channel_tab_about">About</string>
     <string name="show_channel_tabs">Channel tabs</string>
     <string name="show_channel_tabs_summary">What tabs are shown on the channel pages</string>
+    <string name="disable_channel_swipe_on_main_title">Lock channel swipe on main screen</string>
+    <string name="disable_channel_swipe_on_main_summary">Disable horizontal swiping between channel tabs (Videos, Shorts, etc.) on the main screen to swipe directly between main tabs</string>
     <string name="open_play_queue">Open play queue</string>
     <string name="toggle_fullscreen">Toggle fullscreen</string>
     <string name="toggle_screen_orientation">Toggle screen orientation</string>
