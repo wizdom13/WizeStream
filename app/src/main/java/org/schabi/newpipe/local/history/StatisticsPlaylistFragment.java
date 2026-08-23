@@ -61,6 +61,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -112,20 +113,25 @@ public class StatisticsPlaylistFragment
             @NonNull final StreamListFilter selectedStreamFilter,
             @NonNull final String contextualSearchQuery,
             @NonNull final StatisticSortMode sortMode) {
-        final List<StreamStatisticsEntry> historyMatchingFilter = new ArrayList<>();
+        final String normalizedQuery = contextualSearchQuery.toLowerCase(Locale.ROOT);
+        final List<StreamStatisticsEntry> filteredHistory = new ArrayList<>();
         for (final StreamStatisticsEntry item : completeHistory) {
-            if (StreamListFilter.matches(selectedStreamFilter, item)) {
-                historyMatchingFilter.add(item);
+            if (!StreamListFilter.matches(selectedStreamFilter, item)) {
+                continue;
             }
+            if (!normalizedQuery.isEmpty()) {
+                final String title = item.getStreamEntity().getTitle();
+                final String uploader = item.getStreamEntity().getUploader();
+                final boolean matchesTitle = title != null
+                        && title.toLowerCase(Locale.ROOT).contains(normalizedQuery);
+                final boolean matchesUploader = uploader != null
+                        && uploader.toLowerCase(Locale.ROOT).contains(normalizedQuery);
+                if (!matchesTitle && !matchesUploader) {
+                    continue;
+                }
+            }
+            filteredHistory.add(item);
         }
-
-        final List<StreamStatisticsEntry> filteredHistory = ContextualSearchHelper.filter(
-                historyMatchingFilter,
-                contextualSearchQuery,
-                item -> new String[]{
-                        item.getStreamEntity().getTitle(),
-                        item.getStreamEntity().getUploader()
-                });
 
         final Comparator<StreamStatisticsEntry> comparator;
         if (sortMode == StatisticSortMode.LAST_PLAYED) {
