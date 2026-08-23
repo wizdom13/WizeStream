@@ -788,6 +788,51 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom21to22AddsNotificationKeywordFilters() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_21
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_22,
+            true,
+            Migrations.MIGRATION_21_22
+        )
+        migrated.query("PRAGMA table_info(subscriptions)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            val defaultIndex = cursor.getColumnIndex("dflt_value")
+            var defaultValue: String? = null
+            while (cursor.moveToNext()) {
+                if (cursor.getString(nameIndex) == "notification_keywords") {
+                    defaultValue = cursor.getString(defaultIndex)
+                }
+            }
+            assertEquals("''", defaultValue)
+        }
+        migrated.query("PRAGMA table_info(subscription_sync_changes)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            val columns = mutableSetOf<String>()
+            while (cursor.moveToNext()) {
+                columns += cursor.getString(nameIndex)
+            }
+            assertTrue(columns.contains("notification_mode"))
+            assertTrue(columns.contains("notification_keywords"))
+        }
+        migrated.query("PRAGMA table_info(subscription_sync_records)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            val columns = mutableSetOf<String>()
+            while (cursor.moveToNext()) {
+                columns += cursor.getString(nameIndex)
+            }
+            assertTrue(columns.contains("notification_mode"))
+            assertTrue(columns.contains("notification_keywords"))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -802,7 +847,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_17_18,
                 Migrations.MIGRATION_18_19,
                 Migrations.MIGRATION_19_20,
-                Migrations.MIGRATION_20_21
+                Migrations.MIGRATION_20_21,
+                Migrations.MIGRATION_21_22
             )
             .build()
         testHelper.closeWhenFinished(database)

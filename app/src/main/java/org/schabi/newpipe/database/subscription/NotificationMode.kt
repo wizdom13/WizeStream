@@ -8,11 +8,16 @@ package org.schabi.newpipe.database.subscription
 
 import androidx.annotation.IntDef
 
-@IntDef(NotificationMode.Companion.DISABLED, NotificationMode.Companion.ENABLED)
+@IntDef(
+    NotificationMode.Companion.DISABLED,
+    NotificationMode.Companion.ENABLED,
+    NotificationMode.Companion.KEYWORDS_ONLY
+)
 @Retention(AnnotationRetention.SOURCE)
 annotation class NotificationMode {
     companion object {
         const val DISABLED = 0
-        const val ENABLED = 1 // other values reserved for the future
+        const val ENABLED = 1
+        const val KEYWORDS_ONLY = 2
     }
 }

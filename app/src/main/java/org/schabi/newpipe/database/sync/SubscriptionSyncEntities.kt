@@ -61,7 +61,13 @@ data class SubscriptionSyncChangeEntity(
     val description: String?,
 
     @ColumnInfo(name = YOUTUBE_MODE_MASK)
-    val youtubeModeMask: Int?
+    val youtubeModeMask: Int?,
+
+    @ColumnInfo(name = NOTIFICATION_MODE)
+    val notificationMode: Int?,
+
+    @ColumnInfo(name = NOTIFICATION_KEYWORDS)
+    val notificationKeywords: String?
 ) {
     companion object {
         const val TABLE_NAME = "subscription_sync_changes"
@@ -77,6 +83,8 @@ data class SubscriptionSyncChangeEntity(
         const val SUBSCRIBER_COUNT = "subscriber_count"
         const val DESCRIPTION = "description"
         const val YOUTUBE_MODE_MASK = "youtube_mode_mask"
+        const val NOTIFICATION_MODE = "notification_mode"
+        const val NOTIFICATION_KEYWORDS = "notification_keywords"
     }
 }
 
@@ -116,7 +124,13 @@ data class SubscriptionSyncRecordEntity(
     val isDeleted: Boolean,
 
     @ColumnInfo(name = YOUTUBE_MODE_MASK, defaultValue = "1")
-    val youtubeModeMask: Int
+    val youtubeModeMask: Int,
+
+    @ColumnInfo(name = NOTIFICATION_MODE)
+    val notificationMode: Int?,
+
+    @ColumnInfo(name = NOTIFICATION_KEYWORDS)
+    val notificationKeywords: String?
 ) {
     companion object {
         const val TABLE_NAME = "subscription_sync_records"
@@ -128,6 +142,8 @@ data class SubscriptionSyncRecordEntity(
         const val ORIGIN_REVISION = "origin_revision"
         const val IS_DELETED = "is_deleted"
         const val YOUTUBE_MODE_MASK = "youtube_mode_mask"
+        const val NOTIFICATION_MODE = "notification_mode"
+        const val NOTIFICATION_KEYWORDS = "notification_keywords"
     }
 }
 

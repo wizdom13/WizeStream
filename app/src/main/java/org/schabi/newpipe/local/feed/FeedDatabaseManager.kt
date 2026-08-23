@@ -17,7 +17,6 @@ import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.feed.model.FeedLastUpdatedEntity
 import org.schabi.newpipe.database.stream.StreamWithState
 import org.schabi.newpipe.database.stream.model.StreamEntity
-import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
@@ -69,10 +68,10 @@ class FeedDatabaseManager(context: Context) {
         outdatedThreshold
     )
 
-    fun outdatedSubscriptionsWithNotificationMode(
+    fun outdatedSubscriptionsWithNotificationModes(
         outdatedThreshold: OffsetDateTime,
-        @NotificationMode notificationMode: Int
-    ) = feedTable.getOutdatedWithNotificationMode(outdatedThreshold, notificationMode)
+        notificationModes: List<Int>
+    ) = feedTable.getOutdatedWithNotificationModes(outdatedThreshold, notificationModes)
 
     fun notLoadedCount(
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,

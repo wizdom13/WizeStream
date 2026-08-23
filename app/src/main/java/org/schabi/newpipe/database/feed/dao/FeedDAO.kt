@@ -14,7 +14,6 @@ import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.feed.model.FeedLastUpdatedEntity
 import org.schabi.newpipe.database.stream.StreamWithState
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
-import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 
 @Dao
@@ -364,11 +363,11 @@ abstract class FeedDAO {
 
         WHERE 
             (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
-            AND s.notification_mode = :notificationMode
+            AND s.notification_mode IN (:notificationModes)
         """
     )
-    abstract fun getOutdatedWithNotificationMode(
+    abstract fun getOutdatedWithNotificationModes(
         outdatedThreshold: OffsetDateTime,
-        @NotificationMode notificationMode: Int
+        notificationModes: List<Int>
     ): Flowable<List<SubscriptionEntity>>
 }

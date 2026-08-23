@@ -52,6 +52,9 @@ data class SubscriptionEntity(
     @ColumnInfo(name = SUBSCRIPTION_NOTIFICATION_MODE)
     var notificationMode: Int = 0,
 
+    @ColumnInfo(name = SUBSCRIPTION_NOTIFICATION_KEYWORDS, defaultValue = "''")
+    var notificationKeywords: String = "",
+
     @ColumnInfo(name = SUBSCRIPTION_YOUTUBE_MODE_MASK, defaultValue = "1")
     var youtubeModeMask: Int = YOUTUBE_MODE_REGULAR
 ) {
@@ -77,6 +80,7 @@ data class SubscriptionEntity(
         const val SUBSCRIPTION_SUBSCRIBER_COUNT: String = "subscriber_count"
         const val SUBSCRIPTION_DESCRIPTION: String = "description"
         const val SUBSCRIPTION_NOTIFICATION_MODE: String = "notification_mode"
+        const val SUBSCRIPTION_NOTIFICATION_KEYWORDS: String = "notification_keywords"
         const val SUBSCRIPTION_YOUTUBE_MODE_MASK: String = "youtube_mode_mask"
 
         const val YOUTUBE_SERVICE_ID: Int = 0

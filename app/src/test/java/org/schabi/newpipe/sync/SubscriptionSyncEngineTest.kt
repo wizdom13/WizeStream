@@ -11,6 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 
 class SubscriptionSyncEngineTest {
@@ -105,6 +106,30 @@ class SubscriptionSyncEngineTest {
         assertEquals(
             SubscriptionEntity.YOUTUBE_MODE_ALL,
             tabletStore.youtubeModeMask(PHONE_URL)
+        )
+    }
+
+    @Test
+    fun `notification keyword settings synchronize with subscriptions`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = SubscriptionSyncEngine(phoneStore)
+        val tablet = SubscriptionSyncEngine(tabletStore)
+        phoneStore.recordLocalUpsert(
+            SubscriptionEntity(
+                serviceId = SERVICE_ID,
+                url = PHONE_URL,
+                name = "Automotive channel",
+                notificationMode = NotificationMode.KEYWORDS_ONLY,
+                notificationKeywords = "07K\nVW 2.5L"
+            )
+        )
+
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(
+            NotificationMode.KEYWORDS_ONLY to "07K\nVW 2.5L",
+            tabletStore.notificationSettings(PHONE_URL)
         )
     }
 

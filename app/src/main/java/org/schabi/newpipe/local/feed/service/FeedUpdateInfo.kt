@@ -17,6 +17,7 @@ data class FeedUpdateInfo(
     val uid: Long,
     @NotificationMode
     val notificationMode: Int,
+    val notificationKeywords: String,
     val name: String,
     val avatarUrl: String?,
     val url: String,
@@ -36,6 +37,7 @@ data class FeedUpdateInfo(
     ) : this(
         uid = subscription.uid,
         notificationMode = subscription.notificationMode,
+        notificationKeywords = subscription.notificationKeywords,
         name = info.name,
         avatarUrl = (info as? ChannelInfo)?.avatars?.let {
             // if the newly fetched info is not from fast feed, then it contains updated avatars

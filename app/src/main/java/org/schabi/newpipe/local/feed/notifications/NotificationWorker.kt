@@ -46,10 +46,14 @@ class NotificationWorker(
         )
             .doOnSubscribe { showLoadingFeedForegroundNotification() }
             .map { feed ->
-                // filter out feedUpdateInfo items (i.e. channels) with nothing new
                 feed.mapNotNull {
-                    it.value?.takeIf { feedUpdateInfo ->
-                        feedUpdateInfo.newStreams.isNotEmpty()
+                    it.value?.let { feedUpdateInfo ->
+                        feedUpdateInfo.newStreams = NotificationKeywordFilter.filter(
+                            feedUpdateInfo.newStreams,
+                            feedUpdateInfo.notificationMode,
+                            feedUpdateInfo.notificationKeywords
+                        )
+                        feedUpdateInfo.takeIf { update -> update.newStreams.isNotEmpty() }
                     }
                 }
             }
