@@ -73,18 +73,6 @@ jobs:
           grep -q "layout/list_empty_view_subscriptions" "$RUNNER_TEMP/release-resources.txt"
           scripts/verify-apk-abis.sh "$APK_PATH" arm64-v8a armeabi-v7a
 
-      - name: Build and verify x86_64 release APK
-        run: |
-          rm -rf app/build/outputs/apk/release
-          ./gradlew assembleRelease --rerun-tasks --stacktrace -DskipFormatKtlint -PreleaseAbi=x86_64
-          APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
-          test -s "$APK_PATH"
-          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
-          "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/x86-64-release-badging.txt"
-          grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/x86-64-release-badging.txt"
-          grep -q "application-label:'WizeStream'" "$RUNNER_TEMP/x86-64-release-badging.txt"
-          scripts/verify-apk-abis.sh "$APK_PATH" x86_64
-
       - name: Verify debug APK identity
         run: |
           APK_PATH="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"

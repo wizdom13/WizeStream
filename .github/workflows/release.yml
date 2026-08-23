@@ -149,14 +149,19 @@ jobs:
           echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
           echo "x86_64 APK: $APK_NAME" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: "Upload APKs"
+      - name: "Upload ARM APK artifact"
         if: ${{ github.event_name == 'workflow_dispatch' && (inputs.release_target == 'artifacts' || inputs.release_target == 'all') }}
         uses: actions/upload-artifact@v7
         with:
-          name: wizestream-signed-release-apks
-          path: |
-            ${{ steps.release_info.outputs.apk_path }}
-            ${{ steps.x86_release_info.outputs.apk_path }}
+          name: wizestream-signed-release-arm-apk
+          path: ${{ steps.release_info.outputs.apk_path }}
+
+      - name: "Upload x86_64 APK artifact"
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.release_target == 'artifacts' || inputs.release_target == 'all') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-signed-release-x86-64-apk
+          path: ${{ steps.x86_release_info.outputs.apk_path }}
 
       - name: "Validate changelog"
         if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}

@@ -67,4 +67,5 @@ nightly-20260714-dc108a3
 
 ## Retention
 
-The workflow keeps the newest 14 nightly prereleases and deletes older releases and their tags. The duplicate GitHub Actions artifact is retained for 14 days.
+The workflow keeps the newest 14 nightly prereleases and deletes older releases and their tags.
+The separate ARM and x86_64 GitHub Actions artifacts are retained for 14 days.

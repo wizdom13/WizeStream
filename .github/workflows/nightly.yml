@@ -282,14 +282,22 @@ jobs:
               "$releases_file"
           )
 
-      - name: Upload workflow artifact
+      - name: Upload ARM workflow artifact
         if: steps.existing.outputs.skip != 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}
+          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}-arm
           path: |
             ${{ steps.assets.outputs.arm_apk_path }}
             ${{ steps.assets.outputs.arm_checksum_path }}
+          retention-days: 14
+
+      - name: Upload x86_64 workflow artifact
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}-x86-64
+          path: |
             ${{ steps.assets.outputs.x86_apk_path }}
             ${{ steps.assets.outputs.x86_checksum_path }}
           retention-days: 14
