@@ -57,6 +57,29 @@ class SubscriptionImportWorkerTest {
     }
 
     @Test
+    fun `NewPipe JSON export with 84 subscriptions has no artificial limit`() {
+        val export = buildString {
+            append("""{"app_version":"0.28.0","app_version_int":1020000,"subscriptions":[""")
+            repeat(84) { index ->
+                if (index > 0) {
+                    append(',')
+                }
+                append(
+                    """{"service_id":0,"url":"https://www.youtube.com/channel/test$index","name":"Channel $index"}"""
+                )
+            }
+            append("]}")
+        }
+
+        val subscriptions = ImportExportJsonHelper.readFrom(
+            ByteArrayInputStream(export.toByteArray(StandardCharsets.UTF_8))
+        )
+
+        assertEquals(84, subscriptions.size)
+        assertEquals("Channel 83", subscriptions.last().name)
+    }
+
+    @Test
     fun `Provider content type must be preserved`() {
         assertResolvedContentType("application/json", "application/json")
     }

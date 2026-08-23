@@ -6,6 +6,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Fixed NewPipe subscription imports failing completely when one channel is unavailable; valid
+  channels now import independently and the result reports imported and skipped counts.
 - Made history date scrolling transient, consistently show month and year, and process large
   histories without blocking the interface or unnecessarily reloading the database.
 - Fixed Material You wallpaper colors falling back to green with the Black night theme, while

@@ -847,6 +847,7 @@
     <string name="export_subscriptions_summary">Use this for OPML/JSON subscription migration only. Full backup already includes subscriptions.</string>
     <string name="import_from_previous_export">Import from previous export</string>
     <string name="subscriptions_import_unsuccessful">Could not import subscriptions</string>
+    <string name="subscriptions_import_complete_summary">Import completed: %1$d imported, %2$d skipped</string>
     <string name="subscriptions_export_unsuccessful">Could not export subscriptions</string>
     <string name="import_youtube_instructions">Import YouTube subscriptions from Google takeout:
 \n
