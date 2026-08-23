@@ -146,14 +146,8 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
             return;
         }
 
-        final float expandedFraction;
-        if (slideOffset != null) {
-            expandedFraction = PlayerSheetTransitionCalculator
-                    .clampExpandedFraction(slideOffset);
-        } else {
-            expandedFraction = state == STATE_EXPANDED ? 1.0f : 0.0f;
-        }
-
+        final float expandedFraction = PlayerSheetTransitionCalculator
+                .expandedFractionForState(state, slideOffset);
         updateBottomNavigationAppearance(bottomNavigation, expandedFraction);
     }
 

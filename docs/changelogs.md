@@ -8,6 +8,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Fixed the bottom navigation occasionally remaining translated off-screen after an interrupted
+  player-sheet transition, leaving a clipped blank area until the app was restarted.
 - Fixed NewPipe subscription imports failing completely when one channel is unavailable; valid
   channels now import independently and the result reports imported and skipped counts.
 - Made history date scrolling transient, consistently show month and year, and process large
