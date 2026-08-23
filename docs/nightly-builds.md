@@ -6,9 +6,9 @@ Successful builds are published as prereleases in:
 
 - https://github.com/wizdom13/WizeStream_Nightly/releases
 
-Every nightly publishes separate ARM64/ARMv7 and x86_64 APKs with matching SHA-256 checksum
-files. Use the filename ending in `-x86_64.apk` for Waydroid or another 64-bit Intel or AMD
-Android environment; use the standard filename on ARM devices.
+Every nightly publishes two direct APK files: one for ARM64/ARMv7 and one for x86_64. Use the
+filename ending in `-x86_64.apk` for Waydroid or another 64-bit Intel or AMD Android environment;
+use the standard filename on ARM devices.
 
 The workflow skips publishing when the checked-out `pipe` commit already has a nightly release.
 

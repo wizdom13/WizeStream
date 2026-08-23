@@ -178,13 +178,8 @@ jobs:
           mkdir -p dist
           arm_apk_path="dist/$ARM_APK_NAME"
           x86_apk_path="dist/$X86_APK_NAME"
-          arm_checksum_path="${arm_apk_path}.sha256"
-          x86_checksum_path="${x86_apk_path}.sha256"
-
           cp "$RUNNER_TEMP/wizestream-nightly-arm.apk" "$arm_apk_path"
           cp "$RUNNER_TEMP/wizestream-nightly-x86_64.apk" "$x86_apk_path"
-          sha256sum "$arm_apk_path" > "$arm_checksum_path"
-          sha256sum "$x86_apk_path" > "$x86_checksum_path"
 
           build_tools="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
           aapt="$ANDROID_HOME/build-tools/$build_tools/aapt"
@@ -207,9 +202,7 @@ jobs:
 
           {
             echo "arm_apk_path=$arm_apk_path"
-            echo "arm_checksum_path=$arm_checksum_path"
             echo "x86_apk_path=$x86_apk_path"
-            echo "x86_checksum_path=$x86_checksum_path"
           } >> "$GITHUB_OUTPUT"
 
       - name: Publish immutable prerelease
@@ -222,9 +215,7 @@ jobs:
           VERSION_SUFFIX: ${{ steps.metadata.outputs.version_suffix }}
           SOURCE_SHA: ${{ steps.metadata.outputs.source_sha }}
           ARM_APK_PATH: ${{ steps.assets.outputs.arm_apk_path }}
-          ARM_CHECKSUM_PATH: ${{ steps.assets.outputs.arm_checksum_path }}
           X86_APK_PATH: ${{ steps.assets.outputs.x86_apk_path }}
-          X86_CHECKSUM_PATH: ${{ steps.assets.outputs.x86_checksum_path }}
         shell: bash
         run: |
           set -euo pipefail
@@ -248,9 +239,7 @@ jobs:
             --title "WizeStream Nightly ${BUILD_DATE}" \
             --notes-file "$RUNNER_TEMP/nightly-release-notes.md" \
             "$ARM_APK_PATH" \
-            "$ARM_CHECKSUM_PATH" \
-            "$X86_APK_PATH" \
-            "$X86_CHECKSUM_PATH"
+            "$X86_APK_PATH"
 
       - name: Remove nightlies beyond retention limit
         if: steps.existing.outputs.skip != 'true'
@@ -287,9 +276,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}-arm
-          path: |
-            ${{ steps.assets.outputs.arm_apk_path }}
-            ${{ steps.assets.outputs.arm_checksum_path }}
+          path: ${{ steps.assets.outputs.arm_apk_path }}
           retention-days: 14
 
       - name: Upload x86_64 workflow artifact
@@ -297,7 +284,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}-x86-64
-          path: |
-            ${{ steps.assets.outputs.x86_apk_path }}
-            ${{ steps.assets.outputs.x86_checksum_path }}
+          path: ${{ steps.assets.outputs.x86_apk_path }}
           retention-days: 14
