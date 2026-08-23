@@ -6,6 +6,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Made history date scrolling transient, consistently show month and year, and process large
+  histories without blocking the interface or unnecessarily reloading the database.
 - Fixed Material You wallpaper colors falling back to green with the Black night theme, while
   preserving true-black surfaces, and made the player seek bar follow the selected accent color.
 
