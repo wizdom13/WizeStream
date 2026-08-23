@@ -86,8 +86,8 @@ class SubscriptionImportWorker(
                                                 } catch (e: Exception) {
                                                     Log.w(
                                                         TAG,
-                                                        "Could not load the first tab for ${subscription.url}; "
-                                                            + "importing the channel without initial feed items",
+                                                        "Could not load the first tab for ${subscription.url}; " +
+                                                            "importing the channel without initial feed items",
                                                         e
                                                     )
                                                     null
@@ -99,8 +99,8 @@ class SubscriptionImportWorker(
                                     } catch (e: Exception) {
                                         Log.e(
                                             TAG,
-                                            "Skipping subscription that could not be loaded: "
-                                                + subscription.url,
+                                            "Skipping subscription that could not be loaded: " +
+                                                subscription.url,
                                             e
                                         )
                                         null
