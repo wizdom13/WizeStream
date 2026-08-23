@@ -412,7 +412,6 @@ public class StatisticsPlaylistFragment
         playlistControlBinding.getRoot().setVisibility(View.VISIBLE);
         setEmptyStateMessage(ContextualSearchHelper.isActive(contextualSearchQuery)
                 ? R.string.search_no_results : R.string.empty_view_no_videos);
-        showLoading();
 
         if (historyProcessingDisposable != null) {
             historyProcessingDisposable.dispose();
