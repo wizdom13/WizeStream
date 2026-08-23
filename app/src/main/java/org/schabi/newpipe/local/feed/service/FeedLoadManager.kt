@@ -90,9 +90,9 @@ class FeedLoadManager(private val context: Context) {
          */
         val outdatedSubscriptions = when {
             groupId == GROUP_NOTIFICATION_ENABLED ->
-                feedDatabaseManager.outdatedSubscriptionsWithNotificationMode(
+                feedDatabaseManager.outdatedSubscriptionsWithNotificationModes(
                     outdatedThreshold,
-                    NotificationMode.ENABLED
+                    listOf(NotificationMode.ENABLED, NotificationMode.KEYWORDS_ONLY)
                 )
 
             scope == null && groupId == FeedGroupEntity.GROUP_ALL_ID ->
@@ -441,7 +441,7 @@ class FeedLoadManager(private val context: Context) {
     companion object {
 
         /**
-         * Constant used to check for updates of subscriptions with [NotificationMode.ENABLED].
+         * Constant used to check subscriptions with any enabled notification mode.
          */
         const val GROUP_NOTIFICATION_ENABLED = -2L
 

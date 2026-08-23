@@ -68,6 +68,7 @@ class SubscriptionManager(context: Context) {
             subscriptionTable.getSubscriptionDirect(entity.serviceId, requireNotNull(entity.url))
                 ?.let { existing ->
                     entity.notificationMode = existing.notificationMode
+                    entity.notificationKeywords = existing.notificationKeywords
                     entity.youtubeModeMask = existing.youtubeModeMask or
                         currentYoutubeModeMask
                 }
@@ -108,15 +109,37 @@ class SubscriptionManager(context: Context) {
 
     fun updateNotificationMode(serviceId: Int, url: String, @NotificationMode mode: Int): Completable {
         return subscriptionTable().getSubscription(serviceId, url)
+            .flatMapCompletable { entity ->
+                updateNotificationSettings(
+                    serviceId,
+                    url,
+                    mode,
+                    entity.notificationKeywords
+                )
+            }
+    }
+
+    fun updateNotificationSettings(
+        serviceId: Int,
+        url: String,
+        @NotificationMode mode: Int,
+        keywords: String
+    ): Completable {
+        return subscriptionTable().getSubscription(serviceId, url)
             .flatMapCompletable { entity: SubscriptionEntity ->
-                Completable.fromAction {
+                val notificationsWereDisabled =
+                    entity.notificationMode == NotificationMode.DISABLED
+                val update = Completable.fromAction {
                     entity.notificationMode = mode
+                    entity.notificationKeywords = keywords
                     subscriptionTable().update(entity)
-                }.apply {
-                    if (mode != NotificationMode.DISABLED) {
-                        // notifications have just been enabled, mark all streams as "old"
-                        andThen(rememberAllStreams(entity))
-                    }
+                    recordSubscriptionUpsert(entity)
+                }
+                if (notificationsWereDisabled && mode != NotificationMode.DISABLED) {
+                    // Notifications have just been enabled, mark all streams as "old".
+                    update.andThen(rememberAllStreams(entity))
+                } else {
+                    update
                 }
             }
     }

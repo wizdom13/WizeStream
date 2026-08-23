@@ -65,7 +65,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_21,
+    version = Migrations.DB_VER_22,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,

@@ -41,6 +41,7 @@ object Migrations {
     const val DB_VER_19 = 19
     const val DB_VER_20 = 20
     const val DB_VER_21 = 21
+    const val DB_VER_22 = 22
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -799,6 +800,25 @@ object Migrations {
         db.execSQL(
             "UPDATE learning_sessions SET is_designated = 1 WHERE stream_id IN " +
                 "(SELECT stream_id FROM learning_content_streams)"
+        )
+    }
+
+    val MIGRATION_21_22 = Migration(DB_VER_21, DB_VER_22) { db ->
+        db.execSQL(
+            "ALTER TABLE `subscriptions` ADD COLUMN `notification_keywords` " +
+                "TEXT NOT NULL DEFAULT ''"
+        )
+        db.execSQL(
+            "ALTER TABLE `subscription_sync_changes` ADD COLUMN `notification_mode` INTEGER"
+        )
+        db.execSQL(
+            "ALTER TABLE `subscription_sync_changes` ADD COLUMN `notification_keywords` TEXT"
+        )
+        db.execSQL(
+            "ALTER TABLE `subscription_sync_records` ADD COLUMN `notification_mode` INTEGER"
+        )
+        db.execSQL(
+            "ALTER TABLE `subscription_sync_records` ADD COLUMN `notification_keywords` TEXT"
         )
     }
 }

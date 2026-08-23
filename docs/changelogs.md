@@ -6,6 +6,7 @@ Release history is listed newest first. The number beside each release is its An
 
 ### New features
 
+- Added per-channel keyword and phrase filters for new-stream notifications.
 - Added date-aware fast scrolling and a calendar jump action for navigating large watch histories.
 - Added an option to prioritize main-tab swiping when viewing pinned channels.
 

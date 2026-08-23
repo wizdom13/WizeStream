@@ -8,7 +8,9 @@ package org.schabi.newpipe.sync
 import io.libp2p.core.PeerId
 import java.security.MessageDigest
 import kotlinx.serialization.Serializable
+import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.local.feed.notifications.NotificationKeywordFilter
 
 internal const val SUBSCRIPTION_SYNC_PROTOCOL_ID = "/wizestream/subscriptions/1.0.0"
 internal const val SUBSCRIPTION_SYNC_VERSION = 1
@@ -34,16 +36,23 @@ internal data class SyncedSubscription(
     val avatarUrl: String? = null,
     val subscriberCount: Long? = null,
     val description: String? = null,
-    val youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR
+    val youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+    val notificationMode: Int? = null,
+    val notificationKeywords: String? = null
 ) {
-    internal fun toEntity() = SubscriptionEntity(
+    internal fun toEntity(existing: SubscriptionEntity? = null) = SubscriptionEntity(
         serviceId = serviceId,
         url = url,
         name = name,
         avatarUrl = avatarUrl,
         subscriberCount = subscriberCount,
         description = description,
-        youtubeModeMask = youtubeModeMask
+        youtubeModeMask = youtubeModeMask,
+        notificationMode = notificationMode
+            ?: existing?.notificationMode
+            ?: NotificationMode.DISABLED,
+        notificationKeywords = notificationKeywords
+            ?: existing?.notificationKeywords.orEmpty()
     )
 
     companion object {
@@ -55,7 +64,9 @@ internal data class SyncedSubscription(
                 avatarUrl = entity.avatarUrl?.take(MAX_SUBSCRIPTION_AVATAR_URL_LENGTH),
                 subscriberCount = entity.subscriberCount,
                 description = entity.description?.take(MAX_SUBSCRIPTION_DESCRIPTION_LENGTH),
-                youtubeModeMask = entity.youtubeModeMask
+                youtubeModeMask = entity.youtubeModeMask,
+                notificationMode = entity.notificationMode,
+                notificationKeywords = entity.notificationKeywords
             )
         }
     }
@@ -308,7 +319,23 @@ internal object SubscriptionSyncValidation {
             (subscription.description?.length ?: 0) >
             MAX_SUBSCRIPTION_DESCRIPTION_LENGTH ||
             subscription.youtubeModeMask < SubscriptionEntity.YOUTUBE_MODE_REGULAR ||
-            subscription.youtubeModeMask > SubscriptionEntity.YOUTUBE_MODE_ALL
+            subscription.youtubeModeMask > SubscriptionEntity.YOUTUBE_MODE_ALL ||
+            subscription.notificationMode?.let {
+                it !in NotificationMode.DISABLED..NotificationMode.KEYWORDS_ONLY
+            } == true ||
+            subscription.notificationKeywords?.let { keywords ->
+                keywords != NotificationKeywordFilter.normalize(keywords) ||
+                    (
+                        keywords.isNotEmpty() &&
+                            !NotificationKeywordFilter.isValid(keywords)
+                        )
+            } == true ||
+            (
+                subscription.notificationMode == NotificationMode.KEYWORDS_ONLY &&
+                    !NotificationKeywordFilter.isValid(
+                        subscription.notificationKeywords.orEmpty()
+                    )
+                )
         ) {
             throw SubscriptionSyncException("Subscription metadata is invalid")
         }

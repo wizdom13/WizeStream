@@ -896,6 +896,14 @@
     <!-- Notifications settings -->
     <string name="enable_streams_notifications_title">New streams notifications</string>
     <string name="enable_streams_notifications_summary">Notify about new streams from subscriptions</string>
+    <string name="edit_notification_filter">Edit notification filter</string>
+    <string name="notification_mode_disabled">Notifications disabled</string>
+    <string name="notification_mode_all_uploads">All uploads</string>
+    <string name="notification_mode_keywords_only">Matching keywords only</string>
+    <string name="notification_keywords_hint">Keywords or phrases</string>
+    <string name="notification_keywords_help">Enter one keyword or phrase per line. A title matching any line will notify you.</string>
+    <string name="notification_keywords_invalid">Enter between 1 and 25 keywords or phrases, with no line longer than 100 characters.</string>
+    <string name="notification_keywords_summary">Matching keywords only · %1$s</string>
     <string name="streams_notifications_interval_title">Checking frequency</string>
     <string name="streams_notifications_network_title">Required network connection</string>
     <string name="any_network">Any network</string>

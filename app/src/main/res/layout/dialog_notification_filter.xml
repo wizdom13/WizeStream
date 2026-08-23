@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="8dp">
+
+    <RadioGroup
+        android:id="@+id/mode_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/mode_disabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notification_mode_disabled" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/mode_all"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notification_mode_all_uploads" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/mode_keywords"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notification_mode_keywords_only" />
+    </RadioGroup>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/keywords_layout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/notification_keywords_hint"
+        app:errorEnabled="true"
+        app:helperText="@string/notification_keywords_help">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/keywords"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top|start"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLength="2048"
+            android:minLines="4" />
+    </com.google.android.material.textfield.TextInputLayout>
+</LinearLayout>

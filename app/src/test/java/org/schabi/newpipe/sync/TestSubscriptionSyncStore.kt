@@ -25,6 +25,12 @@ internal class TestSubscriptionSyncStore(
         return subscriptions.values.firstOrNull { it.url == url }?.youtubeModeMask
     }
 
+    fun notificationSettings(url: String): Pair<Int?, String?>? {
+        return subscriptions.values.firstOrNull { it.url == url }?.let {
+            it.notificationMode to it.notificationKeywords
+        }
+    }
+
     override fun reconcileLocalSubscriptions() = Unit
 
     override fun recordLocalUpsert(subscription: SubscriptionEntity) {
