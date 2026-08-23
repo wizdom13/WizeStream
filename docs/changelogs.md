@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.10.0 (`1010000`)
+
 ### Fixes
 
 - Fixed NewPipe subscription imports failing completely when one channel is unavailable; valid
@@ -22,6 +24,8 @@ Release history is listed newest first. The number beside each release is its An
 - Added per-channel keyword and phrase filters for new-stream notifications.
 - Added date-aware fast scrolling and a calendar jump action for navigating large watch histories.
 - Added an option to prioritize main-tab swiping when viewing pinned channels.
+
+[View the complete changes since v1.9.1](https://github.com/wizdom13/WizeStream/compare/v1.9.1...v1.10.0)
 
 ## WizeStream 1.9.1 (`1009001`)
 
