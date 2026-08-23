@@ -369,6 +369,7 @@
     </string-array>
 
     <!-- Content & History -->
+    <string name="swipe_main_tabs_on_pinned_channels_key">swipe_main_tabs_on_pinned_channels</string>
     <string name="show_channel_tabs_key">channel_tabs</string>
     <string name="show_channel_tabs_videos">show_channel_tabs_videos</string>
     <string name="show_channel_tabs_tracks">show_channel_tabs_tracks</string>

@@ -1239,6 +1239,8 @@
     <string name="channel_tab_about">About</string>
     <string name="show_channel_tabs">Channel tabs</string>
     <string name="show_channel_tabs_summary">What tabs are shown on the channel pages</string>
+    <string name="swipe_main_tabs_on_pinned_channels_title">Swipe between main tabs on pinned channels</string>
+    <string name="swipe_main_tabs_on_pinned_channels_summary">On pinned channel pages, horizontal swipes change the main tab; tap Videos, Shorts, Live, or other channel sub-tabs to open them</string>
     <string name="open_play_queue">Open play queue</string>
     <string name="toggle_fullscreen">Toggle fullscreen</string>
     <string name="toggle_screen_orientation">Toggle screen orientation</string>

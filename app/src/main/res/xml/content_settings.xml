@@ -58,6 +58,14 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/swipe_main_tabs_on_pinned_channels_key"
+        android:summary="@string/swipe_main_tabs_on_pinned_channels_summary"
+        android:title="@string/swipe_main_tabs_on_pinned_channels_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.PeertubeInstanceListFragment"
         android:key="@string/peertube_instance_setup_key"
