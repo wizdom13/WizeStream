@@ -23,9 +23,9 @@ import com.google.android.material.color.MaterialColors;
 
 import org.schabi.newpipe.R;
 
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
-import java.util.function.Consumer;
 
 public final class HistoryDateFastScroller extends View {
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
