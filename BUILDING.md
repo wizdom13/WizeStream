@@ -31,11 +31,20 @@ Build the debug APK and run JVM checks:
 scripts/build.sh debug
 ```
 
-Build a release APK:
+Build the default ARM64/ARMv7 release APK:
 
 ```bash
 scripts/build.sh release
 ```
+
+Build the x86_64 release APK for Waydroid and Android-x86:
+
+```bash
+scripts/build.sh release -PreleaseAbi=x86_64
+```
+
+The `releaseAbi` property accepts `arm` (the default) or `x86_64`. Published releases build
+both targets from the same tagged source and sign them with the same release key.
 
 Run Android instrumented tests:
 
@@ -79,7 +88,9 @@ WIZESTREAM_RELEASE_KEY_PASSWORD
 
 The legacy `NEWPIPE_MATERIAL_RELEASE_*` names remain accepted as fallbacks so existing CI secrets and local build environments continue to work during migration.
 
-The resulting APK is written under `app/build/outputs/apk/release/`.
+The resulting APK is written under `app/build/outputs/apk/release/`. The release workflow
+publishes the existing `wizestream_vX.Y.Z.apk` ARM asset and a separate
+`wizestream_vX.Y.Z_x86_64.apk` asset so ARM downloads do not increase in size.
 
 ## Reproducible release rule
 

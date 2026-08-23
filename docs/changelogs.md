@@ -15,6 +15,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### New features
 
+- Added separate x86_64 release APKs for Waydroid and Android-x86 environments while keeping the
+  existing ARM release download unchanged.
 - Added optional on-device MP3 audio downloads at 128, 192, 256, or 320 kbps, with conversion
   progress, cancellation-safe temporary files, and title, uploader, and source URL metadata.
 - Added per-channel keyword and phrase filters for new-stream notifications.
