@@ -4,6 +4,10 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### New features
+
+- Added date-aware fast scrolling and a calendar jump action for navigating large watch histories.
+
 ## WizeStream 1.9.1 (`1009001`)
 
 ### Fixes

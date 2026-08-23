@@ -180,6 +180,19 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     }
 
     /**
+     * Converts an item index to its RecyclerView adapter position.
+     *
+     * @param itemIndex index within {@link #getItemsList()}
+     * @return adapter position, or {@link RecyclerView#NO_POSITION} when invalid
+     */
+    public int getAdapterPositionForItemIndex(final int itemIndex) {
+        if (itemIndex < 0 || itemIndex >= localItems.size()) {
+            return RecyclerView.NO_POSITION;
+        }
+        return itemIndex + (hasHeader() ? 1 : 0);
+    }
+
+    /**
      * Removes the item at an exact index, preserving duplicate playlist entries correctly.
      *
      * @param itemIndex index within {@link #getItemsList()}

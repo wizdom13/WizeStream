@@ -682,6 +682,9 @@
     <string name="delete_item_search_history">Do you want to delete this item from search history?</string>
     <string name="title_last_played">Last Played</string>
     <string name="title_most_played">Most Played</string>
+    <string name="history_jump_to_date">Jump to date</string>
+    <string name="history_date_fast_scroll">Scroll through history by date</string>
+    <string name="history_date_fast_scroll_description">History date: %1$s</string>
     <!-- Content -->
     <string name="main_page_content">Customize home</string>
     <string name="main_page_content_summary">Choose which sections appear on your home screen</string>
