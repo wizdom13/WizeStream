@@ -43,6 +43,7 @@ public final class ThemeHelper {
     public static void applyThemeColor(final Context context) {
         if (shouldApplyDynamicColors(context)) {
             DynamicColors.applyToActivityIfAvailable((Activity) context);
+            applyBlackSurfaceOverlay(context);
         } else {
             applyThemeColorOverlay(context);
         }
@@ -60,8 +61,13 @@ public final class ThemeHelper {
 
     public static boolean shouldApplyDynamicColors(final Context context) {
         return context instanceof Activity
-                && isFollowSystemThemeColor(context)
-                && !isBlackThemeSelected(context);
+                && isFollowSystemThemeColor(context);
+    }
+
+    private static void applyBlackSurfaceOverlay(final Context context) {
+        if (isBlackThemeSelected(context)) {
+            context.getTheme().applyStyle(R.style.ThemeOverlay_wizestream_BlackSurfaces, true);
+        }
     }
 
     public static void applyThemeColorOverlay(final Context context) {

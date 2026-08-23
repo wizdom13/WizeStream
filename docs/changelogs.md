@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Fixes
+
+- Fixed Material You wallpaper colors falling back to green with the Black night theme, while
+  preserving true-black surfaces, and made the player seek bar follow the selected accent color.
+
 ### New features
 
 - Added per-channel keyword and phrase filters for new-stream notifications.
