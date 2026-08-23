@@ -154,7 +154,7 @@
             app:tabSelectedTextColor="?attr/colorPrimary"
             app:tabTextColor="@color/tab_layout_material_item_color" />
 
-        <androidx.viewpager.widget.ViewPager
+        <org.schabi.newpipe.views.SwipeControllableViewPager
             android:id="@+id/view_pager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

@@ -801,6 +801,8 @@
     <string name="share_playlist">Partager la liste de lecture</string>
     <string name="video_details_list_item">- %1$s : %2$s</string>
     <string name="show_channel_tabs_summary">Choisir quels onglets seront visibles sur les pages de chaîne</string>
+    <string name="swipe_main_tabs_on_pinned_channels_title">Balayer les onglets principaux sur les chaînes épinglées</string>
+    <string name="swipe_main_tabs_on_pinned_channels_summary">Sur une chaîne épinglée, le balayage horizontal change d’onglet principal. Touchez Vidéos, Shorts, Direct ou un autre sous-onglet pour l’ouvrir</string>
     <string name="toggle_screen_orientation">Changer l’orientation de l’écran</string>
     <string name="toggle_fullscreen">Basculer en plein écran</string>
     <string name="share_playlist_with_titles">Partager avec les noms</string>
