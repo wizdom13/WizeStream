@@ -1,7 +1,6 @@
 package org.schabi.newpipe.local.history;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -33,13 +32,20 @@ public class HistoryDateNavigatorTest {
     }
 
     @Test
-    public void switchesBetweenMonthAndYearLabelsBasedOnHistorySpan() {
-        assertTrue(HistoryDateNavigator.shouldUseMonthLabels(Arrays.asList(
-                LocalDate.of(2026, 8, 1), LocalDate.of(2025, 1, 1))));
-        assertFalse(HistoryDateNavigator.shouldUseMonthLabels(dates));
+    public void alwaysFormatsMonthAndYear() {
         assertEquals("Aug 2026", HistoryDateNavigator.formatLabel(
-                LocalDate.of(2026, 8, 1), true, Locale.US));
-        assertEquals("2026", HistoryDateNavigator.formatLabel(
-                LocalDate.of(2026, 8, 1), false, Locale.US));
+                LocalDate.of(2026, 8, 1), Locale.US));
+    }
+
+    @Test
+    public void findsDateInTenThousandEntryHistory() {
+        final List<LocalDate> largeHistory = new java.util.ArrayList<>(10_000);
+        final LocalDate newest = LocalDate.of(2026, 8, 23);
+        for (int index = 0; index < 10_000; index++) {
+            largeHistory.add(newest.minusDays(index));
+        }
+
+        assertEquals(7_654, HistoryDateNavigator.findClosestIndex(
+                largeHistory, newest.minusDays(7_654)));
     }
 }
