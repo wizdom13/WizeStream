@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Locale;
 
 public final class HistoryDateNavigator {
-    private static final long MONTH_LABEL_MAXIMUM_SPAN_DAYS = 730;
-
     private HistoryDateNavigator() {
     }
 
@@ -57,22 +55,9 @@ public final class HistoryDateNavigator {
         return newerDistance <= olderDistance ? high : low;
     }
 
-    public static boolean shouldUseMonthLabels(@NonNull final List<LocalDate> dates) {
-        if (dates.size() < 2) {
-            return true;
-        }
-        final LocalDate newest = dates.get(0);
-        final LocalDate oldest = dates.get(dates.size() - 1);
-        return Math.abs(ChronoUnit.DAYS.between(oldest, newest))
-                <= MONTH_LABEL_MAXIMUM_SPAN_DAYS;
-    }
-
     @NonNull
     public static String formatLabel(@NonNull final LocalDate date,
-                                     final boolean includeMonth,
                                      @NonNull final Locale locale) {
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
-                includeMonth ? "MMM yyyy" : "yyyy", locale);
-        return formatter.format(date);
+        return DateTimeFormatter.ofPattern("MMM yyyy", locale).format(date);
     }
 }
