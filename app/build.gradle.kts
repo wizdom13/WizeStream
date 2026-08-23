@@ -31,6 +31,15 @@ val hasReleaseSigningConfig = listOf(
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
 
+val releaseAbi = providers.gradleProperty("releaseAbi").orElse("arm").get()
+val releaseAbiFilters = when (releaseAbi) {
+    "arm" -> setOf("arm64-v8a", "armeabi-v7a")
+    "x86_64" -> setOf("x86_64")
+    else -> throw GradleException(
+        "Unsupported releaseAbi '$releaseAbi'. Expected 'arm' or 'x86_64'."
+    )
+}
+
 kotlin {
     jvmToolchain(21)
     compilerOptions {
@@ -93,7 +102,7 @@ configure<ApplicationExtension> {
 
         release {
             ndk {
-                abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+                abiFilters += releaseAbiFilters
             }
             if (hasReleaseSigningConfig) {
                 signingConfig = signingConfigs.getByName("release")

@@ -72,8 +72,11 @@ jobs:
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/release-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/release-apk-badging.txt"
           grep -q "application-label:'WizeStream'" "$RUNNER_TEMP/release-apk-badging.txt"
+          scripts/verify-apk-abis.sh "$APK_PATH" arm64-v8a armeabi-v7a
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
 
-      - name: "Rename APK"
+      - name: "Prepare ARM APK"
         id: release_info
         run: |
           VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
@@ -91,7 +94,8 @@ jobs:
           fi
 
           APK_NAME="wizestream_v${VERSION_NAME}.apk"
-          APK_PATH="app/build/outputs/apk/release/${APK_NAME}"
+          mkdir -p dist
+          APK_PATH="dist/${APK_NAME}"
           CHANGELOG_PATH="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
 
           mv app/build/outputs/apk/release/*.apk "$APK_PATH"
@@ -108,12 +112,51 @@ jobs:
           echo "Release tag: $RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
           echo "Changelog: $CHANGELOG_PATH" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: "Upload APK"
+      - name: Build signed x86_64 release APK
+        env:
+          WIZESTREAM_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
+          WIZESTREAM_RELEASE_STORE_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_STORE_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
+          WIZESTREAM_RELEASE_KEY_ALIAS: ${{ secrets.WIZESTREAM_RELEASE_KEY_ALIAS || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_ALIAS }}
+          WIZESTREAM_RELEASE_KEY_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_KEY_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ./gradlew clean assembleRelease --stacktrace -PreleaseAbi=x86_64
+
+      - name: Prepare and verify x86_64 APK
+        id: x86_release_info
+        run: |
+          set -euo pipefail
+          VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
+          VERSION_CODE="$(jq -r ".elements[0].versionCode" "app/build/outputs/apk/release/output-metadata.json")"
+
+          test "$VERSION_NAME" = "${{ steps.release_info.outputs.version_name }}"
+          test "$VERSION_CODE" = "${{ steps.release_info.outputs.version_code }}"
+
+          APK_NAME="wizestream_v${VERSION_NAME}_x86_64.apk"
+          APK_PATH="dist/${APK_NAME}"
+          mv app/build/outputs/apk/release/*.apk "$APK_PATH"
+
+          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
+          "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/x86-64-release-badging.txt"
+          grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/x86-64-release-badging.txt"
+          grep -q "application-label:'WizeStream'" "$RUNNER_TEMP/x86-64-release-badging.txt"
+          scripts/verify-apk-abis.sh "$APK_PATH" x86_64
+
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
+
+          echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "x86_64 APK: $APK_NAME" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Upload APKs"
         if: ${{ github.event_name == 'workflow_dispatch' && (inputs.release_target == 'artifacts' || inputs.release_target == 'all') }}
         uses: actions/upload-artifact@v7
         with:
-          name: wizestream-signed-release-apk
-          path: ${{ steps.release_info.outputs.apk_path }}
+          name: wizestream-signed-release-apks
+          path: |
+            ${{ steps.release_info.outputs.apk_path }}
+            ${{ steps.x86_release_info.outputs.apk_path }}
 
       - name: "Validate changelog"
         if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
@@ -128,6 +171,8 @@ jobs:
           target_commitish: pipe
           name: WizeStream ${{ steps.release_info.outputs.version_name }}
           body_path: ${{ steps.release_info.outputs.changelog_path }}
-          files: ${{ steps.release_info.outputs.apk_path }}
+          files: |
+            ${{ steps.release_info.outputs.apk_path }}
+            ${{ steps.x86_release_info.outputs.apk_path }}
           fail_on_unmatched_files: true
           make_latest: true

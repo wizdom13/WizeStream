@@ -360,6 +360,16 @@ Install WizeStream through an F-Droid-compatible client from the IzzyOnDroid rep
 
 Install WizeStream from this repository's GitHub releases or signed build artifacts when available.
 
+Releases provide two APKs:
+
+- `wizestream_vX.Y.Z.apk` supports ARM64 and ARMv7 Android devices.
+- `wizestream_vX.Y.Z_x86_64.apk` supports 64-bit Intel and AMD Android environments, including
+  Waydroid and Android-x86.
+
+Waydroid runs the Android application on Linux; this APK is not a native Linux desktop build. The
+separate native desktop project is available at
+[WizeStream Desktop](https://github.com/wizdom13/WizeStream-Desktop).
+
 Releases: https://github.com/wizdom13/WizeStream/releases
 
 WizeStream uses a different application ID from official NewPipe, so both apps can be installed side by side:
@@ -431,6 +441,7 @@ Other build modes:
 
 ```bash
 scripts/build.sh release
+scripts/build.sh release -PreleaseAbi=x86_64
 scripts/build.sh connected
 scripts/build.sh checkstyle
 ```
