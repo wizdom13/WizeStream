@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -82,6 +83,7 @@ import java.util.Optional;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import us.shandian.giga.get.MissionRecoveryInfo;
+import us.shandian.giga.postprocessing.Mp3OutputOptions;
 import us.shandian.giga.postprocessing.Postprocessing;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
@@ -109,6 +111,14 @@ public class DownloadDialog extends DialogFragment
     int selectedAudioIndex = 0; // default to the first item
     @State
     int selectedSubtitleIndex = 0; // default to the first item
+    @State
+    int selectedAudioOutputIndex = 0;
+    @State
+    int selectedMp3BitrateIndex = 1;
+
+    private static final int AUDIO_OUTPUT_ORIGINAL = 0;
+    private static final int AUDIO_OUTPUT_MP3 = 1;
+    private static final int[] MP3_BITRATES = {128, 192, 256, 320};
 
     private StoredDirectoryHelper mainStorageAudio = null;
     private StoredDirectoryHelper mainStorageVideo = null;
@@ -308,7 +318,23 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.qualitySpinner.setOnItemSelectedListener(this);
         dialogBinding.audioStreamSpinner.setOnItemSelectedListener(this);
         dialogBinding.audioTrackSpinner.setOnItemSelectedListener(this);
+        dialogBinding.audioOutputFormatSpinner.setOnItemSelectedListener(this);
+        dialogBinding.mp3BitrateSpinner.setOnItemSelectedListener(this);
         dialogBinding.videoAudioGroup.setOnCheckedChangeListener(this);
+
+        final ArrayAdapter<CharSequence> outputFormatAdapter = ArrayAdapter.createFromResource(
+                requireContext(), R.array.audio_output_format_entries,
+                android.R.layout.simple_spinner_item);
+        outputFormatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogBinding.audioOutputFormatSpinner.setAdapter(outputFormatAdapter);
+        dialogBinding.audioOutputFormatSpinner.setSelection(selectedAudioOutputIndex);
+
+        final ArrayAdapter<CharSequence> bitrateAdapter = ArrayAdapter.createFromResource(
+                requireContext(), R.array.mp3_bitrate_entries,
+                android.R.layout.simple_spinner_item);
+        bitrateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogBinding.mp3BitrateSpinner.setAdapter(bitrateAdapter);
+        dialogBinding.mp3BitrateSpinner.setSelection(selectedMp3BitrateIndex);
 
         initToolbar(dialogBinding.toolbarLayout.toolbar);
         setupDownloadOptions();
@@ -432,6 +458,9 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.audioTrackSpinner.setVisibility(
                 wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
         dialogBinding.audioTrackPresentInVideoText.setVisibility(View.GONE);
+        dialogBinding.audioOutputFormatLabel.setVisibility(View.VISIBLE);
+        dialogBinding.audioOutputFormatSpinner.setVisibility(View.VISIBLE);
+        updateMp3BitrateVisibility();
     }
 
     private void setupVideoSpinner() {
@@ -444,6 +473,7 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.qualitySpinner.setVisibility(View.VISIBLE);
         setRadioButtonsState(true);
         dialogBinding.audioStreamSpinner.setVisibility(View.GONE);
+        hideAudioOutputOptions();
         onVideoStreamSelected();
     }
 
@@ -466,6 +496,7 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.qualitySpinner.setVisibility(View.VISIBLE);
         setRadioButtonsState(true);
         dialogBinding.audioStreamSpinner.setVisibility(View.GONE);
+        hideAudioOutputOptions();
         dialogBinding.audioTrackSpinner.setVisibility(View.GONE);
         dialogBinding.audioTrackPresentInVideoText.setVisibility(View.GONE);
     }
@@ -601,6 +632,12 @@ public class DownloadDialog extends DialogFragment
             }
         } else if (parentId == R.id.audio_stream_spinner) {
             selectedAudioIndex = position;
+            updateMp3BitrateVisibility();
+        } else if (parentId == R.id.audio_output_format_spinner) {
+            selectedAudioOutputIndex = position;
+            updateMp3BitrateVisibility();
+        } else if (parentId == R.id.mp3_bitrate_spinner) {
+            selectedMp3BitrateIndex = position;
         }
     }
 
@@ -695,6 +732,37 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.subtitleButton.setEnabled(enabled);
     }
 
+    private void hideAudioOutputOptions() {
+        dialogBinding.audioOutputFormatLabel.setVisibility(View.GONE);
+        dialogBinding.audioOutputFormatSpinner.setVisibility(View.GONE);
+        dialogBinding.mp3BitrateLabel.setVisibility(View.GONE);
+        dialogBinding.mp3BitrateSpinner.setVisibility(View.GONE);
+    }
+
+    private void updateMp3BitrateVisibility() {
+        if (dialogBinding == null) {
+            return;
+        }
+        final boolean visible = selectedAudioOutputIndex == AUDIO_OUTPUT_MP3
+                && audioStreamsAdapter != null
+                && selectedAudioIndex >= 0
+                && selectedAudioIndex < audioStreamsAdapter.getCount()
+                && audioStreamsAdapter.getItem(selectedAudioIndex).getFormat() != MediaFormat.MP3;
+        dialogBinding.mp3BitrateLabel.setVisibility(visible ? View.VISIBLE : View.GONE);
+        dialogBinding.mp3BitrateSpinner.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    private boolean isMp3OutputSelected() {
+        return selectedAudioOutputIndex == AUDIO_OUTPUT_MP3;
+    }
+
+    private int getSelectedMp3Bitrate() {
+        if (selectedMp3BitrateIndex < 0 || selectedMp3BitrateIndex >= MP3_BITRATES.length) {
+            return Mp3OutputOptions.DEFAULT_BITRATE_KBPS;
+        }
+        return MP3_BITRATES[selectedMp3BitrateIndex];
+    }
+
     private StreamInfoWrapper<AudioStream> getWrappedAudioStreams() {
         if (selectedAudioTrackIndex < 0 || selectedAudioTrackIndex > wrappedAudioTracks.size()) {
             return StreamInfoWrapper.empty();
@@ -753,7 +821,7 @@ public class DownloadDialog extends DialogFragment
         final StoredDirectoryHelper mainStorage;
         final MediaFormat format;
         final String selectedMediaType;
-        final long size;
+        long size;
 
         // first, build the filename and get the output folder (if possible)
         // later, run a very very very large file checking logic
@@ -766,7 +834,14 @@ public class DownloadDialog extends DialogFragment
             mainStorage = mainStorageAudio;
             format = audioStreamsAdapter.getItem(selectedAudioIndex).getFormat();
             size = getWrappedAudioStreams().getSizeInBytes(selectedAudioIndex);
-            if (format == MediaFormat.WEBMA_OPUS) {
+            if (isMp3OutputSelected()) {
+                mimeTmp = MediaFormat.MP3.mimeType;
+                filenameTmp += MediaFormat.MP3.getSuffix();
+                if (Mp3DownloadPolicy.shouldTranscode(true, format)) {
+                    size = Mp3OutputOptions.estimateRequiredBytes(size,
+                            currentInfo.getDuration(), getSelectedMp3Bitrate());
+                }
+            } else if (format == MediaFormat.WEBMA_OPUS) {
                 mimeTmp = "audio/ogg";
                 filenameTmp += "opus";
             } else if (format != null) {
@@ -1049,7 +1124,11 @@ public class DownloadDialog extends DialogFragment
             kind = 'a';
             selectedStream = audioStreamsAdapter.getItem(selectedAudioIndex);
 
-            if (selectedStream.getFormat() == MediaFormat.M4A) {
+            if (Mp3DownloadPolicy.shouldTranscode(isMp3OutputSelected(),
+                    selectedStream.getFormat())) {
+                psName = Postprocessing.ALGORITHM_MP3_FROM_AUDIO;
+                psArgs = new String[] {String.valueOf(getSelectedMp3Bitrate())};
+            } else if (selectedStream.getFormat() == MediaFormat.M4A) {
                 psName = Postprocessing.ALGORITHM_M4A_NO_DASH;
             } else if (selectedStream.getFormat() == MediaFormat.WEBMA_OPUS) {
                 psName = Postprocessing.ALGORITHM_OGG_FROM_WEBM_DEMUXER;

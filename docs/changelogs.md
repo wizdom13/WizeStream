@@ -11,6 +11,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### New features
 
+- Added optional on-device MP3 audio downloads at 128, 192, 256, or 320 kbps, with conversion
+  progress, cancellation-safe temporary files, and title, uploader, and source URL metadata.
 - Added per-channel keyword and phrase filters for new-stream notifications.
 - Added date-aware fast scrolling and a calendar jump action for navigating large watch histories.
 - Added an option to prioritize main-tab swiping when viewing pinned channels.

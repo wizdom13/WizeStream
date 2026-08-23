@@ -298,7 +298,8 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         } else if (!mission.running) {
             state = mission.enqueued ? R.string.queued : R.string.paused;
         } else if (mission.isPsRunning()) {
-            state = R.string.post_processing;
+            state = mission.isConvertingToMp3()
+                    ? R.string.converting_to_mp3 : R.string.post_processing;
         } else if (mission.isRecovering()) {
             state = R.string.recovering;
         } else {
