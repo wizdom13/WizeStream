@@ -59,7 +59,7 @@ class SubscriptionManager(context: Context) {
         }.map { subscriptions -> subscriptions.filter(currentScope::includes) }
     }
 
-    fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo>>) {
+    fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo?>>) {
         val listEntities = infoList.map {
             val entity = SubscriptionEntity.from(it.first)
             if (entity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
@@ -79,7 +79,8 @@ class SubscriptionManager(context: Context) {
 
         database.runInTransaction {
             infoList.forEachIndexed { index, info ->
-                val streams = info.second.relatedItems.filterIsInstance<StreamInfoItem>()
+                val streams = info.second?.relatedItems?.filterIsInstance<StreamInfoItem>()
+                    ?: emptyList()
                 feedDatabaseManager.upsertAll(
                     listEntities[index].uid,
                     streams,
