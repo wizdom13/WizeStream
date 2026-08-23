@@ -28,6 +28,19 @@
             app:iconSize="20dp"
             tools:visibility="visible" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/history_date_jump_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="0dp"
+            android:text="@string/history_jump_to_date"
+            android:visibility="gone"
+            app:icon="@drawable/ic_calendar_month"
+            app:iconPadding="6dp"
+            app:iconSize="20dp"
+            tools:visibility="visible" />
+
         <include
             android:id="@+id/stream_filter_chips"
             layout="@layout/list_stream_filter_chips"
@@ -43,6 +56,16 @@
         android:layout_below="@id/playlist_controls"
         android:scrollbars="vertical"
         tools:listitem="@layout/list_stream_mini_item" />
+
+    <org.schabi.newpipe.local.history.HistoryDateFastScroller
+        android:id="@+id/history_date_fast_scroller"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@id/playlist_controls"
+        android:contentDescription="@string/history_date_fast_scroll"
+        android:visibility="gone" />
 
     <ProgressBar
         android:id="@+id/loading_progress_bar"

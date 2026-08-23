@@ -1,6 +1,7 @@
 package org.schabi.newpipe.local
 
 import android.view.View
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
@@ -43,6 +44,9 @@ class LocalItemListAdapterTest {
             assertEquals(-1, adapter.getItemIndex(0))
             assertEquals(0, adapter.getItemIndex(1))
             assertEquals(1, adapter.getItemIndex(2))
+            assertEquals(1, adapter.getAdapterPositionForItemIndex(0))
+            assertEquals(2, adapter.getAdapterPositionForItemIndex(1))
+            assertEquals(RecyclerView.NO_POSITION, adapter.getAdapterPositionForItemIndex(2))
 
             assertSame(duplicate, adapter.removeItemAt(1))
             assertEquals(listOf(first), adapter.itemsList)
