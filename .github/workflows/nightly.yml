@@ -51,7 +51,8 @@ jobs:
           short_sha="${source_sha::7}"
           nightly_tag="nightly-${build_date}-${short_sha}"
           version_suffix="-nightly.${build_date}.${short_sha}"
-          apk_name="WizeStream-nightly-${build_date}-${short_sha}.apk"
+          arm_apk_name="WizeStream-nightly-${build_date}-${short_sha}.apk"
+          x86_apk_name="WizeStream-nightly-${build_date}-${short_sha}-x86_64.apk"
 
           {
             echo "source_sha=$source_sha"
@@ -60,7 +61,8 @@ jobs:
             echo "short_sha=$short_sha"
             echo "nightly_tag=$nightly_tag"
             echo "version_suffix=$version_suffix"
-            echo "apk_name=$apk_name"
+            echo "arm_apk_name=$arm_apk_name"
+            echo "x86_apk_name=$x86_apk_name"
           } >> "$GITHUB_OUTPUT"
 
       - name: Skip unchanged source commit
@@ -137,7 +139,7 @@ jobs:
             echo "WIZESTREAM_RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
           } >> "$GITHUB_ENV"
 
-      - name: Build optimized nightly APK
+      - name: Build optimized nightly APKs
         if: steps.existing.outputs.skip != 'true'
         env:
           VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
@@ -145,40 +147,62 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           scripts/build.sh nightly \
             -DversionCodeOverride="$VERSION_CODE" \
             -DversionNameSuffix="$VERSION_SUFFIX"
+
+          arm_source="$(find app/build/outputs/apk/nightly -type f -name '*.apk' | head -n 1)"
+          test -s "$arm_source"
+          cp "$arm_source" "$RUNNER_TEMP/wizestream-nightly-arm.apk"
+
+          scripts/build.sh nightly \
+            -DversionCodeOverride="$VERSION_CODE" \
+            -DversionNameSuffix="$VERSION_SUFFIX" \
+            -PreleaseAbi=x86_64
+
+          x86_source="$(find app/build/outputs/apk/nightly -type f -name '*.apk' | head -n 1)"
+          test -s "$x86_source"
+          cp "$x86_source" "$RUNNER_TEMP/wizestream-nightly-x86_64.apk"
 
       - name: Prepare and verify release assets
         if: steps.existing.outputs.skip != 'true'
         id: assets
         env:
-          APK_NAME: ${{ steps.metadata.outputs.apk_name }}
+          ARM_APK_NAME: ${{ steps.metadata.outputs.arm_apk_name }}
+          X86_APK_NAME: ${{ steps.metadata.outputs.x86_apk_name }}
         shell: bash
         run: |
           set -euo pipefail
 
-          source_apk="$(find app/build/outputs/apk/nightly -type f -name '*.apk' | head -n 1)"
-          test -n "$source_apk"
-
           mkdir -p dist
-          apk_path="dist/$APK_NAME"
-          checksum_path="${apk_path}.sha256"
-          cp "$source_apk" "$apk_path"
-          sha256sum "$apk_path" > "$checksum_path"
+          arm_apk_path="dist/$ARM_APK_NAME"
+          x86_apk_path="dist/$X86_APK_NAME"
+          cp "$RUNNER_TEMP/wizestream-nightly-arm.apk" "$arm_apk_path"
+          cp "$RUNNER_TEMP/wizestream-nightly-x86_64.apk" "$x86_apk_path"
 
           build_tools="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
           aapt="$ANDROID_HOME/build-tools/$build_tools/aapt"
           apksigner="$ANDROID_HOME/build-tools/$build_tools/apksigner"
 
-          "$aapt" dump badging "$apk_path" | tee "$RUNNER_TEMP/nightly-apk-badging.txt"
-          grep -q "package: name='org.wisso.newpipematerial.nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
-          grep -q "application-label:'WizeStream Nightly'" "$RUNNER_TEMP/nightly-apk-badging.txt"
-          "$apksigner" verify --verbose --print-certs "$apk_path"
+          verify_identity() {
+            local apk_path="$1"
+            local badging_path="$2"
+            "$aapt" dump badging "$apk_path" | tee "$badging_path"
+            grep -q "package: name='org.wisso.newpipematerial.nightly'" "$badging_path"
+            grep -q "application-label:'WizeStream Nightly'" "$badging_path"
+            "$apksigner" verify --verbose --print-certs "$apk_path"
+          }
+
+          verify_identity "$arm_apk_path" "$RUNNER_TEMP/nightly-arm-badging.txt"
+          scripts/verify-apk-abis.sh "$arm_apk_path" arm64-v8a armeabi-v7a
+
+          verify_identity "$x86_apk_path" "$RUNNER_TEMP/nightly-x86-64-badging.txt"
+          scripts/verify-apk-abis.sh "$x86_apk_path" x86_64
 
           {
-            echo "apk_path=$apk_path"
-            echo "checksum_path=$checksum_path"
+            echo "arm_apk_path=$arm_apk_path"
+            echo "x86_apk_path=$x86_apk_path"
           } >> "$GITHUB_OUTPUT"
 
       - name: Publish immutable prerelease
@@ -190,8 +214,8 @@ jobs:
           VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
           VERSION_SUFFIX: ${{ steps.metadata.outputs.version_suffix }}
           SOURCE_SHA: ${{ steps.metadata.outputs.source_sha }}
-          APK_PATH: ${{ steps.assets.outputs.apk_path }}
-          CHECKSUM_PATH: ${{ steps.assets.outputs.checksum_path }}
+          ARM_APK_PATH: ${{ steps.assets.outputs.arm_apk_path }}
+          X86_APK_PATH: ${{ steps.assets.outputs.x86_apk_path }}
         shell: bash
         run: |
           set -euo pipefail
@@ -214,8 +238,8 @@ jobs:
             --prerelease \
             --title "WizeStream Nightly ${BUILD_DATE}" \
             --notes-file "$RUNNER_TEMP/nightly-release-notes.md" \
-            "$APK_PATH" \
-            "$CHECKSUM_PATH"
+            "$ARM_APK_PATH" \
+            "$X86_APK_PATH"
 
       - name: Remove nightlies beyond retention limit
         if: steps.existing.outputs.skip != 'true'
@@ -247,12 +271,18 @@ jobs:
               "$releases_file"
           )
 
-      - name: Upload workflow artifact
+      - name: Upload ARM workflow artifact
         if: steps.existing.outputs.skip != 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}
-          path: |
-            ${{ steps.assets.outputs.apk_path }}
-            ${{ steps.assets.outputs.checksum_path }}
+          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}-arm
+          path: ${{ steps.assets.outputs.arm_apk_path }}
+          retention-days: 14
+
+      - name: Upload x86_64 workflow artifact
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-nightly-${{ steps.metadata.outputs.build_date }}-${{ steps.metadata.outputs.short_sha }}-x86-64
+          path: ${{ steps.assets.outputs.x86_apk_path }}
           retention-days: 14

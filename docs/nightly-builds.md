@@ -6,6 +6,10 @@ Successful builds are published as prereleases in:
 
 - https://github.com/wizdom13/WizeStream_Nightly/releases
 
+Every nightly publishes two direct APK files: one for ARM64/ARMv7 and one for x86_64. Use the
+filename ending in `-x86_64.apk` for Waydroid or another 64-bit Intel or AMD Android environment;
+use the standard filename on ARM devices.
+
 The workflow skips publishing when the checked-out `pipe` commit already has a nightly release.
 
 ## Nightly identity
@@ -63,4 +67,5 @@ nightly-20260714-dc108a3
 
 ## Retention
 
-The workflow keeps the newest 14 nightly prereleases and deletes older releases and their tags. The duplicate GitHub Actions artifact is retained for 14 days.
+The workflow keeps the newest 14 nightly prereleases and deletes older releases and their tags.
+The separate ARM and x86_64 GitHub Actions artifacts are retained for 14 days.
