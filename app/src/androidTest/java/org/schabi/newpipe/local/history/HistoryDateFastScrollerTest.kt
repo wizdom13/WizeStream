@@ -5,6 +5,7 @@ import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,7 +18,9 @@ class HistoryDateFastScrollerTest {
         instrumentation.runOnMainSync {
             val view = HistoryDateFastScroller(instrumentation.targetContext)
             var selectedPosition = -1
+            val dragStates = mutableListOf<Boolean>()
             view.setOnPositionChangedListener { selectedPosition = it }
+            view.setOnDragStateChangedListener { dragStates += it }
             view.setLabelProvider { position -> "Date $position" }
             view.setItemCount(100)
             view.measure(
@@ -27,12 +30,15 @@ class HistoryDateFastScrollerTest {
             view.layout(0, 0, 48, 1000)
 
             view.onTouchEvent(event(MotionEvent.ACTION_DOWN, 18f))
+            assertTrue(view.isDragging)
             view.onTouchEvent(event(MotionEvent.ACTION_MOVE, 982f))
 
             assertEquals(99, selectedPosition)
             assertTrue(view.contentDescription.toString().contains("Date 99"))
 
             view.onTouchEvent(event(MotionEvent.ACTION_UP, 982f))
+            assertFalse(view.isDragging)
+            assertEquals(listOf(true, false), dragStates)
         }
     }
 
