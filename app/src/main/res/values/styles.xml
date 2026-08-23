@@ -145,6 +145,15 @@
     <style name="Base.BlackTheme" parent="Base.V21.BlackTheme" />
     <style name="BlackTheme" parent="Base.BlackTheme"/>
 
+    <!-- Preserve AMOLED-black surfaces after Material You supplies the accent palette. -->
+    <style name="ThemeOverlay_wizestream_BlackSurfaces">
+        <item name="android:windowBackground">@color/black_background_color</item>
+        <item name="windowBackground">@color/black_background_color</item>
+        <item name="android:statusBarColor">@color/black_background_color</item>
+        <item name="android:navigationBarColor">@color/black_background_color</item>
+        <item name="colorSurface">@color/black_background_color</item>
+    </style>
+
 
     <!-- Theme color preset overlays -->
     <style name="ThemeOverlay_wizestream_ThemeColor_wizestream">

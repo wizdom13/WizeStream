@@ -199,7 +199,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     private void applyPlayerSeekBarColor() {
         final int playerSeekBarColor = ThemeHelper.resolveColorFromAttr(
-                context, R.attr.colorPrimaryFixedDim);
+                binding.playbackSeekBar.getContext(), R.attr.colorPrimaryFixedDim);
         final ColorStateList playerSeekBarColorStateList =
                 ColorStateList.valueOf(playerSeekBarColor);
 
