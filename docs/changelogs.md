@@ -6,6 +6,9 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Restored audio downloads when only muxed MP4 streams are available and made the download dialog
+  fit its content while remaining scrollable on smaller screens.
+
 - Stopped active or queued downloads immediately when their entries are deleted, while preserving
   the previous state when the deletion is undone.
 

@@ -1,18 +1,18 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="?attr/colorSurface">
 
     <include
         android:id="@+id/toolbar_layout"
         layout="@layout/toolbar_layout" />
 
-    <ScrollView
+    <org.schabi.newpipe.views.MaxHeightScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_below="@id/toolbar_layout"
-        android:fillViewport="true">
+        android:fillViewport="false">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -227,6 +227,6 @@
         android:textSize="12sp" />
 
         </RelativeLayout>
-    </ScrollView>
+    </org.schabi.newpipe.views.MaxHeightScrollView>
 
 </RelativeLayout>
