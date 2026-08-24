@@ -5,3 +5,4 @@ WizeStream 1.10.0
 - Added x86_64 release APKs for Waydroid and Android-x86.
 - Improved pinned-channel tab swiping.
 - Fixed subscription imports, History navigation performance, and Material You colors with the Black theme.
+- Polished the History scrollbar placement and animations.

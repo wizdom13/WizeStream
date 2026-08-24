@@ -17,6 +17,11 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed Material You wallpaper colors falling back to green with the Black night theme, while
   preserving true-black surfaces, and made the player seek bar follow the selected accent color.
 
+### Improvements
+
+- Moved the History date scrollbar closer to the screen edge while preserving its accessible touch
+  target, and added smooth cancellable fade transitions.
+
 ### New features
 
 - Added separate x86_64 release APKs for Waydroid and Android-x86 environments while keeping the

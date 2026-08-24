@@ -76,6 +76,8 @@ public class StatisticsPlaylistFragment
         implements PlaylistControlViewHolder, ContextualSearchable {
     private static final int MIN_FAST_SCROLL_ITEMS = 50;
     private static final long FAST_SCROLL_HIDE_DELAY_MILLIS = 1_800L;
+    private static final long FAST_SCROLL_FADE_IN_MILLIS = 140L;
+    private static final long FAST_SCROLL_FADE_OUT_MILLIS = 220L;
     private static final String DATE_PICKER_TAG = "history_date_picker";
 
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -96,12 +98,7 @@ public class StatisticsPlaylistFragment
     private RecyclerView.OnScrollListener historyScrollListener;
     private Disposable historyProcessingDisposable;
 
-    private final Runnable hideFastScrollerRunnable = () -> {
-        if (contentBinding != null && dateFastScrollEnabled
-                && !contentBinding.historyDateFastScroller.isDragging()) {
-            contentBinding.historyDateFastScroller.setVisibility(View.GONE);
-        }
-    };
+    private final Runnable hideFastScrollerRunnable = this::hideFastScrollerAnimated;
 
     /* Used for independent events */
     private Subscription databaseSubscription;
@@ -325,7 +322,7 @@ public class StatisticsPlaylistFragment
         historyScrollListener = null;
 
         if (contentBinding != null) {
-            contentBinding.historyDateFastScroller.removeCallbacks(hideFastScrollerRunnable);
+            hideFastScrollerImmediately();
             contentBinding.historyDateFastScroller.dismissBubble();
         }
         if (historyProcessingDisposable != null) {
@@ -505,8 +502,7 @@ public class StatisticsPlaylistFragment
             return;
         }
         contentBinding.historyDateJumpButton.setVisibility(View.GONE);
-        contentBinding.historyDateFastScroller.removeCallbacks(hideFastScrollerRunnable);
-        contentBinding.historyDateFastScroller.setVisibility(View.GONE);
+        hideFastScrollerImmediately();
         contentBinding.historyDateFastScroller.dismissBubble();
         if (itemsList != null) {
             itemsList.setVerticalScrollBarEnabled(true);
@@ -525,8 +521,7 @@ public class StatisticsPlaylistFragment
 
         dateFastScrollEnabled = chronological
                 && displayedHistory.size() >= MIN_FAST_SCROLL_ITEMS;
-        contentBinding.historyDateFastScroller.removeCallbacks(hideFastScrollerRunnable);
-        contentBinding.historyDateFastScroller.setVisibility(View.GONE);
+        hideFastScrollerImmediately();
         contentBinding.historyDateFastScroller.setItemCount(displayedHistory.size());
         itemsList.setVerticalScrollBarEnabled(!dateFastScrollEnabled);
 
@@ -542,8 +537,55 @@ public class StatisticsPlaylistFragment
         if (!dateFastScrollEnabled || contentBinding == null) {
             return;
         }
-        contentBinding.historyDateFastScroller.removeCallbacks(hideFastScrollerRunnable);
-        contentBinding.historyDateFastScroller.setVisibility(View.VISIBLE);
+        final HistoryDateFastScroller fastScroller =
+                contentBinding.historyDateFastScroller;
+        fastScroller.removeCallbacks(hideFastScrollerRunnable);
+        fastScroller.animate().cancel();
+        fastScroller.animate().withEndAction(null);
+        if (fastScroller.getVisibility() != View.VISIBLE) {
+            fastScroller.setAlpha(0f);
+            fastScroller.setVisibility(View.VISIBLE);
+        }
+        fastScroller.animate()
+                .alpha(1f)
+                .setDuration(FAST_SCROLL_FADE_IN_MILLIS)
+                .start();
+    }
+
+    private void hideFastScrollerAnimated() {
+        if (!dateFastScrollEnabled || contentBinding == null) {
+            return;
+        }
+        final HistoryDateFastScroller fastScroller =
+                contentBinding.historyDateFastScroller;
+        if (fastScroller.isDragging() || fastScroller.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        final FragmentPlaylistBinding bindingAtStart = contentBinding;
+        fastScroller.animate().cancel();
+        fastScroller.animate()
+                .alpha(0f)
+                .setDuration(FAST_SCROLL_FADE_OUT_MILLIS)
+                .withEndAction(() -> {
+                    if (contentBinding == bindingAtStart && !fastScroller.isDragging()) {
+                        fastScroller.setVisibility(View.GONE);
+                        fastScroller.setAlpha(1f);
+                    }
+                })
+                .start();
+    }
+
+    private void hideFastScrollerImmediately() {
+        if (contentBinding == null) {
+            return;
+        }
+        final HistoryDateFastScroller fastScroller =
+                contentBinding.historyDateFastScroller;
+        fastScroller.removeCallbacks(hideFastScrollerRunnable);
+        fastScroller.animate().cancel();
+        fastScroller.animate().withEndAction(null);
+        fastScroller.setAlpha(1f);
+        fastScroller.setVisibility(View.GONE);
     }
 
     private void scheduleFastScrollerHide() {
