@@ -292,12 +292,14 @@ public class DownloadManager {
         synchronized (this) {
             if (mission instanceof DownloadMission) {
                 mMissionsPending.remove(mission);
+                ((DownloadMission) mission).cancel(alsoDeleteFile);
             } else if (mission instanceof FinishedMission) {
                 mMissionsFinished.remove(mission);
                 mFinishedMissionStore.deleteMission(mission);
-            }
-
-            if (alsoDeleteFile) {
+                if (alsoDeleteFile) {
+                    mission.delete();
+                }
+            } else if (alsoDeleteFile) {
                 mission.delete();
             }
         }

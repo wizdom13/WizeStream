@@ -274,11 +274,19 @@ public class DownloadMission extends Mission {
     }
 
 
-    private void notify(int what) {
-        mHandler.obtainMessage(what, this).sendToTarget();
+    private void notify(final int what) {
+        if (deleted && what != DownloadManagerService.MESSAGE_DELETED) {
+            return;
+        }
+        if (mHandler != null) {
+            mHandler.obtainMessage(what, this).sendToTarget();
+        }
     }
 
-    synchronized void notifyProgress(long deltaLen) {
+    synchronized void notifyProgress(final long deltaLen) {
+        if (deleted) {
+            return;
+        }
         if (unknownLength) {
             length += deltaLen;// Update length before proceeding
         }
@@ -315,6 +323,9 @@ public class DownloadMission extends Mission {
     }
 
     public synchronized void notifyError(int code, Exception err) {
+        if (deleted) {
+            return;
+        }
         Log.e(TAG, "notifyError() code = " + code, err);
         if (err != null && err.getCause() instanceof ErrnoException) {
             int errno = ((ErrnoException) err.getCause()).errno;
@@ -362,6 +373,9 @@ public class DownloadMission extends Mission {
     }
 
     synchronized void notifyFinished() {
+        if (deleted) {
+            return;
+        }
         if (current < urls.length) {
             if (++finishCount < threads.length) return;
 
@@ -428,7 +442,7 @@ public class DownloadMission extends Mission {
      * Start downloading with multiple threads.
      */
     public void start() {
-        if (running || isFinished() || urls.length < 1) return;
+        if (deleted || running || isFinished() || urls.length < 1) return;
 
         // ensure that the previous state is completely paused.
         joinForThreads(10000);
@@ -521,22 +535,45 @@ public class DownloadMission extends Mission {
     }
 
     /**
-     * Removes the downloaded file and the meta file
+     * Stops this mission and removes its metadata, optionally deleting the partial file.
+     *
+     * @param alsoDeleteFile whether the partially downloaded output should also be removed
+     * @return whether all requested cleanup operations succeeded
      */
-    @Override
-    public boolean delete() {
+    public boolean cancel(final boolean alsoDeleteFile) {
+        if (deleted) {
+            return true;
+        }
+
+        deleted = true;
         running = false;
+        enqueued = false;
+
+        if (init != null) {
+            init.interrupt();
+        }
         for (final Thread thread : threads) {
             thread.interrupt();
         }
-        if (psAlgorithm != null) psAlgorithm.cleanupTemporalDir();
+        if (psAlgorithm != null) {
+            psAlgorithm.cleanupTemporalDir();
+        }
 
         notify(DownloadManagerService.MESSAGE_DELETED);
 
-        boolean res = deleteThisFromFile();
+        boolean result = deleteThisFromFile();
+        if (alsoDeleteFile && !super.delete()) {
+            result = false;
+        }
+        return result;
+    }
 
-        if (!super.delete()) return false;
-        return res;
+    /**
+     * Removes the downloaded file and the meta file.
+     */
+    @Override
+    public boolean delete() {
+        return cancel(true);
     }
 
 
@@ -755,9 +792,12 @@ public class DownloadMission extends Mission {
 
     private boolean deleteThisFromFile() {
         synchronized (LOCK) {
-            boolean res = metadata.delete();
+            if (metadata == null) {
+                return true;
+            }
+            final boolean result = metadata.delete();
             metadata = null;
-            return res;
+            return result;
         }
     }
 
