@@ -36,6 +36,7 @@ public final class HistoryDateFastScroller extends View {
     private final float thumbWidth;
     private final float thumbHeight;
     private final float verticalInset;
+    private final float edgeInset;
     private final int bubbleGap;
     private final int bubblePaddingHorizontal;
     private final int bubblePaddingVertical;
@@ -71,6 +72,7 @@ public final class HistoryDateFastScroller extends View {
         thumbWidth = dp(8);
         thumbHeight = dp(36);
         verticalInset = dp(18);
+        edgeInset = dp(8);
         bubbleGap = Math.round(dp(8));
         bubblePaddingHorizontal = Math.round(dp(16));
         bubblePaddingVertical = Math.round(dp(10));
@@ -137,7 +139,7 @@ public final class HistoryDateFastScroller extends View {
             return;
         }
 
-        final float centerX = getWidth() / 2f;
+        final float centerX = getTrackCenterX();
         final float top = verticalInset;
         final float bottom = Math.max(top, getHeight() - verticalInset);
         drawingRect.set(centerX - trackWidth / 2f, top,
@@ -251,6 +253,18 @@ public final class HistoryDateFastScroller extends View {
         }
     }
 
+    private float getTrackCenterX() {
+        return getTrackCenterXForLayoutDirection(getLayoutDirection());
+    }
+
+    float getTrackCenterXForLayoutDirection(final int layoutDirection) {
+        final float minimumCenter = thumbWidth / 2f;
+        final float insetCenter = Math.max(minimumCenter,
+                Math.min(edgeInset, getWidth() - minimumCenter));
+        return layoutDirection == LAYOUT_DIRECTION_RTL
+                ? insetCenter : getWidth() - insetCenter;
+    }
+
     private float getFraction() {
         return itemCount <= 1 ? 0f : position / (float) (itemCount - 1);
     }
@@ -289,9 +303,11 @@ public final class HistoryDateFastScroller extends View {
         getLocationOnScreen(location);
 
         final boolean rtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+        final float trackCenterX = getTrackCenterX();
         int x = rtl
-                ? location[0] + getWidth() + bubbleGap
-                : location[0] - bubbleWidth - bubbleGap;
+                ? Math.round(location[0] + trackCenterX + thumbWidth / 2f + bubbleGap)
+                : Math.round(location[0] + trackCenterX - thumbWidth / 2f
+                        - bubbleGap - bubbleWidth);
         final int screenWidth = getResources().getDisplayMetrics().widthPixels;
         x = Math.max(0, Math.min(x, screenWidth - bubbleWidth));
 
