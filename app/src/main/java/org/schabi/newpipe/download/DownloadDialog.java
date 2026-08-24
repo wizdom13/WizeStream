@@ -115,6 +115,8 @@ public class DownloadDialog extends DialogFragment
     int selectedAudioOutputIndex = 0;
     @State
     int selectedMp3BitrateIndex = 1;
+    @State
+    int muxedAudioFallbackVideoIndex = -1;
 
     private static final int AUDIO_OUTPUT_ORIGINAL = 0;
     private static final int AUDIO_OUTPUT_MP3 = 1;
@@ -175,11 +177,8 @@ public class DownloadDialog extends DialogFragment
 
         final List<AudioStream> audioStreams =
                 getStreamsOfSpecifiedDelivery(info.getAudioStreams(), PROGRESSIVE_HTTP);
-        final List<List<AudioStream>> groupedAudioStreams =
-                ListHelper.getGroupedAudioStreams(context, audioStreams);
-        this.wrappedAudioTracks = new AudioTracksWrapper(groupedAudioStreams, context);
-        this.selectedAudioTrackIndex =
-                ListHelper.getDefaultAudioTrackGroup(context, groupedAudioStreams);
+        final List<List<AudioStream>> groupedAudioStreams = new ArrayList<>(
+                ListHelper.getGroupedAudioStreams(context, audioStreams));
 
         // TODO: Adapt this code when the downloader support other types of stream deliveries
         final List<VideoStream> videoStreams = ListHelper.getSortedStreamVideosList(
@@ -189,8 +188,21 @@ public class DownloadDialog extends DialogFragment
                 false,
                 // If there are multiple languages available, prefer streams without audio
                 // to allow language selection
-                wrappedAudioTracks.size() > 1
+                groupedAudioStreams.size() > 1
         );
+
+        if (groupedAudioStreams.isEmpty()) {
+            muxedAudioFallbackVideoIndex =
+                    MuxedAudioFallbackPolicy.findFallbackVideoIndex(videoStreams);
+            if (muxedAudioFallbackVideoIndex >= 0) {
+                groupedAudioStreams.add(List.of(MuxedAudioFallbackPolicy.createFallbackAudioStream(
+                        videoStreams.get(muxedAudioFallbackVideoIndex))));
+            }
+        }
+
+        this.wrappedAudioTracks = new AudioTracksWrapper(groupedAudioStreams, context);
+        this.selectedAudioTrackIndex =
+                ListHelper.getDefaultAudioTrackGroup(context, groupedAudioStreams);
 
         this.wrappedVideoStreams = new StreamInfoWrapper<>(videoStreams, context);
         this.wrappedSubtitleStreams = new StreamInfoWrapper<>(
@@ -259,6 +271,8 @@ public class DownloadDialog extends DialogFragment
      */
     private void updateSecondaryStreams() {
         final StreamInfoWrapper<AudioStream> audioStreams = getWrappedAudioStreams();
+        final StreamInfoWrapper<AudioStream> secondaryAudioStreams = hasMuxedAudioFallback()
+                ? StreamInfoWrapper.empty() : audioStreams;
         final var secondaryStreams = new SparseArrayCompat<SecondaryStreamHelper<AudioStream>>(4);
         final List<VideoStream> videoStreams = wrappedVideoStreams.getStreamsList();
         wrappedVideoStreams.resetInfo();
@@ -268,10 +282,11 @@ public class DownloadDialog extends DialogFragment
                 continue;
             }
             final AudioStream audioStream = SecondaryStreamHelper.getAudioStreamFor(
-                    context, audioStreams.getStreamsList(), videoStreams.get(i));
+                    context, secondaryAudioStreams.getStreamsList(), videoStreams.get(i));
 
             if (audioStream != null) {
-                secondaryStreams.append(i, new SecondaryStreamHelper<>(audioStreams, audioStream));
+                secondaryStreams.append(i,
+                        new SecondaryStreamHelper<>(secondaryAudioStreams, audioStream));
             } else if (DEBUG) {
                 final MediaFormat mediaFormat = videoStreams.get(i).getFormat();
                 if (mediaFormat != null) {
@@ -457,7 +472,10 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.audioStreamSpinner.setVisibility(View.VISIBLE);
         dialogBinding.audioTrackSpinner.setVisibility(
                 wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
-        dialogBinding.audioTrackPresentInVideoText.setVisibility(View.GONE);
+        dialogBinding.audioTrackPresentInVideoText.setText(
+                R.string.audio_extracted_from_video_notice);
+        dialogBinding.audioTrackPresentInVideoText.setVisibility(
+                hasMuxedAudioFallback() ? View.VISIBLE : View.GONE);
         dialogBinding.audioOutputFormatLabel.setVisibility(View.VISIBLE);
         dialogBinding.audioOutputFormatSpinner.setVisibility(View.VISIBLE);
         updateMp3BitrateVisibility();
@@ -480,6 +498,7 @@ public class DownloadDialog extends DialogFragment
     private void onVideoStreamSelected() {
         final boolean isVideoOnly = videoStreamsAdapter.getItem(selectedVideoIndex).isVideoOnly();
 
+        dialogBinding.audioTrackPresentInVideoText.setText(R.string.audio_track_present_in_video);
         dialogBinding.audioTrackSpinner.setVisibility(
                 isVideoOnly && wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
         dialogBinding.audioTrackPresentInVideoText.setVisibility(
@@ -768,6 +787,17 @@ public class DownloadDialog extends DialogFragment
             return StreamInfoWrapper.empty();
         }
         return wrappedAudioTracks.getTracksList().get(selectedAudioTrackIndex);
+    }
+
+    private boolean hasMuxedAudioFallback() {
+        return muxedAudioFallbackVideoIndex >= 0
+                && muxedAudioFallbackVideoIndex < wrappedVideoStreams.getStreamsList().size();
+    }
+
+    @Nullable
+    private VideoStream getMuxedAudioFallbackSource() {
+        return hasMuxedAudioFallback()
+                ? wrappedVideoStreams.getStreamsList().get(muxedAudioFallbackVideoIndex) : null;
     }
 
     private int getSubtitleIndexBy(@NonNull final List<SubtitlesStream> streams) {
@@ -1109,6 +1139,7 @@ public class DownloadDialog extends DialogFragment
         }
 
         final Stream selectedStream;
+        final Stream recoveryStream;
         Stream secondaryStream = null;
         final char kind;
         int threads = dialogBinding.threads.getProgress() + 1;
@@ -1123,11 +1154,16 @@ public class DownloadDialog extends DialogFragment
         if (checkedRadioButtonId == R.id.audio_button) {
             kind = 'a';
             selectedStream = audioStreamsAdapter.getItem(selectedAudioIndex);
+            final VideoStream muxedAudioFallbackSource = getMuxedAudioFallbackSource();
+            recoveryStream = muxedAudioFallbackSource == null
+                    ? selectedStream : muxedAudioFallbackSource;
 
             if (Mp3DownloadPolicy.shouldTranscode(isMp3OutputSelected(),
                     selectedStream.getFormat())) {
                 psName = Postprocessing.ALGORITHM_MP3_FROM_AUDIO;
                 psArgs = new String[] {String.valueOf(getSelectedMp3Bitrate())};
+            } else if (muxedAudioFallbackSource != null) {
+                psName = Postprocessing.ALGORITHM_M4A_FROM_MP4_DEMUXER;
             } else if (selectedStream.getFormat() == MediaFormat.M4A) {
                 psName = Postprocessing.ALGORITHM_M4A_NO_DASH;
             } else if (selectedStream.getFormat() == MediaFormat.WEBMA_OPUS) {
@@ -1136,6 +1172,7 @@ public class DownloadDialog extends DialogFragment
         } else if (checkedRadioButtonId == R.id.video_button) {
             kind = 'v';
             selectedStream = videoStreamsAdapter.getItem(selectedVideoIndex);
+            recoveryStream = selectedStream;
 
             final SecondaryStreamHelper<AudioStream> secondary = videoStreamsAdapter
                     .getAllSecondary()
@@ -1163,6 +1200,7 @@ public class DownloadDialog extends DialogFragment
             threads = 1; // use unique thread for subtitles due small file size
             kind = 's';
             selectedStream = subtitleStreamsAdapter.getItem(selectedSubtitleIndex);
+            recoveryStream = selectedStream;
 
             if (selectedStream.getFormat() == MediaFormat.TTML) {
                 psName = Postprocessing.ALGORITHM_TTML_CONVERTER;
@@ -1179,7 +1217,7 @@ public class DownloadDialog extends DialogFragment
             urls = new String[] {
                     selectedStream.getContent()
             };
-            recoveryInfo = List.of(new MissionRecoveryInfo(selectedStream));
+            recoveryInfo = List.of(new MissionRecoveryInfo(recoveryStream));
         } else {
             if (secondaryStream.getDeliveryMethod() != PROGRESSIVE_HTTP) {
                 throw new IllegalArgumentException("Unsupported stream delivery format"
