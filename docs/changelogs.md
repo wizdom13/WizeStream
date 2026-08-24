@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Fixes
+
+- Stopped active or queued downloads immediately when their entries are deleted, while preserving
+  the previous state when the deletion is undone.
+
 ## WizeStream 1.10.0 (`1010000`)
 
 ### Fixes
