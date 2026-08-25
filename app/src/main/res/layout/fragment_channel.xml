@@ -7,7 +7,7 @@
 
     <!-- since ToolbarTheme sets the tint to icons, it would make images all white,
     therefore app:tint="@null" is used to undo that setting -->
-    <com.google.android.material.appbar.AppBarLayout
+    <org.schabi.newpipe.views.ChannelAppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,7 +19,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fitsSystemWindows="true"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+            android:visibility="gone"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed"
+            tools:visibility="visible">
 
             <ImageView
                 android:id="@+id/channel_banner_image"
@@ -131,7 +133,7 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.appbar.AppBarLayout>
+    </org.schabi.newpipe.views.ChannelAppBarLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
