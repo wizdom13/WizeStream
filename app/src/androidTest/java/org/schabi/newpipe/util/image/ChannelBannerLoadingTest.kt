@@ -33,7 +33,7 @@ class ChannelBannerLoadingTest {
         val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
         val views = inflateBannerViews(instrumentation, context)
         val invalidUrl = resourceUrl(context, 0)
-        val validUrl = resourceUrl(context, R.drawable.placeholder_channel_banner)
+        val validUrl = resourceUrl(context, R.drawable.ic_add)
 
         instrumentation.runOnMainSync {
             ImageStrategy.setPreferredImageQuality(PreferredImageQuality.MEDIUM)
