@@ -10,7 +10,6 @@ import coil3.imageLoader
 import coil3.request.Disposable
 import coil3.request.ImageRequest
 import coil3.request.error
-import coil3.request.listener
 import coil3.request.placeholder
 import coil3.request.target
 import coil3.request.transformations
