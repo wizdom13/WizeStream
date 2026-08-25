@@ -669,7 +669,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     public void showLoading() {
         super.showLoading();
         CoilUtils.dispose(binding.channelAvatarView);
-        CoilUtils.dispose(binding.channelBannerImage);
+        CoilHelper.INSTANCE.clearBanner(binding.channelBannerImage);
         CoilUtils.dispose(binding.subChannelAvatarView);
         animate(binding.channelSubscribeButton, false, 100);
     }
@@ -686,7 +686,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
             CoilHelper.INSTANCE.loadBanner(binding.channelBannerImage, result.getBanners());
         } else {
             // do not waste space for the banner, if the user disabled images or there is not one
-            CoilUtils.dispose(binding.channelBannerImage);
+            CoilHelper.INSTANCE.clearBanner(binding.channelBannerImage);
             binding.channelBannerImage.setImageDrawable(null);
             binding.channelBannerImage.setVisibility(View.GONE);
             binding.channelBannerContainer.setVisibility(View.GONE);
