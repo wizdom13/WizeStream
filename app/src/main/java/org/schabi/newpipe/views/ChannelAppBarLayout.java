@@ -46,12 +46,16 @@ public final class ChannelAppBarLayout extends AppBarLayout {
         super.onLayout(changed, left, top, right, bottom);
 
         final boolean bannerVisible = isBannerVisible();
-        if (bannerVisible && !bannerWasVisible) {
+        if (shouldExpandForBanner(bannerWasVisible, bannerVisible)) {
             // Run after this layout pass so AppBarLayout has already recomputed its scroll range
             // with the newly visible banner.
             post(() -> setExpanded(true, false));
         }
         bannerWasVisible = bannerVisible;
+    }
+
+    static boolean shouldExpandForBanner(final boolean wasVisible, final boolean isVisible) {
+        return !wasVisible && isVisible;
     }
 
     private boolean isBannerVisible() {
