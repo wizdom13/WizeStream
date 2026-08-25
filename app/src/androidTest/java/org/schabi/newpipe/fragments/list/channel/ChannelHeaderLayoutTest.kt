@@ -14,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.R
+import org.schabi.newpipe.views.ChannelAppBarLayout
 
 @RunWith(AndroidJUnit4::class)
 class ChannelHeaderLayoutTest {
@@ -42,9 +43,14 @@ class ChannelHeaderLayoutTest {
         val bannerContainer = root.findViewById<View>(R.id.channel_banner_container)
         val banner = root.findViewById<ImageView>(R.id.channel_banner_image)
 
+        assertTrue(appBar is ChannelAppBarLayout)
+        assertEquals(View.GONE, bannerContainer.visibility)
         measureAndLayout(root, widthPixels, heightPixels)
-        if (!showBanner) {
-            bannerContainer.visibility = View.GONE
+
+        if (showBanner) {
+            // Channel banners arrive asynchronously with ChannelInfo. Exercise the real transition
+            // from no reserved banner space to a newly visible, measured banner.
+            bannerContainer.visibility = View.VISIBLE
             measureAndLayout(root, widthPixels, heightPixels)
         }
 
