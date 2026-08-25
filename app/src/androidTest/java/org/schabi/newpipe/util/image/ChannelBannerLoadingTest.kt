@@ -17,6 +17,7 @@ import java.io.FileOutputStream
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,7 +78,7 @@ class ChannelBannerLoadingTest {
                 instrumentation.runOnMainSync {
                     assertEquals(View.GONE, views.banner.visibility)
                     assertEquals(View.GONE, views.container.visibility)
-                    assertEquals(null, views.banner.drawable)
+                    assertNull(views.banner.drawable)
                 }
             }
         } finally {
