@@ -100,7 +100,18 @@ object CoilHelper {
                 .listener(
                     onError = { _, _ ->
                         if (avatarRequestTokens[target] === requestToken) {
-                            loadAvatarCandidate(target, candidates, index + 1, requestToken)
+                            // Let Coil finish detaching the failed ViewTarget request before
+                            // attaching the fallback request to the same ImageView.
+                            target.post {
+                                if (avatarRequestTokens[target] === requestToken) {
+                                    loadAvatarCandidate(
+                                        target,
+                                        candidates,
+                                        index + 1,
+                                        requestToken
+                                    )
+                                }
+                            }
                         }
                     },
                     onSuccess = { _, _ ->
@@ -228,13 +239,20 @@ object CoilHelper {
                     },
                     onError = { _, _ ->
                         if (bannerRequestTokens[target] === requestToken) {
-                            loadBannerCandidate(
-                                target,
-                                container,
-                                candidates,
-                                index + 1,
-                                requestToken
-                            )
+                            // Coil clears a completed ViewTarget request after listener callbacks.
+                            // Retry on the next main-loop turn so that cleanup cannot dispose the
+                            // fallback request that is about to attach to this same ImageView.
+                            target.post {
+                                if (bannerRequestTokens[target] === requestToken) {
+                                    loadBannerCandidate(
+                                        target,
+                                        container,
+                                        candidates,
+                                        index + 1,
+                                        requestToken
+                                    )
+                                }
+                            }
                         }
                     },
                     onSuccess = { _, _ ->
