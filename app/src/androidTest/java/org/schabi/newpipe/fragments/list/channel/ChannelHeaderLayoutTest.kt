@@ -44,6 +44,7 @@ class ChannelHeaderLayoutTest {
         val banner = root.findViewById<ImageView>(R.id.channel_banner_image)
 
         assertTrue(appBar is ChannelAppBarLayout)
+        assertTrue(bannerContainer is FrameLayout)
         assertEquals(View.GONE, bannerContainer.visibility)
         measureAndLayout(root, widthPixels, heightPixels)
 
