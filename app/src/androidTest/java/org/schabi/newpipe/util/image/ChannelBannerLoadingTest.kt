@@ -2,26 +2,37 @@ package org.schabi.newpipe.util.image
 
 import android.app.Instrumentation
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.SystemClock
-import android.view.ContextThemeWrapper
-import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
+import java.io.FileOutputStream
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.schabi.newpipe.R
+import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.extractor.Image
 import org.schabi.newpipe.extractor.Image.ResolutionLevel
 
 @RunWith(AndroidJUnit4::class)
 class ChannelBannerLoadingTest {
+    @Before
+    fun enableImages() {
+        ImageStrategy.setPreferredImageQuality(PreferredImageQuality.MEDIUM)
+    }
+
     @After
     fun restoreImagePreference() {
         ImageStrategy.setPreferredImageQuality(PreferredImageQuality.MEDIUM)
@@ -30,77 +41,137 @@ class ChannelBannerLoadingTest {
     @Test
     fun failedPreferredBannerFallsBackBeforeRevealingContainer() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
-        val views = inflateBannerViews(instrumentation, context)
-        val invalidUrl = resourceUrl(context, 0)
-        val validUrl = resourceUrl(context, R.drawable.ic_add)
+        val context = instrumentation.targetContext
+        val validBanner = createTestBanner(context)
+        val missingBanner = File(context.cacheDir, "missing-banner-${System.nanoTime()}.png")
 
-        instrumentation.runOnMainSync {
-            ImageStrategy.setPreferredImageQuality(PreferredImageQuality.MEDIUM)
-            CoilHelper.loadBanner(
-                views.banner,
-                listOf(
-                    Image(invalidUrl, 250, 1000, ResolutionLevel.MEDIUM),
-                    Image(validUrl, 75, 300, ResolutionLevel.LOW)
-                )
-            )
+        try {
+            withAttachedBannerViews(instrumentation) { views ->
+                instrumentation.runOnMainSync {
+                    CoilHelper.loadBanner(
+                        views.banner,
+                        listOf(
+                            Image(
+                                missingBanner.toURI().toString(),
+                                250,
+                                1000,
+                                ResolutionLevel.MEDIUM
+                            ),
+                            Image(
+                                validBanner.toURI().toString(),
+                                75,
+                                300,
+                                ResolutionLevel.LOW
+                            )
+                        )
+                    )
 
-            assertEquals(View.GONE, views.banner.visibility)
-            assertEquals(View.GONE, views.container.visibility)
-        }
+                    assertEquals(View.GONE, views.banner.visibility)
+                    assertEquals(View.GONE, views.container.visibility)
+                }
 
-        waitForVisibility(instrumentation, views.container, View.VISIBLE)
-        instrumentation.runOnMainSync {
-            assertEquals(View.VISIBLE, views.banner.visibility)
-            assertNotNull(views.banner.drawable)
+                waitForVisibility(instrumentation, views.container, View.VISIBLE)
+                instrumentation.runOnMainSync {
+                    assertEquals(View.VISIBLE, views.banner.visibility)
+                    assertNotNull(views.banner.drawable)
+                }
+            }
+        } finally {
+            validBanner.delete()
         }
     }
 
     @Test
     fun failedBannerCandidatesLeaveNoReservedSpace() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
-        val views = inflateBannerViews(instrumentation, context)
+        val context = instrumentation.targetContext
+        val firstMissing = File(context.cacheDir, "missing-banner-a-${System.nanoTime()}.png")
+        val secondMissing = File(context.cacheDir, "missing-banner-b-${System.nanoTime()}.png")
 
-        instrumentation.runOnMainSync {
-            ImageStrategy.setPreferredImageQuality(PreferredImageQuality.MEDIUM)
-            CoilHelper.loadBanner(
-                views.banner,
-                listOf(
-                    Image(resourceUrl(context, 0), 250, 1000, ResolutionLevel.MEDIUM),
-                    Image(resourceUrl(context, -1), 75, 300, ResolutionLevel.LOW)
+        withAttachedBannerViews(instrumentation) { views ->
+            instrumentation.runOnMainSync {
+                CoilHelper.loadBanner(
+                    views.banner,
+                    listOf(
+                        Image(
+                            firstMissing.toURI().toString(),
+                            250,
+                            1000,
+                            ResolutionLevel.MEDIUM
+                        ),
+                        Image(
+                            secondMissing.toURI().toString(),
+                            75,
+                            300,
+                            ResolutionLevel.LOW
+                        )
+                    )
                 )
-            )
 
-            assertEquals(View.GONE, views.banner.visibility)
-            assertEquals(View.GONE, views.container.visibility)
-        }
+                assertEquals(View.GONE, views.banner.visibility)
+                assertEquals(View.GONE, views.container.visibility)
+            }
 
-        // Resource URI failures are local and immediate. Give both candidates time to complete and
-        // verify that the loader never replaces the missing banner with a visible placeholder.
-        SystemClock.sleep(500)
-        instrumentation.waitForIdleSync()
-        instrumentation.runOnMainSync {
-            assertEquals(View.GONE, views.banner.visibility)
-            assertEquals(View.GONE, views.container.visibility)
-            assertNull(views.banner.drawable)
+            // Local file failures are immediate. Give both candidates time to complete and verify
+            // that the loader never replaces the missing banner with a visible placeholder.
+            SystemClock.sleep(500)
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                assertEquals(View.GONE, views.banner.visibility)
+                assertEquals(View.GONE, views.container.visibility)
+                assertNull(views.banner.drawable)
+            }
         }
     }
 
-    private fun inflateBannerViews(
+    private fun withAttachedBannerViews(
         instrumentation: Instrumentation,
-        context: Context
-    ): BannerViews {
-        lateinit var views: BannerViews
-        instrumentation.runOnMainSync {
-            val root = LayoutInflater.from(context)
-                .inflate(R.layout.fragment_channel, FrameLayout(context), false)
-            views = BannerViews(
-                banner = root.findViewById(R.id.channel_banner_image),
-                container = root.findViewById(R.id.channel_banner_container)
-            )
+        block: (BannerViews) -> Unit
+    ) {
+        val targetContext = instrumentation.targetContext
+        val intent = Intent(targetContext, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
-        return views
+        val activity = instrumentation.startActivitySync(intent) as MainActivity
+
+        try {
+            lateinit var views: BannerViews
+            instrumentation.runOnMainSync {
+                val height = dpToPx(activity, 70)
+                val container = FrameLayout(activity)
+                val banner = ImageView(activity).apply {
+                    maxHeight = height
+                }
+                container.addView(
+                    banner,
+                    FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height)
+                )
+                activity.setContentView(container)
+                views = BannerViews(banner, container)
+            }
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                assertTrue(views.banner.isAttachedToWindow)
+            }
+            block(views)
+        } finally {
+            instrumentation.runOnMainSync {
+                activity.finish()
+            }
+            instrumentation.waitForIdleSync()
+        }
+    }
+
+    private fun createTestBanner(context: Context): File {
+        val file = File(context.cacheDir, "channel-banner-${System.nanoTime()}.png")
+        val bitmap = Bitmap.createBitmap(16, 8, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.BLACK)
+        }
+        FileOutputStream(file).use { stream ->
+            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream))
+        }
+        bitmap.recycle()
+        return file
     }
 
     private fun waitForVisibility(
@@ -124,8 +195,8 @@ class ChannelBannerLoadingTest {
         assertEquals(expectedVisibility, visibility)
     }
 
-    private fun resourceUrl(context: Context, resourceId: Int): String {
-        return "android.resource://${context.packageName}/$resourceId"
+    private fun dpToPx(context: Context, dp: Int): Int {
+        return (dp * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
     }
 
     private data class BannerViews(
