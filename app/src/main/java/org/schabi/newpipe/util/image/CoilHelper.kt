@@ -30,7 +30,6 @@ import org.schabi.newpipe.ktx.scale
 object CoilHelper {
     private val TAG = CoilHelper::class.java.simpleName
     private val avatarRequestTokens = Collections.synchronizedMap(WeakHashMap<ImageView, Any>())
-    private val bannerRequestTokens = Collections.synchronizedMap(WeakHashMap<ImageView, Any>())
 
     @JvmOverloads
     fun loadBitmapBlocking(
@@ -194,93 +193,17 @@ object CoilHelper {
         target: ImageView,
         images: List<Image>
     ) {
-        val container = target.parent as? View
-        val candidates = bannerCandidateUrls(images)
-        val requestToken = Any()
-        bannerRequestTokens[target] = requestToken
-
-        // Cancel any older ImageView request before starting the new banner. The token is replaced
-        // first so a late cancellation callback from the older request cannot hide the new one.
         CoilUtils.dispose(target)
-        hideBanner(target, container)
-        loadBannerCandidate(target, container, candidates, 0, requestToken)
+        target.visibility = View.VISIBLE
+        (target.parent as? View)?.visibility = View.VISIBLE
+        loadImageDefault(target, images, R.drawable.placeholder_channel_banner)
     }
 
     fun clearBanner(target: ImageView) {
-        // Invalidate callbacks before disposing the active request. Coil may deliver cancellation
-        // after a replacement request has already started on the same ImageView.
-        bannerRequestTokens[target] = Any()
         CoilUtils.dispose(target)
-        hideBanner(target, target.parent as? View)
-    }
-
-    private fun loadBannerCandidate(
-        target: ImageView,
-        container: View?,
-        candidates: List<String>,
-        index: Int,
-        requestToken: Any
-    ) {
-        if (bannerRequestTokens[target] !== requestToken) {
-            return
-        }
-
-        val url = candidates.getOrNull(index)
-        if (url == null) {
-            bannerRequestTokens.remove(target)
-            hideBanner(target, container)
-            return
-        }
-
-        val request =
-            getImageRequest(target.context, url, R.drawable.placeholder_channel_banner)
-                // The banner stays GONE until decoding succeeds, so do not rely on the hidden
-                // ImageView's measured size. Decode only to the width/max-height it will display.
-                .size(bannerRequestSize(target))
-                .target(target)
-                .listener(
-                    onError = { _, _ ->
-                        if (bannerRequestTokens[target] === requestToken) {
-                            // Coil clears a completed ViewTarget request after listener callbacks.
-                            // Retry on the next main-loop turn so that cleanup cannot dispose the
-                            // fallback request that is about to attach to this same ImageView.
-                            target.post {
-                                if (bannerRequestTokens[target] === requestToken) {
-                                    loadBannerCandidate(
-                                        target,
-                                        container,
-                                        candidates,
-                                        index + 1,
-                                        requestToken
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    onSuccess = { _, _ ->
-                        if (bannerRequestTokens[target] === requestToken) {
-                            bannerRequestTokens.remove(target)
-                            target.visibility = View.VISIBLE
-                            container?.visibility = View.VISIBLE
-                        }
-                    }
-                ).build()
-        target.context.imageLoader.enqueue(request)
-    }
-
-    private fun bannerRequestSize(target: ImageView): Size {
-        val displayWidth = target.resources.displayMetrics.widthPixels.coerceAtLeast(1)
-        val width = target.width.takeIf { it > 0 } ?: displayWidth
-        val height = target.maxHeight
-            .takeIf { it > 0 && it < Int.MAX_VALUE }
-            ?: width
-        return Size(width, height)
-    }
-
-    private fun hideBanner(target: ImageView, container: View?) {
         target.setImageDrawable(null)
         target.visibility = View.GONE
-        container?.visibility = View.GONE
+        (target.parent as? View)?.visibility = View.GONE
     }
 
     fun loadPlaylistThumbnail(
@@ -344,8 +267,6 @@ object CoilHelper {
 }
 
 internal fun avatarCandidateUrls(images: List<Image>): List<String> = imageCandidateUrls(images)
-
-internal fun bannerCandidateUrls(images: List<Image>): List<String> = imageCandidateUrls(images)
 
 private fun imageCandidateUrls(images: List<Image>): List<String> {
     if (!ImageStrategy.shouldLoadImages()) {
