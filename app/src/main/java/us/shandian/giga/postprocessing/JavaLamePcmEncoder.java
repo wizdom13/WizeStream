@@ -10,13 +10,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 final class JavaLamePcmEncoder implements Closeable {
-    private static final int QUALITY = 5;
-    private static final int SAMPLES_PER_CHUNK = 8_192;
+    private static final int QUALITY = 7;
+    private static final int SAMPLES_PER_CHUNK = 32_768;
 
     private final int channels;
     private final Lame lame;
     private final OutputStream output;
     private final byte[] encoded = new byte[SAMPLES_PER_CHUNK * 5 / 4 + 7_200];
+    private final float[] left = new float[SAMPLES_PER_CHUNK];
+    private final float[] right = new float[SAMPLES_PER_CHUNK];
 
     JavaLamePcmEncoder(final int sampleRate,
                        final int channels,
@@ -31,13 +33,12 @@ final class JavaLamePcmEncoder implements Closeable {
         lame.getFlags().setInNumChannels(channels);
         lame.getFlags().setInSampleRate(sampleRate);
         if (sampleRate < 32_000) {
-            // MPEG-1 supports the complete 128-320 kbps range; LAME performs the resampling.
             lame.getFlags().setOutSampleRate(32_000);
         }
         lame.getFlags().setMode(channels == 1 ? MPEGMode.MONO : MPEGMode.JOINT_STEREO);
         lame.getFlags().setBitRate(bitrateKbps);
         lame.getFlags().setQuality(QUALITY);
-        lame.getFlags().setFindReplayGain(true);
+        lame.getFlags().setFindReplayGain(false);
         lame.getFlags().setWriteId3tagAutomatic(false);
         lame.getId3().init(lame.getFlags());
         final int result = lame.initParams();
@@ -53,8 +54,6 @@ final class JavaLamePcmEncoder implements Closeable {
         int framesRemaining = frameCount;
         while (framesRemaining > 0) {
             final int frames = Math.min(framesRemaining, SAMPLES_PER_CHUNK);
-            final float[] left = new float[frames];
-            final float[] right = new float[frames];
             for (int i = 0; i < frames; i++) {
                 left[i] = pcm.getShort() * 65_536.0f;
                 right[i] = channels == 2 ? pcm.getShort() * 65_536.0f : left[i];
