@@ -4,13 +4,23 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.10.1 (`1010001`)
+
+### Improvements
+
+- Sped up MP3 encoding while retaining the selected output quality.
+- Kept caption controls accessible on small screens.
+
 ### Fixes
 
 - Restored audio downloads when only muxed MP4 streams are available and made the download dialog
   fit its content while remaining scrollable on smaller screens.
-
 - Stopped active or queued downloads immediately when their entries are deleted, while preserving
   the previous state when the deletion is undone.
+- Restored channel avatars and banner artwork, including reliable banner rendering inside the
+  collapsible channel header.
+
+[View the complete changes since v1.10.0](https://github.com/wizdom13/WizeStream/compare/v1.10.0...v1.10.1)
 
 ## WizeStream 1.10.0 (`1010000`)
 

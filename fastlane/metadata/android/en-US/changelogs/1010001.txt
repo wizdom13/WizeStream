@@ -1,0 +1,4 @@
+• Restored channel avatars and banner artwork.
+• Restored audio downloads when only muxed MP4 streams are available.
+• Stopped deleted downloads immediately while preserving Undo behavior.
+• Improved MP3 encoding speed and caption accessibility on small screens.
