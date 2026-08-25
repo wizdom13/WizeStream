@@ -2,6 +2,7 @@ package org.schabi.newpipe.util.image
 
 import android.app.Instrumentation
 import android.content.Context
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -10,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.core.widget.ImageViewCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
@@ -46,7 +48,14 @@ class ChannelBannerLoadingTest {
         try {
             withAttachedBannerViews(instrumentation) { views ->
                 instrumentation.runOnMainSync {
+                    ImageViewCompat.setImageTintList(
+                        views.banner,
+                        ColorStateList.valueOf(Color.MAGENTA)
+                    )
+                    views.banner.setColorFilter(Color.CYAN)
                     CoilHelper.loadBanner(views.banner, listOf(testImage(validBanner)))
+                    assertNull(ImageViewCompat.getImageTintList(views.banner))
+                    assertNull(views.banner.colorFilter)
                 }
 
                 waitForDrawable(instrumentation, views.banner)
