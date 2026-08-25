@@ -14,11 +14,10 @@
         android:theme="@style/ToolbarTheme"
         app:elevation="0dp">
 
-        <org.schabi.newpipe.views.CustomCollapsingToolbarLayout
+        <FrameLayout
             android:id="@+id/channel_banner_container"
             android:layout_width="match_parent"
             android:layout_height="70dp"
-            android:fitsSystemWindows="true"
             android:visibility="gone"
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             tools:visibility="visible">
@@ -29,11 +28,10 @@
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 android:src="@drawable/placeholder_channel_banner"
-                app:layout_collapseMode="parallax"
                 android:tint="@null"
                 app:tint="@null"
                 tools:ignore="ContentDescription" />
-        </org.schabi.newpipe.views.CustomCollapsingToolbarLayout>
+        </FrameLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/channel_metadata_row"
