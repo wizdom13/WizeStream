@@ -3,6 +3,7 @@ package org.schabi.newpipe.util.image
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.View
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import coil3.executeBlocking
@@ -29,6 +30,7 @@ import org.schabi.newpipe.ktx.scale
 object CoilHelper {
     private val TAG = CoilHelper::class.java.simpleName
     private val avatarRequestTokens = Collections.synchronizedMap(WeakHashMap<ImageView, Any>())
+    private val bannerRequestTokens = Collections.synchronizedMap(WeakHashMap<ImageView, Any>())
 
     @JvmOverloads
     fun loadBitmapBlocking(
@@ -181,7 +183,84 @@ object CoilHelper {
         target: ImageView,
         images: List<Image>
     ) {
-        loadImageDefault(target, images, R.drawable.placeholder_channel_banner)
+        val container = target.parent as? View
+        val candidates = bannerCandidateUrls(images)
+        val requestToken = Any()
+        bannerRequestTokens[target] = requestToken
+
+        // Cancel any older ImageView request before starting the new banner. The token is replaced
+        // first so a late cancellation callback from the older request cannot hide the new one.
+        CoilUtils.dispose(target)
+        hideBanner(target, container)
+        loadBannerCandidate(target, container, candidates, 0, requestToken)
+    }
+
+    private fun loadBannerCandidate(
+        target: ImageView,
+        container: View?,
+        candidates: List<String>,
+        index: Int,
+        requestToken: Any
+    ) {
+        if (bannerRequestTokens[target] !== requestToken) {
+            return
+        }
+
+        val url = candidates.getOrNull(index)
+        if (url == null) {
+            bannerRequestTokens.remove(target)
+            hideBanner(target, container)
+            return
+        }
+
+        val request =
+            getImageRequest(target.context, url, R.drawable.placeholder_channel_banner)
+                // The banner stays GONE until decoding succeeds, so do not rely on the hidden
+                // ImageView's measured size. Decode only to the width/max-height it will display.
+                .size(bannerRequestSize(target))
+                .target(target)
+                .listener(
+                    onCancel = {
+                        if (bannerRequestTokens[target] === requestToken) {
+                            bannerRequestTokens.remove(target)
+                            hideBanner(target, container)
+                        }
+                    },
+                    onError = { _, _ ->
+                        if (bannerRequestTokens[target] === requestToken) {
+                            loadBannerCandidate(
+                                target,
+                                container,
+                                candidates,
+                                index + 1,
+                                requestToken
+                            )
+                        }
+                    },
+                    onSuccess = { _, _ ->
+                        if (bannerRequestTokens[target] === requestToken) {
+                            bannerRequestTokens.remove(target)
+                            target.visibility = View.VISIBLE
+                            container?.visibility = View.VISIBLE
+                        }
+                    }
+                ).build()
+        target.context.imageLoader.enqueue(request)
+    }
+
+    private fun bannerRequestSize(target: ImageView): Size {
+        val displayWidth = target.resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val width = target.width.takeIf { it > 0 } ?: displayWidth
+        val height = target.maxHeight
+            .takeIf { it > 0 && it < Int.MAX_VALUE }
+            ?: width
+        return Size(width, height)
+    }
+
+    private fun hideBanner(target: ImageView, container: View?) {
+        target.setImageDrawable(null)
+        target.visibility = View.GONE
+        container?.visibility = View.GONE
     }
 
     fun loadPlaylistThumbnail(
@@ -244,7 +323,11 @@ object CoilHelper {
     }
 }
 
-internal fun avatarCandidateUrls(images: List<Image>): List<String> {
+internal fun avatarCandidateUrls(images: List<Image>): List<String> = imageCandidateUrls(images)
+
+internal fun bannerCandidateUrls(images: List<Image>): List<String> = imageCandidateUrls(images)
+
+private fun imageCandidateUrls(images: List<Image>): List<String> {
     if (!ImageStrategy.shouldLoadImages()) {
         return emptyList()
     }
