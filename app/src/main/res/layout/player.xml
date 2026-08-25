@@ -284,186 +284,194 @@
 
                 </LinearLayout>
 
-                <LinearLayout
+                <HorizontalScrollView
                     android:id="@+id/secondaryControls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="top"
+                    android:fillViewport="true"
+                    android:overScrollMode="ifContentScrolls"
+                    android:scrollbars="none"
                     android:visibility="invisible"
                     tools:ignore="RtlHardcoded"
                     tools:visibility="visible">
 
-                    <org.schabi.newpipe.views.NewPipeTextView
-                        android:id="@+id/resizeTextView"
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:gravity="center"
-                        android:minWidth="50dp"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:textColor="@android:color/white"
-                        android:textStyle="bold"
-                        tools:ignore="HardcodedText,RtlHardcoded"
-                        tools:text="FIT" />
-
-                    <FrameLayout
-                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="3">
+                        android:gravity="top"
+                        android:orientation="horizontal">
 
                         <org.schabi.newpipe.views.NewPipeTextView
-                            android:id="@+id/captionTextView"
+                            android:id="@+id/resizeTextView"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_height="35dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackground"
-                            android:ellipsize="end"
-                            android:gravity="center|left"
-                            android:lines="1"
+                            android:gravity="center"
                             android:minWidth="50dp"
-                            android:minHeight="35dp"
                             android:padding="@dimen/player_main_buttons_padding"
                             android:textColor="@android:color/white"
                             android:textStyle="bold"
-                            tools:ignore="RelativeOverlap,RtlHardcoded"
-                            tools:text="English" />
+                            tools:ignore="HardcodedText,RtlHardcoded"
+                            tools:text="FIT" />
 
-                    </FrameLayout>
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/playWithKodi"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/play_with_kodi_title"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/ic_cast"
-                        app:tint="@color/white"
-                        tools:ignore="RtlHardcoded" />
+                            <org.schabi.newpipe.views.NewPipeTextView
+                                android:id="@+id/captionTextView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:background="?attr/selectableItemBackground"
+                                android:ellipsize="end"
+                                android:gravity="center|left"
+                                android:lines="1"
+                                android:minWidth="50dp"
+                                android:minHeight="35dp"
+                                android:padding="@dimen/player_main_buttons_padding"
+                                android:textColor="@android:color/white"
+                                android:textStyle="bold"
+                                tools:ignore="RelativeOverlap,RtlHardcoded"
+                                tools:text="English" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/openInBrowser"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/open_in_browser"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/ic_language"
-                        app:tint="@color/white"
-                        tools:ignore="RtlHardcoded" />
+                        </FrameLayout>
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/share"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/share"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/ic_share"
-                        app:tint="@color/white"
-                        tools:ignore="RtlHardcoded" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/playWithKodi"
+                            android:layout_width="wrap_content"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/play_with_kodi_title"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/ic_cast"
+                            app:tint="@color/white"
+                            tools:ignore="RtlHardcoded" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/learningNoteButton"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/learning_note_add"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_edit"
-                        android:visibility="gone"
-                        app:tint="@color/white" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/openInBrowser"
+                            android:layout_width="wrap_content"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/open_in_browser"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/ic_language"
+                            app:tint="@color/white"
+                            tools:ignore="RtlHardcoded" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/sleepTimerButton"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/sleep_timer"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_sleep_timer"
-                        app:tint="@color/white" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/share"
+                            android:layout_width="wrap_content"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/share"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/ic_share"
+                            app:tint="@color/white"
+                            tools:ignore="RtlHardcoded" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/equalizerButton"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/equalizer"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_equalizer"
-                        app:tint="@color/white" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/learningNoteButton"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/learning_note_add"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_edit"
+                            android:visibility="gone"
+                            app:tint="@color/white" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/listenModeButton"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/enter_listen_mode"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_waveform"
-                        app:tint="@color/white" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/sleepTimerButton"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/sleep_timer"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_sleep_timer"
+                            app:tint="@color/white" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/switchMute"
-                        android:layout_width="wrap_content"
-                        android:layout_height="37dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/mute"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/ic_volume_off"
-                        app:tint="@color/white"
-                        tools:ignore="RtlHardcoded" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/equalizerButton"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/equalizer"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_equalizer"
+                            app:tint="@color/white" />
 
-                    <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/fullScreenButton"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:clickable="true"
-                        android:contentDescription="@string/toggle_fullscreen"
-                        android:focusable="true"
-                        android:padding="@dimen/player_main_buttons_padding"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_fullscreen"
-                        android:visibility="gone"
-                        app:tint="@color/white"
-                        tools:ignore="RtlHardcoded"
-                        tools:visibility="visible" />
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/listenModeButton"
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/enter_listen_mode"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_waveform"
+                            app:tint="@color/white" />
 
-                </LinearLayout>
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/switchMute"
+                            android:layout_width="wrap_content"
+                            android:layout_height="37dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/mute"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/ic_volume_off"
+                            app:tint="@color/white"
+                            tools:ignore="RtlHardcoded" />
+
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/fullScreenButton"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/toggle_fullscreen"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_buttons_padding"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_fullscreen"
+                            android:visibility="gone"
+                            app:tint="@color/white"
+                            tools:ignore="RtlHardcoded"
+                            tools:visibility="visible" />
+
+                    </LinearLayout>
+                </HorizontalScrollView>
 
                 <org.schabi.newpipe.views.NewPipeTextView
                     android:id="@+id/sleepTimerCountdown"
