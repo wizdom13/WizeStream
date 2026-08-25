@@ -63,6 +63,8 @@ class ChannelHeaderLayoutTest {
         if (showBanner) {
             assertVisibleAndMeasured(banner)
             assertVisibleAndMeasured(bannerContainer)
+            assertEquals(ImageView.ScaleType.CENTER_CROP, banner.scaleType)
+            assertEquals(bannerContainer.height, banner.height)
             assertTrue(metadataRow.top >= bannerContainer.bottom)
         } else {
             assertEquals(View.GONE, bannerContainer.visibility)
