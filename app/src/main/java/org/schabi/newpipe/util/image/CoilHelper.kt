@@ -206,6 +206,14 @@ object CoilHelper {
         loadBannerCandidate(target, container, candidates, 0, requestToken)
     }
 
+    fun clearBanner(target: ImageView) {
+        // Invalidate callbacks before disposing the active request. Coil may deliver cancellation
+        // after a replacement request has already started on the same ImageView.
+        bannerRequestTokens[target] = Any()
+        CoilUtils.dispose(target)
+        hideBanner(target, target.parent as? View)
+    }
+
     private fun loadBannerCandidate(
         target: ImageView,
         container: View?,
@@ -231,12 +239,6 @@ object CoilHelper {
                 .size(bannerRequestSize(target))
                 .target(target)
                 .listener(
-                    onCancel = {
-                        if (bannerRequestTokens[target] === requestToken) {
-                            bannerRequestTokens.remove(target)
-                            hideBanner(target, container)
-                        }
-                    },
                     onError = { _, _ ->
                         if (bannerRequestTokens[target] === requestToken) {
                             // Coil clears a completed ViewTarget request after listener callbacks.
