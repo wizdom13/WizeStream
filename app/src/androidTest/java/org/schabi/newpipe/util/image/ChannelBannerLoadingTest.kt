@@ -124,6 +124,42 @@ class ChannelBannerLoadingTest {
         }
     }
 
+    @Test
+    fun clearingActiveBannerPreventsLateRequestFromRevealingIt() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val validBanner = createTestBanner(context)
+
+        try {
+            withAttachedBannerViews(instrumentation) { views ->
+                instrumentation.runOnMainSync {
+                    CoilHelper.loadBanner(
+                        views.banner,
+                        listOf(
+                            Image(
+                                validBanner.toURI().toString(),
+                                250,
+                                1000,
+                                ResolutionLevel.MEDIUM
+                            )
+                        )
+                    )
+                    CoilHelper.clearBanner(views.banner)
+                }
+
+                SystemClock.sleep(500)
+                instrumentation.waitForIdleSync()
+                instrumentation.runOnMainSync {
+                    assertEquals(View.GONE, views.banner.visibility)
+                    assertEquals(View.GONE, views.container.visibility)
+                    assertNull(views.banner.drawable)
+                }
+            }
+        } finally {
+            validBanner.delete()
+        }
+    }
+
     private fun withAttachedBannerViews(
         instrumentation: Instrumentation,
         block: (BannerViews) -> Unit
