@@ -24,10 +24,12 @@ class PlayerSecondaryControlsLayoutTest {
             val root = LayoutInflater.from(context)
                 .inflate(R.layout.player, FrameLayout(context), false)
 
+            val playbackControlRoot = root.findViewById<View>(R.id.playbackControlRoot)
             val secondaryControls =
                 root.findViewById<HorizontalScrollView>(R.id.secondaryControls)
             val caption = root.findViewById<View>(R.id.captionTextView)
 
+            playbackControlRoot.visibility = View.VISIBLE
             secondaryControls.visibility = View.VISIBLE
             caption.visibility = View.VISIBLE
 
@@ -65,6 +67,7 @@ class PlayerSecondaryControlsLayoutTest {
         root.layout(0, 0, root.measuredWidth, root.measuredHeight)
     }
 
-    private fun dp(context: Context, value: Int): Int =
-        (value * context.resources.displayMetrics.density).toInt()
+    private fun dp(context: Context, value: Int): Int {
+        return (value * context.resources.displayMetrics.density).toInt()
+    }
 }
