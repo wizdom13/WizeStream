@@ -2,8 +2,8 @@ package org.schabi.newpipe.util.image
 
 import android.app.Instrumentation
 import android.content.Context
-import android.content.res.ColorStateList
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.SystemClock
