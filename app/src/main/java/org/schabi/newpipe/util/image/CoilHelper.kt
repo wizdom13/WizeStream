@@ -18,6 +18,8 @@ import coil3.target.Target
 import coil3.toBitmap
 import coil3.transform.Transformation
 import coil3.util.CoilUtils
+import java.util.Collections
+import java.util.WeakHashMap
 import kotlin.math.min
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
@@ -26,6 +28,7 @@ import org.schabi.newpipe.ktx.scale
 
 object CoilHelper {
     private val TAG = CoilHelper::class.java.simpleName
+    private val avatarRequestTokens = Collections.synchronizedMap(WeakHashMap<ImageView, Any>())
 
     @JvmOverloads
     fun loadBitmapBlocking(
@@ -41,13 +44,19 @@ object CoilHelper {
         target: ImageView,
         images: List<Image>
     ) {
-        loadImageDefault(target, images, R.drawable.placeholder_person)
+        val candidates = avatarCandidateUrls(images)
+        val requestToken = Any()
+        avatarRequestTokens[target] = requestToken
+        CoilUtils.dispose(target)
+        target.setImageResource(R.drawable.placeholder_person)
+        loadAvatarCandidate(target, candidates, 0, requestToken)
     }
 
     fun loadAvatar(
         target: ImageView,
         url: String?
     ) {
+        clearAvatar(target)
         loadImageDefault(target, url, R.drawable.placeholder_person)
     }
 
@@ -61,8 +70,44 @@ object CoilHelper {
     }
 
     fun clearAvatar(target: ImageView) {
+        avatarRequestTokens[target] = Any()
         CoilUtils.dispose(target)
         target.setImageResource(R.drawable.placeholder_person)
+    }
+
+    private fun loadAvatarCandidate(
+        target: ImageView,
+        candidates: List<String>,
+        index: Int,
+        requestToken: Any
+    ) {
+        if (avatarRequestTokens[target] !== requestToken) {
+            return
+        }
+
+        val url = candidates.getOrNull(index)
+        if (url == null) {
+            target.setImageResource(R.drawable.placeholder_person)
+            avatarRequestTokens.remove(target)
+            return
+        }
+
+        val request =
+            getImageRequest(target.context, url, R.drawable.placeholder_person)
+                .target(target)
+                .listener(
+                    onError = { _, _ ->
+                        if (avatarRequestTokens[target] === requestToken) {
+                            loadAvatarCandidate(target, candidates, index + 1, requestToken)
+                        }
+                    },
+                    onSuccess = { _, _ ->
+                        if (avatarRequestTokens[target] === requestToken) {
+                            avatarRequestTokens.remove(target)
+                        }
+                    }
+                ).build()
+        target.context.imageLoader.enqueue(request)
     }
 
     fun loadThumbnail(
@@ -197,6 +242,20 @@ object CoilHelper {
                 }
             }
     }
+}
+
+internal fun avatarCandidateUrls(images: List<Image>): List<String> {
+    if (!ImageStrategy.shouldLoadImages()) {
+        return emptyList()
+    }
+
+    val preferred = ImageStrategy.choosePreferredImage(images)
+    return buildList {
+        preferred?.trim()?.takeIf(String::isNotEmpty)?.let(::add)
+        images.forEach { image ->
+            image.url.trim().takeIf(String::isNotEmpty)?.let(::add)
+        }
+    }.distinct()
 }
 
 internal fun normalizeCommentAvatarUrl(url: String?): String? {

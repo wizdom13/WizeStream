@@ -55,7 +55,7 @@ class ChannelHeaderLayoutTest {
         }
 
         val metadataRow = root.findViewById<View>(R.id.channel_metadata_row)
-        val avatar = root.findViewById<View>(R.id.channel_avatar_view)
+        val avatar = root.findViewById<ImageView>(R.id.channel_avatar_view)
         val title = root.findViewById<View>(R.id.channel_title_view)
         val subscriberCount = root.findViewById<View>(R.id.channel_subscriber_view)
         val subscribeButton = root.findViewById<View>(R.id.channel_subscribe_button)
@@ -74,6 +74,7 @@ class ChannelHeaderLayoutTest {
         assertTrue(appBar.totalScrollRange <= bannerContainer.height)
         assertTrue(appBar.height - appBar.totalScrollRange >= metadataRow.height)
         assertTrue(metadataRow.bottom <= appBar.height)
+        assertEquals(ImageView.ScaleType.CENTER_CROP, avatar.scaleType)
 
         listOf(avatar, title, subscriberCount, subscribeButton).forEach {
             assertVisibleAndMeasured(it)
