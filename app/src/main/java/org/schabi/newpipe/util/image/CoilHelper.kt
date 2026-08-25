@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
+import androidx.core.widget.ImageViewCompat
 import coil3.executeBlocking
 import coil3.imageLoader
 import coil3.request.Disposable
@@ -194,6 +195,8 @@ object CoilHelper {
         images: List<Image>
     ) {
         CoilUtils.dispose(target)
+        ImageViewCompat.setImageTintList(target, null)
+        target.clearColorFilter()
         target.visibility = View.VISIBLE
         (target.parent as? View)?.visibility = View.VISIBLE
         loadImageDefault(target, images, R.drawable.placeholder_channel_banner)
