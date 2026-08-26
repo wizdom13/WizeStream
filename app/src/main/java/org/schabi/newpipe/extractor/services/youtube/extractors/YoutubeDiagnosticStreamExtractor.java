@@ -65,6 +65,8 @@ public final class YoutubeDiagnosticStreamExtractor
                 "androidStreamingData", requestedVideoId);
         appendClient(summary, "ios", "iosPlayerResponse",
                 "iosStreamingData", requestedVideoId);
+        appendClient(summary, "visionos", "visionOsPlayerResponse",
+                "visionOsStreamingData", requestedVideoId);
         appendClient(summary, "safari", "safariPlayerResponse",
                 "safariStreamingData", requestedVideoId);
         appendClient(summary, "tvhtml5", "tvHtml5EmbedPlayerResponse",
