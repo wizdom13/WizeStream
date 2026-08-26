@@ -166,6 +166,11 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+// Room writes one schema file per database version, so new schemas must not be exported concurrently.
+tasks.matching { it.name == "kspReleaseKotlin" }.configureEach {
+    mustRunAfter("kspDebugKotlin")
+}
+
 wire {
     java {
     }
