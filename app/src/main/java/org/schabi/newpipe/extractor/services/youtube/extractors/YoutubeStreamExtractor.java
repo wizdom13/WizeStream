@@ -1356,7 +1356,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             throws IOException, ExtractionException {
 
         final String videoId = getId();
-        final Localization localization = new Localization("en");
+        final Localization localization = getExtractorLocalization();
         final ContentCountry contentCountry = getExtractorContentCountry();
 
         errors.clear();
