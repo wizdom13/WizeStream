@@ -125,6 +125,9 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
         NOT EXISTS (SELECT 1 FROM stream_history sh
         WHERE sh.stream_id = streams.uid)
 
+        AND NOT EXISTS (SELECT 1 FROM stream_state ss
+        WHERE ss.stream_id = streams.uid)
+
         AND NOT EXISTS (SELECT 1 FROM playlist_stream_join ps
         WHERE ps.stream_id = streams.uid)
 
