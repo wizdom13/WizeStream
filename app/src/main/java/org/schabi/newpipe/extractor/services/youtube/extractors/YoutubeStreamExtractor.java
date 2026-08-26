@@ -1356,7 +1356,10 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             throws IOException, ExtractionException {
 
         final String videoId = getId();
-        final Localization localization = getExtractorLocalization();
+        // InnerTube's hl parameter is a language code, while the content country is sent as gl.
+        // Passing Android's regional locale (for example en-AE) can produce unrelated localized
+        // playability responses, so keep player requests in English and preserve the selected gl.
+        final Localization localization = new Localization("en");
         final ContentCountry contentCountry = getExtractorContentCountry();
 
         errors.clear();
@@ -1375,17 +1378,23 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         playerCaptionsTracklistRenderer = null;
         streamType = null;
 
+        // Match upstream NewPipe's request ordering: complete the VISIONOS visitor/player
+        // exchange before starting other InnerTube clients. Concurrent client requests can cause
+        // YouTube to reject an otherwise valid anonymous VISIONOS request.
+        tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId);
+        boolean playableResponseSelected = selectPlayablePlayerResponse(videoId);
+
         CancellableCall webPageCall = YoutubeParsingHelper.getWebPlayerResponse(
                 localization, contentCountry, videoId, this);
 
-        CancellableCall primaryCall;
-        if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
-            primaryCall = fetchAndroidVRJsonPlayer(contentCountry, localization, videoId);
-        } else {
-            primaryCall = tryFetchSafariJsonPlayer(contentCountry, localization, videoId);
+        CancellableCall primaryCall = null;
+        if (!playableResponseSelected) {
+            if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
+                primaryCall = fetchAndroidVRJsonPlayer(contentCountry, localization, videoId);
+            } else {
+                primaryCall = tryFetchSafariJsonPlayer(contentCountry, localization, videoId);
+            }
         }
-        final CancellableCall visionOsCall = tryFetchVisionOsJsonPlayer(
-                contentCountry, localization, videoId);
 
         final byte[] body = JsonWriter.string(
                 prepareDesktopJsonBuilder(localization, contentCountry)
@@ -1421,9 +1430,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     }
                 });
             }
-            waitForCallsToFinish(webPageCall, nextDataCall, primaryCall, visionOsCall);
+            waitForCallsToFinish(webPageCall, nextDataCall, primaryCall);
 
-            boolean playableResponseSelected = selectPlayablePlayerResponse(videoId);
+            playableResponseSelected = selectPlayablePlayerResponse(videoId);
 
             if (!playableResponseSelected) {
                 final CancellableCall iosCall = fetchIosMobileJsonPlayer(contentCountry,
@@ -1765,20 +1774,18 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                         + "&id=" + videoId, callback);
     }
 
-    @Nullable
-    private CancellableCall tryFetchVisionOsJsonPlayer(
+    private void tryFetchVisionOsJsonPlayer(
             @Nonnull final ContentCountry contentCountry,
             @Nonnull final Localization localization,
             @Nonnull final String videoId) {
         try {
-            return fetchVisionOsJsonPlayer(contentCountry, localization, videoId);
-        } catch (final Exception e) {
-            errors.add(new ExtractionException("Skipping optional VISIONOS player response", e));
-            return null;
+            fetchVisionOsJsonPlayer(contentCountry, localization, videoId);
+        } catch (final Exception ex) {
+            errors.add(new ExtractionException("Skipping optional VISIONOS player response", ex));
         }
     }
 
-    private CancellableCall fetchVisionOsJsonPlayer(
+    private void fetchVisionOsJsonPlayer(
             @Nonnull final ContentCountry contentCountry,
             @Nonnull final Localization localization,
             @Nonnull final String videoId) throws IOException, ExtractionException {
@@ -1803,34 +1810,21 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                         .done())
                 .getBytes(StandardCharsets.UTF_8);
 
-        final Downloader.AsyncCallback callback = new Downloader.AsyncCallback() {
-            @Override
-            public void onSuccess(final Response response) {
-                try {
-                    visionOsPlayerResponse = JsonUtils.toJsonObject(
-                            getValidJsonResponseBody(response));
-                    if (isPlayerResponseNotValid(visionOsPlayerResponse, videoId)) {
-                        return;
-                    }
+        visionOsPlayerResponse = getJsonVisionOsPostResponse(PLAYER, body, localization,
+                "&t=" + generateTParameter() + "&id=" + videoId);
+        if (isPlayerResponseNotValid(visionOsPlayerResponse, videoId)) {
+            return;
+        }
 
-                    final JsonObject streamingData =
-                            visionOsPlayerResponse.getObject(STREAMING_DATA);
-                    if (!isNullOrEmpty(streamingData)) {
-                        visionOsStreamingData = streamingData;
-                        if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
-                            playerCaptionsTracklistRenderer = visionOsPlayerResponse
-                                    .getObject("captions")
-                                    .getObject("playerCaptionsTracklistRenderer");
-                        }
-                    }
-                } catch (final Exception e) {
-                    errors.add(e);
-                }
+        final JsonObject streamingData = visionOsPlayerResponse.getObject(STREAMING_DATA);
+        if (!isNullOrEmpty(streamingData)) {
+            visionOsStreamingData = streamingData;
+            if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
+                playerCaptionsTracklistRenderer = visionOsPlayerResponse
+                        .getObject("captions")
+                        .getObject("playerCaptionsTracklistRenderer");
             }
-        };
-
-        return getJsonVisionOsPostResponseAsync(PLAYER, body, localization,
-                "&t=" + generateTParameter() + "&id=" + videoId, callback);
+        }
     }
 
     /**

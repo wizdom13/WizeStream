@@ -1295,6 +1295,15 @@ YoutubeParsingHelper {
                 IOS_YOUTUBE_KEY, endPartOfUrlRequest, callback);
     }
 
+    public static JsonObject getJsonVisionOsPostResponse(
+            final String endpoint,
+            final byte[] body,
+            @Nonnull final Localization localization,
+            @Nullable final String endPartOfUrlRequest) throws IOException, ExtractionException {
+        return getMobilePostResponse(endpoint, body, localization,
+                getVisionOsUserAgent(localization), IOS_YOUTUBE_KEY, endPartOfUrlRequest);
+    }
+
     public static CancellableCall getJsonVisionOsPostResponseAsync(
             final String endpoint,
             final byte[] body,
