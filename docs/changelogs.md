@@ -6,8 +6,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
-- Restored conventional YouTube playback for videos rejected by the obsolete visionOS client,
-  with one fresh retry for genuinely transient page-reload responses.
+- Restored conventional YouTube playback by aligning the visionOS identity and regional
+  request context with current NewPipeExtractor behavior, with one fresh retry for transient errors.
 - Bounded persistent database growth by clearing feed caches and unreferenced stream metadata,
   compacting inactive sync journals while preserving paired-device synchronization state.
 - Fixed videos being reported unavailable when YouTube rejected the Android client but returned
