@@ -22,6 +22,7 @@ import com.xwray.groupie.Group
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.Section
 import com.xwray.groupie.viewbinding.GroupieViewHolder
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity.Companion.GROUP_ALL_ID
@@ -34,6 +35,7 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.fragments.BaseStateFragment
 import org.schabi.newpipe.ktx.animate
+import org.schabi.newpipe.local.feed.SavedSearchFeedManager
 import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionViewModel.SubscriptionState
@@ -65,6 +67,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private lateinit var viewModel: SubscriptionViewModel
     private lateinit var subscriptionManager: SubscriptionManager
     private lateinit var importExportHelper: SubscriptionsImportExportHelper
+    private lateinit var savedSearchFeedManager: SavedSearchFeedManager
     private val disposables: CompositeDisposable = CompositeDisposable()
 
     private val groupAdapter = GroupAdapter<GroupieViewHolder<FeedItemCarouselBinding>>()
@@ -94,6 +97,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         super.onAttach(context)
         subscriptionManager = SubscriptionManager(requireContext())
         importExportHelper = SubscriptionsImportExportHelper(this)
+        savedSearchFeedManager = SavedSearchFeedManager(requireContext())
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -126,7 +130,51 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         activity.supportActionBar?.setDisplayShowTitleEnabled(true)
         activity.supportActionBar?.setTitle(R.string.tab_subscriptions)
 
+        setClickListenerToMenuItem(menu.add(R.string.saved_search_feeds)) {
+            showSavedSearchFeedsDialog()
+        }.setIcon(R.drawable.ic_search)
         buildImportExportMenu(menu)
+    }
+
+    private fun showSavedSearchFeedsDialog() {
+        disposables.add(
+            savedSearchFeedManager.getAll()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { feeds ->
+                        if (feeds.isEmpty()) {
+                            Toast.makeText(
+                                requireContext(),
+                                R.string.no_saved_search_feeds,
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return@subscribe
+                        }
+
+                        val labels = feeds.map { feed ->
+                            getString(
+                                R.string.saved_search_feed_item,
+                                feed.name,
+                                feed.query
+                            )
+                        }.toTypedArray()
+                        AlertDialog.Builder(requireContext())
+                            .setTitle(R.string.saved_search_feeds)
+                            .setItems(labels) { _, index ->
+                                NavigationHelper.openSavedSearchFeed(fm, feeds[index])
+                            }
+                            .setNegativeButton(R.string.cancel, null)
+                            .show()
+                    },
+                    {
+                        Toast.makeText(
+                            requireContext(),
+                            R.string.saved_search_feed_load_failed,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                )
+        )
     }
 
     private fun buildImportExportMenu(menu: Menu) {
