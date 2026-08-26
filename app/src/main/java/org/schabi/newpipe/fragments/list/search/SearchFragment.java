@@ -21,12 +21,14 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,6 +43,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.evernote.android.state.State;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.database.feed.model.SavedSearchFeedEntity;
 import org.schabi.newpipe.databinding.FragmentSearchBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
@@ -61,6 +64,7 @@ import org.schabi.newpipe.fragments.BackPressable;
 import org.schabi.newpipe.fragments.list.BaseListFragment;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.ktx.ExceptionUtils;
+import org.schabi.newpipe.local.feed.SavedSearchFeedManager;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.settings.NewPipeSettings;
 import org.schabi.newpipe.util.Constants;
@@ -79,6 +83,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
@@ -90,6 +95,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         implements BackPressable {
     private static final String YOUTUBE_MUSIC_SONGS_FILTER = "music_songs";
     private static final String YOUTUBE_MUSIC_VIDEOS_FILTER = "music_videos";
+    private static final int MENU_SAVE_SEARCH_FEED = 0x534601;
+    private static final int MENU_REFRESH_SEARCH_FEED = 0x534602;
+    private static final int MENU_DELETE_SEARCH_FEED = 0x534603;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Search
@@ -125,6 +133,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     @State
     int[] sortFilter = new int[0];
 
+    @State
+    long savedSearchFeedId = SavedSearchFeedManager.NO_SAVED_SEARCH_FEED;
+
     // these represents the last search
     @State
     String lastSearchedString;
@@ -153,6 +164,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     private SuggestionListAdapter suggestionListAdapter;
     private HistoryRecordManager historyRecordManager;
+    private SavedSearchFeedManager savedSearchFeedManager;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Views
@@ -186,6 +198,15 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         return searchFragment;
     }
 
+    public static SearchFragment getSavedFeedInstance(
+            @NonNull final SavedSearchFeedEntity entity) {
+        final SearchFragment searchFragment = new SearchFragment();
+        searchFragment.setQuery(entity.getServiceId(), entity.getQuery(),
+                entity.contentFilters(), entity.sortFilters());
+        searchFragment.savedSearchFeedId = entity.getUid();
+        return searchFragment;
+    }
+
     /**
      * Set wasLoading to true so when the fragment onResume is called, the initial search is done.
      */
@@ -213,6 +234,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
         suggestionListAdapter = new SuggestionListAdapter();
         historyRecordManager = new HistoryRecordManager(context);
+        savedSearchFeedManager = new SavedSearchFeedManager(context);
     }
 
     @Override
@@ -404,6 +426,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         searchClear = searchToolbarContainer.findViewById(R.id.toolbar_search_clear);
         searchFilter = searchToolbarContainer.findViewById(R.id.toolbar_search_filter);
         updateSearchFilterVisibility();
+        loadSavedSearchCache();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -465,11 +488,129 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             supportActionBar.setDisplayHomeAsUpEnabled(true);
         }
 
+        if (!TextUtils.isEmpty(searchString)) {
+            if (savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
+                menu.add(Menu.NONE, MENU_SAVE_SEARCH_FEED, Menu.NONE,
+                                R.string.save_search_as_feed)
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+            } else {
+                menu.add(Menu.NONE, MENU_REFRESH_SEARCH_FEED, Menu.NONE,
+                                R.string.refresh_saved_search_feed)
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                menu.add(Menu.NONE, MENU_DELETE_SEARCH_FEED, Menu.NONE,
+                                R.string.delete_saved_search_feed)
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+            }
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
+        if (item.getItemId() == MENU_SAVE_SEARCH_FEED) {
+            showSaveSearchFeedDialog();
+            return true;
+        } else if (item.getItemId() == MENU_REFRESH_SEARCH_FEED) {
+            search(searchString, contentFilter, sortFilter);
+            return true;
+        } else if (item.getItemId() == MENU_DELETE_SEARCH_FEED) {
+            showDeleteSavedSearchFeedDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
     // Search
     //////////////////////////////////////////////////////////////////////////*/
+
+    private void loadSavedSearchCache() {
+        if (savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
+            return;
+        }
+
+        disposables.add(savedSearchFeedManager.getCachedItems(savedSearchFeedId)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(items -> {
+                    if (!items.isEmpty()) {
+                        if (infoListAdapter.getItemsList().isEmpty()) {
+                            infoListAdapter.addInfoItemList(items);
+                        }
+                        hideLoading();
+                    } else if (!TextUtils.isEmpty(searchString)) {
+                        search(searchString, contentFilter, sortFilter);
+                    }
+                }, throwable -> {
+                    if (!TextUtils.isEmpty(searchString)) {
+                        search(searchString, contentFilter, sortFilter);
+                    }
+                }));
+    }
+
+    private void showSaveSearchFeedDialog() {
+        final EditText nameInput = new EditText(requireContext());
+        nameInput.setSingleLine(true);
+        nameInput.setText(searchString);
+        nameInput.setSelection(nameInput.length());
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.save_search_as_feed)
+                .setMessage(R.string.saved_search_feed_name)
+                .setView(nameInput)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.save, (dialog, which) -> {
+                    final String name = nameInput.getText().toString().trim();
+                    if (name.isEmpty()) {
+                        Toast.makeText(requireContext(), R.string.saved_search_feed_name_required,
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    disposables.add(savedSearchFeedManager.create(name, serviceId, searchString,
+                                    contentFilter, sortFilter)
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(feedId -> {
+                                savedSearchFeedId = feedId;
+                                activity.invalidateOptionsMenu();
+                                Toast.makeText(requireContext(),
+                                        R.string.saved_search_feed_saved,
+                                        Toast.LENGTH_SHORT).show();
+                                disposables.add(savedSearchFeedManager.replaceCache(
+                                                feedId, infoListAdapter.getItemsList())
+                                        .subscribe(() -> { }, throwable -> { }));
+                            }, throwable -> Toast.makeText(requireContext(),
+                                    R.string.saved_search_feed_save_failed,
+                                    Toast.LENGTH_LONG).show()));
+                })
+                .show();
+    }
+
+    private void showDeleteSavedSearchFeedDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.delete_saved_search_feed)
+                .setMessage(R.string.delete_saved_search_feed_confirmation)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) ->
+                        disposables.add(savedSearchFeedManager.delete(savedSearchFeedId)
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(() -> getFM().popBackStack(),
+                                        throwable -> Toast.makeText(requireContext(),
+                                                R.string.saved_search_feed_delete_failed,
+                                                Toast.LENGTH_LONG).show())))
+                .show();
+    }
+
+    private void cacheSavedSearchResults(final List<? extends InfoItem> items,
+                                         final boolean replace) {
+        if (savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
+            return;
+        }
+
+        final List<InfoItem> copiedItems = new ArrayList<>(items);
+        final Completable cacheOperation = replace
+                ? savedSearchFeedManager.replaceCache(savedSearchFeedId, copiedItems)
+                : savedSearchFeedManager.appendCache(savedSearchFeedId, copiedItems);
+        disposables.add(cacheOperation.subscribe(() -> { }, throwable -> { }));
+    }
 
     private void showSearchOnStart() {
         if (DEBUG) {
@@ -827,8 +968,14 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
 
         // prepare search
+        if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED
+                && !theSearchString.equals(this.searchString)) {
+            savedSearchFeedId = SavedSearchFeedManager.NO_SAVED_SEARCH_FEED;
+            activity.invalidateOptionsMenu();
+        }
         lastSearchedString = this.searchString;
         this.searchString = theSearchString;
+        activity.invalidateOptionsMenu();
         infoListAdapter.clearStreamItemList();
         hideSuggestionsPanel();
         showMetaInfoInTextView(null, searchBinding.searchMetaInfoTextView,
@@ -902,6 +1049,15 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     }
 
     private void onItemError(final Throwable exception) {
+        if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED
+                && !infoListAdapter.getItemsList().isEmpty()) {
+            hideLoading();
+            showListFooter(false);
+            showSnackBarError(new ErrorInfo(exception, UserAction.SEARCHED,
+                    searchString, serviceId, getOpenInBrowserUrlForErrors()));
+            return;
+        }
+
         if (exception instanceof SearchExtractor.NothingFoundException) {
             infoListAdapter.clearStreamItemList();
             showEmptyState();
@@ -944,6 +1100,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 serviceId == ServiceList.YouTube.getServiceId()
                         && ServiceHelper.isYoutubeMusicMode(requireContext()),
                 (selectedContentFilter, selectedSortFilters) -> {
+                    if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
+                        savedSearchFeedId = SavedSearchFeedManager.NO_SAVED_SEARCH_FEED;
+                        activity.invalidateOptionsMenu();
+                    }
                     contentFilter = selectedContentFilter.isEmpty()
                             ? new String[0] : new String[]{selectedContentFilter};
                     sortFilter = selectedSortFilters.stream()
@@ -1048,6 +1208,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public void handleResult(@NonNull final SearchInfo result) {
+        cacheSavedSearchResults(result.getRelatedItems(), true);
         final List<Throwable> exceptions = result.getErrors();
         if (!exceptions.isEmpty()
                 && !(exceptions.size() == 1
@@ -1119,6 +1280,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public void handleNextItems(final ListExtractor.InfoItemsPage<?> result) {
+        cacheSavedSearchResults(result.getItems(), false);
         showListFooter(false);
         infoListAdapter.addInfoItemList(result.getItems());
 
