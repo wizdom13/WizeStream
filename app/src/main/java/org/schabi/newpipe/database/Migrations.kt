@@ -42,6 +42,7 @@ object Migrations {
     const val DB_VER_20 = 20
     const val DB_VER_21 = 21
     const val DB_VER_22 = 22
+    const val DB_VER_23 = 23
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -819,6 +820,46 @@ object Migrations {
         )
         db.execSQL(
             "ALTER TABLE `subscription_sync_records` ADD COLUMN `notification_keywords` TEXT"
+        )
+    }
+
+
+    val MIGRATION_22_23 = Migration(DB_VER_22, DB_VER_23) { db ->
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `saved_search_feed` (" +
+                "`uid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`name` TEXT NOT NULL, `service_id` INTEGER NOT NULL, " +
+                "`query` TEXT NOT NULL, `content_filter` TEXT NOT NULL, " +
+                "`sort_filter` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, " +
+                "`last_refresh` INTEGER)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_saved_search_feed_sort_order` " +
+                "ON `saved_search_feed` (`sort_order`)"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_saved_search_feed_service_id_query_content_filter_sort_filter` " +
+                "ON `saved_search_feed` " +
+                "(`service_id`, `query`, `content_filter`, `sort_filter`)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `saved_search_feed_stream` (" +
+                "`feed_id` INTEGER NOT NULL, `stream_id` INTEGER NOT NULL, " +
+                "`position` INTEGER NOT NULL, PRIMARY KEY(`feed_id`, `stream_id`), " +
+                "FOREIGN KEY(`feed_id`) REFERENCES `saved_search_feed`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE, " +
+                "FOREIGN KEY(`stream_id`) REFERENCES `streams`(`uid`) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_saved_search_feed_stream_stream_id` " +
+                "ON `saved_search_feed_stream` (`stream_id`)"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_saved_search_feed_stream_feed_id_position` " +
+                "ON `saved_search_feed_stream` (`feed_id`, `position`)"
         )
     }
 }
