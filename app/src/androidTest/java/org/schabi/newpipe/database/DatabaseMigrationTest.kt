@@ -833,6 +833,28 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom22to23AddsSavedSearchFeeds() {
+        val database = testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_22
+        )
+        database.close()
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_23,
+            true,
+            Migrations.MIGRATION_22_23
+        )
+        migrated.query("PRAGMA table_info(saved_search_feed)").use { cursor ->
+            assertEquals(8, cursor.count)
+        }
+        migrated.query("PRAGMA table_info(saved_search_feed_stream)").use { cursor ->
+            assertEquals(3, cursor.count)
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -848,7 +870,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_18_19,
                 Migrations.MIGRATION_19_20,
                 Migrations.MIGRATION_20_21,
-                Migrations.MIGRATION_21_22
+                Migrations.MIGRATION_21_22,
+                Migrations.MIGRATION_22_23
             )
             .build()
         testHelper.closeWhenFinished(database)
