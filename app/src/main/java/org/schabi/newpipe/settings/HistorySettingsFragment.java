@@ -90,8 +90,11 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
         return recordManager.deleteCompleteStreamStateHistory()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        howManyDeleted -> Toast.makeText(context,
-                                R.string.watch_history_states_deleted,  Toast.LENGTH_SHORT).show(),
+                        howManyDeleted -> {
+                            Toast.makeText(context, R.string.watch_history_states_deleted,
+                                    Toast.LENGTH_SHORT).show();
+                            compactUnpairedSyncJournals(context);
+                        },
                         throwable -> ErrorUtil.openActivity(context,
                                 new ErrorInfo(throwable, UserAction.DELETE_FROM_HISTORY,
                                         "Delete playback states")));
@@ -102,8 +105,11 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
         return recordManager.deleteWholeStreamHistory()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        howManyDeleted -> Toast.makeText(context,
-                                R.string.watch_history_deleted, Toast.LENGTH_SHORT).show(),
+                        howManyDeleted -> {
+                            Toast.makeText(context, R.string.watch_history_deleted,
+                                    Toast.LENGTH_SHORT).show();
+                            compactUnpairedSyncJournals(context);
+                        },
                         throwable -> ErrorUtil.openActivity(context,
                                 new ErrorInfo(throwable, UserAction.DELETE_FROM_HISTORY,
                                         "Delete from history")));
@@ -125,11 +131,23 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
         return recordManager.deleteCompleteSearchHistory()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        howManyDeleted -> Toast.makeText(context,
-                                R.string.search_history_deleted, Toast.LENGTH_SHORT).show(),
+                        howManyDeleted -> {
+                            Toast.makeText(context, R.string.search_history_deleted,
+                                    Toast.LENGTH_SHORT).show();
+                            compactUnpairedSyncJournals(context);
+                        },
                         throwable -> ErrorUtil.openActivity(context,
                                 new ErrorInfo(throwable, UserAction.DELETE_FROM_HISTORY,
                                         "Delete search history")));
+    }
+
+    private static void compactUnpairedSyncJournals(@NonNull final Context context) {
+        new DatabaseMaintenanceManager(context).compactUnpairedSyncJournals()
+                .subscribe(
+                        ignored -> { },
+                        throwable -> ErrorUtil.openActivity(context,
+                                new ErrorInfo(throwable, UserAction.DELETE_FROM_HISTORY,
+                                        "Compact synchronization journals")));
     }
 
     public static void openDeleteWatchHistoryDialog(@NonNull final Context context,
