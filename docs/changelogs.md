@@ -4,6 +4,15 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.10.3 (`1010003`)
+
+### Fixes
+
+- Restored live playback when a service provides only an HLS or DASH manifest without separate
+  audio or video stream entries.
+
+[View the complete changes since v1.10.2](https://github.com/wizdom13/WizeStream/compare/v1.10.2...v1.10.3)
+
 ## WizeStream 1.10.2 (`1010002`)
 
 ### Fixes
