@@ -56,7 +56,7 @@ public class YoutubeStreamExtractorTest {
                         + "YoutubeStreamExtractor.java"));
 
         assertTrue(source.contains("private JsonObject visionOsPlayerResponse;"));
-        assertTrue(source.contains("visionOsPlayerResponse = JsonUtils.toJsonObject("));
+        assertTrue(source.contains("visionOsPlayerResponse = getJsonVisionOsPostResponse("));
         assertTrue(source.contains("hasUsablePlaybackData(response)"
                 + " || hasAnyUsablePlaybackData()"));
         assertTrue(source.contains("visionOsPlayerResponse, safariPlayerResponse"));
