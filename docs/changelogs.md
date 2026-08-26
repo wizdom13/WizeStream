@@ -4,14 +4,17 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.10.2 (`1010002`)
+
 ### Fixes
 
-- Restored conventional YouTube playback by aligning the visionOS identity and regional
-  request context with current NewPipeExtractor behavior, with one fresh retry for transient errors.
+- Restored playback for YouTube videos incorrectly reported as unavailable by using the standard
+  Android Reel request path and retaining the existing client fallbacks.
+- Retried transient YouTube page-reload responses once automatically before showing an error.
 - Bounded persistent database growth by clearing feed caches and unreferenced stream metadata,
   compacting inactive sync journals while preserving paired-device synchronization state.
-- Fixed videos being reported unavailable when YouTube rejected the Android client but returned
-  valid metadata and conventional streams through separate fallback clients.
+
+[View the complete changes since v1.10.1](https://github.com/wizdom13/WizeStream/compare/v1.10.1...v1.10.2)
 
 ## WizeStream 1.10.1 (`1010001`)
 
