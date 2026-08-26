@@ -823,7 +823,6 @@ object Migrations {
         )
     }
 
-
     val MIGRATION_22_23 = Migration(DB_VER_22, DB_VER_23) { db ->
         db.execSQL(
             "CREATE TABLE IF NOT EXISTS `saved_search_feed` (" +
