@@ -20,7 +20,7 @@ class SavedSearchFeedManager(context: Context) {
 
     fun getAll(): Single<List<SavedSearchFeedEntity>> = Single
         .fromCallable(savedSearchFeedDao::getAllDirect)
-            .subscribeOn(Schedulers.io())
+        .subscribeOn(Schedulers.io())
 
     fun create(
         name: String,
@@ -54,11 +54,15 @@ class SavedSearchFeedManager(context: Context) {
         }.subscribeOn(Schedulers.io())
 
     fun replaceCache(feedId: Long, items: List<InfoItem>): Completable = cacheItems(
-        feedId, items, replace = true
+        feedId,
+        items,
+        replace = true
     )
 
     fun appendCache(feedId: Long, items: List<InfoItem>): Completable = cacheItems(
-        feedId, items, replace = false
+        feedId,
+        items,
+        replace = false
     )
 
     private fun cacheItems(
