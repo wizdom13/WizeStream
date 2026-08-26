@@ -128,6 +128,18 @@ abstract class HistorySyncDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun upsertPeerState(state: HistorySyncPeerStateEntity)
 
+    @Query("DELETE FROM history_sync_changes")
+    abstract fun deleteAllChanges(): Int
+
+    @Query("DELETE FROM history_sync_records")
+    abstract fun deleteAllRecords(): Int
+
+    @Query("DELETE FROM history_sync_origin_state")
+    abstract fun deleteAllOriginStates(): Int
+
+    @Query("DELETE FROM history_sync_peer_state")
+    abstract fun deleteAllPeerStates(): Int
+
     @Query(
         """
         DELETE FROM history_sync_peer_state
