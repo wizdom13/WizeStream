@@ -7,6 +7,7 @@ package org.schabi.newpipe.database
 
 import android.content.Context
 import io.reactivex.rxjava3.core.Single
+import java.util.concurrent.Callable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.sync.DeviceSyncManager
@@ -27,7 +28,7 @@ class DatabaseMaintenanceManager(context: Context) {
 
     fun clearPersistentCaches(): Single<DatabaseCleanupResult> {
         return Single.fromCallable {
-            val result = database.runInTransaction<DatabaseCleanupResult> {
+            val result = database.runInTransaction(Callable {
                 val feedRows = database.feedDAO().deleteAll()
                 val feedUpdateRows = database.feedDAO().deleteAllLastUpdated()
                 val orphanStreamRows = database.streamDAO().deleteOrphans()
@@ -38,7 +39,7 @@ class DatabaseMaintenanceManager(context: Context) {
                     orphanStreamRows,
                     syncRows
                 )
-            }
+            })
             database.openHelper.writableDatabase.apply {
                 query("PRAGMA wal_checkpoint(TRUNCATE)").close()
                 execSQL("PRAGMA optimize")
@@ -49,9 +50,9 @@ class DatabaseMaintenanceManager(context: Context) {
 
     fun compactUnpairedSyncJournals(): Single<Int> {
         return Single.fromCallable {
-            database.runInTransaction<Int> {
+            database.runInTransaction(Callable {
                 resetSyncJournalsWhenUnpaired()
-            }
+            })
         }.subscribeOn(Schedulers.io())
     }
 
