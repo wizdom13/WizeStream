@@ -11,6 +11,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.database.DatabaseMaintenanceManager;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.ReCaptchaActivity;
@@ -28,6 +29,7 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
     private String playbackStatesClearKey;
     private String searchHistoryClearKey;
     private HistoryRecordManager recordManager;
+    private DatabaseMaintenanceManager maintenanceManager;
     private CompositeDisposable disposables;
 
     @Override
@@ -39,6 +41,7 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
         playbackStatesClearKey = getString(R.string.clear_playback_states_key);
         searchHistoryClearKey = getString(R.string.clear_search_history_key);
         recordManager = new HistoryRecordManager(getActivity());
+        maintenanceManager = new DatabaseMaintenanceManager(requireContext());
         disposables = new CompositeDisposable();
 
         final Preference clearCookiePref = requirePreference(R.string.clear_cookie_key);
@@ -61,8 +64,15 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
     public boolean onPreferenceTreeClick(final Preference preference) {
         if (preference.getKey().equals(cacheWipeKey)) {
             InfoCache.getInstance().clearCache();
-            Toast.makeText(requireContext(),
-                    R.string.metadata_cache_wipe_complete_notice, Toast.LENGTH_SHORT).show();
+            disposables.add(maintenanceManager.clearPersistentCaches()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            result -> Toast.makeText(requireContext(),
+                                    R.string.metadata_cache_wipe_complete_notice,
+                                    Toast.LENGTH_SHORT).show(),
+                            throwable -> ErrorUtil.openActivity(requireContext(),
+                                    new ErrorInfo(throwable, UserAction.DELETE_FROM_HISTORY,
+                                            "Clear persistent caches"))));
         } else if (preference.getKey().equals(viewsHistoryClearKey)) {
             openDeleteWatchHistoryDialog(requireContext(), recordManager, disposables);
         } else if (preference.getKey().equals(playbackStatesClearKey)) {
