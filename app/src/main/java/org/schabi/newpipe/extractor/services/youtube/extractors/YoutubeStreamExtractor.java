@@ -1378,11 +1378,17 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         playerCaptionsTracklistRenderer = null;
         streamType = null;
 
-        // Match upstream NewPipe's request ordering: complete the VISIONOS visitor/player
-        // exchange before starting other InnerTube clients. Concurrent client requests can cause
-        // YouTube to reject an otherwise valid anonymous VISIONOS request.
-        tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId);
+        // NewPipeExtractor 0.26.5 uses the standard ANDROID reel endpoint as its primary
+        // anonymous playback request. Keep the direct ANDROID_VR request only as a fallback.
+        if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
+            tryFetchAndroidReelJsonPlayer(contentCountry, localization, videoId);
+        }
         boolean playableResponseSelected = selectPlayablePlayerResponse(videoId);
+
+        if (!playableResponseSelected) {
+            tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId);
+            playableResponseSelected = selectPlayablePlayerResponse(videoId);
+        }
 
         CancellableCall webPageCall = YoutubeParsingHelper.getWebPlayerResponse(
                 localization, contentCountry, videoId, this);
@@ -1673,6 +1679,66 @@ public class YoutubeStreamExtractor extends StreamExtractor {
      * Fetch the Android VR API and assign the streaming data to the androidStreamingData JSON
      * object.
      */
+    private void tryFetchAndroidReelJsonPlayer(
+            @Nonnull final ContentCountry contentCountry,
+            @Nonnull final Localization localization,
+            @Nonnull final String videoId) {
+        try {
+            fetchAndroidReelJsonPlayer(contentCountry, localization, videoId);
+        } catch (final Exception ex) {
+            errors.add(new ExtractionException(
+                    "Skipping primary ANDROID Reel player response", ex));
+        }
+    }
+
+    private void fetchAndroidReelJsonPlayer(
+            @Nonnull final ContentCountry contentCountry,
+            @Nonnull final Localization localization,
+            @Nonnull final String videoId) throws IOException, ExtractionException {
+        androidCpn = generateContentPlaybackNonce();
+        final InnertubeClientRequestInfo clientRequestInfo =
+                InnertubeClientRequestInfo.ofAndroidClient();
+
+        final Map<String, List<String>> headers = new HashMap<>();
+        headers.put("Content-Type", singletonList("application/json"));
+        headers.put("User-Agent", singletonList(getAndroidUserAgent(localization)));
+        headers.put("X-Goog-Api-Format-Version", singletonList("2"));
+
+        final String visitorData = YoutubeParsingHelper.getVisitorDataFromInnertube(
+                clientRequestInfo, localization, contentCountry, headers,
+                YOUTUBEI_V1_GAPIS_URL, null, false);
+        final byte[] body = JsonWriter.string(
+                prepareAndroidMobileJsonBuilder(localization, contentCountry, visitorData)
+                        .object("playerRequest")
+                        .value(VIDEO_ID, videoId)
+                        .value(CPN, androidCpn)
+                        .value(CONTENT_CHECK_OK, true)
+                        .value(RACY_CHECK_OK, true)
+                        .end()
+                        .value("disablePlayerResponse", false)
+                        .done())
+                .getBytes(StandardCharsets.UTF_8);
+
+        androidPlayerResponse = getJsonAndroidPostResponse(
+                "reel/reel_item_watch", body, localization,
+                "&t=" + generateTParameter() + "&id=" + videoId
+                        + "&$fields=playerResponse")
+                .getObject("playerResponse");
+        if (isPlayerResponseNotValid(androidPlayerResponse, videoId)) {
+            return;
+        }
+
+        final JsonObject streamingData = androidPlayerResponse.getObject(STREAMING_DATA);
+        if (!isNullOrEmpty(streamingData)) {
+            androidStreamingData = streamingData;
+            if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
+                playerCaptionsTracklistRenderer = androidPlayerResponse
+                        .getObject("captions")
+                        .getObject("playerCaptionsTracklistRenderer");
+            }
+        }
+    }
+
     private CancellableCall fetchAndroidVRJsonPlayer(@Nonnull final ContentCountry contentCountry,
                                               @Nonnull final Localization localization,
                                               @Nonnull final String videoId)
