@@ -56,13 +56,43 @@ public class YoutubeStreamExtractorTest {
                         + "YoutubeStreamExtractor.java"));
 
         assertTrue(source.contains("private JsonObject visionOsPlayerResponse;"));
-        assertTrue(source.contains("visionOsPlayerResponse = JsonUtils.toJsonObject("));
+        assertTrue(source.contains("visionOsPlayerResponse = getJsonVisionOsPostResponse("));
         assertTrue(source.contains("hasUsablePlaybackData(response)"
                 + " || hasAnyUsablePlaybackData()"));
         assertTrue(source.contains("visionOsPlayerResponse, safariPlayerResponse"));
         assertTrue(source.contains("if (hasUsableStreamingData(streamingData)) {"
                 + System.lineSeparator() + "                return false;"));
         assertTrue(source.contains("return foundSabrData;"));
+    }
+
+    @Test
+    public void anonymousPlaybackUsesAndroidReelBeforeFallbacks() throws IOException {
+        final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
+                ? Path.of("src/main/java") : Path.of("app/src/main/java");
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/extractor/services/youtube/extractors/"
+                        + "YoutubeStreamExtractor.java"));
+        final int fetchStart = source.indexOf("public void onFetchPage(");
+        final int fetchEnd = source.indexOf(
+                "private void waitForCallsToFinish", fetchStart);
+
+        assertTrue(fetchStart >= 0);
+        assertTrue(fetchEnd > fetchStart);
+
+        final String fetchFlow = source.substring(fetchStart, fetchEnd);
+        final int androidReel = fetchFlow.indexOf(
+                "tryFetchAndroidReelJsonPlayer(contentCountry, localization, videoId)");
+        final int visionOs = fetchFlow.indexOf(
+                "tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId)");
+
+        assertTrue(androidReel >= 0);
+        assertTrue(androidReel < visionOs);
+        assertTrue(source.contains("\"reel/reel_item_watch\""));
+        assertTrue(source.contains(".object(\"playerRequest\")"));
+        assertTrue(source.contains(".value(\"disablePlayerResponse\", false)"));
+        assertTrue(source.contains("&$fields=playerResponse"));
+        assertTrue(source.contains("prepareAndroidMobileJsonBuilder("));
+        assertTrue(source.contains("getJsonAndroidPostResponse("));
     }
 
     @Test
