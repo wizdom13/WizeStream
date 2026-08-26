@@ -86,7 +86,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wizestream-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/schemas/org.schabi.newpipe.database.AppDatabase/23.json
 
   test-android:
     runs-on: ubuntu-latest
