@@ -1,0 +1,2 @@
+• Restored live streams that provide playback through HLS or DASH manifests.
+• Fixed selected bottom-navigation labels occasionally being truncated until restart.
