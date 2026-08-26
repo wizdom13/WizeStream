@@ -188,6 +188,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Browse all [supported services](#supported-services), with dedicated YouTube Music and YouTube
   Shorts destinations
 - Search with service-provided content, date, duration, feature, and sorting filters
+- Save searches as reusable feeds with filters, cached results, pagination, and manual refresh
 - Search within channel tabs and remote or local playlists without leaving the current screen
 - Filter channel, feed, and playlist lists by unwatched, partially watched, live, or Shorts content
 - Block individual videos or channels from their context menus, and hide content by title or uploader
