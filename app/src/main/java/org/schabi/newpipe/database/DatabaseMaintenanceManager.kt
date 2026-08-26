@@ -30,16 +30,16 @@ class DatabaseMaintenanceManager(context: Context) {
         return Single.fromCallable {
             val result = database.runInTransaction(
                 Callable {
-                val feedRows = database.feedDAO().deleteAll()
-                val feedUpdateRows = database.feedDAO().deleteAllLastUpdated()
-                val orphanStreamRows = database.streamDAO().deleteOrphans()
-                val syncRows = resetSyncJournalsWhenUnpaired()
-                DatabaseCleanupResult(
-                    feedRows,
-                    feedUpdateRows,
-                    orphanStreamRows,
-                    syncRows
-                )
+                    val feedRows = database.feedDAO().deleteAll()
+                    val feedUpdateRows = database.feedDAO().deleteAllLastUpdated()
+                    val orphanStreamRows = database.streamDAO().deleteOrphans()
+                    val syncRows = resetSyncJournalsWhenUnpaired()
+                    DatabaseCleanupResult(
+                        feedRows,
+                        feedUpdateRows,
+                        orphanStreamRows,
+                        syncRows
+                    )
                 }
             )
             database.openHelper.writableDatabase.apply {
