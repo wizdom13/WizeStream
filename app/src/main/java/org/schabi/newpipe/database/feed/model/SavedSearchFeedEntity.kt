@@ -74,11 +74,13 @@ data class SavedSearchFeedEntity(
         private const val FILTER_SEPARATOR = "\u001F"
 
         @JvmStatic
-        fun encodeContentFilters(filters: Array<String>): String =
-            filters.filter(String::isNotBlank).joinToString(FILTER_SEPARATOR)
+        fun encodeContentFilters(filters: Array<String>): String = filters
+            .filter(String::isNotBlank)
+            .joinToString(FILTER_SEPARATOR)
 
         @JvmStatic
-        fun encodeSortFilters(filters: IntArray): String =
-            filters.joinToString(FILTER_SEPARATOR)
+        fun encodeSortFilters(filters: IntArray): String = filters.joinToString(
+            FILTER_SEPARATOR
+        )
     }
 }
