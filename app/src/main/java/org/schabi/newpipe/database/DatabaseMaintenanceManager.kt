@@ -7,8 +7,8 @@ package org.schabi.newpipe.database
 
 import android.content.Context
 import io.reactivex.rxjava3.core.Single
-import java.util.concurrent.Callable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.Callable
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.sync.DeviceSyncManager
 
