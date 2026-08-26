@@ -1508,4 +1508,18 @@
     <string name="proxy_invalid_host">Enter a host name or IP address without a URL scheme</string>
     <string name="proxy_invalid_port">Enter a port from 1 to 65535</string>
     <string name="proxy_privacy_notice">Changes apply to new connections. Local and LAN addresses bypass the proxy. Passwords are encrypted with Android Keystore and excluded from backup. HTTP Basic and SOCKS5 username/password authentication are supported.</string>
+
+    <string name="saved_search_feeds">Saved search feeds</string>
+    <string name="save_search_as_feed">Save search as feed</string>
+    <string name="saved_search_feed_name">Choose a name for this feed.</string>
+    <string name="saved_search_feed_name_required">A feed name is required</string>
+    <string name="saved_search_feed_saved">Search feed saved</string>
+    <string name="saved_search_feed_save_failed">Could not save this search feed. It may already exist.</string>
+    <string name="saved_search_feed_load_failed">Could not load saved search feeds</string>
+    <string name="saved_search_feed_item">%1$s\n%2$s</string>
+    <string name="no_saved_search_feeds">No saved search feeds yet. Save one from a search results screen.</string>
+    <string name="refresh_saved_search_feed">Refresh saved search feed</string>
+    <string name="delete_saved_search_feed">Delete saved search feed</string>
+    <string name="delete_saved_search_feed_confirmation">Delete this saved search feed and its cached results?</string>
+    <string name="saved_search_feed_delete_failed">Could not delete this saved search feed</string>
 </resources>
