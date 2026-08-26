@@ -1,0 +1,3 @@
+• Restored YouTube videos incorrectly reported as unavailable.
+• Retried transient YouTube page-reload errors automatically.
+• Bounded database growth while preserving paired-device synchronization state.
