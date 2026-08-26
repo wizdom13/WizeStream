@@ -11,10 +11,13 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import org.schabi.newpipe.database.feed.dao.FeedDAO
 import org.schabi.newpipe.database.feed.dao.FeedGroupDAO
+import org.schabi.newpipe.database.feed.dao.SavedSearchFeedDAO
 import org.schabi.newpipe.database.feed.model.FeedEntity
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.feed.model.FeedGroupSubscriptionEntity
 import org.schabi.newpipe.database.feed.model.FeedLastUpdatedEntity
+import org.schabi.newpipe.database.feed.model.SavedSearchFeedEntity
+import org.schabi.newpipe.database.feed.model.SavedSearchFeedStreamEntity
 import org.schabi.newpipe.database.history.dao.SearchHistoryDAO
 import org.schabi.newpipe.database.history.dao.StreamHistoryDAO
 import org.schabi.newpipe.database.history.model.SearchHistoryEntry
@@ -65,7 +68,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 
 @TypeConverters(Converters::class)
 @Database(
-    version = Migrations.DB_VER_22,
+    version = Migrations.DB_VER_23,
     entities = [
         SubscriptionEntity::class,
         SearchHistoryEntry::class,
@@ -79,6 +82,8 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
         FeedGroupEntity::class,
         FeedGroupSubscriptionEntity::class,
         FeedLastUpdatedEntity::class,
+        SavedSearchFeedEntity::class,
+        SavedSearchFeedStreamEntity::class,
         SubscriptionSyncChangeEntity::class,
         SubscriptionSyncRecordEntity::class,
         SubscriptionSyncOriginStateEntity::class,
@@ -107,6 +112,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
 abstract class AppDatabase : RoomDatabase() {
     abstract fun feedDAO(): FeedDAO
     abstract fun feedGroupDAO(): FeedGroupDAO
+    abstract fun savedSearchFeedDAO(): SavedSearchFeedDAO
     abstract fun playlistDAO(): PlaylistDAO
     abstract fun playlistRemoteDAO(): PlaylistRemoteDAO
     abstract fun playlistStreamDAO(): PlaylistStreamDAO
