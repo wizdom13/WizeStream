@@ -47,6 +47,7 @@ import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
 import org.schabi.newpipe.extractor.kiosk.KioskInfo;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandlerFactory;
@@ -72,6 +73,8 @@ public final class ExtractorHelper {
     private static final String TAG = ExtractorHelper.class.getSimpleName();
     private static final String RETURN_YOUTUBE_DISLIKE_VOTES_URL =
             "https://returnyoutubedislikeapi.com/votes?videoId=";
+    private static final String YOUTUBE_RELOAD_REQUIRED_MESSAGE =
+            "The page needs to be reloaded.";
     private static final InfoCache CACHE = InfoCache.getInstance();
 
     private ExtractorHelper() {
@@ -230,10 +233,29 @@ public final class ExtractorHelper {
     @NonNull
     private static StreamInfo getStreamInfoFromNetwork(final int serviceId,
                                                        final String url) throws Exception {
-        final StreamInfo streamInfo = StreamInfo.getInfo(NewPipe.getService(serviceId), url);
+        StreamInfo streamInfo;
+        try {
+            streamInfo = StreamInfo.getInfo(NewPipe.getService(serviceId), url);
+        } catch (final ContentNotAvailableException error) {
+            if (!isTransientYouTubeReloadError(serviceId, error)) {
+                throw error;
+            }
+            Log.i(TAG, "Retrying YouTube extraction after a transient reload response");
+            streamInfo = StreamInfo.getInfo(NewPipe.getService(serviceId), url);
+        }
         backfillYouTubeRatingsAndViewCount(serviceId, streamInfo);
         backfillYouTubeUploaderAvatarFromChannel(serviceId, streamInfo);
         return streamInfo;
+    }
+
+    static boolean isTransientYouTubeReloadError(
+            final int serviceId,
+            @Nullable final ContentNotAvailableException error) {
+        return serviceId == ServiceList.YouTube.getServiceId()
+                && error != null
+                && error.getMessage() != null
+                && YOUTUBE_RELOAD_REQUIRED_MESSAGE.equalsIgnoreCase(
+                        error.getMessage().trim());
     }
 
     private static void backfillYouTubeRatingsAndViewCount(final int serviceId,
