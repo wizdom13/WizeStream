@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Fixes
+
+- Fixed videos being reported unavailable when YouTube rejected the Android client but returned
+  valid metadata and conventional streams through separate fallback clients.
+
 ## WizeStream 1.10.1 (`1010001`)
 
 ### Improvements

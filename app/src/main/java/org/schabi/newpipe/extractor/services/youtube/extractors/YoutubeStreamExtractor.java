@@ -79,6 +79,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
     private JsonObject androidPlayerResponse;
     private JsonObject iosPlayerResponse;
+    private JsonObject visionOsPlayerResponse;
     private JsonObject safariPlayerResponse;
     private JsonObject tvHtml5EmbedPlayerResponse;
 
@@ -1362,6 +1363,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         playerResponse = null;
         androidPlayerResponse = null;
         iosPlayerResponse = null;
+        visionOsPlayerResponse = null;
         safariPlayerResponse = null;
         tvHtml5EmbedPlayerResponse = null;
         androidStreamingData = null;
@@ -1490,15 +1492,16 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         // Keep the authoritative response deterministic: prefer the Android response used for
         // playback upstream, then deliberate playback fallbacks. WEB is fetched for metadata by
         // YoutubeParsingHelper and must not replace playback state with a temporary reload error.
-        for (final JsonObject response : Arrays.asList(androidPlayerResponse, safariPlayerResponse,
-                iosPlayerResponse, tvHtml5EmbedPlayerResponse)) {
+        for (final JsonObject response : Arrays.asList(androidPlayerResponse,
+                visionOsPlayerResponse, safariPlayerResponse, iosPlayerResponse,
+                tvHtml5EmbedPlayerResponse)) {
             if (response == null || isPlayerResponseNotValid(response, videoId)) {
                 continue;
             }
             final JsonObject playabilityStatus = response.getObject("playabilityStatus");
             final String status = playabilityStatus.getString("status");
             if ((status == null || status.equalsIgnoreCase("ok"))
-                    && hasUsablePlaybackData(response)) {
+                    && (hasUsablePlaybackData(response) || hasAnyUsablePlaybackData())) {
                 playerResponse = response;
                 if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
                     playerCaptionsTracklistRenderer = response.getObject("captions")
@@ -1511,7 +1514,17 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     }
 
     private boolean hasUsablePlaybackData(@Nonnull final JsonObject response) {
-        final JsonObject streamingData = response.getObject(STREAMING_DATA);
+        return hasUsableStreamingData(response.getObject(STREAMING_DATA));
+    }
+
+    private boolean hasAnyUsablePlaybackData() {
+        return Arrays.asList(visionOsStreamingData, safariStreamingData, iosStreamingData,
+                        tvHtml5SimplyEmbedStreamingData, androidStreamingData, webStreamingData)
+                .stream()
+                .anyMatch(this::hasUsableStreamingData);
+    }
+
+    private boolean hasUsableStreamingData(@Nullable final JsonObject streamingData) {
         if (streamingData == null || streamingData.isEmpty()) {
             return false;
         }
@@ -1537,8 +1550,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     private void selectPrimaryErrorResponse(@Nonnull final String videoId) {
         // If no playable response exists after all deliberate fallbacks, report the primary
         // client's genuine playability error through the existing checkPlayabilityStatus logic.
-        for (final JsonObject response : Arrays.asList(androidPlayerResponse, safariPlayerResponse,
-                iosPlayerResponse, tvHtml5EmbedPlayerResponse)) {
+        for (final JsonObject response : Arrays.asList(androidPlayerResponse,
+                visionOsPlayerResponse, safariPlayerResponse, iosPlayerResponse,
+                tvHtml5EmbedPlayerResponse)) {
             if (response != null && !isPlayerResponseNotValid(response, videoId)) {
                 playerResponse = response;
                 return;
@@ -1547,26 +1561,22 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     }
 
     private boolean isSabrOnlyResponse() {
-        for (final JsonObject sd : Arrays.asList(
+        boolean foundSabrData = false;
+        for (final JsonObject streamingData : Arrays.asList(
                 safariStreamingData, androidStreamingData,
                 visionOsStreamingData, iosStreamingData, webStreamingData,
                 tvHtml5SimplyEmbedStreamingData)) {
-            if (sd == null) {
+            if (streamingData == null || streamingData.isEmpty()) {
                 continue;
             }
-            final JsonArray adaptive = sd.getArray(ADAPTIVE_FORMATS);
-            if (adaptive == null || adaptive.isEmpty()) {
-                continue;
+            if (hasUsableStreamingData(streamingData)) {
+                return false;
             }
-            for (int i = 0; i < adaptive.size(); i++) {
-                final JsonObject fmt = adaptive.getObject(i);
-                if (fmt.has("url") || fmt.has(SIGNATURE_CIPHER) || fmt.has(CIPHER)) {
-                    return false;
-                }
-            }
-            return true;
+            final JsonArray adaptive = streamingData.getArray(ADAPTIVE_FORMATS);
+            foundSabrData |= (adaptive != null && !adaptive.isEmpty())
+                    || !isNullOrEmpty(streamingData.getString("serverAbrStreamingUrl"));
         }
-        return false;
+        return foundSabrData;
     }
 
 
@@ -1797,7 +1807,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             @Override
             public void onSuccess(final Response response) {
                 try {
-                    final JsonObject visionOsPlayerResponse = JsonUtils.toJsonObject(
+                    visionOsPlayerResponse = JsonUtils.toJsonObject(
                             getValidJsonResponseBody(response));
                     if (isPlayerResponseNotValid(visionOsPlayerResponse, videoId)) {
                         return;

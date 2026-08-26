@@ -46,6 +46,37 @@ public class YoutubeStreamExtractorTest {
         assertEquals(5, countOccurrences(source, "getPreferredStreamingData()"));
     }
 
+    @Test
+    public void playableMetadataCanUseConventionalStreamsFromAnotherClient()
+            throws IOException {
+        final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
+                ? Path.of("src/main/java") : Path.of("app/src/main/java");
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/extractor/services/youtube/extractors/"
+                        + "YoutubeStreamExtractor.java"));
+
+        assertTrue(source.contains("private JsonObject visionOsPlayerResponse;"));
+        assertTrue(source.contains("visionOsPlayerResponse = JsonUtils.toJsonObject("));
+        assertTrue(source.contains("hasUsablePlaybackData(response)"
+                + " || hasAnyUsablePlaybackData()"));
+        assertTrue(source.contains("visionOsPlayerResponse, safariPlayerResponse"));
+        assertTrue(source.contains("if (hasUsableStreamingData(streamingData)) {"
+                + System.lineSeparator() + "                return false;"));
+        assertTrue(source.contains("return foundSabrData;"));
+    }
+
+    @Test
+    public void diagnosticsIncludeVisionOsFallback() throws IOException {
+        final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
+                ? Path.of("src/main/java") : Path.of("app/src/main/java");
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/extractor/services/youtube/extractors/"
+                        + "YoutubeDiagnosticStreamExtractor.java"));
+
+        assertTrue(source.contains("\"visionos\", \"visionOsPlayerResponse\""));
+        assertTrue(source.contains("\"visionOsStreamingData\", requestedVideoId"));
+    }
+
     private static int countOccurrences(final String source, final String value) {
         int count = 0;
         int offset = 0;
