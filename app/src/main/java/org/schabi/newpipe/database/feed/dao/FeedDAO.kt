@@ -21,6 +21,9 @@ abstract class FeedDAO {
     @Query("DELETE FROM feed")
     abstract fun deleteAll(): Int
 
+    @Query("DELETE FROM feed_last_updated")
+    abstract fun deleteAllLastUpdated(): Int
+
     /**
      * @param groupId          the group id to get feed streams of; use
      *                         [FeedGroupEntity.GROUP_ALL_ID] to not filter by group
