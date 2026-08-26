@@ -6,6 +6,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Automatically retry transient YouTube player responses that request a page reload before
+  showing a playback error.
 - Bounded persistent database growth by clearing feed caches and unreferenced stream metadata,
   compacting inactive sync journals while preserving paired-device synchronization state.
 - Fixed videos being reported unavailable when YouTube rejected the Android client but returned
