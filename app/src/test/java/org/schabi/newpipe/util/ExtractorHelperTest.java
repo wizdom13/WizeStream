@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,6 +29,26 @@ public class ExtractorHelperTest {
                 "https://example.com/avatar.jpg"));
         assertFalse(ExtractorHelper.shouldBackfillYouTubePlaylistUploaderAvatar(
                 youtubeServiceId + 1, "https://example.com/channel/test", ""));
+    }
+
+    @Test
+    public void youtubeReloadResponseIsRetried() {
+        assertTrue(ExtractorHelper.isTransientYouTubeReloadError(
+                ServiceList.YouTube.getServiceId(),
+                new ContentNotAvailableException("The page needs to be reloaded.")));
+    }
+
+    @Test
+    public void genuineAvailabilityErrorsAreNotRetried() {
+        final int youtubeServiceId = ServiceList.YouTube.getServiceId();
+
+        assertFalse(ExtractorHelper.isTransientYouTubeReloadError(
+                youtubeServiceId,
+                new ContentNotAvailableException("This video is private")));
+        assertFalse(ExtractorHelper.isTransientYouTubeReloadError(
+                youtubeServiceId + 1,
+                new ContentNotAvailableException("The page needs to be reloaded.")));
+        assertFalse(ExtractorHelper.isTransientYouTubeReloadError(youtubeServiceId, null));
     }
 
     @Test
