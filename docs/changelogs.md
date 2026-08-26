@@ -6,6 +6,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Bounded persistent database growth by clearing feed caches and unreferenced stream metadata,
+  compacting inactive sync journals while preserving paired-device synchronization state.
 - Fixed videos being reported unavailable when YouTube rejected the Android client but returned
   valid metadata and conventional streams through separate fallback clients.
 

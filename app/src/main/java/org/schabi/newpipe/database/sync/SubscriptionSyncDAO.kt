@@ -82,6 +82,15 @@ abstract class SubscriptionSyncDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun upsertPeerState(state: SubscriptionSyncPeerStateEntity)
 
+    @Query("DELETE FROM subscription_sync_changes")
+    abstract fun deleteAllChanges(): Int
+
+    @Query("DELETE FROM subscription_sync_records")
+    abstract fun deleteAllRecords(): Int
+
+    @Query("DELETE FROM subscription_sync_origin_state")
+    abstract fun deleteAllOriginStates(): Int
+
     @Query("DELETE FROM subscription_sync_peer_state")
     abstract fun deleteAllPeerStates()
 }
