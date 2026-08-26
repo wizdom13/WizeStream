@@ -64,6 +64,7 @@ class SavedSearchFeedSourceTest {
         assertTrue(search.contains("MENU_DELETE_SEARCH_FEED"))
     }
 
-    private fun read(relativePath: String): String =
-        Files.readString(sourceDirectory.resolve(relativePath))
+    private fun read(relativePath: String): String = Files.readString(
+        sourceDirectory.resolve(relativePath)
+    )
 }
