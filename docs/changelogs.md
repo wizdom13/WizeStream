@@ -10,6 +10,8 @@ Release history is listed newest first. The number beside each release is its An
 
 - Restored live playback when a service provides only an HLS or DASH manifest without separate
   audio or video stream entries.
+- Kept manifest-only YouTube live streams playing by preferring their refreshable HLS source over
+  a finite DASH DVR window.
 - Fixed selected bottom-navigation labels occasionally being truncated until the app was
   restarted.
 
