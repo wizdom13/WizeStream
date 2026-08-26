@@ -18,8 +18,8 @@ class SavedSearchFeedManager(context: Context) {
     private val savedSearchFeedDao = database.savedSearchFeedDAO()
     private val streamDao = database.streamDAO()
 
-    fun getAll(): Single<List<SavedSearchFeedEntity>> =
-        Single.fromCallable(savedSearchFeedDao::getAllDirect)
+    fun getAll(): Single<List<SavedSearchFeedEntity>> = Single
+        .fromCallable(savedSearchFeedDao::getAllDirect)
             .subscribeOn(Schedulers.io())
 
     fun create(
@@ -47,17 +47,19 @@ class SavedSearchFeedManager(context: Context) {
         }
     }.subscribeOn(Schedulers.io())
 
-    fun getCachedItems(feedId: Long): Single<List<StreamInfoItem>> =
-        Single.fromCallable {
+    fun getCachedItems(feedId: Long): Single<List<StreamInfoItem>> = Single
+        .fromCallable {
             savedSearchFeedDao.getCachedStreamsDirect(feedId, MAXIMUM_CACHED_ITEMS)
                 .map(StreamEntity::toStreamInfoItem)
         }.subscribeOn(Schedulers.io())
 
-    fun replaceCache(feedId: Long, items: List<InfoItem>): Completable =
-        cacheItems(feedId, items, replace = true)
+    fun replaceCache(feedId: Long, items: List<InfoItem>): Completable = cacheItems(
+        feedId, items, replace = true
+    )
 
-    fun appendCache(feedId: Long, items: List<InfoItem>): Completable =
-        cacheItems(feedId, items, replace = false)
+    fun appendCache(feedId: Long, items: List<InfoItem>): Completable = cacheItems(
+        feedId, items, replace = false
+    )
 
     private fun cacheItems(
         feedId: Long,
