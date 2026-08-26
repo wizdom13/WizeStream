@@ -1514,17 +1514,17 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     }
 
     private boolean hasUsablePlaybackData(@Nonnull final JsonObject response) {
-        return hasUsablePlaybackData(response.getObject(STREAMING_DATA));
+        return hasUsableStreamingData(response.getObject(STREAMING_DATA));
     }
 
     private boolean hasAnyUsablePlaybackData() {
         return Arrays.asList(visionOsStreamingData, safariStreamingData, iosStreamingData,
                         tvHtml5SimplyEmbedStreamingData, androidStreamingData, webStreamingData)
                 .stream()
-                .anyMatch(this::hasUsablePlaybackData);
+                .anyMatch(this::hasUsableStreamingData);
     }
 
-    private boolean hasUsablePlaybackData(@Nullable final JsonObject streamingData) {
+    private boolean hasUsableStreamingData(@Nullable final JsonObject streamingData) {
         if (streamingData == null || streamingData.isEmpty()) {
             return false;
         }
@@ -1569,7 +1569,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             if (streamingData == null || streamingData.isEmpty()) {
                 continue;
             }
-            if (hasUsablePlaybackData(streamingData)) {
+            if (hasUsableStreamingData(streamingData)) {
                 return false;
             }
             final JsonArray adaptive = streamingData.getArray(ADAPTIVE_FORMATS);
