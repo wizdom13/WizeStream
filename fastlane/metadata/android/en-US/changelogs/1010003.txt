@@ -1,0 +1,3 @@
+• Restored live streams that provide playback through HLS or DASH manifests.
+• Kept manifest-only YouTube live streams playing instead of freezing at the DASH window edge.
+• Fixed selected bottom-navigation labels occasionally being truncated until restart.

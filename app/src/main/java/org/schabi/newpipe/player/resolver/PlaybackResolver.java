@@ -202,6 +202,12 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
 
         try {
             final StreamInfoTag tag = StreamInfoTag.of(info);
+            // Manifest-only YouTube lives can expose a finite DASH DVR window whose declared end
+            // is only a few seconds beyond the initial live edge. HLS keeps refreshing its media
+            // playlist, so prefer it for this narrow fallback path.
+            if (shouldPreferHlsForManifestOnlyYoutubeLive(info)) {
+                return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
+            }
             // Prefer DASH over HLS because of an exoPlayer bug that causes the background player to
             // also fetch the video stream even if it is supposed to just fetch the audio stream.
             if (!info.getDashMpdUrl().isEmpty()) {
@@ -217,6 +223,14 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
         }
 
         return null;
+    }
+
+    static boolean shouldPreferHlsForManifestOnlyYoutubeLive(final StreamInfo info) {
+        return info.getServiceId() == ServiceList.YouTube.getServiceId()
+                && StreamTypeUtil.isLiveStream(info.getStreamType())
+                && info.getAudioStreams().isEmpty()
+                && info.getVideoStreams().isEmpty()
+                && !info.getHlsUrl().isEmpty();
     }
 
     static MediaSource buildLiveMediaSource(final PlayerDataSource dataSource,
