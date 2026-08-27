@@ -111,7 +111,7 @@ class NotificationModeConfigFragment : Fragment() {
             this,
             item.title,
             item.notificationMode,
-            item.notificationKeywords,
+            item.notificationKeywords
         ) { mode, keywords ->
             updateNotificationSettings(item, mode, keywords)
         }

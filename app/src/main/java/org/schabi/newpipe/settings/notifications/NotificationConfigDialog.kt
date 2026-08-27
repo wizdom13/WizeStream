@@ -20,7 +20,7 @@ object NotificationConfigDialog {
         title: CharSequence,
         @NotificationMode currentMode: Int,
         currentKeywords: String?,
-        saveListener: SaveListener,
+        saveListener: SaveListener
     ) {
         val binding = DialogNotificationFilterBinding.inflate(fragment.layoutInflater)
         binding.keywords.setText(currentKeywords.orEmpty())
@@ -57,7 +57,7 @@ object NotificationConfigDialog {
                     else -> NotificationMode.DISABLED
                 }
                 val normalizedKeywords = NotificationKeywordFilter.normalize(
-                    binding.keywords.text?.toString().orEmpty(),
+                    binding.keywords.text?.toString().orEmpty()
                 )
                 if (
                     mode == NotificationMode.KEYWORDS_ONLY &&
