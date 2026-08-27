@@ -10,7 +10,6 @@ import org.schabi.newpipe.streams.io.SharpStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 
 class M4aFromMp4Demuxer extends Postprocessing {
@@ -34,7 +33,9 @@ class M4aFromMp4Demuxer extends Postprocessing {
 
         try {
             extractAudio(outputFile);
+            throwIfCancellationRequested();
             replaceDownloadedFile(outputFile);
+            throwIfCancellationRequested();
             getMission().length = getMission().storage.length();
             getMission().done = getMission().length;
             return OK_RESULT;
@@ -70,7 +71,7 @@ class M4aFromMp4Demuxer extends Postprocessing {
             final ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
             final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
             while (true) {
-                throwIfInterrupted();
+                throwIfCancellationRequested();
                 buffer.clear();
                 final int size = extractor.readSampleData(buffer, 0);
                 if (size < 0) {
@@ -124,21 +125,18 @@ class M4aFromMp4Demuxer extends Postprocessing {
     }
 
     private void replaceDownloadedFile(final File extracted) throws IOException {
+        throwIfCancellationRequested();
         try (FileInputStream input = new FileInputStream(extracted);
              SharpStream target = getMission().storage.openAndTruncateStream()) {
             final byte[] buffer = new byte[COPY_BUFFER_SIZE];
             int read;
             while ((read = input.read(buffer)) >= 0) {
-                throwIfInterrupted();
+                throwIfCancellationRequested();
                 target.write(buffer, 0, read);
             }
+            throwIfCancellationRequested();
             target.flush();
         }
     }
 
-    private static void throwIfInterrupted() throws InterruptedIOException {
-        if (Thread.currentThread().isInterrupted()) {
-            throw new InterruptedIOException("M4A extraction was cancelled");
-        }
-    }
 }

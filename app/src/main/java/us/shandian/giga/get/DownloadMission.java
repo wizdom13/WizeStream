@@ -545,6 +545,7 @@ public class DownloadMission extends Mission {
             return true;
         }
 
+        final boolean postprocessingWasRunning = isPsRunning();
         deleted = true;
         running = false;
         enqueued = false;
@@ -555,7 +556,7 @@ public class DownloadMission extends Mission {
         for (final Thread thread : threads) {
             thread.interrupt();
         }
-        if (psAlgorithm != null) {
+        if (psAlgorithm != null && !postprocessingWasRunning) {
             psAlgorithm.cleanupTemporalDir();
         }
 
@@ -650,6 +651,13 @@ public class DownloadMission extends Mission {
         return psAlgorithm != null && (psState == 1 || psState == 3);
     }
 
+    /**
+     * Indicates whether workers should stop without publishing more output.
+     */
+    public boolean isCancellationRequested() {
+        return deleted || Thread.currentThread().isInterrupted();
+    }
+
     public boolean isConvertingToMp3() {
         return isPsRunning() && psAlgorithm.isMp3Conversion();
     }
@@ -731,6 +739,10 @@ public class DownloadMission extends Mission {
     }
 
     private void doPostprocessing() {
+        if (deleted) {
+            return;
+        }
+
         errCode = ERROR_NOTHING;
         errObject = null;
         Thread thread = Thread.currentThread();
@@ -748,8 +760,11 @@ public class DownloadMission extends Mission {
         } catch (Exception err) {
             Log.e(TAG, "Post-processing failed. " + psAlgorithm.toString(), err);
 
-            if (err instanceof InterruptedIOException || err instanceof ClosedByInterruptException || thread.isInterrupted()) {
-                notifyError(DownloadMission.ERROR_POSTPROCESSING_STOPPED, null);
+            if (deleted || err instanceof InterruptedIOException
+                    || err instanceof ClosedByInterruptException || thread.isInterrupted()) {
+                if (!deleted) {
+                    notifyError(DownloadMission.ERROR_POSTPROCESSING_STOPPED, null);
+                }
                 return;
             }
 
@@ -757,7 +772,16 @@ public class DownloadMission extends Mission {
 
             exception = err;
         } finally {
-            notifyPostProcessing(errCode == ERROR_NOTHING ? 2 : 0);
+            if (deleted) {
+                psState = 0;
+                psAlgorithm.cleanupTemporalDir();
+            } else {
+                notifyPostProcessing(errCode == ERROR_NOTHING ? 2 : 0);
+            }
+        }
+
+        if (deleted) {
+            return;
         }
 
         if (errCode != ERROR_NOTHING) {

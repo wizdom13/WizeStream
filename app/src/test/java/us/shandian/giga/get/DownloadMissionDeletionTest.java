@@ -5,8 +5,10 @@
 
 package us.shandian.giga.get;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -17,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
 import us.shandian.giga.postprocessing.Postprocessing;
 
@@ -59,6 +62,41 @@ public class DownloadMissionDeletionTest {
         assertTrue(testMission.mission.deleted);
         assertFalse(testMission.metadata.exists());
         verify(testMission.storage).delete();
+    }
+
+    @Test
+    public void cancelDuringPostprocessingDefersTemporaryCleanupToWorker() throws Exception {
+        final TestMission testMission = mission();
+        final Thread worker = mock(Thread.class);
+        final Postprocessing postprocessing = mock(Postprocessing.class);
+        testMission.mission.threads = new Thread[]{worker};
+        testMission.mission.psAlgorithm = postprocessing;
+        testMission.mission.psState = 1;
+
+        assertTrue(testMission.mission.cancel(false));
+
+        verify(worker).interrupt();
+        verify(postprocessing, never()).cleanupTemporalDir();
+    }
+
+    @Test
+    public void deletedPostprocessingNeverTransitionsToCompleted() throws Exception {
+        final TestMission testMission = mission();
+        final Postprocessing postprocessing = mock(Postprocessing.class);
+        testMission.mission.psAlgorithm = postprocessing;
+        testMission.mission.current = testMission.mission.urls.length;
+        doAnswer(invocation -> {
+            testMission.mission.deleted = true;
+            return null;
+        }).when(postprocessing).run(testMission.mission);
+
+        final Method doPostprocessing =
+                DownloadMission.class.getDeclaredMethod("doPostprocessing");
+        doPostprocessing.setAccessible(true);
+        doPostprocessing.invoke(testMission.mission);
+
+        assertEquals(0, testMission.mission.psState);
+        verify(postprocessing).cleanupTemporalDir();
     }
 
     @Test

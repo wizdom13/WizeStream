@@ -52,7 +52,7 @@ public abstract class Mission implements Serializable {
     /**
      * Indicate if this mission is deleted whatever is stored
      */
-    public transient boolean deleted = false;
+    public transient volatile boolean deleted = false;
 
     @NonNull
     @Override

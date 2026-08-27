@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 
 final class Mp3FromAudio extends Postprocessing {
@@ -43,7 +42,9 @@ final class Mp3FromAudio extends Postprocessing {
 
         try {
             transcode(outputFile, bitrate);
+            throwIfCancellationRequested();
             replaceDownloadedFile(outputFile);
+            throwIfCancellationRequested();
             getMission().length = getMission().storage.length();
             getMission().done = getMission().length;
             return OK_RESULT;
@@ -118,7 +119,7 @@ final class Mp3FromAudio extends Postprocessing {
 
         try {
             while (!outputEnded) {
-                throwIfInterrupted();
+            throwIfCancellationRequested();
                 if (!inputEnded) {
                     final int inputIndex = decoder.dequeueInputBuffer(CODEC_TIMEOUT_US);
                     if (inputIndex >= 0) {
@@ -199,21 +200,18 @@ final class Mp3FromAudio extends Postprocessing {
     }
 
     private void replaceDownloadedFile(final File converted) throws IOException {
+        throwIfCancellationRequested();
         try (FileInputStream input = new FileInputStream(converted);
              SharpStream target = getMission().storage.openAndTruncateStream()) {
             final byte[] buffer = new byte[COPY_BUFFER_SIZE];
             int read;
             while ((read = input.read(buffer)) >= 0) {
-                throwIfInterrupted();
+                throwIfCancellationRequested();
                 target.write(buffer, 0, read);
             }
+            throwIfCancellationRequested();
             target.flush();
         }
     }
 
-    private static void throwIfInterrupted() throws InterruptedIOException {
-        if (Thread.currentThread().isInterrupted()) {
-            throw new InterruptedIOException("MP3 conversion was cancelled");
-        }
-    }
 }
