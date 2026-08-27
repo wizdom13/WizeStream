@@ -7,6 +7,7 @@ Release history is listed newest first. The number beside each release is its An
 ### Improvements
 
 - Added direct notification keyword management to subscribed channel menus.
+- Polished feed refreshing with a translucent overlay, circular progress, and immediate cancellation.
 
 ## WizeStream 1.10.4 (`1010004`)
 

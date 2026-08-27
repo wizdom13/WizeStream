@@ -230,6 +230,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.initListeners()
         feedBinding.refreshRootView.setOnClickListener { reloadContent() }
         feedBinding.swipeRefreshLayout.setOnRefreshListener { reloadContent() }
+        feedBinding.cancelRefreshButton.setOnClickListener {
+            it.isEnabled = false
+            FeedLoadService.cancel(requireContext())
+        }
         feedBinding.swipeRefreshLayout.setOnChildScrollUpCallback { _, _ ->
             !feedHeaderExpanded || feedBinding.itemsList.canScrollVertically(-1)
         }
@@ -360,10 +364,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun showLoading() {
         super.showLoading()
-        feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
+        feedBinding.itemsList.animate(true, 0)
         feedBinding.refreshRootView.animate(false, 0)
         feedBinding.streamFilterChips.root.animate(false, 0)
-        feedBinding.loadingProgressText.animate(true, 200)
+        showRefreshOverlay()
         feedBinding.swipeRefreshLayout.isRefreshing = true
         isRefreshing = true
     }
@@ -373,7 +377,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         feedBinding.itemsList.animate(true, 0)
         feedBinding.refreshRootView.animate(true, 200)
         feedBinding.streamFilterChips.root.animate(true, 200)
-        feedBinding.loadingProgressText.animate(false, 0)
+        hideRefreshOverlay()
         feedBinding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
     }
@@ -383,8 +387,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         feedBinding.refreshRootView.animate(true, 200)
         feedBinding.streamFilterChips.root.animate(true, 200)
-        feedBinding.loadingProgressText.animate(false, 0)
+        hideRefreshOverlay()
         feedBinding.swipeRefreshLayout.isRefreshing = false
+        isRefreshing = false
     }
 
     override fun handleResult(result: FeedState) {
@@ -402,7 +407,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         feedBinding.refreshRootView.animate(false, 0)
         feedBinding.streamFilterChips.root.animate(true, 200)
-        feedBinding.loadingProgressText.animate(false, 0)
+        hideRefreshOverlay()
         feedBinding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
     }
@@ -410,22 +415,39 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private fun handleProgressState(progressState: FeedState.ProgressState) {
         showLoading()
 
-        val isIndeterminate = progressState.currentProgress == -1 &&
-            progressState.maxProgress == -1
+        val isIndeterminate = progressState.currentProgress < 0 ||
+            progressState.maxProgress < 0
+        feedBinding.loadingProgressBar.isVisible = !isIndeterminate
+        feedBinding.loadingIndeterminateProgressBar.isVisible = isIndeterminate
+        feedBinding.loadingProgressText.isVisible = !isIndeterminate
+        feedBinding.loadingProgressStatusText.isVisible = isIndeterminate
 
-        feedBinding.loadingProgressText.text = if (!isIndeterminate) {
-            "${progressState.currentProgress}/${progressState.maxProgress}"
-        } else if (progressState.progressMessage > 0) {
-            getString(progressState.progressMessage)
+        if (isIndeterminate) {
+            feedBinding.loadingProgressStatusText.text =
+                if (progressState.progressMessage > 0) {
+                    getString(progressState.progressMessage)
+                } else {
+                    getString(R.string.feed_notification_loading)
+                }
         } else {
-            "∞/∞"
+            val maxProgress = progressState.maxProgress.coerceAtLeast(1)
+            val currentProgress = progressState.currentProgress.coerceIn(0, maxProgress)
+            feedBinding.loadingProgressText.text = "$currentProgress/$maxProgress"
+            feedBinding.loadingProgressBar.max = maxProgress
+            feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
         }
+    }
 
-        feedBinding.loadingProgressBar.isIndeterminate = isIndeterminate ||
-            (progressState.maxProgress > 0 && progressState.currentProgress == 0)
-        feedBinding.loadingProgressBar.progress = progressState.currentProgress
+    private fun showRefreshOverlay() {
+        if (!feedBinding.refreshLoadingOverlay.isVisible) {
+            feedBinding.refreshLoadingOverlay.animate(true, 200)
+        }
+        feedBinding.cancelRefreshButton.isEnabled = true
+    }
 
-        feedBinding.loadingProgressBar.max = progressState.maxProgress
+    private fun hideRefreshOverlay() {
+        feedBinding.cancelRefreshButton.isEnabled = false
+        feedBinding.refreshLoadingOverlay.animate(false, 200)
     }
 
     private fun showInfoItemDialog(item: StreamInfoItem) {
