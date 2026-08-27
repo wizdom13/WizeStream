@@ -21,7 +21,8 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
 
     steps:
       - name: Check out release source
@@ -32,9 +33,12 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          java-version: 21
+          java-version: 21.0.12+1
           distribution: temurin
           cache: gradle
+
+      - name: Validate pinned release toolchain
+        run: scripts/validate-reproducible-toolchain.sh
 
       - name: Write release keystore
         env:
@@ -47,7 +51,7 @@ jobs:
           fi
           printf '%s' "${RELEASE_KEYSTORE_BASE64}" | base64 -d > "$RUNNER_TEMP/wizestream-release.keystore"
 
-      - name: Build signed release APK
+      - name: Build signed release APK twice and compare SHA-256
         env:
           WIZESTREAM_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
           WIZESTREAM_RELEASE_STORE_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_STORE_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
@@ -61,19 +65,22 @@ jobs:
             echo "Missing one or more WizeStream release signing secrets" >&2
             exit 1
           fi
-          ./gradlew clean assembleRelease --stacktrace
+          scripts/reproducible-build.sh \
+            --verify \
+            --output-dir "$RUNNER_TEMP/reproducible-arm"
 
       - name: Verify release APK identity
         run: |
           set -euo pipefail
           APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
           test -n "$APK_PATH"
-          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
+          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/release-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/release-apk-badging.txt"
           grep -q "application-label:'WizeStream'" "$RUNNER_TEMP/release-apk-badging.txt"
           scripts/verify-apk-abis.sh "$APK_PATH" arm64-v8a armeabi-v7a
-          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
+          APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
           "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
 
       - name: "Prepare ARM APK"
@@ -112,7 +119,7 @@ jobs:
           echo "Release tag: $RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
           echo "Changelog: $CHANGELOG_PATH" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Build signed x86_64 release APK
+      - name: Build signed x86_64 release APK twice and compare SHA-256
         env:
           WIZESTREAM_RELEASE_STORE_FILE: ${{ runner.temp }}/wizestream-release.keystore
           WIZESTREAM_RELEASE_STORE_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_STORE_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_STORE_PASSWORD }}
@@ -120,7 +127,11 @@ jobs:
           WIZESTREAM_RELEASE_KEY_PASSWORD: ${{ secrets.WIZESTREAM_RELEASE_KEY_PASSWORD || secrets.NEWPIPE_MATERIAL_RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          ./gradlew clean assembleRelease --stacktrace -PreleaseAbi=x86_64
+          scripts/reproducible-build.sh \
+            --verify \
+            --output-dir "$RUNNER_TEMP/reproducible-x86-64" \
+            -- \
+            -PreleaseAbi=x86_64
 
       - name: Prepare and verify x86_64 APK
         id: x86_release_info
@@ -136,13 +147,14 @@ jobs:
           APK_PATH="dist/${APK_NAME}"
           mv app/build/outputs/apk/release/*.apk "$APK_PATH"
 
-          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
+          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/x86-64-release-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/x86-64-release-badging.txt"
           grep -q "application-label:'WizeStream'" "$RUNNER_TEMP/x86-64-release-badging.txt"
           scripts/verify-apk-abis.sh "$APK_PATH" x86_64
 
-          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
+          APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
           "$APKSIGNER" verify --verbose --print-certs "$APK_PATH"
 
           echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"

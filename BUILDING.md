@@ -8,9 +8,17 @@ release tag therefore records and builds the application and service extraction 
 ## Requirements
 
 - Git
-- JDK 21
-- Android SDK with the required platform and build tools
+- Eclipse Temurin JDK 21.0.12+1
+- Android SDK platform 36.1 and Build Tools 36.1.0
+- Android NDK 28.2.13676358
 - Accepted Android SDK licenses
+
+The exact toolchain is recorded in `gradle/reproducible-build.properties`. Install the pinned
+Android components with:
+
+```bash
+sdkmanager "platforms;android-36.1" "build-tools;36.1.0" "ndk;28.2.13676358"
+```
 
 ## Clone the exact source
 
@@ -37,6 +45,12 @@ Build the default ARM64/ARMv7 release APK:
 scripts/build.sh release
 ```
 
+Build it twice from clean state and require identical SHA-256 hashes:
+
+```bash
+scripts/reproducible-build.sh --verify
+```
+
 Build the x86_64 release APK for Waydroid and Android-x86:
 
 ```bash
@@ -45,6 +59,11 @@ scripts/build.sh release -PreleaseAbi=x86_64
 
 The `releaseAbi` property accepts `arm` (the default) or `x86_64`. Published releases build
 both targets from the same tagged source and sign them with the same release key.
+
+The release build runs R8 in a dedicated JVM with one active processor. Other Gradle work keeps
+its normal parallelism. Build and configuration caches are disabled by the reproducible entry
+point, the locale and timezone are fixed, and `SOURCE_DATE_EPOCH` comes from the checked-out
+commit. A verified APK and its `SHA256SUMS` file are written to `dist/reproducible/`.
 
 Run Android instrumented tests:
 
@@ -97,3 +116,7 @@ publishes the existing `wizestream_vX.Y.Z.apk` ARM asset and a separate
 Every published WizeStream APK must be built from the exact commit referenced by its release tag.
 That commit includes the integrated extractor source under `app/src/main/java`. An APK must not be
 replaced with one built from a newer untagged commit; publish a new version and tag instead.
+
+Pull-request CI builds the release APK twice and fails when the SHA-256 hashes differ. The release
+workflow applies the same check to both the signed ARM and x86_64 APKs before either asset can be
+published.

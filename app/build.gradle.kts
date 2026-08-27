@@ -31,6 +31,12 @@ val hasReleaseSigningConfig = listOf(
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
 
+val reproducibleBuildProperties = java.util.Properties().apply {
+    rootProject.file("gradle/reproducible-build.properties")
+        .inputStream()
+        .use { load(it) }
+}
+
 val releaseAbi = providers.gradleProperty("releaseAbi").orElse("arm").get()
 val releaseAbiFilters = when (releaseAbi) {
     "arm" -> setOf("arm64-v8a", "armeabi-v7a")
@@ -51,6 +57,9 @@ kotlin {
 }
 
 configure<ApplicationExtension> {
+    buildToolsVersion = reproducibleBuildProperties.getProperty("androidBuildToolsVersion")
+    ndkVersion = reproducibleBuildProperties.getProperty("androidNdkVersion")
+
     compileSdk {
         version = release(ANDROID_COMPILE_SDK_MAJOR) {
             minorApiLevel = ANDROID_COMPILE_SDK_MINOR

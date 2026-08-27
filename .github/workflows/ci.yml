@@ -39,7 +39,7 @@ concurrency:
 
 jobs:
   build-and-test-jvm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -54,30 +54,21 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: 21
+          java-version: 21.0.12+1
           distribution: temurin
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build APKs and run JVM tests
-        run: ./gradlew assembleDebug lintDebug testDebugUnitTest assembleRelease --stacktrace -DskipFormatKtlint
-
-      - name: Verify release packaged resources
-        run: |
-          APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
-          test -s "$APK_PATH"
-          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
-          "$AAPT" dump resources "$APK_PATH" > "$RUNNER_TEMP/release-resources.txt"
-          grep -q "layout/list_search_no_results" "$RUNNER_TEMP/release-resources.txt"
-          grep -q "layout/list_empty_view_subscriptions" "$RUNNER_TEMP/release-resources.txt"
-          scripts/verify-apk-abis.sh "$APK_PATH" arm64-v8a armeabi-v7a
+      - name: Build debug APK and run JVM tests
+        run: ./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
 
       - name: Verify debug APK identity
         run: |
           APK_PATH="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
           test -n "$APK_PATH"
-          AAPT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt"
+          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/debug-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial.debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
           grep -q "application-label:'WizeStream Debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
@@ -88,8 +79,51 @@ jobs:
           name: wizestream-debug-apk
           path: app/build/outputs/apk/debug/*.apk
 
+  reproducible-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Create and checkout branch
+        if: github.event_name == 'pull_request'
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: git checkout -B "$BRANCH"
+
+      - name: Set up pinned JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21.0.12+1
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build release APK twice and compare SHA-256
+        run: scripts/reproducible-build.sh --verify --output-dir "$RUNNER_TEMP/reproducible-release"
+
+      - name: Verify release packaged resources
+        run: |
+          APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
+          test -s "$APK_PATH"
+          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
+          "$AAPT" dump resources "$APK_PATH" > "$RUNNER_TEMP/release-resources.txt"
+          grep -q "layout/list_search_no_results" "$RUNNER_TEMP/release-resources.txt"
+          grep -q "layout/list_empty_view_subscriptions" "$RUNNER_TEMP/release-resources.txt"
+          scripts/verify-apk-abis.sh "$APK_PATH" arm64-v8a armeabi-v7a
+
+      - name: Upload reproducibility result
+        uses: actions/upload-artifact@v7
+        with:
+          name: wizestream-reproducible-release
+          path: ${{ runner.temp }}/reproducible-release/**
+
   test-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       matrix:
@@ -108,7 +142,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: 21
+          java-version: 21.0.12+1
           distribution: temurin
 
       - name: Set up Gradle
