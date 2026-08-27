@@ -4,9 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.USER_VIDEO_API_MODE_CLIENT;
 import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.USER_VIDEO_API_MODE_SEARCH;
 import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.USER_VIDEO_API_MODE_WEB;
@@ -17,7 +14,9 @@ import com.grack.nanojson.JsonObject;
 
 import org.junit.After;
 import org.junit.Test;
+import org.schabi.newpipe.extractor.downloader.CancellableCall;
 import org.schabi.newpipe.extractor.downloader.Downloader;
+import org.schabi.newpipe.extractor.downloader.Request;
 import org.schabi.newpipe.extractor.downloader.Response;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.exceptions.ServiceTemporaryBlockedException;
@@ -172,15 +171,27 @@ public class BilibiliChannelExtractorRiskControlTest {
 
     private static Downloader downloaderReturning(final int responseCode, final String body)
             throws Exception {
-        final Downloader downloader = mock(Downloader.class);
-        when(downloader.execute(any())).thenReturn(new Response(
+        final Response response = new Response(
                 responseCode,
                 "response",
                 Collections.emptyMap(),
                 body,
                 body.getBytes(StandardCharsets.UTF_8),
                 URL
-        ));
-        return downloader;
+        );
+        return new Downloader() {
+            @Override
+            public Response execute(final Request request) {
+                return response;
+            }
+
+            @Override
+            public CancellableCall executeAsync(
+                    final Request request,
+                    final AsyncCallback callback
+            ) {
+                throw new UnsupportedOperationException("Async requests are not used in this test");
+            }
+        };
     }
 }
