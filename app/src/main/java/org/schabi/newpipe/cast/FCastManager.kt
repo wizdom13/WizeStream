@@ -358,8 +358,9 @@ object FCastManager {
         .isPresent
 
     private fun selectSource(context: Context, info: StreamInfo): CastSource? {
-        if (info.hlsUrl.isNotBlank()) {
-            return CastSource(info.hlsUrl, "application/vnd.apple.mpegurl")
+        val hlsUrl: String? = info.hlsUrl
+        if (!hlsUrl.isNullOrBlank()) {
+            return CastSource(hlsUrl, "application/vnd.apple.mpegurl")
         }
 
         val videoStreams = info.videoStreams
@@ -372,8 +373,9 @@ object FCastManager {
             return sourceFrom(videoStreams[index])
         }
 
-        if (info.dashMpdUrl.isNotBlank()) {
-            return CastSource(info.dashMpdUrl, "application/dash+xml")
+        val dashMpdUrl: String? = info.dashMpdUrl
+        if (!dashMpdUrl.isNullOrBlank()) {
+            return CastSource(dashMpdUrl, "application/dash+xml")
         }
 
         return info.audioStreams.firstOrNull { it.isUrl }?.let(::sourceFrom)

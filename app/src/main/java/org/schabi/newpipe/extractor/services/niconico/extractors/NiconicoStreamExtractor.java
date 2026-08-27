@@ -498,6 +498,6 @@ public class NiconicoStreamExtractor extends StreamExtractor {
         if (getStreamType() == StreamType.LIVE_STREAM) {
             return getUrl();
         }
-        return null;
+        return "";
     }
 }

@@ -13,6 +13,17 @@ import static org.mockito.Mockito.when;
 class StreamInfoTest {
 
     @Test
+    void normalizesNullManifestUrls() {
+        final StreamInfo streamInfo = new StreamInfo();
+
+        streamInfo.setHlsUrl(null);
+        streamInfo.setDashMpdUrl(null);
+
+        assertEquals("", streamInfo.getHlsUrl());
+        assertEquals("", streamInfo.getDashMpdUrl());
+    }
+
+    @Test
     void acceptsHlsOnlyLiveStream() throws Exception {
         final StreamExtractor extractor = createExtractor();
         final String hlsUrl = "https://example.com/live.m3u8";

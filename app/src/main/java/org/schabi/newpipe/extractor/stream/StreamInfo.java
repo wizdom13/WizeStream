@@ -765,7 +765,7 @@ public class StreamInfo extends Info {
     }
 
     public void setDashMpdUrl(final String dashMpdUrl) {
-        this.dashMpdUrl = dashMpdUrl;
+        this.dashMpdUrl = dashMpdUrl == null ? "" : dashMpdUrl;
     }
 
     public String getHlsUrl() {
@@ -773,7 +773,7 @@ public class StreamInfo extends Info {
     }
 
     public void setHlsUrl(final String hlsUrl) {
-        this.hlsUrl = hlsUrl;
+        this.hlsUrl = hlsUrl == null ? "" : hlsUrl;
     }
 
     public List<InfoItem> getRelatedItems() {
