@@ -1,8 +1,12 @@
 package org.schabi.newpipe.extractor.services.youtube.extractors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.JsonParserException;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -93,6 +97,44 @@ public class YoutubeStreamExtractorTest {
         assertTrue(source.contains("&$fields=playerResponse"));
         assertTrue(source.contains("prepareAndroidMobileJsonBuilder("));
         assertTrue(source.contains("getJsonAndroidPostResponse("));
+    }
+
+    @Test
+    public void muxed360pOnlyStillNeedsDirectStreamFallback() throws JsonParserException {
+        final JsonObject reelStreamingData = JsonParser.object().from(
+                "{\"formats\":[{\"itag\":18,\"url\":\"https://example.com/360p\"}],"
+                        + "\"adaptiveFormats\":[{\"itag\":137}],"
+                        + "\"serverAbrStreamingUrl\":\"https://example.com/sabr\"}");
+        assertFalse(YoutubeStreamExtractor.hasUsableAdaptiveOrManifestData(
+                reelStreamingData));
+
+        final JsonObject adaptiveStreamingData = JsonParser.object().from(
+                "{\"adaptiveFormats\":[{\"itag\":137,"
+                        + "\"url\":\"https://example.com/1080p\"}]}");
+        assertTrue(YoutubeStreamExtractor.hasUsableAdaptiveOrManifestData(
+                adaptiveStreamingData));
+
+        final JsonObject liveStreamingData = JsonParser.object().from(
+                "{\"hlsManifestUrl\":\"https://example.com/live.m3u8\"}");
+        assertTrue(YoutubeStreamExtractor.hasUsableAdaptiveOrManifestData(
+                liveStreamingData));
+    }
+
+    @Test
+    public void muxedPlaybackDoesNotSuppressQualityFallbacks() throws IOException {
+        final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
+                ? Path.of("src/main/java") : Path.of("app/src/main/java");
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/extractor/services/youtube/extractors/"
+                        + "YoutubeStreamExtractor.java"));
+        final int fetchStart = source.indexOf("public void onFetchPage(");
+        final int fetchEnd = source.indexOf(
+                "private void waitForCallsToFinish", fetchStart);
+
+        assertTrue(fetchStart >= 0);
+        assertTrue(fetchEnd > fetchStart);
+        assertEquals(5, countOccurrences(source.substring(fetchStart, fetchEnd),
+                "needsDirectStreamFallback()"));
     }
 
     @Test

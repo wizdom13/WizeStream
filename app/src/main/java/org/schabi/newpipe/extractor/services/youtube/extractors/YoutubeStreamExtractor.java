@@ -1385,7 +1385,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
         boolean playableResponseSelected = selectPlayablePlayerResponse(videoId);
 
-        if (!playableResponseSelected) {
+        if (!playableResponseSelected || needsDirectStreamFallback()) {
             tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId);
             playableResponseSelected = selectPlayablePlayerResponse(videoId);
         }
@@ -1394,7 +1394,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                 localization, contentCountry, videoId, this);
 
         CancellableCall primaryCall = null;
-        if (!playableResponseSelected) {
+        if (!playableResponseSelected || needsDirectStreamFallback()) {
             if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
                 primaryCall = fetchAndroidVRJsonPlayer(contentCountry, localization, videoId);
             } else {
@@ -1440,21 +1440,22 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             playableResponseSelected = selectPlayablePlayerResponse(videoId);
 
-            if (!playableResponseSelected) {
+            if (!playableResponseSelected || needsDirectStreamFallback()) {
                 final CancellableCall iosCall = fetchIosMobileJsonPlayer(contentCountry,
                         localization, videoId);
                 waitForCallsToFinish(iosCall);
                 playableResponseSelected = selectPlayablePlayerResponse(videoId);
             }
 
-            if (StringUtils.isBlank(ServiceList.YouTube.getTokens()) && !playableResponseSelected) {
+            if (StringUtils.isBlank(ServiceList.YouTube.getTokens())
+                    && (!playableResponseSelected || needsDirectStreamFallback())) {
                 final CancellableCall safariCall = tryFetchSafariJsonPlayer(
                         contentCountry, localization, videoId);
                 waitForCallsToFinish(safariCall);
                 playableResponseSelected = selectPlayablePlayerResponse(videoId);
             }
 
-            if (!playableResponseSelected) {
+            if (!playableResponseSelected || needsDirectStreamFallback()) {
                 final CancellableCall tvHtml5Call = tryFetchTvHtml5EmbedJsonPlayer(
                         contentCountry, localization, videoId);
                 waitForCallsToFinish(tvHtml5Call);
@@ -1539,17 +1540,32 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                 .anyMatch(this::hasUsableStreamingData);
     }
 
+    private boolean needsDirectStreamFallback() {
+        return Arrays.asList(visionOsStreamingData, safariStreamingData, iosStreamingData,
+                        tvHtml5SimplyEmbedStreamingData, androidStreamingData, webStreamingData)
+                .stream()
+                .noneMatch(YoutubeStreamExtractor::hasUsableAdaptiveOrManifestData);
+    }
+
+    static boolean hasUsableAdaptiveOrManifestData(
+            @Nullable final JsonObject streamingData) {
+        if (streamingData == null || streamingData.isEmpty()) {
+            return false;
+        }
+        return hasUsableFormats(streamingData.getArray(ADAPTIVE_FORMATS))
+                || !isNullOrEmpty(streamingData.getString("hlsManifestUrl"))
+                || !isNullOrEmpty(streamingData.getString("dashManifestUrl"));
+    }
+
     private boolean hasUsableStreamingData(@Nullable final JsonObject streamingData) {
         if (streamingData == null || streamingData.isEmpty()) {
             return false;
         }
         return hasUsableFormats(streamingData.getArray(FORMATS))
-                || hasUsableFormats(streamingData.getArray(ADAPTIVE_FORMATS))
-                || !isNullOrEmpty(streamingData.getString("hlsManifestUrl"))
-                || !isNullOrEmpty(streamingData.getString("dashManifestUrl"));
+                || hasUsableAdaptiveOrManifestData(streamingData);
     }
 
-    private boolean hasUsableFormats(@Nullable final JsonArray formats) {
+    private static boolean hasUsableFormats(@Nullable final JsonArray formats) {
         if (formats == null || formats.isEmpty()) {
             return false;
         }
