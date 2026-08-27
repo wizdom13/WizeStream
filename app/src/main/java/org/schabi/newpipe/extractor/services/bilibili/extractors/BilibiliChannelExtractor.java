@@ -13,9 +13,11 @@ import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.channel.ChannelExtractor;
 import org.schabi.newpipe.extractor.downloader.Downloader;
+import org.schabi.newpipe.extractor.downloader.Response;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
+import org.schabi.newpipe.extractor.exceptions.ServiceTemporaryBlockedException;
 import org.schabi.newpipe.extractor.linkhandler.ChannelTabs;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.extractor.search.filter.Filter;
@@ -45,10 +47,9 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
     private final ClientUserVideoImpl clientUserVideoImpl = new ClientUserVideoImpl();
     private final SearchUserVideoImpl searchUserVideoImpl = new SearchUserVideoImpl();
     private final WebUserVideoImpl webUserVideoImpl = new WebUserVideoImpl();
+    private UserVideoImpl activeUserVideoImpl;
 
-
-    private UserVideoImpl getVideoImpl() {
-        int mode = getCurrentVideoApiMode();
+    private UserVideoImpl getVideoImpl(final int mode) {
         switch (mode) {
             case USER_VIDEO_API_MODE_WEB:
                 return webUserVideoImpl;
@@ -57,8 +58,82 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
             case USER_VIDEO_API_MODE_CLIENT:
                 return clientUserVideoImpl;
             default:
-                rotateVideoApiMode();
                 return webUserVideoImpl;
+        }
+    }
+
+    private UserVideoImpl getActiveVideoImpl() {
+        if (activeUserVideoImpl == null) {
+            activeUserVideoImpl = getVideoImpl(getCurrentVideoApiMode());
+        }
+        return activeUserVideoImpl;
+    }
+
+    @FunctionalInterface
+    interface VideoApiAttempt {
+        void fetch(int mode) throws IOException, ExtractionException;
+    }
+
+    static int runVideoApiFallback(final int preferredMode, final VideoApiAttempt attempt)
+            throws IOException, ExtractionException {
+        ServiceTemporaryBlockedException lastBlock = null;
+
+        for (int offset = 0; offset < SIZE_USER_VIDEO_API_MODE; offset++) {
+            final int mode = (preferredMode + offset) % SIZE_USER_VIDEO_API_MODE;
+            try {
+                attempt.fetch(mode);
+                setCurrentVideoApiMode(mode);
+                return mode;
+            } catch (final ServiceTemporaryBlockedException block) {
+                lastBlock = block;
+                if (offset + 1 < SIZE_USER_VIDEO_API_MODE) {
+                    DeviceForger.regenerateRandomDevice();
+                }
+            }
+        }
+
+        // Avoid starting the next manual retry with the same endpoint that was attempted first.
+        setCurrentVideoApiMode((preferredMode + 1) % SIZE_USER_VIDEO_API_MODE);
+        throw lastBlock;
+    }
+
+    private UserVideoImpl fetchInitialVideoPageWithFallback(
+            @Nonnull final Downloader downloader,
+            final String id,
+            final String url
+    ) throws IOException, ExtractionException {
+        final int mode = runVideoApiFallback(
+                getCurrentVideoApiMode(),
+                candidateMode -> getVideoImpl(candidateMode).onFetchPage(downloader, id, url)
+        );
+        activeUserVideoImpl = getVideoImpl(mode);
+        return activeUserVideoImpl;
+    }
+
+    private NextVideoPageResult fetchNextVideoPageWithFallback(
+            @Nonnull final Page page,
+            @Nonnull final StreamInfoItemsCollector collector,
+            @Nonnull final Downloader downloader,
+            @Nonnull final ChannelExtractor extractor,
+            @Nonnull final String id
+    ) throws IOException, ExtractionException {
+        final boolean[] hasVideos = {false};
+        final int mode = runVideoApiFallback(
+                getCurrentVideoApiMode(),
+                candidateMode -> hasVideos[0] = getVideoImpl(candidateMode)
+                        .getPage(page, collector, downloader, extractor, id)
+        );
+        activeUserVideoImpl = getVideoImpl(mode);
+        return new NextVideoPageResult(activeUserVideoImpl, hasVideos[0]);
+    }
+
+    private static final class NextVideoPageResult {
+        private final UserVideoImpl videoImpl;
+        private final boolean hasVideos;
+
+        private NextVideoPageResult(final UserVideoImpl videoImpl, final boolean hasVideos) {
+            this.videoImpl = videoImpl;
+            this.hasVideos = hasVideos;
         }
     }
     //endregion
@@ -72,7 +147,7 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
         Map<String, List<String>> headers = getHeaders(getOriginalUrl());
         String id = getId();
 
-        getVideoImpl().onFetchPage(downloader, id, getUrl());
+        fetchInitialVideoPageWithFallback(downloader, id, getUrl());
 
         userInfoData = requestUserSpaceResponse(downloader, QUERY_USER_INFO_URL + id, headers);
 
@@ -93,7 +168,7 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
         if (userLiveData.getObject("data").getObject(getId()).getInt("live_status") != 0) {
             collector.commit(new BilibiliLiveInfoItemExtractor(userLiveData.getObject("data").getObject(getId()), 1));
         }
-        UserVideoImpl videoImpl = getVideoImpl();
+        UserVideoImpl videoImpl = getActiveVideoImpl();
         boolean hasVideos = videoImpl.getInitialPage(collector, this);
         Page nextPage = null;
         if (hasVideos) nextPage = new Page(getNextPageFromCurrentUrl(
@@ -114,8 +189,10 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
         userInfoData = requestUserSpaceResponse(downloader, QUERY_USER_INFO_URL + id, headers);
 
         final StreamInfoItemsCollector collector = new StreamInfoItemsCollector(getServiceId());
-        UserVideoImpl videoImpl = getVideoImpl();
-        boolean hasVideos = videoImpl.getPage(page, collector, getDownloader(), this, getId());
+        NextVideoPageResult result = fetchNextVideoPageWithFallback(
+                page, collector, downloader, this, id);
+        UserVideoImpl videoImpl = result.videoImpl;
+        boolean hasVideos = result.hasVideos;
         Page nextPage = null;
         if (hasVideos) nextPage = new Page(
                 getNextPageFromCurrentUrl(page.getUrl(), "pn", 1), String.valueOf(videoImpl.lastVideo()), null, BilibiliService.getDefaultCookies(), null
@@ -544,45 +621,68 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
             String url,
             Map<String, List<String>> headers
     ) throws ParsingException, IOException, ReCaptchaException {
-        int maxTry = 2;
-        int currentTry = maxTry;
+        final Response response = downloader.get(url, headers);
+        final String responseBody = stripLeadingBomAndWhitespace(response.responseBody());
 
-        String responseBody = "";
-
-        while (currentTry > 0) {
-            responseBody = downloader.get(url, headers).responseBody();
-            if (responseBody.startsWith("<!DOCTYPE html>")) {
-                // returns HTML, due to risk control
-                DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
-                currentTry -= 1;
-                continue;
-            }
-            try {
-                JsonObject responseJson = JsonParser.object().from(responseBody);
-                long code = responseJson.getLong("code");
-                if (code != 0) {
-                    if (code == -352) {
-                        // blocked risk control
-                        DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
-                    }
-                    currentTry -= 1;
-                } else {
-                    return responseJson;
-                }
-            } catch (JsonParserException e) {
-                e.printStackTrace();
-                throw new ParsingException("Failed parse response body: " + responseBody);
-            }
+        if (isRiskControlResponse(response.responseCode(), responseBody)) {
+            throw temporaryBlock();
         }
 
-        DeviceForger.Device device = DeviceForger.requireRandomDevice();
-        String msg = "BiliBili blocked us, we retried " + maxTry + " times, the last forged device is:\n"
-                + device.info()
-                + "\nTry to refresh, or report this!\n"
-                + responseBody;
-        rotateVideoApiMode();
-        DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
-        throw new ParsingException(msg);
+        final JsonObject responseJson;
+        try {
+            responseJson = JsonParser.object().from(responseBody);
+        } catch (final JsonParserException error) {
+            throw new ParsingException(
+                    "BiliBili returned an invalid response (HTTP "
+                            + response.responseCode() + ")",
+                    error
+            );
+        }
+
+        final long code = responseJson.getLong("code");
+        if (code == -352) {
+            throw temporaryBlock();
+        }
+        if (code != 0) {
+            throw new ParsingException("BiliBili API returned error code " + code);
+        }
+        return responseJson;
+    }
+
+    static boolean isRiskControlResponse(final int responseCode, final String responseBody) {
+        if (responseCode == 412) {
+            return true;
+        }
+
+        final String normalizedBody = stripLeadingBomAndWhitespace(responseBody);
+        if (!normalizedBody.regionMatches(true, 0, "<!doctype html", 0, 14)
+                && !normalizedBody.regionMatches(true, 0, "<html", 0, 5)) {
+            return false;
+        }
+
+        final String lowerBody = normalizedBody.toLowerCase(java.util.Locale.ROOT);
+        return lowerBody.contains("security.bilibili.com")
+                || lowerBody.contains("security control policy")
+                || normalizedBody.contains("错误号: 412")
+                || normalizedBody.contains("风控策略");
+    }
+
+    static String stripLeadingBomAndWhitespace(final String responseBody) {
+        int offset = 0;
+        while (offset < responseBody.length()) {
+            final char character = responseBody.charAt(offset);
+            if (character != '\uFEFF' && !Character.isWhitespace(character)) {
+                break;
+            }
+            offset++;
+        }
+        return responseBody.substring(offset);
+    }
+
+    private static ServiceTemporaryBlockedException temporaryBlock() {
+        return new ServiceTemporaryBlockedException(
+                "BiliBili temporarily blocked requests from this network"
+        );
     }
 
 }
