@@ -5,6 +5,7 @@
 
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.tasks.testing.Test
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -31,7 +32,7 @@ val hasReleaseSigningConfig = listOf(
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
 
-val reproducibleBuildProperties = java.util.Properties().apply {
+val reproducibleBuildProperties = Properties().apply {
     rootProject.file("gradle/reproducible-build.properties")
         .inputStream()
         .use { load(it) }
