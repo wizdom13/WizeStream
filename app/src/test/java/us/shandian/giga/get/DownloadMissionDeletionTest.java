@@ -5,6 +5,7 @@
 
 package us.shandian.giga.get;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -59,6 +60,31 @@ public class DownloadMissionDeletionTest {
         assertTrue(testMission.mission.deleted);
         assertFalse(testMission.metadata.exists());
         verify(testMission.storage).delete();
+    }
+
+    @Test
+    public void cancelDuringPostprocessingDefersTemporaryCleanupToWorker() throws Exception {
+        final TestMission testMission = mission();
+        final Thread worker = mock(Thread.class);
+        final Postprocessing postprocessing = mock(Postprocessing.class);
+        testMission.mission.threads = new Thread[]{worker};
+        testMission.mission.psAlgorithm = postprocessing;
+        testMission.mission.psState = 1;
+
+        assertTrue(testMission.mission.cancel(false));
+
+        verify(worker).interrupt();
+        verify(postprocessing, never()).cleanupTemporalDir();
+    }
+
+    @Test
+    public void deletedPostprocessingNeverTransitionsToCompleted() {
+        assertEquals(0, DownloadMission.resolvePostprocessingFinalState(
+                true, DownloadMission.ERROR_NOTHING));
+        assertEquals(2, DownloadMission.resolvePostprocessingFinalState(
+                false, DownloadMission.ERROR_NOTHING));
+        assertEquals(0, DownloadMission.resolvePostprocessingFinalState(
+                false, DownloadMission.ERROR_POSTPROCESSING));
     }
 
     @Test
