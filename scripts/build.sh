@@ -12,7 +12,7 @@ case "$MODE" in
         exec ./gradlew clean assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint "$@"
         ;;
     release)
-        exec ./gradlew clean assembleRelease --stacktrace -DskipFormatKtlint "$@"
+        exec "$ROOT_DIR/scripts/reproducible-build.sh" "$@"
         ;;
     nightly)
         exec ./gradlew \
