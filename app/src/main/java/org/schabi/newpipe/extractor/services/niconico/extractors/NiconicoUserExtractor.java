@@ -1,8 +1,10 @@
 package org.schabi.newpipe.extractor.services.niconico.extractors;
 
 import static org.schabi.newpipe.extractor.services.niconico.NiconicoService.CHANNEL_URL;
+import static org.schabi.newpipe.extractor.services.niconico.NiconicoService.getMylistHeaders;
 import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 
+import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
 import com.grack.nanojson.JsonParserException;
@@ -28,7 +30,6 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItemsCollector;
 import org.schabi.newpipe.extractor.utils.Parser;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +38,10 @@ import javax.annotation.Nonnull;
 
 
 public class NiconicoUserExtractor extends ChannelExtractor {
+    private static final int USER_VIDEOS_PAGE_SIZE = 100;
+
     private Document rss;
+    private JsonObject videoData;
     private String uploaderName;
     private String uploaderUrl;
     private String uploaderAvatarUrl;
@@ -53,12 +57,10 @@ public class NiconicoUserExtractor extends ChannelExtractor {
     @Override
     public void onFetchPage(final @Nonnull Downloader downloader)
             throws IOException, ExtractionException {
-        String url = getLinkHandler().getUrl();
-        url += "/video?rss=2.0&page=1";
-        rss = Jsoup.parse(getDownloader().get(url).responseBody());
-
-        if(url.contains(CHANNEL_URL)){
+        if (getLinkHandler().getUrl().contains(CHANNEL_URL)) {
             type = 1;
+            final String rssUrl = getLinkHandler().getUrl() + "/video?rss=2.0&page=1";
+            rss = Jsoup.parse(getDownloader().get(rssUrl).responseBody());
             final Document user = Jsoup.parse(getDownloader().get(
                     getLinkHandler().getUrl()).responseBody());
             channel_info = user.select("meta[name=description]").attr("content");
@@ -80,6 +82,7 @@ public class NiconicoUserExtractor extends ChannelExtractor {
             uploaderName = infoObj.getString("nickname");
             uploaderUrl = getLinkHandler().getUrl();
             uploaderAvatarUrl = infoObj.getObject("icons").getString("large");
+            videoData = fetchUserVideos(getUserVideosUrl(1));
         } catch (final JsonParserException | NullPointerException e) {
             throw new ExtractionException("could not parse user information.");
         }
@@ -97,19 +100,25 @@ public class NiconicoUserExtractor extends ChannelExtractor {
         final StreamInfoItemsCollector streamInfoItemsCollector =
                 new StreamInfoItemsCollector(getServiceId());
 
-        final Elements arrays = rss.select("item");
-
-        for (final Element e : arrays) {
-            streamInfoItemsCollector.commit(new NiconicoTrendRSSExtractor(e, uploaderName,
-                    uploaderUrl, uploaderAvatarUrl));
+        final String currentPageUrl;
+        final Page nextPage;
+        if (type == 1) {
+            final Elements items = rss.select("item");
+            for (final Element item : items) {
+                streamInfoItemsCollector.commit(new NiconicoTrendRSSExtractor(item, uploaderName,
+                        uploaderUrl, uploaderAvatarUrl));
+            }
+            currentPageUrl = getLinkHandler().getUrl() + "/video?rss=2.0&page=1";
+            nextPage = items.isEmpty() ? null : getNextPageFromCurrentUrl(currentPageUrl);
+        } else {
+            currentPageUrl = getUserVideosUrl(1);
+            nextPage = collectUserVideos(videoData, streamInfoItemsCollector, currentPageUrl);
         }
 
-        final String currentPageUrl = getLinkHandler().getUrl() + "/video?rss=2.0&page=1";
         if (ServiceList.NicoNico.getFilterTypes().contains("channels")) {
             streamInfoItemsCollector.applyBlocking(ServiceList.NicoNico.getFilterConfig());
         }
-        return new InfoItemsPage<>(streamInfoItemsCollector,
-                getNextPageFromCurrentUrl(currentPageUrl));
+        return new InfoItemsPage<>(streamInfoItemsCollector, nextPage);
     }
 
     @Override
@@ -122,23 +131,24 @@ public class NiconicoUserExtractor extends ChannelExtractor {
         final StreamInfoItemsCollector streamInfoItemsCollector =
                 new StreamInfoItemsCollector(getServiceId());
 
-        final Document response = Jsoup.parse(getDownloader().get(page.getUrl(),
-                NiconicoService.LOCALE).responseBody());
-        final Elements arrays = response.getElementsByTag("item");
-
-        for (final Element e : arrays) {
-            streamInfoItemsCollector.commit(new NiconicoTrendRSSExtractor(e, uploaderName,
-                    uploaderUrl, uploaderAvatarUrl));
-        }
-        if (arrays.size() == 0) {
-            return new InfoItemsPage<>(streamInfoItemsCollector,
-                    null);
+        final Page nextPage;
+        if (page.getUrl().contains("nvapi.nicovideo.jp/v3/users/")) {
+            nextPage = collectUserVideos(fetchUserVideos(page.getUrl()),
+                    streamInfoItemsCollector, page.getUrl());
+        } else {
+            final Document response = Jsoup.parse(getDownloader().get(page.getUrl(),
+                    NiconicoService.LOCALE).responseBody());
+            final Elements items = response.getElementsByTag("item");
+            for (final Element item : items) {
+                streamInfoItemsCollector.commit(new NiconicoTrendRSSExtractor(item, uploaderName,
+                        uploaderUrl, uploaderAvatarUrl));
+            }
+            nextPage = items.isEmpty() ? null : getNextPageFromCurrentUrl(page.getUrl());
         }
         if (ServiceList.NicoNico.getFilterTypes().contains("channels")) {
             streamInfoItemsCollector.applyBlocking(ServiceList.NicoNico.getFilterConfig());
         }
-        return new InfoItemsPage<>(streamInfoItemsCollector,
-                getNextPageFromCurrentUrl(page.getUrl()));
+        return new InfoItemsPage<>(streamInfoItemsCollector, nextPage);
     }
 
     @Override
@@ -150,11 +160,6 @@ public class NiconicoUserExtractor extends ChannelExtractor {
     public String getBannerUrl() throws ParsingException {
         // Niconico does not have user banner.
         return null;
-    }
-
-    @Override
-    public String getFeedUrl() throws ParsingException {
-        return getLinkHandler().getUrl();
     }
 
     @Override
@@ -178,14 +183,53 @@ public class NiconicoUserExtractor extends ChannelExtractor {
 
     private Page getNextPageFromCurrentUrl(final String currentUrl)
             throws ParsingException {
-        final String page = "&page=(\\d+?)";
+        final String page = "(?:\\?|&)page=(\\d+)(?:&|$)";
         try {
             final int nowPage = Integer.parseInt(Parser.matchGroup1(page, currentUrl));
-            return new Page(currentUrl.replace("&page=" + nowPage, "&page="
-                    + (nowPage + 1)));
+            return new Page(currentUrl.replace("page=" + nowPage, "page=" + (nowPage + 1)));
         } catch (final Parser.RegexException e) {
             throw new ParsingException("could not parse pager.");
         }
+    }
+
+    private String getUserVideosUrl(final int page) {
+        final String id = getLinkHandler().getId().split("user/")[1];
+        return String.format("https://nvapi.nicovideo.jp/v3/users/%s/videos"
+                        + "?sortKey=registeredAt&sortOrder=desc&sensitiveContents=mask"
+                        + "&pageSize=%d&page=%d",
+                id, USER_VIDEOS_PAGE_SIZE, page);
+    }
+
+    private JsonObject fetchUserVideos(final String url) throws IOException, ExtractionException {
+        try {
+            final JsonObject data = JsonParser.object()
+                    .from(getDownloader().get(url, getMylistHeaders()).responseBody())
+                    .getObject("data");
+            if (data == null) {
+                throw new ExtractionException("user videos response contains no data.");
+            }
+            return data;
+        } catch (final JsonParserException | NullPointerException e) {
+            throw new ExtractionException("could not parse user videos.");
+        }
+    }
+
+    private Page collectUserVideos(final JsonObject data,
+                                   final StreamInfoItemsCollector collector,
+                                   final String currentPageUrl) throws ParsingException {
+        final JsonArray items = data.getArray("items");
+        for (int i = 0; i < items.size(); i++) {
+            collector.commit(new NiconicoSearchContentItemExtractor(
+                    items.getObject(i).getObject("essential")));
+        }
+
+        final int currentPage = Integer.parseInt(Parser.matchGroup1(
+                "(?:\\?|&)page=(\\d+)(?:&|$)", currentPageUrl));
+        if (items.isEmpty() || (long) currentPage * USER_VIDEOS_PAGE_SIZE
+                >= data.getLong("totalCount")) {
+            return null;
+        }
+        return getNextPageFromCurrentUrl(currentPageUrl);
     }
 
     @Nonnull
