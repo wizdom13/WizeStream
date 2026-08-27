@@ -33,12 +33,14 @@ android {
                 r8 {
                     runInSeparateProcess = true
                     jvmOptions.addAll(
-                        "-Xmx2048m",
-                        "-XX:ActiveProcessorCount=1",
-                        "-Dfile.encoding=UTF-8",
-                        "-Duser.language=en",
-                        "-Duser.country=US",
-                        "-Duser.timezone=UTC"
+                        listOf(
+                            "-Xmx2048m",
+                            "-XX:ActiveProcessorCount=1",
+                            "-Dfile.encoding=UTF-8",
+                            "-Duser.language=en",
+                            "-Duser.country=US",
+                            "-Duser.timezone=UTC"
+                        )
                     )
                 }
             }
