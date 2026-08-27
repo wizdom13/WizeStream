@@ -140,13 +140,13 @@
                     android:orientation="vertical">
 
                     <FrameLayout
-                        android:layout_width="88dp"
-                        android:layout_height="88dp">
+                        android:layout_width="104dp"
+                        android:layout_height="104dp">
 
                         <com.google.android.material.progressindicator.CircularProgressIndicator
                             android:id="@+id/loading_progress_bar"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
+                            android:layout_width="104dp"
+                            android:layout_height="104dp"
                             android:indeterminate="false"
                             android:max="1"
                             android:progress="0"
@@ -159,8 +159,8 @@
 
                         <com.google.android.material.progressindicator.CircularProgressIndicator
                             android:id="@+id/loading_indeterminate_progress_bar"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
+                            android:layout_width="104dp"
+                            android:layout_height="104dp"
                             android:indeterminate="true"
                             android:visibility="gone"
                             app:indicatorColor="?attr/colorPrimary"

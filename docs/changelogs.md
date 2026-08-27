@@ -12,6 +12,7 @@ Release history is listed newest first. The number beside each release is its An
 ### Fixes
 
 - Prevented feed refreshes and filters from crashing when the displayed list shrinks to zero items.
+- Prevented the circular feed refresh indicator from being clipped along its edges.
 
 ## WizeStream 1.10.4 (`1010004`)
 

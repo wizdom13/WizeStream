@@ -71,14 +71,28 @@ public class FeedRefreshControlsTest {
         final Document document = parseLayout();
         final Element progress = findByAndroidId(
                 document, "@+id/loading_progress_bar");
+        final Element indeterminateProgress = findByAndroidId(
+                document, "@+id/loading_indeterminate_progress_bar");
         final Element cancel = findByAndroidId(
                 document, "@+id/cancel_refresh_button");
 
         assertNotNull(progress);
+        assertNotNull(indeterminateProgress);
         assertEquals(
                 "com.google.android.material.progressindicator.CircularProgressIndicator",
                 progress.getTagName());
+        assertEquals("104dp", progress.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("104dp", progress.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
         assertEquals("88dp", progress.getAttributeNS(APP_NAMESPACE, "indicatorSize"));
+        assertEquals(
+                "104dp",
+                indeterminateProgress.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals(
+                "104dp",
+                indeterminateProgress.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals(
+                "88dp",
+                indeterminateProgress.getAttributeNS(APP_NAMESPACE, "indicatorSize"));
         assertEquals("6dp", progress.getAttributeNS(APP_NAMESPACE, "trackThickness"));
         assertEquals("3dp", progress.getAttributeNS(APP_NAMESPACE, "trackCornerRadius"));
 
