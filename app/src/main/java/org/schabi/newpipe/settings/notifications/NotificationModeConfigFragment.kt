@@ -8,18 +8,14 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.subscription.NotificationMode
-import org.schabi.newpipe.databinding.DialogNotificationFilterBinding
 import org.schabi.newpipe.databinding.FragmentChannelsNotificationsBinding
-import org.schabi.newpipe.local.feed.notifications.NotificationKeywordFilter
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 
 /**
@@ -111,58 +107,15 @@ class NotificationModeConfigFragment : Fragment() {
     }
 
     private fun showNotificationConfigDialog(item: SubscriptionItem) {
-        val dialogBinding = DialogNotificationFilterBinding.inflate(layoutInflater)
-        dialogBinding.keywords.setText(item.notificationKeywords)
-        when (item.notificationMode) {
-            NotificationMode.ENABLED -> dialogBinding.modeAll.isChecked = true
-            NotificationMode.KEYWORDS_ONLY -> dialogBinding.modeKeywords.isChecked = true
-            else -> dialogBinding.modeDisabled.isChecked = true
+        NotificationConfigDialog.show(
+            this,
+            item.title,
+            item.notificationMode,
+            item.notificationKeywords,
+        ) { mode, keywords ->
+            updateNotificationSettings(item, mode, keywords)
         }
-
-        fun updateKeywordVisibility() {
-            dialogBinding.keywordsLayout.visibility = if (dialogBinding.modeKeywords.isChecked) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-        }
-        dialogBinding.modeGroup.setOnCheckedChangeListener { _, _ ->
-            dialogBinding.keywordsLayout.error = null
-            updateKeywordVisibility()
-        }
-        updateKeywordVisibility()
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(item.title)
-            .setView(dialogBinding.root)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.save, null)
-            .create()
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val mode = when (dialogBinding.modeGroup.checkedRadioButtonId) {
-                    R.id.mode_all -> NotificationMode.ENABLED
-                    R.id.mode_keywords -> NotificationMode.KEYWORDS_ONLY
-                    else -> NotificationMode.DISABLED
-                }
-                val normalizedKeywords = NotificationKeywordFilter.normalize(
-                    dialogBinding.keywords.text?.toString().orEmpty()
-                )
-                if (
-                    mode == NotificationMode.KEYWORDS_ONLY &&
-                    !NotificationKeywordFilter.isValid(normalizedKeywords)
-                ) {
-                    dialogBinding.keywordsLayout.error =
-                        getString(R.string.notification_keywords_invalid)
-                    return@setOnClickListener
-                }
-                updateNotificationSettings(item, mode, normalizedKeywords)
-                dialog.dismiss()
-            }
-        }
-        dialog.show()
     }
-
     private fun updateNotificationSettings(
         item: SubscriptionItem,
         @NotificationMode mode: Int,
