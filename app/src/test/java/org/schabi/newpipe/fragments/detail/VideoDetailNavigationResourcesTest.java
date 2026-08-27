@@ -77,8 +77,10 @@ public class VideoDetailNavigationResourcesTest {
         final var viewPagers = document.getElementsByTagName(
                 "androidx.viewpager.widget.ViewPager");
         assertEquals(1, viewPagers.getLength());
+        final var viewPager = (Element) viewPagers.item(0);
         assertEquals("@dimen/video_detail_navigation_height",
-                ((Element) viewPagers.item(0)).getAttribute("android:paddingBottom"));
+                viewPager.getAttribute("android:layout_marginBottom"));
+        assertEquals("", viewPager.getAttribute("android:paddingBottom"));
     }
 
     private void assertMenuItem(final Element item,

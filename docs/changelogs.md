@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Fixes
+
+- Prevented portrait videos from leaving Related items underneath the video-detail navigation by
+  reserving the navigation's full height in the content layout.
+
 ## WizeStream 1.10.4 (`1010004`)
 
 ### New features
