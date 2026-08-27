@@ -27,7 +27,9 @@ public class ContextualSearchIntegrationTest {
         assertSourceContains("org/schabi/newpipe/download/DownloadsTabFragment.java",
                 "implements ContextualSearchable");
         assertSourceContains("org/schabi/newpipe/local/subscription/SubscriptionViewModel.kt",
-                "getSubscriptions(filterQuery = it)");
+                "getSubscriptionsForScope(");
+        assertSourceContains("org/schabi/newpipe/local/subscription/SubscriptionViewModel.kt",
+                "filterQuery = query");
         assertSourceContains("org/schabi/newpipe/MainActivity.java",
                 "fragment instanceof MainFragment");
     }

@@ -36,7 +36,6 @@ class FeedViewModel(
     initialShowFutureItems: Boolean
 ) : ViewModel() {
     private val feedDatabaseManager = FeedDatabaseManager(application)
-    private val feedScope = FeedScope.from(application)
 
     private val showPlayedItems = BehaviorProcessor.create<Boolean>()
     private val showPlayedItemsFlowable = showPlayedItems
@@ -56,54 +55,69 @@ class FeedViewModel(
     private val mutableStateLiveData = MutableLiveData<FeedState>()
     val stateLiveData: LiveData<FeedState> = mutableStateLiveData
 
-    private var combineDisposable = Flowable
-        .combineLatest(
-            FeedEventManager.events(feedScope),
-            showPlayedItemsFlowable,
-            showPartiallyPlayedItemsFlowable,
-            showFutureItemsFlowable,
-            feedDatabaseManager.notLoadedCount(
-                groupId,
-                feedScope
-            ),
-            feedDatabaseManager.oldestSubscriptionUpdate(
-                groupId,
-                feedScope
-            ),
+    private var combineDisposable = FeedScope.changes(application)
+        .switchMap { feedScope ->
+            Flowable.combineLatest(
+                FeedEventManager.events(feedScope),
+                showPlayedItemsFlowable,
+                showPartiallyPlayedItemsFlowable,
+                showFutureItemsFlowable,
+                feedDatabaseManager.notLoadedCount(
+                    groupId,
+                    feedScope
+                ),
+                feedDatabaseManager.oldestSubscriptionUpdate(
+                    groupId,
+                    feedScope
+                ),
 
-            Function6 {
-                    t1: FeedEventManager.Event,
-                    t2: Boolean,
-                    t3: Boolean,
-                    t4: Boolean,
-                    t5: Long,
-                    t6: List<OffsetDateTime?>
-                ->
-                return@Function6 CombineResultEventHolder(t1, t2, t3, t4, t5, t6.firstOrNull())
-            }
-        )
-        .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
-        .subscribeOn(Schedulers.io())
-        .observeOn(Schedulers.io())
-        .map { (event, showPlayedItems, showPartiallyPlayedItems, showFutureItems, notLoadedCount, oldestUpdate) ->
-            val streamItems = if (event is SuccessResultEvent || event is IdleEvent) {
-                feedDatabaseManager
-                    .getStreams(
-                        groupId,
-                        showPlayedItems,
-                        showPartiallyPlayedItems,
-                        showFutureItems,
-                        feedScope
+                Function6 {
+                        t1: FeedEventManager.Event,
+                        t2: Boolean,
+                        t3: Boolean,
+                        t4: Boolean,
+                        t5: Long,
+                        t6: List<OffsetDateTime?>
+                    ->
+                    return@Function6 CombineResultEventHolder(
+                        t1,
+                        t2,
+                        t3,
+                        t4,
+                        t5,
+                        t6.firstOrNull()
                     )
-                    .blockingGet(arrayListOf())
-            } else {
-                arrayListOf()
-            }
+                }
+            )
+                .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
+                .observeOn(Schedulers.io())
+                .map { (event, showPlayedItems, showPartiallyPlayedItems, showFutureItems, notLoadedCount, oldestUpdate) ->
+                    val streamItems = if (event is SuccessResultEvent || event is IdleEvent) {
+                        feedDatabaseManager
+                            .getStreams(
+                                groupId,
+                                showPlayedItems,
+                                showPartiallyPlayedItems,
+                                showFutureItems,
+                                feedScope
+                            )
+                            .blockingGet(arrayListOf())
+                    } else {
+                        arrayListOf()
+                    }
 
-            CombineResultDataHolder(event, streamItems, notLoadedCount, oldestUpdate)
+                    CombineResultDataHolder(
+                        feedScope,
+                        event,
+                        streamItems,
+                        notLoadedCount,
+                        oldestUpdate
+                    )
+                }
         }
+        .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe { (event, listFromDB, notLoadedCount, oldestUpdate) ->
+        .subscribe { (feedScope, event, listFromDB, notLoadedCount, oldestUpdate) ->
             mutableStateLiveData.postValue(
                 when (event) {
                     is IdleEvent -> FeedState.LoadedState(listFromDB.map { e -> StreamItem(e) }, oldestUpdate, notLoadedCount, listOf())
@@ -133,6 +147,7 @@ class FeedViewModel(
     )
 
     private data class CombineResultDataHolder(
+        val scope: FeedScope,
         val t1: FeedEventManager.Event,
         val t2: List<StreamWithState>,
         val t3: Long,
