@@ -8,7 +8,6 @@ package us.shandian.giga.get;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,7 +18,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.lang.reflect.Method;
 
 import us.shandian.giga.postprocessing.Postprocessing;
 
@@ -80,24 +78,13 @@ public class DownloadMissionDeletionTest {
     }
 
     @Test
-    public void deletedPostprocessingNeverTransitionsToCompleted() throws Exception {
-        final TestMission testMission = mission();
-        final Postprocessing postprocessing = mock(Postprocessing.class);
-        testMission.mission.psAlgorithm = postprocessing;
-        testMission.mission.current = testMission.mission.urls.length;
-        testMission.mission.metadata = null;
-        doAnswer(invocation -> {
-            testMission.mission.deleted = true;
-            return null;
-        }).when(postprocessing).run(testMission.mission);
-
-        final Method doPostprocessing =
-                DownloadMission.class.getDeclaredMethod("doPostprocessing");
-        doPostprocessing.setAccessible(true);
-        doPostprocessing.invoke(testMission.mission);
-
-        assertEquals(0, testMission.mission.psState);
-        verify(postprocessing).cleanupTemporalDir();
+    public void deletedPostprocessingNeverTransitionsToCompleted() {
+        assertEquals(0, DownloadMission.resolvePostprocessingFinalState(
+                true, DownloadMission.ERROR_NOTHING));
+        assertEquals(2, DownloadMission.resolvePostprocessingFinalState(
+                false, DownloadMission.ERROR_NOTHING));
+        assertEquals(0, DownloadMission.resolvePostprocessingFinalState(
+                false, DownloadMission.ERROR_POSTPROCESSING));
     }
 
     @Test

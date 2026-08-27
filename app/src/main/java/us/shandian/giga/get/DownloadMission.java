@@ -772,11 +772,12 @@ public class DownloadMission extends Mission {
 
             exception = err;
         } finally {
+            final int finalState = resolvePostprocessingFinalState(deleted, errCode);
             if (deleted) {
-                psState = 0;
+                psState = finalState;
                 psAlgorithm.cleanupTemporalDir();
             } else {
-                notifyPostProcessing(errCode == ERROR_NOTHING ? 2 : 0);
+                notifyPostProcessing(finalState);
             }
         }
 
@@ -791,6 +792,11 @@ public class DownloadMission extends Mission {
         }
 
         notifyFinished();
+    }
+
+    static int resolvePostprocessingFinalState(final boolean deleted,
+                                               final int errorCode) {
+        return !deleted && errorCode == ERROR_NOTHING ? 2 : 0;
     }
 
     /**
