@@ -1,0 +1,7 @@
+• Added BiliBili, NicoNico & reusable saved-search feeds.
+• Restored YouTube HD, adaptive audio & download quality options.
+• Auto-refreshes Subscriptions & What's New on service switch.
+• Added Retry/Close dialog for unstarted scheduled livestreams.
+• Fixed FCast crashes & safely stopped deleted conversions.
+• Improved BiliBili risk-control & release reproducibility.
+• Fixed "Related items" hiding under the nav bar for portrait videos.

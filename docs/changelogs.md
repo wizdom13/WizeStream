@@ -4,11 +4,31 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.10.4 (`1010004`)
+
 ### New features
 
-- Added saved-search feeds with service-specific filters, persistent bounded result caching,
-  pagination, deduplication, manual refresh, and safe cached-result fallback when refresh fails.
-  
+- Enabled BiliBili and NicoNico as selectable streaming services.
+- Added reusable saved-search feeds with service-specific filters, persistent bounded result
+  caching, pagination, deduplication, manual refresh, and cached-result fallback.
+
+### Improvements
+
+- Reproducible release APK builds via pinned toolchain.
+- Auto-refreshes Subscriptions/What's New on service switch.
+
+### Fixes
+
+- Instantly halts deleted downloads & clears temp files.
+- Fixed empty-body POST requests in extractors.
+- Prevented FCast crashes from missing stream manifests.
+- Handled BiliBili risk-control blocks & fallbacks.
+- Restored YouTube HD, audio & download options.
+- Added Retry dialog for unstarted livestreams.
+- Fixed layout overlap in portrait videos.  
+
+[View the complete changes since v1.10.3](https://github.com/wizdom13/WizeStream/compare/v1.10.3...v1.10.4)
+
 ## WizeStream 1.10.3 (`1010003`)
 
 ### Fixes
