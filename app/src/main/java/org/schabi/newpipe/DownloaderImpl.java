@@ -196,10 +196,7 @@ public final class DownloaderImpl extends Downloader {
         final Map<String, List<String>> headers = request.headers();
         final byte[] dataToSend = request.dataToSend();
 
-        RequestBody requestBody = null;
-        if (dataToSend != null) {
-            requestBody = RequestBody.create(dataToSend);
-        }
+        final RequestBody requestBody = buildRequestBody(httpMethod, dataToSend);
 
         final okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
                 .method(httpMethod, requestBody)
@@ -217,6 +214,18 @@ public final class DownloaderImpl extends Downloader {
                     requestBuilder.addHeader(headerName, headerValue));
         });
         return requestBuilder.build();
+    }
+
+    @Nullable
+    static RequestBody buildRequestBody(@NonNull final String httpMethod,
+                                        @Nullable final byte[] dataToSend) {
+        if (dataToSend != null) {
+            return RequestBody.create(dataToSend);
+        }
+
+        // OkHttp requires POST requests to have a body, while the extractor downloader contract
+        // permits callers to represent an empty body with null.
+        return "POST".equals(httpMethod) ? RequestBody.create(new byte[0]) : null;
     }
 
     @NonNull
