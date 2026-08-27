@@ -85,6 +85,7 @@ public class DownloadMissionDeletionTest {
         final Postprocessing postprocessing = mock(Postprocessing.class);
         testMission.mission.psAlgorithm = postprocessing;
         testMission.mission.current = testMission.mission.urls.length;
+        testMission.mission.metadata = null;
         doAnswer(invocation -> {
             testMission.mission.deleted = true;
             return null;
