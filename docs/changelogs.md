@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### New features
+
+- Added saved-search feeds with service-specific filters, persistent bounded result caching,
+  pagination, deduplication, manual refresh, and safe cached-result fallback when refresh fails.
+  
 ## WizeStream 1.10.3 (`1010003`)
 
 ### Fixes

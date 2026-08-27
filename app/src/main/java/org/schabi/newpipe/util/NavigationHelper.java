@@ -49,6 +49,7 @@ import org.schabi.newpipe.fragments.list.channel.ChannelFragment;
 import org.schabi.newpipe.fragments.list.comments.CommentRepliesFragment;
 import org.schabi.newpipe.fragments.list.kiosk.KioskFragment;
 import org.schabi.newpipe.fragments.list.playlist.PlaylistFragment;
+import org.schabi.newpipe.database.feed.model.SavedSearchFeedEntity;
 import org.schabi.newpipe.fragments.list.search.SearchFragment;
 import org.schabi.newpipe.local.bookmark.BookmarkFragment;
 import org.schabi.newpipe.local.feed.FeedFragment;
@@ -402,6 +403,16 @@ public final class NavigationHelper {
                                           final int serviceId, final String searchString) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, SearchFragment.getInstance(serviceId, searchString))
+                .addToBackStack(SEARCH_FRAGMENT_TAG)
+                .commit();
+    }
+
+    public static void openSavedSearchFeed(
+            final FragmentManager fragmentManager,
+            @NonNull final SavedSearchFeedEntity savedSearchFeed) {
+        defaultTransaction(fragmentManager)
+                .replace(R.id.fragment_holder,
+                        SearchFragment.getSavedFeedInstance(savedSearchFeed))
                 .addToBackStack(SEARCH_FRAGMENT_TAG)
                 .commit();
     }
