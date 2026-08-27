@@ -758,13 +758,17 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             }
         }
 
-        // Force updates all items so that the highlighting is correct
-        // If this isn't done visible items that are already highlighted will stay in a highlighted
-        // state until the user scrolls them out of the visible area which causes a update/bind-call
-        groupAdapter.notifyItemRangeChanged(
-            0,
-            highlightCount.coerceIn(lastNewItemsCount, groupAdapter.itemCount)
+        // Rebind enough remaining items to both apply new highlights and clear stale ones.
+        // The displayed list can shrink below lastNewItemsCount after filtering or refreshing,
+        // including all the way to zero, so cap the range to the current adapter size.
+        val rebindCount = calculateFeedHighlightRebindCount(
+            lastNewItemsCount,
+            highlightCount,
+            groupAdapter.itemCount
         )
+        if (rebindCount > 0) {
+            groupAdapter.notifyItemRangeChanged(0, rebindCount)
+        }
 
         if (highlightCount > 0) {
             showNewItemsLoaded()
