@@ -805,12 +805,21 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             int framesPerPageY = data.getInt("img_y_len", 10);
             int totalFrames = timeIndex.size() - 1; // Last index is the end time
 
+            if (frameWidth <= 0 || frameHeight <= 0 || framesPerPageX <= 0
+                    || framesPerPageY <= 0 || totalFrames <= 0) {
+                return Collections.emptyList();
+            }
+
             // Calculate average duration per frame
             int durationPerFrame = 0;
             if (totalFrames > 1) {
                 // Convert seconds to milliseconds and calculate average interval
                 int totalDuration = timeIndex.getInt(totalFrames) - timeIndex.getInt(0);
                 durationPerFrame = (totalDuration * 1000) / totalFrames;
+            }
+
+            if (durationPerFrame <= 0) {
+                return Collections.emptyList();
             }
 
             // Prepare URLs with https protocol

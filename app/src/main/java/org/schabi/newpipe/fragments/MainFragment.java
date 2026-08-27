@@ -213,6 +213,7 @@ public class MainFragment extends BaseFragment
             updateBottomNavigationLabelVisibility();
         }
         updateMainNavigationMode();
+        scheduleBottomNavigationRemeasure();
     }
 
     @Override
@@ -607,6 +608,7 @@ public class MainFragment extends BaseFragment
         }
 
         updateBottomNavigationSelection(binding.pager.getCurrentItem());
+        scheduleBottomNavigationRemeasure();
     }
 
     private String getBottomNavigationDisplayLabel(final Tab tab, final String tabName) {
@@ -637,6 +639,25 @@ public class MainFragment extends BaseFragment
         if (bottomNavigation.getSelectedItemId() != itemId) {
             bottomNavigation.setSelectedItemId(itemId);
         }
+        scheduleBottomNavigationRemeasure();
+    }
+
+    private void scheduleBottomNavigationRemeasure() {
+        final BottomNavigationView navigation = bottomNavigation;
+        if (navigation == null) {
+            return;
+        }
+
+        navigation.post(() -> {
+            if (bottomNavigation != navigation) {
+                return;
+            }
+            navigation.requestLayout();
+            for (int i = 0; i < navigation.getChildCount(); i++) {
+                navigation.getChildAt(i).requestLayout();
+            }
+            navigation.invalidate();
+        });
     }
 
     private int getBottomNavigationItemId(final int position) {

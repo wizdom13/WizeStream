@@ -3,6 +3,8 @@ package us.shandian.giga.io;
 import org.schabi.newpipe.streams.io.SharpStream;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.util.function.BooleanSupplier;
 
 public class ChunkFileInputStream extends SharpStream {
     private static final int REPORT_INTERVAL = 256 * 1024;
@@ -14,13 +16,21 @@ public class ChunkFileInputStream extends SharpStream {
 
     private long progressReport;
     private final ProgressReport onProgress;
+    private final BooleanSupplier cancellationRequested;
 
     public ChunkFileInputStream(SharpStream target, long start, long end, ProgressReport callback) throws IOException {
+        this(target, start, end, callback, () -> false);
+    }
+
+    public ChunkFileInputStream(final SharpStream target, final long start, final long end,
+                                final ProgressReport callback,
+                                final BooleanSupplier cancellationRequested) throws IOException {
         source = target;
         offset = start;
         length = end - start;
         position = 0;
         onProgress = callback;
+        this.cancellationRequested = cancellationRequested;
         progressReport = REPORT_INTERVAL;
 
         if (length < 1) {
@@ -49,11 +59,13 @@ public class ChunkFileInputStream extends SharpStream {
 
     @Override
     public int read() throws IOException {
+        throwIfCancellationRequested();
         if ((position + 1) > length) {
             return 0;
         }
 
         int res = source.read();
+        throwIfCancellationRequested();
         if (res >= 0) {
             position++;
         }
@@ -68,6 +80,7 @@ public class ChunkFileInputStream extends SharpStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        throwIfCancellationRequested();
         if ((position + len) > length) {
             len = (int) (length - position);
         }
@@ -76,6 +89,7 @@ public class ChunkFileInputStream extends SharpStream {
         }
 
         int res = source.read(b, off, len);
+        throwIfCancellationRequested();
         position += res;
 
         if (onProgress != null && position > progressReport) {
@@ -88,6 +102,7 @@ public class ChunkFileInputStream extends SharpStream {
 
     @Override
     public long skip(long pos) throws IOException {
+        throwIfCancellationRequested();
         pos = Math.min(pos + position, length);
 
         if (pos == 0) {
@@ -95,6 +110,7 @@ public class ChunkFileInputStream extends SharpStream {
         }
 
         source.seek(offset + pos);
+        throwIfCancellationRequested();
 
         long oldPos = position;
         position = pos;
@@ -121,8 +137,10 @@ public class ChunkFileInputStream extends SharpStream {
 
     @Override
     public void rewind() throws IOException {
+        throwIfCancellationRequested();
         position = 0;
         source.seek(offset);
+        throwIfCancellationRequested();
     }
 
     @Override
@@ -150,6 +168,12 @@ public class ChunkFileInputStream extends SharpStream {
 
     @Override
     public void write(byte[] buffer, int offset, int count) {
+    }
+
+    private void throwIfCancellationRequested() throws InterruptedIOException {
+        if (cancellationRequested.getAsBoolean()) {
+            throw new InterruptedIOException("Post-processing was cancelled");
+        }
     }
 
 }

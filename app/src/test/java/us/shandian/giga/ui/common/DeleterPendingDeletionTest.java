@@ -8,6 +8,7 @@ package us.shandian.giga.ui.common;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.Test;
 
@@ -16,6 +17,14 @@ import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.ui.common.Deleter.PendingDeletion;
 
 public class DeleterPendingDeletionTest {
+    @Test
+    public void runningPostprocessingRequiresImmediateIrreversibleDeletion() {
+        final DownloadMission mission = mock(DownloadMission.class);
+        when(mission.isPsRunning()).thenReturn(true);
+
+        org.junit.Assert.assertTrue(Deleter.requiresImmediateDeletion(mission));
+    }
+
     @Test
     public void runningDownloadIsPausedAndRestored() {
         final DownloadMission mission = mock(DownloadMission.class);

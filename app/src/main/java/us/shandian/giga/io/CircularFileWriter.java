@@ -7,7 +7,9 @@ import org.schabi.newpipe.streams.io.SharpStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 public class CircularFileWriter extends SharpStream {
 
@@ -17,6 +19,7 @@ public class CircularFileWriter extends SharpStream {
     private static final int THRESHOLD_AUX_LENGTH = 15 * 1024 * 1024;// 15 MiB
 
     private final OffsetChecker callback;
+    private final BooleanSupplier cancellationRequested;
 
     public ProgressReport onProgress;
     public WriteErrorHandle onWriteError;
@@ -28,6 +31,12 @@ public class CircularFileWriter extends SharpStream {
     private BufferedFile aux;
 
     public CircularFileWriter(SharpStream target, File temp, OffsetChecker checker) throws IOException {
+        this(target, temp, checker, () -> false);
+    }
+
+    public CircularFileWriter(final SharpStream target, final File temp,
+                              final OffsetChecker checker,
+                              final BooleanSupplier cancellationRequested) throws IOException {
         Objects.requireNonNull(checker);
 
         if (!temp.exists()) {
@@ -40,11 +49,13 @@ public class CircularFileWriter extends SharpStream {
         out = new BufferedFile(target);
 
         callback = checker;
+        this.cancellationRequested = cancellationRequested;
 
         reportPosition = NOTIFY_BYTES_INTERVAL;
     }
 
     private void flushAuxiliar(long amount) throws IOException {
+        throwIfCancellationRequested();
         if (aux.length < 1) {
             return;
         }
@@ -60,6 +71,7 @@ public class CircularFileWriter extends SharpStream {
 
         long length = amount;
         while (length > 0) {
+            throwIfCancellationRequested();
             int read = (int) Math.min(length, Integer.MAX_VALUE);
             read = aux.target.read(buffer, 0, Math.min(read, buffer.length));
 
@@ -105,6 +117,7 @@ public class CircularFileWriter extends SharpStream {
             aux.length -= amount;
             length = aux.length;
             while (length > 0) {
+                throwIfCancellationRequested();
                 int read = (int) Math.min(length, Integer.MAX_VALUE);
                 read = aux.target.read(buffer, 0, Math.min(read, buffer.length));
 
@@ -137,9 +150,11 @@ public class CircularFileWriter extends SharpStream {
      * @throws IOException if an I/O error occurs
      */
     public long finalizeFile() throws IOException {
+        throwIfCancellationRequested();
         flushAuxiliar(aux.length);
 
         out.flush();
+        throwIfCancellationRequested();
 
         // change file length (if required)
         long length = Math.max(maxLengthKnown, out.length);
@@ -179,6 +194,7 @@ public class CircularFileWriter extends SharpStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        throwIfCancellationRequested();
         if (len == 0) {
             return;
         }
@@ -238,12 +254,15 @@ public class CircularFileWriter extends SharpStream {
                 onProgress.report(absoluteOffset);
             }
         }
+        throwIfCancellationRequested();
     }
 
     @Override
     public void flush() throws IOException {
+        throwIfCancellationRequested();
         aux.flush();
         out.flush();
+        throwIfCancellationRequested();
 
         long total = out.length + aux.length;
         if (total > maxLengthKnown) {
@@ -253,12 +272,14 @@ public class CircularFileWriter extends SharpStream {
 
     @Override
     public long skip(long amount) throws IOException {
+        throwIfCancellationRequested();
         seek(out.getOffset() + aux.getOffset() + amount);
         return amount;
     }
 
     @Override
     public void rewind() throws IOException {
+        throwIfCancellationRequested();
         if (onProgress != null) {
             onProgress.report(0);// rollback the whole progress
         }
@@ -270,6 +291,7 @@ public class CircularFileWriter extends SharpStream {
 
     @Override
     public void seek(long offset) throws IOException {
+        throwIfCancellationRequested();
         long total = out.length + aux.length;
 
         if (offset == total) {
@@ -368,6 +390,12 @@ public class CircularFileWriter extends SharpStream {
         boolean handle(Exception err);
     }
 
+    private void throwIfCancellationRequested() throws InterruptedIOException {
+        if (cancellationRequested.getAsBoolean()) {
+            throw new InterruptedIOException("Post-processing was cancelled");
+        }
+    }
+
     class BufferedFile {
 
         final SharpStream target;
@@ -397,6 +425,7 @@ public class CircularFileWriter extends SharpStream {
 
         void write(byte[] b, int off, int len) throws IOException {
             while (len > 0) {
+                throwIfCancellationRequested();
                 // if the queue is full, the method available() will flush the queue
                 int read = Math.min(available(), len);
 
@@ -449,16 +478,20 @@ public class CircularFileWriter extends SharpStream {
         }
 
         void writeProof(byte[] buffer, int length) throws IOException {
+            throwIfCancellationRequested();
             if (onWriteError == null) {
                 target.write(buffer, 0, length);
+                throwIfCancellationRequested();
                 return;
             }
 
             while (true) {
                 try {
                     target.write(buffer, 0, length);
+                    throwIfCancellationRequested();
                     return;
                 } catch (Exception e) {
+                    throwIfCancellationRequested();
                     if (!onWriteError.handle(e)) {
                         throw e;// give up
                     }

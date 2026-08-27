@@ -9,6 +9,7 @@ import org.schabi.newpipe.streams.io.SharpStream;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.Serializable;
 
 import us.shandian.giga.get.DownloadMission;
@@ -101,6 +102,16 @@ public abstract class Postprocessing implements Serializable {
         return tempFile;
     }
 
+    protected final boolean isCancellationRequested() {
+        return mission == null || mission.isCancellationRequested();
+    }
+
+    protected final void throwIfCancellationRequested() throws InterruptedIOException {
+        if (isCancellationRequested()) {
+            throw new InterruptedIOException("Post-processing was cancelled");
+        }
+    }
+
     public final boolean isMp3Conversion() {
         return ALGORITHM_MP3_FROM_AUDIO.equals(name);
     }
@@ -130,6 +141,7 @@ public abstract class Postprocessing implements Serializable {
 
     public void run(DownloadMission target) throws IOException {
         this.mission = target;
+        throwIfCancellationRequested();
 
         int result;
         long finalLength = -1;
@@ -151,9 +163,11 @@ public abstract class Postprocessing implements Serializable {
                     SharpStream source = mission.storage.getStream();
                     long end = j < sources.length ? mission.offsets[j] : source.length();
 
-                    sources[i] = new ChunkFileInputStream(source, mission.offsets[i], end, readProgress);
+                    sources[i] = new ChunkFileInputStream(source, mission.offsets[i], end,
+                            readProgress, this::isCancellationRequested);
                 }
 
+                throwIfCancellationRequested();
                 if (test(sources)) {
                     for (SharpStream source : sources) source.rewind();
 
@@ -174,7 +188,8 @@ public abstract class Postprocessing implements Serializable {
                     };
 
                     try (CircularFileWriter out = new CircularFileWriter(
-                            mission.storage.getStream(), tempFile, checker)) {
+                            mission.storage.getStream(), tempFile, checker,
+                            this::isCancellationRequested)) {
                         out.onProgress = (long position) -> mission.done = position;
 
                         out.onWriteError = err -> {
@@ -195,6 +210,7 @@ public abstract class Postprocessing implements Serializable {
                         };
 
                         result = process(out, sources);
+                        throwIfCancellationRequested();
 
                         if (result == OK_RESULT)
                             finalLength = out.finalizeFile();
@@ -216,8 +232,10 @@ public abstract class Postprocessing implements Serializable {
             }
         } else {
             result = test() ? process(null) : OK_RESULT;
+            throwIfCancellationRequested();
         }
 
+        throwIfCancellationRequested();
         if (result == OK_RESULT) {
             if (finalLength != -1) {
                 mission.length = finalLength;

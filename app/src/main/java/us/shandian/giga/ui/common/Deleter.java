@@ -61,6 +61,14 @@ public class Deleter {
         mHandler.removeCallbacksAndMessages(COMMIT);
         commit();
 
+        if (requiresImmediateDeletion(item)) {
+            final Optional<String> fileToBeDeleted = alsoDeleteFile
+                    ? Optional.of(item.storage.getName()) : Optional.empty();
+            mDownloadManager.deleteMission(item, alsoDeleteFile);
+            showDeletion(fileToBeDeleted, false);
+            return;
+        }
+
         final PendingDeletion pendingDeletion =
                 PendingDeletion.capture(item, alsoDeleteFile);
         mIterator.hide(item);
@@ -96,6 +104,14 @@ public class Deleter {
                 .map(pendingDeletion -> pendingDeletion.mission.storage.getName())
                 .findFirst();
 
+        showDeletion(fileToBeDeleted, true);
+
+        HandlerCompat.postDelayed(mHandler, this::commit, COMMIT, TIMEOUT);
+    }
+
+    private void showDeletion(final Optional<String> fileToBeDeleted,
+                              final boolean allowUndo) {
+
         String msg;
         if (fileToBeDeleted.isPresent()) {
             msg = mContext.getString(R.string.file_deleted)
@@ -105,12 +121,18 @@ public class Deleter {
             msg = mContext.getString(R.string.entry_deleted);
         }
 
-        snackbar = Snackbar.make(mView, msg, Snackbar.LENGTH_INDEFINITE);
-        snackbar.setAction(R.string.undo, s -> forget());
-        snackbar.setActionTextColor(Color.YELLOW);
+        snackbar = Snackbar.make(mView, msg,
+                allowUndo ? Snackbar.LENGTH_INDEFINITE : Snackbar.LENGTH_LONG);
+        if (allowUndo) {
+            snackbar.setAction(R.string.undo, s -> forget());
+            snackbar.setActionTextColor(Color.YELLOW);
+        }
         snackbar.show();
+    }
 
-        HandlerCompat.postDelayed(mHandler, this::commit, COMMIT, TIMEOUT);
+    static boolean requiresImmediateDeletion(final Mission mission) {
+        return mission instanceof DownloadMission
+                && ((DownloadMission) mission).isPsRunning();
     }
 
     private void commit() {
