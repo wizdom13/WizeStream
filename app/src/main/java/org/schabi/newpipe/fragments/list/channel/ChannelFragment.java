@@ -48,6 +48,7 @@ import org.schabi.newpipe.local.feed.notifications.NotificationHelper;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.local.subscription.SubscriptionManager;
+import org.schabi.newpipe.settings.notifications.NotificationConfigDialog;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.ExtractorApiCompat;
@@ -111,6 +112,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
     private MenuItem menuRssButton;
     private MenuItem menuNotifyButton;
+    private MenuItem menuNotificationKeywordsButton;
     private SubscriptionEntity channelSubscription;
 
     public static ChannelFragment getInstance(final int serviceId, final String url,
@@ -185,6 +187,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 }
                 menuRssButton = menu.findItem(R.id.menu_item_rss);
                 menuNotifyButton = menu.findItem(R.id.menu_item_notify);
+                menuNotificationKeywordsButton =
+                        menu.findItem(R.id.menu_item_notification_keywords);
                 updateRssButton();
                 updateNotifyButton(channelSubscription);
             }
@@ -196,6 +200,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     final boolean value = !item.isChecked();
                     item.setEnabled(false);
                     setNotify(value);
+                } else if (itemId == R.id.menu_item_notification_keywords) {
+                    showNotificationConfigDialog();
                 } else if (itemId == R.id.action_settings) {
                     NavigationHelper.openSettings(requireContext());
                 } else if (itemId == R.id.menu_item_rss) {
@@ -483,7 +489,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     }
 
     private void updateNotifyButton(@Nullable final SubscriptionEntity subscription) {
-        if (menuNotifyButton == null) {
+        if (menuNotifyButton == null || menuNotificationKeywordsButton == null) {
             return;
         }
         if (subscription != null) {
@@ -491,11 +497,46 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     NotificationHelper.areNewStreamsNotificationsEnabled(requireContext())
             );
             menuNotifyButton.setChecked(
-                    subscription.getNotificationMode() == NotificationMode.ENABLED
+                    subscription.getNotificationMode() != NotificationMode.DISABLED
             );
         }
 
         menuNotifyButton.setVisible(subscription != null);
+        menuNotificationKeywordsButton.setVisible(subscription != null);
+    }
+
+    private void showNotificationConfigDialog() {
+        final SubscriptionEntity subscription = channelSubscription;
+        if (subscription == null) {
+            return;
+        }
+
+        final String title = currentInfo == null ? name : currentInfo.getName();
+        NotificationConfigDialog.show(
+                this,
+                title,
+                subscription.getNotificationMode(),
+                subscription.getNotificationKeywords(),
+                (mode, keywords) -> updateNotificationSettings(
+                        subscription, mode, keywords)
+        );
+    }
+
+    private void updateNotificationSettings(
+            @NonNull final SubscriptionEntity subscription,
+            final int mode,
+            @NonNull final String keywords) {
+        disposables.add(
+                subscriptionManager
+                        .updateNotificationSettings(
+                                subscription.getServiceId(),
+                                subscription.getUrl(),
+                                mode,
+                                keywords)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe()
+        );
     }
 
     private void setNotify(final boolean isEnabled) {
