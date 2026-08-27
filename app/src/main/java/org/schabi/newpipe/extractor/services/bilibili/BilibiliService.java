@@ -505,11 +505,18 @@ public class BilibiliService extends StreamingService {
 
     private static int userVideoApiMode = USER_VIDEO_API_MODE_WEB;
 
-    public static int getCurrentVideoApiMode() {
+    public static synchronized int getCurrentVideoApiMode() {
         return userVideoApiMode;
     }
 
-    public static void rotateVideoApiMode() {
+    public static synchronized void rotateVideoApiMode() {
         userVideoApiMode = (userVideoApiMode + 1) % SIZE_USER_VIDEO_API_MODE;
+    }
+
+    public static synchronized void setCurrentVideoApiMode(final int mode) {
+        if (mode < 0 || mode >= SIZE_USER_VIDEO_API_MODE) {
+            throw new IllegalArgumentException("Unknown user video API mode: " + mode);
+        }
+        userVideoApiMode = mode;
     }
 }

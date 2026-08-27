@@ -22,6 +22,7 @@ import org.schabi.newpipe.extractor.exceptions.GeographicRestrictionException
 import org.schabi.newpipe.extractor.exceptions.PaidContentException
 import org.schabi.newpipe.extractor.exceptions.PrivateContentException
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
+import org.schabi.newpipe.extractor.exceptions.ServiceTemporaryBlockedException
 import org.schabi.newpipe.extractor.exceptions.SoundCloudGoPlusContentException
 import org.schabi.newpipe.extractor.exceptions.YoutubeMusicPremiumContentException
 import org.schabi.newpipe.ktx.isNetworkRelated
@@ -255,6 +256,12 @@ class ErrorInfo private constructor(
                         YOUTUBE_IP_BAN_FAQ_URL
                     )
 
+                throwable is ServiceTemporaryBlockedException ->
+                    ErrorMessage(
+                        R.string.service_temporary_block,
+                        getServiceName(serviceId)
+                    )
+
                 throwable is ContentNotAvailableException ->
                     ErrorMessage(R.string.content_not_available)
 
@@ -311,6 +318,9 @@ class ErrorInfo private constructor(
 
                 // we know the content is not supported, no need to let the user report it
                 is ContentNotSupportedException -> false
+
+                // Temporary anti-bot blocks are service/network conditions, not app defects.
+                is ServiceTemporaryBlockedException -> false
 
                 // happens often when there is no internet connection; we don't use
                 // `throwable.isNetworkRelated` since any `IOException` would make that function
