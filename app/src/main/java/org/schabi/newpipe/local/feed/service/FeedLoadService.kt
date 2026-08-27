@@ -48,7 +48,17 @@ class FeedLoadService : Service() {
     companion object {
         private val TAG = FeedLoadService::class.java.simpleName
         const val NOTIFICATION_ID = 7293450
-        private const val ACTION_CANCEL = App.PACKAGE_NAME + ".local.feed.service.FeedLoadService.CANCEL"
+        private const val ACTION_CANCEL =
+            App.PACKAGE_NAME + ".local.feed.service.FeedLoadService.CANCEL"
+
+        @JvmStatic
+        fun cancel(context: Context) {
+            context.sendBroadcast(cancelIntent(context))
+        }
+
+        private fun cancelIntent(context: Context): Intent {
+            return Intent(ACTION_CANCEL).setPackage(context.packageName)
+        }
 
         /**
          * How often the notification will be updated.
@@ -119,9 +129,23 @@ class FeedLoadService : Service() {
     }
 
     private fun disposeAll() {
-        unregisterReceiver(broadcastReceiver)
+        broadcastReceiver?.let {
+            unregisterReceiver(it)
+            broadcastReceiver = null
+        }
         loadingDisposable?.dispose()
+        loadingDisposable = null
         notificationDisposable?.dispose()
+        notificationDisposable = null
+    }
+
+    private fun cancelLoading() {
+        feedLoadManager.cancel()
+        loadingDisposable?.dispose()
+        if (::feedScope.isInitialized) {
+            FeedEventManager.reset(feedScope)
+        }
+        stopService()
     }
 
     private fun stopService() {
@@ -149,7 +173,7 @@ class FeedLoadService : Service() {
 
     private fun createNotification(): NotificationCompat.Builder {
         val cancelActionIntent = PendingIntentCompat
-            .getBroadcast(this, NOTIFICATION_ID, Intent(ACTION_CANCEL), 0, false)
+            .getBroadcast(this, NOTIFICATION_ID, cancelIntent(this), 0, false)
 
         return NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
             .setOngoing(true)
@@ -206,17 +230,23 @@ class FeedLoadService : Service() {
     // Notification Actions
     // /////////////////////////////////////////////////////////////////////////
 
-    private lateinit var broadcastReceiver: BroadcastReceiver
+    private var broadcastReceiver: BroadcastReceiver? = null
 
     private fun setupBroadcastReceiver() {
-        broadcastReceiver = object : BroadcastReceiver() {
+        val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == ACTION_CANCEL) {
-                    feedLoadManager.cancel()
+                    cancelLoading()
                 }
             }
         }
-        ContextCompat.registerReceiver(this, broadcastReceiver, IntentFilter(ACTION_CANCEL), ContextCompat.RECEIVER_NOT_EXPORTED)
+        broadcastReceiver = receiver
+        ContextCompat.registerReceiver(
+            this,
+            receiver,
+            IntentFilter(ACTION_CANCEL),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     // /////////////////////////////////////////////////////////////////////////
