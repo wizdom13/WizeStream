@@ -28,18 +28,10 @@ object ServiceHelper {
     const val YOUTUBE_MUSIC_MODE = "youtube_music"
 
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
-    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(5, 6)
-
-    @JvmStatic
-    fun isServiceVisible(service: StreamingService): Boolean {
-        // TODO: Enable WizeStreamExtractor's BiliBili and NicoNico services after app-side UI
-        // flows are validated for search, detail, playback, subscriptions, and downloads.
-        return service.serviceId !in TEMPORARILY_HIDDEN_SERVICE_IDS
-    }
 
     @JvmStatic
     fun getVisibleServices(): List<StreamingService> {
-        return ServiceList.all().filter(::isServiceVisible)
+        return ServiceList.all()
     }
 
     @JvmStatic
@@ -51,6 +43,8 @@ object ServiceHelper {
             2 -> R.drawable.ic_placeholder_media_ccc
             3 -> R.drawable.ic_placeholder_peertube
             4 -> R.drawable.ic_placeholder_bandcamp
+            5 -> R.drawable.ic_bilibili
+            6 -> R.drawable.ic_niconico
             else -> R.drawable.ic_circle
         }
     }
@@ -66,16 +60,30 @@ object ServiceHelper {
             "users" -> context.getString(R.string.users)
             "conferences" -> context.getString(R.string.conferences)
             "events" -> context.getString(R.string.events)
+            "lives" -> context.getString(R.string.lives)
+            "animes" -> context.getString(R.string.animes)
+            "movies_and_tv" -> context.getString(R.string.movies_and_tv)
             "music_songs" -> context.getString(R.string.songs)
             "music_albums" -> context.getString(R.string.albums)
             "music_artists" -> context.getString(R.string.artists)
             "sortby" -> context.getString(R.string.sort)
+            "sortorder" -> context.getString(R.string.sort_order)
             "latest" -> context.getString(R.string.channel_video_sort_latest)
             "popular" -> context.getString(R.string.channel_video_sort_popular)
             "oldest" -> context.getString(R.string.channel_video_sort_oldest)
+            "sort_popular" -> context.getString(R.string.channel_video_sort_popular)
             "sort_relevance" -> context.getString(R.string.search_filter_relevance)
             "sort_rating" -> context.getString(R.string.search_filter_rating)
             "sort_view" -> context.getString(R.string.search_filter_view_count)
+            "sort_bookmark" -> context.getString(R.string.sort_bookmarks)
+            "sort_likes" -> context.getString(R.string.sort_likes)
+            "sort_comments" -> context.getString(R.string.sort_comments)
+            "sort_bullet_comments" -> context.getString(R.string.sort_bullet_comments)
+            "sort_publish_time" -> context.getString(R.string.search_filter_upload_date)
+            "sort_last_comment_time" -> context.getString(R.string.sort_last_comment_time)
+            "sort_video_count" -> context.getString(R.string.sort_video_count)
+            "sort_overall" -> context.getString(R.string.sort_overall)
+            "sort_ascending" -> context.getString(R.string.sort_ascending)
             "upload_date" -> context.getString(R.string.search_filter_upload_date)
             "past_hour" -> context.getString(R.string.search_filter_past_hour)
             "past_day" -> context.getString(R.string.search_filter_past_day)
@@ -84,7 +92,9 @@ object ServiceHelper {
             "past_year" -> context.getString(R.string.search_filter_past_year)
             "duration" -> context.getString(R.string.duration)
             "short_video" -> context.getString(R.string.search_filter_short)
+            "medium_length" -> context.getString(R.string.search_filter_medium)
             "long_video" -> context.getString(R.string.search_filter_long)
+            "extra_long" -> context.getString(R.string.search_filter_extra_long)
             "features" -> context.getString(R.string.search_filter_features)
             "Subtitles" -> context.getString(R.string.search_filter_subtitles)
             "Ccommons" -> context.getString(R.string.search_filter_creative_commons)
@@ -177,7 +187,6 @@ object ServiceHelper {
 
         return runCatching { NewPipe.getService(serviceName) }
             .getOrNull()
-            ?.takeIf(::isServiceVisible)
     }
 
     @JvmStatic
@@ -204,7 +213,6 @@ object ServiceHelper {
     fun setSelectedServiceId(context: Context, serviceId: Int) {
         val serviceName = runCatching { NewPipe.getService(serviceId) }
             .getOrNull()
-            ?.takeIf(::isServiceVisible)
             ?.serviceInfo
             ?.name
             ?: DEFAULT_FALLBACK_SERVICE.serviceInfo.name
@@ -226,10 +234,14 @@ object ServiceHelper {
 
     @JvmStatic
     fun getCacheExpirationMillis(serviceId: Int): Long {
-        return if (serviceId == ServiceList.SoundCloud.serviceId) {
-            TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES)
-        } else {
-            TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS)
+        return when (serviceId) {
+            ServiceList.SoundCloud.serviceId ->
+                TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES)
+
+            ServiceList.NicoNico.serviceId ->
+                TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES)
+
+            else -> TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS)
         }
     }
 
@@ -263,13 +275,14 @@ object ServiceHelper {
         val sponsorBlockApiSettings = buildSponsorBlockApiSettings(context)
         ServiceList.all().forEach { initService(context, it.serviceId) }
 
-        // Return YouTube Dislike and SponsorBlock are app-side YouTube-only integrations.
+        // Return YouTube Dislike is YouTube-only. SponsorBlock also supports BiliBili.
         ServiceList.all().forEach {
             it.setFetchDislike(false)
             it.setSponsorBlockApiSettings(null)
         }
         ServiceList.YouTube.setFetchDislike(fetchDislike)
         ServiceList.YouTube.setSponsorBlockApiSettings(sponsorBlockApiSettings)
+        ServiceList.BiliBili.setSponsorBlockApiSettings(sponsorBlockApiSettings)
         configureMembersOnlyFilter(context)
     }
 
