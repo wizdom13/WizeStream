@@ -8,7 +8,7 @@ release tag therefore records and builds the application and service extraction 
 ## Requirements
 
 - Git
-- Eclipse Temurin JDK 21.0.12+1
+- Eclipse Temurin JDK 21.0.12+8
 - Android SDK platform 36.1 and Build Tools 36.1.0
 - Android NDK 28.2.13676358
 - Accepted Android SDK licenses

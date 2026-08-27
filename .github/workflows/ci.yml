@@ -54,7 +54,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: 21.0.12+1
+          java-version: 21.0.12+8.0.LTS
           distribution: temurin
 
       - name: Set up Gradle
@@ -96,7 +96,7 @@ jobs:
       - name: Set up pinned JDK
         uses: actions/setup-java@v5
         with:
-          java-version: 21.0.12+1
+          java-version: 21.0.12+8.0.LTS
           distribution: temurin
 
       - name: Set up Gradle
@@ -142,7 +142,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: 21.0.12+1
+          java-version: 21.0.12+8.0.LTS
           distribution: temurin
 
       - name: Set up Gradle
