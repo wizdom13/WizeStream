@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.schabi.newpipe.database.AppDatabase;
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity;
 import org.schabi.newpipe.database.subscription.SubscriptionEntity;
+import org.schabi.newpipe.local.feed.FeedScope;
 import org.schabi.newpipe.testUtil.TestDatabase;
 import org.schabi.newpipe.testUtil.TrampolineSchedulerRule;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -142,5 +143,32 @@ public class SubscriptionManagerTest {
         assertEquals(1, manager.getSubscriptions(
                 FeedGroupEntity.GROUP_ALL_ID, "", false)
                 .blockingFirst().get(0).getServiceId());
+    }
+
+    @Test
+    public void subscriptionsCanSwitchServiceAndYoutubeModeWithoutRecreatingManager() {
+        manager.insertSubscription(createSubscriptionEntity());
+
+        final SubscriptionEntity otherServiceSubscription = createSubscriptionEntity();
+        otherServiceSubscription.setServiceId(1);
+        otherServiceSubscription.setUrl("https://example.com/other-service/channel");
+        database.subscriptionDAO().insert(otherServiceSubscription);
+
+        assertEquals(0, manager.getSubscriptionsForScope(
+                new FeedScope(SERVICE_ID, SubscriptionEntity.YOUTUBE_MODE_MUSIC),
+                FeedGroupEntity.GROUP_ALL_ID,
+                "",
+                false).blockingFirst().size());
+
+        final List<SubscriptionEntity> otherServiceSubscriptions = manager
+                .getSubscriptionsForScope(
+                        new FeedScope(1, SubscriptionEntity.YOUTUBE_MODE_REGULAR),
+                        FeedGroupEntity.GROUP_ALL_ID,
+                        "",
+                        false)
+                .blockingFirst();
+
+        assertEquals(1, otherServiceSubscriptions.size());
+        assertEquals(1, otherServiceSubscriptions.get(0).getServiceId());
     }
 }

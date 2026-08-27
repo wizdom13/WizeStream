@@ -40,6 +40,18 @@ class SubscriptionManager(context: Context) {
         currentGroupId: Long = FeedGroupEntity.GROUP_ALL_ID,
         filterQuery: String = "",
         showOnlyUngrouped: Boolean = false
+    ): Flowable<List<SubscriptionEntity>> = getSubscriptionsForScope(
+        currentScope,
+        currentGroupId,
+        filterQuery,
+        showOnlyUngrouped
+    )
+
+    fun getSubscriptionsForScope(
+        scope: FeedScope,
+        currentGroupId: Long = FeedGroupEntity.GROUP_ALL_ID,
+        filterQuery: String = "",
+        showOnlyUngrouped: Boolean = false
     ): Flowable<List<SubscriptionEntity>> {
         return when {
             filterQuery.isNotEmpty() -> {
@@ -56,7 +68,7 @@ class SubscriptionManager(context: Context) {
             showOnlyUngrouped -> subscriptionTable.getSubscriptionsOnlyUngrouped(currentGroupId)
 
             else -> subscriptionTable.getAll()
-        }.map { subscriptions -> subscriptions.filter(currentScope::includes) }
+        }.map { subscriptions -> subscriptions.filter(scope::includes) }
     }
 
     fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo?>>) {
