@@ -1,0 +1,6 @@
+• Added BiliBili, NicoNico, and reusable saved-search feeds.
+• Restored YouTube HD, adaptive audio, and download quality options.
+• Refreshes Subscriptions and What's New immediately after switching services.
+• Shows a Retry/Close dialog when a scheduled livestream has not started.
+• Prevented FCast null-manifest crashes and stopped deleted conversions safely.
+• Improved BiliBili risk-control handling and release reproducibility.
