@@ -624,6 +624,8 @@
     <string name="comments_are_disabled">Comments are disabled</string>
     <string name="no_streams">No streams</string>
     <string name="no_live_streams">No live streams</string>
+    <string name="live_stream_not_started_title">Live stream has not started</string>
+    <string name="live_stream_not_started_message">This live stream has not started yet. Please try again when it begins.</string>
     <plurals name="new_streams">
         <item quantity="one">%s new stream</item>
         <item quantity="other">%s new streams</item>

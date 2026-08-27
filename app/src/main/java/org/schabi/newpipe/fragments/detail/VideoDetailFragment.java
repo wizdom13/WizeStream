@@ -79,6 +79,7 @@ import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.extractor.exceptions.LiveNotStartException;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
@@ -237,6 +238,8 @@ public final class VideoDetailFragment
     private boolean forceFullscreen = false;
 
     private Disposable currentWorker;
+    @Nullable
+    private AlertDialog liveNotStartedDialog;
     @NonNull
     private final CompositeDisposable disposables = new CompositeDisposable();
     @Nullable
@@ -483,6 +486,10 @@ public final class VideoDetailFragment
 
     @Override
     public void onDestroyView() {
+        if (liveNotStartedDialog != null) {
+            liveNotStartedDialog.dismiss();
+            liveNotStartedDialog = null;
+        }
         super.onDestroyView();
         binding = null;
     }
@@ -1110,8 +1117,33 @@ public final class VideoDetailFragment
                             openVideoPlayerAutoFullscreen();
                         }
                     }
-                }, throwable -> showError(new ErrorInfo(throwable, UserAction.REQUESTED_STREAM,
-                        url == null ? "no url" : url, serviceId, url)));
+                }, throwable -> {
+                    if (throwable instanceof LiveNotStartException) {
+                        showLiveNotStartedDialog();
+                    } else {
+                        showError(new ErrorInfo(throwable, UserAction.REQUESTED_STREAM,
+                                url == null ? "no url" : url, serviceId, url));
+                    }
+                });
+    }
+
+    private void showLiveNotStartedDialog() {
+        handleError();
+        if (!isAdded() || activity == null) {
+            return;
+        }
+        if (liveNotStartedDialog != null && liveNotStartedDialog.isShowing()) {
+            return;
+        }
+
+        liveNotStartedDialog = new AlertDialog.Builder(activity)
+                .setTitle(R.string.live_stream_not_started_title)
+                .setMessage(R.string.live_stream_not_started_message)
+                .setNegativeButton(R.string.close, null)
+                .setPositiveButton(R.string.retry, (dialog, which) -> reloadContent())
+                .create();
+        liveNotStartedDialog.setOnDismissListener(dialog -> liveNotStartedDialog = null);
+        liveNotStartedDialog.show();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
