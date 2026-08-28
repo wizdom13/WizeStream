@@ -4,6 +4,10 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### New features
+
+- Added BitChute and Rumble browsing, search, channels, comments, live streams, and playback.
+
 ### Improvements
 
 - Added direct notification keyword management to subscribed channel menus.

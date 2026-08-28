@@ -260,6 +260,7 @@ dependencies {
 
     // NewPipe libraries
     implementation(libs.newpipe.nanojson)
+    implementation("com.github.evermind-zz:hlsdownloader:1.0.0")
     implementation(libs.newpipe.filepicker)
 
     // Integrated extractor sources

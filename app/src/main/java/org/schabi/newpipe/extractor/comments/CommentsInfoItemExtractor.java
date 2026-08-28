@@ -11,6 +11,7 @@ import org.schabi.newpipe.extractor.utils.Utils;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -83,7 +84,12 @@ public interface CommentsInfoItemExtractor extends InfoItemExtractor {
     }
 
     default String getUploaderAvatarUrl() throws ParsingException {
-        return Utils.EMPTY_STRING;
+        final List<Image> avatars = getUploaderAvatars();
+        return avatars.isEmpty() ? Utils.EMPTY_STRING : avatars.get(0).getUrl();
+    }
+
+    default List<Image> getUploaderAvatars() throws ParsingException {
+        return Collections.emptyList();
     }
 
     /**
