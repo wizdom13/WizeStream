@@ -35,23 +35,91 @@ public final class EdgeToEdgeHelper {
         final int initialBottom = view.getPaddingBottom();
 
         ViewCompat.setOnApplyWindowInsetsListener(view, (target, windowInsets) -> {
-            final Insets systemBars = windowInsets.getInsets(
-                    WindowInsetsCompat.Type.systemBars());
-            final Insets displayCutout = windowInsets.getInsets(
-                    WindowInsetsCompat.Type.displayCutout());
-            final Insets safeInsets = Insets.max(systemBars, displayCutout);
+            final Insets safeInsets = getSafeSystemBarInsets(windowInsets);
             target.setPadding(
                     initialLeft + safeInsets.left,
                     initialTop + safeInsets.top,
                     initialRight + safeInsets.right,
                     initialBottom + safeInsets.bottom);
 
-            return new WindowInsetsCompat.Builder(windowInsets)
-                    .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.NONE)
-                    .setInsets(WindowInsetsCompat.Type.displayCutout(), Insets.NONE)
-                    .build();
+            return consumeAppliedInsets(windowInsets);
         });
         ViewCompat.requestApplyInsets(view);
+    }
+
+    /**
+     * Applies insets to the independently laid-out content and drawer children of a
+     * {@link androidx.drawerlayout.widget.DrawerLayout}. Padding the drawer layout itself does
+     * not constrain those children, which can leave bottom navigation behind the system
+     * navigation bar and drawer header content behind the status bar.
+     *
+     * <p>The drawer keeps drawing its background edge-to-edge. Only its header content receives
+     * the top inset, while the drawer container receives horizontal cutout protection and the
+     * bottom system-bar inset.</p>
+     *
+     * @param insetSource view that receives the window inset dispatch
+     * @param content main activity content constrained inside all safe edges
+     * @param drawer navigation drawer protected on its horizontal and bottom edges
+     * @param drawerHeader drawer header whose content is protected below the status bar
+     */
+    public static void applyDrawerLayoutSystemBarPadding(
+            @NonNull final View insetSource,
+            @NonNull final View content,
+            @NonNull final View drawer,
+            @NonNull final View drawerHeader) {
+        final int contentLeft = content.getPaddingLeft();
+        final int contentTop = content.getPaddingTop();
+        final int contentRight = content.getPaddingRight();
+        final int contentBottom = content.getPaddingBottom();
+        final int drawerLeft = drawer.getPaddingLeft();
+        final int drawerTop = drawer.getPaddingTop();
+        final int drawerRight = drawer.getPaddingRight();
+        final int drawerBottom = drawer.getPaddingBottom();
+        final int headerLeft = drawerHeader.getPaddingLeft();
+        final int headerTop = drawerHeader.getPaddingTop();
+        final int headerRight = drawerHeader.getPaddingRight();
+        final int headerBottom = drawerHeader.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(insetSource, (target, windowInsets) -> {
+            final Insets safeInsets = getSafeSystemBarInsets(windowInsets);
+            content.setPadding(
+                    contentLeft + safeInsets.left,
+                    contentTop + safeInsets.top,
+                    contentRight + safeInsets.right,
+                    contentBottom + safeInsets.bottom);
+            drawer.setPadding(
+                    drawerLeft + safeInsets.left,
+                    drawerTop,
+                    drawerRight + safeInsets.right,
+                    drawerBottom + safeInsets.bottom);
+            drawerHeader.setPadding(
+                    headerLeft,
+                    headerTop + safeInsets.top,
+                    headerRight,
+                    headerBottom);
+
+            return consumeAppliedInsets(windowInsets);
+        });
+        ViewCompat.requestApplyInsets(insetSource);
+    }
+
+    @NonNull
+    private static Insets getSafeSystemBarInsets(
+            @NonNull final WindowInsetsCompat windowInsets) {
+        final Insets systemBars = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars());
+        final Insets displayCutout = windowInsets.getInsets(
+                WindowInsetsCompat.Type.displayCutout());
+        return Insets.max(systemBars, displayCutout);
+    }
+
+    @NonNull
+    private static WindowInsetsCompat consumeAppliedInsets(
+            @NonNull final WindowInsetsCompat windowInsets) {
+        return new WindowInsetsCompat.Builder(windowInsets)
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.NONE)
+                .setInsets(WindowInsetsCompat.Type.displayCutout(), Insets.NONE)
+                .build();
     }
 
     public static void showSystemBars(@NonNull final Activity activity) {

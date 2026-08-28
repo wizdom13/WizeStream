@@ -36,7 +36,6 @@ public class EdgeToEdgeIntegrationTest {
     @Test
     public void coreActivitiesApplySystemBarPadding() throws Exception {
         final List<String> activitySources = List.of(
-                "java/org/schabi/newpipe/MainActivity.java",
                 "java/org/schabi/newpipe/about/AboutActivity.kt",
                 "java/org/schabi/newpipe/download/DownloadActivity.java",
                 "java/org/schabi/newpipe/error/ErrorActivity.kt",
@@ -50,6 +49,22 @@ public class EdgeToEdgeIntegrationTest {
             assertTrue(sourcePath,
                     source.contains("EdgeToEdgeHelper.applySystemBarPadding("));
         }
+    }
+
+    @Test
+    public void mainActivityDistributesInsetsInsideDrawerLayout() throws Exception {
+        final String activity = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/MainActivity.java"));
+        final String phoneLayout = Files.readString(mainDirectory.resolve(
+                "res/layout/activity_main.xml"));
+        final String tabletLayout = Files.readString(mainDirectory.resolve(
+                "res/layout-sw600dp/activity_main.xml"));
+
+        assertTrue(activity.contains("EdgeToEdgeHelper.applyDrawerLayoutSystemBarPadding("));
+        assertFalse(activity.contains(
+                "EdgeToEdgeHelper.applySystemBarPadding(mainBinding.getRoot())"));
+        assertTrue(phoneLayout.contains("android:id=\"@+id/main_content\""));
+        assertTrue(tabletLayout.contains("android:id=\"@+id/main_content\""));
     }
 
     @Test
