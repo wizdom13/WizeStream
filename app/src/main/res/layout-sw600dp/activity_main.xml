@@ -9,17 +9,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/fragment_holder"
+        <FrameLayout
+            android:id="@+id/main_safe_content"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginStart="@dimen/main_navigation_rail_width"
-            android:layout_marginTop="?attr/actionBarSize" />
+            android:layout_height="match_parent">
 
-        <include
-            android:id="@+id/toolbar_layout"
-            layout="@layout/toolbar_layout"
-            android:layout_marginStart="@dimen/main_navigation_rail_width" />
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragment_holder"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="@dimen/main_navigation_rail_width"
+                android:layout_marginTop="?attr/actionBarSize" />
+
+        </FrameLayout>
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/fragment_player_holder"
@@ -30,6 +32,11 @@
             app:behavior_hideable="true"
             app:behavior_peekHeight="0dp"
             app:layout_behavior="org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior" />
+
+        <include
+            android:id="@+id/toolbar_layout"
+            layout="@layout/toolbar_layout"
+            android:layout_marginStart="@dimen/main_navigation_rail_width" />
 
         <com.google.android.material.navigationrail.NavigationRailView
             android:id="@+id/main_bottom_navigation"

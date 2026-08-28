@@ -256,6 +256,9 @@ public final class VideoDetailFragment
     //////////////////////////////////////////////////////////////////////////*/
 
     private TabAdapter pageAdapter;
+    private View activityToolbarLayout;
+    private View.OnLayoutChangeListener toolbarLayoutChangeListener;
+    private int activityToolbarHeight;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -492,6 +495,12 @@ public final class VideoDetailFragment
             liveNotStartedDialog.dismiss();
             liveNotStartedDialog = null;
         }
+        if (activityToolbarLayout != null && toolbarLayoutChangeListener != null) {
+            activityToolbarLayout.removeOnLayoutChangeListener(toolbarLayoutChangeListener);
+        }
+        activityToolbarLayout = null;
+        toolbarLayoutChangeListener = null;
+        activityToolbarHeight = 0;
         super.onDestroyView();
         detailNavigation = null;
         binding = null;
@@ -703,6 +712,17 @@ public final class VideoDetailFragment
         super.initViews(rootView, savedInstanceState);
 
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
+        activityToolbarLayout = requireActivity().findViewById(R.id.toolbar_layout);
+        activityToolbarHeight = Math.max(activityToolbarLayout.getHeight(), 0);
+        toolbarLayoutChangeListener = (view, left, top, right, bottom,
+                                       oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (bottom > top) {
+                activityToolbarHeight = bottom - top;
+            }
+            updateDetailContentTopMargin(isFullscreen());
+        };
+        activityToolbarLayout.addOnLayoutChangeListener(toolbarLayoutChangeListener);
+        binding.getRoot().post(() -> updateDetailContentTopMargin(isFullscreen()));
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -898,6 +918,7 @@ public final class VideoDetailFragment
             player.disablePreloadingOfCurrentTrack();
         }
 
+        hideMainPlayerOnLoadingNewStream();
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
         if (currentLocalItem != null) {
             prepareAndHandleLocalMedia(currentLocalItem, true);
@@ -1709,6 +1730,34 @@ public final class VideoDetailFragment
                 && !tabletLayout;
     }
 
+    static boolean shouldHidePreviousStreamContent(final boolean streamInfoCached) {
+        return !streamInfoCached;
+    }
+
+    static boolean shouldShowQueueItemLoadingPreview(final boolean hasQueueItem,
+                                                     final boolean localMedia) {
+        return hasQueueItem && !localMedia;
+    }
+
+    static int getDetailContentTopMargin(final boolean fullscreen,
+                                         final int toolbarHeight) {
+        return fullscreen ? 0 : Math.max(toolbarHeight, 0);
+    }
+
+    private void updateDetailContentTopMargin(final boolean fullscreen) {
+        if (binding == null || activityToolbarLayout == null) {
+            return;
+        }
+        final int desiredTopMargin = getDetailContentTopMargin(
+                fullscreen, activityToolbarHeight);
+        final ViewGroup.MarginLayoutParams params =
+                (ViewGroup.MarginLayoutParams) binding.detailMainContent.getLayoutParams();
+        if (params.topMargin != desiredTopMargin) {
+            params.topMargin = desiredTopMargin;
+            binding.detailMainContent.setLayoutParams(params);
+        }
+    }
+
     private void updatePinnedPlayerLayout() {
         updatePinnedPlayerLayout(0);
     }
@@ -1887,9 +1936,13 @@ public final class VideoDetailFragment
 
         super.showLoading();
 
-        //if data is already cached, transition from VISIBLE -> INVISIBLE -> VISIBLE is not required
-        if (!ExtractorHelper.isCached(serviceId, url, InfoCache.Type.STREAM)) {
+        // If data is already cached, the transition from visible to hidden and back is unnecessary.
+        final boolean streamInfoCached =
+                ExtractorHelper.isCached(serviceId, url, InfoCache.Type.STREAM);
+        if (shouldHidePreviousStreamContent(streamInfoCached)) {
             binding.detailContentRootHiding.setVisibility(View.INVISIBLE);
+            binding.viewPager.setVisibility(View.GONE);
+            detailNavigation.setVisibility(View.GONE);
         }
 
         animate(binding.detailThumbnailPlayButton, false, 50);
@@ -1920,6 +1973,32 @@ public final class VideoDetailFragment
         CoilUtils.dispose(binding.detailUploaderThumbnailView);
         binding.detailThumbnailImageView.setImageBitmap(null);
         binding.detailSubChannelThumbnailView.setImageBitmap(null);
+        showQueueItemLoadingPreview();
+    }
+
+    private void showQueueItemLoadingPreview() {
+        final PlayQueueItem queueItem = playQueue == null ? null : playQueue.getItem();
+        if (!shouldShowQueueItemLoadingPreview(
+                queueItem != null, queueItem != null && queueItem.isLocalMedia())) {
+            return;
+        }
+
+        CoilHelper.INSTANCE.loadDetailsThumbnail(
+                binding.detailThumbnailImageView,
+                ExtractorImageCompat.thumbnailImages(queueItem));
+        if (queueItem.getDuration() > 0) {
+            binding.detailDurationView.setText(
+                    Localization.getDurationString(queueItem.getDuration()));
+            binding.detailDurationView.setBackgroundColor(
+                    ContextCompat.getColor(activity, R.color.duration_background_color));
+            animate(binding.detailDurationView, true, 100);
+        } else if (queueItem.getStreamType() == StreamType.LIVE_STREAM
+                || queueItem.getStreamType() == StreamType.AUDIO_LIVE_STREAM) {
+            binding.detailDurationView.setText(R.string.duration_live);
+            binding.detailDurationView.setBackgroundColor(
+                    ContextCompat.getColor(activity, R.color.live_duration_background_color));
+            animate(binding.detailDurationView, true, 100);
+        }
     }
 
     @Override
@@ -2368,6 +2447,8 @@ public final class VideoDetailFragment
         } else {
             showSystemUi();
         }
+        activityToolbarLayout.setVisibility(fullscreen ? View.GONE : View.VISIBLE);
+        updateDetailContentTopMargin(fullscreen);
 
         if (binding.relatedItemsLayout != null) {
             if (showRelatedItems) {

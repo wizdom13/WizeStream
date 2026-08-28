@@ -192,9 +192,12 @@ public class MainActivity extends AppCompatActivity {
                 .getHeaderView(0));
         toolbarLayoutBinding = mainBinding.toolbarLayout;
         setContentView(mainBinding.getRoot());
-        EdgeToEdgeHelper.applyDrawerLayoutSystemBarPadding(
+        EdgeToEdgeHelper.applyMainActivitySystemBarInsets(
                 mainBinding.getRoot(),
-                mainBinding.mainContent,
+                mainBinding.mainSafeContent,
+                mainBinding.toolbarLayout.getRoot(),
+                mainBinding.mainBottomNavigation,
+                mainBinding.fragmentPlayerHolder,
                 drawerLayoutBinding.navigation,
                 drawerHeaderBinding.getRoot());
         nativePipController = new NativePipController(this);

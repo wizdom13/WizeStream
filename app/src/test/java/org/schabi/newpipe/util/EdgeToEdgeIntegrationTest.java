@@ -60,11 +60,49 @@ public class EdgeToEdgeIntegrationTest {
         final String tabletLayout = Files.readString(mainDirectory.resolve(
                 "res/layout-sw600dp/activity_main.xml"));
 
-        assertTrue(activity.contains("EdgeToEdgeHelper.applyDrawerLayoutSystemBarPadding("));
+        assertTrue(activity.contains("EdgeToEdgeHelper.applyMainActivitySystemBarInsets("));
         assertFalse(activity.contains(
                 "EdgeToEdgeHelper.applySystemBarPadding(mainBinding.getRoot())"));
         assertTrue(phoneLayout.contains("android:id=\"@+id/main_content\""));
         assertTrue(tabletLayout.contains("android:id=\"@+id/main_content\""));
+        assertTrue(phoneLayout.contains("android:id=\"@+id/main_safe_content\""));
+        assertTrue(tabletLayout.contains("android:id=\"@+id/main_safe_content\""));
+    }
+
+    @Test
+    public void playerSheetStaysOutsideInsetContentContainer() throws Exception {
+        final List<String> layouts = List.of(
+                "res/layout/activity_main.xml",
+                "res/layout-sw600dp/activity_main.xml");
+
+        for (final String layoutPath : layouts) {
+            final String layout = Files.readString(mainDirectory.resolve(layoutPath));
+            final int safeContentStart = layout.indexOf(
+                    "android:id=\"@+id/main_safe_content\"");
+            final int safeContentEnd = layout.indexOf("</FrameLayout>", safeContentStart);
+            final int playerSheetStart = layout.indexOf(
+                    "android:id=\"@+id/fragment_player_holder\"");
+
+            assertTrue(layoutPath, safeContentStart >= 0);
+            assertTrue(layoutPath, safeContentEnd > safeContentStart);
+            assertTrue(layoutPath, playerSheetStart > safeContentEnd);
+        }
+    }
+
+    @Test
+    public void miniPlayerOverlayStaysOutsideToolbarInsetDetailContent() throws Exception {
+        final String detailLayout = Files.readString(mainDirectory.resolve(
+                "res/layout/fragment_video_detail.xml"));
+        final int detailContentStart = detailLayout.indexOf(
+                "android:id=\"@+id/detail_main_content\"");
+        final int detailContentEnd = detailLayout.indexOf(
+                "</androidx.coordinatorlayout.widget.CoordinatorLayout>", detailContentStart);
+        final int miniPlayerOverlayStart = detailLayout.indexOf(
+                "android:id=\"@+id/overlay_layout\"");
+
+        assertTrue(detailContentStart >= 0);
+        assertTrue(detailContentEnd > detailContentStart);
+        assertTrue(miniPlayerOverlayStart > detailContentEnd);
     }
 
     @Test
