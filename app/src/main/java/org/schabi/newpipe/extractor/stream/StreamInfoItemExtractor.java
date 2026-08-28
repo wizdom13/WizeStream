@@ -163,4 +163,8 @@ public interface StreamInfoItemExtractor extends InfoItemExtractor {
     default boolean requiresMembership() throws ParsingException {
         return false;
     }
+
+    default ContentAvailability getContentAvailability() throws ParsingException {
+        return ContentAvailability.UNKNOWN;
+    }
 }

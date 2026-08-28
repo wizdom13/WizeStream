@@ -45,6 +45,8 @@ object ServiceHelper {
             4 -> R.drawable.ic_placeholder_bandcamp
             5 -> R.drawable.ic_bilibili
             6 -> R.drawable.ic_niconico
+            7 -> R.drawable.ic_placeholder_bitchute
+            8 -> R.drawable.ic_placeholder_rumble
             else -> R.drawable.ic_circle
         }
     }

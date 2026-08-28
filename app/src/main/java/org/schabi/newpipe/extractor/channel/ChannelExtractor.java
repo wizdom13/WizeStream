@@ -66,7 +66,10 @@ public abstract class ChannelExtractor extends ListExtractor<StreamInfoItem> {
         }
     }
 
-    public abstract String getAvatarUrl() throws ParsingException;
+    public String getAvatarUrl() throws ParsingException {
+        final List<Image> avatars = getAvatars();
+        return avatars.isEmpty() ? null : avatars.get(0).getUrl();
+    }
 
     public String getBannerUrl() throws ParsingException {
         return null;

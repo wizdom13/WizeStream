@@ -16,6 +16,9 @@ NewPipeExtractor and later incorporated PipePipeExtractor and WizeStream-specifi
 not the unmodified official NewPipeExtractor and is no longer consumed as an external
 PipePipeExtractor or WizeStreamExtractor dependency.
 
+The BitChute and Rumble service implementations are derived from BravePipeExtractor commit
+`6e3e3f9769bf35963f79fdac2df8e85aa292de6e` and adapted to WizeStream's integrated extractor API.
+
 Each WizeStream commit and release records the exact extractor source together with the app. This
 allows application, player, and service compatibility changes to be developed and tested together.
 

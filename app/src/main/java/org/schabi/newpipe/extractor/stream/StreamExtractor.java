@@ -97,7 +97,10 @@ public abstract class StreamExtractor extends Extractor {
      * @return The url of the thumbnail.
      */
     @Nonnull
-    public abstract String getThumbnailUrl() throws ParsingException;
+    public String getThumbnailUrl() throws ParsingException {
+        final List<Image> thumbnails = getThumbnails();
+        return thumbnails.isEmpty() ? null : thumbnails.get(0).getUrl();
+    }
 
     /**
      * This will return the thumbnails of the stream.
