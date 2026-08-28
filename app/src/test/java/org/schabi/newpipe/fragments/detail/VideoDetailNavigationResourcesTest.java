@@ -16,6 +16,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public class VideoDetailNavigationResourcesTest {
     private static final String BOTTOM_NAVIGATION_VIEW =
             "com.google.android.material.bottomnavigation.BottomNavigationView";
+    private static final String NAVIGATION_RAIL_VIEW =
+            "com.google.android.material.navigationrail.NavigationRailView";
     private static final String TAB_LAYOUT = "com.google.android.material.tabs.TabLayout";
 
     private final Path resourcesDirectory = Files.exists(Path.of("src/main/res"))
@@ -24,8 +26,8 @@ public class VideoDetailNavigationResourcesTest {
 
     @Test
     public void phoneAndLargeLandscapeLayoutsUseExpressiveNavigation() throws Exception {
-        assertExpressiveNavigation("layout/fragment_video_detail.xml");
-        assertExpressiveNavigation("layout-large-land/fragment_video_detail.xml");
+        assertPhoneBottomNavigation();
+        assertLargeLandscapeNavigationRail();
     }
 
     @Test
@@ -74,6 +76,14 @@ public class VideoDetailNavigationResourcesTest {
                 navigation.getAttribute("android:id"));
         assertEquals("@style/wizestreamBottomNavigationActiveIndicator",
                 navigation.getAttribute("app:itemActiveIndicatorStyle"));
+
+        final Document largeDocument = parse("layout-sw600dp/activity_main.xml");
+        final var rails = largeDocument.getElementsByTagName(NAVIGATION_RAIL_VIEW);
+        assertEquals(1, rails.getLength());
+        final var rail = (Element) rails.item(0);
+        assertEquals("@+id/main_bottom_navigation", rail.getAttribute("android:id"));
+        assertEquals("@style/wizestreamBottomNavigationActiveIndicator",
+                rail.getAttribute("app:itemActiveIndicatorStyle"));
     }
 
     @Test
@@ -103,8 +113,8 @@ public class VideoDetailNavigationResourcesTest {
                 "@string/learning_notes_tab_description");
     }
 
-    private void assertExpressiveNavigation(final String layoutPath) throws Exception {
-        final Document document = parse(layoutPath);
+    private void assertPhoneBottomNavigation() throws Exception {
+        final Document document = parse("layout/fragment_video_detail.xml");
 
         assertEquals(0, document.getElementsByTagName(TAB_LAYOUT).getLength());
         final var navigationViews = document.getElementsByTagName(BOTTOM_NAVIGATION_VIEW);
@@ -112,10 +122,11 @@ public class VideoDetailNavigationResourcesTest {
 
         final var navigation = (Element) navigationViews.item(0);
         assertEquals("@+id/detail_navigation", navigation.getAttribute("android:id"));
-        assertEquals("selected", navigation.getAttribute("app:labelVisibilityMode"));
+        assertEquals("labeled", navigation.getAttribute("app:labelVisibilityMode"));
         assertEquals("@menu/video_detail_navigation", navigation.getAttribute("app:menu"));
-        assertEquals("?attr/colorSurface", navigation.getAttribute("android:background"));
-        assertEquals("8dp", navigation.getAttribute("android:elevation"));
+        assertEquals("?attr/colorSurfaceContainer",
+                navigation.getAttribute("android:background"));
+        assertEquals("0dp", navigation.getAttribute("android:elevation"));
         assertEquals(
                 "@style/wizestreamBottomNavigationActiveIndicator",
                 navigation.getAttribute("app:itemActiveIndicatorStyle"));
@@ -131,6 +142,40 @@ public class VideoDetailNavigationResourcesTest {
         assertEquals("@dimen/video_detail_navigation_height",
                 viewPager.getAttribute("android:layout_marginBottom"));
         assertEquals("", viewPager.getAttribute("android:paddingBottom"));
+    }
+
+    private void assertLargeLandscapeNavigationRail() throws Exception {
+        final Document document = parse("layout-large-land/fragment_video_detail.xml");
+
+        assertEquals(0, document.getElementsByTagName(TAB_LAYOUT).getLength());
+        assertEquals(0, document.getElementsByTagName(BOTTOM_NAVIGATION_VIEW).getLength());
+        final var navigationViews = document.getElementsByTagName(NAVIGATION_RAIL_VIEW);
+        assertEquals(1, navigationViews.getLength());
+
+        final var navigation = (Element) navigationViews.item(0);
+        assertEquals("@+id/detail_navigation", navigation.getAttribute("android:id"));
+        assertEquals("labeled", navigation.getAttribute("app:labelVisibilityMode"));
+        assertEquals("@menu/video_detail_navigation", navigation.getAttribute("app:menu"));
+        assertEquals("?attr/colorSurfaceContainer",
+                navigation.getAttribute("android:background"));
+        assertEquals("0dp", navigation.getAttribute("android:elevation"));
+        assertEquals("@dimen/main_navigation_rail_width",
+                navigation.getAttribute("android:layout_width"));
+        assertEquals("match_parent", navigation.getAttribute("android:layout_height"));
+        assertEquals("@style/wizestreamBottomNavigationActiveIndicator",
+                navigation.getAttribute("app:itemActiveIndicatorStyle"));
+        assertEquals("@color/tab_layout_material_item_color",
+                navigation.getAttribute("app:itemIconTint"));
+        assertEquals("@color/tab_layout_material_item_color",
+                navigation.getAttribute("app:itemTextColor"));
+
+        final var viewPagers = document.getElementsByTagName(
+                "androidx.viewpager.widget.ViewPager");
+        assertEquals(1, viewPagers.getLength());
+        final var viewPager = (Element) viewPagers.item(0);
+        assertEquals("@dimen/main_navigation_rail_width",
+                viewPager.getAttribute("android:layout_marginStart"));
+        assertEquals("", viewPager.getAttribute("android:layout_marginBottom"));
     }
 
     private void assertMenuItem(final Element item,

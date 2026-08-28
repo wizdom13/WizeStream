@@ -62,6 +62,8 @@ import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.navigationrail.NavigationRailView;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
@@ -193,6 +195,7 @@ public final class VideoDetailFragment
     @Nullable
     private PlayQueueItem currentLocalItem = null;
     private FragmentVideoDetailBinding binding;
+    private NavigationBarView detailNavigation;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener =
             (sharedPreferences, key) -> {
@@ -491,6 +494,7 @@ public final class VideoDetailFragment
             liveNotStartedDialog = null;
         }
         super.onDestroyView();
+        detailNavigation = null;
         binding = null;
     }
 
@@ -699,6 +703,7 @@ public final class VideoDetailFragment
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
 
+        detailNavigation = rootView.findViewById(R.id.detail_navigation);
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -707,7 +712,7 @@ public final class VideoDetailFragment
                 updateDetailNavigationSelection(position);
             }
         });
-        binding.detailNavigation.setOnItemSelectedListener(item -> {
+        detailNavigation.setOnItemSelectedListener(item -> {
             final String tabTag = VideoDetailNavigationMapper.getTabTag(item.getItemId());
             if (tabTag == null) {
                 return false;
@@ -1202,7 +1207,7 @@ public final class VideoDetailFragment
     }
 
     private void setDetailNavigationItemVisible(final int itemId, final String tabTag) {
-        final var item = binding.detailNavigation.getMenu().findItem(itemId);
+        final var item = detailNavigation.getMenu().findItem(itemId);
         if (item != null) {
             item.setVisible(pageAdapter.getItemPositionByTitle(tabTag) >= 0);
         }
@@ -1212,8 +1217,8 @@ public final class VideoDetailFragment
         final int itemId = VideoDetailNavigationMapper.getNavigationItemId(
                 pageAdapter.getItemTitle(position));
         if (itemId != VideoDetailNavigationMapper.NO_NAVIGATION_ITEM_ID
-                && binding.detailNavigation.getSelectedItemId() != itemId) {
-            binding.detailNavigation.setSelectedItemId(itemId);
+                && detailNavigation.getSelectedItemId() != itemId) {
+            detailNavigation.setSelectedItemId(itemId);
         }
     }
 
@@ -1260,18 +1265,23 @@ public final class VideoDetailFragment
 
     public void updateDetailNavigationVisibility() {
 
-        if (binding == null) {
+        if (binding == null || detailNavigation == null) {
             //If binding is null we do not need to and should not do anything with its object(s)
             return;
         }
 
         if (pageAdapter.getCount() < 2 || binding.viewPager.getVisibility() != View.VISIBLE) {
             // Hide navigation if there is only one destination or if the pager is hidden.
-            binding.detailNavigation.setVisibility(View.GONE);
+            detailNavigation.setVisibility(View.GONE);
         } else {
+            if (detailNavigation instanceof NavigationRailView) {
+                detailNavigation.setTranslationY(0.0f);
+                detailNavigation.setVisibility(View.VISIBLE);
+                return;
+            }
             // call `post()` to be sure `viewPager.getHitRect()`
             // is up to date and not being currently recomputed
-            binding.detailNavigation.post(() -> {
+            detailNavigation.post(() -> {
                 final var activity = getActivity();
                 if (activity != null) {
                     final Rect pagerHitRect = new Rect();
@@ -1284,12 +1294,12 @@ public final class VideoDetailFragment
 
                     if (viewPagerVisibleHeight > navigationHeight * 2) {
                         // No translation when the visible pager is taller than three bars.
-                        binding.detailNavigation.setTranslationY(
+                        detailNavigation.setTranslationY(
                                 Math.max(0, navigationHeight * 3 - viewPagerVisibleHeight));
-                        binding.detailNavigation.setVisibility(View.VISIBLE);
+                        detailNavigation.setVisibility(View.VISIBLE);
                     } else {
                         // The pager is not visible enough.
-                        binding.detailNavigation.setVisibility(View.GONE);
+                        detailNavigation.setVisibility(View.GONE);
                     }
                 }
             });
@@ -1810,7 +1820,7 @@ public final class VideoDetailFragment
 
         // hide comments / related streams / description tabs
         binding.viewPager.setVisibility(View.GONE);
-        binding.detailNavigation.setVisibility(View.GONE);
+        detailNavigation.setVisibility(View.GONE);
     }
 
     private void hideAgeRestrictedContent() {
