@@ -625,10 +625,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private fun handleItemsErrors(errors: List<Throwable>) {
         errors.forEachIndexed { i, t ->
-            if (t is FeedLoadService.RequestException &&
-                (t.cause is ContentNotAvailableException ||
-                    t.cause is ContentNotSupportedException)
-            ) {
+            val isUnavailableFeed = t.cause is ContentNotAvailableException ||
+                t.cause is ContentNotSupportedException
+            if (t is FeedLoadService.RequestException && isUnavailableFeed) {
                 disposables.add(
                     Single.fromCallable {
                         NewPipeDatabase.getInstance(requireContext()).subscriptionDAO()
