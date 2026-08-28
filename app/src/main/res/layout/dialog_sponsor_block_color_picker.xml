@@ -19,6 +19,7 @@
 
     <SeekBar
         android:id="@+id/red"
+        style="@style/Widget.WizeStream.SeekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:contentDescription="@string/sponsor_block_color_red"
@@ -32,6 +33,7 @@
 
     <SeekBar
         android:id="@+id/green"
+        style="@style/Widget.WizeStream.SeekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:contentDescription="@string/sponsor_block_color_green"
@@ -45,6 +47,7 @@
 
     <SeekBar
         android:id="@+id/blue"
+        style="@style/Widget.WizeStream.SeekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:contentDescription="@string/sponsor_block_color_blue"
