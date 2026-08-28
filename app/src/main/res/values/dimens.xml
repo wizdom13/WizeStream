@@ -151,6 +151,7 @@
 
     <!-- Main Material bottom navigation -->
     <dimen name="main_bottom_navigation_height">64dp</dimen>
+    <dimen name="main_navigation_rail_width">80dp</dimen>
     <dimen name="main_bottom_navigation_item_padding_top">6dp</dimen>
     <dimen name="main_bottom_navigation_item_padding_bottom">6dp</dimen>
 

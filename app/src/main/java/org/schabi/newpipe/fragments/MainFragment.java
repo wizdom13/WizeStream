@@ -35,9 +35,9 @@ import androidx.fragment.app.FragmentStatePagerAdapterMenuWorkaround;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.navigationrail.NavigationRailView;
 import com.google.android.material.tabs.TabLayout;
 
 import org.schabi.newpipe.BaseFragment;
@@ -66,6 +66,7 @@ import java.util.List;
 public class MainFragment extends BaseFragment
         implements TabLayout.OnTabSelectedListener, BackPressable {
     private static final int BOTTOM_NAVIGATION_MAX_ITEM_COUNT = 5;
+    private static final int NAVIGATION_RAIL_MAX_ITEM_COUNT = 7;
     private static final int BOTTOM_NAVIGATION_ITEM_ID_BASE = 10_000;
     private static final long CONTEXTUAL_SEARCH_DEBOUNCE_MILLIS = 250L;
     private static final String STATE_CONTEXTUAL_SEARCH_OPEN = "contextual_search_open";
@@ -73,7 +74,7 @@ public class MainFragment extends BaseFragment
     private static final String STATE_CONTEXTUAL_SEARCH_TAB = "contextual_search_tab";
 
     private FragmentMainBinding binding;
-    private BottomNavigationView bottomNavigation;
+    private NavigationBarView bottomNavigation;
     private SelectedTabsPagerAdapter pagerAdapter;
 
     private View contextualSearchContainer;
@@ -593,7 +594,7 @@ public class MainFragment extends BaseFragment
 
         final Menu menu = bottomNavigation.getMenu();
         menu.clear();
-        if (tabsList.size() > BOTTOM_NAVIGATION_MAX_ITEM_COUNT) {
+        if (tabsList.size() > getNavigationItemLimit()) {
             return;
         }
 
@@ -631,7 +632,7 @@ public class MainFragment extends BaseFragment
 
     private void updateBottomNavigationSelection(final int position) {
         if (binding == null || bottomNavigation == null
-                || tabsList.size() > BOTTOM_NAVIGATION_MAX_ITEM_COUNT
+                || tabsList.size() > getNavigationItemLimit()
                 || position < 0 || position >= tabsList.size()) {
             return;
         }
@@ -643,7 +644,7 @@ public class MainFragment extends BaseFragment
     }
 
     private void scheduleBottomNavigationRemeasure() {
-        final BottomNavigationView navigation = bottomNavigation;
+        final NavigationBarView navigation = bottomNavigation;
         if (navigation == null) {
             return;
         }
@@ -700,11 +701,14 @@ public class MainFragment extends BaseFragment
         final ScrollableTabLayout tabLayout = binding.mainTabLayout;
         final ViewPager viewPager = binding.pager;
         final boolean bottom = mainTabsPositionBottom;
+        final boolean navigationRail = isNavigationRail();
         final HomeNavigationMode navigationMode = HomeNavigationModeResolver
                 .resolveNavigationMode(tabsList.size(), bottom);
-        final boolean showBottomNavigation = navigationMode
-                == HomeNavigationMode.BOTTOM_NAVIGATION;
-        final boolean showTabLayout = navigationMode == HomeNavigationMode.SCROLLABLE_TABS;
+        final boolean showBottomNavigation = navigationRail
+                ? tabsList.size() <= getNavigationItemLimit()
+                : navigationMode == HomeNavigationMode.BOTTOM_NAVIGATION;
+        final boolean showTabLayout = !showBottomNavigation
+                && navigationMode == HomeNavigationMode.SCROLLABLE_TABS;
 
         final var tabParams = (RelativeLayout.LayoutParams) tabLayout.getLayoutParams();
         final var pagerParams = (RelativeLayout.LayoutParams) viewPager.getLayoutParams();
@@ -716,7 +720,7 @@ public class MainFragment extends BaseFragment
         pagerParams.removeRule(BELOW);
         pagerParams.removeRule(ABOVE);
         pagerParams.bottomMargin = 0;
-        if (showBottomNavigation) {
+        if (showBottomNavigation && !navigationRail) {
             pagerParams.bottomMargin = getResources()
                     .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
         } else if (showTabLayout) {
@@ -749,7 +753,7 @@ public class MainFragment extends BaseFragment
             fabParams.addRule(ABOVE, R.id.main_tab_layout);
         } else {
             fabParams.addRule(ALIGN_PARENT_BOTTOM);
-            if (showBottomNavigation) {
+            if (showBottomNavigation && !isNavigationRail()) {
                 fabParams.bottomMargin += getResources()
                         .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
             }
@@ -764,7 +768,9 @@ public class MainFragment extends BaseFragment
 
         bottomNavigation.setTag(visible);
         bottomNavigation.setAlpha(1.0f);
+        bottomNavigation.setTranslationX(0.0f);
         bottomNavigation.setTranslationY(0.0f);
+        setNavigationRailContentInset(visible);
         if (!visible) {
             bottomNavigation.setVisibility(View.GONE);
             notifyBottomNavigationVisibilityChanged();
@@ -782,16 +788,57 @@ public class MainFragment extends BaseFragment
 
         if (playerCoversNavigation) {
             bottomNavigation.setAlpha(0.0f);
-            bottomNavigation.setTranslationY(bottomNavigation.getHeight() > 0
-                    ? bottomNavigation.getHeight()
-                    : getResources()
-                    .getDimensionPixelSize(R.dimen.main_bottom_navigation_height));
+            if (isNavigationRail()) {
+                bottomNavigation.setTranslationX(-getNavigationRailWidth(bottomNavigation));
+            } else {
+                bottomNavigation.setTranslationY(bottomNavigation.getHeight() > 0
+                        ? bottomNavigation.getHeight()
+                        : getResources()
+                        .getDimensionPixelSize(R.dimen.main_bottom_navigation_height));
+            }
             bottomNavigation.setVisibility(View.INVISIBLE);
         } else {
             bottomNavigation.setVisibility(View.VISIBLE);
         }
         bottomNavigation.bringToFront();
         notifyBottomNavigationVisibilityChanged();
+    }
+
+    private int getNavigationItemLimit() {
+        return isNavigationRail()
+                ? NAVIGATION_RAIL_MAX_ITEM_COUNT : BOTTOM_NAVIGATION_MAX_ITEM_COUNT;
+    }
+
+    private boolean isNavigationRail() {
+        return bottomNavigation instanceof NavigationRailView;
+    }
+
+    private int getNavigationRailWidth(@NonNull final View navigation) {
+        return navigation.getWidth() > 0
+                ? navigation.getWidth()
+                : getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width);
+    }
+
+    private void setNavigationRailContentInset(final boolean visible) {
+        if (!isNavigationRail()) {
+            return;
+        }
+        final int inset = visible
+                ? getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width) : 0;
+        setStartMargin(requireActivity().findViewById(R.id.fragment_holder), inset);
+        setStartMargin(requireActivity().findViewById(R.id.toolbar_layout), inset);
+        setStartMargin(requireActivity().findViewById(R.id.fragment_player_holder), inset);
+    }
+
+    private static void setStartMargin(@Nullable final View view, final int margin) {
+        if (view == null || !(view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        final var params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+        if (params.getMarginStart() != margin) {
+            params.setMarginStart(margin);
+            view.setLayoutParams(params);
+        }
     }
 
     private void notifyBottomNavigationVisibilityChanged() {

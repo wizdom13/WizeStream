@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.navigationrail.NavigationRailView;
 
 import org.schabi.newpipe.R;
 
@@ -172,23 +173,43 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
                 .clampExpandedFraction(expandedFraction);
         if (clampedFraction >= 1.0f) {
             bottomNavigation.setAlpha(0.0f);
-            bottomNavigation.setTranslationY(getBottomNavigationHeight(bottomNavigation));
+            if (bottomNavigation instanceof NavigationRailView) {
+                bottomNavigation.setTranslationX(-getNavigationRailWidth(bottomNavigation));
+            } else {
+                bottomNavigation.setTranslationY(getBottomNavigationHeight(bottomNavigation));
+            }
             bottomNavigation.setVisibility(View.INVISIBLE);
             return;
         }
 
         bottomNavigation.setVisibility(View.VISIBLE);
         bottomNavigation.setAlpha(1.0f - clampedFraction);
-        bottomNavigation.setTranslationY(
-                PlayerSheetTransitionCalculator.bottomNavigationTranslation(
-                        getBottomNavigationHeight(bottomNavigation), clampedFraction));
+        if (bottomNavigation instanceof NavigationRailView) {
+            bottomNavigation.setTranslationX(
+                    -getNavigationRailWidth(bottomNavigation) * clampedFraction);
+            bottomNavigation.setTranslationY(0.0f);
+        } else {
+            bottomNavigation.setTranslationX(0.0f);
+            bottomNavigation.setTranslationY(
+                    PlayerSheetTransitionCalculator.bottomNavigationTranslation(
+                            getBottomNavigationHeight(bottomNavigation), clampedFraction));
+        }
     }
 
     private static int getBottomNavigationHeight(@NonNull final View view) {
+        if (view instanceof NavigationRailView) {
+            return 0;
+        }
         return view.getHeight() > 0
                 ? view.getHeight()
                 : view.getResources()
                 .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
+    }
+
+    private static int getNavigationRailWidth(@NonNull final View view) {
+        return view.getWidth() > 0
+                ? view.getWidth()
+                : view.getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width);
     }
 
     private static boolean isBottomNavigationRequested(@NonNull final View bottomSheet) {
