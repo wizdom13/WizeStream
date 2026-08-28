@@ -60,11 +60,33 @@ public class EdgeToEdgeIntegrationTest {
         final String tabletLayout = Files.readString(mainDirectory.resolve(
                 "res/layout-sw600dp/activity_main.xml"));
 
-        assertTrue(activity.contains("EdgeToEdgeHelper.applyDrawerLayoutSystemBarPadding("));
+        assertTrue(activity.contains("EdgeToEdgeHelper.applyMainActivitySystemBarInsets("));
         assertFalse(activity.contains(
                 "EdgeToEdgeHelper.applySystemBarPadding(mainBinding.getRoot())"));
         assertTrue(phoneLayout.contains("android:id=\"@+id/main_content\""));
         assertTrue(tabletLayout.contains("android:id=\"@+id/main_content\""));
+        assertTrue(phoneLayout.contains("android:id=\"@+id/main_safe_content\""));
+        assertTrue(tabletLayout.contains("android:id=\"@+id/main_safe_content\""));
+    }
+
+    @Test
+    public void playerSheetStaysOutsideInsetContentContainer() throws Exception {
+        final List<String> layouts = List.of(
+                "res/layout/activity_main.xml",
+                "res/layout-sw600dp/activity_main.xml");
+
+        for (final String layoutPath : layouts) {
+            final String layout = Files.readString(mainDirectory.resolve(layoutPath));
+            final int safeContentStart = layout.indexOf(
+                    "android:id=\"@+id/main_safe_content\"");
+            final int safeContentEnd = layout.indexOf("</FrameLayout>", safeContentStart);
+            final int playerSheetStart = layout.indexOf(
+                    "android:id=\"@+id/fragment_player_holder\"");
+
+            assertTrue(layoutPath, safeContentStart >= 0);
+            assertTrue(layoutPath, safeContentEnd > safeContentStart);
+            assertTrue(layoutPath, playerSheetStart > safeContentEnd);
+        }
     }
 
     @Test

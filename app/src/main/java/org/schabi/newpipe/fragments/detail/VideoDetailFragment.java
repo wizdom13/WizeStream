@@ -2408,6 +2408,8 @@ public final class VideoDetailFragment
         } else {
             showSystemUi();
         }
+        requireActivity().findViewById(R.id.toolbar_layout)
+                .setVisibility(fullscreen ? View.GONE : View.VISIBLE);
 
         if (binding.relatedItemsLayout != null) {
             if (showRelatedItems) {

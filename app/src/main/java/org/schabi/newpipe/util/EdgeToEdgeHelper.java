@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 
 import androidx.annotation.NonNull;
@@ -48,29 +49,48 @@ public final class EdgeToEdgeHelper {
     }
 
     /**
-     * Applies insets to the independently laid-out content and drawer children of a
-     * {@link androidx.drawerlayout.widget.DrawerLayout}. Padding the drawer layout itself does
-     * not constrain those children, which can leave bottom navigation behind the system
-     * navigation bar and drawer header content behind the status bar.
+     * Applies insets to the independently laid-out main activity and drawer children.
      *
-     * <p>The drawer keeps drawing its background edge-to-edge. Only its header content receives
-     * the top inset, while the drawer container receives horizontal cutout protection and the
-     * bottom system-bar inset.</p>
+     * <p>The player bottom sheet deliberately remains outside {@code safeContent}. Padding the
+     * sheet's {@link androidx.coordinatorlayout.widget.CoordinatorLayout} parent changes the
+     * height used by {@code BottomSheetBehavior} and shifts its expanded position downward. The
+     * regular fragment content, toolbar, and adaptive navigation receive their insets directly
+     * instead.</p>
      *
      * @param insetSource view that receives the window inset dispatch
-     * @param content main activity content constrained inside all safe edges
+     * @param safeContent regular fragment content constrained inside all safe edges
+     * @param toolbar toolbar protected below the status bar and display cutouts
+     * @param navigation bottom navigation or navigation rail protected inside all safe edges
+     * @param playerSheet player sheet whose children avoid horizontal and bottom system bars
      * @param drawer navigation drawer protected on its horizontal and bottom edges
      * @param drawerHeader drawer header whose content is protected below the status bar
      */
-    public static void applyDrawerLayoutSystemBarPadding(
+    public static void applyMainActivitySystemBarInsets(
             @NonNull final View insetSource,
-            @NonNull final View content,
+            @NonNull final View safeContent,
+            @NonNull final View toolbar,
+            @NonNull final View navigation,
+            @NonNull final View playerSheet,
             @NonNull final View drawer,
             @NonNull final View drawerHeader) {
-        final int contentLeft = content.getPaddingLeft();
-        final int contentTop = content.getPaddingTop();
-        final int contentRight = content.getPaddingRight();
-        final int contentBottom = content.getPaddingBottom();
+        final int contentLeft = safeContent.getPaddingLeft();
+        final int contentTop = safeContent.getPaddingTop();
+        final int contentRight = safeContent.getPaddingRight();
+        final int contentBottom = safeContent.getPaddingBottom();
+        final int toolbarLeft = toolbar.getPaddingLeft();
+        final int toolbarTop = toolbar.getPaddingTop();
+        final int toolbarRight = toolbar.getPaddingRight();
+        final int toolbarBottom = toolbar.getPaddingBottom();
+        final ViewGroup.MarginLayoutParams navigationParams =
+                (ViewGroup.MarginLayoutParams) navigation.getLayoutParams();
+        final int navigationLeft = navigationParams.leftMargin;
+        final int navigationTop = navigationParams.topMargin;
+        final int navigationRight = navigationParams.rightMargin;
+        final int navigationBottom = navigationParams.bottomMargin;
+        final int playerLeft = playerSheet.getPaddingLeft();
+        final int playerTop = playerSheet.getPaddingTop();
+        final int playerRight = playerSheet.getPaddingRight();
+        final int playerBottom = playerSheet.getPaddingBottom();
         final int drawerLeft = drawer.getPaddingLeft();
         final int drawerTop = drawer.getPaddingTop();
         final int drawerRight = drawer.getPaddingRight();
@@ -82,11 +102,29 @@ public final class EdgeToEdgeHelper {
 
         ViewCompat.setOnApplyWindowInsetsListener(insetSource, (target, windowInsets) -> {
             final Insets safeInsets = getSafeSystemBarInsets(windowInsets);
-            content.setPadding(
+            safeContent.setPadding(
                     contentLeft + safeInsets.left,
                     contentTop + safeInsets.top,
                     contentRight + safeInsets.right,
                     contentBottom + safeInsets.bottom);
+            toolbar.setPadding(
+                    toolbarLeft + safeInsets.left,
+                    toolbarTop + safeInsets.top,
+                    toolbarRight + safeInsets.right,
+                    toolbarBottom);
+            final ViewGroup.MarginLayoutParams updatedNavigationParams =
+                    (ViewGroup.MarginLayoutParams) navigation.getLayoutParams();
+            updatedNavigationParams.setMargins(
+                    navigationLeft + safeInsets.left,
+                    navigationTop + safeInsets.top,
+                    navigationRight + safeInsets.right,
+                    navigationBottom + safeInsets.bottom);
+            navigation.setLayoutParams(updatedNavigationParams);
+            playerSheet.setPadding(
+                    playerLeft + safeInsets.left,
+                    playerTop,
+                    playerRight + safeInsets.right,
+                    playerBottom + safeInsets.bottom);
             drawer.setPadding(
                     drawerLeft + safeInsets.left,
                     drawerTop,
