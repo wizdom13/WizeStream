@@ -36,15 +36,15 @@ public class ResultsStreamVideo implements Serializable {
     private final String videoName;
     private final int viewCount;
 
-    public ResultsStreamVideo(JsonObject jsonObject) {
+    public ResultsStreamVideo(final JsonObject jsonObject) {
         this.categoryId = jsonObject.getString("category_id");
         this.channel = new Channel(jsonObject.getObject("channel"));
         this.datePublished = jsonObject.getString("date_published");
         this.description = jsonObject.getString("description");
         this.duration = jsonObject.getString("duration");
-        List<String> listobjArrayhashtags = new ArrayList<>();
-        JsonArray objArrayhashtags = jsonObject.getArray("hashtags");
-        for (Object obj : objArrayhashtags) {
+        final List<String> listobjArrayhashtags = new ArrayList<>();
+        final JsonArray objArrayhashtags = jsonObject.getArray("hashtags");
+        for (final Object obj : objArrayhashtags) {
             listobjArrayhashtags.add((String) obj);
         }
         this.hashtags = listobjArrayhashtags;

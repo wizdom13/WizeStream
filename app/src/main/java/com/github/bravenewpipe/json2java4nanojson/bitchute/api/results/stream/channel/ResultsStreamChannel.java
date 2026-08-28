@@ -37,7 +37,7 @@ public class ResultsStreamChannel implements Serializable {
     private final int videoCount;
     private final int viewCount;
 
-    public ResultsStreamChannel(JsonObject jsonObject) {
+    public ResultsStreamChannel(final JsonObject jsonObject) {
         this.blockReason = jsonObject.getInt("block_reason");
         this.categoryId = jsonObject.getString("category_id");
         this.channelId = jsonObject.getString("channel_id");

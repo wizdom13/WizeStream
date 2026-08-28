@@ -16,7 +16,7 @@ public class ResultsStreamVideoCounts implements Serializable {
     private final int likeCount;
     private final int viewCount;
 
-    public ResultsStreamVideoCounts(JsonObject jsonObject) {
+    public ResultsStreamVideoCounts(final JsonObject jsonObject) {
         this.dislikeCount = jsonObject.getInt("dislike_count");
         this.likeCount = jsonObject.getInt("like_count");
         this.viewCount = jsonObject.getInt("view_count");

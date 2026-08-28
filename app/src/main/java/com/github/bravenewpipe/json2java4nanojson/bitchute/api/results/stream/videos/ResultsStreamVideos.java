@@ -17,10 +17,10 @@ public class ResultsStreamVideos implements Serializable {
 
     private final List<Videos> videos;
 
-    public ResultsStreamVideos(JsonObject jsonObject) {
-        List<Videos> listobjArrayvideos = new ArrayList<>();
-        JsonArray objArrayvideos = jsonObject.getArray("videos");
-        for (Object obj : objArrayvideos) {
+    public ResultsStreamVideos(final JsonObject jsonObject) {
+        final List<Videos> listobjArrayvideos = new ArrayList<>();
+        final JsonArray objArrayvideos = jsonObject.getArray("videos");
+        for (final Object obj : objArrayvideos) {
             listobjArrayvideos.add(new Videos(((JsonObject) obj)));
         }
         this.videos = listobjArrayvideos;

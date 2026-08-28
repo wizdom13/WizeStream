@@ -16,7 +16,7 @@ public class Channels implements Serializable {
     private final int subscriberCount;
     private final String thumbnailUrl;
 
-    public Channels(JsonObject jsonObject) {
+    public Channels(final JsonObject jsonObject) {
         this.channelId = jsonObject.getString("channel_id");
         this.channelName = jsonObject.getString("channel_name");
         this.channelUrl = jsonObject.getString("channel_url");

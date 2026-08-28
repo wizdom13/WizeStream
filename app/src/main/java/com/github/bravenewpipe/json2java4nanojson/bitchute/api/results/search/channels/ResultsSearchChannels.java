@@ -19,11 +19,11 @@ public class ResultsSearchChannels implements Serializable {
     private final List<Channels> channels;
     private final String duration;
 
-    public ResultsSearchChannels(JsonObject jsonObject) {
+    public ResultsSearchChannels(final JsonObject jsonObject) {
         this.channelCount = jsonObject.getInt("channel_count");
-        List<Channels> listobjArraychannels = new ArrayList<>();
-        JsonArray objArraychannels = jsonObject.getArray("channels");
-        for (Object obj : objArraychannels) {
+        final List<Channels> listobjArraychannels = new ArrayList<>();
+        final JsonArray objArraychannels = jsonObject.getArray("channels");
+        for (final Object obj : objArraychannels) {
             listobjArraychannels.add(new Channels(((JsonObject) obj)));
         }
         this.channels = listobjArraychannels;

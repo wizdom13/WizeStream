@@ -19,12 +19,12 @@ public class ResultsSearchVideos implements Serializable {
     private final int videoCount;
     private final List<Videos> videos;
 
-    public ResultsSearchVideos(JsonObject jsonObject) {
+    public ResultsSearchVideos(final JsonObject jsonObject) {
         this.duration = jsonObject.getString("duration");
         this.videoCount = jsonObject.getInt("video_count");
-        List<Videos> listobjArrayvideos = new ArrayList<>();
-        JsonArray objArrayvideos = jsonObject.getArray("videos");
-        for (Object obj : objArrayvideos) {
+        final List<Videos> listobjArrayvideos = new ArrayList<>();
+        final JsonArray objArrayvideos = jsonObject.getArray("videos");
+        for (final Object obj : objArrayvideos) {
             listobjArrayvideos.add(new Videos(((JsonObject) obj)));
         }
         this.videos = listobjArrayvideos;

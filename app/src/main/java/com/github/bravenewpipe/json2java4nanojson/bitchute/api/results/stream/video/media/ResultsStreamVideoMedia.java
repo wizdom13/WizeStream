@@ -16,7 +16,7 @@ public class ResultsStreamVideoMedia implements Serializable {
     private final String mediaUrl;
     private final String videoId;
 
-    public ResultsStreamVideoMedia(JsonObject jsonObject) {
+    public ResultsStreamVideoMedia(final JsonObject jsonObject) {
         this.mediaType = jsonObject.getString("media_type");
         this.mediaUrl = jsonObject.getString("media_url");
         this.videoId = jsonObject.getString("video_id");

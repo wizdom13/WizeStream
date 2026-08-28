@@ -10,7 +10,7 @@ public class Profile implements Serializable {
     private final String profileThumbnailUrl;
     private final String profileUrl;
 
-    public Profile(JsonObject jsonObject) {
+    public Profile(final JsonObject jsonObject) {
         this.profileId = jsonObject.getString("profile_id");
         this.profileName = jsonObject.getString("profile_name");
         this.profileThumbnailUrl = jsonObject.getString("profile_thumbnail_url");

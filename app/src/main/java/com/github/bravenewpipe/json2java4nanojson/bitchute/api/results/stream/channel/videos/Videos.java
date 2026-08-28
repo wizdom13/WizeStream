@@ -17,7 +17,7 @@ public class Videos implements Serializable {
     private final String videoUrl;
     private final int viewCount;
 
-    public Videos(JsonObject jsonObject) {
+    public Videos(final JsonObject jsonObject) {
         this.datePublished = jsonObject.getString("date_published");
         this.description = jsonObject.getString("description");
         this.duration = jsonObject.getString("duration");
