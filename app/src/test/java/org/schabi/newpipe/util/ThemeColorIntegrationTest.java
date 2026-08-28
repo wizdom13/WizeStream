@@ -28,8 +28,68 @@ public class ThemeColorIntegrationTest {
                 < helper.indexOf("applyBlackSurfaceOverlay(context);"));
         assertTrue(blackOverlay.contains(
                 "<item name=\"colorSurface\">@color/black_background_color</item>"));
+        assertTrue(blackOverlay.contains(
+                "<item name=\"colorSurfaceContainer\">"
+                        + "@color/black_m3_surface_container_color</item>"));
+        assertTrue(blackOverlay.contains(
+                "<item name=\"colorSurfaceContainerHigh\">"
+                        + "@color/black_m3_surface_container_high_color</item>"));
         assertFalse(blackOverlay.contains("colorPrimary"));
         assertFalse(blackOverlay.contains("colorSecondary"));
+    }
+
+    @Test
+    public void themesExposeMaterialSurfaceAndOutlineRoles() throws Exception {
+        final String styles = Files.readString(resourceDirectory.resolve("values/styles.xml"));
+
+        for (final String theme : new String[]{
+                "Base.V21.LightTheme",
+                "Base.V21.DarkTheme",
+                "Base.V21.BlackTheme"
+        }) {
+            final String body = styleBody(styles, theme);
+            assertTrue(theme, body.contains("<item name=\"colorSurfaceContainerLow\">"));
+            assertTrue(theme, body.contains("<item name=\"colorSurfaceContainer\">"));
+            assertTrue(theme, body.contains("<item name=\"colorSurfaceContainerHigh\">"));
+            assertTrue(theme, body.contains("<item name=\"colorOutlineVariant\">"));
+            assertTrue(theme, body.contains(
+                    "<item name=\"separator_color\">?attr/colorOutlineVariant</item>"));
+            assertTrue(theme, body.contains(
+                    "<item name=\"card_item_background_color\">"
+                            + "?attr/colorSurfaceContainerLow</item>"));
+        }
+
+        final String baseTheme = styleBody(styles, "Base.V21");
+        assertTrue(baseTheme.contains(
+                "<item name=\"colorControlActivated\">?attr/colorPrimary</item>"));
+        assertFalse(baseTheme.contains(
+                "<item name=\"colorControlActivated\">?attr/colorSecondary</item>"));
+    }
+
+    @Test
+    public void explicitLegacyWidgetsUseMaterial3Components() throws Exception {
+        final String relatedItems = Files.readString(
+                resourceDirectory.resolve("layout/related_items_header.xml"));
+        final String colorPicker = Files.readString(
+                resourceDirectory.resolve("layout/dialog_sponsor_block_color_picker.xml"));
+        final String queue = Files.readString(
+                resourceDirectory.resolve("layout/activity_player_queue_control.xml"));
+        final String queueLandscape = Files.readString(
+                resourceDirectory.resolve("layout-land/activity_player_queue_control.xml"));
+        final String feedGroupDialog = Files.readString(
+                resourceDirectory.resolve("layout/dialog_feed_group_create.xml"));
+
+        assertTrue(relatedItems.contains(
+                "com.google.android.material.materialswitch.MaterialSwitch"));
+        assertFalse(relatedItems.contains("androidx.appcompat.widget.SwitchCompat"));
+        assertTrue(colorPicker.contains(
+                "com.google.android.material.textfield.TextInputLayout"));
+        assertTrue(colorPicker.contains(
+                "com.google.android.material.textfield.TextInputEditText"));
+        assertFalse(colorPicker.contains("<EditText"));
+        assertMaterialToolbar(queue);
+        assertMaterialToolbar(queueLandscape);
+        assertMaterialToolbar(feedGroupDialog);
     }
 
     @Test
@@ -75,6 +135,12 @@ public class ThemeColorIntegrationTest {
     private void assertLayoutUsesMaterialSeekBar(final String layout) throws Exception {
         final String source = Files.readString(resourceDirectory.resolve(layout));
         assertTrue(source.contains("style=\"@style/Widget.WizeStream.SeekBar\""));
+    }
+
+    private void assertMaterialToolbar(final String layout) {
+        assertTrue(layout.contains("com.google.android.material.appbar.MaterialToolbar"));
+        assertTrue(layout.contains("android:background=\"?attr/colorSurfaceContainer\""));
+        assertFalse(layout.contains("androidx.appcompat.widget.Toolbar"));
     }
 
     private String styleBody(final String styles, final String styleName) {

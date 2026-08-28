@@ -22,7 +22,7 @@
         <item name="snackbarButtonStyle">@style/Widget.wizestream.Button.TextButton.Snackbar</item>
         <item name="snackbarTextViewStyle">@style/Widget.wizestream.Snackbar.TextView</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
-        <item name="colorControlActivated">?attr/colorSecondary</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
     </style>
     <style name="Base" parent="Base.V21"/>
 
@@ -44,27 +44,33 @@
         <item name="colorSurfaceInverse">@color/light_m3_inverse_surface_color</item>
         <item name="colorOnSurfaceInverse">@color/light_m3_inverse_on_surface_color</item>
         <item name="colorPrimaryInverse">@color/light_m3_inverse_primary_color</item>
+        <item name="colorSurfaceContainerLowest">@color/light_m3_surface_container_lowest_color</item>
+        <item name="colorSurfaceContainerLow">@color/light_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/light_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/light_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/light_m3_surface_container_highest_color</item>
         <item name="actionColor">?attr/colorOnSurface</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorPrimaryContainer">@color/light_m3_primary_container_color</item>
         <item name="colorOnPrimaryContainer">@color/light_m3_on_primary_container_color</item>
-        <item name="colorOutline">@color/light_border_color</item>
+        <item name="colorOutline">@color/light_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/light_m3_outline_variant_color</item>
         <item name="android:windowBackground">@color/light_background_color</item>
         <item name="windowBackground">@color/light_background_color</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:navigationBarColor">?attr/colorSurface</item>
 
-        <item name="separator_color">@color/light_separator_color</item>
-        <item name="contrast_background_color">@color/light_contrast_background_color</item>
+        <item name="separator_color">?attr/colorOutlineVariant</item>
+        <item name="contrast_background_color">?attr/colorSurfaceContainerHigh</item>
         <item name="checked_selector">@drawable/selector_checked_light</item>
         <item name="focused_selector">@drawable/selector_focused_light</item>
         <item name="toolbar_shadow">@drawable/toolbar_shadow_light</item>
         <item name="selector">@drawable/selector_light</item>
         <item name="colorControlHighlight">@color/light_ripple_color</item>
         <item name="progress_horizontal_drawable">@drawable/progress_youtube_horizontal_light</item>
-        <item name="card_item_background_color">@color/light_card_item_background_color</item>
-        <item name="card_item_contrast_color">@color/light_card_item_contrast_color</item>
-        <item name="border_color">@color/light_border_color</item>
+        <item name="card_item_background_color">?attr/colorSurfaceContainerLow</item>
+        <item name="card_item_contrast_color">?attr/colorSurfaceContainerHigh</item>
+        <item name="border_color">?attr/colorOutlineVariant</item>
         <item name="dashed_border">@drawable/dashed_border_light</item>
     </style>
     <style name="Base.LightTheme" parent="Base.V21.LightTheme" />
@@ -88,27 +94,33 @@
         <item name="colorSurfaceInverse">@color/dark_m3_inverse_surface_color</item>
         <item name="colorOnSurfaceInverse">@color/dark_m3_inverse_on_surface_color</item>
         <item name="colorPrimaryInverse">@color/dark_m3_inverse_primary_color</item>
+        <item name="colorSurfaceContainerLowest">@color/dark_m3_surface_container_lowest_color</item>
+        <item name="colorSurfaceContainerLow">@color/dark_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/dark_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/dark_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/dark_m3_surface_container_highest_color</item>
         <item name="actionColor">?attr/colorOnSurface</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorPrimaryContainer">@color/dark_m3_primary_container_color</item>
         <item name="colorOnPrimaryContainer">@color/dark_m3_on_primary_container_color</item>
-        <item name="colorOutline">@color/dark_border_color</item>
+        <item name="colorOutline">@color/dark_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/dark_m3_outline_variant_color</item>
         <item name="android:windowBackground">@color/dark_background_color</item>
         <item name="windowBackground">@color/dark_background_color</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:navigationBarColor">?attr/colorSurface</item>
 
-        <item name="separator_color">@color/dark_separator_color</item>
-        <item name="contrast_background_color">@color/dark_contrast_background_color</item>
+        <item name="separator_color">?attr/colorOutlineVariant</item>
+        <item name="contrast_background_color">?attr/colorSurfaceContainerHigh</item>
         <item name="checked_selector">@drawable/selector_checked_dark</item>
         <item name="focused_selector">@drawable/selector_focused_dark</item>
         <item name="toolbar_shadow">@drawable/toolbar_shadow_dark</item>
         <item name="selector">@drawable/selector_dark</item>
         <item name="colorControlHighlight">@color/dark_ripple_color</item>
         <item name="progress_horizontal_drawable">@drawable/progress_youtube_horizontal_dark</item>
-        <item name="card_item_background_color">@color/dark_card_item_background_color</item>
-        <item name="card_item_contrast_color">@color/dark_card_item_contrast_color</item>
-        <item name="border_color">@color/dark_border_color</item>
+        <item name="card_item_background_color">?attr/colorSurfaceContainerLow</item>
+        <item name="card_item_contrast_color">?attr/colorSurfaceContainerHigh</item>
+        <item name="border_color">?attr/colorOutlineVariant</item>
         <item name="dashed_border">@drawable/dashed_border_dark</item>
     </style>
     <style name="Base.DarkTheme" parent="Base.V21.DarkTheme" />
@@ -132,14 +144,20 @@
         <item name="colorSurfaceInverse">@color/dark_m3_inverse_surface_color</item>
         <item name="colorOnSurfaceInverse">@color/dark_m3_inverse_on_surface_color</item>
         <item name="colorPrimaryInverse">@color/dark_m3_inverse_primary_color</item>
-        <item name="colorOutline">@color/black_border_color</item>
+        <item name="colorSurfaceContainerLowest">@color/black_m3_surface_container_lowest_color</item>
+        <item name="colorSurfaceContainerLow">@color/black_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/black_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/black_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/black_m3_surface_container_highest_color</item>
+        <item name="colorOutline">@color/dark_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/dark_m3_outline_variant_color</item>
 
-        <item name="separator_color">@color/black_separator_color</item>
-        <item name="contrast_background_color">@color/black_contrast_background_color</item>
+        <item name="separator_color">?attr/colorOutlineVariant</item>
+        <item name="contrast_background_color">?attr/colorSurfaceContainerHigh</item>
 
-        <item name="card_item_background_color">@color/black_card_item_background_color</item>
-        <item name="card_item_contrast_color">@color/black_card_item_contrast_color</item>
-        <item name="border_color">@color/black_border_color</item>
+        <item name="card_item_background_color">?attr/colorSurfaceContainerLow</item>
+        <item name="card_item_contrast_color">?attr/colorSurfaceContainerHigh</item>
+        <item name="border_color">?attr/colorOutlineVariant</item>
         <item name="dashed_border">@drawable/dashed_border_black</item>
     </style>
     <style name="Base.BlackTheme" parent="Base.V21.BlackTheme" />
@@ -152,6 +170,11 @@
         <item name="android:statusBarColor">@color/black_background_color</item>
         <item name="android:navigationBarColor">@color/black_background_color</item>
         <item name="colorSurface">@color/black_background_color</item>
+        <item name="colorSurfaceContainerLowest">@color/black_m3_surface_container_lowest_color</item>
+        <item name="colorSurfaceContainerLow">@color/black_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/black_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/black_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/black_m3_surface_container_highest_color</item>
     </style>
 
 
@@ -166,7 +189,7 @@
         <item name="colorSecondary">#52634F</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#52634F</item>
-        <item name="colorControlActivated">#52634F</item>
+        <item name="colorControlActivated">#46674F</item>
         <item name="colorSecondaryContainer">#D5E8CF</item>
         <item name="colorOnSecondaryContainer">#10200F</item>
     </style>
@@ -181,7 +204,7 @@
         <item name="colorSecondary">#5E5E5E</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#5E5E5E</item>
-        <item name="colorControlActivated">#5E5E5E</item>
+        <item name="colorControlActivated">#5F5F5F</item>
         <item name="colorSecondaryContainer">#E5E5E5</item>
         <item name="colorOnSecondaryContainer">#1B1B1B</item>
     </style>
@@ -196,7 +219,7 @@
         <item name="colorSecondary">#55624C</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#55624C</item>
-        <item name="colorControlActivated">#55624C</item>
+        <item name="colorControlActivated">#386A20</item>
         <item name="colorSecondaryContainer">#D9E7CB</item>
         <item name="colorOnSecondaryContainer">#131F0D</item>
     </style>
@@ -211,7 +234,7 @@
         <item name="colorSecondary">#535F70</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#535F70</item>
-        <item name="colorControlActivated">#535F70</item>
+        <item name="colorControlActivated">#0061A4</item>
         <item name="colorSecondaryContainer">#D7E3F7</item>
         <item name="colorOnSecondaryContainer">#101C2B</item>
     </style>
@@ -226,7 +249,7 @@
         <item name="colorSecondary">#625B71</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#625B71</item>
-        <item name="colorControlActivated">#625B71</item>
+        <item name="colorControlActivated">#6750A4</item>
         <item name="colorSecondaryContainer">#E8DEF8</item>
         <item name="colorOnSecondaryContainer">#1D192B</item>
     </style>
@@ -241,7 +264,7 @@
         <item name="colorSecondary">#77574A</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#77574A</item>
-        <item name="colorControlActivated">#77574A</item>
+        <item name="colorControlActivated">#9B4300</item>
         <item name="colorSecondaryContainer">#FFDBCE</item>
         <item name="colorOnSecondaryContainer">#2C160D</item>
     </style>
@@ -256,7 +279,7 @@
         <item name="colorSecondary">#74565F</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#74565F</item>
-        <item name="colorControlActivated">#74565F</item>
+        <item name="colorControlActivated">#984061</item>
         <item name="colorSecondaryContainer">#FFD8E7</item>
         <item name="colorOnSecondaryContainer">#2B151D</item>
     </style>
@@ -271,7 +294,7 @@
         <item name="colorSecondary">#775651</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorAccent">#775651</item>
-        <item name="colorControlActivated">#775651</item>
+        <item name="colorControlActivated">#BA1A1A</item>
         <item name="colorSecondaryContainer">#FFDAD6</item>
         <item name="colorOnSecondaryContainer">#2C1512</item>
     </style>
@@ -283,9 +306,14 @@
         <item name="colorSecondary">@color/light_m3_secondary_color</item>
         <item name="colorAccent">@color/light_m3_secondary_color</item>
         <item name="colorSurface">@color/light_dialog_background_color</item>
+        <item name="colorSurfaceContainerLow">@color/light_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/light_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/light_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/light_m3_surface_container_highest_color</item>
         <item name="colorOnSurface">#1B1C18</item>
         <item name="colorOnSurfaceVariant">@color/light_m3_on_surface_variant_color</item>
-        <item name="colorOutline">@color/light_border_color</item>
+        <item name="colorOutline">@color/light_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/light_m3_outline_variant_color</item>
         <item name="android:windowBackground">@color/light_dialog_background_color</item>
         <item name="windowBackground">@color/light_dialog_background_color</item>
 
@@ -299,9 +327,14 @@
         <item name="colorSecondary">@color/dark_m3_secondary_color</item>
         <item name="colorAccent">@color/dark_m3_secondary_color</item>
         <item name="colorSurface">@color/dark_dialog_background_color</item>
+        <item name="colorSurfaceContainerLow">@color/dark_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/dark_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/dark_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/dark_m3_surface_container_highest_color</item>
         <item name="colorOnSurface">@color/white</item>
         <item name="colorOnSurfaceVariant">@color/dark_m3_on_surface_variant_color</item>
-        <item name="colorOutline">@color/dark_border_color</item>
+        <item name="colorOutline">@color/dark_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/dark_m3_outline_variant_color</item>
         <item name="android:windowBackground">@color/dark_dialog_background_color</item>
         <item name="windowBackground">@color/dark_dialog_background_color</item>
 
@@ -317,9 +350,14 @@
         <item name="colorSecondary">@color/light_m3_secondary_color</item>
         <item name="colorAccent">@color/light_m3_secondary_color</item>
         <item name="colorSurface">@color/light_dialog_background_color</item>
+        <item name="colorSurfaceContainerLow">@color/light_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/light_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/light_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/light_m3_surface_container_highest_color</item>
         <item name="colorOnSurface">#1B1C18</item>
         <item name="colorOnSurfaceVariant">@color/light_m3_on_surface_variant_color</item>
-        <item name="colorOutline">@color/light_border_color</item>
+        <item name="colorOutline">@color/light_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/light_m3_outline_variant_color</item>
         <item name="android:windowBackground">@color/light_dialog_background_color</item>
         <item name="windowBackground">@color/light_dialog_background_color</item>
 
@@ -335,9 +373,14 @@
         <item name="colorSecondary">@color/dark_m3_secondary_color</item>
         <item name="colorAccent">@color/dark_m3_secondary_color</item>
         <item name="colorSurface">@color/dark_dialog_background_color</item>
+        <item name="colorSurfaceContainerLow">@color/dark_m3_surface_container_low_color</item>
+        <item name="colorSurfaceContainer">@color/dark_m3_surface_container_color</item>
+        <item name="colorSurfaceContainerHigh">@color/dark_m3_surface_container_high_color</item>
+        <item name="colorSurfaceContainerHighest">@color/dark_m3_surface_container_highest_color</item>
         <item name="colorOnSurface">@color/white</item>
         <item name="colorOnSurfaceVariant">@color/dark_m3_on_surface_variant_color</item>
-        <item name="colorOutline">@color/dark_border_color</item>
+        <item name="colorOutline">@color/dark_m3_outline_color</item>
+        <item name="colorOutlineVariant">@color/dark_m3_outline_variant_color</item>
         <item name="android:windowBackground">@color/dark_dialog_background_color</item>
         <item name="windowBackground">@color/dark_dialog_background_color</item>
 
