@@ -40,10 +40,27 @@ public class VideoDetailNavigationResourcesTest {
         assertTrue(indicator.contains("<item name=\"android:height\">28dp</item>"));
         assertTrue(indicator.contains("<item name=\"marginHorizontal\">4dp</item>"));
         assertTrue(indicator.contains(
+                "<item name=\"android:color\">?attr/colorSecondaryContainer</item>"));
+        assertFalse(indicator.contains(
+                "<item name=\"android:color\">?attr/colorPrimaryContainer</item>"));
+        assertTrue(indicator.contains(
                 "@style/ShapeAppearance.WizeStream.Navigation.ActiveIndicator"));
         assertTrue(shape.contains("<item name=\"cornerFamily\">rounded</item>"));
         assertTrue(shape.contains("<item name=\"cornerSize\">8dp</item>"));
         assertFalse(shape.contains("Corner.Full"));
+    }
+
+    @Test
+    public void selectedNavigationContentStaysThemeColored() throws Exception {
+        final String colors = Files.readString(
+                resourcesDirectory.resolve("color/tab_layout_material_item_color.xml"));
+
+        assertTrue(colors.contains(
+                "android:color=\"?attr/colorPrimary\" android:state_checked=\"true\""));
+        assertTrue(colors.contains(
+                "android:color=\"?attr/colorPrimary\" android:state_selected=\"true\""));
+        assertTrue(colors.contains("<item android:color=\"?attr/colorOnSurfaceVariant\" />"));
+        assertFalse(colors.contains("?attr/colorOnSecondaryContainer"));
     }
 
     @Test
