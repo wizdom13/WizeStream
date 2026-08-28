@@ -42,7 +42,7 @@
             android:layout_toRightOf="@+id/group_icon"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textAppearance="?textAppearanceListItem"
+            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
             android:textColor="?attr/colorOnSurface"
             tools:ignore="RtlHardcoded"
             tools:text="Lorem ipsum dolor sit amet" />

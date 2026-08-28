@@ -103,7 +103,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/local_media_permission_description"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/localMediaGrantAccess"

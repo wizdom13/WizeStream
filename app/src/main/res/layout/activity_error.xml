@@ -36,7 +36,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/sorry_string"
-                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
@@ -60,7 +60,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/what_happened_headline"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold" />
 
@@ -94,7 +94,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/what_device_headline"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold" />
 
@@ -146,7 +146,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/error_details_headline"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold" />
 
@@ -187,7 +187,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/your_comment"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold" />
 

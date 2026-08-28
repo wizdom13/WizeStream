@@ -47,7 +47,7 @@
                         android:ellipsize="end"
                         android:gravity="start|center_vertical"
                         android:maxLines="2"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp"
                         tools:text="@tools:sample/lorem/random" />
@@ -59,7 +59,7 @@
                         android:ellipsize="end"
                         android:gravity="start|center_vertical"
                         android:maxLines="1"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp"
                         tools:text="@tools:sample/lorem/random" />
@@ -177,7 +177,7 @@
                             android:layout_gravity="center"
                             android:accessibilityLiveRegion="polite"
                             android:text="0/0"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp"
                             android:textStyle="bold"
@@ -192,7 +192,7 @@
                         android:accessibilityLiveRegion="polite"
                         android:gravity="center"
                         android:maxWidth="240dp"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:visibility="gone"
                         tools:text="@string/feed_processing_message" />

@@ -41,7 +41,7 @@
             android:layout_toRightOf="@+id/tabIcon"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textAppearance="?textAppearanceListItem"
+            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
             tools:ignore="RtlHardcoded"
             tools:text="Lorem ipsum dolor sit amet" />
 

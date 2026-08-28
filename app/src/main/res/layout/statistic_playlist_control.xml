@@ -33,7 +33,7 @@
             android:layout_toRightOf="@id/sortButtonIcon"
             android:gravity="left|center"
             android:text="@string/title_most_played"
-            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             android:textColor="?attr/colorOnSurface"
             android:textSize="15sp"
             android:textStyle="bold"

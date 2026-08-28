@@ -42,7 +42,7 @@
             android:layout_toRightOf="@+id/instanceIcon"
             android:ellipsize="marquee"
             android:singleLine="true"
-            android:textAppearance="?textAppearanceListItem"
+            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
             android:textColor="?attr/colorOnSurface"
             tools:ignore="RtlHardcoded"
             tools:text="Framatube" />
@@ -59,7 +59,7 @@
             android:autoLink="web"
             android:ellipsize="marquee"
             android:singleLine="true"
-            android:textAppearance="?textAppearanceListItemSecondary"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:ignore="RtlHardcoded"
             tools:text="https://framatube.org" />

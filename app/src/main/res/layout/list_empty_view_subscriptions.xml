@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="¯\\_(ツ)_/¯"
-        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         tools:ignore="HardcodedText" />
 
     <org.schabi.newpipe.views.NewPipeTextView
