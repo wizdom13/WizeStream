@@ -693,7 +693,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 message += "\n" + cause.message
             }
         } else if (!isNullOrEmpty(cause?.message)) {
-            message += "\n" + cause.message
+            message += "\n" + cause?.message
         }
         builder.setMessage(message)
             .show()
