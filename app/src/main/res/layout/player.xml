@@ -701,7 +701,7 @@
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/itemsListHeaderTitle"
-                style="@style/TextAppearance.AppCompat.Medium"
+                style="@style/TextAppearance.Material3.BodyMedium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignEnd="@id/itemsListClose"
@@ -752,7 +752,7 @@
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/itemsListHeaderDuration"
-                style="@style/TextAppearance.AppCompat.Medium"
+                style="@style/TextAppearance.Material3.BodyMedium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"

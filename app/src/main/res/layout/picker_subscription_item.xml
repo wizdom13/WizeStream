@@ -32,7 +32,7 @@
             android:gravity="center"
             android:lines="1"
             android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             android:textColor="?attr/colorOnSurface"
             android:textSize="10sp"
             tools:ignore="SmallSp"

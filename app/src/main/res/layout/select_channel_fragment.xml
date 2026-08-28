@@ -16,7 +16,7 @@
         android:layout_marginRight="5dp"
         android:layout_marginBottom="10dp"
         android:text="@string/select_a_channel"
-        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         android:textColor="?attr/colorOnSurface" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -33,7 +33,7 @@
         android:layout_margin="10dp"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:text="@string/no_channel_subscribed_yet"
-        android:textAppearance="?android:attr/textAppearanceListItem" />
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
 
     <ProgressBar
         android:id="@+id/progressBar"

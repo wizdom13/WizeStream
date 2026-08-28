@@ -16,7 +16,7 @@
         android:layout_marginBottom="20dp"
         android:fontFamily="sans-serif-condensed"
         android:text="@string/app_name"
-        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         android:textSize="40sp" />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -25,6 +25,6 @@
         android:layout_gravity="center_horizontal"
         android:gravity="center"
         android:text="@string/main_bg_subtitle"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
 
 </LinearLayout>
