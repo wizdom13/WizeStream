@@ -7,7 +7,6 @@ import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItemExtractor;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
-import org.schabi.newpipe.extractor.stream.Description;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -44,9 +43,8 @@ public class RumbleCommentsInfoItemExtractor implements CommentsInfoItemExtracto
     }
 
     @Override
-    public Description getCommentText() {
-        return new Description(element.selectFirst("p.comment-text").wholeText(),
-                Description.PLAIN_TEXT);
+    public String getCommentText() {
+        return element.selectFirst("p.comment-text").wholeText();
     }
 
     @Override

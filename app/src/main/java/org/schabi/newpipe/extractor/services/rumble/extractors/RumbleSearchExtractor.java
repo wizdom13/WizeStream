@@ -64,7 +64,8 @@ public class RumbleSearchExtractor extends SearchExtractor {
 
     @Nonnull
     @Override
-    public InfoItemsPage<InfoItem> getInitialPage() throws IOException, ExtractionException {
+    protected InfoItemsPage<InfoItem> getInitialPageInternal()
+            throws IOException, ExtractionException {
         return extractAndGetInfoItemsFromPage();
     }
 
@@ -121,7 +122,7 @@ public class RumbleSearchExtractor extends SearchExtractor {
     }
 
     @Override
-    public InfoItemsPage<InfoItem> getPage(final Page page)
+    protected InfoItemsPage<InfoItem> getPageInternal(final Page page)
             throws IOException, ExtractionException {
         if (null == page) {
             return null;

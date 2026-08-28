@@ -85,7 +85,6 @@ public class BitchuteChannelExtractor extends ChannelExtractor {
     }
 
     @Nonnull
-    @Override
     public List<Image> getParentChannelAvatars() throws ParsingException {
         return Collections.emptyList();
     }

@@ -2,6 +2,7 @@ package org.schabi.newpipe.extractor.channel;
 
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.ListExtractor;
+import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
@@ -37,6 +38,18 @@ public abstract class ChannelExtractor extends ListExtractor<StreamInfoItem> {
 
     public ChannelExtractor(final StreamingService service, final ListLinkHandler linkHandler) {
         super(service, linkHandler);
+    }
+
+    @Nonnull
+    @Override
+    public InfoItemsPage<StreamInfoItem> getInitialPage() {
+        return InfoItemsPage.emptyPage();
+    }
+
+    @Nonnull
+    @Override
+    public InfoItemsPage<StreamInfoItem> getPage(final Page page) {
+        return InfoItemsPage.emptyPage();
     }
 
 

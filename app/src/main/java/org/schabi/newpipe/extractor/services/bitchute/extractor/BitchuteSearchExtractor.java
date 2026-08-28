@@ -71,8 +71,9 @@ public class BitchuteSearchExtractor extends SearchExtractor {
 
     @Nonnull
     @Override
-    public InfoItemsPage<InfoItem> getInitialPage() throws IOException, ExtractionException {
-        return getPage(new Page(getUrl(), BitchuteConstants.INITIAL_PAGE_NO));
+    protected InfoItemsPage<InfoItem> getInitialPageInternal()
+            throws IOException, ExtractionException {
+        return getPageInternal(new Page(getUrl(), BitchuteConstants.INITIAL_PAGE_NO));
     }
 
     private BitchuteFilters.BitchuteKindContentFilterItem getContentFilterWithQueryData() {
@@ -87,7 +88,7 @@ public class BitchuteSearchExtractor extends SearchExtractor {
     }
 
     @Override
-    public InfoItemsPage<InfoItem> getPage(final Page page)
+    protected InfoItemsPage<InfoItem> getPageInternal(final Page page)
             throws IOException, ExtractionException {
 
         final String sortQuery;
