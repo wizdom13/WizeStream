@@ -27,8 +27,8 @@
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/learning_note_edit"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/learning_note_edit"
         android:padding="8dp"
@@ -37,8 +37,8 @@
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/learning_note_delete"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/delete"
         android:padding="8dp"

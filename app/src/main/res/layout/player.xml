@@ -109,13 +109,13 @@
                     android:baselineAligned="false"
                     android:descendantFocusability="afterDescendants"
                     android:gravity="top"
-                    android:minHeight="45dp"
+                    android:minHeight="48dp"
                     tools:ignore="RtlHardcoded">
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/playerCloseButton"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
@@ -183,13 +183,13 @@
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/audioTrackTextView"
                                 android:layout_width="wrap_content"
-                                android:layout_height="35dp"
+                                android:layout_height="48dp"
                                 android:layout_gravity="right"
                                 android:layout_marginEnd="8dp"
                                 android:background="?attr/selectableItemBackground"
                                 android:ellipsize="end"
                                 android:gravity="center"
-                                android:minWidth="0dp"
+                                android:minWidth="48dp"
                                 android:padding="@dimen/player_main_buttons_padding"
                                 android:singleLine="true"
                                 android:textColor="@android:color/white"
@@ -205,11 +205,11 @@
                     <org.schabi.newpipe.views.NewPipeTextView
                         android:id="@+id/qualityTextView"
                         android:layout_width="wrap_content"
-                        android:layout_height="35dp"
+                        android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
-                        android:minWidth="0dp"
+                        android:minWidth="48dp"
                         android:padding="@dimen/player_main_buttons_padding"
                         android:textColor="@android:color/white"
                         android:textStyle="bold"
@@ -219,11 +219,11 @@
                     <org.schabi.newpipe.views.NewPipeTextView
                         android:id="@+id/playbackSpeed"
                         android:layout_width="wrap_content"
-                        android:layout_height="35dp"
+                        android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:gravity="center"
-                        android:minWidth="0dp"
+                        android:minWidth="48dp"
                         android:padding="@dimen/player_main_buttons_padding"
                         android:textColor="@android:color/white"
                         android:textStyle="bold"
@@ -232,8 +232,8 @@
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/queueButton"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
@@ -251,8 +251,8 @@
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/segmentsButton"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
@@ -270,8 +270,8 @@
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/moreOptionsButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:contentDescription="@string/more_options"
@@ -304,7 +304,7 @@
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/resizeTextView"
                             android:layout_width="wrap_content"
-                            android:layout_height="35dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackground"
                             android:gravity="center"
@@ -329,7 +329,7 @@
                                 android:gravity="center|left"
                                 android:lines="1"
                                 android:minWidth="50dp"
-                                android:minHeight="35dp"
+                                android:minHeight="48dp"
                                 android:padding="@dimen/player_main_buttons_padding"
                                 android:textColor="@android:color/white"
                                 android:textStyle="bold"
@@ -341,12 +341,13 @@
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/playWithKodi"
                             android:layout_width="wrap_content"
-                            android:layout_height="35dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
                             android:contentDescription="@string/play_with_kodi_title"
                             android:focusable="true"
+                            android:minWidth="48dp"
                             android:padding="@dimen/player_main_buttons_padding"
                             android:scaleType="fitXY"
                             android:src="@drawable/ic_cast"
@@ -356,12 +357,13 @@
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/openInBrowser"
                             android:layout_width="wrap_content"
-                            android:layout_height="35dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
                             android:contentDescription="@string/open_in_browser"
                             android:focusable="true"
+                            android:minWidth="48dp"
                             android:padding="@dimen/player_main_buttons_padding"
                             android:scaleType="fitXY"
                             android:src="@drawable/ic_language"
@@ -371,12 +373,13 @@
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/share"
                             android:layout_width="wrap_content"
-                            android:layout_height="35dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
                             android:contentDescription="@string/share"
                             android:focusable="true"
+                            android:minWidth="48dp"
                             android:padding="@dimen/player_main_buttons_padding"
                             android:scaleType="fitXY"
                             android:src="@drawable/ic_share"
@@ -385,8 +388,8 @@
 
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/learningNoteButton"
-                            android:layout_width="35dp"
-                            android:layout_height="35dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
@@ -400,8 +403,8 @@
 
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/sleepTimerButton"
-                            android:layout_width="35dp"
-                            android:layout_height="35dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
@@ -414,8 +417,8 @@
 
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/equalizerButton"
-                            android:layout_width="35dp"
-                            android:layout_height="35dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
@@ -428,8 +431,8 @@
 
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/listenModeButton"
-                            android:layout_width="35dp"
-                            android:layout_height="35dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
@@ -443,11 +446,12 @@
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/switchMute"
                             android:layout_width="wrap_content"
-                            android:layout_height="37dp"
+                            android:layout_height="48dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
                             android:contentDescription="@string/mute"
                             android:focusable="true"
+                            android:minWidth="48dp"
                             android:padding="@dimen/player_main_buttons_padding"
                             android:scaleType="fitXY"
                             android:src="@drawable/ic_volume_off"
@@ -456,8 +460,8 @@
 
                         <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/fullScreenButton"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:clickable="true"
                             android:contentDescription="@string/toggle_fullscreen"
@@ -613,8 +617,8 @@
 
                 <androidx.appcompat.widget.AppCompatImageButton
                     android:id="@+id/screenRotationButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_marginStart="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
@@ -641,7 +645,7 @@
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/playPreviousButton"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_marginEnd="10dp"
                 android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
@@ -667,7 +671,7 @@
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/playNextButton"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
