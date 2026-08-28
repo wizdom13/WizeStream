@@ -1,6 +1,8 @@
 package org.schabi.newpipe.fragments.detail;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -24,6 +26,37 @@ public class VideoDetailNavigationResourcesTest {
     public void phoneAndLargeLandscapeLayoutsUseExpressiveNavigation() throws Exception {
         assertExpressiveNavigation("layout/fragment_video_detail.xml");
         assertExpressiveNavigation("layout-large-land/fragment_video_detail.xml");
+    }
+
+    @Test
+    public void navigationIndicatorsAreCompactRoundedRectangles() throws Exception {
+        final String styles = Files.readString(resourcesDirectory.resolve("values/styles.xml"));
+        final String indicator = styleBody(
+                styles, "wizestreamBottomNavigationActiveIndicator");
+        final String shape = styleBody(
+                styles, "ShapeAppearance.WizeStream.Navigation.ActiveIndicator");
+
+        assertTrue(indicator.contains("<item name=\"android:width\">44dp</item>"));
+        assertTrue(indicator.contains("<item name=\"android:height\">28dp</item>"));
+        assertTrue(indicator.contains("<item name=\"marginHorizontal\">4dp</item>"));
+        assertTrue(indicator.contains(
+                "@style/ShapeAppearance.WizeStream.Navigation.ActiveIndicator"));
+        assertTrue(shape.contains("<item name=\"cornerFamily\">rounded</item>"));
+        assertTrue(shape.contains("<item name=\"cornerSize\">8dp</item>"));
+        assertFalse(shape.contains("Corner.Full"));
+    }
+
+    @Test
+    public void mainNavigationUsesTheCompactIndicator() throws Exception {
+        final Document document = parse("layout/activity_main.xml");
+        final var navigationViews = document.getElementsByTagName(BOTTOM_NAVIGATION_VIEW);
+        assertEquals(1, navigationViews.getLength());
+
+        final var navigation = (Element) navigationViews.item(0);
+        assertEquals("@+id/main_bottom_navigation",
+                navigation.getAttribute("android:id"));
+        assertEquals("@style/wizestreamBottomNavigationActiveIndicator",
+                navigation.getAttribute("app:itemActiveIndicatorStyle"));
     }
 
     @Test
@@ -101,6 +134,19 @@ public class VideoDetailNavigationResourcesTest {
             }
         }
         assertEquals(layoutPath, 1, matches);
+    }
+
+    private String styleBody(final String styles, final String styleName) {
+        final String openingTag = "<style name=\"" + styleName + "\"";
+        final int start = styles.indexOf(openingTag);
+        if (start < 0) {
+            throw new AssertionError("Missing style: " + styleName);
+        }
+        final int end = styles.indexOf("</style>", start);
+        if (end < 0) {
+            throw new AssertionError("Unclosed style: " + styleName);
+        }
+        return styles.substring(start, end);
     }
 
     private Document parse(final String relativePath) throws Exception {

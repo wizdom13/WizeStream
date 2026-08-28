@@ -402,16 +402,21 @@
     <style name="RouterActivityThemeDark" parent="Base.RouterActivityThemeDark" />
 
 
-    <style name="wizestreamBottomNavigationActiveIndicator"
-        parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">?attr/colorPrimaryContainer</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+    <style name="ShapeAppearance.WizeStream.Navigation.ActiveIndicator"
+        parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
     </style>
 
-    <style name="Widget.WizeStream.VideoDetailNavigation.ActiveIndicator"
+    <style name="wizestreamBottomNavigationActiveIndicator"
         parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">?attr/colorSecondaryContainer</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
+        <item name="android:width">44dp</item>
+        <item name="android:height">28dp</item>
+        <item name="marginHorizontal">4dp</item>
+        <item name="android:color">?attr/colorPrimaryContainer</item>
+        <item name="shapeAppearance">
+            @style/ShapeAppearance.WizeStream.Navigation.ActiveIndicator
+        </item>
     </style>
 
 </resources>
