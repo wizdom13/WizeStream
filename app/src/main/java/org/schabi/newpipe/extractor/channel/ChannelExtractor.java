@@ -4,11 +4,13 @@ import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,13 +44,15 @@ public abstract class ChannelExtractor extends ListExtractor<StreamInfoItem> {
 
     @Nonnull
     @Override
-    public InfoItemsPage<StreamInfoItem> getInitialPage() {
+    public InfoItemsPage<StreamInfoItem> getInitialPage()
+            throws IOException, ExtractionException {
         return InfoItemsPage.emptyPage();
     }
 
     @Nonnull
     @Override
-    public InfoItemsPage<StreamInfoItem> getPage(final Page page) {
+    public InfoItemsPage<StreamInfoItem> getPage(final Page page)
+            throws IOException, ExtractionException {
         return InfoItemsPage.emptyPage();
     }
 
