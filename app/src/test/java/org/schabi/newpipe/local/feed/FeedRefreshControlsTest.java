@@ -134,6 +134,28 @@ public class FeedRefreshControlsTest {
         ).contains("cancelLoading()"));
     }
 
+    @Test
+    public void preferenceChangesCannotOutliveTheFeedViewBinding() throws Exception {
+        final String source = readSource(
+                "org/schabi/newpipe/local/feed/FeedFragment.kt");
+
+        assertTrue(methodBody(
+                source,
+                "override fun onViewCreated",
+                "override fun onResume"
+        ).contains("registerOnSharedPreferenceChangeListener(onSettingsChangeListener)"));
+        assertTrue(methodBody(
+                source,
+                "override fun onDestroyView()",
+                "// Handling"
+        ).contains("unregisterOnSharedPreferenceChangeListener(onSettingsChangeListener)"));
+        assertTrue(methodBody(
+                source,
+                "private fun showFilteredFeedItems",
+                "override fun setContextualSearchQuery"
+        ).contains("if (_feedBinding == null)"));
+    }
+
     private String readSource(final String relativePath) throws Exception {
         return Files.readString(sourceDirectory.resolve(relativePath));
     }

@@ -1,7 +1,7 @@
 package org.schabi.newpipe.extractor.services.youtube.extractors;
 
-import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.addCookieHeader;
-import static org.schabi.newpipe.extractor.utils.Utils.UTF_8;
+import static org.schabi.newpipe.extractor.utils.Utils.isBlank;
+import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 
 import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonParser;
@@ -9,17 +9,18 @@ import com.grack.nanojson.JsonParserException;
 
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
-import org.schabi.newpipe.extractor.downloader.Downloader;
+import org.schabi.newpipe.extractor.downloader.Response;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.suggestion.SuggestionExtractor;
+import org.schabi.newpipe.extractor.utils.Utils;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /*
  * Created by Christian Schabesberger on 28.09.16.
@@ -49,38 +50,46 @@ public class YoutubeSuggestionExtractor extends SuggestionExtractor {
 
     @Override
     public List<String> suggestionList(final String query) throws IOException, ExtractionException {
-        final Downloader dl = NewPipe.getDownloader();
-        final List<String> suggestions = new ArrayList<>();
-
-        final String url = "https://suggestqueries.google.com/complete/search"
-                + "?client=" + "youtube" //"firefox" for JSON, 'toolbar' for xml
-                + "&jsonp=" + "JP"
+        final String url = "https://suggestqueries-clients6.youtube.com/complete/search"
+                + "?client=" + "youtube"
                 + "&ds=" + "yt"
-                + "&gl=" + URLEncoder.encode(getExtractorContentCountry().getCountryCode(), UTF_8)
-                + "&q=" + URLEncoder.encode(query, UTF_8);
+                + "&gl=" + Utils.encodeUrlUtf8(getExtractorContentCountry().getCountryCode())
+                + "&q=" + Utils.encodeUrlUtf8(query)
+                + "&xhr=t";
 
         final Map<String, List<String>> headers = new HashMap<>();
-        addCookieHeader(headers);
+        headers.put("Origin", Collections.singletonList("https://www.youtube.com"));
+        headers.put("Referer", Collections.singletonList("https://www.youtube.com"));
 
-        String response = dl.get(url, headers, getExtractorLocalization()).responseBody();
-        // trim JSONP part "JP(...)"
-        response = response.substring(3, response.length() - 1);
+        final Response response = NewPipe.getDownloader()
+                .get(url, headers, getExtractorLocalization());
+
+        final String contentTypeHeader = response.getHeader("Content-Type");
+        if (isNullOrEmpty(contentTypeHeader) || !contentTypeHeader.contains("application/json")) {
+            throw new ExtractionException("Invalid response type (got \"" + contentTypeHeader
+                    + "\", expected a JSON response) (response code "
+                    + response.responseCode() + ")");
+        }
+
+        return parseSuggestions(response.responseBody());
+    }
+
+    static List<String> parseSuggestions(final String responseBody) throws ExtractionException {
+        if (responseBody.isEmpty()) {
+            throw new ExtractionException("Empty response received");
+        }
         try {
-            final JsonArray collection = JsonParser.array().from(response).getArray(1);
-            for (final Object suggestion : collection) {
-                if (!(suggestion instanceof JsonArray)) {
-                    continue;
-                }
-                final String suggestionStr = ((JsonArray) suggestion).getString(0);
-                if (suggestionStr == null) {
-                    continue;
-                }
-                suggestions.add(suggestionStr);
-            }
-
-            return suggestions;
+            return JsonParser.array()
+                    .from(responseBody)
+                    .getArray(1)
+                    .stream()
+                    .filter(JsonArray.class::isInstance)
+                    .map(JsonArray.class::cast)
+                    .map(suggestion -> suggestion.getString(0))
+                    .filter(suggestion -> !isBlank(suggestion))
+                    .collect(Collectors.toUnmodifiableList());
         } catch (final JsonParserException e) {
-            throw new ParsingException("Could not parse json response", e);
+            throw new ParsingException("Could not parse JSON response", e);
         }
     }
 }

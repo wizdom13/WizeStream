@@ -17,6 +17,8 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getTextFromObject;
 import static org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getThumbnailUrlFromInfoItem;
@@ -42,6 +44,7 @@ import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
  */
 
 public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
+    private static final Pattern VIEW_LABEL_PATTERN = Pattern.compile("\\bviews?\\b");
     private final JsonObject videoInfo;
     private final TimeAgoParser timeAgoParser;
     private StreamType cachedStreamType;
@@ -459,7 +462,7 @@ public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
                 if (isNullOrEmpty(text) || text.equals(" • ")) {
                     continue;
                 }
-                if (text.contains("ukubukwa") || text.toLowerCase().contains("view")) {
+                if (hasViewCountLabel(text)) {
                     continue;
                 }
                 if (timeAgoParser != null) {
@@ -570,20 +573,9 @@ public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
                     final JsonArray runs = videoInfo.getObject("videoInfo").getArray("runs");
                     for (final Object runObj : runs) {
                         final String text = ((JsonObject) runObj).getString("text");
-                        if (text != null
-                                && (text.toLowerCase().contains("view")
-                                || text.toLowerCase().contains("ukubukwa")
-                                || text.toLowerCase().contains("no views")
-                                || text.toLowerCase().contains("akukho"))) {
-                            if (text.toLowerCase().contains("no views")
-                                    || text.toLowerCase().contains("akukho ukubukwa")
-                                    || text.toLowerCase().contains("akukho kubukwa")) {
-                                return 0;
-                            } else if (text.toLowerCase().contains("recommended")
-                                    || text.toLowerCase().contains("okutusiwe")) {
-                                return -1;
-                            }
-                            return Utils.mixedNumberWordToLong(text);
+                        final Long parsedViewCount = parseFallbackViewCount(text);
+                        if (parsedViewCount != null) {
+                            return parsedViewCount;
                         }
                     }
                 } catch (final Exception ignored) {
@@ -601,19 +593,9 @@ public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
                         final String content = ((JsonObject) part)
                                 .getObject("text")
                                 .getString("content");
-                        if (content != null && (content.toLowerCase().contains("view")
-                                || content.toLowerCase().contains("ukubukwa")
-                                || content.toLowerCase().contains("no views")
-                                || content.toLowerCase().contains("akukho"))) {
-                            if (content.toLowerCase().contains("no views")
-                                    || content.toLowerCase().contains("akukho ukubukwa")
-                                    || content.toLowerCase().contains("akukho kubukwa")) {
-                                return 0;
-                            } else if (content.toLowerCase().contains("recommended")
-                                    || content.toLowerCase().contains("okutusiwe")) {
-                                return -1;
-                            }
-                            return Utils.mixedNumberWordToLong(content);
+                        final Long parsedViewCount = parseFallbackViewCount(content);
+                        if (parsedViewCount != null) {
+                            return parsedViewCount;
                         }
                     }
                 }
@@ -632,10 +614,46 @@ public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
                 return -1;
             }
 
-            return Long.parseLong(Utils.removeNonDigitCharacters(viewCount));
+            final String digits = Utils.removeNonDigitCharacters(viewCount);
+            return isNullOrEmpty(digits) ? -1 : Long.parseLong(digits);
         } catch (final Exception e) {
             throw new ParsingException("Could not get view count", e);
         }
+    }
+
+    @Nullable
+    private static Long parseFallbackViewCount(@Nullable final String text) {
+        if (isNullOrEmpty(text)) {
+            return null;
+        }
+
+        final String lowercaseText = text.toLowerCase(Locale.ROOT);
+        if (lowercaseText.contains("no views")
+                || lowercaseText.contains("akukho ukubukwa")
+                || lowercaseText.contains("akukho kubukwa")) {
+            return 0L;
+        }
+        if (lowercaseText.contains("recommended") || lowercaseText.contains("okutusiwe")) {
+            return -1L;
+        }
+
+        final boolean hasViewLabel = hasViewCountLabel(lowercaseText);
+        final boolean hasDigit = text.codePoints().anyMatch(Character::isDigit);
+        if (!hasViewLabel || !hasDigit) {
+            return null;
+        }
+
+        try {
+            return Utils.mixedNumberWordToLong(text);
+        } catch (final Exception ignored) {
+            return null;
+        }
+    }
+
+    private static boolean hasViewCountLabel(final String text) {
+        final String lowercaseText = text.toLowerCase(Locale.ROOT);
+        return VIEW_LABEL_PATTERN.matcher(lowercaseText).find()
+                || lowercaseText.contains("ukubukwa");
     }
 
     @Override

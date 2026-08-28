@@ -82,24 +82,24 @@ class DeviceSyncManager private constructor(context: Context) {
 
     @Synchronized
     fun createPairingCode(): String {
-        node.start(allowEphemeralFallback = true)
+        startNode()
         return node.createPairingCode()
     }
 
     @Synchronized
     fun pair(pairingCode: String): TrustedPeer {
-        node.start(allowEphemeralFallback = true)
+        startNode()
         return node.pair(pairingCode)
     }
 
     @Synchronized
     fun startListening() {
-        node.start(allowEphemeralFallback = true)
+        startNode()
     }
 
     @Synchronized
     fun syncSubscriptions(): DeviceSyncSummary {
-        node.start(allowEphemeralFallback = true)
+        startNode()
         val peers = trustedPeers
         if (peers.isEmpty()) {
             throw SubscriptionSyncException("Pair a trusted device before synchronizing")
@@ -162,7 +162,7 @@ class DeviceSyncManager private constructor(context: Context) {
     }
 
     private fun syncInternal(background: Boolean): DeviceSyncSummary {
-        node.start(allowEphemeralFallback = true)
+        startNode()
         val peers = trustedPeers
         if (peers.isEmpty()) {
             throw SubscriptionSyncException("Pair a trusted device before synchronizing")
@@ -341,6 +341,20 @@ class DeviceSyncManager private constructor(context: Context) {
         }
     }
 
+    private fun startNode() {
+        try {
+            node.start(allowEphemeralFallback = true)
+        } catch (error: LinkageError) {
+            if (isUnsupportedCompletableFutureError(Build.VERSION.SDK_INT, error)) {
+                throw IllegalStateException(
+                    applicationContext.getString(R.string.device_sync_android_version_unsupported),
+                    error
+                )
+            }
+            throw error
+        }
+    }
+
     companion object {
         private const val DYNAMIC_LISTEN_PORT = 0
         private const val LEGACY_LISTEN_PORT = 48_243
@@ -360,6 +374,22 @@ class DeviceSyncManager private constructor(context: Context) {
 
         fun hasTrustedPeers(context: Context): Boolean {
             return AndroidSyncStateRepository(context.applicationContext).hasTrustedPeers()
+        }
+
+        internal fun isUnsupportedCompletableFutureError(
+            sdkInt: Int,
+            error: Throwable
+        ): Boolean {
+            if (sdkInt >= Build.VERSION_CODES.N) {
+                return false
+            }
+            return generateSequence(error) { it.cause }
+                .take(MAX_LOG_CAUSE_DEPTH)
+                .mapNotNull(Throwable::message)
+                .any { message ->
+                    message.contains("java/util/concurrent/CompletableFuture") ||
+                        message.contains("java.util.concurrent.CompletableFuture")
+                }
         }
     }
 }

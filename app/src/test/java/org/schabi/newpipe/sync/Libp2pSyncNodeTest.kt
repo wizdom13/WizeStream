@@ -10,12 +10,27 @@ import io.libp2p.core.crypto.KeyType
 import io.libp2p.core.crypto.generateKeyPair
 import java.net.ServerSocket
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Libp2pSyncNodeTest {
+    @Test
+    fun `device sync recognizes Android 6 CompletableFuture linkage failures`() {
+        val missingCompletableFuture = NoClassDefFoundError(
+            "Failed resolution of: Ljava/util/concurrent/CompletableFuture;"
+        )
+
+        assertTrue(
+            DeviceSyncManager.isUnsupportedCompletableFutureError(23, missingCompletableFuture)
+        )
+        assertFalse(
+            DeviceSyncManager.isUnsupportedCompletableFutureError(24, missingCompletableFuture)
+        )
+    }
+
     @Test
     fun `default listener advertises and reports its selected dynamic port`() {
         val state = InMemorySyncStateRepository()

@@ -121,6 +121,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private final Handler controlsVisibilityHandler = new Handler(Looper.getMainLooper());
     @Nullable
     private SurfaceHolderCallback surfaceHolderCallback;
+    @Nullable
+    private Bitmap scaledEndScreenThumbnail;
     boolean surfaceIsSetup = false;
 
 
@@ -442,7 +444,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void destroy() {
         super.destroy();
-        binding.endScreen.setImageDrawable(null);
+        clearScaledEndScreenThumbnail();
         deinitPlayerSeekOverlay();
         deinitListeners();
     }
@@ -509,18 +511,28 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     private void updateEndScreenThumbnail(@Nullable final Bitmap thumbnail) {
         if (thumbnail == null) {
-            // remove end screen thumbnail
-            binding.endScreen.setImageDrawable(null);
+            clearScaledEndScreenThumbnail();
             return;
         }
 
         final float endScreenHeight = calculateMaxEndScreenThumbnailHeight(thumbnail);
-        final Bitmap endScreenBitmap = BitmapCompat.createScaledBitmap(
-                thumbnail,
-                (int) (thumbnail.getWidth() / (thumbnail.getHeight() / endScreenHeight)),
-                (int) endScreenHeight,
-                null,
-                true);
+        final Bitmap endScreenBitmap;
+        if (needsThumbnailScaling(thumbnail.getHeight(), endScreenHeight)) {
+            final int targetHeight = Math.max(1, Math.round(endScreenHeight));
+            final int targetWidth = Math.max(
+                    1,
+                    Math.round(thumbnail.getWidth()
+                            * (targetHeight / (float) thumbnail.getHeight()))
+            );
+            endScreenBitmap = BitmapCompat.createScaledBitmap(
+                    thumbnail,
+                    targetWidth,
+                    targetHeight,
+                    null,
+                    true);
+        } else {
+            endScreenBitmap = thumbnail;
+        }
 
         if (DEBUG) {
             Log.d(TAG, "Thumbnail - onThumbnailLoaded() called with: "
@@ -530,7 +542,23 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     + ", scaled end screen width = " + endScreenBitmap.getWidth());
         }
 
+        clearScaledEndScreenThumbnail();
+        if (endScreenBitmap != thumbnail) {
+            scaledEndScreenThumbnail = endScreenBitmap;
+        }
         binding.endScreen.setImageBitmap(endScreenBitmap);
+    }
+
+    static boolean needsThumbnailScaling(final int sourceHeight, final float targetHeight) {
+        return targetHeight > 0 && targetHeight < sourceHeight;
+    }
+
+    private void clearScaledEndScreenThumbnail() {
+        binding.endScreen.setImageDrawable(null);
+        if (scaledEndScreenThumbnail != null && !scaledEndScreenThumbnail.isRecycled()) {
+            scaledEndScreenThumbnail.recycle();
+        }
+        scaledEndScreenThumbnail = null;
     }
 
     protected abstract float calculateMaxEndScreenThumbnailHeight(@NonNull Bitmap bitmap);

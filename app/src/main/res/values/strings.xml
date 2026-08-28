@@ -378,6 +378,7 @@
     <string name="device_sync_search_history_title">Synchronize search history</string>
     <string name="device_sync_search_history_summary">Private by default. Enable to exchange search history with trusted devices; the other device must also enable it.</string>
     <string name="device_sync_sync_failed">Synchronization failed</string>
+    <string name="device_sync_android_version_unsupported">Secure device synchronization requires Android 7.0 or newer on this device</string>
     <string name="device_sync_identity_title">This device PeerID</string>
     <string name="device_sync_show_code_title">Show pairing code</string>
     <string name="device_sync_show_code_summary">Let another WizeStream device scan this one-time QR code</string>
