@@ -56,6 +56,11 @@ public final class EdgeToEdgeHelper {
      * <p>The drawer keeps drawing its background edge-to-edge. Only its header content receives
      * the top inset, while the drawer container receives horizontal cutout protection and the
      * bottom system-bar inset.</p>
+     *
+     * @param insetSource view that receives the window inset dispatch
+     * @param content main activity content constrained inside all safe edges
+     * @param drawer navigation drawer protected on its horizontal and bottom edges
+     * @param drawerHeader drawer header whose content is protected below the status bar
      */
     public static void applyDrawerLayoutSystemBarPadding(
             @NonNull final View insetSource,
