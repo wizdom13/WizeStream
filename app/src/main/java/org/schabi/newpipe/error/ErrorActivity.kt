@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.ActivityErrorBinding
+import org.schabi.newpipe.util.EdgeToEdgeHelper
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ThemeHelper
 import org.schabi.newpipe.util.external_communication.ShareUtils
@@ -69,9 +70,11 @@ class ErrorActivity : AppCompatActivity() {
 
         ThemeHelper.setDayNightMode(this)
         ThemeHelper.setTheme(this)
+        EdgeToEdgeHelper.enable(this)
 
         binding = ActivityErrorBinding.inflate(layoutInflater)
         setContentView(binding.getRoot())
+        EdgeToEdgeHelper.applySystemBarPadding(binding.root)
 
         setSupportActionBar(binding.toolbarLayout.toolbar)
         supportActionBar?.apply {

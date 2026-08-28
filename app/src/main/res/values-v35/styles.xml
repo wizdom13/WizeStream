@@ -2,9 +2,7 @@
 <resources>
 
     <!-- Base Theme -->
-    <style name="Base.V35" parent="Base.V29">
-        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
-    </style>
+    <style name="Base.V35" parent="Base.V29" />
     <style name="Base" parent="Base.V35"/>
 
     <!-- Light Theme -->
