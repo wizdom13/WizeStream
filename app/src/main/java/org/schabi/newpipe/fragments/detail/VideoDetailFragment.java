@@ -258,7 +258,7 @@ public final class VideoDetailFragment
     private TabAdapter pageAdapter;
     private View activityToolbarLayout;
     private View.OnLayoutChangeListener toolbarLayoutChangeListener;
-    private int activityToolbarHeight;
+    private int activityStatusBarInset;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -500,7 +500,7 @@ public final class VideoDetailFragment
         }
         activityToolbarLayout = null;
         toolbarLayoutChangeListener = null;
-        activityToolbarHeight = 0;
+        activityStatusBarInset = 0;
         super.onDestroyView();
         detailNavigation = null;
         binding = null;
@@ -713,11 +713,12 @@ public final class VideoDetailFragment
 
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
         activityToolbarLayout = requireActivity().findViewById(R.id.toolbar_layout);
-        activityToolbarHeight = Math.max(activityToolbarLayout.getHeight(), 0);
+        activityStatusBarInset = Math.max(activityToolbarLayout.getPaddingTop(), 0);
         toolbarLayoutChangeListener = (view, left, top, right, bottom,
                                        oldLeft, oldTop, oldRight, oldBottom) -> {
-            if (bottom > top) {
-                activityToolbarHeight = bottom - top;
+            final int currentTopInset = Math.max(view.getPaddingTop(), 0);
+            if (currentTopInset > 0 || activityStatusBarInset == 0) {
+                activityStatusBarInset = currentTopInset;
             }
             updateDetailContentTopMargin(isFullscreen());
         };
@@ -1740,8 +1741,8 @@ public final class VideoDetailFragment
     }
 
     static int getDetailContentTopMargin(final boolean fullscreen,
-                                         final int toolbarHeight) {
-        return fullscreen ? 0 : Math.max(toolbarHeight, 0);
+                                         final int statusBarInset) {
+        return fullscreen ? 0 : Math.max(statusBarInset, 0);
     }
 
     private void updateDetailContentTopMargin(final boolean fullscreen) {
@@ -1749,7 +1750,7 @@ public final class VideoDetailFragment
             return;
         }
         final int desiredTopMargin = getDetailContentTopMargin(
-                fullscreen, activityToolbarHeight);
+                fullscreen, activityStatusBarInset);
         final ViewGroup.MarginLayoutParams params =
                 (ViewGroup.MarginLayoutParams) binding.detailMainContent.getLayoutParams();
         if (params.topMargin != desiredTopMargin) {
@@ -2447,7 +2448,6 @@ public final class VideoDetailFragment
         } else {
             showSystemUi();
         }
-        activityToolbarLayout.setVisibility(fullscreen ? View.GONE : View.VISIBLE);
         updateDetailContentTopMargin(fullscreen);
 
         if (binding.relatedItemsLayout != null) {

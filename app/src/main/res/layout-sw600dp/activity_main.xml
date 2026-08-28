@@ -23,6 +23,11 @@
 
         </FrameLayout>
 
+        <include
+            android:id="@+id/toolbar_layout"
+            layout="@layout/toolbar_layout"
+            android:layout_marginStart="@dimen/main_navigation_rail_width" />
+
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/fragment_player_holder"
             android:layout_width="match_parent"
@@ -32,11 +37,6 @@
             app:behavior_hideable="true"
             app:behavior_peekHeight="0dp"
             app:layout_behavior="org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior" />
-
-        <include
-            android:id="@+id/toolbar_layout"
-            layout="@layout/toolbar_layout"
-            android:layout_marginStart="@dimen/main_navigation_rail_width" />
 
         <com.google.android.material.navigationrail.NavigationRailView
             android:id="@+id/main_bottom_navigation"
