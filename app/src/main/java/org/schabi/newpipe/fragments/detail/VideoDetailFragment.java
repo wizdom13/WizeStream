@@ -256,6 +256,9 @@ public final class VideoDetailFragment
     //////////////////////////////////////////////////////////////////////////*/
 
     private TabAdapter pageAdapter;
+    private View activityToolbarLayout;
+    private View.OnLayoutChangeListener toolbarLayoutChangeListener;
+    private int activityToolbarHeight;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -492,6 +495,12 @@ public final class VideoDetailFragment
             liveNotStartedDialog.dismiss();
             liveNotStartedDialog = null;
         }
+        if (activityToolbarLayout != null && toolbarLayoutChangeListener != null) {
+            activityToolbarLayout.removeOnLayoutChangeListener(toolbarLayoutChangeListener);
+        }
+        activityToolbarLayout = null;
+        toolbarLayoutChangeListener = null;
+        activityToolbarHeight = 0;
         super.onDestroyView();
         detailNavigation = null;
         binding = null;
@@ -703,6 +712,17 @@ public final class VideoDetailFragment
         super.initViews(rootView, savedInstanceState);
 
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
+        activityToolbarLayout = requireActivity().findViewById(R.id.toolbar_layout);
+        activityToolbarHeight = Math.max(activityToolbarLayout.getHeight(), 0);
+        toolbarLayoutChangeListener = (view, left, top, right, bottom,
+                                       oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (bottom > top) {
+                activityToolbarHeight = bottom - top;
+            }
+            updateDetailContentTopMargin(isFullscreen());
+        };
+        activityToolbarLayout.addOnLayoutChangeListener(toolbarLayoutChangeListener);
+        binding.getRoot().post(() -> updateDetailContentTopMargin(isFullscreen()));
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -1719,6 +1739,25 @@ public final class VideoDetailFragment
         return hasQueueItem && !localMedia;
     }
 
+    static int getDetailContentTopMargin(final boolean fullscreen,
+                                         final int toolbarHeight) {
+        return fullscreen ? 0 : Math.max(toolbarHeight, 0);
+    }
+
+    private void updateDetailContentTopMargin(final boolean fullscreen) {
+        if (binding == null || activityToolbarLayout == null) {
+            return;
+        }
+        final int desiredTopMargin = getDetailContentTopMargin(
+                fullscreen, activityToolbarHeight);
+        final ViewGroup.MarginLayoutParams params =
+                (ViewGroup.MarginLayoutParams) binding.detailMainContent.getLayoutParams();
+        if (params.topMargin != desiredTopMargin) {
+            params.topMargin = desiredTopMargin;
+            binding.detailMainContent.setLayoutParams(params);
+        }
+    }
+
     private void updatePinnedPlayerLayout() {
         updatePinnedPlayerLayout(0);
     }
@@ -2408,8 +2447,8 @@ public final class VideoDetailFragment
         } else {
             showSystemUi();
         }
-        requireActivity().findViewById(R.id.toolbar_layout)
-                .setVisibility(fullscreen ? View.GONE : View.VISIBLE);
+        activityToolbarLayout.setVisibility(fullscreen ? View.GONE : View.VISIBLE);
+        updateDetailContentTopMargin(fullscreen);
 
         if (binding.relatedItemsLayout != null) {
             if (showRelatedItems) {

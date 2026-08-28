@@ -90,6 +90,22 @@ public class EdgeToEdgeIntegrationTest {
     }
 
     @Test
+    public void miniPlayerOverlayStaysOutsideToolbarInsetDetailContent() throws Exception {
+        final String detailLayout = Files.readString(mainDirectory.resolve(
+                "res/layout/fragment_video_detail.xml"));
+        final int detailContentStart = detailLayout.indexOf(
+                "android:id=\"@+id/detail_main_content\"");
+        final int detailContentEnd = detailLayout.indexOf(
+                "</androidx.coordinatorlayout.widget.CoordinatorLayout>", detailContentStart);
+        final int miniPlayerOverlayStart = detailLayout.indexOf(
+                "android:id=\"@+id/overlay_layout\"");
+
+        assertTrue(detailContentStart >= 0);
+        assertTrue(detailContentEnd > detailContentStart);
+        assertTrue(miniPlayerOverlayStart > detailContentEnd);
+    }
+
+    @Test
     public void playerDoesNotUseDeprecatedSystemUiVisibilityFlags() throws Exception {
         final String detailSource = Files.readString(mainDirectory.resolve(
                 "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
