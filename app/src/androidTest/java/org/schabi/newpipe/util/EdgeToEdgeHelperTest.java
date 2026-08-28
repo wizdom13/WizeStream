@@ -26,18 +26,20 @@ public class EdgeToEdgeHelperTest {
         final View content = new FrameLayout(context);
         final View toolbar = new FrameLayout(context);
         final View navigation = new FrameLayout(context);
+        final View navigationScrim = new FrameLayout(context);
         final View player = new FrameLayout(context);
         final View drawer = new FrameLayout(context);
         final View header = new FrameLayout(context);
         content.setPadding(1, 2, 3, 4);
         toolbar.setPadding(13, 14, 15, 16);
         navigation.setLayoutParams(new FrameLayout.LayoutParams(100, 100));
+        navigationScrim.setLayoutParams(new FrameLayout.LayoutParams(100, 5));
         player.setPadding(17, 18, 19, 20);
         drawer.setPadding(5, 6, 7, 8);
         header.setPadding(9, 10, 11, 12);
 
         EdgeToEdgeHelper.applyMainActivitySystemBarInsets(
-                source, content, toolbar, navigation, player, drawer, header);
+                source, content, toolbar, navigation, navigationScrim, player, drawer, header);
         final WindowInsetsCompat result = ViewCompat.dispatchApplyWindowInsets(
                 source,
                 new WindowInsetsCompat.Builder()
@@ -48,6 +50,7 @@ public class EdgeToEdgeHelperTest {
         assertPadding(content, 3, 32, 6, 52);
         assertPadding(toolbar, 15, 44, 18, 16);
         assertMargins(navigation, 2, 30, 3, 48);
+        assertHeight(navigationScrim, 53);
         assertPadding(player, 19, 18, 22, 68);
         assertPadding(drawer, 7, 6, 10, 56);
         assertPadding(header, 9, 40, 11, 12);
@@ -58,6 +61,7 @@ public class EdgeToEdgeHelperTest {
         assertPadding(content, 1, 2, 3, 4);
         assertPadding(toolbar, 13, 14, 15, 16);
         assertMargins(navigation, 0, 0, 0, 0);
+        assertHeight(navigationScrim, 5);
         assertPadding(player, 17, 18, 19, 20);
         assertPadding(drawer, 5, 6, 7, 8);
         assertPadding(header, 9, 10, 11, 12);
@@ -71,13 +75,15 @@ public class EdgeToEdgeHelperTest {
         final View content = new FrameLayout(context);
         final View toolbar = new FrameLayout(context);
         final View navigation = new FrameLayout(context);
+        final View navigationScrim = new FrameLayout(context);
         final View player = new FrameLayout(context);
         final View drawer = new FrameLayout(context);
         final View header = new FrameLayout(context);
         navigation.setLayoutParams(new FrameLayout.LayoutParams(100, 100));
+        navigationScrim.setLayoutParams(new FrameLayout.LayoutParams(100, 0));
 
         EdgeToEdgeHelper.applyMainActivitySystemBarInsets(
-                source, content, toolbar, navigation, player, drawer, header);
+                source, content, toolbar, navigation, navigationScrim, player, drawer, header);
         final WindowInsetsCompat result = ViewCompat.dispatchApplyWindowInsets(
                 source,
                 new WindowInsetsCompat.Builder()
@@ -90,6 +96,7 @@ public class EdgeToEdgeHelperTest {
         assertPadding(content, 2, 30, 3, 20);
         assertPadding(toolbar, 2, 30, 3, 0);
         assertMargins(navigation, 2, 30, 3, 20);
+        assertHeight(navigationScrim, 20);
         assertPadding(player, 2, 0, 3, 20);
         assertPadding(drawer, 2, 0, 3, 20);
         assertPadding(header, 0, 30, 0, 0);
@@ -141,5 +148,9 @@ public class EdgeToEdgeHelperTest {
         assertEquals(top, params.topMargin);
         assertEquals(right, params.rightMargin);
         assertEquals(bottom, params.bottomMargin);
+    }
+
+    private static void assertHeight(final View view, final int height) {
+        assertEquals(height, view.getLayoutParams().height);
     }
 }
