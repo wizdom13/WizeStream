@@ -137,14 +137,15 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <androidx.appcompat.widget.Toolbar
+                <com.google.android.material.appbar.MaterialToolbar
                     android:id="@+id/subscriptions_header_toolbar"
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
+                    android:background="?attr/colorSurfaceContainer"
                     android:gravity="center_vertical"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
-                    android:theme="@style/ContrastToolbarTheme">
+                    android:theme="@style/ToolbarTheme">
 
                     <LinearLayout
                         android:id="@+id/subscriptions_header_info_container"
@@ -176,7 +177,7 @@
                         android:id="@+id/subscriptions_header_search_container"
                         layout="@layout/toolbar_search_layout"
                         android:visibility="gone" />
-                </androidx.appcompat.widget.Toolbar>
+                </com.google.android.material.appbar.MaterialToolbar>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/subscriptions_selector_list"

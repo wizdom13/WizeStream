@@ -53,11 +53,18 @@
         android:contentDescription="@string/sponsor_block_color_blue"
         android:max="255" />
 
-    <EditText
-        android:id="@+id/hex"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/sponsor_block_color_hex_label"
-        android:inputType="textNoSuggestions|textCapCharacters"
-        android:singleLine="true" />
+        android:hint="@string/sponsor_block_color_hex_label">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/hex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textNoSuggestions|textCapCharacters"
+            android:singleLine="true" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>
