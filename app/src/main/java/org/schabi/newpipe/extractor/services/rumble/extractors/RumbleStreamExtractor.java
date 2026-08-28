@@ -69,7 +69,7 @@ public class RumbleStreamExtractor extends StreamExtractor {
 
     private final String videoViewerCountHtmlKey =
             "div.media-engage div.video-counters--item.video-item--views";
-    private final String relatedStreamHtmlKey = "ul.mediaList-list";
+    private static final String RELATED_STREAM_HTML_KEY = "ul.mediaList-list";
 
     private Document doc;
     JsonObject embedJsonStreamInfoObj;
@@ -565,12 +565,19 @@ public class RumbleStreamExtractor extends StreamExtractor {
         return isLiveStream ? StreamType.LIVE_STREAM : StreamType.VIDEO_STREAM;
     }
 
+    static List<Node> getRelatedItemNodes(final Document document) {
+        final Element relatedItems = document.selectFirst(RELATED_STREAM_HTML_KEY);
+        if (relatedItems == null) {
+            return Collections.emptyList();
+        }
+        return relatedItems.childNodes();
+    }
+
     @Nullable
     @Override
     public StreamInfoItemsCollector getRelatedItems() throws ExtractionException {
-        final List<Node> nodes = doc.select(relatedStreamHtmlKey).first().childNodes();
         final StreamInfoItemsCollector collector = new StreamInfoItemsCollector(getServiceId());
-        for (final Node node : nodes) {
+        for (final Node node : getRelatedItemNodes(doc)) {
             // we only want Element(s) as they might bear useful content
             if ((node instanceof Element)
                     && (null != ((Element) node).closest(".mediaList-item"))) {
