@@ -3,8 +3,11 @@ package org.schabi.newpipe.settings
 import android.content.SharedPreferences
 import com.grack.nanojson.JsonParser
 import java.io.File
+import java.nio.ByteBuffer
 import java.nio.file.Paths
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteIfExists
@@ -12,6 +15,9 @@ import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.inputStream
+import kotlin.io.path.outputStream
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -165,6 +171,29 @@ class ImportExportManagerTest {
         assertTrue(dbWal.exists())
         assertTrue(dbShm.exists())
         assertEquals(0, db.fileSize())
+    }
+
+    @Test
+    fun `An incompatible foreign database must not replace the current database`() {
+        val db = createTempFile("newpipe_", "")
+        db.writeText("current WizeStream database")
+        `when`(fileLocator.db).thenReturn(db)
+
+        val foreignDatabase = ByteArray(100)
+        "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
+            .copyInto(foreignDatabase)
+        ByteBuffer.wrap(foreignDatabase, 60, Int.SIZE_BYTES).putInt(901)
+
+        val zip = createTempFile("pipepipe_", ".zip")
+        ZipOutputStream(zip.outputStream()).use { output ->
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_DB))
+            output.write(foreignDatabase)
+            output.closeEntry()
+        }
+        `when`(storedFileHelper.stream).thenReturn(FileStream(zip.toFile()))
+
+        assertFalse(ImportExportManager(fileLocator).extractDb(storedFileHelper))
+        assertEquals("current WizeStream database", db.readText())
     }
 
     @Suppress("DEPRECATION")

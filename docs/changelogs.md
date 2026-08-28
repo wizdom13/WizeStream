@@ -25,6 +25,11 @@ Release history is listed newest first. The number beside each release is its An
 - Handled Rumble videos that do not provide related items.
 - Kept navigation and drawer content clear of status bars, display cutouts, gesture navigation,
   and three-button navigation while preserving fullscreen playback.
+- Hardened YouTube search suggestions and feed view-count parsing against malformed metadata.
+- Prevented preference updates from reaching a destroyed feed view and handled unsupported channels.
+- Prevented Android 6 device-sync linkage failures, bounded the image cache, and reused player
+  thumbnails to reduce memory pressure.
+- Rejected incompatible foreign databases before they could replace WizeStream data.
 
 [View the complete changes since v1.10.4](https://github.com/wizdom13/WizeStream/compare/v1.10.4...v1.11.0)
 

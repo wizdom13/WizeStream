@@ -68,6 +68,7 @@ import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.extractor.exceptions.AccountTerminatedException
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException
+import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty
 import org.schabi.newpipe.fragments.BaseStateFragment
@@ -122,7 +123,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private lateinit var groupAdapter: GroupieAdapter
 
-    private var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private lateinit var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
     private var updateListViewModeOnResume = false
     private var isRefreshing = false
 
@@ -150,8 +151,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
         }
-        PreferenceManager.getDefaultSharedPreferences(activity)
-            .registerOnSharedPreferenceChangeListener(onSettingsChangeListener)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -162,6 +161,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         // super.onViewCreated() calls initListeners() which require the binding to be initialized
         _feedBinding = FragmentFeedBinding.bind(rootView)
         super.onViewCreated(rootView, savedInstanceState)
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .registerOnSharedPreferenceChangeListener(onSettingsChangeListener)
 
         val factory = FeedViewModel.getFactory(requireContext(), groupId)
         viewModel = ViewModelProvider(this, factory)[FeedViewModel::class.java]
@@ -332,12 +333,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun onDestroy() {
         disposables.dispose()
-        if (onSettingsChangeListener != null) {
-            PreferenceManager.getDefaultSharedPreferences(activity)
-                .unregisterOnSharedPreferenceChangeListener(onSettingsChangeListener)
-            onSettingsChangeListener = null
-        }
-
         super.onDestroy()
 
         if (
@@ -349,6 +344,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onDestroyView() {
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .unregisterOnSharedPreferenceChangeListener(onSettingsChangeListener)
+
         // Ensure that all animations are canceled
         tryGetNewItemsLoadedButton()?.clearAnimation()
 
@@ -538,6 +536,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         loadedState: FeedState.LoadedState,
         restoreListState: Boolean
     ) {
+        if (_feedBinding == null) {
+            return
+        }
+
         val itemVersion = when (getItemViewMode(requireContext())) {
             ItemViewMode.GRID -> StreamItem.ItemVersion.GRID
             ItemViewMode.CARD -> StreamItem.ItemVersion.CARD
@@ -623,9 +625,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private fun handleItemsErrors(errors: List<Throwable>) {
         errors.forEachIndexed { i, t ->
-            if (t is FeedLoadService.RequestException &&
-                t.cause is ContentNotAvailableException
-            ) {
+            val isUnavailableFeed = t.cause is ContentNotAvailableException ||
+                t.cause is ContentNotSupportedException
+            if (t is FeedLoadService.RequestException && isUnavailableFeed) {
                 disposables.add(
                     Single.fromCallable {
                         NewPipeDatabase.getInstance(requireContext()).subscriptionDAO()
@@ -690,6 +692,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             } else if (!isNullOrEmpty(cause.message)) {
                 message += "\n" + cause.message
             }
+        } else if (!isNullOrEmpty(cause?.message)) {
+            message += "\n" + cause?.message
         }
         builder.setMessage(message)
             .show()

@@ -5,12 +5,16 @@ import com.grack.nanojson.JsonArray
 import com.grack.nanojson.JsonParser
 import com.grack.nanojson.JsonParserException
 import com.grack.nanojson.JsonWriter
+import java.io.DataInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.deleteIfExists
+import org.schabi.newpipe.database.Migrations
 import org.schabi.newpipe.streams.io.SharpInputStream
 import org.schabi.newpipe.streams.io.SharpOutputStream
 import org.schabi.newpipe.streams.io.StoredFileHelper
@@ -20,6 +24,11 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
     companion object {
         const val TAG = "ImportExportManager"
         private const val MANIFEST_FORMAT_VERSION = 1
+        private const val SQLITE_HEADER_LENGTH = 16
+        private const val SQLITE_USER_VERSION_OFFSET = 60
+        private const val SQLITE_HEADER_TO_VERSION_LENGTH =
+            SQLITE_USER_VERSION_OFFSET - SQLITE_HEADER_LENGTH
+        private const val SQLITE_MAGIC = "SQLite format 3\u0000"
     }
 
     data class BackupContents(
@@ -100,15 +109,46 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
      */
     fun extractDb(file: StoredFileHelper): Boolean {
         val name = BackupFileLocator.FILE_NAME_DB
-        val success = ZipHelper.extractFileFromZip(file, name, fileLocator.db)
+        val importedDb = fileLocator.db.resolveSibling("${fileLocator.db.fileName}.import")
+        importedDb.deleteIfExists()
 
-        if (success) {
+        try {
+            if (!ZipHelper.extractFileFromZip(file, name, importedDb)) {
+                return false
+            }
+            val databaseVersion = readSqliteUserVersion(importedDb)
+            if (databaseVersion !in Migrations.DB_VER_1..Migrations.DB_VER_23) {
+                return false
+            }
+
+            Files.move(importedDb, fileLocator.db, StandardCopyOption.REPLACE_EXISTING)
             fileLocator.dbJournal.deleteIfExists()
             fileLocator.dbWal.deleteIfExists()
             fileLocator.dbShm.deleteIfExists()
+            return true
+        } finally {
+            importedDb.deleteIfExists()
         }
+    }
 
-        return success
+    private fun readSqliteUserVersion(database: java.nio.file.Path): Int? {
+        return try {
+            DataInputStream(Files.newInputStream(database).buffered()).use { input ->
+                val header = ByteArray(SQLITE_HEADER_LENGTH)
+                input.readFully(header)
+                if (header.toString(Charsets.US_ASCII) != SQLITE_MAGIC) {
+                    return null
+                }
+                if (input.skipBytes(SQLITE_HEADER_TO_VERSION_LENGTH)
+                    != SQLITE_HEADER_TO_VERSION_LENGTH
+                ) {
+                    return null
+                }
+                input.readInt()
+            }
+        } catch (error: IOException) {
+            null
+        }
     }
 
     @Deprecated(
