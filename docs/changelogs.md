@@ -4,6 +4,23 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.11.1 (`1011001`)
+
+### Fixes
+
+- Kept the expanded video-detail player below the status bar and prevented the parent screen from
+  covering it during loading transitions.
+- Restored compact player-overlay text and icons while preserving 48dp accessible touch targets.
+- Corrected the collapsed mini-player layout and hid content behind an opaque system-navigation
+  surface.
+- Hardened YouTube search suggestions and feed view-count parsing against malformed metadata.
+- Prevented preference updates from reaching a destroyed feed view and handled unsupported channels.
+- Prevented Android 6 device-sync linkage failures, bounded the image cache, and reused player
+  thumbnails to reduce memory pressure.
+- Rejected incompatible foreign databases before they could replace WizeStream data.
+
+[View the complete changes since v1.11.0](https://github.com/wizdom13/WizeStream/compare/v1.11.0...v1.11.1)
+
 ## WizeStream 1.11.0 (`1011000`)
 
 ### New features
@@ -25,11 +42,6 @@ Release history is listed newest first. The number beside each release is its An
 - Handled Rumble videos that do not provide related items.
 - Kept navigation and drawer content clear of status bars, display cutouts, gesture navigation,
   and three-button navigation while preserving fullscreen playback.
-- Hardened YouTube search suggestions and feed view-count parsing against malformed metadata.
-- Prevented preference updates from reaching a destroyed feed view and handled unsupported channels.
-- Prevented Android 6 device-sync linkage failures, bounded the image cache, and reused player
-  thumbnails to reduce memory pressure.
-- Rejected incompatible foreign databases before they could replace WizeStream data.
 
 [View the complete changes since v1.10.4](https://github.com/wizdom13/WizeStream/compare/v1.10.4...v1.11.0)
 

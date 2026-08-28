@@ -1,0 +1,5 @@
+• Kept the video-detail player below the status bar and prevented loading transitions from covering it.
+• Restored compact overlay text and icons while retaining accessible touch targets.
+• Fixed the collapsed mini-player layout and hid content behind system navigation.
+• Hardened YouTube suggestions and view counts.
+• Fixed unsupported-channel, Android 6 sync, image-cache and database-import failures.
