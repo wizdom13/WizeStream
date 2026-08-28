@@ -6,13 +6,13 @@ import org.junit.Test;
 
 public class VideoDetailLayoutStateTest {
     @Test
-    public void normalDetailContentStartsBelowTheCompleteToolbar() {
-        assertEquals(86, VideoDetailFragment.getDetailContentTopMargin(false, 86));
+    public void normalDetailContentStartsBelowTheStatusBar() {
+        assertEquals(30, VideoDetailFragment.getDetailContentTopMargin(false, 30));
     }
 
     @Test
     public void fullscreenDetailContentStartsAtTheTopOfTheWindow() {
-        assertEquals(0, VideoDetailFragment.getDetailContentTopMargin(true, 86));
+        assertEquals(0, VideoDetailFragment.getDetailContentTopMargin(true, 30));
     }
 
     @Test

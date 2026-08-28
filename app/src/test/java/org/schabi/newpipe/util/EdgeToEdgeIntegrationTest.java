@@ -90,6 +90,24 @@ public class EdgeToEdgeIntegrationTest {
     }
 
     @Test
+    public void expandedPlayerIsDrawnAboveTheParentToolbar() throws Exception {
+        final List<String> layouts = List.of(
+                "res/layout/activity_main.xml",
+                "res/layout-sw600dp/activity_main.xml");
+
+        for (final String layoutPath : layouts) {
+            final String layout = Files.readString(mainDirectory.resolve(layoutPath));
+            final int toolbarStart = layout.indexOf(
+                    "android:id=\"@+id/toolbar_layout\"");
+            final int playerSheetStart = layout.indexOf(
+                    "android:id=\"@+id/fragment_player_holder\"");
+
+            assertTrue(layoutPath, toolbarStart >= 0);
+            assertTrue(layoutPath, playerSheetStart > toolbarStart);
+        }
+    }
+
+    @Test
     public void miniPlayerOverlayStaysOutsideToolbarInsetDetailContent() throws Exception {
         final String detailLayout = Files.readString(mainDirectory.resolve(
                 "res/layout/fragment_video_detail.xml"));
