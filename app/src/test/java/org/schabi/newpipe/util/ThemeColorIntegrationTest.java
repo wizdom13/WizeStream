@@ -40,8 +40,10 @@ public class ThemeColorIntegrationTest {
         assertTrue(playerUi.contains(
                 "final Context seekBarContext = binding.playbackSeekBar.getContext();"));
         assertTrue(playerUi.contains("seekBarContext, R.attr.colorPrimaryFixedDim"));
-        assertTrue(playerUi.contains("seekBarContext, R.attr.colorPrimaryContainer"));
-        assertTrue(playerUi.contains("seekBarContext, R.attr.colorSurfaceVariant"));
+        assertTrue(playerUi.contains("seekBarContext, "
+                + "com.google.android.material.R.attr.colorPrimaryContainer"));
+        assertTrue(playerUi.contains("seekBarContext, "
+                + "com.google.android.material.R.attr.colorSurfaceVariant"));
         assertTrue(playerUi.contains("setSecondaryProgressTintList(bufferedColor)"));
         assertTrue(playerUi.contains("setProgressBackgroundTintList(inactiveColor)"));
         assertFalse(playerUi.contains("context, R.attr.colorPrimaryFixedDim"));

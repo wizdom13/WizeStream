@@ -16,6 +16,7 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.getTimeString;
 import static org.schabi.newpipe.player.helper.PlayerHelper.nextResizeModeAndSaveToPrefs;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -204,10 +205,10 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                         seekBarContext, R.attr.colorPrimaryFixedDim));
         final ColorStateList bufferedColor = ColorStateList.valueOf(
                 ThemeHelper.resolveColorFromAttr(
-                        seekBarContext, R.attr.colorPrimaryContainer));
+                        seekBarContext, com.google.android.material.R.attr.colorPrimaryContainer));
         final ColorStateList inactiveColor = ColorStateList.valueOf(
                 ThemeHelper.resolveColorFromAttr(
-                        seekBarContext, R.attr.colorSurfaceVariant));
+                        seekBarContext, com.google.android.material.R.attr.colorSurfaceVariant));
 
         binding.playbackSeekBar.setProgressTintList(activeColor);
         binding.playbackSeekBar.setProgressTintMode(PorterDuff.Mode.SRC_IN);
