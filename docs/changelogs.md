@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.11.0 (`1011000`)
+
 ### New features
 
 - Added BitChute and Rumble browsing, search, channels, comments, live streams, and playback.
@@ -12,11 +14,19 @@ Release history is listed newest first. The number beside each release is its An
 
 - Added direct notification keyword management to subscribed channel menus.
 - Polished feed refreshing with a translucent overlay, circular progress, and immediate cancellation.
+- Updated colors, typography, components, seekbars, and navigation indicators to Material 3.
+- Added adaptive bottom navigation and navigation rails for phone, tablet, and landscape layouts.
+- Improved player-control accessibility and touch targets.
 
 ### Fixes
 
 - Prevented feed refreshes and filters from crashing when the displayed list shrinks to zero items.
 - Prevented the circular feed refresh indicator from being clipped along its edges.
+- Handled Rumble videos that do not provide related items.
+- Kept navigation and drawer content clear of status bars, display cutouts, gesture navigation,
+  and three-button navigation while preserving fullscreen playback.
+
+[View the complete changes since v1.10.4](https://github.com/wizdom13/WizeStream/compare/v1.10.4...v1.11.0)
 
 ## WizeStream 1.10.4 (`1010004`)
 

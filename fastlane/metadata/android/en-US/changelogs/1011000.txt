@@ -1,0 +1,6 @@
+• Added BitChute and Rumble browsing, search, channels, comments, live streams and playback.
+• Refreshed the interface with Material 3 colors, typography, components and adaptive navigation.
+• Improved player controls, seekbars, navigation indicators and accessibility.
+• Added channel notification keyword controls.
+• Polished feed refresh and made it cancellable.
+• Fixed empty-feed crashes, clipped progress, missing Rumble related items and system-bar overlaps.
