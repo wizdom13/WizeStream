@@ -15,11 +15,16 @@ final class PlayerSheetTransitionCalculator {
 
     static int adjustedPeekHeight(final int playerPeekHeight,
                                   final int bottomNavigationHeight,
-                                  final boolean bottomNavigationVisible) {
-        if (!bottomNavigationVisible || playerPeekHeight <= 0) {
-            return playerPeekHeight;
+                                  final boolean bottomNavigationVisible,
+                                  final int bottomSystemBarInset) {
+        if (playerPeekHeight <= 0) {
+            return 0;
         }
-        return playerPeekHeight + bottomNavigationHeight;
+        final int safeBottomInset = Math.max(bottomSystemBarInset, 0);
+        if (!bottomNavigationVisible) {
+            return playerPeekHeight + safeBottomInset;
+        }
+        return playerPeekHeight + bottomNavigationHeight + safeBottomInset;
     }
 
     static float clampExpandedFraction(final float expandedFraction) {

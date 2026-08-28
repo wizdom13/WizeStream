@@ -197,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
                 mainBinding.mainSafeContent,
                 mainBinding.toolbarLayout.getRoot(),
                 mainBinding.mainBottomNavigation,
+                mainBinding.mainBottomSystemBarScrim,
                 mainBinding.fragmentPlayerHolder,
                 drawerLayoutBinding.navigation,
                 drawerHeaderBinding.getRoot());

@@ -459,7 +459,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     protected void setupElementsSize(final int buttonsMinWidth,
                                      final int playerTopPad,
                                      final int controlsPad,
-                                     final int buttonsPad) {
+                                     final int buttonsPad,
+                                     final int iconButtonsPad) {
         binding.topControls.setPaddingRelative(controlsPad, playerTopPad, controlsPad, 0);
         binding.bottomControls.setPaddingRelative(controlsPad, 0, controlsPad, 0);
         binding.qualityTextView.setPadding(buttonsPad, buttonsPad, buttonsPad, buttonsPad);
@@ -467,7 +468,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playbackSpeed.setPadding(buttonsPad, buttonsPad, buttonsPad, buttonsPad);
         binding.playbackSpeed.setMinimumWidth(buttonsMinWidth);
         binding.captionTextView.setPadding(buttonsPad, buttonsPad, buttonsPad, buttonsPad);
-        binding.sleepTimerButton.setPadding(buttonsPad, buttonsPad, buttonsPad, buttonsPad);
+        binding.sleepTimerButton.setPadding(
+                iconButtonsPad, iconButtonsPad, iconButtonsPad, iconButtonsPad);
     }
     //endregion
 

@@ -8,18 +8,27 @@ import org.junit.Test;
 
 public class PlayerSheetTransitionCalculatorTest {
     @Test
-    public void collapsedPeekHeightIncludesVisibleBottomNavigation() {
-        assertEquals(132, PlayerSheetTransitionCalculator.adjustedPeekHeight(60, 72, true));
+    public void collapsedPeekHeightIncludesVisibleBottomNavigationAndSystemBar() {
+        assertEquals(156,
+                PlayerSheetTransitionCalculator.adjustedPeekHeight(60, 72, true, 24));
     }
 
     @Test
     public void hiddenPlayerDoesNotReserveBottomNavigationSpace() {
-        assertEquals(0, PlayerSheetTransitionCalculator.adjustedPeekHeight(0, 72, true));
+        assertEquals(0,
+                PlayerSheetTransitionCalculator.adjustedPeekHeight(0, 72, true, 24));
     }
 
     @Test
-    public void playerPeekHeightIsUnchangedWithoutBottomNavigation() {
-        assertEquals(60, PlayerSheetTransitionCalculator.adjustedPeekHeight(60, 72, false));
+    public void collapsedPeekHeightIncludesSystemBarWithoutBottomNavigation() {
+        assertEquals(84,
+                PlayerSheetTransitionCalculator.adjustedPeekHeight(60, 72, false, 24));
+    }
+
+    @Test
+    public void negativeSystemBarInsetsAreIgnored() {
+        assertEquals(132,
+                PlayerSheetTransitionCalculator.adjustedPeekHeight(60, 72, true, -24));
     }
 
     @Test

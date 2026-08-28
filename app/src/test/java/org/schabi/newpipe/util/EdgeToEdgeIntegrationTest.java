@@ -61,12 +61,17 @@ public class EdgeToEdgeIntegrationTest {
                 "res/layout-sw600dp/activity_main.xml"));
 
         assertTrue(activity.contains("EdgeToEdgeHelper.applyMainActivitySystemBarInsets("));
+        assertTrue(activity.contains("mainBinding.mainBottomSystemBarScrim"));
         assertFalse(activity.contains(
                 "EdgeToEdgeHelper.applySystemBarPadding(mainBinding.getRoot())"));
         assertTrue(phoneLayout.contains("android:id=\"@+id/main_content\""));
         assertTrue(tabletLayout.contains("android:id=\"@+id/main_content\""));
         assertTrue(phoneLayout.contains("android:id=\"@+id/main_safe_content\""));
         assertTrue(tabletLayout.contains("android:id=\"@+id/main_safe_content\""));
+        assertTrue(phoneLayout.contains(
+                "android:id=\"@+id/main_bottom_system_bar_scrim\""));
+        assertTrue(tabletLayout.contains(
+                "android:id=\"@+id/main_bottom_system_bar_scrim\""));
     }
 
     @Test
@@ -104,6 +109,29 @@ public class EdgeToEdgeIntegrationTest {
 
             assertTrue(layoutPath, toolbarStart >= 0);
             assertTrue(layoutPath, playerSheetStart > toolbarStart);
+        }
+    }
+
+    @Test
+    public void bottomSystemBarScrimCoversTheCollapsedPlayerSheet() throws Exception {
+        final List<String> layouts = List.of(
+                "res/layout/activity_main.xml",
+                "res/layout-sw600dp/activity_main.xml");
+
+        for (final String layoutPath : layouts) {
+            final String layout = Files.readString(mainDirectory.resolve(layoutPath));
+            final int playerSheetStart = layout.indexOf(
+                    "android:id=\"@+id/fragment_player_holder\"");
+            final int scrimStart = layout.indexOf(
+                    "android:id=\"@+id/main_bottom_system_bar_scrim\"");
+            final int navigationStart = layout.indexOf(
+                    "android:id=\"@+id/main_bottom_navigation\"");
+
+            assertTrue(layoutPath, playerSheetStart >= 0);
+            assertTrue(layoutPath, scrimStart > playerSheetStart);
+            assertTrue(layoutPath, navigationStart > scrimStart);
+            assertTrue(layoutPath,
+                    layout.contains("android:background=\"?attr/colorSurfaceContainer\""));
         }
     }
 

@@ -197,6 +197,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
                 0,
                 0,
                 resources.getDimensionPixelSize(R.dimen.player_popup_controls_padding),
+                resources.getDimensionPixelSize(R.dimen.player_popup_buttons_padding),
                 resources.getDimensionPixelSize(R.dimen.player_popup_buttons_padding)
         );
     }

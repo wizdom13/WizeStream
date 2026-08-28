@@ -61,6 +61,7 @@ public final class EdgeToEdgeHelper {
      * @param safeContent regular fragment content constrained inside all safe edges
      * @param toolbar toolbar protected below the status bar and display cutouts
      * @param navigation bottom navigation or navigation rail protected inside all safe edges
+     * @param navigationScrim opaque surface drawn behind the bottom system navigation bar
      * @param playerSheet player sheet whose children avoid horizontal and bottom system bars
      * @param drawer navigation drawer protected on its horizontal and bottom edges
      * @param drawerHeader drawer header whose content is protected below the status bar
@@ -70,6 +71,7 @@ public final class EdgeToEdgeHelper {
             @NonNull final View safeContent,
             @NonNull final View toolbar,
             @NonNull final View navigation,
+            @NonNull final View navigationScrim,
             @NonNull final View playerSheet,
             @NonNull final View drawer,
             @NonNull final View drawerHeader) {
@@ -87,6 +89,7 @@ public final class EdgeToEdgeHelper {
         final int navigationTop = navigationParams.topMargin;
         final int navigationRight = navigationParams.rightMargin;
         final int navigationBottom = navigationParams.bottomMargin;
+        final int navigationScrimHeight = navigationScrim.getLayoutParams().height;
         final int playerLeft = playerSheet.getPaddingLeft();
         final int playerTop = playerSheet.getPaddingTop();
         final int playerRight = playerSheet.getPaddingRight();
@@ -120,6 +123,10 @@ public final class EdgeToEdgeHelper {
                     navigationRight + safeInsets.right,
                     navigationBottom + safeInsets.bottom);
             navigation.setLayoutParams(updatedNavigationParams);
+            final ViewGroup.LayoutParams updatedScrimParams =
+                    navigationScrim.getLayoutParams();
+            updatedScrimParams.height = navigationScrimHeight + safeInsets.bottom;
+            navigationScrim.setLayoutParams(updatedScrimParams);
             playerSheet.setPadding(
                     playerLeft + safeInsets.left,
                     playerTop,

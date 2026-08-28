@@ -403,7 +403,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 resources.getDimensionPixelSize(R.dimen.player_main_buttons_min_width),
                 resources.getDimensionPixelSize(R.dimen.player_main_top_padding),
                 resources.getDimensionPixelSize(R.dimen.player_main_controls_padding),
-                resources.getDimensionPixelSize(R.dimen.player_main_buttons_padding)
+                resources.getDimensionPixelSize(R.dimen.player_main_buttons_padding),
+                resources.getDimensionPixelSize(R.dimen.player_main_icon_buttons_padding)
         );
     }
     //endregion

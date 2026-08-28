@@ -161,7 +161,8 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
                 .getDimensionPixelSize(R.dimen.main_bottom_navigation_height)
                 : getBottomNavigationHeight(bottomNavigation);
         final int adjustedPeekHeight = PlayerSheetTransitionCalculator.adjustedPeekHeight(
-                playerPeekHeight, navigationHeight, bottomNavigationVisible);
+                playerPeekHeight, navigationHeight, bottomNavigationVisible,
+                bottomSheet.getPaddingBottom());
         if (super.getPeekHeight() != adjustedPeekHeight) {
             super.setPeekHeight(adjustedPeekHeight);
         }

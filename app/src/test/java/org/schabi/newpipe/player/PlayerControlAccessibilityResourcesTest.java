@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -59,6 +60,34 @@ public class PlayerControlAccessibilityResourcesTest {
     }
 
     @Test
+    public void playerOverlayKeepsCompactVisualsInsideAccessibleTargets() throws Exception {
+        final Document player = parse("layout/player.xml");
+        assertAttribute(player, "playerCloseButton", "padding",
+                "@dimen/player_main_icon_buttons_padding");
+        assertAttribute(player, "moreOptionsButton", "padding",
+                "@dimen/player_main_icon_buttons_padding");
+        assertAttribute(player, "queueButton", "paddingStart", "9dp");
+        assertAttribute(player, "queueButton", "paddingTop", "11dp");
+
+        for (final String id : new String[]{
+                "qualityTextView", "playbackSpeed", "resizeTextView", "captionTextView",
+                "sleepTimerCountdown", "playbackCurrentTime", "playbackEndTime"
+        }) {
+            assertAttribute(player, id, "textSize",
+                    "@dimen/player_main_controls_text_size");
+        }
+
+        for (final String id : new String[]{
+                "playWithKodi", "openInBrowser", "share", "learningNoteButton",
+                "sleepTimerButton", "equalizerButton", "listenModeButton", "switchMute",
+                "fullScreenButton", "screenRotationButton"
+        }) {
+            assertAttribute(player, id, "padding",
+                    "@dimen/player_main_icon_buttons_padding");
+        }
+    }
+
+    @Test
     public void learningNoteActionsHaveAccessibleTargetsAndLabels() throws Exception {
         assertControls(
                 "layout/item_learning_note.xml",
@@ -93,6 +122,16 @@ public class PlayerControlAccessibilityResourcesTest {
             assertTrue(layout + ": " + id + " " + attribute,
                     parseDp(value) >= 48);
         }
+    }
+
+    private void assertAttribute(final Document document,
+                                 final String id,
+                                 final String attribute,
+                                 final String expected) {
+        final Element element = findById(document, id);
+        assertNotNull(id, element);
+        assertEquals(id + " " + attribute, expected,
+                element.getAttributeNS(ANDROID_NAMESPACE, attribute));
     }
 
     private int parseDp(final String value) {
