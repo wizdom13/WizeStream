@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentTransaction;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.ActivityDownloaderBinding;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.util.EdgeToEdgeHelper;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.views.FocusOverlayView;
 
@@ -33,10 +34,12 @@ public class DownloadActivity extends AppCompatActivity {
         ThemeHelper.setTheme(this);
 
         super.onCreate(savedInstanceState);
+        EdgeToEdgeHelper.enable(this);
 
         final ActivityDownloaderBinding downloaderBinding =
                 ActivityDownloaderBinding.inflate(getLayoutInflater());
         setContentView(downloaderBinding.getRoot());
+        EdgeToEdgeHelper.applySystemBarPadding(downloaderBinding.getRoot());
 
         setSupportActionBar(downloaderBinding.toolbarLayout.toolbar);
 

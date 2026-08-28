@@ -23,7 +23,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
@@ -38,7 +37,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
@@ -115,6 +113,7 @@ import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.util.EdgeToEdgeHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.InfoCache;
 import org.schabi.newpipe.util.ListHelper;
@@ -2442,64 +2441,17 @@ public final class VideoDetailFragment
             activity.getWindow().getAttributes().layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
         }
-        activity.getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
+        EdgeToEdgeHelper.showSystemBars(activity);
         restoreSystemBarAppearance();
-        activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        final int statusBarColor = ThemeHelper.resolveColorFromAttr(requireContext(),
-                android.R.attr.statusBarColor);
-        final int navigationBarColor = ThemeHelper.resolveColorFromAttr(requireContext(),
-                android.R.attr.navigationBarColor);
-        activity.getWindow().setStatusBarColor(statusBarColor);
-        activity.getWindow().setNavigationBarColor(navigationBarColor);
-    }
-
-    private int getSystemUiVisibility() {
-        int visibility = 0;
-
-        if (ThemeHelper.isLightThemeSelected(activity)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                visibility |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                visibility |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            }
-        }
-
-        return visibility;
     }
 
     private void restoreSystemBarAppearance() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            return;
-        }
-
-        final WindowInsetsController windowInsetsController =
-                activity.getWindow().getInsetsController();
-        if (windowInsetsController == null) {
-            return;
-        }
-
-        final int lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-        windowInsetsController.setSystemBarsAppearance(
-                ThemeHelper.isLightThemeSelected(activity) ? lightSystemBars : 0,
-                lightSystemBars);
+        EdgeToEdgeHelper.setLightSystemBars(
+                activity, ThemeHelper.isLightThemeSelected(activity));
     }
 
     private void clearLightSystemBarAppearance() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            return;
-        }
-
-        final WindowInsetsController windowInsetsController =
-                activity.getWindow().getInsetsController();
-        if (windowInsetsController == null) {
-            return;
-        }
-
-        final int lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-        windowInsetsController.setSystemBarsAppearance(0, lightSystemBars);
+        EdgeToEdgeHelper.setLightSystemBars(activity, false);
     }
 
     private void hideSystemUi() {
@@ -2516,26 +2468,11 @@ public final class VideoDetailFragment
             activity.getWindow().getAttributes().layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
-        int visibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-
         // In multiWindow mode status bar is not transparent for devices with cutout
-        // if I include this flag. So without it is better in this case
+        // if it is hidden. Keeping it visible is better in this case.
         final boolean isInMultiWindow = DeviceUtils.isInMultiWindow(activity);
-        if (!isInMultiWindow) {
-            visibility |= View.SYSTEM_UI_FLAG_FULLSCREEN;
-        }
-        activity.getWindow().getDecorView().setSystemUiVisibility(visibility);
+        EdgeToEdgeHelper.hideSystemBars(activity, !isInMultiWindow);
         clearLightSystemBarAppearance();
-
-        if (isInMultiWindow || isFullscreen()) {
-            activity.getWindow().setStatusBarColor(Color.TRANSPARENT);
-            activity.getWindow().setNavigationBarColor(Color.TRANSPARENT);
-        }
-        activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
     // Listener implementation

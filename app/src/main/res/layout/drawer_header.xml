@@ -21,7 +21,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/drawer_header_padding_top"
-        android:fitsSystemWindows="true"
         android:gravity="bottom"
         android:minHeight="@dimen/drawer_header_content_min_height"
         android:orientation="vertical"

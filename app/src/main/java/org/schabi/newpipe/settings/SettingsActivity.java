@@ -35,6 +35,7 @@ import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchResultHighli
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchResultListener;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearcher;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.util.EdgeToEdgeHelper;
 import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.ReleaseVersionUtil;
 import org.schabi.newpipe.util.ThemeHelper;
@@ -94,12 +95,14 @@ public class SettingsActivity extends AppCompatActivity implements
         ThemeHelper.applyThemeColor(this);
 
         super.onCreate(savedInstanceBundle);
+        EdgeToEdgeHelper.enable(this);
         Bridge.restoreInstanceState(this, savedInstanceBundle);
         final boolean restored = savedInstanceBundle != null;
 
         final SettingsLayoutBinding settingsLayoutBinding =
                 SettingsLayoutBinding.inflate(getLayoutInflater());
         setContentView(settingsLayoutBinding.getRoot());
+        EdgeToEdgeHelper.applySystemBarPadding(settingsLayoutBinding.getRoot());
         initSearch(settingsLayoutBinding, restored);
 
         setSupportActionBar(settingsLayoutBinding.settingsToolbarLayout.toolbar);

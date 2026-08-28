@@ -16,6 +16,7 @@ import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.ActivityAboutBinding
 import org.schabi.newpipe.databinding.FragmentAboutBinding
+import org.schabi.newpipe.util.EdgeToEdgeHelper
 import org.schabi.newpipe.util.ThemeHelper
 import org.schabi.newpipe.util.external_communication.ShareUtils
 
@@ -24,10 +25,12 @@ class AboutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeHelper.setTheme(this)
+        EdgeToEdgeHelper.enable(this)
         title = getString(R.string.wizestream_about_title)
 
         val aboutBinding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(aboutBinding.root)
+        EdgeToEdgeHelper.applySystemBarPadding(aboutBinding.root)
         setSupportActionBar(aboutBinding.aboutToolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
