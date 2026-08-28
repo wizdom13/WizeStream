@@ -898,6 +898,7 @@ public final class VideoDetailFragment
             player.disablePreloadingOfCurrentTrack();
         }
 
+        hideMainPlayerOnLoadingNewStream();
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
         if (currentLocalItem != null) {
             prepareAndHandleLocalMedia(currentLocalItem, true);
@@ -1709,6 +1710,15 @@ public final class VideoDetailFragment
                 && !tabletLayout;
     }
 
+    static boolean shouldHidePreviousStreamContent(final boolean streamInfoCached) {
+        return !streamInfoCached;
+    }
+
+    static boolean shouldShowQueueItemLoadingPreview(final boolean hasQueueItem,
+                                                     final boolean localMedia) {
+        return hasQueueItem && !localMedia;
+    }
+
     private void updatePinnedPlayerLayout() {
         updatePinnedPlayerLayout(0);
     }
@@ -1887,9 +1897,13 @@ public final class VideoDetailFragment
 
         super.showLoading();
 
-        //if data is already cached, transition from VISIBLE -> INVISIBLE -> VISIBLE is not required
-        if (!ExtractorHelper.isCached(serviceId, url, InfoCache.Type.STREAM)) {
+        // If data is already cached, the transition from visible to hidden and back is unnecessary.
+        final boolean streamInfoCached =
+                ExtractorHelper.isCached(serviceId, url, InfoCache.Type.STREAM);
+        if (shouldHidePreviousStreamContent(streamInfoCached)) {
             binding.detailContentRootHiding.setVisibility(View.INVISIBLE);
+            binding.viewPager.setVisibility(View.GONE);
+            detailNavigation.setVisibility(View.GONE);
         }
 
         animate(binding.detailThumbnailPlayButton, false, 50);
@@ -1920,6 +1934,32 @@ public final class VideoDetailFragment
         CoilUtils.dispose(binding.detailUploaderThumbnailView);
         binding.detailThumbnailImageView.setImageBitmap(null);
         binding.detailSubChannelThumbnailView.setImageBitmap(null);
+        showQueueItemLoadingPreview();
+    }
+
+    private void showQueueItemLoadingPreview() {
+        final PlayQueueItem queueItem = playQueue == null ? null : playQueue.getItem();
+        if (!shouldShowQueueItemLoadingPreview(
+                queueItem != null, queueItem != null && queueItem.isLocalMedia())) {
+            return;
+        }
+
+        CoilHelper.INSTANCE.loadDetailsThumbnail(
+                binding.detailThumbnailImageView,
+                ExtractorImageCompat.thumbnailImages(queueItem));
+        if (queueItem.getDuration() > 0) {
+            binding.detailDurationView.setText(
+                    Localization.getDurationString(queueItem.getDuration()));
+            binding.detailDurationView.setBackgroundColor(
+                    ContextCompat.getColor(activity, R.color.duration_background_color));
+            animate(binding.detailDurationView, true, 100);
+        } else if (queueItem.getStreamType() == StreamType.LIVE_STREAM
+                || queueItem.getStreamType() == StreamType.AUDIO_LIVE_STREAM) {
+            binding.detailDurationView.setText(R.string.duration_live);
+            binding.detailDurationView.setBackgroundColor(
+                    ContextCompat.getColor(activity, R.color.live_duration_background_color));
+            animate(binding.detailDurationView, true, 100);
+        }
     }
 
     @Override
