@@ -16,6 +16,7 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.getTimeString;
 import static org.schabi.newpipe.player.helper.PlayerHelper.nextResizeModeAndSaveToPrefs;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -198,14 +199,24 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void applyPlayerSeekBarColor() {
-        final int playerSeekBarColor = ThemeHelper.resolveColorFromAttr(
-                binding.playbackSeekBar.getContext(), R.attr.colorPrimaryFixedDim);
-        final ColorStateList playerSeekBarColorStateList =
-                ColorStateList.valueOf(playerSeekBarColor);
+        final Context seekBarContext = binding.playbackSeekBar.getContext();
+        final ColorStateList activeColor = ColorStateList.valueOf(
+                ThemeHelper.resolveColorFromAttr(
+                        seekBarContext, R.attr.colorPrimaryFixedDim));
+        final ColorStateList bufferedColor = ColorStateList.valueOf(
+                ThemeHelper.resolveColorFromAttr(
+                        seekBarContext, com.google.android.material.R.attr.colorPrimaryContainer));
+        final ColorStateList inactiveColor = ColorStateList.valueOf(
+                ThemeHelper.resolveColorFromAttr(
+                        seekBarContext, com.google.android.material.R.attr.colorSurfaceVariant));
 
-        binding.playbackSeekBar.setProgressTintList(playerSeekBarColorStateList);
+        binding.playbackSeekBar.setProgressTintList(activeColor);
         binding.playbackSeekBar.setProgressTintMode(PorterDuff.Mode.SRC_IN);
-        binding.playbackSeekBar.setThumbTintList(playerSeekBarColorStateList);
+        binding.playbackSeekBar.setSecondaryProgressTintList(bufferedColor);
+        binding.playbackSeekBar.setSecondaryProgressTintMode(PorterDuff.Mode.SRC_IN);
+        binding.playbackSeekBar.setProgressBackgroundTintList(inactiveColor);
+        binding.playbackSeekBar.setProgressBackgroundTintMode(PorterDuff.Mode.SRC_IN);
+        binding.playbackSeekBar.setThumbTintList(activeColor);
         binding.playbackSeekBar.setThumbTintMode(PorterDuff.Mode.SRC_IN);
     }
 

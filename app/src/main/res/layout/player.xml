@@ -567,7 +567,7 @@
 
                     <org.schabi.newpipe.views.FocusAwareSeekBar
                         android:id="@+id/playbackSeekBar"
-                        style="@style/Widget.AppCompat.SeekBar"
+                        style="@style/Widget.WizeStream.SeekBar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:nextFocusDown="@id/screenRotationButton"

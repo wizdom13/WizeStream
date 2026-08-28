@@ -33,17 +33,52 @@ public class ThemeColorIntegrationTest {
     }
 
     @Test
-    public void playerSeekBarUsesItsThemedViewContext() throws Exception {
+    public void playerSeekBarUsesMaterialColorsFromItsThemedViewContext() throws Exception {
         final String playerUi = Files.readString(sourceDirectory.resolve(
                 "org/schabi/newpipe/player/ui/VideoPlayerUi.java"));
 
         assertTrue(playerUi.contains(
-                "binding.playbackSeekBar.getContext(), R.attr.colorPrimaryFixedDim"));
+                "final Context seekBarContext = binding.playbackSeekBar.getContext();"));
+        assertTrue(playerUi.contains("seekBarContext, R.attr.colorPrimaryFixedDim"));
+        assertTrue(playerUi.contains("seekBarContext, "
+                + "com.google.android.material.R.attr.colorPrimaryContainer"));
+        assertTrue(playerUi.contains("seekBarContext, "
+                + "com.google.android.material.R.attr.colorSurfaceVariant"));
+        assertTrue(playerUi.contains("setSecondaryProgressTintList(bufferedColor)"));
+        assertTrue(playerUi.contains("setProgressBackgroundTintList(inactiveColor)"));
         assertFalse(playerUi.contains("context, R.attr.colorPrimaryFixedDim"));
     }
 
+    @Test
+    public void xmlSeekBarsShareTheMaterialColorStyle() throws Exception {
+        final String styles = Files.readString(
+                resourceDirectory.resolve("values/styles_misc.xml"));
+        final String materialSeekBar = styleBody(styles, "Widget.WizeStream.SeekBar");
+
+        assertTrue(materialSeekBar.contains(
+                "<item name=\"android:thumbTint\">?attr/colorPrimary</item>"));
+        assertTrue(materialSeekBar.contains(
+                "<item name=\"android:progressTint\">?attr/colorPrimary</item>"));
+        assertTrue(materialSeekBar.contains(
+                "<item name=\"android:progressBackgroundTint\">"
+                        + "?attr/colorSurfaceVariant</item>"));
+        assertTrue(materialSeekBar.contains(
+                "<item name=\"android:secondaryProgressTint\">"
+                        + "?attr/colorPrimaryContainer</item>"));
+
+        assertLayoutUsesMaterialSeekBar("layout/player.xml");
+        assertLayoutUsesMaterialSeekBar("layout/activity_player_queue_control.xml");
+        assertLayoutUsesMaterialSeekBar("layout-land/activity_player_queue_control.xml");
+        assertLayoutUsesMaterialSeekBar("layout/dialog_sponsor_block_color_picker.xml");
+    }
+
+    private void assertLayoutUsesMaterialSeekBar(final String layout) throws Exception {
+        final String source = Files.readString(resourceDirectory.resolve(layout));
+        assertTrue(source.contains("style=\"@style/Widget.WizeStream.SeekBar\""));
+    }
+
     private String styleBody(final String styles, final String styleName) {
-        final String openingTag = "<style name=\"" + styleName + "\">";
+        final String openingTag = "<style name=\"" + styleName + "\"";
         final int start = styles.indexOf(openingTag);
         if (start < 0) {
             throw new AssertionError("Missing style: " + styleName);
