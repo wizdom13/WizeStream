@@ -4,6 +4,17 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.11.3 (`1011003`)
+
+### Fixes
+
+- Serialized the complete release pipeline, including Gradle, D8/L8, R8, and child JVMs, to
+  prevent nondeterministic DEX interface ordering across independent build environments.
+- Added a fail-fast processor-count check and limited reproducible release builds to one Gradle
+  worker while retaining normal parallelism for debug and test builds.
+
+[View the complete changes since v1.11.2](https://github.com/wizdom13/WizeStream/compare/v1.11.2...v1.11.3)
+
 ## WizeStream 1.11.2 (`1011002`)
 
 ### Fixes

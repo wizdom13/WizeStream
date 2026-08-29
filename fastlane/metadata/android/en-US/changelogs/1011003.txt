@@ -1,0 +1,2 @@
+• Serialized the complete release pipeline to prevent nondeterministic DEX ordering across independent build environments.
+• Added fail-fast processor checks and one-worker Gradle builds for reliable reproducible APK verification.
