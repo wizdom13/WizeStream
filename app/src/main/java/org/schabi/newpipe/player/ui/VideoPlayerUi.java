@@ -150,6 +150,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private BasePlayerGestureListener playerGestureListener;
     @Nullable
     private View.OnLayoutChangeListener onLayoutChangeListener = null;
+    private int controlsBasePadding;
+    private int topControlsBasePadding;
 
     @NonNull
     private final SeekbarPreviewThumbnailHolder seekbarPreviewThumbnailHolder =
@@ -286,6 +288,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         // player_overlays and fast_seek_overlay too. Without it they will be off-centered.
         onLayoutChangeListener =
                 (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    updateFullscreenOverlayInsets();
                     binding.playerOverlays.setPadding(v.getPaddingLeft(), v.getPaddingTop(),
                             v.getPaddingRight(), v.getPaddingBottom());
 
@@ -461,6 +464,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                                      final int controlsPad,
                                      final int buttonsPad,
                                      final int iconButtonsPad) {
+        controlsBasePadding = controlsPad;
+        topControlsBasePadding = playerTopPad;
         binding.topControls.setPaddingRelative(controlsPad, playerTopPad, controlsPad, 0);
         binding.bottomControls.setPaddingRelative(controlsPad, 0, controlsPad, 0);
         binding.qualityTextView.setPadding(buttonsPad, buttonsPad, buttonsPad, buttonsPad);
@@ -470,6 +475,56 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.captionTextView.setPadding(buttonsPad, buttonsPad, buttonsPad, buttonsPad);
         binding.sleepTimerButton.setPadding(
                 iconButtonsPad, iconButtonsPad, iconButtonsPad, iconButtonsPad);
+        updateFullscreenOverlayInsets();
+    }
+
+    protected final void updateFullscreenOverlayInsets() {
+        Insets systemBarInsets = Insets.NONE;
+        Insets displayCutoutInsets = Insets.NONE;
+        final WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(binding.getRoot());
+        if (rootInsets != null) {
+            systemBarInsets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            displayCutoutInsets = rootInsets.getInsets(
+                    WindowInsetsCompat.Type.displayCutout());
+        }
+
+        binding.playbackControlRoot.setPadding(0, 0, 0, 0);
+        final int leftPadding = calculateControlsEdgePadding(
+                isFullscreen(), controlsBasePadding,
+                systemBarInsets.left, displayCutoutInsets.left);
+        final int topPadding = calculateTopControlsPadding(
+                isFullscreen(), topControlsBasePadding,
+                systemBarInsets.top, displayCutoutInsets.top);
+        final int rightPadding = calculateControlsEdgePadding(
+                isFullscreen(), controlsBasePadding,
+                systemBarInsets.right, displayCutoutInsets.right);
+        final int bottomPadding = calculateControlsEdgePadding(
+                isFullscreen(), 0, systemBarInsets.bottom, displayCutoutInsets.bottom);
+
+        binding.topControls.setPadding(leftPadding, topPadding, rightPadding, 0);
+        binding.bottomControls.setPadding(leftPadding, 0, rightPadding, bottomPadding);
+    }
+
+    static int calculateTopControlsPadding(final boolean fullscreen,
+                                           final int basePadding,
+                                           final int statusBarInset,
+                                           final int displayCutoutInset) {
+        final int safeBasePadding = Math.max(basePadding, 0);
+        if (!fullscreen) {
+            return safeBasePadding;
+        }
+        return safeBasePadding + Math.max(Math.max(statusBarInset, displayCutoutInset), 0);
+    }
+
+    static int calculateControlsEdgePadding(final boolean fullscreen,
+                                            final int basePadding,
+                                            final int systemBarInset,
+                                            final int displayCutoutInset) {
+        final int safeBasePadding = Math.max(basePadding, 0);
+        if (!fullscreen) {
+            return safeBasePadding;
+        }
+        return safeBasePadding + Math.max(Math.max(systemBarInset, displayCutoutInset), 0);
     }
     //endregion
 

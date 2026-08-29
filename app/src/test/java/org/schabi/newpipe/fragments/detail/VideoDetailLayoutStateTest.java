@@ -19,4 +19,28 @@ public class VideoDetailLayoutStateTest {
     public void unmeasuredToolbarDoesNotCreateANegativeOffset() {
         assertEquals(0, VideoDetailFragment.getDetailContentTopMargin(false, -1));
     }
+
+    @Test
+    public void phoneDetailNavigationAvoidsBottomSystemBar() {
+        assertEquals(48,
+                VideoDetailFragment.getDetailNavigationBottomInset(
+                        false, false, 48, 0));
+    }
+
+    @Test
+    public void phoneDetailNavigationAvoidsLargerBottomCutout() {
+        assertEquals(52,
+                VideoDetailFragment.getDetailNavigationBottomInset(
+                        false, false, 48, 52));
+    }
+
+    @Test
+    public void fullscreenAndNavigationRailDoNotMoveDetailNavigation() {
+        assertEquals(0,
+                VideoDetailFragment.getDetailNavigationBottomInset(
+                        true, false, 48, 52));
+        assertEquals(0,
+                VideoDetailFragment.getDetailNavigationBottomInset(
+                        false, true, 48, 52));
+    }
 }

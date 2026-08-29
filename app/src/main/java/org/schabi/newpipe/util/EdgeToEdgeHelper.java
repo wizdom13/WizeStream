@@ -8,11 +8,14 @@ import android.view.ViewGroup;
 import android.view.Window;
 
 import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+
+import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 
 /** Shared edge-to-edge setup and system-bar inset handling for app activities. */
 public final class EdgeToEdgeHelper {
@@ -62,7 +65,8 @@ public final class EdgeToEdgeHelper {
      * @param toolbar toolbar protected below the status bar and display cutouts
      * @param navigation bottom navigation or navigation rail protected inside all safe edges
      * @param navigationScrim opaque surface drawn behind the bottom system navigation bar
-     * @param playerSheet player sheet whose children avoid horizontal and bottom system bars
+     * @param playerSheet edge-to-edge player sheet; only its collapsed peek height avoids the
+     *                    bottom system bar
      * @param drawer navigation drawer protected on its horizontal and bottom edges
      * @param drawerHeader drawer header whose content is protected below the status bar
      */
@@ -128,10 +132,11 @@ public final class EdgeToEdgeHelper {
             updatedScrimParams.height = navigationScrimHeight + safeInsets.bottom;
             navigationScrim.setLayoutParams(updatedScrimParams);
             playerSheet.setPadding(
-                    playerLeft + safeInsets.left,
+                    playerLeft,
                     playerTop,
-                    playerRight + safeInsets.right,
-                    playerBottom + safeInsets.bottom);
+                    playerRight,
+                    playerBottom);
+            updatePlayerSheetBottomInset(playerSheet, safeInsets.bottom);
             drawer.setPadding(
                     drawerLeft + safeInsets.left,
                     drawerTop,
@@ -146,6 +151,15 @@ public final class EdgeToEdgeHelper {
             return consumeAppliedInsets(windowInsets);
         });
         ViewCompat.requestApplyInsets(insetSource);
+    }
+
+    private static void updatePlayerSheetBottomInset(@NonNull final View playerSheet,
+                                                     final int bottomInset) {
+        if (!(playerSheet.getLayoutParams() instanceof CoordinatorLayout.LayoutParams params)
+                || !(params.getBehavior() instanceof CustomBottomSheetBehavior behavior)) {
+            return;
+        }
+        behavior.setBottomSystemBarInset(bottomInset);
     }
 
     @NonNull

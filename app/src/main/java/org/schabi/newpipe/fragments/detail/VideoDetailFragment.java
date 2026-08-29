@@ -50,6 +50,9 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
@@ -259,6 +262,8 @@ public final class VideoDetailFragment
     private View activityToolbarLayout;
     private View.OnLayoutChangeListener toolbarLayoutChangeListener;
     private int activityStatusBarInset;
+    private int detailNavigationBaseBottomMargin;
+    private int viewPagerBaseBottomMargin;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -501,6 +506,9 @@ public final class VideoDetailFragment
         activityToolbarLayout = null;
         toolbarLayoutChangeListener = null;
         activityStatusBarInset = 0;
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), null);
+        detailNavigationBaseBottomMargin = 0;
+        viewPagerBaseBottomMargin = 0;
         super.onDestroyView();
         detailNavigation = null;
         binding = null;
@@ -712,6 +720,15 @@ public final class VideoDetailFragment
         super.initViews(rootView, savedInstanceState);
 
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
+        detailNavigationBaseBottomMargin = ((ViewGroup.MarginLayoutParams)
+                detailNavigation.getLayoutParams()).bottomMargin;
+        viewPagerBaseBottomMargin = ((ViewGroup.MarginLayoutParams)
+                binding.viewPager.getLayoutParams()).bottomMargin;
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (view, windowInsets) -> {
+            updateDetailNavigationBottomInset();
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(binding.getRoot());
         activityToolbarLayout = requireActivity().findViewById(R.id.toolbar_layout);
         activityStatusBarInset = Math.max(activityToolbarLayout.getPaddingTop(), 0);
         toolbarLayoutChangeListener = (view, left, top, right, bottom,
@@ -723,7 +740,10 @@ public final class VideoDetailFragment
             updateDetailContentTopMargin(isFullscreen());
         };
         activityToolbarLayout.addOnLayoutChangeListener(toolbarLayoutChangeListener);
-        binding.getRoot().post(() -> updateDetailContentTopMargin(isFullscreen()));
+        binding.getRoot().post(() -> {
+            updateDetailContentTopMargin(isFullscreen());
+            updateDetailNavigationBottomInset();
+        });
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -1745,6 +1765,51 @@ public final class VideoDetailFragment
         return fullscreen ? 0 : Math.max(statusBarInset, 0);
     }
 
+    static int getDetailNavigationBottomInset(final boolean fullscreen,
+                                              final boolean navigationRail,
+                                              final int navigationBarInset,
+                                              final int displayCutoutInset) {
+        if (fullscreen || navigationRail) {
+            return 0;
+        }
+        return Math.max(Math.max(navigationBarInset, displayCutoutInset), 0);
+    }
+
+    private void updateDetailNavigationBottomInset() {
+        if (binding == null || detailNavigation == null) {
+            return;
+        }
+
+        Insets navigationBarInsets = Insets.NONE;
+        Insets displayCutoutInsets = Insets.NONE;
+        final WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(binding.getRoot());
+        if (rootInsets != null) {
+            navigationBarInsets = rootInsets.getInsets(
+                    WindowInsetsCompat.Type.navigationBars());
+            displayCutoutInsets = rootInsets.getInsets(
+                    WindowInsetsCompat.Type.displayCutout());
+        }
+        final int bottomInset = getDetailNavigationBottomInset(
+                isFullscreen(), detailNavigation instanceof NavigationRailView,
+                navigationBarInsets.bottom, displayCutoutInsets.bottom);
+
+        final ViewGroup.MarginLayoutParams navigationParams =
+                (ViewGroup.MarginLayoutParams) detailNavigation.getLayoutParams();
+        final int desiredNavigationBottomMargin = detailNavigationBaseBottomMargin + bottomInset;
+        if (navigationParams.bottomMargin != desiredNavigationBottomMargin) {
+            navigationParams.bottomMargin = desiredNavigationBottomMargin;
+            detailNavigation.setLayoutParams(navigationParams);
+        }
+
+        final ViewGroup.MarginLayoutParams pagerParams =
+                (ViewGroup.MarginLayoutParams) binding.viewPager.getLayoutParams();
+        final int desiredPagerBottomMargin = viewPagerBaseBottomMargin + bottomInset;
+        if (pagerParams.bottomMargin != desiredPagerBottomMargin) {
+            pagerParams.bottomMargin = desiredPagerBottomMargin;
+            binding.viewPager.setLayoutParams(pagerParams);
+        }
+    }
+
     private void updateDetailContentTopMargin(final boolean fullscreen) {
         if (binding == null || activityToolbarLayout == null) {
             return;
@@ -2449,6 +2514,8 @@ public final class VideoDetailFragment
             showSystemUi();
         }
         updateDetailContentTopMargin(fullscreen);
+        updateDetailNavigationBottomInset();
+        binding.getRoot().post(this::updateDetailNavigationBottomInset);
 
         if (binding.relatedItemsLayout != null) {
             if (showRelatedItems) {
