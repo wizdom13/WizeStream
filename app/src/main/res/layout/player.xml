@@ -128,14 +128,16 @@
                         tools:ignore="RtlHardcoded" />
 
                     <LinearLayout
+                        android:id="@+id/metadataControls"
                         android:layout_width="0dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:minHeight="48dp"
                         android:orientation="horizontal">
 
                         <LinearLayout
                             android:id="@+id/metadataView"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
                             android:layout_marginEnd="8dp"
@@ -175,9 +177,9 @@
                         </LinearLayout>
 
                         <FrameLayout
+                            android:id="@+id/audioTrackContainer"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
+                            android:layout_height="wrap_content">
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/audioTrackTextView"
@@ -188,6 +190,7 @@
                                 android:background="?attr/selectableItemBackground"
                                 android:ellipsize="end"
                                 android:gravity="center"
+                                android:maxWidth="@dimen/player_audio_track_max_width"
                                 android:minWidth="48dp"
                                 android:padding="@dimen/player_main_buttons_padding"
                                 android:singleLine="true"

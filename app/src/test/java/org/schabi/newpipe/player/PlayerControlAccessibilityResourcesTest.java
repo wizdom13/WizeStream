@@ -88,6 +88,19 @@ public class PlayerControlAccessibilityResourcesTest {
     }
 
     @Test
+    public void fullscreenMetadataOwnsSpaceBeforeTheCappedAudioSelector() throws Exception {
+        final Document player = parse("layout/player.xml");
+        assertAttribute(player, "metadataView", "layout_width", "0dp");
+        assertAttribute(player, "metadataView", "layout_weight", "1");
+        assertAttribute(player, "metadataControls", "layout_height", "wrap_content");
+        assertAttribute(player, "metadataControls", "minHeight", "48dp");
+        assertAttribute(player, "audioTrackContainer", "layout_width", "wrap_content");
+        assertAttribute(player, "audioTrackContainer", "layout_weight", "");
+        assertAttribute(player, "audioTrackTextView", "maxWidth",
+                "@dimen/player_audio_track_max_width");
+    }
+
+    @Test
     public void seekGestureUsesCompactRoundedScrim() throws Exception {
         final Document player = parse("layout/player.xml");
         assertAttribute(player, "swipeSeekDisplay", "background",

@@ -176,6 +176,9 @@ public abstract class PlayerUi {
     public void onBlocked() {
     }
 
+    public void onMediaItemTransition() {
+    }
+
     public void onPlaying() {
     }
 

@@ -56,7 +56,7 @@
                             android:layout_height="wrap_content"
                             android:background="?windowBackground"
                             android:contentDescription="@string/detail_thumbnail_view_description"
-                            android:scaleType="fitCenter"
+                            android:scaleType="centerCrop"
                             tools:ignore="RtlHardcoded"
                             tools:layout_height="200dp"
                             tools:src="@drawable/placeholder_thumbnail_video" />

@@ -2244,6 +2244,7 @@ public final class Player implements PlaybackListener, Listener {
         // Refresh the playback if there is a transition to the next video
         final int newIndex = newPosition.mediaItemIndex;
         if (newIndex != oldPosition.mediaItemIndex) {
+            UIs.call(PlayerUi::onMediaItemTransition);
             cancelPendingMediaUrlRecovery();
             mediaUrlRecoveryGuard.reset();
         }

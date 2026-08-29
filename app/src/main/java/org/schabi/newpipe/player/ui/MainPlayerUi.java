@@ -371,7 +371,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.metadataView.setVisibility(isFullscreen ? View.VISIBLE : View.GONE);
 
         // Reset workaround changes from popup player
-        binding.audioTrackTextView.setMaxWidth(Integer.MAX_VALUE);
+        binding.audioTrackTextView.setMaxWidth(context.getResources().getDimensionPixelSize(
+                R.dimen.player_audio_track_max_width));
         updateSleepTimerButton(player.getSleepTimerMode(),
                 player.getSleepTimerRemainingMillis());
     }

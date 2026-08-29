@@ -153,6 +153,19 @@ public class ExpandableSurfaceView extends SurfaceView {
         return videoAspectRatio;
     }
 
+    /**
+     * Clears geometry left by the previous video while a new video size is not available yet.
+     * The surface temporarily fills its parent until {@link #setAspectRatio(float)} receives the
+     * new stream dimensions.
+     */
+    public void clearAspectRatio() {
+        videoAspectRatio = 0.0f;
+        scaleX = 1.0f;
+        scaleY = 1.0f;
+        resetUserTransform();
+        requestLayout();
+    }
+
     public void setAspectRatio(final float aspectRatio) {
         if (videoAspectRatio == aspectRatio || aspectRatio == 0 || !Float.isFinite(aspectRatio)) {
             return;
