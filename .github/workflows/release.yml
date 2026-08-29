@@ -12,6 +12,11 @@ on:
           - artifacts
           - release
           - all
+  pull_request:
+    branches:
+      - pipe
+    types:
+      - opened
   push:
     branches:
       - "release-pre-*"
@@ -23,6 +28,7 @@ permissions:
 
 jobs:
   release:
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-pre-') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
 
@@ -178,12 +184,12 @@ jobs:
           path: ${{ steps.x86_release_info.outputs.apk_path }}
 
       - name: "Validate changelog"
-        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
         run: |
           test -s "${{ steps.release_info.outputs.changelog_path }}"
 
       - name: "Create release"
-        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || steps.release_info.outputs.release_tag }}
