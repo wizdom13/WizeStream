@@ -54,6 +54,10 @@ public class ReproducibleBuildConfigurationTest {
         assertTrue(releaseWorkflow.contains("github.ref_type == 'tag' && github.ref_name"));
         assertTrue(releaseWorkflow.contains("prerelease: ${{ github.ref_type == 'branch' }}"));
         assertTrue(releaseWorkflow.contains("make_latest: ${{ github.ref_type == 'tag' }}"));
+        assertTrue(releaseWorkflow.contains("github.event_name != 'pull_request' ||"));
+        assertTrue(releaseWorkflow.contains("startsWith(github.head_ref, 'release-pre-')"));
+        assertEquals(2, occurrences(releaseWorkflow,
+                "github.event_name == 'pull_request'"));
     }
 
     @Test
