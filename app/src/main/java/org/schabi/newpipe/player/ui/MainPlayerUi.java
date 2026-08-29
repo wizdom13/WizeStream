@@ -586,6 +586,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             getParentActivity().ifPresent(activity -> {
                 EdgeToEdgeHelper.showSystemBars(activity);
                 EdgeToEdgeHelper.setLightSystemBars(activity, false);
+                binding.getRoot().post(this::updateFullscreenOverlayInsets);
             });
         }
     }
@@ -1067,6 +1068,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
         binding.metadataView.setVisibility(isFullscreen ? View.VISIBLE : View.GONE);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
+        updateFullscreenOverlayInsets();
         setupScreenRotationButton();
     }
 

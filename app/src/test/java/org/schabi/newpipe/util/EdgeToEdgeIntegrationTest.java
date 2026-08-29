@@ -95,6 +95,23 @@ public class EdgeToEdgeIntegrationTest {
     }
 
     @Test
+    public void playerSheetRemainsEdgeToEdgeWhilePeekHeightKeepsBottomInset() throws Exception {
+        final String insetHelper = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/util/EdgeToEdgeHelper.java"));
+        final String behavior = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/player/gesture/CustomBottomSheetBehavior.java"));
+
+        assertTrue(insetHelper.contains(
+                "updatePlayerSheetBottomInset(playerSheet, safeInsets.bottom)"));
+        assertFalse(insetHelper.contains("playerLeft + safeInsets.left"));
+        assertFalse(insetHelper.contains("playerRight + safeInsets.right"));
+        assertFalse(insetHelper.contains("playerBottom + safeInsets.bottom"));
+        assertTrue(behavior.contains("bottomSystemBarInset"));
+        assertTrue(behavior.contains("playerPeekHeight, navigationHeight,"
+                + " bottomNavigationVisible,"));
+    }
+
+    @Test
     public void expandedPlayerIsDrawnAboveTheParentToolbar() throws Exception {
         final List<String> layouts = List.of(
                 "res/layout/activity_main.xml",
@@ -163,5 +180,37 @@ public class EdgeToEdgeIntegrationTest {
         assertFalse(combined.contains("setSystemUiVisibility"));
         assertTrue(combined.contains("EdgeToEdgeHelper.hideSystemBars"));
         assertTrue(combined.contains("EdgeToEdgeHelper.showSystemBars"));
+    }
+
+    @Test
+    public void fullscreenControlsAvoidInsetsWithoutShrinkingVideoSurface() throws Exception {
+        final String playerSource = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/player/ui/VideoPlayerUi.java"));
+        final String mainPlayerSource = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/player/ui/MainPlayerUi.java"));
+
+        assertTrue(playerSource.contains(
+                "ViewCompat.getRootWindowInsets(binding.getRoot())"));
+        assertTrue(playerSource.contains("WindowInsetsCompat.Type.systemBars()"));
+        assertTrue(playerSource.contains("WindowInsetsCompat.Type.displayCutout()"));
+        assertTrue(playerSource.contains(
+                "binding.playbackControlRoot.setPadding(0, 0, 0, 0)"));
+        assertTrue(playerSource.contains("binding.topControls.setPadding("));
+        assertTrue(playerSource.contains("binding.bottomControls.setPadding("));
+        assertTrue(mainPlayerSource.contains(
+                "binding.getRoot().post(this::updateFullscreenOverlayInsets)"));
+    }
+
+    @Test
+    public void phoneDetailNavigationReservesItsBottomSystemInset() throws Exception {
+        final String detailSource = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+
+        assertTrue(detailSource.contains("WindowInsetsCompat.Type.navigationBars()"));
+        assertTrue(detailSource.contains("WindowInsetsCompat.Type.displayCutout()"));
+        assertTrue(detailSource.contains(
+                "detailNavigationBaseBottomMargin + bottomInset"));
+        assertTrue(detailSource.contains("viewPagerBaseBottomMargin + bottomInset"));
+        assertTrue(detailSource.contains("detailNavigation instanceof NavigationRailView"));
     }
 }

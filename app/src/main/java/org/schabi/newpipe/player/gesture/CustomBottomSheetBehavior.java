@@ -23,6 +23,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     private final Rect globalRect = new Rect();
     private boolean skippingInterception = false;
     private int playerPeekHeight;
+    private int bottomSystemBarInset;
     @Nullable
     private FrameLayout bottomSheetView;
     private final List<Integer> skipInterceptionOfElements = List.of(
@@ -76,6 +77,19 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     public void onBottomNavigationVisibilityChanged() {
         if (bottomSheetView != null) {
             updateBottomNavigation(bottomSheetView, getState(), null);
+        }
+    }
+
+    public void setBottomSystemBarInset(final int inset) {
+        final int safeInset = Math.max(inset, 0);
+        if (bottomSystemBarInset == safeInset) {
+            return;
+        }
+        bottomSystemBarInset = safeInset;
+        if (bottomSheetView != null) {
+            applyPlayerPeekHeight(
+                    bottomSheetView, isBottomNavigationRequested(bottomSheetView));
+            bottomSheetView.requestLayout();
         }
     }
 
@@ -162,7 +176,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
                 : getBottomNavigationHeight(bottomNavigation);
         final int adjustedPeekHeight = PlayerSheetTransitionCalculator.adjustedPeekHeight(
                 playerPeekHeight, navigationHeight, bottomNavigationVisible,
-                bottomSheet.getPaddingBottom());
+                bottomSystemBarInset);
         if (super.getPeekHeight() != adjustedPeekHeight) {
             super.setPeekHeight(adjustedPeekHeight);
         }

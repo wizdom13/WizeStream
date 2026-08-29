@@ -88,6 +88,30 @@ public class PlayerControlAccessibilityResourcesTest {
     }
 
     @Test
+    public void seekGestureUsesCompactRoundedScrim() throws Exception {
+        final Document player = parse("layout/player.xml");
+        assertAttribute(player, "swipeSeekDisplay", "background",
+                "@drawable/player_seek_gesture_background");
+        assertAttribute(player, "swipeSeekDisplay", "paddingStart",
+                "@dimen/player_seek_gesture_horizontal_padding");
+        assertAttribute(player, "swipeSeekDisplay", "paddingTop",
+                "@dimen/player_seek_gesture_vertical_padding");
+        assertAttribute(player, "swipeSeekDisplay", "textSize",
+                "@dimen/player_seek_gesture_text_size");
+
+        final Element background = parse("drawable/player_seek_gesture_background.xml")
+                .getDocumentElement();
+        assertEquals("rectangle",
+                background.getAttributeNS(ANDROID_NAMESPACE, "shape"));
+        assertEquals("@dimen/player_seek_gesture_corner_radius",
+                ((Element) background.getElementsByTagName("corners").item(0))
+                        .getAttributeNS(ANDROID_NAMESPACE, "radius"));
+        assertEquals("#99000000",
+                ((Element) background.getElementsByTagName("solid").item(0))
+                        .getAttributeNS(ANDROID_NAMESPACE, "color"));
+    }
+
+    @Test
     public void learningNoteActionsHaveAccessibleTargetsAndLabels() throws Exception {
         assertControls(
                 "layout/item_learning_note.xml",

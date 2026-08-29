@@ -51,7 +51,7 @@ public class EdgeToEdgeHelperTest {
         assertPadding(toolbar, 15, 44, 18, 16);
         assertMargins(navigation, 2, 30, 3, 48);
         assertHeight(navigationScrim, 53);
-        assertPadding(player, 19, 18, 22, 68);
+        assertPadding(player, 17, 18, 19, 20);
         assertPadding(drawer, 7, 6, 10, 56);
         assertPadding(header, 9, 40, 11, 12);
         assertEquals(Insets.NONE,
@@ -97,7 +97,7 @@ public class EdgeToEdgeHelperTest {
         assertPadding(toolbar, 2, 30, 3, 0);
         assertMargins(navigation, 2, 30, 3, 20);
         assertHeight(navigationScrim, 20);
-        assertPadding(player, 2, 0, 3, 20);
+        assertPadding(player, 0, 0, 0, 0);
         assertPadding(drawer, 2, 0, 3, 20);
         assertPadding(header, 0, 30, 0, 0);
         assertEquals(Insets.NONE,
