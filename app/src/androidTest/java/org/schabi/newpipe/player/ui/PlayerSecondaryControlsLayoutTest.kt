@@ -1,11 +1,13 @@
 package org.schabi.newpipe.player.ui
 
 import android.content.Context
+import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
+import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -16,6 +18,38 @@ import org.schabi.newpipe.R
 
 @RunWith(AndroidJUnit4::class)
 class PlayerSecondaryControlsLayoutTest {
+    @Test
+    fun metadataExpandsBeforeSecondaryControlsAtLargeTextSize() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
+            val root = LayoutInflater.from(context)
+                .inflate(R.layout.player, FrameLayout(context), false)
+
+            val playbackControlRoot = root.findViewById<View>(R.id.playbackControlRoot)
+            val primaryControls = root.findViewById<View>(R.id.primaryControls)
+            val metadataControls = root.findViewById<View>(R.id.metadataControls)
+            val metadata = root.findViewById<View>(R.id.metadataView)
+            val secondaryControls = root.findViewById<View>(R.id.secondaryControls)
+            val title = root.findViewById<TextView>(R.id.titleTextView)
+            val channel = root.findViewById<TextView>(R.id.channelTextView)
+
+            playbackControlRoot.visibility = View.VISIBLE
+            metadata.visibility = View.VISIBLE
+            secondaryControls.visibility = View.VISIBLE
+            title.text = "A long fullscreen title that needs the complete metadata row"
+            channel.text = "A channel name that must remain fully visible"
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+            channel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+
+            measureAndLayout(root, dp(context, 640), dp(context, 288))
+
+            assertTrue(channel.bottom <= metadata.height)
+            assertTrue(metadataControls.top + metadata.bottom <= primaryControls.height)
+            assertTrue(primaryControls.bottom <= secondaryControls.top)
+        }
+    }
+
     @Test
     fun captionControlStaysVisibleAtNarrowPhoneWidth() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

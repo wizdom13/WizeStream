@@ -916,6 +916,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onBlocked() {
         super.onBlocked();
 
+        binding.surfaceView.clearAspectRatio();
+
         // if we are e.g. switching players, hide controls
         hideControls(DEFAULT_CONTROLS_DURATION, 0);
 
@@ -929,6 +931,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         updatePlayPauseButton(PlayButtonAction.PLAY);
         animatePlayButtons(false, 100);
         binding.getRoot().setKeepScreenOn(false);
+    }
+
+    @Override
+    public void onMediaItemTransition() {
+        super.onMediaItemTransition();
+        binding.surfaceView.clearAspectRatio();
     }
 
     @Override
@@ -1687,12 +1695,32 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
         super.onVideoSizeChanged(videoSize);
-        // Starting with ExoPlayer 2.19.0, the VideoSize will report a width and height of 0
-        // if the renderer is disabled. In that case, we skip updating the aspect ratio.
-        if (videoSize.width == 0 || videoSize.height == 0) {
+        final float displayAspectRatio = calculateDisplayAspectRatio(
+                videoSize.width, videoSize.height, videoSize.unappliedRotationDegrees,
+                videoSize.pixelWidthHeightRatio);
+        if (displayAspectRatio == 0.0f) {
             return;
         }
-        binding.surfaceView.setAspectRatio(((float) videoSize.width) / videoSize.height);
+        binding.surfaceView.setAspectRatio(displayAspectRatio);
+    }
+
+    static float calculateDisplayAspectRatio(final int width,
+                                             final int height,
+                                             final int unappliedRotationDegrees,
+                                             final float pixelWidthHeightRatio) {
+        if (width <= 0 || height <= 0) {
+            return 0.0f;
+        }
+
+        final float safePixelRatio = Float.isFinite(pixelWidthHeightRatio)
+                && pixelWidthHeightRatio > 0.0f ? pixelWidthHeightRatio : 1.0f;
+        float displayAspectRatio = width * safePixelRatio / height;
+        final int normalizedRotation = Math.floorMod(unappliedRotationDegrees, 360);
+        if (normalizedRotation == 90 || normalizedRotation == 270) {
+            displayAspectRatio = 1.0f / displayAspectRatio;
+        }
+        return Float.isFinite(displayAspectRatio) && displayAspectRatio > 0.0f
+                ? displayAspectRatio : 0.0f;
     }
     //endregion
 
