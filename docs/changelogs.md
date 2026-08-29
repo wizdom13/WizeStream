@@ -4,6 +4,20 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.11.2 (`1011002`)
+
+### Fixes
+
+- Kept fullscreen video edge-to-edge while protecting interactive controls from status bars,
+  navigation bars, and display cutouts.
+- Kept video-detail tabs and content above system navigation and restored compact fullscreen seek
+  feedback.
+- Prevented long fullscreen titles, channel names, and audio-track labels from being clipped.
+- Reset video-surface geometry between queue transitions so cached return previews fill the player
+  correctly, including rotated and anamorphic video.
+
+[View the complete changes since v1.11.1](https://github.com/wizdom13/WizeStream/compare/v1.11.1...v1.11.2)
+
 ## WizeStream 1.11.1 (`1011001`)
 
 ### Fixes
