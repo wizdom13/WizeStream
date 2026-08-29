@@ -1,0 +1,4 @@
+• Kept fullscreen video edge-to-edge while protecting controls from status bars, navigation bars and cutouts.
+• Fixed clipping of long fullscreen titles, channel names and audio-track labels.
+• Restored compact fullscreen seek feedback and kept detail tabs above system navigation.
+• Reset video geometry between queue transitions and filled cached return previews correctly, including rotated and anamorphic video.
