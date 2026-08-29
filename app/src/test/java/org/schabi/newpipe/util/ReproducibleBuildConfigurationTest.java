@@ -46,6 +46,17 @@ public class ReproducibleBuildConfigurationTest {
     }
 
     @Test
+    public void preReleasePublishingUsesAnExplicitNonLatestBranchTrigger() throws Exception {
+        final String releaseWorkflow = read(".github/workflows/release.yml");
+
+        assertTrue(releaseWorkflow.contains("- \"release-pre-*\""));
+        assertTrue(releaseWorkflow.contains("if [ \"$GITHUB_REF_TYPE\" = \"tag\" ]"));
+        assertTrue(releaseWorkflow.contains("github.ref_type == 'tag' && github.ref_name"));
+        assertTrue(releaseWorkflow.contains("prerelease: ${{ github.ref_type == 'branch' }}"));
+        assertTrue(releaseWorkflow.contains("make_latest: ${{ github.ref_type == 'tag' }}"));
+    }
+
+    @Test
     public void downstreamInstructionsRequireTheSharedEntryPoint() throws Exception {
         final String building = read("BUILDING.md");
 

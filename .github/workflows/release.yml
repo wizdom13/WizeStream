@@ -13,6 +13,8 @@ on:
           - release
           - all
   push:
+    branches:
+      - "release-pre-*"
     tags:
       - "v*.*.*"
 
@@ -95,7 +97,7 @@ jobs:
             exit 1
           fi
 
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$RELEASE_TAG" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "$RELEASE_TAG" ]; then
             echo "Tag mismatch: pushed tag is '$GITHUB_REF_NAME' but Gradle versionName is '$VERSION_NAME' and expects tag '$RELEASE_TAG'"
             exit 1
           fi
@@ -184,7 +186,7 @@ jobs:
         if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.release_target == 'release' || inputs.release_target == 'all')) }}
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event_name == 'push' && github.ref_name || steps.release_info.outputs.release_tag }}
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || steps.release_info.outputs.release_tag }}
           target_commitish: pipe
           name: WizeStream ${{ steps.release_info.outputs.version_name }}
           body_path: ${{ steps.release_info.outputs.changelog_path }}
@@ -192,4 +194,5 @@ jobs:
             ${{ steps.release_info.outputs.apk_path }}
             ${{ steps.x86_release_info.outputs.apk_path }}
           fail_on_unmatched_files: true
-          make_latest: true
+          prerelease: ${{ github.ref_type == 'branch' }}
+          make_latest: ${{ github.ref_type == 'tag' }}
