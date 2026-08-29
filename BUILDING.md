@@ -60,10 +60,16 @@ scripts/build.sh release -PreleaseAbi=x86_64
 The `releaseAbi` property accepts `arm` (the default) or `x86_64`. Published releases build
 both targets from the same tagged source and sign them with the same release key.
 
-The release build runs R8 in a dedicated JVM with one active processor. Other Gradle work keeps
-its normal parallelism. Build and configuration caches are disabled by the reproducible entry
-point, the locale and timezone are fixed, and `SOURCE_DATE_EPOCH` comes from the checked-out
-commit. A verified APK and its `SHA256SUMS` file are written to `dist/reproducible/`.
+The reproducible entry point runs the complete release pipeline with one visible processor and one
+Gradle worker. `JAVA_TOOL_OPTIONS` propagates the processor limit to Gradle, D8/L8, R8, and child
+JVMs, while the existing R8 execution profile provides an additional dedicated-process safeguard.
+Normal debug and test builds keep their parallelism. Build and configuration caches are disabled,
+the locale and timezone are fixed, and `SOURCE_DATE_EPOCH` comes from the checked-out commit. A
+verified APK and its `SHA256SUMS` file are written to `dist/reproducible/`.
+
+Independent rebuilders must use `scripts/reproducible-build.sh` rather than invoking
+`./gradlew assembleRelease` directly. The script validates the pinned toolchain and fails before
+assembly if the Gradle JVM does not observe exactly one active processor.
 
 Run Android instrumented tests:
 
