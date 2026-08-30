@@ -115,6 +115,9 @@ public enum StreamDialogDefaultEntry {
     PLAY_WITH_KODI(R.string.play_with_kodi_title, (fragment, item) ->
             KoreUtils.playWithKore(fragment.requireContext(), Uri.parse(item.getUrl()))),
 
+    COPY_TITLE(R.string.copy_video_title, (fragment, item) ->
+            ShareUtils.copyToClipboard(fragment.requireContext(), item.getName())),
+
     SHARE(R.string.share, (fragment, item) ->
             ShareUtils.shareText(fragment.requireContext(), item.getName(), item.getUrl(),
                     ExtractorImageCompat.thumbnailImages(item))),
