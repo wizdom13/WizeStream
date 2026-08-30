@@ -67,6 +67,7 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
         });
 
         final boolean showTabletNavigationPreferences = DeviceUtils.isTablet(requireContext());
+        setPreferenceVisible(R.string.grid_columns_key, showTabletNavigationPreferences);
         setPreferenceVisible(R.string.tablet_navigation_portrait_position_key,
                 showTabletNavigationPreferences);
         setPreferenceVisible(R.string.tablet_navigation_landscape_position_key,
