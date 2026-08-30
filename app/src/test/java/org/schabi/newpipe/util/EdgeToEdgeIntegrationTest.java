@@ -61,6 +61,7 @@ public class EdgeToEdgeIntegrationTest {
                 "res/layout-sw600dp/activity_main.xml"));
 
         assertTrue(activity.contains("EdgeToEdgeHelper.applyMainActivitySystemBarInsets("));
+        assertTrue(activity.contains("mainBinding.mainNavigationRail"));
         assertTrue(activity.contains("mainBinding.mainBottomSystemBarScrim"));
         assertFalse(activity.contains(
                 "EdgeToEdgeHelper.applySystemBarPadding(mainBinding.getRoot())"));
@@ -72,6 +73,8 @@ public class EdgeToEdgeIntegrationTest {
                 "android:id=\"@+id/main_bottom_system_bar_scrim\""));
         assertTrue(tabletLayout.contains(
                 "android:id=\"@+id/main_bottom_system_bar_scrim\""));
+        assertTrue(phoneLayout.contains("android:id=\"@+id/main_navigation_rail\""));
+        assertTrue(tabletLayout.contains("android:id=\"@+id/main_navigation_rail\""));
     }
 
     @Test
@@ -143,10 +146,13 @@ public class EdgeToEdgeIntegrationTest {
                     "android:id=\"@+id/main_bottom_system_bar_scrim\"");
             final int navigationStart = layout.indexOf(
                     "android:id=\"@+id/main_bottom_navigation\"");
+            final int navigationRailStart = layout.indexOf(
+                    "android:id=\"@+id/main_navigation_rail\"");
 
             assertTrue(layoutPath, playerSheetStart >= 0);
             assertTrue(layoutPath, scrimStart > playerSheetStart);
             assertTrue(layoutPath, navigationStart > scrimStart);
+            assertTrue(layoutPath, navigationRailStart > scrimStart);
             assertTrue(layoutPath,
                     layout.contains("android:background=\"?attr/colorSurfaceContainer\""));
         }

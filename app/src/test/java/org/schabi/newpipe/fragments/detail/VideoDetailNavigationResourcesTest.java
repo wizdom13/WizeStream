@@ -81,9 +81,15 @@ public class VideoDetailNavigationResourcesTest {
         final var rails = largeDocument.getElementsByTagName(NAVIGATION_RAIL_VIEW);
         assertEquals(1, rails.getLength());
         final var rail = (Element) rails.item(0);
-        assertEquals("@+id/main_bottom_navigation", rail.getAttribute("android:id"));
+        assertEquals("@+id/main_navigation_rail", rail.getAttribute("android:id"));
         assertEquals("@style/wizestreamBottomNavigationActiveIndicator",
                 rail.getAttribute("app:itemActiveIndicatorStyle"));
+
+        final var largeBottomNavigation =
+                largeDocument.getElementsByTagName(BOTTOM_NAVIGATION_VIEW);
+        assertEquals(1, largeBottomNavigation.getLength());
+        assertEquals("@+id/main_bottom_navigation",
+                ((Element) largeBottomNavigation.item(0)).getAttribute("android:id"));
     }
 
     @Test

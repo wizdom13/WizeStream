@@ -350,6 +350,25 @@
 
     <!-- Main-Tabs Position -->
     <string name="main_tabs_position_key">main_tabs_position</string>
+    <string name="tablet_navigation_portrait_position_key">tablet_navigation_portrait_position</string>
+    <string name="tablet_navigation_landscape_position_key">tablet_navigation_landscape_position</string>
+    <string name="tablet_navigation_position_automatic_value">automatic</string>
+    <string name="tablet_navigation_position_bottom_value">bottom</string>
+    <string name="tablet_navigation_position_left_value">left</string>
+    <string name="tablet_navigation_position_default_value">@string/tablet_navigation_position_automatic_value</string>
+
+    <string-array name="tablet_navigation_position_description">
+        <item>@string/tablet_navigation_position_automatic</item>
+        <item>@string/tablet_navigation_position_bottom</item>
+        <item>@string/tablet_navigation_position_left</item>
+    </string-array>
+
+    <string-array name="tablet_navigation_position_values">
+        <item>@string/tablet_navigation_position_automatic_value</item>
+        <item>@string/tablet_navigation_position_bottom_value</item>
+        <item>@string/tablet_navigation_position_left_value</item>
+    </string-array>
+
     <string name="bottom_navigation_labels_key">bottom_navigation_labels</string>
     <string name="bottom_navigation_labels_always_value">always</string>
     <string name="bottom_navigation_labels_active_value">active</string>

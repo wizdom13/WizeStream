@@ -15,6 +15,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.Constants;
+import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ThemeHelper;
 
 public class AppearanceSettingsFragment extends BasePreferenceFragment {
@@ -64,6 +65,19 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
             applyThemeColorChange(startThemeColorKey, themeColorKey, preference, newValue);
             return false;
         });
+
+        final boolean showTabletNavigationPreferences = DeviceUtils.isTablet(requireContext());
+        setPreferenceVisible(R.string.tablet_navigation_portrait_position_key,
+                showTabletNavigationPreferences);
+        setPreferenceVisible(R.string.tablet_navigation_landscape_position_key,
+                showTabletNavigationPreferences);
+    }
+
+    private void setPreferenceVisible(final int key, final boolean visible) {
+        final Preference preference = findPreference(getString(key));
+        if (preference != null) {
+            preference.setVisible(visible);
+        }
     }
 
     @Override

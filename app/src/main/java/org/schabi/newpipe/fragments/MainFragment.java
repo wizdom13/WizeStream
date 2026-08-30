@@ -9,6 +9,7 @@ import static com.google.android.material.tabs.TabLayout.INDICATOR_GRAVITY_TOP;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -36,6 +37,7 @@ import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.material.navigationrail.NavigationRailView;
 import com.google.android.material.tabs.TabLayout;
@@ -54,7 +56,9 @@ import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 import org.schabi.newpipe.settings.tabs.HomeNavigationMode;
 import org.schabi.newpipe.settings.tabs.HomeNavigationModeResolver;
 import org.schabi.newpipe.settings.tabs.Tab;
+import org.schabi.newpipe.settings.tabs.TabletNavigationPositionResolver;
 import org.schabi.newpipe.settings.tabs.TabsManager;
+import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -75,6 +79,8 @@ public class MainFragment extends BaseFragment
 
     private FragmentMainBinding binding;
     private NavigationBarView bottomNavigation;
+    private BottomNavigationView bottomNavigationView;
+    private NavigationRailView navigationRailView;
     private SelectedTabsPagerAdapter pagerAdapter;
 
     private View contextualSearchContainer;
@@ -100,6 +106,7 @@ public class MainFragment extends BaseFragment
     private String mainTabsPositionKey;
     private String bottomNavigationLabelsKey;
     private String bottomNavigationLabelsValue;
+    private boolean tabletNavigation;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Fragment's LifeCycle
@@ -151,7 +158,9 @@ public class MainFragment extends BaseFragment
         super.initViews(rootView, savedInstanceState);
 
         binding = FragmentMainBinding.bind(rootView);
-        bottomNavigation = requireActivity().findViewById(R.id.main_bottom_navigation);
+        bottomNavigationView = requireActivity().findViewById(R.id.main_bottom_navigation);
+        navigationRailView = requireActivity().findViewById(R.id.main_navigation_rail);
+        selectMainNavigation();
         updateBottomNavigationLabelVisibility();
 
         binding.mainTabLayout.setupWithViewPager(binding.pager);
@@ -168,24 +177,6 @@ public class MainFragment extends BaseFragment
                 requireActivity().invalidateOptionsMenu();
             }
         });
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            final int position = getBottomNavigationItemPosition(item.getItemId());
-            if (position < 0 || position >= tabsList.size()) {
-                return false;
-            }
-            if (binding.pager.getCurrentItem() != position) {
-                binding.pager.setCurrentItem(position);
-            }
-            updateTitleForTab(position);
-            return true;
-        });
-        bottomNavigation.setOnItemReselectedListener(item -> {
-            final int position = getBottomNavigationItemPosition(item.getItemId());
-            if (position >= 0 && position < tabsList.size()) {
-                updateTitleForTab(position);
-            }
-        });
-
         setupTabs();
         initContextualSearchToolbar();
         if (contextualSearchOpen) {
@@ -196,6 +187,8 @@ public class MainFragment extends BaseFragment
     @Override
     public void onResume() {
         super.onResume();
+
+        final boolean navigationChanged = selectMainNavigation();
 
         final boolean newYoutubeRestrictedModeEnabled =
                 prefs.getBoolean(youtubeRestrictedModeEnabledKey, false);
@@ -212,6 +205,9 @@ public class MainFragment extends BaseFragment
         if (!bottomNavigationLabelsValue.equals(newBottomNavigationLabelsValue)) {
             bottomNavigationLabelsValue = newBottomNavigationLabelsValue;
             updateBottomNavigationLabelVisibility();
+        }
+        if (navigationChanged) {
+            updateBottomNavigationItems();
         }
         updateMainNavigationMode();
         scheduleBottomNavigationRemeasure();
@@ -259,15 +255,11 @@ public class MainFragment extends BaseFragment
         contextualSearchClose = null;
         contextualSearchTextWatcher = null;
         contextualSearchTarget = null;
-        if (bottomNavigation != null) {
-            bottomNavigation.setOnItemSelectedListener(null);
-            bottomNavigation.setOnItemReselectedListener(null);
-            bottomNavigation.getMenu().clear();
-            bottomNavigation.setTag(Boolean.FALSE);
-            bottomNavigation.setAlpha(1.0f);
-            bottomNavigation.setVisibility(View.GONE);
-            bottomNavigation = null;
-        }
+        clearMainNavigation(bottomNavigationView);
+        clearMainNavigation(navigationRailView);
+        bottomNavigation = null;
+        bottomNavigationView = null;
+        navigationRailView = null;
         super.onDestroyView();
         binding = null;
     }
@@ -369,6 +361,74 @@ public class MainFragment extends BaseFragment
     private int getSafeTabIconRes(final Tab tab) {
         final int iconRes = tab.getTabIconRes(requireContext());
         return iconRes > 0 ? iconRes : R.drawable.ic_asterisk;
+    }
+
+    private boolean selectMainNavigation() {
+        if (bottomNavigationView == null || navigationRailView == null) {
+            return false;
+        }
+
+        final int orientation = getResources().getConfiguration().orientation;
+        final int positionKey = orientation == Configuration.ORIENTATION_LANDSCAPE
+                ? R.string.tablet_navigation_landscape_position_key
+                : R.string.tablet_navigation_portrait_position_key;
+        final String defaultPosition = getString(
+                R.string.tablet_navigation_position_default_value);
+        final String position = prefs.getString(getString(positionKey), defaultPosition);
+        tabletNavigation = DeviceUtils.isTablet(requireContext());
+        final boolean useNavigationRail = TabletNavigationPositionResolver.useNavigationRail(
+                tabletNavigation, orientation, position);
+        final NavigationBarView selectedNavigation = useNavigationRail
+                ? navigationRailView : bottomNavigationView;
+        if (bottomNavigation == selectedNavigation) {
+            return false;
+        }
+
+        if (bottomNavigation != null) {
+            setNavigationRailContentInset(false);
+            clearMainNavigation(bottomNavigation);
+        }
+        bottomNavigation = selectedNavigation;
+        setBottomNavigationListeners();
+        updateBottomNavigationLabelVisibility();
+        return true;
+    }
+
+    private void setBottomNavigationListeners() {
+        if (bottomNavigation == null) {
+            return;
+        }
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            final int position = getBottomNavigationItemPosition(item.getItemId());
+            if (position < 0 || position >= tabsList.size()) {
+                return false;
+            }
+            if (binding.pager.getCurrentItem() != position) {
+                binding.pager.setCurrentItem(position);
+            }
+            updateTitleForTab(position);
+            return true;
+        });
+        bottomNavigation.setOnItemReselectedListener(item -> {
+            final int position = getBottomNavigationItemPosition(item.getItemId());
+            if (position >= 0 && position < tabsList.size()) {
+                updateTitleForTab(position);
+            }
+        });
+    }
+
+    private static void clearMainNavigation(@Nullable final NavigationBarView navigation) {
+        if (navigation == null) {
+            return;
+        }
+        navigation.setOnItemSelectedListener(null);
+        navigation.setOnItemReselectedListener(null);
+        navigation.getMenu().clear();
+        navigation.setTag(Boolean.FALSE);
+        navigation.setAlpha(1.0f);
+        navigation.setTranslationX(0.0f);
+        navigation.setTranslationY(0.0f);
+        navigation.setVisibility(View.GONE);
     }
 
     private void updateTitleForTab(final int tabPosition) {
@@ -704,7 +764,7 @@ public class MainFragment extends BaseFragment
         final boolean navigationRail = isNavigationRail();
         final HomeNavigationMode navigationMode = HomeNavigationModeResolver
                 .resolveNavigationMode(tabsList.size(), bottom);
-        final boolean showBottomNavigation = navigationRail
+        final boolean showBottomNavigation = tabletNavigation
                 ? tabsList.size() <= getNavigationItemLimit()
                 : navigationMode == HomeNavigationMode.BOTTOM_NAVIGATION;
         final boolean showTabLayout = !showBottomNavigation
