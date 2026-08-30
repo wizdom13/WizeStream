@@ -27,6 +27,6 @@ public class VideoDetailOrientationHandlingTest {
         assertTrue(fragment.contains("reconcileDetailLayoutAfterConfigurationChange"));
         assertTrue(fragment.contains("restoreDetailLayoutAfterConfigurationChange"));
         assertTrue(fragment.contains("prepareAndHandleInfo(currentInfo, false)"));
-        assertTrue(fragment.contains("binding.relatedItemsLayout.setVisibility(showRelatedItems"));
+        assertTrue(fragment.contains("fullscreen ? View.GONE : View.VISIBLE"));
     }
 }
