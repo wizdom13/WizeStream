@@ -1,0 +1,4 @@
+• Fixed Android 6 feed filtering errors when opening or refreshing What's New.
+• Added a tablet setting to place navigation on the left rail or bottom bar.
+• Made tablet grids adapt to the available width after navigation and orientation changes.
+• Fixed tablet video-detail panes, lower tabs, navigation-rail spacing and fullscreen sizing.

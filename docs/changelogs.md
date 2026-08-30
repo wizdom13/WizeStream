@@ -4,6 +4,22 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.11.4 (`1011004`)
+
+### New features
+
+- Added a tablet setting to place app navigation on the left rail or bottom bar.
+
+### Fixes
+
+- Prevented Android 6 feed filtering failures when opening or refreshing What's New.
+- Made tablet grids recalculate from the available content width after navigation and orientation
+  changes.
+- Selected the single- or two-pane video-detail layout from the current screen width and removed
+  navigation-rail gaps from expanded and fullscreen playback.
+
+[View the complete changes since v1.11.3](https://github.com/wizdom13/WizeStream/compare/v1.11.3...v1.11.4)
+
 ## WizeStream 1.11.3 (`1011003`)
 
 ### Fixes
