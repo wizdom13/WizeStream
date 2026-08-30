@@ -23,5 +23,10 @@ public class VideoDetailOrientationHandlingTest {
         assertTrue(fragment.contains("public void onConfigurationChanged("));
         assertTrue(fragment.contains("syncFullscreenWithOrientation("));
         assertTrue(fragment.contains("binding.getRoot().post("));
+        assertTrue(fragment.contains("detailLayoutRecreationRequested"));
+        assertTrue(fragment.contains("reconcileDetailLayoutAfterConfigurationChange"));
+        assertTrue(fragment.contains("restoreDetailLayoutAfterConfigurationChange"));
+        assertTrue(fragment.contains("prepareAndHandleInfo(currentInfo, false)"));
+        assertTrue(fragment.contains("fullscreen ? View.GONE : View.VISIBLE"));
     }
 }

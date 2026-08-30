@@ -41,6 +41,18 @@ public class VideoDetailLayoutStateTest {
     }
 
     @Test
+    public void layoutRecreationTracksTheCurrentlyInflatedLayout() {
+        assertTrue(VideoDetailFragment.shouldRecreateDetailLayout(
+                false, Configuration.ORIENTATION_LANDSCAPE, 840));
+        assertFalse(VideoDetailFragment.shouldRecreateDetailLayout(
+                true, Configuration.ORIENTATION_LANDSCAPE, 840));
+        assertTrue(VideoDetailFragment.shouldRecreateDetailLayout(
+                true, Configuration.ORIENTATION_PORTRAIT, 1200));
+        assertFalse(VideoDetailFragment.shouldRecreateDetailLayout(
+                false, Configuration.ORIENTATION_PORTRAIT, 1200));
+    }
+
+    @Test
     public void phoneDetailNavigationAvoidsBottomSystemBar() {
         assertEquals(48,
                 VideoDetailFragment.getDetailNavigationBottomInset(

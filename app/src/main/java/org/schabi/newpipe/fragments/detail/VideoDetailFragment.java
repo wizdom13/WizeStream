@@ -268,6 +268,7 @@ public final class VideoDetailFragment
     private int viewPagerBaseStartMargin;
     private int viewPagerBaseBottomMargin;
     private boolean detailLayoutRecreationPending;
+    private boolean detailLayoutRecreationRequested;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -412,6 +413,10 @@ public final class VideoDetailFragment
 
         setupBrightness();
 
+        if (detailLayoutRecreationRequested && binding != null) {
+            binding.getRoot().post(this::reconcileDetailLayoutAfterConfigurationChange);
+        }
+
         if (tabSettingsChanged) {
             tabSettingsChanged = false;
             initTabs();
@@ -432,9 +437,9 @@ public final class VideoDetailFragment
         if (binding == null) {
             return;
         }
-        final boolean wideLandscapeLayout = binding.relatedItemsLayout != null;
-        if (wideLandscapeLayout != shouldUseWideLandscapeDetailLayout(
+        if (shouldRecreateDetailLayout(binding.relatedItemsLayout != null,
                 newConfig.orientation, newConfig.screenWidthDp)) {
+            detailLayoutRecreationRequested = true;
             recreateDetailLayoutForConfigurationChange();
             return;
         }
@@ -468,7 +473,15 @@ public final class VideoDetailFragment
                 && screenWidthDp >= EXPANDED_DETAIL_MIN_WIDTH_DP;
     }
 
+    static boolean shouldRecreateDetailLayout(final boolean wideLandscapeLayout,
+                                              final int orientation,
+                                              final int screenWidthDp) {
+        return wideLandscapeLayout
+                != shouldUseWideLandscapeDetailLayout(orientation, screenWidthDp);
+    }
+
     private void recreateDetailLayoutForConfigurationChange() {
+        detailLayoutRecreationRequested = true;
         if (detailLayoutRecreationPending || binding == null) {
             return;
         }
@@ -483,18 +496,68 @@ public final class VideoDetailFragment
                 detailLayoutRecreationPending = false;
                 return;
             }
+            detailLayoutRecreationRequested = false;
             fragmentManager.beginTransaction()
                     .detach(this)
                     .attach(this)
                     .runOnCommit(() -> {
                         detailLayoutRecreationPending = false;
-                        if (binding != null && player != null && isAdded()) {
-                            binding.getRoot().post(() -> syncFullscreenWithOrientation(
-                                    player.UIs().get(MainPlayerUi.class)));
+                        if (binding != null && isAdded()) {
+                            binding.getRoot().post(
+                                    this::reconcileDetailLayoutAfterConfigurationChange);
                         }
                     })
                     .commit();
         });
+    }
+
+    private void reconcileDetailLayoutAfterConfigurationChange() {
+        if (binding == null || !isAdded()) {
+            return;
+        }
+        final Configuration configuration = getResources().getConfiguration();
+        if (shouldRecreateDetailLayout(binding.relatedItemsLayout != null,
+                configuration.orientation, configuration.screenWidthDp)) {
+            detailLayoutRecreationRequested = true;
+            recreateDetailLayoutForConfigurationChange();
+            return;
+        }
+
+        detailLayoutRecreationRequested = false;
+        restoreDetailLayoutAfterConfigurationChange();
+    }
+
+    private void restoreDetailLayoutAfterConfigurationChange() {
+        if (binding == null || !isAdded()) {
+            return;
+        }
+
+        if (currentInfo != null) {
+            prepareAndHandleInfo(currentInfo, false);
+        } else if (currentLocalItem != null) {
+            prepareAndHandleLocalMedia(currentLocalItem, false);
+        }
+
+        final boolean fullscreen = isFullscreen();
+        updateDetailContentTopMargin(fullscreen);
+        updateDetailContentStartMargins(fullscreen);
+        updateDetailNavigationBottomInset();
+        updateDetailNavigationVisibility();
+
+        if (binding.relatedItemsLayout != null) {
+            if (showRelatedItems) {
+                binding.relatedItemsLayout.setVisibility(
+                        fullscreen ? View.GONE : View.VISIBLE);
+            } else {
+                binding.relatedItemsLayout.setVisibility(View.GONE);
+            }
+        }
+
+        tryAddVideoPlayerView();
+        updatePinnedPlayerLayout();
+        if (player != null) {
+            syncFullscreenWithOrientation(player.UIs().get(MainPlayerUi.class));
+        }
     }
 
     @Override
