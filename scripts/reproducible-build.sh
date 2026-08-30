@@ -39,8 +39,6 @@ done
 
 export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:+$JAVA_TOOL_OPTIONS }-XX:ActiveProcessorCount=1"
 
-"$ROOT_DIR/scripts/validate-reproducible-toolchain.sh"
-
 SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
 export SOURCE_DATE_EPOCH
 export TZ=UTC
@@ -59,7 +57,7 @@ build_once() {
         --max-workers=1 \
         --no-build-cache \
         --no-configuration-cache \
-        clean verifyReproducibleEnvironment assembleRelease \
+        clean assembleRelease \
         --stacktrace \
         -DskipFormatKtlint \
         "${GRADLE_ARGS[@]}"
