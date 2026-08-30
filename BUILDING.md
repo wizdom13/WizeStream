@@ -8,13 +8,14 @@ release tag therefore records and builds the application and service extraction 
 ## Requirements
 
 - Git
-- Eclipse Temurin JDK 21.0.12+8
+- JDK 21
 - Android SDK platform 36.1 and Build Tools 36.1.0
 - Android NDK 28.2.13676358
 - Accepted Android SDK licenses
 
-The exact toolchain is recorded in `gradle/reproducible-build.properties`. Install the pinned
-Android components with:
+The Android platform, Build Tools, NDK, AGP, and Java toolchain versions are declared in the
+Gradle build. With accepted Android SDK licenses, Gradle installs missing Android components.
+They can also be installed in advance with:
 
 ```bash
 sdkmanager "platforms;android-36.1" "build-tools;36.1.0" "ndk;28.2.13676358"
@@ -62,14 +63,15 @@ both targets from the same tagged source and sign them with the same release key
 
 The reproducible entry point runs the complete release pipeline with one visible processor and one
 Gradle worker. `JAVA_TOOL_OPTIONS` propagates the processor limit to Gradle, D8/L8, R8, and child
-JVMs, while the existing R8 execution profile provides an additional dedicated-process safeguard.
+JVMs.
 Normal debug and test builds keep their parallelism. Build and configuration caches are disabled,
 the locale and timezone are fixed, and `SOURCE_DATE_EPOCH` comes from the checked-out commit. A
 verified APK and its `SHA256SUMS` file are written to `dist/reproducible/`.
 
-Independent rebuilders must use `scripts/reproducible-build.sh` rather than invoking
-`./gradlew assembleRelease` directly. The script validates the pinned toolchain and fails before
-assembly if the Gradle JVM does not observe exactly one active processor.
+Independent rebuilders should use `scripts/reproducible-build.sh` rather than invoking
+`./gradlew assembleRelease` directly. The script applies the single-processor constraint required
+for deterministic D8/L8/R8 output without assuming a particular SDK installation directory or JDK
+distribution.
 
 Run Android instrumented tests:
 
