@@ -40,6 +40,7 @@ public class PlayQueueItem implements Serializable {
     private final String uploaderUrl;
     @NonNull
     private final StreamType streamType;
+    private final boolean shortFormContent;
     @NonNull
     private final SourceType sourceType;
     @Nullable
@@ -60,8 +61,8 @@ public class PlayQueueItem implements Serializable {
     public PlayQueueItem(@NonNull final StreamInfo info) {
         this(info.getName(), info.getUrl(), info.getServiceId(), info.getDuration(),
                 ExtractorImageCompat.thumbnailImages(info), info.getUploaderName(),
-                info.getUploaderUrl(), info.getStreamType(), SourceType.REMOTE,
-                null, null, null, -1L, null);
+                info.getUploaderUrl(), info.getStreamType(), info.isShortFormContent(),
+                SourceType.REMOTE, null, null, null, -1L, null);
 
         if (info.getStartPosition() > 0) {
             setRecoveryPosition(info.getStartPosition() * 1000);
@@ -71,8 +72,8 @@ public class PlayQueueItem implements Serializable {
     public PlayQueueItem(@NonNull final StreamInfoItem item) {
         this(item.getName(), item.getUrl(), item.getServiceId(), item.getDuration(),
                 ExtractorImageCompat.thumbnailImages(item), item.getUploaderName(),
-                item.getUploaderUrl(), item.getStreamType(), SourceType.REMOTE,
-                null, null, null, -1L, null);
+                item.getUploaderUrl(), item.getStreamType(), item.isShortFormContent(),
+                SourceType.REMOTE, null, null, null, -1L, null);
     }
 
     @SuppressWarnings("ParameterNumber")
@@ -89,7 +90,7 @@ public class PlayQueueItem implements Serializable {
         return new PlayQueueItem(title, contentUri, LOCAL_SERVICE_ID, duration,
                 Collections.emptyList(), artist, null,
                 video ? StreamType.VIDEO_STREAM : StreamType.AUDIO_STREAM,
-                SourceType.LOCAL, mimeType, album, folder, localMediaId, thumbnailUri);
+                false, SourceType.LOCAL, mimeType, album, folder, localMediaId, thumbnailUri);
     }
 
     @SuppressWarnings("ParameterNumber")
@@ -97,7 +98,8 @@ public class PlayQueueItem implements Serializable {
                           final int serviceId, final long duration,
                           final List<Image> thumbnails, @Nullable final String uploader,
                           final String uploaderUrl, @NonNull final StreamType streamType,
-                          @NonNull final SourceType sourceType, @Nullable final String mimeType,
+                          final boolean shortFormContent, @NonNull final SourceType sourceType,
+                          @Nullable final String mimeType,
                           @Nullable final String album, @Nullable final String folder,
                           final long localMediaId, @Nullable final String localThumbnailUrl) {
         this.title = name != null ? name : EMPTY_STRING;
@@ -108,6 +110,7 @@ public class PlayQueueItem implements Serializable {
         this.uploader = uploader != null ? uploader : EMPTY_STRING;
         this.uploaderUrl = uploaderUrl;
         this.streamType = streamType;
+        this.shortFormContent = shortFormContent;
         this.sourceType = sourceType;
         this.mimeType = mimeType;
         this.album = album;
@@ -170,6 +173,10 @@ public class PlayQueueItem implements Serializable {
     @NonNull
     public StreamType getStreamType() {
         return streamType;
+    }
+
+    public boolean isShortFormContent() {
+        return shortFormContent;
     }
 
     @NonNull
