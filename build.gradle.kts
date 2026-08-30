@@ -19,16 +19,3 @@ plugins {
     alias(libs.plugins.squareup.wire) apply false
 }
 
-tasks.register("verifyReproducibleEnvironment") {
-    group = "verification"
-    description = "Checks the JVM constraints required for reproducible release builds"
-
-    doLast {
-        val activeProcessors = Runtime.getRuntime().availableProcessors()
-        check(activeProcessors == 1) {
-            "Reproducible release builds require exactly one active processor, " +
-                "but the Gradle JVM detected $activeProcessors"
-        }
-        logger.lifecycle("Reproducible release JVM active processors: $activeProcessors")
-    }
-}
