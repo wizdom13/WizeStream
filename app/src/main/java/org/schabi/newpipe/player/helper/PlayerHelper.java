@@ -161,19 +161,21 @@ public final class PlayerHelper {
      * if a candidate next video's url already exists in the existing items.
      * </p>
      * <p>
-     * The first item in {@link StreamInfo#getRelatedItems()} is checked first.
-     * If it is non-null and is not part of the existing items, it will be used as the next stream.
-     * Otherwise, a random stream with non-repeating url will be selected
-     * from the {@link StreamInfo#getRelatedItems()}. Non-stream items are ignored.
+     * For short-form playback, the first non-repeating short-form related stream is preferred.
+     * If none is available, the first related stream is checked. If that stream is unavailable or
+     * already queued, a random stream with a non-repeating URL is selected from
+     * {@link StreamInfo#getRelatedItems()}. Non-stream items are ignored.
      * </p>
      *
-     * @param info          currently playing stream
-     * @param existingItems existing items in the queue
+     * @param info                   currently playing stream
+     * @param existingItems          existing items in the queue
+     * @param preferShortFormContent whether short-form related streams should be preferred
      * @return {@link SinglePlayQueue} with the next stream to queue
      */
     @Nullable
     public static PlayQueue autoQueueOf(@NonNull final StreamInfo info,
-                                        @NonNull final List<PlayQueueItem> existingItems) {
+                                        @NonNull final List<PlayQueueItem> existingItems,
+                                        final boolean preferShortFormContent) {
         final Set<String> urls = existingItems.stream()
                 .map(PlayQueueItem::getUrl)
                 .collect(Collectors.toUnmodifiableSet());
@@ -181,6 +183,16 @@ public final class PlayerHelper {
         final List<InfoItem> relatedItems = info.getRelatedItems();
         if (Utils.isNullOrEmpty(relatedItems)) {
             return null;
+        }
+
+        if (preferShortFormContent) {
+            for (final InfoItem item : relatedItems) {
+                if (item instanceof StreamInfoItem
+                        && ((StreamInfoItem) item).isShortFormContent()
+                        && !urls.contains(item.getUrl())) {
+                    return getAutoQueuedSinglePlayQueue((StreamInfoItem) item);
+                }
+            }
         }
 
         if (relatedItems.get(0) instanceof StreamInfoItem
@@ -198,6 +210,12 @@ public final class PlayerHelper {
         Collections.shuffle(autoQueueItems);
         return autoQueueItems.isEmpty()
                 ? null : getAutoQueuedSinglePlayQueue(autoQueueItems.get(0));
+    }
+
+    @Nullable
+    public static PlayQueue autoQueueOf(@NonNull final StreamInfo info,
+                                        @NonNull final List<PlayQueueItem> existingItems) {
+        return autoQueueOf(info, existingItems, info.isShortFormContent());
     }
 
     // endregion

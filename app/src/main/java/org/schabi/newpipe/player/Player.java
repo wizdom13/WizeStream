@@ -2992,8 +2992,11 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
         // auto queue when starting playback on the last item when not repeating
+        final PlayQueueItem currentQueueItem = playQueue.getItem();
+        final boolean preferShortFormContent = info.isShortFormContent()
+                || (currentQueueItem != null && currentQueueItem.isShortFormContent());
         final PlayQueue autoQueue = PlayerHelper.autoQueueOf(info,
-                playQueue.getStreams());
+                playQueue.getStreams(), preferShortFormContent);
         if (autoQueue != null) {
             playQueue.append(autoQueue.getStreams());
         }
