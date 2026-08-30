@@ -11,7 +11,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.R;
 
-/** Creates grid layout managers whose span count follows the user's preference and content width. */
+/**
+ * Creates grid layout managers whose span count follows the user's preference and content width.
+ */
 public final class GridLayoutManagerHelper {
     private static final int AUTOMATIC_SPAN_COUNT = 0;
     private static final int MINIMUM_CONFIGURED_SPAN_COUNT = 2;
