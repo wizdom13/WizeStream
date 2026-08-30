@@ -85,6 +85,7 @@
     <string name="open_in_popup_mode">Open in popup mode</string>
     <string name="open_with">Open with</string>
     <string name="share">Share</string>
+    <string name="copy_video_title">Copy title</string>
     <string name="download">Download</string>
     <string name="bulk_download_title">Bulk download</string>
     <string name="download_playlist">Download playlist</string>
