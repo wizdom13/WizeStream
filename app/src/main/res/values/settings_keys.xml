@@ -1528,6 +1528,7 @@
     </string-array>
 
     <string name="list_view_mode_key">list_view_mode</string>
+    <string name="show_full_grid_titles_key">show_full_grid_titles</string>
     <string name="list_view_mode_value">@string/list_view_mode_auto_key</string>
 
     <!-- TODO: Use these across the app instead of hardcoding it -->

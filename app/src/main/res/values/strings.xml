@@ -950,6 +950,8 @@
     <string name="wifi_only">Only on Wi-Fi</string>
     <string name="never">Never</string>
     <string name="list_view_mode">List view mode</string>
+    <string name="show_full_grid_titles_title">Show full video titles in grid view</string>
+    <string name="show_full_grid_titles_summary">Allow video titles to wrap instead of limiting them to two lines</string>
     <string name="list">List</string>
     <string name="grid">Grid</string>
     <string name="card">Card</string>
