@@ -67,7 +67,7 @@ jobs:
         run: |
           APK_PATH="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
           test -n "$APK_PATH"
-          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          BUILD_TOOLS_VERSION="36.1.0"
           AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/debug-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial.debug'" "$RUNNER_TEMP/debug-apk-badging.txt"
@@ -109,7 +109,7 @@ jobs:
         run: |
           APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
           test -s "$APK_PATH"
-          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          BUILD_TOOLS_VERSION="36.1.0"
           AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump resources "$APK_PATH" > "$RUNNER_TEMP/release-resources.txt"
           grep -q "layout/list_search_no_results" "$RUNNER_TEMP/release-resources.txt"
