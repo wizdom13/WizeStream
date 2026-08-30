@@ -6,6 +6,7 @@
 package org.schabi.newpipe.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class ReproducibleBuildConfigurationTest {
     }
 
     @Test
-    public void preReleasePublishingUsesAnExplicitNonLatestBranchTrigger() throws Exception {
+    public void preReleasePublishingUsesOnlyAnExplicitNonLatestBranchTrigger() throws Exception {
         final String releaseWorkflow = read(".github/workflows/release.yml");
 
         assertTrue(releaseWorkflow.contains("- \"release-pre-*\""));
@@ -54,10 +55,9 @@ public class ReproducibleBuildConfigurationTest {
         assertTrue(releaseWorkflow.contains("github.ref_type == 'tag' && github.ref_name"));
         assertTrue(releaseWorkflow.contains("prerelease: ${{ github.ref_type == 'branch' }}"));
         assertTrue(releaseWorkflow.contains("make_latest: ${{ github.ref_type == 'tag' }}"));
-        assertTrue(releaseWorkflow.contains("github.event_name != 'pull_request' ||"));
-        assertTrue(releaseWorkflow.contains("startsWith(github.head_ref, 'release-pre-')"));
-        assertEquals(2, occurrences(releaseWorkflow,
-                "github.event_name == 'pull_request'"));
+        assertFalse(releaseWorkflow.contains("pull_request:"));
+        assertFalse(releaseWorkflow.contains("github.event_name == 'pull_request'"));
+        assertFalse(releaseWorkflow.contains("github.head_ref"));
     }
 
     @Test
