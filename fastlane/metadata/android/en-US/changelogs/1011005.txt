@@ -1,0 +1,6 @@
+• Added optional full video titles in grid layouts.
+• Added configurable tablet grid columns with responsive thumbnails.
+• Made automatic queues prefer Shorts when watching Shorts.
+• Added a copy-title action to video menus.
+• Stabilized tablet video details after rotation.
+• Made reproducible release builds portable across independent build environments.
