@@ -361,32 +361,35 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     // //////////////////////////////////////////////////////////////////////////
 
     override fun showLoading() {
+        val binding = _feedBinding ?: return
         super.showLoading()
-        feedBinding.itemsList.animate(true, 0)
-        feedBinding.refreshRootView.animate(false, 0)
-        feedBinding.streamFilterChips.root.animate(false, 0)
-        showRefreshOverlay()
-        feedBinding.swipeRefreshLayout.isRefreshing = true
+        binding.itemsList.animate(true, 0)
+        binding.refreshRootView.animate(false, 0)
+        binding.streamFilterChips.root.animate(false, 0)
+        showRefreshOverlay(binding)
+        binding.swipeRefreshLayout.isRefreshing = true
         isRefreshing = true
     }
 
     override fun hideLoading() {
+        val binding = _feedBinding ?: return
         super.hideLoading()
-        feedBinding.itemsList.animate(true, 0)
-        feedBinding.refreshRootView.animate(true, 200)
-        feedBinding.streamFilterChips.root.animate(true, 200)
-        hideRefreshOverlay()
-        feedBinding.swipeRefreshLayout.isRefreshing = false
+        binding.itemsList.animate(true, 0)
+        binding.refreshRootView.animate(true, 200)
+        binding.streamFilterChips.root.animate(true, 200)
+        hideRefreshOverlay(binding)
+        binding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
     }
 
     override fun showEmptyState() {
+        val binding = _feedBinding ?: return
         super.showEmptyState()
-        feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
-        feedBinding.refreshRootView.animate(true, 200)
-        feedBinding.streamFilterChips.root.animate(true, 200)
-        hideRefreshOverlay()
-        feedBinding.swipeRefreshLayout.isRefreshing = false
+        binding.itemsList.animateHideRecyclerViewAllowingScrolling()
+        binding.refreshRootView.animate(true, 200)
+        binding.streamFilterChips.root.animate(true, 200)
+        hideRefreshOverlay(binding)
+        binding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
     }
 
@@ -401,12 +404,13 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun handleError() {
+        val binding = _feedBinding ?: return
         super.handleError()
-        feedBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
-        feedBinding.refreshRootView.animate(false, 0)
-        feedBinding.streamFilterChips.root.animate(true, 200)
-        hideRefreshOverlay()
-        feedBinding.swipeRefreshLayout.isRefreshing = false
+        binding.itemsList.animateHideRecyclerViewAllowingScrolling()
+        binding.refreshRootView.animate(false, 0)
+        binding.streamFilterChips.root.animate(true, 200)
+        hideRefreshOverlay(binding)
+        binding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
     }
 
@@ -436,16 +440,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
     }
 
-    private fun showRefreshOverlay() {
-        if (!feedBinding.refreshLoadingOverlay.isVisible) {
-            feedBinding.refreshLoadingOverlay.animate(true, 200)
+    private fun showRefreshOverlay(binding: FragmentFeedBinding) {
+        if (!binding.refreshLoadingOverlay.isVisible) {
+            binding.refreshLoadingOverlay.animate(true, 200)
         }
-        feedBinding.cancelRefreshButton.isEnabled = true
+        binding.cancelRefreshButton.isEnabled = true
     }
 
-    private fun hideRefreshOverlay() {
-        feedBinding.cancelRefreshButton.isEnabled = false
-        feedBinding.refreshLoadingOverlay.animate(false, 200)
+    private fun hideRefreshOverlay(binding: FragmentFeedBinding) {
+        binding.cancelRefreshButton.isEnabled = false
+        binding.refreshLoadingOverlay.animate(false, 200)
     }
 
     private fun showInfoItemDialog(item: StreamInfoItem) {
