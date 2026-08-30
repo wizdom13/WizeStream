@@ -12,10 +12,11 @@
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/itemThumbnailView"
-        android:layout_width="@dimen/video_item_grid_thumbnail_image_width"
-        android:layout_height="@dimen/video_item_grid_thumbnail_image_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:scaleType="fitCenter"
         android:src="@drawable/placeholder_thumbnail_video"
+        app:layout_constraintDimensionRatio="H,16:9"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
