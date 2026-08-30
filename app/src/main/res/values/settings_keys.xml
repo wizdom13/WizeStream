@@ -1528,6 +1528,23 @@
     </string-array>
 
     <string name="list_view_mode_key">list_view_mode</string>
+    <string name="grid_columns_key">grid_columns</string>
+    <string name="grid_columns_auto_key">auto</string>
+    <string name="grid_columns_two_key">2</string>
+    <string name="grid_columns_three_key">3</string>
+    <string name="grid_columns_four_key">4</string>
+    <string-array name="grid_columns_values">
+        <item>@string/grid_columns_auto_key</item>
+        <item>@string/grid_columns_two_key</item>
+        <item>@string/grid_columns_three_key</item>
+        <item>@string/grid_columns_four_key</item>
+    </string-array>
+    <string-array name="grid_columns_description">
+        <item>@string/auto</item>
+        <item>@string/grid_columns_two</item>
+        <item>@string/grid_columns_three</item>
+        <item>@string/grid_columns_four</item>
+    </string-array>
     <string name="show_full_grid_titles_key">show_full_grid_titles</string>
     <string name="list_view_mode_value">@string/list_view_mode_auto_key</string>
 
