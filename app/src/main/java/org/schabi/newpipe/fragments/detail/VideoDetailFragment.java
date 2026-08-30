@@ -545,9 +545,12 @@ public final class VideoDetailFragment
         updateDetailNavigationVisibility();
 
         if (binding.relatedItemsLayout != null) {
-            binding.relatedItemsLayout.setVisibility(showRelatedItems
-                    ? fullscreen ? View.GONE : View.VISIBLE
-                    : View.GONE);
+            if (showRelatedItems) {
+                binding.relatedItemsLayout.setVisibility(
+                        fullscreen ? View.GONE : View.VISIBLE);
+            } else {
+                binding.relatedItemsLayout.setVisibility(View.GONE);
+            }
         }
 
         tryAddVideoPlayerView();
