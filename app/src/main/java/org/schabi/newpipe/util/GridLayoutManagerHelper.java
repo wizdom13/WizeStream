@@ -1,14 +1,22 @@
 package org.schabi.newpipe.util;
 
+import android.content.Context;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-/** Creates grid layout managers whose span count follows the measured content width. */
+import org.schabi.newpipe.R;
+
+/** Creates grid layout managers whose span count follows the user's preference and content width. */
 public final class GridLayoutManagerHelper {
+    private static final int AUTOMATIC_SPAN_COUNT = 0;
+    private static final int MINIMUM_CONFIGURED_SPAN_COUNT = 2;
+    private static final int MAXIMUM_CONFIGURED_SPAN_COUNT = 4;
+
     private GridLayoutManagerHelper() {
     }
 
@@ -21,7 +29,7 @@ public final class GridLayoutManagerHelper {
     @NonNull
     public static GridLayoutManager create(@NonNull final RecyclerView recyclerView,
                                            final int minimumItemWidth) {
-        return create(recyclerView, minimumItemWidth, null);
+        return create(recyclerView, minimumItemWidth, AUTOMATIC_SPAN_COUNT, null);
     }
 
     @NonNull
@@ -29,8 +37,18 @@ public final class GridLayoutManagerHelper {
             @NonNull final RecyclerView recyclerView,
             final int minimumItemWidth,
             @Nullable final SpanSizeLookupFactory spanSizeLookupFactory) {
+        return create(recyclerView, minimumItemWidth, AUTOMATIC_SPAN_COUNT,
+                spanSizeLookupFactory);
+    }
+
+    @NonNull
+    public static GridLayoutManager create(
+            @NonNull final RecyclerView recyclerView,
+            final int minimumItemWidth,
+            final int preferredSpanCount,
+            @Nullable final SpanSizeLookupFactory spanSizeLookupFactory) {
         final int initialSpanCount = calculateSpanCount(
-                getAvailableWidth(recyclerView), minimumItemWidth);
+                getAvailableWidth(recyclerView), minimumItemWidth, preferredSpanCount);
         final GridLayoutManager layoutManager = new GridLayoutManager(
                 recyclerView.getContext(), initialSpanCount);
         updateSpanSizeLookup(layoutManager, initialSpanCount, spanSizeLookupFactory);
@@ -55,7 +73,7 @@ public final class GridLayoutManagerHelper {
                 }
 
                 final int spanCount = calculateSpanCount(
-                        getAvailableWidth(recyclerView), minimumItemWidth);
+                        getAvailableWidth(recyclerView), minimumItemWidth, preferredSpanCount);
                 if (spanCount != layoutManager.getSpanCount()) {
                     updateSpanSizeLookup(layoutManager, spanCount, spanSizeLookupFactory);
                     layoutManager.setSpanCount(spanCount);
@@ -65,7 +83,41 @@ public final class GridLayoutManagerHelper {
         return layoutManager;
     }
 
+    public static int getPreferredSpanCount(@NonNull final Context context) {
+        final String value = PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(context.getString(R.string.grid_columns_key),
+                        context.getString(R.string.grid_columns_auto_key));
+        return parsePreferredSpanCount(value);
+    }
+
+    static int parsePreferredSpanCount(@Nullable final String value) {
+        if (value == null) {
+            return AUTOMATIC_SPAN_COUNT;
+        }
+
+        try {
+            final int spanCount = Integer.parseInt(value);
+            if (spanCount >= MINIMUM_CONFIGURED_SPAN_COUNT
+                    && spanCount <= MAXIMUM_CONFIGURED_SPAN_COUNT) {
+                return spanCount;
+            }
+        } catch (final NumberFormatException ignored) {
+            // Automatic and unknown values both use responsive sizing.
+        }
+        return AUTOMATIC_SPAN_COUNT;
+    }
+
     static int calculateSpanCount(final int availableWidth, final int minimumItemWidth) {
+        return calculateSpanCount(availableWidth, minimumItemWidth, AUTOMATIC_SPAN_COUNT);
+    }
+
+    static int calculateSpanCount(final int availableWidth,
+                                  final int minimumItemWidth,
+                                  final int preferredSpanCount) {
+        if (preferredSpanCount >= MINIMUM_CONFIGURED_SPAN_COUNT
+                && preferredSpanCount <= MAXIMUM_CONFIGURED_SPAN_COUNT) {
+            return preferredSpanCount;
+        }
         if (availableWidth <= 0 || minimumItemWidth <= 0) {
             return 1;
         }
