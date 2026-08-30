@@ -638,7 +638,7 @@ public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
         }
 
         final boolean hasViewLabel = hasViewCountLabel(lowercaseText);
-        final boolean hasDigit = text.codePoints().anyMatch(Character::isDigit);
+        final boolean hasDigit = containsDigit(text);
         if (!hasViewLabel || !hasDigit) {
             return null;
         }
@@ -648,6 +648,17 @@ public class YoutubeStreamInfoItemExtractor implements StreamInfoItemExtractor {
         } catch (final Exception ignored) {
             return null;
         }
+    }
+
+    static boolean containsDigit(final String text) {
+        for (int index = 0; index < text.length();) {
+            final int codePoint = Character.codePointAt(text, index);
+            if (Character.isDigit(codePoint)) {
+                return true;
+            }
+            index += Character.charCount(codePoint);
+        }
+        return false;
     }
 
     private static boolean hasViewCountLabel(final String text) {

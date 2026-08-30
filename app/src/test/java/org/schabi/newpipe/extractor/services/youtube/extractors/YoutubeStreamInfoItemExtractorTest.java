@@ -1,6 +1,8 @@
 package org.schabi.newpipe.extractor.services.youtube.extractors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
@@ -27,6 +29,13 @@ public class YoutubeStreamInfoItemExtractorTest {
         );
 
         assertEquals(1_200L, new YoutubeStreamInfoItemExtractor(videoInfo, null).getViewCount());
+    }
+
+    @Test
+    public void digitDetectionDoesNotRequireJavaStreamApis() {
+        assertTrue(YoutubeStreamInfoItemExtractor.containsDigit("1.2K views"));
+        assertTrue(YoutubeStreamInfoItemExtractor.containsDigit("١٢٣ مشاهدة"));
+        assertFalse(YoutubeStreamInfoItemExtractor.containsDigit("no views"));
     }
 
     @Test
