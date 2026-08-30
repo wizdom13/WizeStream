@@ -85,12 +85,12 @@ import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
 import org.schabi.newpipe.util.ContentBlockingHelper
 import org.schabi.newpipe.util.DeviceUtils
+import org.schabi.newpipe.util.GridLayoutManagerHelper
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.MembersOnlyContentHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.StreamListFilter
-import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountStreams
 import org.schabi.newpipe.util.ThemeHelper.getItemViewMode
 import org.schabi.newpipe.util.ThemeHelper.resolveDrawable
 import org.schabi.newpipe.util.ThemeHelper.shouldUseGridLayout
@@ -221,9 +221,20 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private fun setupListViewMode() {
         // does everything needed to setup the layouts for grid or list modes
-        groupAdapter.spanCount = if (shouldUseGridLayout(context)) getGridSpanCountStreams(context) else 1
-        feedBinding.itemsList.layoutManager = GridLayoutManager(requireContext(), groupAdapter.spanCount).apply {
-            spanSizeLookup = groupAdapter.spanSizeLookup
+        val gridMode = shouldUseGridLayout(context)
+        val minimumItemWidth = resources.getDimensionPixelSize(
+            R.dimen.video_item_grid_thumbnail_image_width
+        ) + resources.getDimensionPixelSize(R.dimen.video_item_search_padding) * 2
+        feedBinding.itemsList.layoutManager = if (gridMode) {
+            GridLayoutManagerHelper.create(feedBinding.itemsList, minimumItemWidth) { spanCount ->
+                groupAdapter.spanCount = spanCount
+                groupAdapter.spanSizeLookup
+            }
+        } else {
+            groupAdapter.spanCount = 1
+            GridLayoutManager(requireContext(), 1).apply {
+                spanSizeLookup = groupAdapter.spanSizeLookup
+            }
         }
     }
 

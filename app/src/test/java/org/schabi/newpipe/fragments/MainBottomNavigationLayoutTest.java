@@ -71,6 +71,20 @@ public class MainBottomNavigationLayoutTest {
         assertTrue(source.contains("bottomNavigation instanceof NavigationRailView"));
     }
 
+    @Test
+    public void orientationChangeUpdatesTabletNavigationWithoutPlayerInset() throws Exception {
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/fragments/MainFragment.java"));
+
+        assertMethodContains(source, "public void onConfigurationChanged(",
+                "selectMainNavigation()");
+        assertMethodContains(source, "public void onConfigurationChanged(",
+                "updateMainNavigationMode();");
+        assertFalse(source.contains(
+                "setStartMargin(requireActivity().findViewById("
+                        + "R.id.fragment_player_holder), inset)"));
+    }
+
     private void assertMethodContains(final String source,
                                       final String signature,
                                       final String expected) {

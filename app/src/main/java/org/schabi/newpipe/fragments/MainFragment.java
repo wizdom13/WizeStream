@@ -214,6 +214,24 @@ public class MainFragment extends BaseFragment
     }
 
     @Override
+    public void onConfigurationChanged(@NonNull final Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (binding == null) {
+            return;
+        }
+        binding.getRoot().post(() -> {
+            if (binding == null || !isAdded()) {
+                return;
+            }
+            if (selectMainNavigation()) {
+                updateBottomNavigationItems();
+            }
+            updateMainNavigationMode();
+            scheduleBottomNavigationRemeasure();
+        });
+    }
+
+    @Override
     public void onPause() {
         setBottomNavigationRequestedVisibility(false);
         if (contextualSearchEditText != null) {
@@ -887,7 +905,6 @@ public class MainFragment extends BaseFragment
                 ? getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width) : 0;
         setStartMargin(requireActivity().findViewById(R.id.fragment_holder), inset);
         setStartMargin(requireActivity().findViewById(R.id.toolbar_layout), inset);
-        setStartMargin(requireActivity().findViewById(R.id.fragment_player_holder), inset);
     }
 
     private static void setStartMargin(@Nullable final View view, final int margin) {

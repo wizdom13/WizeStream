@@ -49,4 +49,10 @@ final class PlayerSheetTransitionCalculator {
                                              final float expandedFraction) {
         return bottomNavigationHeight * clampExpandedFraction(expandedFraction);
     }
+
+    static int navigationRailPlayerMargin(final int navigationRailWidth,
+                                          final float expandedFraction) {
+        final int safeWidth = Math.max(navigationRailWidth, 0);
+        return Math.round(safeWidth * (1.0f - clampExpandedFraction(expandedFraction)));
+    }
 }

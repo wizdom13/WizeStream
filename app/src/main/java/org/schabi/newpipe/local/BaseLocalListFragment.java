@@ -1,7 +1,6 @@
 package org.schabi.newpipe.local;
 
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -13,7 +12,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
@@ -23,6 +21,7 @@ import org.schabi.newpipe.databinding.PignateFooterBinding;
 import org.schabi.newpipe.fragments.BaseStateFragment;
 import org.schabi.newpipe.fragments.list.ListViewContract;
 import org.schabi.newpipe.info_list.ItemViewMode;
+import org.schabi.newpipe.util.GridLayoutManagerHelper;
 
 import static org.schabi.newpipe.ktx.ViewUtils.animate;
 import static org.schabi.newpipe.ktx.ViewUtils.animateHideRecyclerViewAllowingScrolling;
@@ -111,13 +110,11 @@ public abstract class BaseLocalListFragment<I, N> extends BaseStateFragment<I>
     }
 
     protected RecyclerView.LayoutManager getGridLayoutManager() {
-        final Resources resources = activity.getResources();
+        final var resources = activity.getResources();
         int width = resources.getDimensionPixelSize(R.dimen.video_item_grid_thumbnail_image_width);
         width += (24 * resources.getDisplayMetrics().density);
-        final int spanCount = Math.floorDiv(resources.getDisplayMetrics().widthPixels, width);
-        final GridLayoutManager lm = new GridLayoutManager(activity, spanCount);
-        lm.setSpanSizeLookup(itemListAdapter.getSpanSizeLookup(spanCount));
-        return lm;
+        return GridLayoutManagerHelper.create(itemsList, width,
+                itemListAdapter::getSpanSizeLookup);
     }
 
     protected RecyclerView.LayoutManager getListLayoutManager() {

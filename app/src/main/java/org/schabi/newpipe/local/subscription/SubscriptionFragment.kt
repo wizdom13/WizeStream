@@ -53,10 +53,10 @@ import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
 import org.schabi.newpipe.local.subscription.item.SearchNoResultsPlaceholderItem
+import org.schabi.newpipe.util.GridLayoutManagerHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ServiceHelper
-import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountChannels
 import org.schabi.newpipe.util.external_communication.ShareUtils
 import org.schabi.newpipe.util.image.ExtractorImageCompat
 
@@ -247,9 +247,20 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         super.initViews(rootView, savedInstanceState)
         _binding = FragmentSubscriptionBinding.bind(rootView)
 
-        groupAdapter.spanCount = if (SubscriptionViewModel.shouldUseGridForSubscription(requireContext())) getGridSpanCountChannels(context) else 1
-        binding.itemsList.layoutManager = GridLayoutManager(requireContext(), groupAdapter.spanCount).apply {
-            spanSizeLookup = groupAdapter.spanSizeLookup
+        val gridMode = SubscriptionViewModel.shouldUseGridForSubscription(requireContext())
+        val minimumItemWidth = resources.getDimensionPixelSize(
+            R.dimen.channel_item_grid_min_width
+        )
+        binding.itemsList.layoutManager = if (gridMode) {
+            GridLayoutManagerHelper.create(binding.itemsList, minimumItemWidth) { spanCount ->
+                groupAdapter.spanCount = spanCount
+                groupAdapter.spanSizeLookup
+            }
+        } else {
+            groupAdapter.spanCount = 1
+            GridLayoutManager(requireContext(), 1).apply {
+                spanSizeLookup = groupAdapter.spanSizeLookup
+            }
         }
         binding.itemsList.adapter = groupAdapter
         binding.itemsList.itemAnimator = null

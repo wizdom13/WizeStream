@@ -5,6 +5,7 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -148,6 +149,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
                                         @Nullable final Float slideOffset) {
         final View bottomNavigation = findRequestedNavigation(bottomSheet);
         if (bottomNavigation == null) {
+            setPlayerStartMargin(bottomSheet, 0);
             applyPlayerPeekHeight(bottomSheet, false);
             return;
         }
@@ -156,13 +158,13 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         applyPlayerPeekHeight(bottomSheet, true);
 
         if (state == STATE_HIDDEN) {
-            updateBottomNavigationAppearance(bottomNavigation, 0.0f);
+            updateBottomNavigationAppearance(bottomSheet, bottomNavigation, 0.0f);
             return;
         }
 
         final float expandedFraction = PlayerSheetTransitionCalculator
                 .expandedFractionForState(state, slideOffset);
-        updateBottomNavigationAppearance(bottomNavigation, expandedFraction);
+        updateBottomNavigationAppearance(bottomSheet, bottomNavigation, expandedFraction);
     }
 
     private void applyPlayerPeekHeight(@NonNull final FrameLayout bottomSheet,
@@ -180,10 +182,18 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         }
     }
 
-    private void updateBottomNavigationAppearance(@NonNull final View bottomNavigation,
+    private void updateBottomNavigationAppearance(@NonNull final View bottomSheet,
+                                                  @NonNull final View bottomNavigation,
                                                   final float expandedFraction) {
         final float clampedFraction = PlayerSheetTransitionCalculator
                 .clampExpandedFraction(expandedFraction);
+        if (bottomNavigation instanceof NavigationRailView) {
+            setPlayerStartMargin(bottomSheet,
+                    PlayerSheetTransitionCalculator.navigationRailPlayerMargin(
+                            getNavigationRailWidth(bottomNavigation), clampedFraction));
+        } else {
+            setPlayerStartMargin(bottomSheet, 0);
+        }
         if (clampedFraction >= 1.0f) {
             bottomNavigation.setAlpha(0.0f);
             if (bottomNavigation instanceof NavigationRailView) {
@@ -223,6 +233,16 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         return view.getWidth() > 0
                 ? view.getWidth()
                 : view.getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width);
+    }
+
+    private static void setPlayerStartMargin(@NonNull final View playerSheet,
+                                             final int margin) {
+        if (!(playerSheet.getLayoutParams() instanceof ViewGroup.MarginLayoutParams params)
+                || params.getMarginStart() == margin) {
+            return;
+        }
+        params.setMarginStart(margin);
+        playerSheet.setLayoutParams(params);
     }
 
     private static boolean isBottomNavigationRequested(@NonNull final View bottomSheet) {
