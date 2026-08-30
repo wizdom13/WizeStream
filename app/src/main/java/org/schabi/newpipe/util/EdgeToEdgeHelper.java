@@ -63,7 +63,8 @@ public final class EdgeToEdgeHelper {
      * @param insetSource view that receives the window inset dispatch
      * @param safeContent regular fragment content constrained inside all safe edges
      * @param toolbar toolbar protected below the status bar and display cutouts
-     * @param navigation bottom navigation or navigation rail protected inside all safe edges
+     * @param bottomNavigation bottom navigation protected inside all safe edges
+     * @param navigationRail navigation rail protected inside all safe edges
      * @param navigationScrim opaque surface drawn behind the bottom system navigation bar
      * @param playerSheet edge-to-edge player sheet; only its collapsed peek height avoids the
      *                    bottom system bar
@@ -74,7 +75,8 @@ public final class EdgeToEdgeHelper {
             @NonNull final View insetSource,
             @NonNull final View safeContent,
             @NonNull final View toolbar,
-            @NonNull final View navigation,
+            @NonNull final View bottomNavigation,
+            @NonNull final View navigationRail,
             @NonNull final View navigationScrim,
             @NonNull final View playerSheet,
             @NonNull final View drawer,
@@ -87,12 +89,18 @@ public final class EdgeToEdgeHelper {
         final int toolbarTop = toolbar.getPaddingTop();
         final int toolbarRight = toolbar.getPaddingRight();
         final int toolbarBottom = toolbar.getPaddingBottom();
-        final ViewGroup.MarginLayoutParams navigationParams =
-                (ViewGroup.MarginLayoutParams) navigation.getLayoutParams();
-        final int navigationLeft = navigationParams.leftMargin;
-        final int navigationTop = navigationParams.topMargin;
-        final int navigationRight = navigationParams.rightMargin;
-        final int navigationBottom = navigationParams.bottomMargin;
+        final ViewGroup.MarginLayoutParams bottomNavigationParams =
+                (ViewGroup.MarginLayoutParams) bottomNavigation.getLayoutParams();
+        final int bottomNavigationLeft = bottomNavigationParams.leftMargin;
+        final int bottomNavigationTop = bottomNavigationParams.topMargin;
+        final int bottomNavigationRight = bottomNavigationParams.rightMargin;
+        final int bottomNavigationBottom = bottomNavigationParams.bottomMargin;
+        final ViewGroup.MarginLayoutParams navigationRailParams =
+                (ViewGroup.MarginLayoutParams) navigationRail.getLayoutParams();
+        final int navigationRailLeft = navigationRailParams.leftMargin;
+        final int navigationRailTop = navigationRailParams.topMargin;
+        final int navigationRailRight = navigationRailParams.rightMargin;
+        final int navigationRailBottom = navigationRailParams.bottomMargin;
         final int navigationScrimHeight = navigationScrim.getLayoutParams().height;
         final int playerLeft = playerSheet.getPaddingLeft();
         final int playerTop = playerSheet.getPaddingTop();
@@ -119,14 +127,12 @@ public final class EdgeToEdgeHelper {
                     toolbarTop + safeInsets.top,
                     toolbarRight + safeInsets.right,
                     toolbarBottom);
-            final ViewGroup.MarginLayoutParams updatedNavigationParams =
-                    (ViewGroup.MarginLayoutParams) navigation.getLayoutParams();
-            updatedNavigationParams.setMargins(
-                    navigationLeft + safeInsets.left,
-                    navigationTop + safeInsets.top,
-                    navigationRight + safeInsets.right,
-                    navigationBottom + safeInsets.bottom);
-            navigation.setLayoutParams(updatedNavigationParams);
+            applyNavigationMargins(bottomNavigation,
+                    bottomNavigationLeft, bottomNavigationTop,
+                    bottomNavigationRight, bottomNavigationBottom, safeInsets);
+            applyNavigationMargins(navigationRail,
+                    navigationRailLeft, navigationRailTop,
+                    navigationRailRight, navigationRailBottom, safeInsets);
             final ViewGroup.LayoutParams updatedScrimParams =
                     navigationScrim.getLayoutParams();
             updatedScrimParams.height = navigationScrimHeight + safeInsets.bottom;
@@ -151,6 +157,22 @@ public final class EdgeToEdgeHelper {
             return consumeAppliedInsets(windowInsets);
         });
         ViewCompat.requestApplyInsets(insetSource);
+    }
+
+    private static void applyNavigationMargins(@NonNull final View navigation,
+                                               final int initialLeft,
+                                               final int initialTop,
+                                               final int initialRight,
+                                               final int initialBottom,
+                                               @NonNull final Insets safeInsets) {
+        final ViewGroup.MarginLayoutParams params =
+                (ViewGroup.MarginLayoutParams) navigation.getLayoutParams();
+        params.setMargins(
+                initialLeft + safeInsets.left,
+                initialTop + safeInsets.top,
+                initialRight + safeInsets.right,
+                initialBottom + safeInsets.bottom);
+        navigation.setLayoutParams(params);
     }
 
     private static void updatePlayerSheetBottomInset(@NonNull final View playerSheet,

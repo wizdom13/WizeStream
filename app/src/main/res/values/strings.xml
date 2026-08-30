@@ -521,6 +521,11 @@
     <string name="fast_mode">Fast mode</string>
     <string name="main_tabs_position_summary">Move main tab selector to the bottom</string>
     <string name="main_tabs_position_title">Main tabs position</string>
+    <string name="tablet_navigation_portrait_position_title">Tablet navigation in portrait</string>
+    <string name="tablet_navigation_landscape_position_title">Tablet navigation in landscape</string>
+    <string name="tablet_navigation_position_automatic">Automatic</string>
+    <string name="tablet_navigation_position_bottom">Bottom</string>
+    <string name="tablet_navigation_position_left">Left</string>
     <string name="bottom_navigation_labels_title">Bottom navigation labels</string>
     <string name="bottom_navigation_labels_always">Always visible</string>
     <string name="bottom_navigation_labels_active">Active only</string>

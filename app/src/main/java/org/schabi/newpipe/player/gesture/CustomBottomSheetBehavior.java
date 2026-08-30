@@ -146,9 +146,8 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     private void updateBottomNavigation(@NonNull final FrameLayout bottomSheet,
                                         final int state,
                                         @Nullable final Float slideOffset) {
-        final View bottomNavigation = bottomSheet.getRootView()
-                .findViewById(R.id.main_bottom_navigation);
-        if (bottomNavigation == null || !Boolean.TRUE.equals(bottomNavigation.getTag())) {
+        final View bottomNavigation = findRequestedNavigation(bottomSheet);
+        if (bottomNavigation == null) {
             applyPlayerPeekHeight(bottomSheet, false);
             return;
         }
@@ -168,8 +167,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
 
     private void applyPlayerPeekHeight(@NonNull final FrameLayout bottomSheet,
                                        final boolean bottomNavigationVisible) {
-        final View bottomNavigation = bottomSheet.getRootView()
-                .findViewById(R.id.main_bottom_navigation);
+        final View bottomNavigation = findRequestedNavigation(bottomSheet);
         final int navigationHeight = bottomNavigation == null
                 ? bottomSheet.getResources()
                 .getDimensionPixelSize(R.dimen.main_bottom_navigation_height)
@@ -228,8 +226,18 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     }
 
     private static boolean isBottomNavigationRequested(@NonNull final View bottomSheet) {
-        final View bottomNavigation = bottomSheet.getRootView()
-                .findViewById(R.id.main_bottom_navigation);
-        return bottomNavigation != null && Boolean.TRUE.equals(bottomNavigation.getTag());
+        return findRequestedNavigation(bottomSheet) != null;
+    }
+
+    @Nullable
+    private static View findRequestedNavigation(@NonNull final View bottomSheet) {
+        final View root = bottomSheet.getRootView();
+        final View navigationRail = root.findViewById(R.id.main_navigation_rail);
+        if (navigationRail != null && Boolean.TRUE.equals(navigationRail.getTag())) {
+            return navigationRail;
+        }
+        final View bottomNavigation = root.findViewById(R.id.main_bottom_navigation);
+        return bottomNavigation != null && Boolean.TRUE.equals(bottomNavigation.getTag())
+                ? bottomNavigation : null;
     }
 }
