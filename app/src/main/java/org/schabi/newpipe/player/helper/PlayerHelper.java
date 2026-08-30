@@ -167,13 +167,15 @@ public final class PlayerHelper {
      * from the {@link StreamInfo#getRelatedItems()}. Non-stream items are ignored.
      * </p>
      *
-     * @param info          currently playing stream
-     * @param existingItems existing items in the queue
+     * @param info                   currently playing stream
+     * @param existingItems          existing items in the queue
+     * @param preferShortFormContent whether short-form related streams should be preferred
      * @return {@link SinglePlayQueue} with the next stream to queue
      */
     @Nullable
     public static PlayQueue autoQueueOf(@NonNull final StreamInfo info,
-                                        @NonNull final List<PlayQueueItem> existingItems) {
+                                        @NonNull final List<PlayQueueItem> existingItems,
+                                        final boolean preferShortFormContent) {
         final Set<String> urls = existingItems.stream()
                 .map(PlayQueueItem::getUrl)
                 .collect(Collectors.toUnmodifiableSet());
@@ -181,6 +183,16 @@ public final class PlayerHelper {
         final List<InfoItem> relatedItems = info.getRelatedItems();
         if (Utils.isNullOrEmpty(relatedItems)) {
             return null;
+        }
+
+        if (preferShortFormContent) {
+            for (final InfoItem item : relatedItems) {
+                if (item instanceof StreamInfoItem
+                        && ((StreamInfoItem) item).isShortFormContent()
+                        && !urls.contains(item.getUrl())) {
+                    return getAutoQueuedSinglePlayQueue((StreamInfoItem) item);
+                }
+            }
         }
 
         if (relatedItems.get(0) instanceof StreamInfoItem
@@ -198,6 +210,12 @@ public final class PlayerHelper {
         Collections.shuffle(autoQueueItems);
         return autoQueueItems.isEmpty()
                 ? null : getAutoQueuedSinglePlayQueue(autoQueueItems.get(0));
+    }
+
+    @Nullable
+    public static PlayQueue autoQueueOf(@NonNull final StreamInfo info,
+                                        @NonNull final List<PlayQueueItem> existingItems) {
+        return autoQueueOf(info, existingItems, info.isShortFormContent());
     }
 
     // endregion
