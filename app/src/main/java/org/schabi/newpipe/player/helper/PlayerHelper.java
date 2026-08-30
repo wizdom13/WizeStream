@@ -161,10 +161,10 @@ public final class PlayerHelper {
      * if a candidate next video's url already exists in the existing items.
      * </p>
      * <p>
-     * The first item in {@link StreamInfo#getRelatedItems()} is checked first.
-     * If it is non-null and is not part of the existing items, it will be used as the next stream.
-     * Otherwise, a random stream with non-repeating url will be selected
-     * from the {@link StreamInfo#getRelatedItems()}. Non-stream items are ignored.
+     * For short-form playback, the first non-repeating short-form related stream is preferred.
+     * If none is available, the first related stream is checked. If that stream is unavailable or
+     * already queued, a random stream with a non-repeating URL is selected from
+     * {@link StreamInfo#getRelatedItems()}. Non-stream items are ignored.
      * </p>
      *
      * @param info                   currently playing stream
