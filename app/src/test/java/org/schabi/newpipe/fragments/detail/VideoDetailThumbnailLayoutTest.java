@@ -22,7 +22,7 @@ public class VideoDetailThumbnailLayoutTest {
     @Test
     public void returnedVideoPreviewFillsThePlayerFrame() throws Exception {
         assertThumbnailFillsFrame("layout/fragment_video_detail.xml");
-        assertThumbnailFillsFrame("layout-large-land/fragment_video_detail.xml");
+        assertThumbnailFillsFrame("layout-w840dp-land/fragment_video_detail.xml");
     }
 
     private void assertThumbnailFillsFrame(final String layout) throws Exception {

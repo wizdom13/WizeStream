@@ -42,6 +42,16 @@ public class PlayerSheetTransitionCalculatorTest {
     }
 
     @Test
+    public void navigationRailMarginLeavesTheExpandedPlayerEdgeToEdge() {
+        assertEquals(80,
+                PlayerSheetTransitionCalculator.navigationRailPlayerMargin(80, 0.0f));
+        assertEquals(40,
+                PlayerSheetTransitionCalculator.navigationRailPlayerMargin(80, 0.5f));
+        assertEquals(0,
+                PlayerSheetTransitionCalculator.navigationRailPlayerMargin(80, 1.0f));
+    }
+
+    @Test
     public void stableCollapsedAndHiddenStatesIgnoreLateSlideOffsets() {
         assertEquals(0.0f,
                 PlayerSheetTransitionCalculator.expandedFractionForState(

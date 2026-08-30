@@ -1,6 +1,10 @@
 package org.schabi.newpipe.fragments.detail;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import android.content.res.Configuration;
 
 import org.junit.Test;
 
@@ -18,6 +22,22 @@ public class VideoDetailLayoutStateTest {
     @Test
     public void unmeasuredToolbarDoesNotCreateANegativeOffset() {
         assertEquals(0, VideoDetailFragment.getDetailContentTopMargin(false, -1));
+    }
+
+    @Test
+    public void fullscreenRemovesTheDetailNavigationRailStartMargin() {
+        assertEquals(0, VideoDetailFragment.getDetailContentStartMargin(true, 80));
+        assertEquals(80, VideoDetailFragment.getDetailContentStartMargin(false, 80));
+    }
+
+    @Test
+    public void twoPaneDetailsRequireExpandedWidthAndLandscape() {
+        assertTrue(VideoDetailFragment.shouldUseWideLandscapeDetailLayout(
+                Configuration.ORIENTATION_LANDSCAPE, 840));
+        assertFalse(VideoDetailFragment.shouldUseWideLandscapeDetailLayout(
+                Configuration.ORIENTATION_PORTRAIT, 840));
+        assertFalse(VideoDetailFragment.shouldUseWideLandscapeDetailLayout(
+                Configuration.ORIENTATION_LANDSCAPE, 839));
     }
 
     @Test

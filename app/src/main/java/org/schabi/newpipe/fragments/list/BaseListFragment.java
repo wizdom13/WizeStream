@@ -5,7 +5,6 @@ import static org.schabi.newpipe.ktx.ViewUtils.animateHideRecyclerViewAllowingSc
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -17,7 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.R;
@@ -33,6 +31,7 @@ import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.util.ContentBlockingHelper;
+import org.schabi.newpipe.util.GridLayoutManagerHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -215,13 +214,11 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
     }
 
     protected RecyclerView.LayoutManager getGridLayoutManager() {
-        final Resources resources = activity.getResources();
+        final var resources = activity.getResources();
         int width = resources.getDimensionPixelSize(R.dimen.video_item_grid_thumbnail_image_width);
         width += (24 * resources.getDisplayMetrics().density);
-        final int spanCount = Math.floorDiv(resources.getDisplayMetrics().widthPixels, width);
-        final GridLayoutManager lm = new GridLayoutManager(activity, spanCount);
-        lm.setSpanSizeLookup(infoListAdapter.getSpanSizeLookup(spanCount));
-        return lm;
+        return GridLayoutManagerHelper.create(itemsList, width,
+                infoListAdapter::getSpanSizeLookup);
     }
 
     /**

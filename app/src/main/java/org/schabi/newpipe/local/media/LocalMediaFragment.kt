@@ -21,7 +21,6 @@ import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
@@ -35,6 +34,7 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.info_list.ItemViewMode
 import org.schabi.newpipe.local.dialog.PlaylistDialog
 import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue
+import org.schabi.newpipe.util.GridLayoutManagerHelper
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.ThemeHelper
@@ -191,7 +191,10 @@ class LocalMediaFragment : Fragment() {
     private fun applyItemViewMode() {
         val mode = ThemeHelper.getItemViewMode(requireContext())
         list.layoutManager = if (mode == ItemViewMode.GRID) {
-            GridLayoutManager(requireContext(), ThemeHelper.getGridSpanCountStreams(requireContext()))
+            val minimumItemWidth = resources.getDimensionPixelSize(
+                R.dimen.video_item_grid_thumbnail_image_width
+            ) + resources.getDimensionPixelSize(R.dimen.video_item_search_padding) * 2
+            GridLayoutManagerHelper.create(list, minimumItemWidth)
         } else {
             LinearLayoutManager(requireContext())
         }

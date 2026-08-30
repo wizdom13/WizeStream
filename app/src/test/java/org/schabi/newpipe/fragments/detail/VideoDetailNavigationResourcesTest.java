@@ -95,7 +95,7 @@ public class VideoDetailNavigationResourcesTest {
     @Test
     public void phoneAndLargeLandscapeLayoutsExposeCastControl() throws Exception {
         assertViewIdExists("layout/fragment_video_detail.xml", "@+id/detail_controls_cast");
-        assertViewIdExists("layout-large-land/fragment_video_detail.xml",
+        assertViewIdExists("layout-w840dp-land/fragment_video_detail.xml",
                 "@+id/detail_controls_cast");
     }
 
@@ -151,7 +151,7 @@ public class VideoDetailNavigationResourcesTest {
     }
 
     private void assertLargeLandscapeNavigationRail() throws Exception {
-        final Document document = parse("layout-large-land/fragment_video_detail.xml");
+        final Document document = parse("layout-w840dp-land/fragment_video_detail.xml");
 
         assertEquals(0, document.getElementsByTagName(TAB_LAYOUT).getLength());
         assertEquals(0, document.getElementsByTagName(BOTTOM_NAVIGATION_VIEW).getLength());

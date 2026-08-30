@@ -155,6 +155,7 @@ public final class VideoDetailFragment
 
     private static final float MAX_OVERLAY_ALPHA = 0.9f;
     private static final float MAX_PLAYER_HEIGHT = 0.7f;
+    private static final int EXPANDED_DETAIL_MIN_WIDTH_DP = 840;
     private static final int LEGACY_PLAYER_COLLAPSE_MODE =
             CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PARALLAX;
     private static final int PINNED_PLAYER_COLLAPSE_MODE =
@@ -263,7 +264,10 @@ public final class VideoDetailFragment
     private View.OnLayoutChangeListener toolbarLayoutChangeListener;
     private int activityStatusBarInset;
     private int detailNavigationBaseBottomMargin;
+    private int appBarBaseStartMargin;
+    private int viewPagerBaseStartMargin;
     private int viewPagerBaseBottomMargin;
+    private boolean detailLayoutRecreationPending;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -425,7 +429,16 @@ public final class VideoDetailFragment
     @Override
     public void onConfigurationChanged(@NonNull final Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (binding == null || player == null) {
+        if (binding == null) {
+            return;
+        }
+        final boolean wideLandscapeLayout = binding.relatedItemsLayout != null;
+        if (wideLandscapeLayout != shouldUseWideLandscapeDetailLayout(
+                newConfig.orientation, newConfig.screenWidthDp)) {
+            recreateDetailLayoutForConfigurationChange();
+            return;
+        }
+        if (player == null) {
             return;
         }
         // MainActivity handles orientation changes for native PiP, so the fragment is no longer
@@ -447,6 +460,41 @@ public final class VideoDetailFragment
                 && !DeviceUtils.isTablet(activity)) {
             playerUi.ifPresent(MainPlayerUi::toggleFullscreen);
         }
+    }
+
+    static boolean shouldUseWideLandscapeDetailLayout(final int orientation,
+                                                      final int screenWidthDp) {
+        return orientation == Configuration.ORIENTATION_LANDSCAPE
+                && screenWidthDp >= EXPANDED_DETAIL_MIN_WIDTH_DP;
+    }
+
+    private void recreateDetailLayoutForConfigurationChange() {
+        if (detailLayoutRecreationPending || binding == null) {
+            return;
+        }
+        detailLayoutRecreationPending = true;
+        binding.getRoot().post(() -> {
+            if (!isAdded()) {
+                detailLayoutRecreationPending = false;
+                return;
+            }
+            final var fragmentManager = getParentFragmentManager();
+            if (fragmentManager.isStateSaved()) {
+                detailLayoutRecreationPending = false;
+                return;
+            }
+            fragmentManager.beginTransaction()
+                    .detach(this)
+                    .attach(this)
+                    .runOnCommit(() -> {
+                        detailLayoutRecreationPending = false;
+                        if (binding != null && player != null && isAdded()) {
+                            binding.getRoot().post(() -> syncFullscreenWithOrientation(
+                                    player.UIs().get(MainPlayerUi.class)));
+                        }
+                    })
+                    .commit();
+        });
     }
 
     @Override
@@ -508,6 +556,8 @@ public final class VideoDetailFragment
         activityStatusBarInset = 0;
         ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), null);
         detailNavigationBaseBottomMargin = 0;
+        appBarBaseStartMargin = 0;
+        viewPagerBaseStartMargin = 0;
         viewPagerBaseBottomMargin = 0;
         super.onDestroyView();
         detailNavigation = null;
@@ -722,8 +772,13 @@ public final class VideoDetailFragment
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
         detailNavigationBaseBottomMargin = ((ViewGroup.MarginLayoutParams)
                 detailNavigation.getLayoutParams()).bottomMargin;
-        viewPagerBaseBottomMargin = ((ViewGroup.MarginLayoutParams)
-                binding.viewPager.getLayoutParams()).bottomMargin;
+        final ViewGroup.MarginLayoutParams appBarParams =
+                (ViewGroup.MarginLayoutParams) binding.appBarLayout.getLayoutParams();
+        appBarBaseStartMargin = appBarParams.getMarginStart();
+        final ViewGroup.MarginLayoutParams viewPagerParams =
+                (ViewGroup.MarginLayoutParams) binding.viewPager.getLayoutParams();
+        viewPagerBaseStartMargin = viewPagerParams.getMarginStart();
+        viewPagerBaseBottomMargin = viewPagerParams.bottomMargin;
         ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (view, windowInsets) -> {
             updateDetailNavigationBottomInset();
             return windowInsets;
@@ -742,6 +797,7 @@ public final class VideoDetailFragment
         activityToolbarLayout.addOnLayoutChangeListener(toolbarLayoutChangeListener);
         binding.getRoot().post(() -> {
             updateDetailContentTopMargin(isFullscreen());
+            updateDetailContentStartMargins(isFullscreen());
             updateDetailNavigationBottomInset();
         });
         pageAdapter = new TabAdapter(getChildFragmentManager());
@@ -1311,7 +1367,8 @@ public final class VideoDetailFragment
             return;
         }
 
-        if (pageAdapter.getCount() < 2 || binding.viewPager.getVisibility() != View.VISIBLE) {
+        if (isFullscreen() || pageAdapter.getCount() < 2
+                || binding.viewPager.getVisibility() != View.VISIBLE) {
             // Hide navigation if there is only one destination or if the pager is hidden.
             detailNavigation.setVisibility(View.GONE);
         } else {
@@ -1765,6 +1822,11 @@ public final class VideoDetailFragment
         return fullscreen ? 0 : Math.max(statusBarInset, 0);
     }
 
+    static int getDetailContentStartMargin(final boolean fullscreen,
+                                           final int baseStartMargin) {
+        return fullscreen ? 0 : Math.max(baseStartMargin, 0);
+    }
+
     static int getDetailNavigationBottomInset(final boolean fullscreen,
                                               final boolean navigationRail,
                                               final int navigationBarInset,
@@ -1821,6 +1883,25 @@ public final class VideoDetailFragment
         if (params.topMargin != desiredTopMargin) {
             params.topMargin = desiredTopMargin;
             binding.detailMainContent.setLayoutParams(params);
+        }
+    }
+
+    private void updateDetailContentStartMargins(final boolean fullscreen) {
+        if (binding == null) {
+            return;
+        }
+        setStartMargin(binding.appBarLayout,
+                getDetailContentStartMargin(fullscreen, appBarBaseStartMargin));
+        setStartMargin(binding.viewPager,
+                getDetailContentStartMargin(fullscreen, viewPagerBaseStartMargin));
+    }
+
+    private static void setStartMargin(@NonNull final View view, final int startMargin) {
+        final ViewGroup.MarginLayoutParams params =
+                (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+        if (params.getMarginStart() != startMargin) {
+            params.setMarginStart(startMargin);
+            view.setLayoutParams(params);
         }
     }
 
@@ -2514,8 +2595,14 @@ public final class VideoDetailFragment
             showSystemUi();
         }
         updateDetailContentTopMargin(fullscreen);
+        updateDetailContentStartMargins(fullscreen);
         updateDetailNavigationBottomInset();
         binding.getRoot().post(this::updateDetailNavigationBottomInset);
+        if (fullscreen) {
+            detailNavigation.setVisibility(View.GONE);
+        } else {
+            updateDetailNavigationVisibility();
+        }
 
         if (binding.relatedItemsLayout != null) {
             if (showRelatedItems) {
