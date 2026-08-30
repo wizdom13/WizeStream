@@ -120,6 +120,7 @@ public final class InfoItemDialog {
          *     | addEntry() and addAllEntries()             |
          *     + - - - - - - - - - - - - - - - - - - - - - -+
          *     | APPEND_PLAYLIST                            |
+         *     | COPY_TITLE                                 |
          *     | SHARE                                      |
          *     | OPEN_IN_BROWSER                            |
          *     | PLAY_WITH_KODI                             |
@@ -161,6 +162,7 @@ public final class InfoItemDialog {
          *     | addEntry() and addAllEntries()             |
          *     + - - - - - - - - - - - - - - - - - - - - - -+
          *     | APPEND_PLAYLIST                            |
+         *     | COPY_TITLE                                 |
          *     | SHARE                                      |
          *     | OPEN_IN_BROWSER                            |
          *     | PLAY_WITH_KODI                             |
@@ -341,6 +343,7 @@ public final class InfoItemDialog {
             addAllEntries(
                     StreamDialogDefaultEntry.DOWNLOAD,
                     StreamDialogDefaultEntry.APPEND_PLAYLIST,
+                    StreamDialogDefaultEntry.COPY_TITLE,
                     StreamDialogDefaultEntry.SHARE,
                     StreamDialogDefaultEntry.OPEN_IN_BROWSER,
                     StreamDialogDefaultEntry.BLOCK_VIDEO,
