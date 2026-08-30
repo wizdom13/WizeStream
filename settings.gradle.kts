@@ -3,15 +3,6 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 pluginManagement {
-    val reproducibleBuildProperties = java.util.Properties().apply {
-        file("gradle/reproducible-build.properties").inputStream().use { load(it) }
-    }
-
-    plugins {
-        id("com.android.settings") version
-            reproducibleBuildProperties.getProperty("androidGradlePluginVersion")
-    }
-
     repositories {
         gradlePluginPortal()
         google()
@@ -20,7 +11,7 @@ pluginManagement {
 }
 
 plugins {
-    id("com.android.settings")
+    id("com.android.settings") version "9.2.1"
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

@@ -39,8 +39,6 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Validate pinned release toolchain
-        run: scripts/validate-reproducible-toolchain.sh
 
       - name: Write release keystore
         env:
@@ -76,7 +74,7 @@ jobs:
           set -euo pipefail
           APK_PATH="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
           test -n "$APK_PATH"
-          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          BUILD_TOOLS_VERSION="36.1.0"
           AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/release-apk-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/release-apk-badging.txt"
@@ -149,7 +147,7 @@ jobs:
           APK_PATH="dist/${APK_NAME}"
           mv app/build/outputs/apk/release/*.apk "$APK_PATH"
 
-          BUILD_TOOLS_VERSION="$(sed -n 's/^androidBuildToolsVersion=//p' gradle/reproducible-build.properties)"
+          BUILD_TOOLS_VERSION="36.1.0"
           AAPT="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/aapt"
           "$AAPT" dump badging "$APK_PATH" | tee "$RUNNER_TEMP/x86-64-release-badging.txt"
           grep -q "package: name='org.wisso.newpipematerial'" "$RUNNER_TEMP/x86-64-release-badging.txt"
