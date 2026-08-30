@@ -218,6 +218,7 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
         int width = resources.getDimensionPixelSize(R.dimen.video_item_grid_thumbnail_image_width);
         width += (24 * resources.getDisplayMetrics().density);
         return GridLayoutManagerHelper.create(itemsList, width,
+                GridLayoutManagerHelper.getPreferredSpanCount(activity),
                 infoListAdapter::getSpanSizeLookup);
     }
 
@@ -506,7 +507,8 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences,
                                           final String key) {
-        if (getString(R.string.list_view_mode_key).equals(key)) {
+        if (getString(R.string.list_view_mode_key).equals(key)
+                || getString(R.string.grid_columns_key).equals(key)) {
             updateFlags |= LIST_MODE_UPDATE_FLAG;
         } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
             reloadContent();
