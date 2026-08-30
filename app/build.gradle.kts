@@ -5,7 +5,6 @@
 
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.tasks.testing.Test
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -32,12 +31,6 @@ val hasReleaseSigningConfig = listOf(
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
 
-val reproducibleBuildProperties = Properties().apply {
-    rootProject.file("gradle/reproducible-build.properties")
-        .inputStream()
-        .use { load(it) }
-}
-
 val releaseAbi = providers.gradleProperty("releaseAbi").orElse("arm").get()
 val releaseAbiFilters = when (releaseAbi) {
     "arm" -> setOf("arm64-v8a", "armeabi-v7a")
@@ -58,8 +51,8 @@ kotlin {
 }
 
 configure<ApplicationExtension> {
-    buildToolsVersion = reproducibleBuildProperties.getProperty("androidBuildToolsVersion")
-    ndkVersion = reproducibleBuildProperties.getProperty("androidNdkVersion")
+    buildToolsVersion = "36.1.0"
+    ndkVersion = "28.2.13676358"
 
     compileSdk {
         version = release(ANDROID_COMPILE_SDK_MAJOR) {
