@@ -34,7 +34,7 @@ public class TabletGridConfigurationTest {
                 "android:entryValues=\"@array/grid_columns_values\""));
         assertTrue(appearanceFragment.contains(
                 "setPreferenceVisible(R.string.grid_columns_key, "
-                        + "showTabletNavigationPreferences);"));
+                        + "showTabletPreferences);"));
     }
 
     @Test
