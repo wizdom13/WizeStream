@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/itemRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:padding="@dimen/video_item_search_padding">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/itemThumbnailView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/placeholder_thumbnail_video"
+        app:layout_constraintDimensionRatio="16:9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.42"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.wizestream.StreamThumbnail" />
+
+    <org.schabi.newpipe.views.NewPipeTextView
+        android:id="@+id/itemDurationView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/video_item_search_duration_margin"
+        android:layout_marginBottom="@dimen/video_item_search_duration_margin"
+        android:background="@color/info_list_duration_badge_background_color"
+        android:paddingHorizontal="@dimen/video_item_search_duration_horizontal_padding"
+        android:paddingVertical="@dimen/video_item_search_duration_vertical_padding"
+        android:textAllCaps="true"
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="@color/info_list_thumbnail_badge_text_color"
+        android:textSize="@dimen/video_item_search_duration_text_size"
+        app:layout_constraintBottom_toBottomOf="@id/itemThumbnailView"
+        app:layout_constraintRight_toRightOf="@id/itemThumbnailView"
+        tools:text="1:09:10" />
+
+    <org.schabi.newpipe.views.NewPipeTextView
+        android:id="@+id/itemMembersOnlyView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/video_item_search_duration_margin"
+        android:layout_marginTop="@dimen/video_item_search_duration_margin"
+        android:background="@drawable/members_only_badge_background"
+        android:paddingHorizontal="@dimen/video_item_search_duration_horizontal_padding"
+        android:paddingVertical="@dimen/video_item_search_duration_vertical_padding"
+        android:text="@string/members_only"
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="@color/info_list_thumbnail_badge_text_color"
+        android:textSize="@dimen/video_item_search_duration_text_size"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/itemThumbnailView"
+        app:layout_constraintTop_toTopOf="@id/itemThumbnailView"
+        tools:visibility="visible" />
+
+    <org.schabi.newpipe.views.NewPipeTextView
+        android:id="@+id/itemVideoTitleView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/video_item_search_image_right_margin"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="@dimen/video_item_search_title_text_size"
+        app:layout_constraintBottom_toTopOf="@+id/itemUploaderRoot"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/itemThumbnailView"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="A related video title that wraps onto a second line" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/itemUploaderRoot"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:minHeight="@dimen/stream_item_uploader_touch_target"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/itemVideoTitleView"
+        app:layout_constraintStart_toStartOf="@+id/itemVideoTitleView"
+        app:layout_constraintTop_toBottomOf="@+id/itemVideoTitleView"
+        tools:contentDescription="Open channel Uploader">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/itemUploaderAvatarView"
+            android:layout_width="@dimen/video_item_detail_uploader_image_size"
+            android:layout_height="@dimen/video_item_detail_uploader_image_size"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            android:src="@drawable/placeholder_person"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearance="@style/CircularImageView" />
+
+        <org.schabi.newpipe.views.NewPipeTextView
+            android:id="@+id/itemUploaderView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_small"
+            android:ellipsize="end"
+            android:lines="1"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/video_item_search_uploader_text_size"
+            app:layout_constraintBottom_toTopOf="@+id/itemAdditionalDetails"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/itemUploaderAvatarView"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="Uploader" />
+
+        <org.schabi.newpipe.views.NewPipeTextView
+            android:id="@+id/itemAdditionalDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:lines="1"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/video_item_search_upload_date_text_size"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/itemUploaderView"
+            app:layout_constraintTop_toBottomOf="@+id/itemUploaderView"
+            tools:text="2 years ago • 10M views" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <org.schabi.newpipe.views.AnimatedProgressBar
+        android:id="@+id/itemProgressView"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/stream_thumbnail_progress_height"
+        android:layout_marginHorizontal="@dimen/stream_thumbnail_progress_horizontal_inset"
+        android:layout_marginBottom="@dimen/stream_thumbnail_progress_bottom_margin"
+        android:progressDrawable="@drawable/progress_stream_thumbnail_material"
+        app:layout_constraintBottom_toBottomOf="@+id/itemThumbnailView"
+        app:layout_constraintEnd_toEndOf="@+id/itemThumbnailView"
+        app:layout_constraintStart_toStartOf="@+id/itemThumbnailView" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

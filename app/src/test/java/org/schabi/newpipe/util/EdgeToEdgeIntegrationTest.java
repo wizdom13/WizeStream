@@ -217,6 +217,6 @@ public class EdgeToEdgeIntegrationTest {
         assertTrue(detailSource.contains(
                 "detailNavigationBaseBottomMargin + bottomInset"));
         assertTrue(detailSource.contains("viewPagerBaseBottomMargin + bottomInset"));
-        assertTrue(detailSource.contains("detailNavigation instanceof NavigationRailView"));
+        assertTrue(detailSource.contains("binding.relatedItemsLayout != null"));
     }
 }

@@ -64,7 +64,6 @@ import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationBarView;
-import com.google.android.material.navigationrail.NavigationRailView;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
@@ -1388,7 +1387,8 @@ public final class VideoDetailFragment
                 pageAdapter.updateItem(RELATED_TAB_TAG, RelatedItemsFragment.getInstance(info));
             } else { // tablet + TV
                 getChildFragmentManager().beginTransaction()
-                        .replace(R.id.relatedItemsLayout, RelatedItemsFragment.getInstance(info))
+                        .replace(R.id.relatedItemsLayout,
+                                RelatedItemsFragment.getInstance(info, true))
                         .commitAllowingStateLoss();
                 binding.relatedItemsLayout.setVisibility(isFullscreen() ? View.GONE : View.VISIBLE);
             }
@@ -1435,7 +1435,7 @@ public final class VideoDetailFragment
             // Hide navigation if there is only one destination or if the pager is hidden.
             detailNavigation.setVisibility(View.GONE);
         } else {
-            if (detailNavigation instanceof NavigationRailView) {
+            if (binding.relatedItemsLayout != null) {
                 detailNavigation.setTranslationY(0.0f);
                 detailNavigation.setVisibility(View.VISIBLE);
                 return;
@@ -1891,10 +1891,10 @@ public final class VideoDetailFragment
     }
 
     static int getDetailNavigationBottomInset(final boolean fullscreen,
-                                              final boolean navigationRail,
+                                              final boolean wideDetailLayout,
                                               final int navigationBarInset,
                                               final int displayCutoutInset) {
-        if (fullscreen || navigationRail) {
+        if (fullscreen || wideDetailLayout) {
             return 0;
         }
         return Math.max(Math.max(navigationBarInset, displayCutoutInset), 0);
@@ -1915,7 +1915,7 @@ public final class VideoDetailFragment
                     WindowInsetsCompat.Type.displayCutout());
         }
         final int bottomInset = getDetailNavigationBottomInset(
-                isFullscreen(), detailNavigation instanceof NavigationRailView,
+                isFullscreen(), binding.relatedItemsLayout != null,
                 navigationBarInsets.bottom, displayCutoutInsets.bottom);
 
         final ViewGroup.MarginLayoutParams navigationParams =

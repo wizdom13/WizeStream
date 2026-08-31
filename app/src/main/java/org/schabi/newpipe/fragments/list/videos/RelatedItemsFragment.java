@@ -33,6 +33,7 @@ import io.reactivex.rxjava3.core.Single;
 public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, RelatedItemsInfo>
         implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String INFO_KEY = "related_info_key";
+    private static final String WIDE_DETAIL_LAYOUT_KEY = "wide_detail_layout_key";
 
     private RelatedItemsInfo relatedItemsInfo;
 
@@ -43,7 +44,15 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
     private RelatedItemsHeaderBinding headerBinding;
 
     public static RelatedItemsFragment getInstance(final StreamInfo info) {
+        return getInstance(info, false);
+    }
+
+    public static RelatedItemsFragment getInstance(final StreamInfo info,
+                                                   final boolean wideDetailLayout) {
         final RelatedItemsFragment instance = new RelatedItemsFragment();
+        final Bundle arguments = new Bundle();
+        arguments.putBoolean(WIDE_DETAIL_LAYOUT_KEY, wideDetailLayout);
+        instance.setArguments(arguments);
         instance.setInitialData(info);
         return instance;
     }
@@ -61,6 +70,14 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
                              @Nullable final ViewGroup container,
                              @Nullable final Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_related_items, container, false);
+    }
+
+    @Override
+    protected void initViews(final View rootView, final Bundle savedInstanceState) {
+        final Bundle arguments = getArguments();
+        infoListAdapter.setUseWideRelatedVariant(
+                arguments != null && arguments.getBoolean(WIDE_DETAIL_LAYOUT_KEY, false));
+        super.initViews(rootView, savedInstanceState);
     }
 
     @Override

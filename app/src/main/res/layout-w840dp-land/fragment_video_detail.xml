@@ -26,7 +26,6 @@
                 android:id="@+id/app_bar_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/main_navigation_rail_width"
                 android:background="@android:color/transparent"
                 android:touchscreenBlocksFocus="false"
                 app:elevation="0dp"
@@ -611,34 +610,31 @@
 
                     </LinearLayout>
                 </RelativeLayout>
+
+                <com.google.android.material.bottomnavigation.BottomNavigationView
+                    android:id="@+id/detail_navigation"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/video_detail_navigation_height"
+                    android:background="?attr/colorSurfaceContainer"
+                    android:elevation="0dp"
+                    android:visibility="gone"
+                    app:itemActiveIndicatorStyle="@style/wizestreamBottomNavigationActiveIndicator"
+                    app:itemIconTint="@color/tab_layout_material_item_color"
+                    app:itemPaddingBottom="@dimen/video_detail_navigation_item_padding"
+                    app:itemPaddingTop="@dimen/video_detail_navigation_item_padding"
+                    app:itemRippleColor="?attr/colorControlHighlight"
+                    app:itemTextColor="@color/tab_layout_material_item_color"
+                    app:labelVisibilityMode="labeled"
+                    app:menu="@menu/video_detail_navigation"
+                    tools:visibility="visible" />
+
             </com.google.android.material.appbar.AppBarLayout>
 
             <androidx.viewpager.widget.ViewPager
                 android:id="@+id/view_pager"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginStart="@dimen/main_navigation_rail_width"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-
-            <com.google.android.material.navigationrail.NavigationRailView
-                android:id="@+id/detail_navigation"
-                android:layout_width="@dimen/main_navigation_rail_width"
-                android:layout_height="match_parent"
-                android:layout_gravity="start"
-                android:background="?attr/colorSurfaceContainer"
-                android:elevation="0dp"
-                android:paddingVertical="8dp"
-                android:visibility="gone"
-                app:itemActiveIndicatorStyle="@style/wizestreamBottomNavigationActiveIndicator"
-                app:itemIconTint="@color/tab_layout_material_item_color"
-                app:itemPaddingBottom="@dimen/video_detail_navigation_item_padding"
-                app:itemPaddingTop="@dimen/video_detail_navigation_item_padding"
-                app:itemRippleColor="?attr/colorControlHighlight"
-                app:itemTextColor="@color/tab_layout_material_item_color"
-                app:labelVisibilityMode="labeled"
-                app:menuGravity="center"
-                app:menu="@menu/video_detail_navigation"
-                tools:visibility="visible" />
 
         </org.schabi.newpipe.views.FocusAwareCoordinator>
 
@@ -647,7 +643,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginTop="10dp"
-            android:layout_weight="3" />
+            android:layout_weight="4" />
     </LinearLayout>
 
 

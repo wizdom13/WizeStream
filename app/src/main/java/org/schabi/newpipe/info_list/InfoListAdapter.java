@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.PignateFooterBinding;
 import org.schabi.newpipe.dearrow.DeArrowService;
 import org.schabi.newpipe.extractor.InfoItem;
@@ -76,6 +77,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private static final int STREAM_HOLDER_TYPE = 0x101;
     private static final int GRID_STREAM_HOLDER_TYPE = 0x102;
     private static final int CARD_STREAM_HOLDER_TYPE = 0x103;
+    private static final int WIDE_RELATED_STREAM_HOLDER_TYPE = 0x104;
     private static final int MINI_CHANNEL_HOLDER_TYPE = 0x200;
     private static final int CHANNEL_HOLDER_TYPE = 0x201;
     private static final int GRID_CHANNEL_HOLDER_TYPE = 0x202;
@@ -93,6 +95,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private final HistoryRecordManager recordManager;
 
     private boolean useMiniVariant = false;
+    private boolean useWideRelatedVariant = false;
     private boolean showFooter = false;
 
     private ItemViewMode itemMode = ItemViewMode.LIST;
@@ -124,6 +127,10 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public void setUseMiniVariant(final boolean useMiniVariant) {
         this.useMiniVariant = useMiniVariant;
+    }
+
+    public void setUseWideRelatedVariant(final boolean useWideRelatedVariant) {
+        this.useWideRelatedVariant = useWideRelatedVariant;
     }
 
     public void setItemViewMode(final ItemViewMode itemViewMode) {
@@ -287,6 +294,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     return CARD_STREAM_HOLDER_TYPE;
                 } else if (itemMode == ItemViewMode.GRID) {
                     return GRID_STREAM_HOLDER_TYPE;
+                } else if (useWideRelatedVariant) {
+                    return WIDE_RELATED_STREAM_HOLDER_TYPE;
                 } else if (useMiniVariant) {
                     return MINI_STREAM_HOLDER_TYPE;
                 } else {
@@ -344,6 +353,9 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 return new StreamMiniInfoItemHolder(infoItemBuilder, parent);
             case STREAM_HOLDER_TYPE:
                 return new StreamInfoItemHolder(infoItemBuilder, parent);
+            case WIDE_RELATED_STREAM_HOLDER_TYPE:
+                return new StreamInfoItemHolder(
+                        infoItemBuilder, R.layout.list_stream_related_wide_item, parent);
             case GRID_STREAM_HOLDER_TYPE:
                 return new StreamGridInfoItemHolder(infoItemBuilder, parent);
             case CARD_STREAM_HOLDER_TYPE:
