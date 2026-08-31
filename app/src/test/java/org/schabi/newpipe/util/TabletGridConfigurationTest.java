@@ -54,6 +54,17 @@ public class TabletGridConfigurationTest {
     }
 
     @Test
+    public void channelGroupFeedsUseAndObserveTheColumnPreference() throws Exception {
+        final String feedFragment = read(
+                "app/src/main/java/org/schabi/newpipe/local/feed/FeedFragment.kt");
+
+        assertTrue(feedFragment.contains(
+                "GridLayoutManagerHelper.getPreferredSpanCount(requireContext())"));
+        assertTrue(feedFragment.contains(
+                "getString(R.string.grid_columns_key).equals(key)"));
+    }
+
+    @Test
     public void thumbnailCardsFillTheirColumnAtSixteenByNine() throws Exception {
         for (final String layout : List.of(
                 "app/src/main/res/layout/list_stream_grid_item.xml",
