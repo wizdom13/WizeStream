@@ -44,19 +44,32 @@ public class GridTitleDisplayPolicyTest {
     }
 
     @Test
-    public void everyStreamGridHolderAppliesTheDisplayPolicy() throws Exception {
-        final List<String> gridHolders = List.of(
+    public void everyStreamGridOrCardHolderAppliesTheDisplayPolicy() throws Exception {
+        final List<String> streamHolders = List.of(
                 "app/src/main/java/org/schabi/newpipe/info_list/holder/"
                         + "StreamGridInfoItemHolder.java",
+                "app/src/main/java/org/schabi/newpipe/info_list/holder/"
+                        + "StreamCardInfoItemHolder.java",
                 "app/src/main/java/org/schabi/newpipe/local/holder/"
                         + "LocalPlaylistStreamGridItemHolder.java",
                 "app/src/main/java/org/schabi/newpipe/local/holder/"
                         + "LocalStatisticStreamGridItemHolder.java");
 
-        for (final String gridHolder : gridHolders) {
-            assertTrue(read(gridHolder).contains(
+        for (final String streamHolder : streamHolders) {
+            assertTrue(read(streamHolder).contains(
                     "GridTitleDisplayPolicy.apply(itemVideoTitleView);"));
         }
+    }
+
+    @Test
+    public void channelGroupGridAndCardItemsApplyTheDisplayPolicy() throws Exception {
+        final String streamItem = read(
+                "app/src/main/java/org/schabi/newpipe/local/feed/item/StreamItem.kt");
+
+        assertTrue(streamItem.contains(
+                "itemVersion == ItemVersion.GRID || itemVersion == ItemVersion.CARD"));
+        assertTrue(streamItem.contains(
+                "GridTitleDisplayPolicy.apply(viewBinding.itemVideoTitleView)"));
     }
 
     private String read(final String relativePath) throws Exception {
