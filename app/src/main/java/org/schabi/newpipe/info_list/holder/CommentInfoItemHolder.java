@@ -24,6 +24,7 @@ import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.util.CommentTextSizeHelper;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -86,6 +87,8 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         if (!(infoItem instanceof CommentsInfoItem item)) {
             return;
         }
+
+        CommentTextSizeHelper.applyCommentTextSize(itemContentView);
 
         // load the author avatar
         CoilHelper.INSTANCE.loadCommentAvatar(itemThumbnailView, item.getUploaderAvatarUrl());

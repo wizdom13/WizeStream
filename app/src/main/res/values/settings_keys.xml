@@ -1547,6 +1547,23 @@
         <item>@string/grid_columns_four</item>
     </string-array>
     <string name="show_full_grid_titles_key">show_full_grid_titles</string>
+    <string name="comment_text_size_key">comment_text_size</string>
+    <string name="comment_text_size_small_key">12</string>
+    <string name="comment_text_size_medium_key">14</string>
+    <string name="comment_text_size_large_key">16</string>
+    <string name="comment_text_size_extra_large_key">18</string>
+    <string-array name="comment_text_size_values">
+        <item>@string/comment_text_size_small_key</item>
+        <item>@string/comment_text_size_medium_key</item>
+        <item>@string/comment_text_size_large_key</item>
+        <item>@string/comment_text_size_extra_large_key</item>
+    </string-array>
+    <string-array name="comment_text_size_description">
+        <item>@string/comment_text_size_small</item>
+        <item>@string/comment_text_size_medium</item>
+        <item>@string/comment_text_size_large</item>
+        <item>@string/comment_text_size_extra_large</item>
+    </string-array>
     <string name="list_view_mode_value">@string/list_view_mode_auto_key</string>
 
     <!-- TODO: Use these across the app instead of hardcoding it -->

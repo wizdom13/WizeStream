@@ -50,6 +50,7 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
     protected org.schabi.newpipe.util.SavedState savedState;
 
     private boolean useDefaultStateSaving = true;
+    private boolean commentTextSizeUpdatePending = false;
     private int updateFlags = 0;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -100,6 +101,9 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
                 refreshItemViewMode();
             }
             updateFlags = 0;
+        }
+        if (commentTextSizeUpdatePending) {
+            applyPendingCommentTextSizeUpdate();
         }
     }
 
@@ -510,9 +514,19 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
         if (getString(R.string.list_view_mode_key).equals(key)
                 || getString(R.string.grid_columns_key).equals(key)) {
             updateFlags |= LIST_MODE_UPDATE_FLAG;
+        } else if (getString(R.string.comment_text_size_key).equals(key)) {
+            commentTextSizeUpdatePending = true;
+            if (isResumed()) {
+                applyPendingCommentTextSizeUpdate();
+            }
         } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
             reloadContent();
         }
+    }
+
+    private void applyPendingCommentTextSizeUpdate() {
+        infoListAdapter.notifyDataSetChanged();
+        commentTextSizeUpdatePending = false;
     }
 
     /**

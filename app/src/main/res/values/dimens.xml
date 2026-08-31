@@ -150,7 +150,7 @@
 
     <!-- Text Size -->
     <dimen name="comment_item_title_text_size">12sp</dimen>
-    <dimen name="comment_item_content_text_size">12sp</dimen>
+    <dimen name="comment_item_content_text_size">14sp</dimen>
 
     <!-- Feed Groups dimensions-->
 
