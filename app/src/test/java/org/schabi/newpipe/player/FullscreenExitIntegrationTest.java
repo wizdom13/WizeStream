@@ -32,12 +32,14 @@ public class FullscreenExitIntegrationTest {
     }
 
     @Test
-    public void rotationButtonAppliesFullscreenBeforeRequestingOrientation() throws Exception {
+    public void rotationButtonDefersFullscreenUntilTargetOrientation() throws Exception {
         final String source = read(
                 "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
         final String rotation = methodBody(source,
                 "public void onScreenRotationButtonClicked()");
 
+        assertTrue(rotation.contains(
+                "if (isTargetFullscreenOrientation(currentOrientation, fullscreen))"));
         assertTrue(rotation.contains("ui.setFullscreen(fullscreen);"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_SENSOR_LANDSCAPE"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_PORTRAIT"));
