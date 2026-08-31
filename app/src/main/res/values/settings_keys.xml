@@ -350,6 +350,7 @@
 
     <!-- Main-Tabs Position -->
     <string name="main_tabs_position_key">main_tabs_position</string>
+    <string name="show_service_sections_key">show_service_sections</string>
     <string name="tablet_navigation_portrait_position_key">tablet_navigation_portrait_position</string>
     <string name="tablet_navigation_landscape_position_key">tablet_navigation_landscape_position</string>
     <string name="tablet_navigation_position_automatic_value">automatic</string>
