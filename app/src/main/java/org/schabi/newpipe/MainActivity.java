@@ -86,6 +86,7 @@ import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.pip.NativePipController;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.settings.UpdateSettingsFragment;
+import org.schabi.newpipe.settings.tabs.DrawerServiceSectionsPolicy;
 import org.schabi.newpipe.settings.tabs.HomeDestinationKey;
 import org.schabi.newpipe.settings.tabs.HomeDestinationResolver;
 import org.schabi.newpipe.settings.tabs.HomeDrawerPolicy;
@@ -355,7 +356,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            addDrawerKiosks(homeDestinations);
+            if (DrawerServiceSectionsPolicy.shouldShow(sharedPreferences,
+                    getString(R.string.show_service_sections_key))) {
+                addDrawerKiosks(homeDestinations);
+            }
         } catch (final Exception e) {
             ErrorUtil.showUiErrorSnackbar(this, "Loading drawer kiosks", e);
         } finally {
