@@ -29,7 +29,10 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.core.graphics.Insets;
 import androidx.core.view.MenuItemCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapterMenuWorkaround;
@@ -93,6 +96,8 @@ public class MainFragment extends BaseFragment
     private boolean tabsSetupInProgress;
     private String contextualSearchQuery = "";
     private int contextualSearchTabPosition = -1;
+    private int contextualSearchFabBaseBottomMargin;
+    private int contextualSearchImeBottomInset;
 
     private final List<Tab> tabsList = new ArrayList<>();
     private TabsManager tabsManager;
@@ -179,6 +184,7 @@ public class MainFragment extends BaseFragment
         });
         setupTabs();
         initContextualSearchToolbar();
+        initContextualSearchInsets();
         if (contextualSearchOpen) {
             binding.pager.post(this::restoreContextualSearch);
         }
@@ -261,6 +267,10 @@ public class MainFragment extends BaseFragment
     @Override
     public void onDestroyView() {
         contextualSearchHandler.removeCallbacksAndMessages(null);
+        if (binding != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), null);
+        }
+        contextualSearchImeBottomInset = 0;
         setActivityContextualSearchToolbarActive(false);
         if (contextualSearchEditText != null && contextualSearchTextWatcher != null) {
             contextualSearchEditText.removeTextChangedListener(contextualSearchTextWatcher);
@@ -459,6 +469,26 @@ public class MainFragment extends BaseFragment
     /*//////////////////////////////////////////////////////////////////////////
     // Contextual local search
     //////////////////////////////////////////////////////////////////////////*/
+
+    private void initContextualSearchInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (view, windowInsets) -> {
+            final WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(view);
+            final WindowInsetsCompat effectiveInsets =
+                    rootInsets == null ? windowInsets : rootInsets;
+            final Insets imeInsets = effectiveInsets.getInsets(
+                    WindowInsetsCompat.Type.ime());
+            final Insets navigationBarInsets = effectiveInsets.getInsets(
+                    WindowInsetsCompat.Type.navigationBars());
+            final int newImeBottomInset = Math.max(
+                    0, imeInsets.bottom - navigationBarInsets.bottom);
+            if (contextualSearchImeBottomInset != newImeBottomInset) {
+                contextualSearchImeBottomInset = newImeBottomInset;
+                updateGlobalSearchFabBottomMargin();
+            }
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(binding.getRoot());
+    }
 
     private void initContextualSearchToolbar() {
         contextualSearchContainer = requireActivity()
@@ -825,17 +855,29 @@ public class MainFragment extends BaseFragment
                 binding.contextualGlobalSearchFab.getLayoutParams();
         fabParams.removeRule(ABOVE);
         fabParams.removeRule(ALIGN_PARENT_BOTTOM);
-        fabParams.bottomMargin = getResources()
+        contextualSearchFabBaseBottomMargin = getResources()
                 .getDimensionPixelSize(R.dimen.margin_normal);
         if (showBottomTabs) {
             fabParams.addRule(ABOVE, R.id.main_tab_layout);
         } else {
             fabParams.addRule(ALIGN_PARENT_BOTTOM);
             if (showBottomNavigation && !isNavigationRail()) {
-                fabParams.bottomMargin += getResources()
+                contextualSearchFabBaseBottomMargin += getResources()
                         .getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
             }
         }
+        updateGlobalSearchFabBottomMargin();
+    }
+
+    private void updateGlobalSearchFabBottomMargin() {
+        if (binding == null) {
+            return;
+        }
+
+        final var fabParams = (RelativeLayout.LayoutParams)
+                binding.contextualGlobalSearchFab.getLayoutParams();
+        fabParams.bottomMargin =
+                contextualSearchFabBaseBottomMargin + contextualSearchImeBottomInset;
         binding.contextualGlobalSearchFab.setLayoutParams(fabParams);
     }
 
