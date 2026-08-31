@@ -22,8 +22,8 @@ import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_AUDIO_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.VIDEO_STREAM
 import org.schabi.newpipe.info_list.StreamUploaderNavigation
-import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.GridTitleDisplayPolicy
+import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.StreamTypeUtil
 import org.schabi.newpipe.util.image.CoilHelper
 
