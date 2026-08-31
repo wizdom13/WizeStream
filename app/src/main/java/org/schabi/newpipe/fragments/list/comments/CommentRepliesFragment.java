@@ -2,6 +2,7 @@ package org.schabi.newpipe.fragments.list.comments;
 
 import static org.schabi.newpipe.util.ServiceHelper.getServiceById;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +23,7 @@ import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
+import org.schabi.newpipe.util.CommentTextSizeHelper;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
@@ -45,6 +47,7 @@ public final class CommentRepliesFragment
     @State
     CommentsInfoItem commentsInfoItem; // the comment to show replies of
     private final CompositeDisposable disposables = new CompositeDisposable();
+    private CommentRepliesHeaderBinding headerBinding;
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -74,14 +77,34 @@ public final class CommentRepliesFragment
     @Override
     public void onDestroyView() {
         disposables.clear();
+        headerBinding = null;
         super.onDestroyView();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (headerBinding != null) {
+            CommentTextSizeHelper.applyCommentTextSize(headerBinding.commentContent);
+        }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences,
+                                          final String key) {
+        super.onSharedPreferenceChanged(sharedPreferences, key);
+        if (getString(R.string.comment_text_size_key).equals(key)
+                && isResumed() && headerBinding != null) {
+            CommentTextSizeHelper.applyCommentTextSize(headerBinding.commentContent);
+        }
     }
 
     @Override
     protected Supplier<View> getListHeaderSupplier() {
         return () -> {
-            final CommentRepliesHeaderBinding binding = CommentRepliesHeaderBinding
+            headerBinding = CommentRepliesHeaderBinding
                     .inflate(activity.getLayoutInflater(), itemsList, false);
+            final CommentRepliesHeaderBinding binding = headerBinding;
             final CommentsInfoItem item = commentsInfoItem;
 
             // load the author avatar
@@ -110,6 +133,7 @@ public final class CommentRepliesFragment
             binding.pinnedImage.setVisibility(item.isPinned() ? View.VISIBLE : View.GONE);
 
             // setup comment content
+            CommentTextSizeHelper.applyCommentTextSize(binding.commentContent);
             TextLinkifier.fromDescription(binding.commentContent,
                     new Description(item.getCommentText(), Description.PLAIN_TEXT),
                     HtmlCompat.FROM_HTML_MODE_LEGACY, getServiceById(item.getServiceId()),
