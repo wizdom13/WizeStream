@@ -67,9 +67,18 @@ public class AdditionalServicesIntegrationTest {
     public void serviceSpecificTransportAndCachePoliciesAreConfigured() throws Exception {
         final String downloader = read("src/main/java/org/schabi/newpipe/DownloaderImpl.java");
         final String helper = read("src/main/java/org/schabi/newpipe/util/ServiceHelper.kt");
+        final String playerDataSource = read(
+                "src/main/java/org/schabi/newpipe/player/helper/PlayerDataSource.java");
+        final String playbackResolver = read(
+                "src/main/java/org/schabi/newpipe/player/resolver/PlaybackResolver.java");
 
         assertTrue(downloader.contains("BilibiliService.isBiliBiliDownloadUrl(url)"));
         assertTrue(downloader.contains("BilibiliService.getUserAgentHeaders(WWW_REFERER)"));
+        assertTrue(playerDataSource.contains(
+                ".setDefaultRequestProperties(getBilibiliPlaybackHeaders())"));
+        assertTrue(playbackResolver.contains(
+                "metadata.getServiceId() == ServiceList.BiliBili.getServiceId()"));
+        assertTrue(playbackResolver.contains("getBilibiliProgressiveMediaSourceFactory()"));
         assertTrue(helper.contains("ServiceList.NicoNico.serviceId"));
         assertTrue(helper.contains("TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES)"));
         assertTrue(helper.contains(

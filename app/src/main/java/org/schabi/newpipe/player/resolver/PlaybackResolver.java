@@ -306,7 +306,11 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             throw new ResolverException("Non URI progressive contents are not supported");
         }
         throwResolverExceptionIfUrlNullOrEmpty(stream.getContent());
-        return dataSource.getProgressiveMediaSourceFactory().createMediaSource(
+        final ProgressiveMediaSource.Factory factory =
+                metadata.getServiceId() == ServiceList.BiliBili.getServiceId()
+                        ? dataSource.getBilibiliProgressiveMediaSourceFactory()
+                        : dataSource.getProgressiveMediaSourceFactory();
+        return factory.createMediaSource(
                 new MediaItem.Builder()
                         .setTag(metadata)
                         .setUri(Uri.parse(stream.getContent()))
