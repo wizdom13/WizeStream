@@ -145,7 +145,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         groupName = arguments?.getString(KEY_GROUP_NAME) ?: ""
 
         onSettingsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (getString(R.string.list_view_mode_key).equals(key)) {
+            if (getString(R.string.list_view_mode_key).equals(key) ||
+                getString(R.string.grid_columns_key).equals(key)
+            ) {
                 updateListViewModeOnResume = true
             } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
@@ -226,7 +228,11 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             R.dimen.video_item_grid_thumbnail_image_width
         ) + resources.getDimensionPixelSize(R.dimen.video_item_search_padding) * 2
         feedBinding.itemsList.layoutManager = if (gridMode) {
-            GridLayoutManagerHelper.create(feedBinding.itemsList, minimumItemWidth) { spanCount ->
+            GridLayoutManagerHelper.create(
+                feedBinding.itemsList,
+                minimumItemWidth,
+                GridLayoutManagerHelper.getPreferredSpanCount(requireContext())
+            ) { spanCount ->
                 groupAdapter.spanCount = spanCount
                 groupAdapter.spanSizeLookup
             }
