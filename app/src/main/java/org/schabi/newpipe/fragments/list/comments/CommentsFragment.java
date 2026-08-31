@@ -112,6 +112,10 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
     }
 
     public boolean scrollToComment(final CommentsInfoItem comment) {
+        if (infoListAdapter == null || itemsList == null) {
+            return false;
+        }
+
         final int position = infoListAdapter.getItemsList().indexOf(comment);
         if (position < 0) {
             return false;
