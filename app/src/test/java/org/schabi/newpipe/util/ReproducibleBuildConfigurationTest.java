@@ -28,12 +28,30 @@ public class ReproducibleBuildConfigurationTest {
     }
 
     @Test
-    public void ciAndPublishingUseTheSharedReproducibleEntryPoint() throws Exception {
+    public void targetedChecksAndPublishingUseTheSharedReproducibleEntryPoint()
+            throws Exception {
         final String ciWorkflow = read(".github/workflows/ci.yml");
+        final String reproducibilityWorkflow = read(
+                ".github/workflows/reproducibility.yml");
         final String releaseWorkflow = read(".github/workflows/release.yml");
 
-        assertEquals(1, occurrences(ciWorkflow, "scripts/reproducible-build.sh"));
+        assertEquals(0, occurrences(ciWorkflow, "scripts/reproducible-build.sh"));
+        assertEquals(1, occurrences(
+                reproducibilityWorkflow, "scripts/reproducible-build.sh"));
         assertEquals(2, occurrences(releaseWorkflow, "scripts/reproducible-build.sh"));
+    }
+
+    @Test
+    public void reproducibilityWorkflowIsManualWeeklyAndPathFiltered() throws Exception {
+        final String workflow = read(".github/workflows/reproducibility.yml");
+
+        assertTrue(workflow.contains("workflow_dispatch:"));
+        assertTrue(workflow.contains("schedule:"));
+        assertTrue(workflow.contains("pull_request:"));
+        assertTrue(workflow.contains("push:"));
+        assertTrue(workflow.contains("paths:"));
+        assertTrue(workflow.contains("- \"gradle/**\""));
+        assertTrue(workflow.contains("- \"scripts/**\""));
     }
 
     @Test
