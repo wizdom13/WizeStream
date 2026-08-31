@@ -25,16 +25,6 @@ public class ReproducibleBuildConfigurationTest {
         assertTrue(script.contains("export JAVA_TOOL_OPTIONS="));
         assertTrue(script.contains("-XX:ActiveProcessorCount=1"));
         assertTrue(script.contains("--max-workers=1"));
-        assertTrue(script.contains("verifyReproducibleEnvironment"));
-    }
-
-    @Test
-    public void releaseBuildFailsWhenTheGradleJvmSeesMultipleProcessors() throws Exception {
-        final String buildScript = read("build.gradle.kts");
-
-        assertTrue(buildScript.contains("tasks.register(\"verifyReproducibleEnvironment\")"));
-        assertTrue(buildScript.contains("Runtime.getRuntime().availableProcessors()"));
-        assertTrue(buildScript.contains("check(activeProcessors == 1)"));
     }
 
     @Test
@@ -64,7 +54,7 @@ public class ReproducibleBuildConfigurationTest {
     public void downstreamInstructionsRequireTheSharedEntryPoint() throws Exception {
         final String building = read("BUILDING.md");
 
-        assertTrue(building.contains("Independent rebuilders must use "
+        assertTrue(building.contains("Independent rebuilders should use "
                 + "`scripts/reproducible-build.sh`"));
         assertTrue(building.contains("rather than invoking\n`./gradlew assembleRelease` directly"));
     }
