@@ -90,6 +90,20 @@ public class ContextualSearchIntegrationTest {
     }
 
     @Test
+    public void contextualSearchFabStaysAboveTheKeyboard() throws Exception {
+        final String mainFragment = read("org/schabi/newpipe/fragments/MainFragment.java");
+        final String manifest = Files.readString(
+                resourceDirectory.resolve("../AndroidManifest.xml").normalize());
+
+        assertTrue(mainFragment.contains("WindowInsetsCompat.Type.ime()"));
+        assertTrue(mainFragment.contains(
+                "imeInsets.bottom - navigationBarInsets.bottom"));
+        assertTrue(mainFragment.contains(
+                "contextualSearchFabBaseBottomMargin + contextualSearchImeBottomInset"));
+        assertTrue(manifest.contains("android:windowSoftInputMode=\"adjustResize\""));
+    }
+
+    @Test
     public void downloadsSearchIsBufferedFilteredAndRefreshSafe() throws Exception {
         final String mainFragment = read("org/schabi/newpipe/fragments/MainFragment.java");
         assertTrue(mainFragment.contains("searchItem.setVisible(!contextualSearchOpen)"));
