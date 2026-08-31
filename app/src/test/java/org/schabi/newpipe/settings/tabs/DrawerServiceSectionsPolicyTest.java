@@ -26,7 +26,7 @@ public class DrawerServiceSectionsPolicyTest {
 
     private SharedPreferences preferencesReturning(final Boolean value) {
         return (SharedPreferences) Proxy.newProxyInstance(
-                SharedPreferences.class.getClassLoader(),
+                DrawerServiceSectionsPolicyTest.class.getClassLoader(),
                 new Class<?>[]{SharedPreferences.class},
                 (proxy, method, arguments) -> {
                     if ("getBoolean".equals(method.getName())) {
