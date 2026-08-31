@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
+import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
@@ -25,6 +26,7 @@ import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.views.AnimatedProgressBar;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class StreamMiniInfoItemHolder extends InfoItemHolder {
@@ -164,8 +166,14 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
             return;
         }
 
-        CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatarView,
-                ExtractorImageCompat.uploaderAvatarImages(item));
+        final List<Image> uploaderAvatars = ExtractorImageCompat.uploaderAvatarImages(item);
+        if (uploaderAvatars.isEmpty()) {
+            CoilHelper.INSTANCE.clearAvatar(itemUploaderAvatarView);
+            itemUploaderAvatarView.setVisibility(View.GONE);
+        } else {
+            itemUploaderAvatarView.setVisibility(View.VISIBLE);
+            CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatarView, uploaderAvatars);
+        }
 
         final ChannelInfoItem channel = StreamUploaderNavigation.fromStream(item);
         final OnClickGesture<ChannelInfoItem> listener =

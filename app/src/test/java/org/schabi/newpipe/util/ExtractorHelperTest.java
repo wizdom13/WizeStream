@@ -9,6 +9,8 @@ import org.junit.Test;
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
+import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+import org.schabi.newpipe.extractor.stream.StreamType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,11 +72,78 @@ public class ExtractorHelperTest {
         assertNull(ExtractorHelper.findLastNonEmptyImageUrl(Collections.emptyList()));
     }
 
+    @Test
+    public void playlistOwnerAvatarIsReusedWithoutAnotherLookup() {
+        final List<StreamInfoItem> items = Arrays.asList(
+                stream("first", "channel", null),
+                stream("second", "channel", null));
+
+        assertNull(ExtractorHelper.enrichKnownPlaylistItemUploaderAvatars(
+                items, "channel", "avatar"));
+        assertEquals("avatar", items.get(0).getUploaderAvatarUrl());
+        assertEquals("avatar", items.get(1).getUploaderAvatarUrl());
+    }
+
+    @Test
+    public void knownItemAvatarIsReusedForMatchingPlaylistItems() {
+        final List<StreamInfoItem> items = Arrays.asList(
+                stream("first", "channel", "cached-avatar"),
+                stream("second", "channel", null));
+
+        assertNull(ExtractorHelper.enrichKnownPlaylistItemUploaderAvatars(
+                items, null, null));
+        assertEquals("cached-avatar", items.get(1).getUploaderAvatarUrl());
+    }
+
+    @Test
+    public void singleMissingUploaderRequestsOnlyOneChannelLookup() {
+        final List<StreamInfoItem> items = Arrays.asList(
+                stream("first", "channel", null),
+                stream("second", "channel", null));
+
+        assertEquals("channel", ExtractorHelper.enrichKnownPlaylistItemUploaderAvatars(
+                items, null, null));
+    }
+
+    @Test
+    public void mixedMissingUploadersDoNotTriggerPerVideoLookups() {
+        final List<StreamInfoItem> items = Arrays.asList(
+                stream("first", "channel-one", null),
+                stream("second", "channel-two", null));
+
+        assertNull(ExtractorHelper.enrichKnownPlaylistItemUploaderAvatars(
+                items, null, null));
+    }
+
+    @Test
+    public void resolvedAvatarDoesNotOverwriteExistingAvatar() {
+        final List<StreamInfoItem> items = Arrays.asList(
+                stream("first", "channel", "existing-avatar"),
+                stream("second", "channel", null),
+                stream("third", "other-channel", null));
+
+        ExtractorHelper.applyPlaylistItemUploaderAvatar(items, "channel", "resolved-avatar");
+
+        assertEquals("existing-avatar", items.get(0).getUploaderAvatarUrl());
+        assertEquals("resolved-avatar", items.get(1).getUploaderAvatarUrl());
+        assertNull(items.get(2).getUploaderAvatarUrl());
+    }
+
     private static Image image(final String url) {
         return new Image(
                 url,
                 Image.HEIGHT_UNKNOWN,
                 Image.WIDTH_UNKNOWN,
                 Image.ResolutionLevel.UNKNOWN);
+    }
+
+    private static StreamInfoItem stream(final String url,
+                                         final String uploaderUrl,
+                                         final String uploaderAvatarUrl) {
+        final StreamInfoItem item = new StreamInfoItem(
+                ServiceList.YouTube.getServiceId(), url, url, StreamType.VIDEO_STREAM);
+        item.setUploaderUrl(uploaderUrl);
+        item.setUploaderAvatarUrl(uploaderAvatarUrl);
+        return item;
     }
 }

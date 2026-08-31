@@ -63,7 +63,11 @@ import org.schabi.newpipe.util.text.TextLinkifier;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -424,6 +428,11 @@ public final class ExtractorHelper {
         final PlaylistInfo playlistInfo =
                 PlaylistInfo.getInfo(NewPipe.getService(serviceId), url);
         backfillYouTubePlaylistUploaderAvatarFromChannel(serviceId, playlistInfo);
+        backfillYouTubePlaylistItemUploaderAvatars(
+                serviceId,
+                playlistInfo.getRelatedItems(),
+                playlistInfo.getUploaderUrl(),
+                playlistInfo.getUploaderAvatarUrl());
         return playlistInfo;
     }
 
@@ -456,12 +465,94 @@ public final class ExtractorHelper {
                 && isNullOrEmpty(uploaderAvatarUrl);
     }
 
+    private static void backfillYouTubePlaylistItemUploaderAvatars(
+            final int serviceId,
+            @Nullable final List<StreamInfoItem> items,
+            @Nullable final String playlistUploaderUrl,
+            @Nullable final String playlistUploaderAvatarUrl) {
+        if (serviceId != ServiceList.YouTube.getServiceId()
+                || items == null || items.isEmpty()) {
+            return;
+        }
+
+        final String unresolvedUploaderUrl = enrichKnownPlaylistItemUploaderAvatars(
+                items, playlistUploaderUrl, playlistUploaderAvatarUrl);
+        if (isNullOrEmpty(unresolvedUploaderUrl)) {
+            return;
+        }
+
+        try {
+            final ChannelInfo channelInfo = getChannelInfo(
+                    serviceId, unresolvedUploaderUrl, false).blockingGet();
+            final String avatarUrl = findLastNonEmptyImageUrl(channelInfo.getAvatars());
+            applyPlaylistItemUploaderAvatar(items, unresolvedUploaderUrl, avatarUrl);
+        } catch (final Exception ignored) {
+            // Keep the playlist usable if the optional shared-uploader lookup fails.
+        }
+    }
+
+    @Nullable
+    static String enrichKnownPlaylistItemUploaderAvatars(
+            final List<StreamInfoItem> items,
+            @Nullable final String playlistUploaderUrl,
+            @Nullable final String playlistUploaderAvatarUrl) {
+        final Map<String, String> knownAvatars = new HashMap<>();
+        if (!isNullOrEmpty(playlistUploaderUrl)
+                && !isNullOrEmpty(playlistUploaderAvatarUrl)) {
+            knownAvatars.put(playlistUploaderUrl, playlistUploaderAvatarUrl);
+        }
+
+        for (final StreamInfoItem item : items) {
+            if (!isNullOrEmpty(item.getUploaderUrl())
+                    && !isNullOrEmpty(item.getUploaderAvatarUrl())) {
+                knownAvatars.putIfAbsent(item.getUploaderUrl(), item.getUploaderAvatarUrl());
+            }
+        }
+
+        for (final Map.Entry<String, String> entry : knownAvatars.entrySet()) {
+            applyPlaylistItemUploaderAvatar(items, entry.getKey(), entry.getValue());
+        }
+
+        final Set<String> unresolvedUploaderUrls = new LinkedHashSet<>();
+        for (final StreamInfoItem item : items) {
+            if (isNullOrEmpty(item.getUploaderAvatarUrl())
+                    && !isNullOrEmpty(item.getUploaderUrl())) {
+                unresolvedUploaderUrls.add(item.getUploaderUrl());
+                if (unresolvedUploaderUrls.size() > 1) {
+                    return null;
+                }
+            }
+        }
+        return unresolvedUploaderUrls.stream().findFirst().orElse(null);
+    }
+
+    static void applyPlaylistItemUploaderAvatar(
+            final List<StreamInfoItem> items,
+            @Nullable final String uploaderUrl,
+            @Nullable final String uploaderAvatarUrl) {
+        if (isNullOrEmpty(uploaderUrl) || isNullOrEmpty(uploaderAvatarUrl)) {
+            return;
+        }
+
+        for (final StreamInfoItem item : items) {
+            if (uploaderUrl.equals(item.getUploaderUrl())
+                    && isNullOrEmpty(item.getUploaderAvatarUrl())) {
+                item.setUploaderAvatarUrl(uploaderAvatarUrl);
+            }
+        }
+    }
+
     public static Single<InfoItemsPage<StreamInfoItem>> getMorePlaylistItems(final int serviceId,
                                                                              final String url,
                                                                              final Page nextPage) {
         checkServiceId(serviceId);
-        return Single.fromCallable(() ->
-                PlaylistInfo.getMoreItems(NewPipe.getService(serviceId), url, nextPage));
+        return Single.fromCallable(() -> {
+            final InfoItemsPage<StreamInfoItem> page = PlaylistInfo.getMoreItems(
+                    NewPipe.getService(serviceId), url, nextPage);
+            backfillYouTubePlaylistItemUploaderAvatars(
+                    serviceId, page.getItems(), null, null);
+            return page;
+        });
     }
 
     public static Single<KioskInfo> getKioskInfo(final int serviceId,

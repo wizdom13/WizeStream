@@ -58,6 +58,17 @@ public class StreamUploaderIntegrationTest {
     }
 
     @Test
+    public void recycledStreamRowsResetMissingAndAvailableAvatarVisibility() throws Exception {
+        final String holder = read(
+                "src/main/java/org/schabi/newpipe/info_list/holder/StreamMiniInfoItemHolder.java"
+        );
+
+        assertTrue(holder.contains("clearAvatar(itemUploaderAvatarView)"));
+        assertTrue(holder.contains("itemUploaderAvatarView.setVisibility(View.GONE)"));
+        assertTrue(holder.contains("itemUploaderAvatarView.setVisibility(View.VISIBLE)"));
+    }
+
+    @Test
     public void feedRefreshAndImportUseCachedSubscriptionAvatarWithoutExtraLookup()
             throws Exception {
         final String feedLoadManager = read(
