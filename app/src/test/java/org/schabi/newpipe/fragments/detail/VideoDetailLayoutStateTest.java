@@ -67,7 +67,7 @@ public class VideoDetailLayoutStateTest {
     }
 
     @Test
-    public void fullscreenAndNavigationRailDoNotMoveDetailNavigation() {
+    public void fullscreenAndWideDetailNavigationDoNotMoveForBottomInsets() {
         assertEquals(0,
                 VideoDetailFragment.getDetailNavigationBottomInset(
                         true, false, 48, 52));
