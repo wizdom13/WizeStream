@@ -5,8 +5,6 @@ import static org.schabi.newpipe.MainActivity.DEBUG;
 import static org.schabi.newpipe.QueueItemMenuUtil.openPopupMenu;
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import static org.schabi.newpipe.ktx.ViewUtils.animate;
-import static org.schabi.newpipe.player.Player.STATE_COMPLETED;
-import static org.schabi.newpipe.player.Player.STATE_PAUSED;
 import static org.schabi.newpipe.player.helper.PlayerHelper.MinimizeMode.MINIMIZE_ON_EXIT_MODE_BACKGROUND;
 import static org.schabi.newpipe.player.helper.PlayerHelper.MinimizeMode.MINIMIZE_ON_EXIT_MODE_NONE;
 import static org.schabi.newpipe.player.helper.PlayerHelper.MinimizeMode.MINIMIZE_ON_EXIT_MODE_POPUP;
@@ -1048,13 +1046,28 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         if (DEBUG) {
             Log.d(TAG, "toggleFullscreen() called");
         }
+        setFullscreen(!isFullscreen);
+    }
+
+    /**
+     * Applies the requested fullscreen state without toggling an already-correct state.
+     * Configuration changes may deliver more than one callback, so orientation-driven
+     * fullscreen synchronization must be idempotent.
+     *
+     * @param fullscreen whether the player should be fullscreen
+     */
+    public void setFullscreen(final boolean fullscreen) {
+        if (isFullscreen == fullscreen) {
+            return;
+        }
+
         final PlayerServiceEventListener fragmentListener = player.getFragmentListener()
                 .orElse(null);
         if (fragmentListener == null || player.exoPlayerIsNull()) {
             return;
         }
 
-        isFullscreen = !isFullscreen;
+        isFullscreen = fullscreen;
         if (isFullscreen) {
             // Android needs tens milliseconds to send new insets but a user is able to see
             // how controls changes it's position from `0` to `nav bar height` padding.
@@ -1098,13 +1111,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         final boolean videoInLandscapeButNotInFullscreen = isLandscape()
                 && !isFullscreen
                 && !player.isAudioOnly();
-        final boolean notPaused = player.getCurrentState() != STATE_COMPLETED
-                && player.getCurrentState() != STATE_PAUSED;
 
         if (videoInLandscapeButNotInFullscreen
-                && notPaused
                 && !DeviceUtils.isTablet(context)) {
-            toggleFullscreen();
+            setFullscreen(true);
         }
     }
     //endregion
