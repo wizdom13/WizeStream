@@ -242,15 +242,10 @@ class NewPipeDataMigrationManagerTest {
         originalPreferences.forEach { (key, value) ->
             when (value) {
                 is Boolean -> editor.putBoolean(key, value)
-
                 is Float -> editor.putFloat(key, value)
-
                 is Int -> editor.putInt(key, value)
-
                 is Long -> editor.putLong(key, value)
-
                 is String -> editor.putString(key, value)
-
                 is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
             }
         }
