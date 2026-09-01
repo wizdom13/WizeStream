@@ -10,15 +10,29 @@
     android:focusable="true"
     android:padding="@dimen/video_item_search_padding">
 
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/itemThumbnailView"
+    <org.schabi.newpipe.views.RoundedThumbnailContainer
+        android:id="@+id/itemThumbnailContainer"
         android:layout_width="@dimen/video_item_search_thumbnail_image_width"
         android:layout_height="@dimen/video_item_search_thumbnail_image_height"
-        android:scaleType="fitCenter"
-        android:src="@drawable/placeholder_thumbnail_video"
-        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.wizestream.StreamThumbnail"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/itemThumbnailView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/placeholder_thumbnail_video"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.wizestream.StreamThumbnail" />
+
+        <org.schabi.newpipe.views.AnimatedProgressBar
+            android:id="@+id/itemProgressView"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/stream_thumbnail_progress_height"
+            android:layout_gravity="bottom"
+            android:progressDrawable="@drawable/progress_stream_thumbnail_material" />
+    </org.schabi.newpipe.views.RoundedThumbnailContainer>
 
     <org.schabi.newpipe.views.NewPipeTextView
         android:id="@+id/itemDurationView"
@@ -33,8 +47,8 @@
         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
         android:textColor="@color/info_list_thumbnail_badge_text_color"
         android:textSize="@dimen/video_item_search_duration_text_size"
-        app:layout_constraintBottom_toBottomOf="@id/itemThumbnailView"
-        app:layout_constraintRight_toRightOf="@id/itemThumbnailView"
+        app:layout_constraintBottom_toBottomOf="@id/itemThumbnailContainer"
+        app:layout_constraintRight_toRightOf="@id/itemThumbnailContainer"
         tools:text="1:09:10" />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -51,8 +65,8 @@
         android:textColor="@color/info_list_thumbnail_badge_text_color"
         android:textSize="@dimen/video_item_search_duration_text_size"
         android:visibility="gone"
-        app:layout_constraintStart_toStartOf="@id/itemThumbnailView"
-        app:layout_constraintTop_toTopOf="@id/itemThumbnailView"
+        app:layout_constraintStart_toStartOf="@id/itemThumbnailContainer"
+        app:layout_constraintTop_toTopOf="@id/itemThumbnailContainer"
         tools:visibility="visible" />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -67,7 +81,7 @@
         android:textSize="@dimen/video_item_search_title_text_size"
         app:layout_constraintBottom_toTopOf="@+id/itemUploaderRoot"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/itemThumbnailView"
+        app:layout_constraintStart_toEndOf="@+id/itemThumbnailContainer"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tristique vitae sem vitae blanditLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum" />
 
@@ -131,17 +145,5 @@
             tools:text="2 years ago • 10M views" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <org.schabi.newpipe.views.AnimatedProgressBar
-        android:id="@+id/itemProgressView"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="@dimen/stream_thumbnail_progress_height"
-        android:layout_marginBottom="@dimen/stream_thumbnail_progress_bottom_margin"
-        android:layout_marginHorizontal="@dimen/stream_thumbnail_progress_horizontal_inset"
-        android:progressDrawable="@drawable/progress_stream_thumbnail_material"
-        app:layout_constraintBottom_toBottomOf="@+id/itemThumbnailView"
-        app:layout_constraintEnd_toEndOf="@+id/itemThumbnailView"
-        app:layout_constraintStart_toStartOf="@+id/itemThumbnailView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

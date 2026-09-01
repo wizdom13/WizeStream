@@ -143,10 +143,11 @@
                         android:layout_width="104dp"
                         android:layout_height="104dp">
 
-                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                        <org.schabi.newpipe.local.feed.FeedProgressIndicator
                             android:id="@+id/loading_progress_bar"
                             android:layout_width="104dp"
                             android:layout_height="104dp"
+                            android:accessibilityLiveRegion="polite"
                             android:indeterminate="false"
                             android:max="1"
                             android:progress="0"
@@ -170,19 +171,6 @@
                             app:trackCornerRadius="3dp"
                             app:trackThickness="6dp" />
 
-                        <org.schabi.newpipe.views.NewPipeTextView
-                            android:id="@+id/loading_progress_text"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:accessibilityLiveRegion="polite"
-                            android:gravity="center"
-                            android:includeFontPadding="false"
-                            android:text="0/0"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            tools:text="16/47" />
                     </FrameLayout>
 
                     <org.schabi.newpipe.views.NewPipeTextView

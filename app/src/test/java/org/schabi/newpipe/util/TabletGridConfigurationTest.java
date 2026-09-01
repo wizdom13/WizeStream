@@ -68,17 +68,29 @@ public class TabletGridConfigurationTest {
     public void thumbnailCardsFillTheirColumnAtSixteenByNine() throws Exception {
         for (final String layout : List.of(
                 "app/src/main/res/layout/list_stream_grid_item.xml",
-                "app/src/main/res/layout/list_stream_playlist_grid_item.xml",
-                "app/src/main/res/layout/list_playlist_grid_item.xml")) {
+                "app/src/main/res/layout/list_stream_playlist_grid_item.xml")) {
             final String source = read(layout);
 
             assertTrue(source.contains(
-                    "android:id=\"@+id/itemThumbnailView\"\n"
+                    "android:id=\"@+id/itemThumbnailContainer\"\n"
                             + "        android:layout_width=\"0dp\"\n"
                             + "        android:layout_height=\"0dp\""));
             assertTrue(source.contains(
                     "app:layout_constraintDimensionRatio=\"H,16:9\""));
+            assertTrue(source.contains(
+                    "android:id=\"@+id/itemThumbnailView\"\n"
+                            + "            android:layout_width=\"match_parent\"\n"
+                            + "            android:layout_height=\"match_parent\""));
         }
+
+        final String playlist = read(
+                "app/src/main/res/layout/list_playlist_grid_item.xml");
+        assertTrue(playlist.contains(
+                "android:id=\"@+id/itemThumbnailView\"\n"
+                        + "        android:layout_width=\"0dp\"\n"
+                        + "        android:layout_height=\"0dp\""));
+        assertTrue(playlist.contains(
+                "app:layout_constraintDimensionRatio=\"H,16:9\""));
     }
 
     private String read(final String relativePath) throws Exception {
