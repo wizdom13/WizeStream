@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_media_tracks">Tracks</string>
+    <string name="local_media_artists">Artists</string>
+    <string name="local_media_albums">Albums</string>
+    <string name="local_media_genres">Genres</string>
+    <string name="local_media_unknown_artist">Unknown artist</string>
+    <string name="local_media_unknown_album">Unknown album</string>
+    <string name="local_media_unknown_genre">Unknown genre</string>
+    <string name="local_media_back_to_categories">Back to categories</string>
+    <string name="local_media_folders">Folders</string>
+    <string name="local_media_unknown_folder">Unknown folder</string>
+    <string name="local_media_play_all">Play all</string>
+    <string name="local_media_shuffle_all">Shuffle all</string>
+    <string name="local_media_group_more_actions">More group actions</string>
+    <string name="local_media_browse_folders">Browse folders</string>
+    <string name="local_media_storage_locations">Storage locations</string>
+    <string name="local_media_add_folder">Add folder</string>
+    <string name="local_media_browse_back">Back to parent folder</string>
+    <string name="local_media_folder_unavailable">This folder is unavailable</string>
+    <string name="local_media_remove_folder">Remove selected folder</string>
+    <string name="local_media_folder_empty">No supported media in this folder</string>
+    <string name="local_media_size_megabytes">%1$.1f MB</string>
+    <plurals name="local_media_track_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
+</resources>
