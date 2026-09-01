@@ -1,280 +1,294 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/localMediaSearchLayout"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/localMediaHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="12dp"
-        android:hint="@string/local_media_search_hint"
-        app:endIconMode="clear_text">
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/localMediaSearch"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:imeOptions="actionDone"
-            android:inputType="text" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:orientation="vertical"
+            app:layout_scrollFlags="scroll|enterAlways">
 
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/localMediaFilters"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
-            app:selectionRequired="true"
-            app:singleSelection="true">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAll"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/localMediaSearchLayout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/all" />
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="12dp"
+                android:hint="@string/local_media_search_hint"
+                app:endIconMode="clear_text">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAudio"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/localMediaSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionDone"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/audio" />
+                android:scrollbars="none">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaVideo"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/localMediaFilters"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAll"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/all" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudio"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/audio" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaVideo"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/videos_string" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaBrowse"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/local_media_browse_folders" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaSort"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="@string/local_media_sort_title" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <HorizontalScrollView
+                android:id="@+id/localMediaAudioNavigation"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/videos_string" />
+                android:scrollbars="none"
+                android:visibility="gone">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaBrowse"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/localMediaAudioCategories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="12dp"
+                    android:paddingBottom="8dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudioTracks"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/local_media_tracks" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudioArtists"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/local_media_artists" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudioAlbums"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/local_media_albums" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudioGenres"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/local_media_genres" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudioPlaylists"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="@string/playlists" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <HorizontalScrollView
+                android:id="@+id/localMediaVideoNavigation"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/local_media_browse_folders" />
+                android:scrollbars="none"
+                android:visibility="gone">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaSort"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/localMediaVideoCategories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="12dp"
+                    android:paddingBottom="8dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaVideoVideos"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/videos_string" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaVideoFolders"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/local_media_folders" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <LinearLayout
+                android:id="@+id/localMediaBrowseNavigation"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checkable="false"
-                android:text="@string/local_media_sort_title" />
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
 
-    <HorizontalScrollView
-        android:id="@+id/localMediaAudioNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:visibility="gone">
+                <ImageButton
+                    android:id="@+id/localMediaBrowseBack"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_browse_back"
+                    android:src="@drawable/ic_arrow_back"
+                    android:visibility="gone"
+                    app:tint="?attr/colorOnSurface" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/localMediaAudioCategories"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp"
-            app:selectionRequired="true"
-            app:singleSelection="true">
+                <TextView
+                    android:id="@+id/localMediaBrowseTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:text="@string/local_media_storage_locations"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAudioTracks"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
+                <ImageButton
+                    android:id="@+id/localMediaBrowseAdd"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_add_folder"
+                    android:src="@drawable/ic_create_new_folder"
+                    app:tint="?attr/colorOnSurface" />
+
+                <ImageButton
+                    android:id="@+id/localMediaBrowseMore"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_group_more_actions"
+                    android:src="@drawable/ic_more_vert"
+                    android:visibility="gone"
+                    app:tint="?attr/colorOnSurface" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/localMediaGroupHeader"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/local_media_tracks" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAudioArtists"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/local_media_artists" />
+                <ImageButton
+                    android:id="@+id/localMediaGroupBack"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_back_to_categories"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="?attr/colorOnSurface" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAudioAlbums"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/local_media_albums" />
+                <TextView
+                    android:id="@+id/localMediaGroupTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:maxLines="2"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAudioGenres"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/local_media_genres" />
+                <ImageButton
+                    android:id="@+id/localMediaGroupPlay"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_play_all"
+                    android:src="@drawable/ic_play_arrow"
+                    app:tint="?attr/colorOnSurface" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaAudioPlaylists"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checkable="false"
-                android:text="@string/playlists" />
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
+                <ImageButton
+                    android:id="@+id/localMediaGroupShuffle"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_shuffle_all"
+                    android:src="@drawable/ic_shuffle"
+                    app:tint="?attr/colorOnSurface" />
 
-    <HorizontalScrollView
-        android:id="@+id/localMediaVideoNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:visibility="gone">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/localMediaVideoCategories"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp"
-            app:selectionRequired="true"
-            app:singleSelection="true">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaVideoVideos"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/videos_string" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/localMediaVideoFolders"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/local_media_folders" />
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
-
-    <LinearLayout
-        android:id="@+id/localMediaBrowseNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="8dp"
-        android:visibility="gone">
-
-        <ImageButton
-            android:id="@+id/localMediaBrowseBack"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_browse_back"
-            android:src="@drawable/ic_arrow_back"
-            android:visibility="gone"
-            app:tint="?attr/colorOnSurface" />
-
-        <TextView
-            android:id="@+id/localMediaBrowseTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:text="@string/local_media_storage_locations"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-        <ImageButton
-            android:id="@+id/localMediaBrowseAdd"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_add_folder"
-            android:src="@drawable/ic_create_new_folder"
-            app:tint="?attr/colorOnSurface" />
-
-        <ImageButton
-            android:id="@+id/localMediaBrowseMore"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_group_more_actions"
-            android:src="@drawable/ic_more_vert"
-            android:visibility="gone"
-            app:tint="?attr/colorOnSurface" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/localMediaGroupHeader"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="8dp"
-        android:visibility="gone">
-
-        <ImageButton
-            android:id="@+id/localMediaGroupBack"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_back_to_categories"
-            android:src="@drawable/ic_arrow_back"
-            app:tint="?attr/colorOnSurface" />
-
-        <TextView
-            android:id="@+id/localMediaGroupTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:maxLines="2"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-        <ImageButton
-            android:id="@+id/localMediaGroupPlay"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_play_all"
-            android:src="@drawable/ic_play_arrow"
-            app:tint="?attr/colorOnSurface" />
-
-        <ImageButton
-            android:id="@+id/localMediaGroupShuffle"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_shuffle_all"
-            android:src="@drawable/ic_shuffle"
-            app:tint="?attr/colorOnSurface" />
-
-        <ImageButton
-            android:id="@+id/localMediaGroupMore"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/local_media_group_more_actions"
-            android:src="@drawable/ic_more_vert"
-            app:tint="?attr/colorOnSurface" />
-    </LinearLayout>
+                <ImageButton
+                    android:id="@+id/localMediaGroupMore"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/local_media_group_more_actions"
+                    android:src="@drawable/ic_more_vert"
+                    app:tint="?attr/colorOnSurface" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/localMediaList"
@@ -315,4 +329,4 @@
                 android:text="@string/local_media_grant_access" />
         </LinearLayout>
     </FrameLayout>
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
