@@ -25,12 +25,21 @@ import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
 class NewPipeDataMigrationManagerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var sourcePath: Path
+    private var originalPreferences: Map<String, Any> = emptyMap()
 
     @Before
     fun setUp() {
         NewPipeDatabase.close()
         context.deleteDatabase(AppDatabase.DATABASE_NAME)
-        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        originalPreferences = buildMap {
+            preferences.all.forEach { (key, value) ->
+                if (value != null) {
+                    put(key, value)
+                }
+            }
+        }
+        preferences.edit().clear().commit()
         sourcePath = context.cacheDir.resolve("newpipe-migration-source.db").toPath()
         sourcePath.toFile().delete()
         createSourceDatabase(sourcePath)
@@ -40,7 +49,7 @@ class NewPipeDataMigrationManagerTest {
     fun tearDown() {
         NewPipeDatabase.close()
         context.deleteDatabase(AppDatabase.DATABASE_NAME)
-        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
+        restorePreferences()
         sourcePath.toFile().delete()
     }
 
@@ -226,6 +235,21 @@ class NewPipeDataMigrationManagerTest {
             preferences.getLong(SponsorBlockCategoryConfig.SPONSOR.colorKey(), 0L)
         )
         assertFalse(preferences.contains("sponsor_block_user_id"))
+    }
+
+    private fun restorePreferences() {
+        val editor = PreferenceManager.getDefaultSharedPreferences(context).edit().clear()
+        originalPreferences.forEach { (key, value) ->
+            when (value) {
+                is Boolean -> editor.putBoolean(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is String -> editor.putString(key, value)
+                is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+            }
+        }
+        check(editor.commit())
     }
 
     private fun createSourceDatabase(path: Path) {

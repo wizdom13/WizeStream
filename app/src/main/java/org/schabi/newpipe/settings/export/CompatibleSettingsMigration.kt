@@ -92,10 +92,15 @@ internal class CompatibleSettingsMigration(
         values.forEach { (key, value) ->
             when (value) {
                 is Boolean -> editor.putBoolean(key, value)
+
                 is Float -> editor.putFloat(key, value)
+
                 is Int -> editor.putInt(key, value)
+
                 is Long -> editor.putLong(key, value)
+
                 is String -> editor.putString(key, value)
+
                 is Set<*> -> {
                     val strings = value.filterIsInstance<String>().toSet()
                     if (strings.size == value.size) {
