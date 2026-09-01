@@ -19,19 +19,23 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val historyItems: Int,
         val progressItems: Int,
         val playlists: Int,
-        val playlistItems: Int
+        val playlistItems: Int,
+        val compatibleSettings: Int
     ) {
         val hasHistory: Boolean
             get() = historyItems > 0 || progressItems > 0
         val hasPlaylists: Boolean
             get() = playlists > 0
+        val hasCompatibleSettings: Boolean
+            get() = compatibleSettings > 0
         val hasImportableData: Boolean
-            get() = hasHistory || hasPlaylists
+            get() = hasHistory || hasPlaylists || hasCompatibleSettings
     }
 
-    data class Selection(
+    data class Selection @JvmOverloads constructor(
         val importHistory: Boolean,
-        val importPlaylists: Boolean
+        val importPlaylists: Boolean,
+        val importSettings: Boolean = false
     )
 
     data class Result(
@@ -39,176 +43,203 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val progressItems: Int,
         val playlists: Int,
         val playlistItems: Int,
+        val compatibleSettings: Int,
         val skippedItems: Int
     )
 
     class UnsupportedSourceException(message: String) : Exception(message)
 
-    fun inspect(databasePath: Path): Preview = openSource(databasePath).use { source ->
+    fun inspect(
+        databasePath: Path,
+        sourcePreferences: Map<String, *> = emptyMap<String, Any>()
+    ): Preview = openSource(databasePath).use { source ->
         val schema = inspectSchema(source)
+        val compatibleSettings = CompatibleSettingsMigration(context).prepare(sourcePreferences)
         Preview(
             historyItems = if (schema.hasHistory) source.countRows(HISTORY_TABLE) else 0,
             progressItems = if (schema.hasProgress) source.countRows(STATE_TABLE) else 0,
             playlists = if (schema.hasPlaylists) source.countRows(PLAYLIST_TABLE) else 0,
-            playlistItems = if (schema.hasPlaylists) source.countRows(PLAYLIST_JOIN_TABLE) else 0
+            playlistItems = if (schema.hasPlaylists) source.countRows(PLAYLIST_JOIN_TABLE) else 0,
+            compatibleSettings = compatibleSettings.size
         )
     }
 
-    fun importData(databasePath: Path, selection: Selection): Result = openSource(
-        databasePath
-    ).use { source ->
+    fun importData(
+        databasePath: Path,
+        selection: Selection,
+        sourcePreferences: Map<String, *> = emptyMap<String, Any>()
+    ): Result = openSource(databasePath).use { source ->
         val schema = inspectSchema(source)
         val streams = readStreams(source)
         val target = NewPipeDatabase.getInstance(context)
-        var result = Result(0, 0, 0, 0, 0)
+        val settingsMigration = CompatibleSettingsMigration(context)
+        val compatibleSettings = settingsMigration.prepare(sourcePreferences)
+        val settingsRollback = if (selection.importSettings && compatibleSettings.size > 0) {
+            settingsMigration.apply(compatibleSettings)
+        } else {
+            null
+        }
+        var result = Result(0, 0, 0, 0, 0, 0)
 
-        target.runInTransaction {
-            val streamIds = mutableMapOf<Long, Long>()
-            fun targetStreamId(sourceId: Long): Long? {
-                streamIds[sourceId]?.let { return it }
-                val stream = streams[sourceId] ?: return null
-                val streamDao = target.streamDAO()
-                val existing = streamDao.getStreamDirect(stream.serviceId, stream.url)
-                val targetId = existing?.uid ?: streamDao.insert(stream)
-                streamIds[sourceId] = targetId
-                return targetId
-            }
-
-            var historyItems = 0
-            var progressItems = 0
-            var playlists = 0
-            var playlistItems = 0
-            var skippedItems = 0
-
-            if (selection.importHistory && schema.hasHistory) {
-                source.rawQuery(
-                    "SELECT stream_id, access_date, repeat_count FROM $HISTORY_TABLE",
-                    null
-                ).use { cursor ->
-                    val writable = target.openHelper.writableDatabase
-                    while (cursor.moveToNext()) {
-                        val targetId = targetStreamId(cursor.getLong(0))
-                        val accessDate = cursor.getLong(1)
-                        if (targetId == null || accessDate <= 0) {
-                            skippedItems++
-                            continue
-                        }
-                        val repeatCount = cursor.getLong(2).coerceAtLeast(0)
-                        writable.execSQL(
-                            "INSERT OR IGNORE INTO $HISTORY_TABLE " +
-                                "(stream_id, access_date, repeat_count) VALUES (?, ?, ?)",
-                            arrayOf(targetId, accessDate, repeatCount)
-                        )
-                        writable.execSQL(
-                            "UPDATE $HISTORY_TABLE SET repeat_count = " +
-                                "MAX(repeat_count, ?) WHERE stream_id = ? AND access_date = ?",
-                            arrayOf(repeatCount, targetId, accessDate)
-                        )
-                        historyItems++
-                    }
+        try {
+            target.runInTransaction {
+                val streamIds = mutableMapOf<Long, Long>()
+                fun targetStreamId(sourceId: Long): Long? {
+                    streamIds[sourceId]?.let { return it }
+                    val stream = streams[sourceId] ?: return null
+                    val streamDao = target.streamDAO()
+                    val existing = streamDao.getStreamDirect(stream.serviceId, stream.url)
+                    val targetId = existing?.uid ?: streamDao.insert(stream)
+                    streamIds[sourceId] = targetId
+                    return targetId
                 }
-            }
 
-            if (selection.importHistory && schema.hasProgress) {
-                val existingStates = target.streamStateDAO().getAllDirect()
-                    .associateBy { it.streamUid }
-                source.rawQuery(
-                    "SELECT stream_id, progress_time FROM $STATE_TABLE",
-                    null
-                ).use { cursor ->
-                    while (cursor.moveToNext()) {
-                        val targetId = targetStreamId(cursor.getLong(0))
-                        if (targetId == null) {
-                            skippedItems++
-                            continue
-                        }
-                        val progress = cursor.getLong(1).coerceAtLeast(0)
-                        val currentProgress = existingStates[targetId]?.progressMillis ?: -1
-                        if (progress > currentProgress) {
-                            target.streamStateDAO().upsert(
-                                StreamStateEntity(targetId, progress)
+                var historyItems = 0
+                var progressItems = 0
+                var playlists = 0
+                var playlistItems = 0
+                var skippedItems = 0
+
+                if (selection.importHistory && schema.hasHistory) {
+                    source.rawQuery(
+                        "SELECT stream_id, access_date, repeat_count FROM $HISTORY_TABLE",
+                        null
+                    ).use { cursor ->
+                        val writable = target.openHelper.writableDatabase
+                        while (cursor.moveToNext()) {
+                            val targetId = targetStreamId(cursor.getLong(0))
+                            val accessDate = cursor.getLong(1)
+                            if (targetId == null || accessDate <= 0) {
+                                skippedItems++
+                                continue
+                            }
+                            val repeatCount = cursor.getLong(2).coerceAtLeast(0)
+                            writable.execSQL(
+                                "INSERT OR IGNORE INTO $HISTORY_TABLE " +
+                                    "(stream_id, access_date, repeat_count) VALUES (?, ?, ?)",
+                                arrayOf(targetId, accessDate, repeatCount)
                             )
-                            progressItems++
+                            writable.execSQL(
+                                "UPDATE $HISTORY_TABLE SET repeat_count = " +
+                                    "MAX(repeat_count, ?) WHERE stream_id = ? AND access_date = ?",
+                                arrayOf(repeatCount, targetId, accessDate)
+                            )
+                            historyItems++
                         }
                     }
                 }
-            }
 
-            if (selection.importPlaylists && schema.hasPlaylists) {
-                val playlistDao = target.playlistDAO()
-                val playlistStreamDao = target.playlistStreamDAO()
-                val usedNames = playlistDao.getAllDirect()
-                    .mapNotNullTo(mutableSetOf()) { it.name }
-                var displayIndex = playlistDao.getAllDirect()
-                    .maxOfOrNull { it.displayIndex }?.plus(1) ?: 0L
-                val playlistOrder = when {
-                    schema.usesAlphabeticalPlaylistOrder -> "name COLLATE NOCASE ASC, uid"
-                    schema.playlistColumns.contains("display_index") -> "display_index, uid"
-                    else -> "uid"
-                }
-
-                source.rawQuery(
-                    "SELECT uid, name FROM $PLAYLIST_TABLE ORDER BY $playlistOrder",
-                    null
-                ).use { playlistCursor ->
-                    while (playlistCursor.moveToNext()) {
-                        val sourcePlaylistId = playlistCursor.getLong(0)
-                        val sourceName = playlistCursor.getString(1)?.trim().orEmpty()
-                        val targetName = uniquePlaylistName(
-                            sourceName.ifBlank { "Imported playlist" },
-                            usedNames
-                        )
-                        val playlist = PlaylistEntity(
-                            name = targetName,
-                            isThumbnailPermanent = false,
-                            thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID,
-                            displayIndex = displayIndex++
-                        )
-                        val targetPlaylistId = playlistDao.insert(playlist)
-                        var targetIndex = 0
-                        var firstStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID
-
-                        source.rawQuery(
-                            "SELECT stream_id FROM $PLAYLIST_JOIN_TABLE " +
-                                "WHERE playlist_id = ? ORDER BY join_index",
-                            arrayOf(sourcePlaylistId.toString())
-                        ).use { itemCursor ->
-                            while (itemCursor.moveToNext()) {
-                                val targetId = targetStreamId(itemCursor.getLong(0))
-                                if (targetId == null) {
-                                    skippedItems++
-                                    continue
-                                }
-                                if (firstStreamId == PlaylistEntity.DEFAULT_THUMBNAIL_ID) {
-                                    firstStreamId = targetId
-                                }
-                                playlistStreamDao.insert(
-                                    PlaylistStreamEntity(
-                                        targetPlaylistId,
-                                        targetId,
-                                        targetIndex++
-                                    )
+                if (selection.importHistory && schema.hasProgress) {
+                    val existingStates = target.streamStateDAO().getAllDirect()
+                        .associateBy { it.streamUid }
+                    source.rawQuery(
+                        "SELECT stream_id, progress_time FROM $STATE_TABLE",
+                        null
+                    ).use { cursor ->
+                        while (cursor.moveToNext()) {
+                            val targetId = targetStreamId(cursor.getLong(0))
+                            if (targetId == null) {
+                                skippedItems++
+                                continue
+                            }
+                            val progress = cursor.getLong(1).coerceAtLeast(0)
+                            val currentProgress = existingStates[targetId]?.progressMillis ?: -1
+                            if (progress > currentProgress) {
+                                target.streamStateDAO().upsert(
+                                    StreamStateEntity(targetId, progress)
                                 )
-                                playlistItems++
+                                progressItems++
                             }
                         }
-                        if (firstStreamId != PlaylistEntity.DEFAULT_THUMBNAIL_ID) {
-                            playlist.thumbnailStreamId = firstStreamId
-                            playlist.uid = targetPlaylistId
-                            playlistDao.update(playlist)
-                        }
-                        playlists++
                     }
                 }
-            }
 
-            result = Result(
-                historyItems,
-                progressItems,
-                playlists,
-                playlistItems,
-                skippedItems
-            )
+                if (selection.importPlaylists && schema.hasPlaylists) {
+                    val playlistDao = target.playlistDAO()
+                    val playlistStreamDao = target.playlistStreamDAO()
+                    val usedNames = playlistDao.getAllDirect()
+                        .mapNotNullTo(mutableSetOf()) { it.name }
+                    var displayIndex = playlistDao.getAllDirect()
+                        .maxOfOrNull { it.displayIndex }?.plus(1) ?: 0L
+                    val playlistOrder = when {
+                        schema.usesAlphabeticalPlaylistOrder -> "name COLLATE NOCASE ASC, uid"
+                        schema.playlistColumns.contains("display_index") -> "display_index, uid"
+                        else -> "uid"
+                    }
+
+                    source.rawQuery(
+                        "SELECT uid, name FROM $PLAYLIST_TABLE ORDER BY $playlistOrder",
+                        null
+                    ).use { playlistCursor ->
+                        while (playlistCursor.moveToNext()) {
+                            val sourcePlaylistId = playlistCursor.getLong(0)
+                            val sourceName = playlistCursor.getString(1)?.trim().orEmpty()
+                            val targetName = uniquePlaylistName(
+                                sourceName.ifBlank { "Imported playlist" },
+                                usedNames
+                            )
+                            val playlist = PlaylistEntity(
+                                name = targetName,
+                                isThumbnailPermanent = false,
+                                thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID,
+                                displayIndex = displayIndex++
+                            )
+                            val targetPlaylistId = playlistDao.insert(playlist)
+                            var targetIndex = 0
+                            var firstStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID
+
+                            source.rawQuery(
+                                "SELECT stream_id FROM $PLAYLIST_JOIN_TABLE " +
+                                    "WHERE playlist_id = ? ORDER BY join_index",
+                                arrayOf(sourcePlaylistId.toString())
+                            ).use { itemCursor ->
+                                while (itemCursor.moveToNext()) {
+                                    val targetId = targetStreamId(itemCursor.getLong(0))
+                                    if (targetId == null) {
+                                        skippedItems++
+                                        continue
+                                    }
+                                    if (firstStreamId == PlaylistEntity.DEFAULT_THUMBNAIL_ID) {
+                                        firstStreamId = targetId
+                                    }
+                                    playlistStreamDao.insert(
+                                        PlaylistStreamEntity(
+                                            targetPlaylistId,
+                                            targetId,
+                                            targetIndex++
+                                        )
+                                    )
+                                    playlistItems++
+                                }
+                            }
+                            if (firstStreamId != PlaylistEntity.DEFAULT_THUMBNAIL_ID) {
+                                playlist.thumbnailStreamId = firstStreamId
+                                playlist.uid = targetPlaylistId
+                                playlistDao.update(playlist)
+                            }
+                            playlists++
+                        }
+                    }
+                }
+
+                result = Result(
+                    historyItems,
+                    progressItems,
+                    playlists,
+                    playlistItems,
+                    if (selection.importSettings) compatibleSettings.size else 0,
+                    skippedItems
+                )
+            }
+        } catch (error: Throwable) {
+            if (settingsRollback != null) {
+                try {
+                    settingsMigration.rollback(settingsRollback)
+                } catch (rollbackError: Throwable) {
+                    error.addSuppressed(rollbackError)
+                }
+            }
+            throw error
         }
         result
     }

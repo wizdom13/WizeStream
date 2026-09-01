@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +51,12 @@ import java.util.concurrent.Executors;
 public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
 
     private static final String ZIP_MIME_TYPE = "application/zip";
+
+    private enum MigrationOption {
+        HISTORY,
+        PLAYLISTS,
+        SETTINGS
+    }
 
     private final SimpleDateFormat exportDateFormat =
             new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
@@ -208,13 +215,17 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                 if (stagedDatabase == null) {
                     throw new IOException("The backup does not contain a SQLite database");
                 }
+                final Map<String, ?> sourcePreferences = manager.exportHasJsonPrefs(file)
+                        ? manager.readJsonPrefs(file) : Collections.emptyMap();
                 final NewPipeDataMigrationManager.Preview preview =
-                        migrationManager.inspect(stagedDatabase);
+                        migrationManager.inspect(stagedDatabase, sourcePreferences);
                 final Path readyDatabase = stagedDatabase;
+                final Map<String, ?> readyPreferences = sourcePreferences;
                 stagedDatabase = null;
                 if (getActivity() != null) {
                     requireActivity().runOnUiThread(() ->
-                            showMigrationConfirmation(readyDatabase, importDataUri, preview));
+                            showMigrationConfirmation(readyDatabase, importDataUri,
+                                    readyPreferences, preview));
                 } else {
                     manager.discardStagedDb(readyDatabase);
                 }
@@ -240,6 +251,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private void showMigrationConfirmation(
             final Path stagedDatabase,
             final Uri importDataUri,
+            final Map<String, ?> sourcePreferences,
             final NewPipeDataMigrationManager.Preview preview) {
         if (!preview.getHasImportableData()) {
             manager.discardStagedDb(stagedDatabase);
@@ -249,20 +261,26 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         }
 
         final List<String> optionLabels = new ArrayList<>();
-        final List<Boolean> optionTypes = new ArrayList<>();
+        final List<MigrationOption> optionTypes = new ArrayList<>();
         if (preview.getHasHistory()) {
             optionLabels.add(getString(
                     R.string.migration_history_option,
                     preview.getHistoryItems(),
                     preview.getProgressItems()));
-            optionTypes.add(true);
+            optionTypes.add(MigrationOption.HISTORY);
         }
         if (preview.getHasPlaylists()) {
             optionLabels.add(getString(
                     R.string.migration_playlists_option,
                     preview.getPlaylists(),
                     preview.getPlaylistItems()));
-            optionTypes.add(false);
+            optionTypes.add(MigrationOption.PLAYLISTS);
+        }
+        if (preview.getHasCompatibleSettings()) {
+            optionLabels.add(getString(
+                    R.string.migration_settings_option,
+                    preview.getCompatibleSettings()));
+            optionTypes.add(MigrationOption.SETTINGS);
         }
         final boolean[] checkedItems = new boolean[optionLabels.size()];
         java.util.Arrays.fill(checkedItems, true);
@@ -283,17 +301,26 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                 .setOnClickListener(button -> {
                     boolean importHistory = false;
                     boolean importPlaylists = false;
+                    boolean importSettings = false;
                     for (int i = 0; i < checkedItems.length; i++) {
                         if (!checkedItems[i]) {
                             continue;
                         }
-                        if (optionTypes.get(i)) {
-                            importHistory = true;
-                        } else {
-                            importPlaylists = true;
+                        switch (optionTypes.get(i)) {
+                            case HISTORY:
+                                importHistory = true;
+                                break;
+                            case PLAYLISTS:
+                                importPlaylists = true;
+                                break;
+                            case SETTINGS:
+                                importSettings = true;
+                                break;
+                            default:
+                                break;
                         }
                     }
-                    if (!importHistory && !importPlaylists) {
+                    if (!importHistory && !importPlaylists && !importSettings) {
                         Toast.makeText(requireContext(), R.string.migration_nothing_selected,
                                 Toast.LENGTH_SHORT).show();
                         return;
@@ -302,9 +329,11 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     importMigratedData(
                             stagedDatabase,
                             importDataUri,
+                            sourcePreferences,
                             new NewPipeDataMigrationManager.Selection(
                                     importHistory,
-                                    importPlaylists));
+                                    importPlaylists,
+                                    importSettings));
                 }));
         dialog.show();
     }
@@ -312,12 +341,14 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private void importMigratedData(
             final Path stagedDatabase,
             final Uri importDataUri,
+            final Map<String, ?> sourcePreferences,
             final NewPipeDataMigrationManager.Selection selection) {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
                 final NewPipeDataMigrationManager.Result migrationResult =
-                        migrationManager.importData(stagedDatabase, selection);
+                        migrationManager.importData(
+                                stagedDatabase, selection, sourcePreferences);
                 if (getActivity() != null) {
                     requireActivity().runOnUiThread(() -> {
                         saveLastImportExportDataUri(importDataUri);
@@ -329,6 +360,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                         migrationResult.getProgressItems(),
                                         migrationResult.getPlaylists(),
                                         migrationResult.getPlaylistItems(),
+                                        migrationResult.getCompatibleSettings(),
                                         migrationResult.getSkippedItems()))
                                 .setPositiveButton(R.string.ok, null)
                                 .show();
