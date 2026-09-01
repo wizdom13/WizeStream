@@ -73,6 +73,8 @@ public class FeedRefreshControlsTest {
                 document, "@+id/loading_progress_bar");
         final Element indeterminateProgress = findByAndroidId(
                 document, "@+id/loading_indeterminate_progress_bar");
+        final Element progressText = findByAndroidId(
+                document, "@+id/loading_progress_text");
         final Element cancel = findByAndroidId(
                 document, "@+id/cancel_refresh_button");
 
@@ -95,6 +97,15 @@ public class FeedRefreshControlsTest {
                 indeterminateProgress.getAttributeNS(APP_NAMESPACE, "indicatorSize"));
         assertEquals("6dp", progress.getAttributeNS(APP_NAMESPACE, "trackThickness"));
         assertEquals("3dp", progress.getAttributeNS(APP_NAMESPACE, "trackCornerRadius"));
+
+        assertNotNull(progressText);
+        assertEquals("match_parent",
+                progressText.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("match_parent",
+                progressText.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("center", progressText.getAttributeNS(ANDROID_NAMESPACE, "gravity"));
+        assertEquals("false",
+                progressText.getAttributeNS(ANDROID_NAMESPACE, "includeFontPadding"));
 
         assertNotNull(cancel);
         assertEquals(
