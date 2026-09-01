@@ -26,7 +26,8 @@ data class LocalMediaItem(
     val discNumber: Int = 0,
     val relativePath: String = "",
     val volumeName: String = "",
-    val sizeBytes: Long = 0L
+    val sizeBytes: Long = 0L,
+    val genres: Set<String> = emptySet()
 ) : Serializable {
     val stableId: String
         get() = contentUri
