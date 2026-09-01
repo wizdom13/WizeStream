@@ -26,6 +26,22 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_equalizer"
+        android:checkable="true"
+        android:icon="@drawable/ic_equalizer"
+        android:title="@string/equalizer"
+        android:visible="true"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_visualizer"
+        android:checkable="true"
+        android:icon="@drawable/ic_waveform"
+        android:title="@string/show_visualizer"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_audio_track"
         android:tooltipText="@string/audio_track"
         android:visible="false"
