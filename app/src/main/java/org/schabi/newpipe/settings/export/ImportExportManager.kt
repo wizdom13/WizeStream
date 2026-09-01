@@ -160,6 +160,28 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
         }
     }
 
+    /** Stages a foreign NewPipe-style database for selective, read-only migration. */
+    fun stageMigrationDb(file: StoredFileHelper): Path? {
+        val importedDb = fileLocator.db.resolveSibling("${fileLocator.db.fileName}.migration")
+        importedDb.deleteIfExists()
+        return try {
+            if (!ZipHelper.extractFileFromZip(
+                    file,
+                    BackupFileLocator.FILE_NAME_DB,
+                    importedDb
+                ) || readSqliteUserVersion(importedDb) == null
+            ) {
+                importedDb.deleteIfExists()
+                null
+            } else {
+                importedDb
+            }
+        } catch (error: IOException) {
+            importedDb.deleteIfExists()
+            null
+        }
+    }
+
     /** Replaces the live database while retaining a rollback copy until the caller commits. */
     @Throws(IOException::class)
     fun replaceDb(importedDb: Path): DatabaseRollback {

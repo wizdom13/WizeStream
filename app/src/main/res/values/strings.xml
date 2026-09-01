@@ -487,6 +487,9 @@
     <string name="switch_to_popup">Switch to Popup</string>
     <string name="switch_to_main">Switch to Main</string>
     <string name="import_data_title">Import full backup</string>
+    <string name="import_compatible_data_key" translatable="false">import_compatible_data</string>
+    <string name="import_compatible_data_title">Import from NewPipe or compatible app</string>
+    <string name="import_compatible_data_summary">Merge watch history, playback positions, and local playlists from a NewPipe-style ZIP backup without replacing existing WizeStream data.</string>
     <string name="export_data_title">Export full backup</string>
     <string name="clear_cookie_title">Clear reCAPTCHA cookies</string>
     <string name="recaptcha_cookies_cleared">reCAPTCHA cookies have been cleared</string>
@@ -506,6 +509,14 @@
     <string name="backup_invalid_or_empty">This ZIP does not contain recognizable WizeStream backup data.</string>
     <string name="backup_incompatible_title">Backup cannot be restored</string>
     <string name="backup_incompatible_message">Full restore accepts only backups created by a supported version of WizeStream. This archive may be from another app, an older unverified format, or an incompatible WizeStream version. Nothing on this device was changed.</string>
+    <string name="migration_invalid_backup">This backup does not contain compatible NewPipe history or playlist data.</string>
+    <string name="migration_choose_data_title">Choose data to merge</string>
+    <string name="migration_history_option">Watch history: %1$d entries and %2$d playback positions</string>
+    <string name="migration_playlists_option">Local playlists: %1$d playlists and %2$d items</string>
+    <string name="migration_import_button">Merge data</string>
+    <string name="migration_nothing_selected">Select at least one data category.</string>
+    <string name="migration_complete_title">Migration complete</string>
+    <string name="migration_complete_message">Merged %1$d history entries, %2$d playback positions, %3$d playlists, and %4$d playlist items. Skipped %5$d incompatible items.</string>
     <string name="backup_exported_with_file">Backup exported: %s</string>
     <string name="backup_import_succeeded_restart">Import succeeded. WizeStream will restart to finish loading the backup.</string>
     <string name="restart">Restart</string>
