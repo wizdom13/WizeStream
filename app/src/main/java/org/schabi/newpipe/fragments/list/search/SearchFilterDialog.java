@@ -55,8 +55,7 @@ final class SearchFilterDialog {
         this.context = context;
         this.service = service;
         this.listener = listener;
-        contentFilters = filterContentTypes(
-                flatten(service.getSearchQHFactory().getAvailableContentFilter()), musicOnly);
+        contentFilters = getContentFilters(service, musicOnly);
         selectedContentFilter = findByName(contentFilters,
                 currentContentFilters.length == 0 ? null : currentContentFilters[0]);
         if (selectedContentFilter == null && !contentFilters.isEmpty()) {
@@ -92,6 +91,13 @@ final class SearchFilterDialog {
         final Filter content = service.getSearchQHFactory().getAvailableContentFilter();
         final Filter sort = service.getSearchQHFactory().getAvailableSortFilter();
         return !flatten(content).isEmpty() || !flatten(sort).isEmpty();
+    }
+
+    @NonNull
+    static List<FilterItem> getContentFilters(@NonNull final StreamingService service,
+                                              final boolean musicOnly) {
+        return filterContentTypes(
+                flatten(service.getSearchQHFactory().getAvailableContentFilter()), musicOnly);
     }
 
     private void show() {

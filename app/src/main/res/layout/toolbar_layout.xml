@@ -33,4 +33,10 @@
 
     </com.google.android.material.appbar.MaterialToolbar>
 
+    <include
+        android:id="@+id/toolbar_search_music_filters"
+        layout="@layout/toolbar_search_music_filter_chips"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
 </LinearLayout>

@@ -41,6 +41,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.evernote.android.state.State;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.feed.model.SavedSearchFeedEntity;
@@ -59,6 +61,7 @@ import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.search.SearchInfo;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.fragments.BackPressable;
 import org.schabi.newpipe.fragments.list.BaseListFragment;
@@ -176,6 +179,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private EditText searchEditText;
     private View searchClear;
     private View searchFilter;
+    private View searchMusicFilters;
+    private ChipGroup searchMusicFilterChipGroup;
 
     private boolean suggestionsPanelVisible = false;
 
@@ -278,11 +283,86 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             return;
         }
         final boolean hasFilters = SearchFilterDialog.hasFilters(service);
-        searchFilter.setVisibility(hasFilters ? View.VISIBLE : View.GONE);
+        final boolean youtubeMusicMode = serviceId == ServiceList.YouTube.getServiceId()
+                && ServiceHelper.isYoutubeMusicMode(requireContext());
+        final List<FilterItem> musicFilters = service == null || !youtubeMusicMode
+                ? Collections.emptyList()
+                : SearchFilterDialog.getContentFilters(service, true);
+        final boolean showMusicFilterChips = shouldShowMusicFilterChips(
+                serviceId == ServiceList.YouTube.getServiceId(), youtubeMusicMode,
+                !musicFilters.isEmpty());
+        searchFilter.setVisibility(hasFilters && !showMusicFilterChips
+                ? View.VISIBLE : View.GONE);
         final ViewGroup.MarginLayoutParams layoutParams =
                 (ViewGroup.MarginLayoutParams) searchEditText.getLayoutParams();
-        layoutParams.rightMargin = DeviceUtils.dpToPx(hasFilters ? 96 : 48, requireContext());
+        layoutParams.rightMargin = DeviceUtils.dpToPx(
+                hasFilters && !showMusicFilterChips ? 96 : 48, requireContext());
         searchEditText.setLayoutParams(layoutParams);
+        updateMusicFilterChips(showMusicFilterChips ? musicFilters : Collections.emptyList());
+    }
+
+    static boolean shouldShowMusicFilterChips(final boolean youtubeService,
+                                              final boolean youtubeMusicMode,
+                                              final boolean hasMusicFilters) {
+        return youtubeService && youtubeMusicMode && hasMusicFilters;
+    }
+
+    private void updateMusicFilterChips(@NonNull final List<FilterItem> musicFilters) {
+        if (searchMusicFilters == null || searchMusicFilterChipGroup == null) {
+            return;
+        }
+        searchMusicFilterChipGroup.setOnCheckedStateChangeListener(null);
+        searchMusicFilterChipGroup.removeAllViews();
+        if (musicFilters.isEmpty()) {
+            searchMusicFilters.setVisibility(View.GONE);
+            return;
+        }
+
+        final String restoredFilter = contentFilter.length == 0 ? "" : contentFilter[0];
+        final String selectedFilter = resolveMusicFilterName(musicFilters, contentFilter);
+        if (!selectedFilter.equals(restoredFilter) || sortFilter.length > 0) {
+            contentFilter = new String[]{selectedFilter};
+            sortFilter = new int[0];
+        }
+        int checkedChipId = View.NO_ID;
+        for (final FilterItem filter : musicFilters) {
+            final Chip chip = (Chip) getLayoutInflater().inflate(
+                    R.layout.item_search_music_filter_chip,
+                    searchMusicFilterChipGroup, false);
+            chip.setId(View.generateViewId());
+            chip.setText(ServiceHelper.getTranslatedFilterString(
+                    filter.getName(), requireContext()));
+            chip.setTag(filter.getName());
+            searchMusicFilterChipGroup.addView(chip);
+            if (filter.getName().equals(selectedFilter)) {
+                checkedChipId = chip.getId();
+            }
+        }
+
+        searchMusicFilterChipGroup.check(checkedChipId);
+        searchMusicFilterChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty()) {
+                return;
+            }
+            final Chip selectedChip = group.findViewById(checkedIds.get(0));
+            if (selectedChip != null && selectedChip.getTag() instanceof String) {
+                applySearchFilters((String) selectedChip.getTag(), Collections.emptyList());
+            }
+        });
+        searchMusicFilters.setVisibility(View.VISIBLE);
+    }
+
+    @NonNull
+    static String resolveMusicFilterName(@NonNull final List<FilterItem> musicFilters,
+                                         @NonNull final String[] currentContentFilter) {
+        final String restoredFilter = currentContentFilter.length == 0
+                ? "" : currentContentFilter[0];
+        for (final FilterItem filter : musicFilters) {
+            if (filter.getName().equals(restoredFilter)) {
+                return restoredFilter;
+            }
+        }
+        return musicFilters.isEmpty() ? "" : musicFilters.get(0).getName();
     }
 
     @Override
@@ -360,6 +440,16 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
         unsetSearchListeners();
 
+        if (searchMusicFilterChipGroup != null) {
+            searchMusicFilterChipGroup.setOnCheckedStateChangeListener(null);
+            searchMusicFilterChipGroup.removeAllViews();
+        }
+        if (searchMusicFilters != null) {
+            searchMusicFilters.setVisibility(View.GONE);
+        }
+        searchMusicFilterChipGroup = null;
+        searchMusicFilters = null;
+
         searchBinding = null;
         super.onDestroyView();
     }
@@ -425,6 +515,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         searchEditText = searchToolbarContainer.findViewById(R.id.toolbar_search_edit_text);
         searchClear = searchToolbarContainer.findViewById(R.id.toolbar_search_clear);
         searchFilter = searchToolbarContainer.findViewById(R.id.toolbar_search_filter);
+        searchMusicFilters = activity.findViewById(R.id.toolbar_search_music_filters);
+        searchMusicFilterChipGroup = searchMusicFilters.findViewById(
+                R.id.toolbar_search_music_filter_chip_group);
         updateSearchFilterVisibility();
         loadSavedSearchCache();
     }
@@ -763,6 +856,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
         searchClear.setOnClickListener(null);
         searchClear.setOnLongClickListener(null);
+        searchFilter.setOnClickListener(null);
         searchEditText.setOnClickListener(null);
         searchEditText.setOnFocusChangeListener(null);
         searchEditText.setOnEditorActionListener(null);
@@ -1099,23 +1193,32 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         SearchFilterDialog.show(requireContext(), service, contentFilter, sortFilter,
                 serviceId == ServiceList.YouTube.getServiceId()
                         && ServiceHelper.isYoutubeMusicMode(requireContext()),
-                (selectedContentFilter, selectedSortFilters) -> {
-                    if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
-                        savedSearchFeedId = SavedSearchFeedManager.NO_SAVED_SEARCH_FEED;
-                        activity.invalidateOptionsMenu();
-                    }
-                    contentFilter = selectedContentFilter.isEmpty()
-                            ? new String[0] : new String[]{selectedContentFilter};
-                    sortFilter = selectedSortFilters.stream()
-                            .mapToInt(Integer::intValue)
-                            .toArray();
-                    if (!selectedContentFilter.isEmpty()) {
-                        updateSearchHint(selectedContentFilter);
-                    }
-                    if (!TextUtils.isEmpty(searchString)) {
-                        search(searchString, contentFilter, sortFilter);
-                    }
-                });
+                this::applySearchFilters);
+    }
+
+    private void applySearchFilters(@NonNull final String selectedContentFilter,
+                                    @NonNull final List<Integer> selectedSortFilters) {
+        final boolean contentFilterUnchanged = contentFilter.length == 1
+                && selectedContentFilter.equals(contentFilter[0]);
+        final int[] newSortFilters = selectedSortFilters.stream()
+                .mapToInt(Integer::intValue)
+                .toArray();
+        if (contentFilterUnchanged && Arrays.equals(sortFilter, newSortFilters)) {
+            return;
+        }
+        if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
+            savedSearchFeedId = SavedSearchFeedManager.NO_SAVED_SEARCH_FEED;
+            activity.invalidateOptionsMenu();
+        }
+        contentFilter = selectedContentFilter.isEmpty()
+                ? new String[0] : new String[]{selectedContentFilter};
+        sortFilter = newSortFilters;
+        if (!selectedContentFilter.isEmpty()) {
+            updateSearchHint(selectedContentFilter);
+        }
+        if (!TextUtils.isEmpty(searchString)) {
+            search(searchString, contentFilter, sortFilter);
+        }
     }
 
     private void updateSearchHint(@NonNull final String selectedContentFilter) {
