@@ -1473,6 +1473,9 @@
     <string name="sponsor_block_skip_button_content_description">Skip SponsorBlock segment</string>
     <!-- Equalizer -->
     <string name="equalizer">Equalizer</string>
+    <string name="audio_visualizer">Audio visualizer</string>
+    <string name="show_visualizer">Show visualizer</string>
+    <string name="show_play_queue">Show play queue</string>
     <string name="enter_listen_mode">Listen without video</string>
     <string name="exit_listen_mode">Return to video</string>
     <string name="visualizer_style_title">Visualizer style</string>

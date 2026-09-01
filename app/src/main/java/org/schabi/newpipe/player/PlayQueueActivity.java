@@ -19,6 +19,7 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -36,6 +37,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.fragments.OnScrollBelowItemsListener;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.player.event.PlayerEventListener;
+import org.schabi.newpipe.player.equalizer.EqualizerDialog;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
 import org.schabi.newpipe.player.helper.SleepTimer;
 import org.schabi.newpipe.player.helper.SleepTimerDialog;
@@ -66,6 +68,7 @@ public final class PlayQueueActivity extends AppCompatActivity
     private static final int SMOOTH_SCROLL_MAXIMUM_DISTANCE = 80;
 
     private static final int MENU_ID_AUDIO_TRACK = 71;
+    private static final String STATE_VISUALIZER_VISIBLE = "visualizer_visible";
 
     private Player player;
 
@@ -73,6 +76,7 @@ public final class PlayQueueActivity extends AppCompatActivity
     private ServiceConnection serviceConnection;
 
     private boolean seeking;
+    private boolean visualizerVisible;
 
     ////////////////////////////////////////////////////////////////////////////
     // Views
@@ -97,6 +101,8 @@ public final class PlayQueueActivity extends AppCompatActivity
         queueControlBinding = ActivityPlayerQueueControlBinding.inflate(getLayoutInflater());
         setContentView(queueControlBinding.getRoot());
         EdgeToEdgeHelper.applySystemBarPadding(queueControlBinding.getRoot());
+        visualizerVisible = savedInstanceState != null
+                && savedInstanceState.getBoolean(STATE_VISUALIZER_VISIBLE, false);
 
         setSupportActionBar(queueControlBinding.toolbar);
         if (getSupportActionBar() != null) {
@@ -106,6 +112,24 @@ public final class PlayQueueActivity extends AppCompatActivity
 
         serviceConnection = getServiceConnection();
         bind();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        updateVisualizerPresentation();
+    }
+
+    @Override
+    protected void onStop() {
+        suspendVisualizerProcessing();
+        super.onStop();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull final Bundle outState) {
+        outState.putBoolean(STATE_VISUALIZER_VISIBLE, visualizerVisible);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -132,6 +156,11 @@ public final class PlayQueueActivity extends AppCompatActivity
                     .setVisible(!player.audioPlayerSelected());
             updateSleepTimerMenuItem(player.getSleepTimerMode(),
                     player.getSleepTimerRemainingMillis());
+            menu.findItem(R.id.action_equalizer)
+                    .setChecked(player.getEqualizerState().isEnabled());
+            menu.findItem(R.id.action_visualizer)
+                    .setVisible(player.audioPlayerSelected());
+            updateVisualizerMenuItem();
         }
         return super.onPrepareOptionsMenu(m);
     }
@@ -155,6 +184,15 @@ public final class PlayQueueActivity extends AppCompatActivity
             if (player != null) {
                 SleepTimerDialog.show(this, player);
             }
+            return true;
+        } else if (itemId == R.id.action_equalizer) {
+            if (player != null) {
+                EqualizerDialog.show(this, EqualizerDialog.forPlayer(player),
+                        this::invalidateOptionsMenu);
+            }
+            return true;
+        } else if (itemId == R.id.action_visualizer) {
+            toggleVisualizer();
             return true;
         } else if (itemId == R.id.action_mute) {
             player.toggleMute();
@@ -229,6 +267,7 @@ public final class PlayQueueActivity extends AppCompatActivity
 
     private void unbind() {
         if (serviceBound) {
+            suspendVisualizerProcessing();
             unbindService(serviceConnection);
             serviceBound = false;
             if (player != null) {
@@ -265,6 +304,11 @@ public final class PlayQueueActivity extends AppCompatActivity
                 } else {
                     onQueueUpdate(player.getPlayQueue());
                     buildComponents();
+                    if (!player.audioPlayerSelected()) {
+                        visualizerVisible = false;
+                    }
+                    updateVisualizerPresentation();
+                    invalidateOptionsMenu();
                     if (player != null) {
                         player.setActivityListener(PlayQueueActivity.this);
                     }
@@ -282,6 +326,56 @@ public final class PlayQueueActivity extends AppCompatActivity
         buildMetadata();
         buildSeekBar();
         buildControls();
+    }
+
+    private void toggleVisualizer() {
+        if (player == null || !player.audioPlayerSelected()) {
+            return;
+        }
+        visualizerVisible = !visualizerVisible;
+        updateVisualizerPresentation();
+    }
+
+    private void updateVisualizerPresentation() {
+        final boolean showVisualizer = visualizerVisible
+                && player != null
+                && player.audioPlayerSelected();
+        queueControlBinding.playQueue.setVisibility(showVisualizer ? View.GONE : View.VISIBLE);
+        queueControlBinding.audioVisualizer.setVisibility(
+                showVisualizer ? View.VISIBLE : View.GONE);
+
+        if (showVisualizer) {
+            queueControlBinding.audioVisualizer.setAudioProcessor(
+                    player.getVisualizerAudioProcessor());
+            player.setPlaybackPresentationMode(PlaybackPresentationMode.LISTEN_VISUALIZER);
+        } else {
+            suspendVisualizerProcessing();
+        }
+        updateVisualizerMenuItem();
+    }
+
+    private void suspendVisualizerProcessing() {
+        queueControlBinding.audioVisualizer.setAudioProcessor(null);
+        if (player != null
+                && player.audioPlayerSelected()
+                && player.getPlaybackPresentationMode()
+                        == PlaybackPresentationMode.LISTEN_VISUALIZER) {
+            player.setPlaybackPresentationMode(PlaybackPresentationMode.AUDIO_BACKGROUND);
+        }
+    }
+
+    private void updateVisualizerMenuItem() {
+        if (menu == null) {
+            return;
+        }
+        final MenuItem item = menu.findItem(R.id.action_visualizer);
+        if (item == null) {
+            return;
+        }
+        item.setChecked(visualizerVisible);
+        item.setIcon(visualizerVisible ? R.drawable.ic_list : R.drawable.ic_waveform);
+        item.setTitle(visualizerVisible
+                ? R.string.show_play_queue : R.string.show_visualizer);
     }
 
     private void buildQueue() {
