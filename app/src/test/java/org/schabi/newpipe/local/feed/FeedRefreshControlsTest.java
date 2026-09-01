@@ -2,6 +2,7 @@ package org.schabi.newpipe.local.feed;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -73,18 +74,18 @@ public class FeedRefreshControlsTest {
                 document, "@+id/loading_progress_bar");
         final Element indeterminateProgress = findByAndroidId(
                 document, "@+id/loading_indeterminate_progress_bar");
-        final Element progressText = findByAndroidId(
-                document, "@+id/loading_progress_text");
         final Element cancel = findByAndroidId(
                 document, "@+id/cancel_refresh_button");
 
         assertNotNull(progress);
         assertNotNull(indeterminateProgress);
         assertEquals(
-                "com.google.android.material.progressindicator.CircularProgressIndicator",
+                "org.schabi.newpipe.local.feed.FeedProgressIndicator",
                 progress.getTagName());
         assertEquals("104dp", progress.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
         assertEquals("104dp", progress.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("polite",
+                progress.getAttributeNS(ANDROID_NAMESPACE, "accessibilityLiveRegion"));
         assertEquals("88dp", progress.getAttributeNS(APP_NAMESPACE, "indicatorSize"));
         assertEquals(
                 "104dp",
@@ -98,14 +99,7 @@ public class FeedRefreshControlsTest {
         assertEquals("6dp", progress.getAttributeNS(APP_NAMESPACE, "trackThickness"));
         assertEquals("3dp", progress.getAttributeNS(APP_NAMESPACE, "trackCornerRadius"));
 
-        assertNotNull(progressText);
-        assertEquals("match_parent",
-                progressText.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
-        assertEquals("match_parent",
-                progressText.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
-        assertEquals("center", progressText.getAttributeNS(ANDROID_NAMESPACE, "gravity"));
-        assertEquals("false",
-                progressText.getAttributeNS(ANDROID_NAMESPACE, "includeFontPadding"));
+        assertNull(findByAndroidId(document, "@+id/loading_progress_text"));
 
         assertNotNull(cancel);
         assertEquals(
@@ -119,6 +113,18 @@ public class FeedRefreshControlsTest {
                 cancel.getAttributeNS(ANDROID_NAMESPACE, "contentDescription"));
         assertEquals("@drawable/ic_close",
                 cancel.getAttributeNS(APP_NAMESPACE, "srcCompat"));
+    }
+
+    @Test
+    public void determinateCounterUsesTheCircularIndicatorsExactCanvasCenter()
+            throws Exception {
+        final String source = readSource(
+                "org/schabi/newpipe/local/feed/FeedProgressIndicator.java");
+
+        assertTrue(source.contains("super.onDraw(canvas)"));
+        assertTrue(source.contains("counterBounds.exactCenterX()"));
+        assertTrue(source.contains("counterBounds.exactCenterY()"));
+        assertTrue(source.contains("canvas.drawText(counterText"));
     }
 
     @Test

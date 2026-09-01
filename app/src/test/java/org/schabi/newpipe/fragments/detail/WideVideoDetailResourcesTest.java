@@ -32,12 +32,15 @@ public class WideVideoDetailResourcesTest {
     @Test
     public void wideRelatedThumbnailsScaleWithTheAvailablePaneWidth() throws Exception {
         final Document document = parse("layout/list_stream_related_wide_item.xml");
+        final Element container = findById(document, "@+id/itemThumbnailContainer");
         final Element thumbnail = findById(document, "@+id/itemThumbnailView");
 
-        assertEquals("0dp", thumbnail.getAttribute("android:layout_width"));
-        assertEquals("0dp", thumbnail.getAttribute("android:layout_height"));
-        assertEquals("0.42", thumbnail.getAttribute("app:layout_constraintWidth_percent"));
-        assertEquals("16:9", thumbnail.getAttribute("app:layout_constraintDimensionRatio"));
+        assertEquals("0dp", container.getAttribute("android:layout_width"));
+        assertEquals("0dp", container.getAttribute("android:layout_height"));
+        assertEquals("0.42", container.getAttribute("app:layout_constraintWidth_percent"));
+        assertEquals("16:9", container.getAttribute("app:layout_constraintDimensionRatio"));
+        assertEquals("match_parent", thumbnail.getAttribute("android:layout_width"));
+        assertEquals("match_parent", thumbnail.getAttribute("android:layout_height"));
     }
 
     private Element findById(final Document document, final String id) {

@@ -438,8 +438,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             progressState.maxProgress < 0
         feedBinding.loadingProgressBar.isVisible = !isIndeterminate
         feedBinding.loadingIndeterminateProgressBar.isVisible = isIndeterminate
-        feedBinding.loadingProgressText.isVisible = !isIndeterminate
         feedBinding.loadingProgressStatusText.isVisible = isIndeterminate
+        feedBinding.loadingProgressBar.setCounterText(null)
 
         if (isIndeterminate) {
             feedBinding.loadingProgressStatusText.text =
@@ -451,7 +451,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         } else {
             val maxProgress = progressState.maxProgress.coerceAtLeast(1)
             val currentProgress = progressState.currentProgress.coerceIn(0, maxProgress)
-            feedBinding.loadingProgressText.text = "$currentProgress/$maxProgress"
+            feedBinding.loadingProgressBar.setCounterText("$currentProgress/$maxProgress")
             feedBinding.loadingProgressBar.max = maxProgress
             feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
         }
