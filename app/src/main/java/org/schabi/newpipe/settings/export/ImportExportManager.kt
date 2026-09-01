@@ -8,8 +8,11 @@ import com.grack.nanojson.JsonWriter
 import java.io.DataInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.createParentDirectories
@@ -36,11 +39,26 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
         val hasJsonPreferences: Boolean,
         val hasSerializedPreferences: Boolean,
         val hasManifest: Boolean,
-        val manifest: String?
+        val manifest: String?,
+        val source: BackupSource,
+        val backupFormatVersion: Int?
     ) {
         val hasRecognizableBackupData: Boolean
             get() = hasDatabase || hasJsonPreferences || hasSerializedPreferences
     }
+
+    enum class BackupSource {
+        WIZESTREAM,
+        FOREIGN,
+        LEGACY_OR_UNKNOWN,
+        INVALID_MANIFEST,
+        UNSUPPORTED_WIZESTREAM
+    }
+
+    data class DatabaseRollback internal constructor(
+        internal val backup: Path,
+        internal val previousDatabaseExisted: Boolean
+    )
 
     /**
      * Exports given [SharedPreferences] to the file in given outputPath.
@@ -108,27 +126,96 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
      * @return true if the database was successfully extracted, false otherwise
      */
     fun extractDb(file: StoredFileHelper): Boolean {
+        val importedDb = stageDb(file) ?: return false
+        return try {
+            val rollback = replaceDb(importedDb)
+            finishDbReplacement(rollback)
+            true
+        } catch (error: IOException) {
+            false
+        } finally {
+            discardStagedDb(importedDb)
+        }
+    }
+
+    /** Extracts a database into a temporary sibling without touching the live database. */
+    fun stageDb(file: StoredFileHelper): Path? {
         val name = BackupFileLocator.FILE_NAME_DB
         val importedDb = fileLocator.db.resolveSibling("${fileLocator.db.fileName}.import")
         importedDb.deleteIfExists()
 
-        try {
+        return try {
             if (!ZipHelper.extractFileFromZip(file, name, importedDb)) {
-                return false
+                return null
             }
             val databaseVersion = readSqliteUserVersion(importedDb)
             if (databaseVersion !in Migrations.DB_VER_1..Migrations.DB_VER_23) {
-                return false
+                importedDb.deleteIfExists()
+                return null
             }
-
-            Files.move(importedDb, fileLocator.db, StandardCopyOption.REPLACE_EXISTING)
-            fileLocator.dbJournal.deleteIfExists()
-            fileLocator.dbWal.deleteIfExists()
-            fileLocator.dbShm.deleteIfExists()
-            return true
-        } finally {
+            importedDb
+        } catch (error: IOException) {
             importedDb.deleteIfExists()
+            null
         }
+    }
+
+    /** Replaces the live database while retaining a rollback copy until the caller commits. */
+    @Throws(IOException::class)
+    fun replaceDb(importedDb: Path): DatabaseRollback {
+        val rollback = fileLocator.db.resolveSibling("${fileLocator.db.fileName}.rollback")
+        rollback.deleteIfExists()
+        val previousDatabaseExisted = Files.exists(fileLocator.db)
+        if (previousDatabaseExisted) {
+            Files.copy(fileLocator.db, rollback, REPLACE_EXISTING)
+        }
+
+        try {
+            moveReplacing(importedDb, fileLocator.db)
+            deleteLiveDatabaseSidecars()
+        } catch (error: IOException) {
+            if (previousDatabaseExisted && Files.exists(rollback)) {
+                Files.copy(rollback, fileLocator.db, REPLACE_EXISTING)
+            }
+            rollback.deleteIfExists()
+            throw error
+        }
+        return DatabaseRollback(rollback, previousDatabaseExisted)
+    }
+
+    fun rollbackDb(recovery: DatabaseRollback) {
+        if (recovery.previousDatabaseExisted) {
+            Files.copy(recovery.backup, fileLocator.db, REPLACE_EXISTING)
+        } else {
+            fileLocator.db.deleteIfExists()
+        }
+        deleteLiveDatabaseSidecars()
+        recovery.backup.deleteIfExists()
+    }
+
+    fun finishDbReplacement(recovery: DatabaseRollback) {
+        recovery.backup.deleteIfExists()
+    }
+
+    fun discardStagedDb(importedDb: Path) {
+        importedDb.deleteIfExists()
+        importedDb.resolveSibling("${importedDb.fileName}-journal").deleteIfExists()
+        importedDb.resolveSibling("${importedDb.fileName}-wal").deleteIfExists()
+        importedDb.resolveSibling("${importedDb.fileName}-shm").deleteIfExists()
+    }
+
+    private fun moveReplacing(source: Path, destination: Path) {
+        try {
+            Files.move(source, destination, ATOMIC_MOVE, REPLACE_EXISTING)
+        } catch (error: AtomicMoveNotSupportedException) {
+            Files.move(source, destination, REPLACE_EXISTING)
+        }
+    }
+
+    private fun deleteLiveDatabaseSidecars() {
+        fileLocator.dbJournal.deleteIfExists()
+        fileLocator.dbWal.deleteIfExists()
+        fileLocator.dbShm.deleteIfExists()
     }
 
     private fun readSqliteUserVersion(database: java.nio.file.Path): Int? {
@@ -190,13 +277,40 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
             }
         }
 
+        val manifestInfo = inspectManifest(hasManifest, manifest)
         return BackupContents(
             hasDatabase,
             hasJsonPreferences,
             hasSerializedPreferences,
             hasManifest,
-            manifest
+            manifest,
+            manifestInfo.first,
+            manifestInfo.second
         )
+    }
+
+    private fun inspectManifest(
+        hasManifest: Boolean,
+        manifest: String?
+    ): Pair<BackupSource, Int?> {
+        if (!hasManifest) {
+            return BackupSource.LEGACY_OR_UNKNOWN to null
+        }
+        return try {
+            val json = JsonParser.`object`().from(checkNotNull(manifest))
+            val appName = json.getString("appName")
+            val formatVersion = json.getInt("backupFormatVersion")
+            when {
+                appName != "WizeStream" -> BackupSource.FOREIGN to formatVersion
+
+                formatVersion != MANIFEST_FORMAT_VERSION ->
+                    BackupSource.UNSUPPORTED_WIZESTREAM to formatVersion
+
+                else -> BackupSource.WIZESTREAM to formatVersion
+            }
+        } catch (error: JsonParserException) {
+            BackupSource.INVALID_MANIFEST to null
+        }
     }
 
     /**
@@ -208,43 +322,23 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
     )
     @Throws(IOException::class, ClassNotFoundException::class)
     fun loadSerializedPrefs(zipFile: StoredFileHelper, preferences: SharedPreferences) {
+        replacePreferences(preferences, readSerializedPrefs(zipFile))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Throws(IOException::class, ClassNotFoundException::class)
+    fun readSerializedPrefs(zipFile: StoredFileHelper): Map<String, Any?> {
+        var entries: Map<String, Any?>? = null
         ZipHelper.extractFileFromZip(zipFile, BackupFileLocator.FILE_NAME_SERIALIZED_PREFS) {
             PreferencesObjectInputStream(it).use { input ->
-                @Suppress("UNCHECKED_CAST")
-                val entries = input.readObject() as Map<String, *>
-
-                val editor = preferences.edit()
-                editor.clear()
-
-                for ((key, value) in entries) {
-                    when (value) {
-                        is Boolean -> editor.putBoolean(key, value)
-
-                        is Float -> editor.putFloat(key, value)
-
-                        is Int -> editor.putInt(key, value)
-
-                        is Long -> editor.putLong(key, value)
-
-                        is String -> editor.putString(key, value)
-
-                        is Set<*> -> {
-                            // There are currently only Sets with type String possible
-                            @Suppress("UNCHECKED_CAST")
-                            editor.putStringSet(key, value as Set<String>?)
-                        }
-                    }
-                }
-
-                if (!editor.commit()) {
-                    throw IOException("Unable to commit loadSerializedPrefs")
-                }
+                entries = sanitizePreferences(input.readObject() as Map<String, *>)
             }
         }.let { fileExists ->
             if (!fileExists) {
                 throw FileNotFoundException(BackupFileLocator.FILE_NAME_SERIALIZED_PREFS)
             }
         }
+        return checkNotNull(entries)
     }
 
     /**
@@ -252,39 +346,65 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
      */
     @Throws(IOException::class, JsonParserException::class)
     fun loadJsonPrefs(zipFile: StoredFileHelper, preferences: SharedPreferences) {
+        replacePreferences(preferences, readJsonPrefs(zipFile))
+    }
+
+    @Throws(IOException::class, JsonParserException::class)
+    fun readJsonPrefs(zipFile: StoredFileHelper): Map<String, Any?> {
+        var entries: Map<String, Any?>? = null
         ZipHelper.extractFileFromZip(zipFile, BackupFileLocator.FILE_NAME_JSON_PREFS) {
             val jsonObject = JsonParser.`object`().from(it)
-            val entries = mutableMapOf<String, Any?>()
+            val parsedEntries = mutableMapOf<String, Any?>()
 
             for ((key, value) in jsonObject) {
                 when (value) {
-                    is Boolean, is Float, is Int, is Long, is String -> entries[key] = value
-                    is JsonArray -> entries[key] = value.mapNotNull { e -> e as? String }.toSet()
+                    is Boolean, is Float, is Int, is Long, is String ->
+                        parsedEntries[key] = value
+
+                    is JsonArray ->
+                        parsedEntries[key] = value.mapNotNull { e -> e as? String }.toSet()
                 }
             }
-
-            val editor = preferences.edit()
-            editor.clear()
-
-            for ((key, value) in entries) {
-                @Suppress("UNCHECKED_CAST")
-                when (value) {
-                    is Boolean -> editor.putBoolean(key, value)
-                    is Float -> editor.putFloat(key, value)
-                    is Int -> editor.putInt(key, value)
-                    is Long -> editor.putLong(key, value)
-                    is String -> editor.putString(key, value)
-                    is Set<*> -> editor.putStringSet(key, value as Set<String>?)
-                }
-            }
-
-            if (!editor.commit()) {
-                throw IOException("Unable to commit loadJsonPrefs")
-            }
+            entries = parsedEntries
         }.let { fileExists ->
             if (!fileExists) {
                 throw FileNotFoundException(BackupFileLocator.FILE_NAME_JSON_PREFS)
             }
         }
+        return checkNotNull(entries)
+    }
+
+    fun replacePreferences(preferences: SharedPreferences, entries: Map<String, *>) {
+        val editor = preferences.edit()
+        editor.clear()
+        for ((key, value) in sanitizePreferences(entries)) {
+            @Suppress("UNCHECKED_CAST")
+            when (value) {
+                is Boolean -> editor.putBoolean(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is String -> editor.putString(key, value)
+                is Set<*> -> editor.putStringSet(key, value as Set<String>)
+            }
+        }
+        if (!editor.commit()) {
+            throw IOException("Unable to commit imported preferences")
+        }
+    }
+
+    private fun sanitizePreferences(entries: Map<String, *>): Map<String, Any?> {
+        return entries.mapNotNull { (key, value) ->
+            when (value) {
+                is Boolean, is Float, is Int, is Long, is String -> key to value
+
+                is Set<*> -> {
+                    val strings = value.filterIsInstance<String>().toSet()
+                    if (strings.size == value.size) key to strings else null
+                }
+
+                else -> null
+            }
+        }.toMap()
     }
 }

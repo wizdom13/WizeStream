@@ -37,6 +37,7 @@ import org.mockito.Mockito.withSettings
 import org.mockito.junit.MockitoJUnitRunner
 import org.schabi.newpipe.settings.export.BackupFileLocator
 import org.schabi.newpipe.settings.export.ImportExportManager
+import org.schabi.newpipe.settings.export.ImportExportManager.BackupSource
 import org.schabi.newpipe.streams.io.StoredFileHelper
 import us.shandian.giga.io.FileStream
 
@@ -110,6 +111,60 @@ class ImportExportManagerTest {
                 assertTrue(manifest.getBoolean("includesPreferences"))
                 assertFalse(manifest.getBoolean("includesSponsorBlockSettings"))
             }
+        }
+    }
+
+    @Test
+    fun `A supported WizeStream manifest must be accepted for full restore`() {
+        val zip = backupWithManifest(
+            """{"appName":"WizeStream","backupFormatVersion":1}"""
+        )
+        `when`(storedFileHelper.stream).thenReturn(FileStream(zip.toFile()))
+
+        val contents = ImportExportManager(fileLocator).inspectBackup(storedFileHelper)
+
+        assertEquals(BackupSource.WIZESTREAM, contents.source)
+        assertEquals(1, contents.backupFormatVersion)
+    }
+
+    @Test
+    fun `A foreign manifest must not be accepted as a WizeStream backup`() {
+        val zip = backupWithManifest(
+            """{"appName":"PipePipe","backupFormatVersion":1}"""
+        )
+        `when`(storedFileHelper.stream).thenReturn(FileStream(zip.toFile()))
+
+        val contents = ImportExportManager(fileLocator).inspectBackup(storedFileHelper)
+
+        assertEquals(BackupSource.FOREIGN, contents.source)
+    }
+
+    @Test
+    fun `A manifest-less archive must remain untrusted`() {
+        val zip = createTempFile("legacy_backup_", ".zip")
+        ZipOutputStream(zip.outputStream()).use { output ->
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_DB))
+            output.write("legacy database".toByteArray())
+            output.closeEntry()
+        }
+        `when`(storedFileHelper.stream).thenReturn(FileStream(zip.toFile()))
+
+        val contents = ImportExportManager(fileLocator).inspectBackup(storedFileHelper)
+
+        assertEquals(BackupSource.LEGACY_OR_UNKNOWN, contents.source)
+    }
+
+    private fun backupWithManifest(manifest: String) = createTempFile(
+        "backup_manifest_",
+        ".zip"
+    ).also { zip ->
+        ZipOutputStream(zip.outputStream()).use { output ->
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_DB))
+            output.write("database".toByteArray())
+            output.closeEntry()
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_MANIFEST))
+            output.write(manifest.toByteArray())
+            output.closeEntry()
         }
     }
 

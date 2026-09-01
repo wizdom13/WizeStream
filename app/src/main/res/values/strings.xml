@@ -504,6 +504,8 @@
     <string name="backup_contents_manifest">backup manifest</string>
     <string name="backup_contents_none">no recognizable backup contents</string>
     <string name="backup_invalid_or_empty">This ZIP does not contain recognizable WizeStream backup data.</string>
+    <string name="backup_incompatible_title">Backup cannot be restored</string>
+    <string name="backup_incompatible_message">Full restore accepts only backups created by a supported version of WizeStream. This archive may be from another app, an older unverified format, or an incompatible WizeStream version. Nothing on this device was changed.</string>
     <string name="backup_exported_with_file">Backup exported: %s</string>
     <string name="backup_import_succeeded_restart">Import succeeded. WizeStream will restart to finish loading the backup.</string>
     <string name="restart">Restart</string>
