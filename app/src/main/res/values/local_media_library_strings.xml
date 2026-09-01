@@ -10,6 +10,9 @@
     <string name="local_media_back_to_categories">Back to categories</string>
     <string name="local_media_folders">Folders</string>
     <string name="local_media_unknown_folder">Unknown folder</string>
+    <string name="local_media_play_all">Play all</string>
+    <string name="local_media_shuffle_all">Shuffle all</string>
+    <string name="local_media_group_more_actions">More group actions</string>
     <plurals name="local_media_track_count">
         <item quantity="one">%d track</item>
         <item quantity="other">%d tracks</item>
