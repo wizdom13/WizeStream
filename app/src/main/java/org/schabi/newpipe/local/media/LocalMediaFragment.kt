@@ -115,8 +115,8 @@ class LocalMediaFragment : Fragment() {
         super.onDestroy()
     }
 
-    private fun requiredPermissions(): Array<String> =
-        LocalMediaPermissionPolicy.requiredPermissions()
+    private fun requiredPermissions(): Array<String> = LocalMediaPermissionPolicy
+        .requiredPermissions()
 
     private fun loadOrExplainPermission() {
         val access = LocalMediaPermissionPolicy.access(requireContext())

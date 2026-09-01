@@ -25,6 +25,7 @@ object LocalMediaPermissionPolicy {
         )
 
         sdk >= 23 -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+
         else -> emptyArray()
     }
 
@@ -33,6 +34,7 @@ object LocalMediaPermissionPolicy {
         sdk: Int = Build.VERSION.SDK_INT
     ): LocalMediaAccess = when {
         sdk < 23 -> LocalMediaAccess(canReadAudio = true, canReadVideo = true)
+
         sdk < 33 -> {
             val granted = isGranted(context, Manifest.permission.READ_EXTERNAL_STORAGE)
             LocalMediaAccess(canReadAudio = granted, canReadVideo = granted)
@@ -44,6 +46,6 @@ object LocalMediaPermissionPolicy {
         )
     }
 
-    private fun isGranted(context: Context, permission: String): Boolean =
-        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    private fun isGranted(context: Context, permission: String): Boolean = ContextCompat
+        .checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }
