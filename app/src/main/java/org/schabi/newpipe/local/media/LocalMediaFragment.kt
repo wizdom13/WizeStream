@@ -3,12 +3,7 @@
  */
 package org.schabi.newpipe.local.media
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -19,8 +14,8 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
@@ -28,7 +23,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import java.util.Locale
-import java.util.concurrent.Executors
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.info_list.ItemViewMode
@@ -50,8 +44,6 @@ class LocalMediaFragment : Fragment() {
     private enum class Filter { ALL, AUDIO, VIDEO }
     private enum class Sort { TITLE, ARTIST, ALBUM, FOLDER, RECENT }
 
-    private val executor = Executors.newSingleThreadExecutor()
-    private val mainHandler = Handler(Looper.getMainLooper())
     private val disposables = CompositeDisposable()
     private var allItems = emptyList<LocalMediaItem>()
     private var shownItems = emptyList<LocalMediaItem>()
@@ -60,6 +52,7 @@ class LocalMediaFragment : Fragment() {
     private var query = ""
     private lateinit var adapter: LocalMediaAdapter
     private lateinit var list: RecyclerView
+    private lateinit var viewModel: LocalMediaViewModel
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -76,6 +69,7 @@ class LocalMediaFragment : Fragment() {
     override fun onViewCreated(view: View, state: Bundle?) {
         super.onViewCreated(view, state)
         list = view.findViewById(R.id.localMediaList)
+        viewModel = ViewModelProvider(this)[LocalMediaViewModel::class.java]
         adapter = LocalMediaAdapter(::play, ::showActions)
         list.adapter = adapter
         applyItemViewMode()
@@ -106,6 +100,7 @@ class LocalMediaFragment : Fragment() {
                 override fun afterTextChanged(s: Editable?) = Unit
             }
         )
+        viewModel.state.observe(viewLifecycleOwner, ::renderState)
         loadOrExplainPermission()
     }
 
@@ -117,44 +112,28 @@ class LocalMediaFragment : Fragment() {
 
     override fun onDestroy() {
         disposables.dispose()
-        executor.shutdownNow()
         super.onDestroy()
     }
 
-    private fun requiredPermissions(): Array<String> = when {
-        Build.VERSION.SDK_INT >= 33 -> arrayOf(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO
-        )
-
-        Build.VERSION.SDK_INT >= 23 -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-
-        else -> emptyArray()
-    }
-
-    private fun hasAnyPermission(): Boolean = requiredPermissions().isEmpty() ||
-        requiredPermissions().any {
-            ContextCompat.checkSelfPermission(requireContext(), it) ==
-                PackageManager.PERMISSION_GRANTED
-        }
+    private fun requiredPermissions(): Array<String> = LocalMediaPermissionPolicy
+        .requiredPermissions()
 
     private fun loadOrExplainPermission() {
-        if (!hasAnyPermission()) {
+        val access = LocalMediaPermissionPolicy.access(requireContext())
+        if (!access.hasAnyAccess) {
             showMessage(R.string.local_media_permission_description, true)
             return
         }
         view?.findViewById<View>(R.id.localMediaMessagePanel)?.visibility = View.GONE
-        view?.findViewById<View>(R.id.localMediaProgress)?.visibility = View.VISIBLE
-        val appContext = requireContext().applicationContext
-        executor.execute {
-            val result = LocalMediaRepository(appContext).query()
-            mainHandler.post {
-                if (!isAdded || view == null) return@post
-                allItems = result
-                view?.findViewById<View>(R.id.localMediaProgress)?.visibility = View.GONE
-                updateList()
-            }
-        }
+        viewModel.load(access)
+    }
+
+    private fun renderState(state: LocalMediaLibraryState) {
+        if (!isAdded || view == null) return
+        view?.findViewById<View>(R.id.localMediaProgress)?.visibility =
+            if (state.isLoading) View.VISIBLE else View.GONE
+        allItems = state.library.allItems
+        if (!state.isLoading) updateList()
     }
 
     private fun updateList() {
