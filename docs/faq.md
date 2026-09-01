@@ -65,10 +65,11 @@ and choose the folders under **Settings > Download** before starting a batch.
 ## How does content blocking work?
 
 Long-press a video to block that video or its channel. Under **Settings > Content > Blocked
-content**, you can enable or disable filtering, add title or uploader keywords, review blocked
-videos and channels, remove individual rules, or clear everything. Matching remote videos,
-channels, posts, playlists, feeds, search results, and related content are hidden locally. Blocking
-does not unsubscribe from channels, delete history, or report anything to a service.
+content**, you can enable or disable filtering, add title or content keywords, review blocked videos
+and channels, remove individual rules, or clear everything. Keyword rules do not match uploader
+names; use **Block channel** when you want to hide all content from a channel. Matching remote
+videos, channels, posts, playlists, feeds, search results, and related content are hidden locally.
+Blocking does not unsubscribe from channels, delete history, or report anything to a service.
 
 ## How do proxy settings work?
 
