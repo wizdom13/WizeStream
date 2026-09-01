@@ -2,16 +2,19 @@ package org.schabi.newpipe.settings
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.nio.file.Path
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.NewPipeDatabase
+import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager
@@ -25,6 +28,7 @@ class NewPipeDataMigrationManagerTest {
     fun setUp() {
         NewPipeDatabase.close()
         context.deleteDatabase(AppDatabase.DATABASE_NAME)
+        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
         sourcePath = context.cacheDir.resolve("newpipe-migration-source.db").toPath()
         sourcePath.toFile().delete()
         createSourceDatabase(sourcePath)
@@ -34,6 +38,7 @@ class NewPipeDataMigrationManagerTest {
     fun tearDown() {
         NewPipeDatabase.close()
         context.deleteDatabase(AppDatabase.DATABASE_NAME)
+        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
         sourcePath.toFile().delete()
     }
 
@@ -123,6 +128,44 @@ class NewPipeDataMigrationManagerTest {
             listOf("First lesson", "Second lesson", "Third lesson"),
             alphaStreams.map { it.title }
         )
+    }
+
+    @Test
+    fun compatibleSettingsAreTypeCheckedAndMergedWithoutClearingOtherPreferences() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        preferences.edit()
+            .putString("existing_wizestream_setting", "keep me")
+            .putBoolean(context.getString(R.string.show_comments_key), true)
+            .commit()
+        val sourcePreferences = mapOf<String, Any>(
+            context.getString(R.string.current_service_key) to "YouTube",
+            context.getString(R.string.show_comments_key) to false,
+            context.getString(R.string.playback_speed_key) to 1.25f,
+            context.getString(R.string.show_next_video_key) to "wrong type",
+            context.getString(R.string.proxy_password_key) to "secret"
+        )
+        val manager = NewPipeDataMigrationManager(context)
+
+        val preview = manager.inspect(sourcePath, sourcePreferences)
+        assertEquals(2, preview.compatibleSettings)
+
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(
+                importHistory = false,
+                importPlaylists = false,
+                importSettings = true
+            ),
+            sourcePreferences
+        )
+
+        assertEquals(2, result.compatibleSettings)
+        assertFalse(preferences.contains("service"))
+        assertFalse(preferences.getBoolean("show_comments", true))
+        assertEquals(1.25f, preferences.getFloat("playback_speed_key", 0f))
+        assertFalse(preferences.contains("show_next_video"))
+        assertFalse(preferences.contains("proxy_password"))
+        assertEquals("keep me", preferences.getString("existing_wizestream_setting", null))
     }
 
     private fun createSourceDatabase(path: Path) {
