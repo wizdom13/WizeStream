@@ -44,7 +44,7 @@ class LocalMediaRepository(private val context: Context) {
             }
         }.toTypedArray()
 
-        return queryCollection(
+        val items = queryCollection(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
             columns,
             "${MediaStore.Audio.Media.IS_MUSIC} != 0"
@@ -82,6 +82,8 @@ class LocalMediaRepository(private val context: Context) {
                 sizeBytes = cursor.long(MediaStore.Audio.Media.SIZE)
             )
         }
+        val genres = queryAudioGenres()
+        return items.map { item -> item.copy(genres = genres[item.mediaStoreId].orEmpty()) }
     }
 
     private fun queryVideo(): List<LocalMediaItem> {
@@ -152,6 +154,55 @@ class LocalMediaRepository(private val context: Context) {
             }
         } catch (_: SecurityException) {
             // Android 13+ may grant audio and video independently.
+        }
+        return result
+    }
+
+    private fun queryAudioGenres(): Map<Long, Set<String>> {
+        val result = mutableMapOf<Long, MutableSet<String>>()
+        val projection = arrayOf(
+            MediaStore.Audio.Genres._ID,
+            MediaStore.Audio.Genres.NAME
+        )
+        try {
+            context.contentResolver.query(
+                MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                null
+            )?.use { genres ->
+                while (genres.moveToNext()) {
+                    val genreId = genres.long(MediaStore.Audio.Genres._ID)
+                    val genreName = genres.text(MediaStore.Audio.Genres.NAME)
+                    if (genreId <= 0 || genreName.isBlank()) continue
+                    queryGenreMembers(genreId).forEach { audioId ->
+                        result.getOrPut(audioId) { linkedSetOf() } += genreName
+                    }
+                }
+            }
+        } catch (_: SecurityException) {
+            return emptyMap()
+        } catch (_: IllegalArgumentException) {
+            return emptyMap()
+        }
+        return result
+    }
+
+    private fun queryGenreMembers(genreId: Long): List<Long> {
+        val volume = if (Build.VERSION.SDK_INT >= 29) MediaStore.VOLUME_EXTERNAL else "external"
+        val uri = MediaStore.Audio.Genres.Members.getContentUri(volume, genreId)
+        val result = mutableListOf<Long>()
+        context.contentResolver.query(
+            uri,
+            arrayOf(MediaStore.Audio.Genres.Members.AUDIO_ID),
+            null,
+            null,
+            null
+        )?.use { members ->
+            while (members.moveToNext()) {
+                result += members.long(MediaStore.Audio.Genres.Members.AUDIO_ID)
+            }
         }
         return result
     }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_media_tracks">Tracks</string>
+    <string name="local_media_artists">Artists</string>
+    <string name="local_media_albums">Albums</string>
+    <string name="local_media_genres">Genres</string>
+    <string name="local_media_unknown_artist">Unknown artist</string>
+    <string name="local_media_unknown_album">Unknown album</string>
+    <string name="local_media_unknown_genre">Unknown genre</string>
+    <string name="local_media_back_to_categories">Back to categories</string>
+    <plurals name="local_media_track_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
+</resources>
