@@ -518,6 +518,11 @@ Please keep changes focused and testable. For UI work, include before-and-after 
 
 Special thanks to [@FabianOvrWrt](https://github.com/FabianOvrWrt) (Fabián PS) for designing and contributing WizeStream's logo graphics in [PR #97](https://github.com/wizdom13/WizeStream/pull/97).
 
+Special thanks to [IzzySoft](https://github.com/IzzySoft) for the independent reproducible-build
+testing, precise diagnostics, and patient guidance that helped make WizeStream releases portable
+and reproducible across independent build environments, and for distributing WizeStream through
+[IzzyOnDroid](https://apt.izzysoft.de/packages/org.wisso.newpipematerial).
+
 ### Integrated extractor source
 
 Extractor and timeago-parser sources are stored directly under `app/src/main/java`, with protocol
