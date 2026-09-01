@@ -169,7 +169,50 @@ public final class ContentBlockingHelper {
 
     @NonNull
     private static String normalize(@Nullable final String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        return value == null ? "" : trimWhitespace(value).toLowerCase(Locale.ROOT);
+    }
+
+    @NonNull
+    private static String trimWhitespace(@NonNull final String value) {
+        int start = 0;
+        int end = value.length();
+        while (start < end && isWhitespace(value.charAt(start))) {
+            start++;
+        }
+        while (end > start && isWhitespace(value.charAt(end - 1))) {
+            end--;
+        }
+        return value.substring(start, end);
+    }
+
+    private static boolean isWhitespace(final char value) {
+        return Character.isWhitespace(value) || Character.isSpaceChar(value);
+    }
+
+    /**
+     * Returns the canonical persisted representation of keyword rules.
+     *
+     * <p>Commas and line breaks separate rules. Surrounding Unicode whitespace, empty rules, and
+     * case-insensitive duplicates are removed while the first spelling of each rule is retained.
+     *
+     * @param keywords raw comma- or line-break-separated keyword rules
+     * @return canonical line-break-separated keyword rules
+     */
+    @NonNull
+    public static String sanitizeKeywords(@Nullable final String keywords) {
+        if (keywords == null) {
+            return "";
+        }
+
+        final List<String> sanitized = new ArrayList<>();
+        final Set<String> seen = new HashSet<>();
+        for (final String value : keywords.split("[,\\n]")) {
+            final String keyword = trimWhitespace(value);
+            if (!keyword.isEmpty() && seen.add(normalize(keyword))) {
+                sanitized.add(keyword);
+            }
+        }
+        return String.join("\n", sanitized);
     }
 
     public static final class Entry {
@@ -231,12 +274,10 @@ public final class ContentBlockingHelper {
             }
 
             final List<String> keywordList = new ArrayList<>();
-            if (keywords != null) {
-                for (final String value : keywords.split("[,\\n]")) {
-                    final String keyword = normalize(value);
-                    if (!keyword.isEmpty() && !keywordList.contains(keyword)) {
-                        keywordList.add(keyword);
-                    }
+            for (final String value : sanitizeKeywords(keywords).split("\\n")) {
+                final String keyword = normalize(value);
+                if (!keyword.isEmpty()) {
+                    keywordList.add(keyword);
                 }
             }
             return new Rules(enabled, videos, channels, channelNames, keywordList);
@@ -250,7 +291,7 @@ public final class ContentBlockingHelper {
                 final StreamInfoItem stream = (StreamInfoItem) item;
                 return blockedVideoUrls.contains(normalize(stream.getUrl()))
                         || isBlockedChannel(stream.getUploaderUrl(), stream.getUploaderName())
-                        || containsKeyword(stream.getName(), stream.getUploaderName());
+                        || containsKeyword(stream.getName());
             }
             if (item instanceof ChannelInfoItem) {
                 return isBlockedChannel(item.getUrl(), item.getName())
@@ -259,13 +300,12 @@ public final class ContentBlockingHelper {
             if (item instanceof PlaylistInfoItem) {
                 final PlaylistInfoItem playlist = (PlaylistInfoItem) item;
                 return isBlockedChannel(null, playlist.getUploaderName())
-                        || containsKeyword(playlist.getName(), playlist.getUploaderName());
+                        || containsKeyword(playlist.getName());
             }
             if (item instanceof PostInfoItem) {
                 final PostInfoItem post = (PostInfoItem) item;
                 return isBlockedChannel(post.getUploaderUrl(), post.getUploaderName())
-                        || containsKeyword(post.getName(), post.getContent(),
-                                post.getUploaderName());
+                        || containsKeyword(post.getName(), post.getContent());
             }
             return containsKeyword(item.getName());
         }

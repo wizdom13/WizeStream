@@ -38,7 +38,13 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
             editText.setMinLines(4);
         });
         blockedKeywordsPreference.setOnPreferenceChangeListener((preference, value) -> {
-            preference.setSummary(keywordSummary(value == null ? "" : value.toString()));
+            final String proposed = value == null ? "" : value.toString();
+            final String sanitized = ContentBlockingHelper.sanitizeKeywords(proposed);
+            preference.setSummary(keywordSummary(sanitized));
+            if (!sanitized.equals(proposed)) {
+                blockedKeywordsPreference.setText(sanitized);
+                return false;
+            }
             return true;
         });
         blockedChannelsPreference.setOnPreferenceClickListener(preference -> {
@@ -140,12 +146,8 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
 
     @NonNull
     private String keywordSummary(@Nullable final String value) {
-        int count = 0;
-        for (final String keyword : (value == null ? "" : value).split("[,\\n]")) {
-            if (!keyword.trim().isEmpty()) {
-                count++;
-            }
-        }
+        final String sanitized = ContentBlockingHelper.sanitizeKeywords(value);
+        final int count = sanitized.isEmpty() ? 0 : sanitized.split("\\n").length;
         return getResources().getQuantityString(R.plurals.blocked_keywords_count, count, count);
     }
 }
