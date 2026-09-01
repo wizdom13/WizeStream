@@ -141,10 +141,10 @@ class NewPipeDataMigrationManager(private val context: Context) {
                     .mapNotNullTo(mutableSetOf()) { it.name }
                 var displayIndex = playlistDao.getAllDirect()
                     .maxOfOrNull { it.displayIndex }?.plus(1) ?: 0L
-                val playlistOrder = if (schema.playlistColumns.contains("display_index")) {
-                    "display_index, uid"
-                } else {
-                    "uid"
+                val playlistOrder = when {
+                    schema.usesAlphabeticalPlaylistOrder -> "name COLLATE NOCASE ASC, uid"
+                    schema.playlistColumns.contains("display_index") -> "display_index, uid"
+                    else -> "uid"
                 }
 
                 source.rawQuery(
@@ -235,7 +235,10 @@ class NewPipeDataMigrationManager(private val context: Context) {
             hasProgress = stateColumns.containsAll(REQUIRED_STATE_COLUMNS),
             hasPlaylists = playlistColumns.containsAll(REQUIRED_PLAYLIST_COLUMNS) &&
                 joinColumns.containsAll(REQUIRED_PLAYLIST_JOIN_COLUMNS),
-            playlistColumns = playlistColumns
+            playlistColumns = playlistColumns,
+            usesAlphabeticalPlaylistOrder =
+                source.tableExists(PIPEPIPE_SPONSORBLOCK_WHITELIST_TABLE) ||
+                    source.userVersion() >= PIPEPIPE_DATABASE_VERSION_FLOOR
         )
         if (!schema.hasHistory && !schema.hasProgress && !schema.hasPlaylists) {
             throw UnsupportedSourceException(
@@ -325,6 +328,13 @@ class NewPipeDataMigrationManager(private val context: Context) {
         }
     }
 
+    private fun SQLiteDatabase.userVersion(): Int = rawQuery(
+        "PRAGMA user_version",
+        null
+    ).use { cursor ->
+        if (cursor.moveToFirst()) cursor.getInt(0) else 0
+    }
+
     private fun Cursor.string(column: String): String? {
         val index = getColumnIndex(column)
         return if (index < 0 || isNull(index)) null else getString(index)
@@ -344,7 +354,8 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val hasHistory: Boolean,
         val hasProgress: Boolean,
         val hasPlaylists: Boolean,
-        val playlistColumns: Set<String>
+        val playlistColumns: Set<String>,
+        val usesAlphabeticalPlaylistOrder: Boolean
     )
 
     companion object {
@@ -353,6 +364,8 @@ class NewPipeDataMigrationManager(private val context: Context) {
         private const val STATE_TABLE = "stream_state"
         private const val PLAYLIST_TABLE = "playlists"
         private const val PLAYLIST_JOIN_TABLE = "playlist_stream_join"
+        private const val PIPEPIPE_SPONSORBLOCK_WHITELIST_TABLE = "sponsorblock_whitelist"
+        private const val PIPEPIPE_DATABASE_VERSION_FLOOR = 900
 
         private val REQUIRED_STREAM_COLUMNS = setOf(
             "uid",

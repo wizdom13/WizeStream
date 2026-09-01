@@ -98,6 +98,33 @@ class NewPipeDataMigrationManagerTest {
         assertEquals(1, target.playlistDAO().getAllDirect().size)
     }
 
+    @Test
+    fun pipePipePlaylistAndStreamOrderMatchesItsVisibleOrder() {
+        sourcePath.toFile().delete()
+        createPipePipeSourceDatabase(sourcePath)
+        val manager = NewPipeDataMigrationManager(context)
+
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(
+                importHistory = false,
+                importPlaylists = true
+            )
+        )
+
+        val target = NewPipeDatabase.getInstance(context)
+        assertEquals(2, result.playlists)
+        assertEquals(4, result.playlistItems)
+        val playlists = target.playlistDAO().getAllDirect().sortedBy { it.displayIndex }
+        assertEquals(listOf("Alpha", "Zulu"), playlists.map { it.name })
+        val alphaStreams = target.playlistStreamDAO()
+            .getOrderedStreamsDirect(playlists.first().uid)
+        assertEquals(
+            listOf("First lesson", "Second lesson", "Third lesson"),
+            alphaStreams.map { it.title }
+        )
+    }
+
     private fun createSourceDatabase(path: Path) {
         SQLiteDatabase.openOrCreateDatabase(path.toFile(), null).use { source ->
             source.execSQL(
@@ -132,6 +159,44 @@ class NewPipeDataMigrationManagerTest {
             source.execSQL("INSERT INTO stream_state VALUES (1, 90000)")
             source.execSQL("INSERT INTO playlists VALUES (10, 'Lessons')")
             source.execSQL("INSERT INTO playlist_stream_join VALUES (10, 1, 0)")
+        }
+    }
+
+    private fun createPipePipeSourceDatabase(path: Path) {
+        SQLiteDatabase.openOrCreateDatabase(path.toFile(), null).use { source ->
+            source.execSQL("PRAGMA user_version = 901")
+            source.execSQL(
+                "CREATE TABLE streams (" +
+                    "uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, " +
+                    "url TEXT NOT NULL, title TEXT NOT NULL, stream_type TEXT NOT NULL, " +
+                    "duration INTEGER NOT NULL, uploader TEXT NOT NULL)"
+            )
+            source.execSQL(
+                "CREATE TABLE playlists (" +
+                    "uid INTEGER PRIMARY KEY, name TEXT, display_index INTEGER NOT NULL)"
+            )
+            source.execSQL(
+                "CREATE TABLE playlist_stream_join (" +
+                    "playlist_id INTEGER NOT NULL, stream_id INTEGER NOT NULL, " +
+                    "join_index INTEGER NOT NULL)"
+            )
+            source.execSQL(
+                "CREATE TABLE sponsorblock_whitelist (uploader TEXT PRIMARY KEY NOT NULL)"
+            )
+            source.execSQL(
+                "INSERT INTO streams VALUES " +
+                    "(1, 0, 'https://example.com/watch/1', 'First lesson', " +
+                    "'VIDEO_STREAM', 300, 'Teacher'), " +
+                    "(2, 0, 'https://example.com/watch/2', 'Second lesson', " +
+                    "'VIDEO_STREAM', 300, 'Teacher'), " +
+                    "(3, 0, 'https://example.com/watch/3', 'Third lesson', " +
+                    "'VIDEO_STREAM', 300, 'Teacher')"
+            )
+            source.execSQL("INSERT INTO playlists VALUES (10, 'Zulu', 0), (20, 'Alpha', 1)")
+            source.execSQL("INSERT INTO playlist_stream_join VALUES (20, 3, 2)")
+            source.execSQL("INSERT INTO playlist_stream_join VALUES (20, 1, 0)")
+            source.execSQL("INSERT INTO playlist_stream_join VALUES (20, 2, 1)")
+            source.execSQL("INSERT INTO playlist_stream_join VALUES (10, 2, 0)")
         }
     }
 }
