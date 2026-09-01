@@ -51,6 +51,7 @@ class LocalMediaFragment : Fragment() {
     private var sort = Sort.TITLE
     private var query = ""
     private var audioCategory = LocalMediaAudioCategory.TRACKS
+    private var videoCategory = LocalMediaVideoCategory.VIDEOS
     private var activeGroup: LocalMediaGroup? = null
     private lateinit var adapter: LocalMediaAdapter
     private lateinit var groupAdapter: LocalMediaGroupAdapter
@@ -74,7 +75,7 @@ class LocalMediaFragment : Fragment() {
         list = view.findViewById(R.id.localMediaList)
         viewModel = ViewModelProvider(this)[LocalMediaViewModel::class.java]
         adapter = LocalMediaAdapter(::play, ::showActions)
-        groupAdapter = LocalMediaGroupAdapter(::openGroup) { audioCategory }
+        groupAdapter = LocalMediaGroupAdapter(::openGroup)
         list.adapter = adapter
         applyItemViewMode()
 
@@ -105,6 +106,12 @@ class LocalMediaFragment : Fragment() {
         }
         view.findViewById<Chip>(R.id.localMediaAudioPlaylists).setOnClickListener {
             NavigationHelper.openBookmarksFragment(parentFragmentManager)
+        }
+        view.findViewById<Chip>(R.id.localMediaVideoVideos).setOnClickListener {
+            selectVideoCategory(LocalMediaVideoCategory.VIDEOS)
+        }
+        view.findViewById<Chip>(R.id.localMediaVideoFolders).setOnClickListener {
+            selectVideoCategory(LocalMediaVideoCategory.FOLDERS)
         }
         view.findViewById<View>(R.id.localMediaGroupBack).setOnClickListener {
             activeGroup = null
@@ -166,11 +173,19 @@ class LocalMediaFragment : Fragment() {
         activeGroup = null
         view?.findViewById<View>(R.id.localMediaAudioNavigation)?.visibility =
             if (selected == Filter.AUDIO) View.VISIBLE else View.GONE
+        view?.findViewById<View>(R.id.localMediaVideoNavigation)?.visibility =
+            if (selected == Filter.VIDEO) View.VISIBLE else View.GONE
         updateList()
     }
 
     private fun selectAudioCategory(selected: LocalMediaAudioCategory) {
         audioCategory = selected
+        activeGroup = null
+        updateList()
+    }
+
+    private fun selectVideoCategory(selected: LocalMediaVideoCategory) {
+        videoCategory = selected
         activeGroup = null
         updateList()
     }
@@ -189,6 +204,14 @@ class LocalMediaFragment : Fragment() {
             activeGroup == null
         ) {
             showAudioGroups(term)
+            return
+        }
+        if (
+            filter == Filter.VIDEO &&
+            videoCategory == LocalMediaVideoCategory.FOLDERS &&
+            activeGroup == null
+        ) {
+            showVideoGroups(term)
             return
         }
         val comparator: Comparator<LocalMediaItem> = when (sort) {
@@ -235,6 +258,22 @@ class LocalMediaFragment : Fragment() {
                 value.lowercase(Locale.getDefault()).contains(term)
             }
         }
+        renderGroups(groups)
+    }
+
+    private fun showVideoGroups(term: String) {
+        val groups = LocalMediaVideoIndex.folders(
+            allItems.filter(LocalMediaItem::isVideo),
+            getString(R.string.local_media_unknown_folder)
+        ).filter { group ->
+            term.isEmpty() || listOf(group.title, group.subtitle).any { value ->
+                value.lowercase(Locale.getDefault()).contains(term)
+            }
+        }
+        renderGroups(groups)
+    }
+
+    private fun renderGroups(groups: List<LocalMediaGroup>) {
         list.adapter = groupAdapter
         list.layoutManager = LinearLayoutManager(requireContext())
         view?.findViewById<View>(R.id.localMediaGroupHeader)?.visibility = View.GONE
@@ -334,8 +373,7 @@ class LocalMediaFragment : Fragment() {
 }
 
 private class LocalMediaGroupAdapter(
-    private val onClick: (LocalMediaGroup) -> Unit,
-    private val category: () -> LocalMediaAudioCategory
+    private val onClick: (LocalMediaGroup) -> Unit
 ) : RecyclerView.Adapter<LocalMediaGroupAdapter.Holder>() {
     private var items = emptyList<LocalMediaGroup>()
 
@@ -362,16 +400,21 @@ private class LocalMediaGroupAdapter(
         private val subtitle = view.findViewById<TextView>(R.id.localMediaGroupItemSubtitle)
 
         fun bind(group: LocalMediaGroup) {
+            val countPlural = if (group.kind == LocalMediaGroupKind.VIDEO_FOLDER) {
+                R.plurals.videos
+            } else {
+                R.plurals.local_media_track_count
+            }
             val count = itemView.resources.getQuantityString(
-                R.plurals.local_media_track_count,
+                countPlural,
                 group.items.size,
                 group.items.size
             )
             icon.setImageResource(
-                if (category() == LocalMediaAudioCategory.ARTISTS) {
-                    R.drawable.ic_person
-                } else {
-                    R.drawable.ic_music_note
+                when (group.kind) {
+                    LocalMediaGroupKind.ARTIST -> R.drawable.ic_person
+                    LocalMediaGroupKind.VIDEO_FOLDER -> R.drawable.ic_movie
+                    else -> R.drawable.ic_music_note
                 }
             )
             title.text = group.title

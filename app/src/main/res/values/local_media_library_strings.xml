@@ -8,6 +8,8 @@
     <string name="local_media_unknown_album">Unknown album</string>
     <string name="local_media_unknown_genre">Unknown genre</string>
     <string name="local_media_back_to_categories">Back to categories</string>
+    <string name="local_media_folders">Folders</string>
+    <string name="local_media_unknown_folder">Unknown folder</string>
     <plurals name="local_media_track_count">
         <item quantity="one">%d track</item>
         <item quantity="other">%d tracks</item>
