@@ -5,12 +5,15 @@ package org.schabi.newpipe.local.media
 
 enum class LocalMediaAudioCategory { TRACKS, ARTISTS, ALBUMS, GENRES }
 
+enum class LocalMediaGroupKind { ARTIST, ALBUM, GENRE, VIDEO_FOLDER }
+
 data class LocalMediaGroup(
     val stableKey: String,
     val title: String,
     val subtitle: String,
     val items: List<LocalMediaItem>,
-    val thumbnailUri: String?
+    val thumbnailUri: String?,
+    val kind: LocalMediaGroupKind
 )
 
 object LocalMediaAudioIndex {
@@ -40,7 +43,8 @@ object LocalMediaAudioIndex {
             title = title,
             subtitle = "",
             items = groupedItems.sortedWith(trackComparator),
-            thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri)
+            thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri),
+            kind = LocalMediaGroupKind.ARTIST
         )
     }
 
@@ -58,7 +62,8 @@ object LocalMediaAudioIndex {
             title = first.album.ifBlank { unknownAlbum },
             subtitle = first.artist.ifBlank { unknownArtist },
             items = groupedItems.sortedWith(trackComparator),
-            thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri)
+            thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri),
+            kind = LocalMediaGroupKind.ALBUM
         )
     }
 
@@ -77,7 +82,8 @@ object LocalMediaAudioIndex {
                 title = genre,
                 subtitle = "",
                 items = groupedItems.sortedWith(trackComparator),
-                thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri)
+                thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri),
+                kind = LocalMediaGroupKind.GENRE
             )
         }
     }
