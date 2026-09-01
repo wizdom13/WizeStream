@@ -1,0 +1,6 @@
+• Import history and playlists from NewPipe-compatible backups.
+• Added YouTube Music search filter chips.
+• Added adjustable comment text and optional drawer service sections.
+• Improved tablet video details, fullscreen rotation, grid titles, and feeds.
+• Fixed BiliBili playback, blocked keywords, comments, playlist swipes, search, and avatars.
+• Polished refresh and watched-progress indicators.
