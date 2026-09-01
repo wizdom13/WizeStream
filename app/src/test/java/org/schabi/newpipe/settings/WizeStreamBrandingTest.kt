@@ -20,7 +20,10 @@ class WizeStreamBrandingTest {
     fun `localized product strings do not restore the legacy brand`() {
         val upstreamOnlyResources = setOf(
             "donation_encouragement",
-            "import_settings_vulnerable_format"
+            "import_settings_vulnerable_format",
+            "import_compatible_data_title",
+            "import_compatible_data_summary",
+            "migration_invalid_backup"
         )
 
         Files.walk(resourcesDirectory).use { paths ->

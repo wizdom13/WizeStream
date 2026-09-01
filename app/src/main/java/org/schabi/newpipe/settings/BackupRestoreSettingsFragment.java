@@ -4,6 +4,7 @@ import static org.schabi.newpipe.extractor.utils.Utils.isBlank;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -29,6 +30,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.subscription.SubscriptionsImportExportHelper;
 import org.schabi.newpipe.settings.export.BackupFileLocator;
 import org.schabi.newpipe.settings.export.ImportExportManager;
+import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -36,8 +38,10 @@ import org.schabi.newpipe.util.NavigationHelper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -57,7 +61,11 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private final ActivityResultLauncher<Intent> requestExportPathLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     this::requestExportPathResult);
+    private final ActivityResultLauncher<Intent> requestMigrationPathLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    this::requestMigrationPathResult);
     private SubscriptionsImportExportHelper importExportHelper;
+    private NewPipeDataMigrationManager migrationManager;
 
 
     @Override
@@ -70,6 +78,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     public void onCreatePreferences(@Nullable final Bundle savedInstanceState,
                                     @Nullable final String rootKey) {
         manager = new ImportExportManager(new BackupFileLocator(requireContext()));
+        migrationManager = new NewPipeDataMigrationManager(requireContext());
 
         importExportDataPathKey = getString(R.string.import_export_data_path);
 
@@ -85,6 +94,19 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     getContext()
             );
 
+            return true;
+        });
+
+        final Preference importCompatiblePreference =
+                requirePreference(R.string.import_compatible_data_key);
+        importCompatiblePreference.setOnPreferenceClickListener(preference -> {
+            NoFileManagerSafeGuard.launchSafe(
+                    requestMigrationPathLauncher,
+                    StoredFileHelper.getSystemPicker(requireContext(),
+                            ZIP_MIME_TYPE, getImportExportDataUri()),
+                    TAG,
+                    getContext()
+            );
             return true;
         });
 
@@ -164,6 +186,164 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
 
             showImportConfirmation(file, lastImportDataUri);
         }
+    }
+
+    private void requestMigrationPathResult(final ActivityResult result) {
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
+            return;
+        }
+        final Uri importDataUri = result.getData().getData();
+        final StoredFileHelper file = new StoredFileHelper(
+                requireContext(), importDataUri, ZIP_MIME_TYPE);
+        inspectMigrationBackup(file, importDataUri);
+    }
+
+    private void inspectMigrationBackup(final StoredFileHelper file, final Uri importDataUri) {
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            Path stagedDatabase = null;
+            try {
+                manager.ensureDbDirectoryExists();
+                stagedDatabase = manager.stageMigrationDb(file);
+                if (stagedDatabase == null) {
+                    throw new IOException("The backup does not contain a SQLite database");
+                }
+                final NewPipeDataMigrationManager.Preview preview =
+                        migrationManager.inspect(stagedDatabase);
+                final Path readyDatabase = stagedDatabase;
+                stagedDatabase = null;
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() ->
+                            showMigrationConfirmation(readyDatabase, importDataUri, preview));
+                } else {
+                    manager.discardStagedDb(readyDatabase);
+                }
+            } catch (final Exception e) {
+                final Path failedDatabase = stagedDatabase;
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), R.string.migration_invalid_backup,
+                                Toast.LENGTH_LONG).show();
+                        if (failedDatabase != null) {
+                            manager.discardStagedDb(failedDatabase);
+                        }
+                    });
+                } else if (failedDatabase != null) {
+                    manager.discardStagedDb(failedDatabase);
+                }
+            } finally {
+                executor.shutdown();
+            }
+        });
+    }
+
+    private void showMigrationConfirmation(
+            final Path stagedDatabase,
+            final Uri importDataUri,
+            final NewPipeDataMigrationManager.Preview preview) {
+        if (!preview.getHasImportableData()) {
+            manager.discardStagedDb(stagedDatabase);
+            Toast.makeText(requireContext(), R.string.migration_invalid_backup,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        final List<String> optionLabels = new ArrayList<>();
+        final List<Boolean> optionTypes = new ArrayList<>();
+        if (preview.getHasHistory()) {
+            optionLabels.add(getString(
+                    R.string.migration_history_option,
+                    preview.getHistoryItems(),
+                    preview.getProgressItems()));
+            optionTypes.add(true);
+        }
+        if (preview.getHasPlaylists()) {
+            optionLabels.add(getString(
+                    R.string.migration_playlists_option,
+                    preview.getPlaylists(),
+                    preview.getPlaylistItems()));
+            optionTypes.add(false);
+        }
+        final boolean[] checkedItems = new boolean[optionLabels.size()];
+        java.util.Arrays.fill(checkedItems, true);
+
+        final androidx.appcompat.app.AlertDialog dialog =
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.migration_choose_data_title)
+                        .setMultiChoiceItems(
+                                optionLabels.toArray(new String[0]),
+                                checkedItems,
+                                (ignored, which, isChecked) -> checkedItems[which] = isChecked)
+                        .setNegativeButton(R.string.cancel, (ignored, which) ->
+                                manager.discardStagedDb(stagedDatabase))
+                        .setPositiveButton(R.string.migration_import_button, null)
+                        .create();
+        dialog.setOnCancelListener(ignored -> manager.discardStagedDb(stagedDatabase));
+        dialog.setOnShowListener(ignored -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
+                .setOnClickListener(button -> {
+                    boolean importHistory = false;
+                    boolean importPlaylists = false;
+                    for (int i = 0; i < checkedItems.length; i++) {
+                        if (!checkedItems[i]) {
+                            continue;
+                        }
+                        if (optionTypes.get(i)) {
+                            importHistory = true;
+                        } else {
+                            importPlaylists = true;
+                        }
+                    }
+                    if (!importHistory && !importPlaylists) {
+                        Toast.makeText(requireContext(), R.string.migration_nothing_selected,
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    dialog.dismiss();
+                    importMigratedData(
+                            stagedDatabase,
+                            importDataUri,
+                            new NewPipeDataMigrationManager.Selection(
+                                    importHistory,
+                                    importPlaylists));
+                }));
+        dialog.show();
+    }
+
+    private void importMigratedData(
+            final Path stagedDatabase,
+            final Uri importDataUri,
+            final NewPipeDataMigrationManager.Selection selection) {
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                final NewPipeDataMigrationManager.Result migrationResult =
+                        migrationManager.importData(stagedDatabase, selection);
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        saveLastImportExportDataUri(importDataUri);
+                        new MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(R.string.migration_complete_title)
+                                .setMessage(getString(
+                                        R.string.migration_complete_message,
+                                        migrationResult.getHistoryItems(),
+                                        migrationResult.getProgressItems(),
+                                        migrationResult.getPlaylists(),
+                                        migrationResult.getPlaylistItems(),
+                                        migrationResult.getSkippedItems()))
+                                .setPositiveButton(R.string.ok, null)
+                                .show();
+                    });
+                }
+            } catch (final Exception e) {
+                if (getActivity() != null) {
+                    requireActivity().runOnUiThread(() ->
+                            showErrorSnackbar(e, "Migrating NewPipe data"));
+                }
+            } finally {
+                manager.discardStagedDb(stagedDatabase);
+                executor.shutdown();
+            }
+        });
     }
 
     private void exportDatabase(final StoredFileHelper file, final Uri exportDataUri) {
