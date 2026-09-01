@@ -117,6 +117,7 @@ import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
+import org.schabi.newpipe.util.GridTitleDisplayPolicy;
 import org.schabi.newpipe.util.InfoCache;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.Localization;
@@ -410,6 +411,8 @@ public final class VideoDetailFragment
         activity.sendBroadcast(new Intent(ACTION_VIDEO_FRAGMENT_RESUMED));
 
         updateOverlayPlayQueueButtonVisibility();
+        applyTitleDisplayPolicy(
+                binding.detailSecondaryControlPanel.getVisibility() != View.GONE);
 
         setupBrightness();
 
@@ -882,19 +885,29 @@ public final class VideoDetailFragment
     }
 
     private void toggleTitleAndSecondaryControls() {
-        if (binding.detailSecondaryControlPanel.getVisibility() == View.GONE) {
-            binding.detailVideoTitleView.setMaxLines(10);
+        final boolean expandSecondaryControls =
+                binding.detailSecondaryControlPanel.getVisibility() == View.GONE;
+        applyTitleDisplayPolicy(expandSecondaryControls);
+        if (expandSecondaryControls) {
             animateRotation(binding.detailToggleSecondaryControlsView,
                     VideoPlayerUi.DEFAULT_CONTROLS_DURATION, 180);
             binding.detailSecondaryControlPanel.setVisibility(View.VISIBLE);
         } else {
-            binding.detailVideoTitleView.setMaxLines(1);
             animateRotation(binding.detailToggleSecondaryControlsView,
                     VideoPlayerUi.DEFAULT_CONTROLS_DURATION, 0);
             binding.detailSecondaryControlPanel.setVisibility(View.GONE);
         }
         // ViewPager height has changed, update the detail navigation.
         updateDetailNavigationVisibility();
+    }
+
+    private void applyTitleDisplayPolicy(final boolean manuallyExpanded) {
+        if (currentLocalItem == null) {
+            GridTitleDisplayPolicy.applyToDetail(
+                    binding.detailVideoTitleView, manuallyExpanded);
+        } else {
+            GridTitleDisplayPolicy.applyToLocalDetail(binding.detailVideoTitleView);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -904,6 +917,7 @@ public final class VideoDetailFragment
     @Override // called from onViewCreated in {@link BaseFragment#onViewCreated}
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
+        applyTitleDisplayPolicy(false);
 
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
         detailNavigationBaseBottomMargin = ((ViewGroup.MarginLayoutParams)
@@ -1210,7 +1224,7 @@ public final class VideoDetailFragment
         }
 
         binding.detailVideoTitleView.setText(item.getTitle());
-        binding.detailVideoTitleView.setMaxLines(3);
+        applyTitleDisplayPolicy(false);
         binding.detailToggleSecondaryControlsView.setVisibility(View.GONE);
         binding.detailSecondaryControlPanel.setVisibility(View.GONE);
 
@@ -2235,7 +2249,7 @@ public final class VideoDetailFragment
         binding.positionView.setVisibility(View.GONE);
 
         binding.detailVideoTitleView.setText(title);
-        binding.detailVideoTitleView.setMaxLines(1);
+        applyTitleDisplayPolicy(false);
         animate(binding.detailVideoTitleView, true, 0);
 
         binding.detailToggleSecondaryControlsView.setVisibility(View.GONE);
@@ -2292,7 +2306,7 @@ public final class VideoDetailFragment
         currentInfo = info;
         setInitialData(info.getServiceId(), info.getOriginalUrl(), info.getName(), playQueue);
 
-        binding.detailVideoTitleView.setMaxLines(1);
+        applyTitleDisplayPolicy(false);
         binding.detailUploaderRootLayout.setClickable(true);
         binding.detailsPanel.setVisibility(View.VISIBLE);
         binding.detailControlsShare.setVisibility(View.VISIBLE);
