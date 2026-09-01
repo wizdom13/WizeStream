@@ -184,6 +184,33 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+        <ImageButton
+            android:id="@+id/localMediaGroupPlay"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/local_media_play_all"
+            android:src="@drawable/ic_play_arrow"
+            app:tint="?attr/colorOnSurface" />
+
+        <ImageButton
+            android:id="@+id/localMediaGroupShuffle"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/local_media_shuffle_all"
+            android:src="@drawable/ic_shuffle"
+            app:tint="?attr/colorOnSurface" />
+
+        <ImageButton
+            android:id="@+id/localMediaGroupMore"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/local_media_group_more_actions"
+            android:src="@drawable/ic_more_vert"
+            app:tint="?attr/colorOnSurface" />
     </LinearLayout>
 
     <FrameLayout

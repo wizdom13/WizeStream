@@ -117,6 +117,15 @@ class LocalMediaFragment : Fragment() {
             activeGroup = null
             updateList()
         }
+        view.findViewById<View>(R.id.localMediaGroupPlay).setOnClickListener {
+            playActiveGroup(shuffle = false)
+        }
+        view.findViewById<View>(R.id.localMediaGroupShuffle).setOnClickListener {
+            playActiveGroup(shuffle = true)
+        }
+        view.findViewById<View>(R.id.localMediaGroupMore).setOnClickListener {
+            showActiveGroupActions()
+        }
         view.findViewById<TextInputEditText>(R.id.localMediaSearch).addTextChangedListener(
             object : TextWatcher {
                 override fun beforeTextChanged(
@@ -214,12 +223,22 @@ class LocalMediaFragment : Fragment() {
             showVideoGroups(term)
             return
         }
-        val comparator: Comparator<LocalMediaItem> = when (sort) {
-            Sort.TITLE -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::title)
-            Sort.ARTIST -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::artist)
-            Sort.ALBUM -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::album)
-            Sort.FOLDER -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::folder)
-            Sort.RECENT -> compareByDescending(LocalMediaItem::addedAtSeconds)
+        val comparator: Comparator<LocalMediaItem> = if (
+            activeGroup?.kind == LocalMediaGroupKind.ALBUM
+        ) {
+            compareBy(
+                LocalMediaItem::discNumber,
+                LocalMediaItem::trackNumber,
+                LocalMediaItem::title
+            )
+        } else {
+            when (sort) {
+                Sort.TITLE -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::title)
+                Sort.ARTIST -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::artist)
+                Sort.ALBUM -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::album)
+                Sort.FOLDER -> compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::folder)
+                Sort.RECENT -> compareByDescending(LocalMediaItem::addedAtSeconds)
+            }
         }
         val sourceItems = activeGroup?.items ?: allItems
         shownItems = sourceItems.asSequence()
@@ -318,6 +337,44 @@ class LocalMediaFragment : Fragment() {
         val index = shownItems.indexOf(item).coerceAtLeast(0)
         val queue = LocalMediaPlayQueue(shownItems.map(LocalMediaItem::toPlayQueueItem), index)
         NavigationHelper.playOnMainPlayer(requireActivity() as AppCompatActivity, queue)
+    }
+
+    private fun playActiveGroup(shuffle: Boolean) {
+        val group = activeGroup ?: return
+        val queue = LocalMediaGroupQueueBuilder.queue(group, shuffle)
+        NavigationHelper.playOnMainPlayer(requireActivity() as AppCompatActivity, queue)
+    }
+
+    private fun showActiveGroupActions() {
+        val group = activeGroup ?: return
+        val actions = arrayOf(
+            getString(R.string.local_media_play_background),
+            getString(R.string.enqueue),
+            getString(R.string.local_media_enqueue_next),
+            getString(R.string.add_to_playlist)
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(group.title)
+            .setItems(actions) { _, which ->
+                val queue = LocalMediaGroupQueueBuilder.queue(group, shuffle = false)
+                when (which) {
+                    0 -> NavigationHelper.playOnBackgroundPlayer(requireContext(), queue, true)
+                    1 -> NavigationHelper.enqueueOnPlayer(requireContext(), queue)
+                    2 -> NavigationHelper.enqueueNextOnPlayer(requireContext(), queue)
+                    3 -> addGroupToPlaylist(group)
+                }
+            }.show()
+    }
+
+    private fun addGroupToPlaylist(group: LocalMediaGroup) {
+        disposables.add(
+            PlaylistDialog.createCorrespondingDialog(
+                requireContext(),
+                group.items.map { StreamEntity(it.toPlayQueueItem()) }
+            ) { dialog ->
+                dialog.show(parentFragmentManager, "LocalMediaGroupPlaylist")
+            }
+        )
     }
 
     private fun showActions(item: LocalMediaItem) {
