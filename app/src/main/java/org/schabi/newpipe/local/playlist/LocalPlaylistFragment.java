@@ -939,13 +939,14 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
             @Override
             public boolean isItemViewSwipeEnabled() {
-                return true;
+                return LocalPlaylistSwipePolicy.isItemRemovalSwipeEnabled(useAsFrontPage);
             }
 
             @Override
             public int getSwipeDirs(@NonNull final RecyclerView recyclerView,
                                     @NonNull final RecyclerView.ViewHolder viewHolder) {
-                if (itemListAdapter == null) {
+                if (!LocalPlaylistSwipePolicy.isItemRemovalSwipeEnabled(useAsFrontPage)
+                        || itemListAdapter == null) {
                     return ItemTouchHelper.ACTION_STATE_IDLE;
                 }
 
