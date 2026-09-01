@@ -60,6 +60,13 @@
                 android:text="@string/videos_string" />
 
             <com.google.android.material.chip.Chip
+                android:id="@+id/localMediaBrowse"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/local_media_browse_folders" />
+
+            <com.google.android.material.chip.Chip
                 android:id="@+id/localMediaSort"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
@@ -156,6 +163,57 @@
                 android:text="@string/local_media_folders" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
+
+    <LinearLayout
+        android:id="@+id/localMediaBrowseNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/localMediaBrowseBack"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/local_media_browse_back"
+            android:src="@drawable/ic_arrow_back"
+            android:visibility="gone"
+            app:tint="?attr/colorOnSurface" />
+
+        <TextView
+            android:id="@+id/localMediaBrowseTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="@string/local_media_storage_locations"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+        <ImageButton
+            android:id="@+id/localMediaBrowseAdd"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/local_media_add_folder"
+            android:src="@drawable/ic_create_new_folder"
+            app:tint="?attr/colorOnSurface" />
+
+        <ImageButton
+            android:id="@+id/localMediaBrowseMore"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/local_media_group_more_actions"
+            android:src="@drawable/ic_more_vert"
+            android:visibility="gone"
+            app:tint="?attr/colorOnSurface" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/localMediaGroupHeader"
