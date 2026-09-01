@@ -5,6 +5,8 @@ import com.grack.nanojson.JsonArray
 import com.grack.nanojson.JsonParser
 import com.grack.nanojson.JsonParserException
 import com.grack.nanojson.JsonWriter
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -32,6 +34,9 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
         private const val SQLITE_HEADER_TO_VERSION_LENGTH =
             SQLITE_USER_VERSION_OFFSET - SQLITE_HEADER_LENGTH
         private const val SQLITE_MAGIC = "SQLite format 3\u0000"
+        private const val MAX_MIGRATION_PREFERENCES_BYTES = 1_048_576
+        private const val MAX_MIGRATION_PREFERENCE_ENTRIES = 2_048
+        private const val MAX_MIGRATION_PREFERENCE_KEY_LENGTH = 1_024
     }
 
     data class BackupContents(
@@ -391,6 +396,72 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
         }.let { fileExists ->
             if (!fileExists) {
                 throw FileNotFoundException(BackupFileLocator.FILE_NAME_JSON_PREFS)
+            }
+        }
+        return checkNotNull(entries)
+    }
+
+    /**
+     * Reads preferences for selective migration. JSON is always preferred. The legacy serialized
+     * format is accepted only when the caller has already identified a known PipePipe database.
+     */
+    @Throws(IOException::class, JsonParserException::class, ClassNotFoundException::class)
+    fun readMigrationPrefs(
+        zipFile: StoredFileHelper,
+        allowPipePipeSerializedPreferences: Boolean
+    ): Map<String, Any?> {
+        if (exportHasJsonPrefs(zipFile)) {
+            return readJsonPrefs(zipFile)
+        }
+        if (!allowPipePipeSerializedPreferences ||
+            !ZipHelper.zipContainsFile(zipFile, BackupFileLocator.FILE_NAME_SERIALIZED_PREFS)
+        ) {
+            return emptyMap()
+        }
+        return readBoundedSerializedMigrationPrefs(zipFile)
+    }
+
+    @Throws(IOException::class, ClassNotFoundException::class)
+    private fun readBoundedSerializedMigrationPrefs(
+        zipFile: StoredFileHelper
+    ): Map<String, Any?> {
+        var entries: Map<String, Any?>? = null
+        ZipHelper.extractFileFromZip(zipFile, BackupFileLocator.FILE_NAME_SERIALIZED_PREFS) {
+            val serialized = ByteArrayOutputStream().use { output ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var total = 0
+                while (true) {
+                    val count = it.read(buffer)
+                    if (count < 0) {
+                        break
+                    }
+                    total += count
+                    if (total > MAX_MIGRATION_PREFERENCES_BYTES) {
+                        throw IOException("PipePipe preferences exceed the migration size limit")
+                    }
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
+            PreferencesObjectInputStream(ByteArrayInputStream(serialized)).use { input ->
+                val rawEntries = input.readObject() as? Map<*, *>
+                    ?: throw IOException("PipePipe preferences are not a map")
+                if (rawEntries.size > MAX_MIGRATION_PREFERENCE_ENTRIES) {
+                    throw IOException("PipePipe preferences contain too many entries")
+                }
+                val stringKeyedEntries = rawEntries.mapNotNull { (key, value) ->
+                    (key as? String)
+                        ?.takeIf { it.length <= MAX_MIGRATION_PREFERENCE_KEY_LENGTH }
+                        ?.let { it to value }
+                }.toMap()
+                if (stringKeyedEntries.size != rawEntries.size) {
+                    throw IOException("PipePipe preferences contain invalid keys")
+                }
+                entries = sanitizePreferences(stringKeyedEntries)
+            }
+        }.let { fileExists ->
+            if (!fileExists) {
+                throw FileNotFoundException(BackupFileLocator.FILE_NAME_SERIALIZED_PREFS)
             }
         }
         return checkNotNull(entries)

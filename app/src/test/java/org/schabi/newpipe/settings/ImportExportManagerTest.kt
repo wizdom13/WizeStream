@@ -2,7 +2,10 @@ package org.schabi.newpipe.settings
 
 import android.content.SharedPreferences
 import com.grack.nanojson.JsonParser
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
+import java.io.ObjectOutputStream
 import java.nio.ByteBuffer
 import java.nio.file.Paths
 import java.util.zip.ZipEntry
@@ -295,6 +298,50 @@ class ImportExportManagerTest {
 
         assertThrows(ClassNotFoundException::class.java) {
             ImportExportManager(fileLocator).loadSerializedPrefs(storedFileHelper, preferences)
+        }
+    }
+
+    @Test
+    fun `PipePipe serialized preferences require explicit source approval`() {
+        val serialized = ByteArrayOutputStream().use { bytes ->
+            ObjectOutputStream(bytes).use { output ->
+                output.writeObject(
+                    hashMapOf(
+                        "show_comments" to false,
+                        "sponsor_block_enable" to true
+                    )
+                )
+            }
+            bytes.toByteArray()
+        }
+        val zip = createTempFile("pipepipe_preferences_", ".zip")
+        ZipOutputStream(zip.outputStream()).use { output ->
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_SERIALIZED_PREFS))
+            output.write(serialized)
+            output.closeEntry()
+        }
+        `when`(storedFileHelper.stream).thenAnswer { FileStream(zip.toFile()) }
+        val manager = ImportExportManager(fileLocator)
+
+        assertTrue(manager.readMigrationPrefs(storedFileHelper, false).isEmpty())
+        assertEquals(
+            mapOf("show_comments" to false, "sponsor_block_enable" to true),
+            manager.readMigrationPrefs(storedFileHelper, true)
+        )
+    }
+
+    @Test
+    fun `Oversized PipePipe serialized preferences must be rejected`() {
+        val zip = createTempFile("oversized_pipepipe_preferences_", ".zip")
+        ZipOutputStream(zip.outputStream()).use { output ->
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_SERIALIZED_PREFS))
+            output.write(ByteArray(1_048_577))
+            output.closeEntry()
+        }
+        `when`(storedFileHelper.stream).thenAnswer { FileStream(zip.toFile()) }
+
+        assertThrows(IOException::class.java) {
+            ImportExportManager(fileLocator).readMigrationPrefs(storedFileHelper, true)
         }
     }
 }
