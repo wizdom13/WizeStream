@@ -955,8 +955,8 @@
     <string name="grid_columns_two">2 columns</string>
     <string name="grid_columns_three">3 columns</string>
     <string name="grid_columns_four">4 columns</string>
-    <string name="show_full_grid_titles_title">Show full video titles in grid view</string>
-    <string name="show_full_grid_titles_summary">Allow video titles to wrap instead of limiting them to two lines</string>
+    <string name="show_full_grid_titles_title">Show full video titles</string>
+    <string name="show_full_grid_titles_summary">Display complete titles in grids and while watching videos</string>
     <string name="comment_text_size_title">Comment text size</string>
     <string name="comment_text_size_small">Small (12 sp)</string>
     <string name="comment_text_size_medium">Medium (14 sp)</string>

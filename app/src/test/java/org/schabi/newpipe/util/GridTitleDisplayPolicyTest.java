@@ -33,6 +33,29 @@ public class GridTitleDisplayPolicyTest {
     }
 
     @Test
+    public void compactDetailModeKeepsOneLineAndEllipsizing() {
+        assertEquals(1, GridTitleDisplayPolicy.maxLines(false, false, 1));
+        assertTrue(GridTitleDisplayPolicy.shouldEllipsize(false, false));
+    }
+
+    @Test
+    public void manuallyExpandedDetailAllowsUnlimitedLines() {
+        assertEquals(Integer.MAX_VALUE, GridTitleDisplayPolicy.maxLines(false, true, 1));
+        assertFalse(GridTitleDisplayPolicy.shouldEllipsize(false, true));
+    }
+
+    @Test
+    public void fullDetailModeStaysExpandedWhenSecondaryControlsClose() {
+        assertEquals(Integer.MAX_VALUE, GridTitleDisplayPolicy.maxLines(true, false, 1));
+        assertFalse(GridTitleDisplayPolicy.shouldEllipsize(true, false));
+    }
+
+    @Test
+    public void compactLocalDetailModeKeepsThreeLines() {
+        assertEquals(3, GridTitleDisplayPolicy.maxLines(false, false, 3));
+    }
+
+    @Test
     public void settingIsDisabledByDefault() throws Exception {
         final String appearanceSettings = read(
                 "app/src/main/res/xml/appearance_settings.xml");
@@ -70,6 +93,37 @@ public class GridTitleDisplayPolicyTest {
                 "itemVersion == ItemVersion.GRID || itemVersion == ItemVersion.CARD"));
         assertTrue(streamItem.contains(
                 "GridTitleDisplayPolicy.apply(viewBinding.itemVideoTitleView)"));
+    }
+
+    @Test
+    public void videoDetailsApplyTheDisplayPolicyAcrossEveryState() throws Exception {
+        final String videoDetailFragment = read(
+                "app/src/main/java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
+
+        assertTrue(videoDetailFragment.contains(
+                "applyTitleDisplayPolicy(expandSecondaryControls);"));
+        assertTrue(videoDetailFragment.contains(
+                "GridTitleDisplayPolicy.applyToLocalDetail(binding.detailVideoTitleView);"));
+        assertTrue(videoDetailFragment.contains(
+                "binding.detailSecondaryControlPanel.getVisibility() != View.GONE"));
+        assertEquals(4, occurrences(videoDetailFragment,
+                "applyTitleDisplayPolicy(false);"));
+        assertFalse(videoDetailFragment.contains("detailVideoTitleView.setMaxLines"));
+    }
+
+    @Test
+    public void settingCopyCoversGridsAndVideoDetails() throws Exception {
+        final String strings = read("app/src/main/res/values/strings.xml");
+
+        assertTrue(strings.contains(
+                "<string name=\"show_full_grid_titles_title\">"
+                        + "Show full video titles</string>"));
+        assertTrue(strings.contains(
+                "Display complete titles in grids and while watching videos"));
+    }
+
+    private int occurrences(final String value, final String target) {
+        return (value.length() - value.replace(target, "").length()) / target.length();
     }
 
     private String read(final String relativePath) throws Exception {
