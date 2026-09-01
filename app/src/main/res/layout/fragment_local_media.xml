@@ -124,6 +124,39 @@
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
+    <HorizontalScrollView
+        android:id="@+id/localMediaVideoNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/localMediaVideoCategories"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingBottom="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/localMediaVideoVideos"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/videos_string" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/localMediaVideoFolders"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/local_media_folders" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
     <LinearLayout
         android:id="@+id/localMediaGroupHeader"
         android:layout_width="match_parent"
