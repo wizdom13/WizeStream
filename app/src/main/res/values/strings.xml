@@ -489,7 +489,7 @@
     <string name="import_data_title">Import full backup</string>
     <string name="import_compatible_data_key" translatable="false">import_compatible_data</string>
     <string name="import_compatible_data_title">Import from NewPipe or compatible app</string>
-    <string name="import_compatible_data_summary">Merge watch history, playback positions, local playlists, and compatible settings from a NewPipe-style ZIP backup without replacing existing WizeStream data.</string>
+    <string name="import_compatible_data_summary">Merge watch history, playback positions, local playlists, compatible settings, and PipePipe SponsorBlock settings from a NewPipe-style ZIP backup without replacing existing WizeStream data.</string>
     <string name="export_data_title">Export full backup</string>
     <string name="clear_cookie_title">Clear reCAPTCHA cookies</string>
     <string name="recaptcha_cookies_cleared">reCAPTCHA cookies have been cleared</string>
@@ -514,10 +514,11 @@
     <string name="migration_history_option">Watch history: %1$d entries and %2$d playback positions</string>
     <string name="migration_playlists_option">Local playlists: %1$d playlists and %2$d items</string>
     <string name="migration_settings_option">Compatible app settings: %1$d</string>
+    <string name="migration_sponsor_block_option">PipePipe SponsorBlock settings: %1$d</string>
     <string name="migration_import_button">Merge data</string>
     <string name="migration_nothing_selected">Select at least one data category.</string>
     <string name="migration_complete_title">Migration complete</string>
-    <string name="migration_complete_message">Merged %1$d history entries, %2$d playback positions, %3$d playlists, %4$d playlist items, and %5$d compatible settings. Skipped %6$d incompatible items.</string>
+    <string name="migration_complete_message">Merged %1$d history entries, %2$d playback positions, %3$d playlists, %4$d playlist items, %5$d compatible settings, and %6$d SponsorBlock settings. Skipped %7$d incompatible items.</string>
     <string name="backup_exported_with_file">Backup exported: %s</string>
     <string name="backup_import_succeeded_restart">Import succeeded. WizeStream will restart to finish loading the backup.</string>
     <string name="restart">Restart</string>

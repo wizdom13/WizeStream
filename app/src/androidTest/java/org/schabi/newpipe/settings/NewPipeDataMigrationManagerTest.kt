@@ -18,6 +18,8 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior
+import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
 
 @RunWith(AndroidJUnit4::class)
 class NewPipeDataMigrationManagerTest {
@@ -166,6 +168,64 @@ class NewPipeDataMigrationManagerTest {
         assertFalse(preferences.contains("show_next_video"))
         assertFalse(preferences.contains("proxy_password"))
         assertEquals("keep me", preferences.getString("existing_wizestream_setting", null))
+    }
+
+    @Test
+    fun pipePipeSponsorBlockSettingsAreConvertedWithoutInventingMissingDefaults() {
+        sourcePath.toFile().delete()
+        createPipePipeSourceDatabase(sourcePath)
+        val sourcePreferences = mapOf<String, Any>(
+            context.getString(R.string.sponsor_block_enable_key) to true,
+            context.getString(R.string.sponsor_block_notifications_key) to false,
+            "sponsor_block_category_sponsor" to true,
+            "sponsor_block_category_intro" to false,
+            "sponsor_block_category_sponsor_mode" to "automatic",
+            "sponsor_block_category_intro_mode" to "manual",
+            "sponsor_block_category_outro_mode" to "highlight",
+            "sponsor_block_category_sponsor_color" to "#123456",
+            context.getString(R.string.sponsor_block_user_id_key) to "do not import"
+        )
+        val manager = NewPipeDataMigrationManager(context)
+
+        val preview = manager.inspect(sourcePath, sourcePreferences)
+        assertEquals(NewPipeDataMigrationManager.SourceApp.PIPEPIPE, preview.sourceApp)
+        assertEquals(8, preview.sponsorBlockSettings)
+
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(
+                importHistory = false,
+                importPlaylists = false,
+                importSettings = false,
+                importSponsorBlock = true
+            ),
+            sourcePreferences
+        )
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        assertEquals(8, result.sponsorBlockSettings)
+        assertTrue(preferences.getBoolean("sponsor_block_enable", false))
+        assertFalse(preferences.getBoolean("sponsor_block_notifications", true))
+        assertFalse(preferences.contains("sponsor_block_graced_rewind"))
+        assertTrue(preferences.getBoolean("sponsor_block_category_sponsor", false))
+        assertFalse(preferences.getBoolean("sponsor_block_category_intro", true))
+        assertEquals(
+            SponsorBlockBehavior.SKIP.value,
+            preferences.getString(SponsorBlockCategoryConfig.SPONSOR.behaviorKey(), null)
+        )
+        assertEquals(
+            SponsorBlockBehavior.MANUAL.value,
+            preferences.getString(SponsorBlockCategoryConfig.INTRO.behaviorKey(), null)
+        )
+        assertEquals(
+            SponsorBlockBehavior.DONT_SKIP.value,
+            preferences.getString(SponsorBlockCategoryConfig.OUTRO.behaviorKey(), null)
+        )
+        assertEquals(
+            0xFF123456L,
+            preferences.getLong(SponsorBlockCategoryConfig.SPONSOR.colorKey(), 0L)
+        )
+        assertFalse(preferences.contains("sponsor_block_user_id"))
     }
 
     private fun createSourceDatabase(path: Path) {

@@ -15,12 +15,19 @@ import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.extractor.stream.StreamType
 
 class NewPipeDataMigrationManager(private val context: Context) {
+    enum class SourceApp {
+        NEWPIPE,
+        PIPEPIPE
+    }
+
     data class Preview(
         val historyItems: Int,
         val progressItems: Int,
         val playlists: Int,
         val playlistItems: Int,
-        val compatibleSettings: Int
+        val compatibleSettings: Int,
+        val sponsorBlockSettings: Int,
+        val sourceApp: SourceApp
     ) {
         val hasHistory: Boolean
             get() = historyItems > 0 || progressItems > 0
@@ -28,14 +35,18 @@ class NewPipeDataMigrationManager(private val context: Context) {
             get() = playlists > 0
         val hasCompatibleSettings: Boolean
             get() = compatibleSettings > 0
+        val hasSponsorBlockSettings: Boolean
+            get() = sponsorBlockSettings > 0
         val hasImportableData: Boolean
-            get() = hasHistory || hasPlaylists || hasCompatibleSettings
+            get() = hasHistory || hasPlaylists ||
+                hasCompatibleSettings || hasSponsorBlockSettings
     }
 
     data class Selection @JvmOverloads constructor(
         val importHistory: Boolean,
         val importPlaylists: Boolean,
-        val importSettings: Boolean = false
+        val importSettings: Boolean = false,
+        val importSponsorBlock: Boolean = false
     )
 
     data class Result(
@@ -44,23 +55,32 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val playlists: Int,
         val playlistItems: Int,
         val compatibleSettings: Int,
+        val sponsorBlockSettings: Int,
         val skippedItems: Int
     )
 
     class UnsupportedSourceException(message: String) : Exception(message)
 
+    @JvmOverloads
     fun inspect(
         databasePath: Path,
         sourcePreferences: Map<String, *> = emptyMap<String, Any>()
     ): Preview = openSource(databasePath).use { source ->
         val schema = inspectSchema(source)
         val compatibleSettings = CompatibleSettingsMigration(context).prepare(sourcePreferences)
+        val sponsorBlockSettings = if (schema.isPipePipe) {
+            PipePipeSponsorBlockMigration(context).prepare(sourcePreferences)
+        } else {
+            CompatibleSettingsMigration.Prepared(emptyMap<String, Any>())
+        }
         Preview(
             historyItems = if (schema.hasHistory) source.countRows(HISTORY_TABLE) else 0,
             progressItems = if (schema.hasProgress) source.countRows(STATE_TABLE) else 0,
             playlists = if (schema.hasPlaylists) source.countRows(PLAYLIST_TABLE) else 0,
             playlistItems = if (schema.hasPlaylists) source.countRows(PLAYLIST_JOIN_TABLE) else 0,
-            compatibleSettings = compatibleSettings.size
+            compatibleSettings = compatibleSettings.size,
+            sponsorBlockSettings = sponsorBlockSettings.size,
+            sourceApp = if (schema.isPipePipe) SourceApp.PIPEPIPE else SourceApp.NEWPIPE
         )
     }
 
@@ -74,14 +94,22 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val target = NewPipeDatabase.getInstance(context)
         val settingsMigration = CompatibleSettingsMigration(context)
         val compatibleSettings = settingsMigration.prepare(sourcePreferences)
-        val settingsRollback = if (selection.importSettings && compatibleSettings.size > 0) {
-            settingsMigration.apply(compatibleSettings)
+        val sponsorBlockSettings = if (schema.isPipePipe) {
+            PipePipeSponsorBlockMigration(context).prepare(sourcePreferences)
         } else {
-            null
+            CompatibleSettingsMigration.Prepared(emptyMap<String, Any>())
         }
-        var result = Result(0, 0, 0, 0, 0, 0)
+        var settingsRollback: CompatibleSettingsMigration.Rollback? = null
+        var sponsorBlockRollback: CompatibleSettingsMigration.Rollback? = null
+        var result = Result(0, 0, 0, 0, 0, 0, 0)
 
         try {
+            if (selection.importSettings && compatibleSettings.size > 0) {
+                settingsRollback = settingsMigration.apply(compatibleSettings)
+            }
+            if (selection.importSponsorBlock && sponsorBlockSettings.size > 0) {
+                sponsorBlockRollback = settingsMigration.apply(sponsorBlockSettings)
+            }
             target.runInTransaction {
                 val streamIds = mutableMapOf<Long, Long>()
                 fun targetStreamId(sourceId: Long): Long? {
@@ -228,10 +256,18 @@ class NewPipeDataMigrationManager(private val context: Context) {
                     playlists,
                     playlistItems,
                     if (selection.importSettings) compatibleSettings.size else 0,
+                    if (selection.importSponsorBlock) sponsorBlockSettings.size else 0,
                     skippedItems
                 )
             }
         } catch (error: Throwable) {
+            if (sponsorBlockRollback != null) {
+                try {
+                    settingsMigration.rollback(sponsorBlockRollback)
+                } catch (rollbackError: Throwable) {
+                    error.addSuppressed(rollbackError)
+                }
+            }
             if (settingsRollback != null) {
                 try {
                     settingsMigration.rollback(settingsRollback)
@@ -267,9 +303,8 @@ class NewPipeDataMigrationManager(private val context: Context) {
             hasPlaylists = playlistColumns.containsAll(REQUIRED_PLAYLIST_COLUMNS) &&
                 joinColumns.containsAll(REQUIRED_PLAYLIST_JOIN_COLUMNS),
             playlistColumns = playlistColumns,
-            usesAlphabeticalPlaylistOrder =
-                source.tableExists(PIPEPIPE_SPONSORBLOCK_WHITELIST_TABLE) ||
-                    source.userVersion() >= PIPEPIPE_DATABASE_VERSION_FLOOR
+            isPipePipe = source.tableExists(PIPEPIPE_SPONSORBLOCK_WHITELIST_TABLE) ||
+                source.userVersion() >= PIPEPIPE_DATABASE_VERSION_FLOOR
         )
         if (!schema.hasHistory && !schema.hasProgress && !schema.hasPlaylists) {
             throw UnsupportedSourceException(
@@ -386,8 +421,11 @@ class NewPipeDataMigrationManager(private val context: Context) {
         val hasProgress: Boolean,
         val hasPlaylists: Boolean,
         val playlistColumns: Set<String>,
+        val isPipePipe: Boolean
+    ) {
         val usesAlphabeticalPlaylistOrder: Boolean
-    )
+            get() = isPipePipe
+    }
 
     companion object {
         private const val STREAM_TABLE = "streams"

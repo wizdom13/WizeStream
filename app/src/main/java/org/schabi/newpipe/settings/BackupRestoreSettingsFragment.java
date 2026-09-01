@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +54,8 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private enum MigrationOption {
         HISTORY,
         PLAYLISTS,
-        SETTINGS
+        SETTINGS,
+        SPONSOR_BLOCK
     }
 
     private final SimpleDateFormat exportDateFormat =
@@ -215,10 +215,15 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                 if (stagedDatabase == null) {
                     throw new IOException("The backup does not contain a SQLite database");
                 }
-                final Map<String, ?> sourcePreferences = manager.exportHasJsonPrefs(file)
-                        ? manager.readJsonPrefs(file) : Collections.emptyMap();
-                final NewPipeDataMigrationManager.Preview preview =
-                        migrationManager.inspect(stagedDatabase, sourcePreferences);
+                final NewPipeDataMigrationManager.Preview databasePreview =
+                        migrationManager.inspect(stagedDatabase);
+                final boolean isPipePipe = databasePreview.getSourceApp()
+                        == NewPipeDataMigrationManager.SourceApp.PIPEPIPE;
+                final Map<String, ?> sourcePreferences = manager.readMigrationPrefs(
+                        file, isPipePipe);
+                final NewPipeDataMigrationManager.Preview preview = sourcePreferences.isEmpty()
+                        ? databasePreview
+                        : migrationManager.inspect(stagedDatabase, sourcePreferences);
                 final Path readyDatabase = stagedDatabase;
                 final Map<String, ?> readyPreferences = sourcePreferences;
                 stagedDatabase = null;
@@ -282,6 +287,12 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     preview.getCompatibleSettings()));
             optionTypes.add(MigrationOption.SETTINGS);
         }
+        if (preview.getHasSponsorBlockSettings()) {
+            optionLabels.add(getString(
+                    R.string.migration_sponsor_block_option,
+                    preview.getSponsorBlockSettings()));
+            optionTypes.add(MigrationOption.SPONSOR_BLOCK);
+        }
         final boolean[] checkedItems = new boolean[optionLabels.size()];
         java.util.Arrays.fill(checkedItems, true);
 
@@ -302,6 +313,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                     boolean importHistory = false;
                     boolean importPlaylists = false;
                     boolean importSettings = false;
+                    boolean importSponsorBlock = false;
                     for (int i = 0; i < checkedItems.length; i++) {
                         if (!checkedItems[i]) {
                             continue;
@@ -316,11 +328,15 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                             case SETTINGS:
                                 importSettings = true;
                                 break;
+                            case SPONSOR_BLOCK:
+                                importSponsorBlock = true;
+                                break;
                             default:
                                 break;
                         }
                     }
-                    if (!importHistory && !importPlaylists && !importSettings) {
+                    if (!importHistory && !importPlaylists
+                            && !importSettings && !importSponsorBlock) {
                         Toast.makeText(requireContext(), R.string.migration_nothing_selected,
                                 Toast.LENGTH_SHORT).show();
                         return;
@@ -333,7 +349,8 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                             new NewPipeDataMigrationManager.Selection(
                                     importHistory,
                                     importPlaylists,
-                                    importSettings));
+                                    importSettings,
+                                    importSponsorBlock));
                 }));
         dialog.show();
     }
@@ -361,6 +378,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                         migrationResult.getPlaylists(),
                                         migrationResult.getPlaylistItems(),
                                         migrationResult.getCompatibleSettings(),
+                                        migrationResult.getSponsorBlockSettings(),
                                         migrationResult.getSkippedItems()))
                                 .setPositiveButton(R.string.ok, null)
                                 .show();
