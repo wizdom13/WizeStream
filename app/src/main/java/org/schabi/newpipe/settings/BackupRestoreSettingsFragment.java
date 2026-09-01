@@ -18,7 +18,6 @@ import androidx.annotation.Nullable;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceManager;
 
-import com.grack.nanojson.JsonParserException;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -35,9 +34,12 @@ import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -190,6 +192,14 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                         .show();
                 return;
             }
+            if (contents.getSource() != ImportExportManager.BackupSource.WIZESTREAM) {
+                new MaterialAlertDialogBuilder(requireActivity())
+                        .setTitle(R.string.backup_incompatible_title)
+                        .setMessage(R.string.backup_incompatible_message)
+                        .setPositiveButton(R.string.ok, null)
+                        .show();
+                return;
+            }
 
             new MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.import_full_backup_title)
@@ -197,7 +207,7 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                             + getString(R.string.import_full_backup_detected_contents,
                             describeBackupContents(contents)))
                     .setPositiveButton(R.string.import_full_backup_button, (d, id) ->
-                            importDatabase(file, importDataUri, contents))
+                            chooseSettingsImport(file, importDataUri, contents))
                     .setNegativeButton(R.string.cancel, (d, id) -> d.cancel())
                     .show();
         } catch (final Exception e) {
@@ -229,54 +239,90 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         builder.append(getString(stringRes));
     }
 
+    private void chooseSettingsImport(final StoredFileHelper file, final Uri importDataUri,
+                                      final ImportExportManager.BackupContents contents) {
+        final boolean hasJsonPrefs = contents.getHasJsonPreferences();
+        if (!hasJsonPrefs && !contents.getHasSerializedPreferences()) {
+            importDatabase(file, importDataUri, contents, false);
+            return;
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.import_settings)
+                .setMessage(hasJsonPrefs ? null : requireContext()
+                        .getString(R.string.import_settings_vulnerable_format))
+                .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                    dialog.dismiss();
+                    importDatabase(file, importDataUri, contents, false);
+                })
+                .setPositiveButton(R.string.ok, (dialog, which) -> {
+                    dialog.dismiss();
+                    importDatabase(file, importDataUri, contents, true);
+                })
+                .show();
+    }
+
     private void importDatabase(final StoredFileHelper file, final Uri importDataUri,
-                                final ImportExportManager.BackupContents contents) {
+                                final ImportExportManager.BackupContents contents,
+                                final boolean importSettings) {
+        final Context context = requireContext();
+        final SharedPreferences preferences = PreferenceManager
+                .getDefaultSharedPreferences(context);
+        final Map<String, ?> previousPreferences = new HashMap<>(preferences.getAll());
+        ImportExportManager.DatabaseRollback databaseRollback = null;
+        Path stagedDatabase = null;
+
         try {
             manager.ensureDbDirectoryExists();
 
-            // replace the current database
-            if (contents.getHasDatabase() && !manager.extractDb(file)) {
-                Toast.makeText(requireContext(), R.string.could_not_import_all_files,
-                                Toast.LENGTH_LONG)
-                        .show();
-                return;
+            final Map<String, ?> importedPreferences;
+            if (!importSettings) {
+                importedPreferences = null;
+            } else if (contents.getHasJsonPreferences()) {
+                importedPreferences = manager.readJsonPrefs(file);
+            } else {
+                importedPreferences = manager.readSerializedPrefs(file);
             }
 
-            // if settings file exist, ask if it should be imported.
-            final boolean hasJsonPrefs = contents.getHasJsonPreferences();
-            if (hasJsonPrefs || contents.getHasSerializedPreferences()) {
-                new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(R.string.import_settings)
-                        .setMessage(hasJsonPrefs ? null : requireContext()
-                                .getString(R.string.import_settings_vulnerable_format))
-                        .setNegativeButton(R.string.cancel, (dialog, which) -> {
-                            dialog.dismiss();
-                            finishImport(importDataUri);
-                        })
-                        .setPositiveButton(R.string.ok, (dialog, which) -> {
-                            dialog.dismiss();
-                            final Context context = requireContext();
-                            final SharedPreferences prefs = PreferenceManager
-                                    .getDefaultSharedPreferences(context);
-                            try {
-                                if (hasJsonPrefs) {
-                                    manager.loadJsonPrefs(file, prefs);
-                                } else {
-                                    manager.loadSerializedPrefs(file, prefs);
-                                }
-                            } catch (IOException | ClassNotFoundException | JsonParserException e) {
-                                createErrorNotification(e, "Importing preferences");
-                                return;
-                            }
-                            cleanImport(context, prefs);
-                            finishImport(importDataUri);
-                        })
-                        .show();
-            } else {
-                finishImport(importDataUri);
+            if (contents.getHasDatabase()) {
+                stagedDatabase = manager.stageDb(file);
+                if (stagedDatabase == null) {
+                    throw new IOException("The backup database could not be staged");
+                }
+                NewPipeDatabase.validateImportDatabase(
+                        context, stagedDatabase.getFileName().toString());
+                try {
+                    NewPipeDatabase.checkpoint();
+                } catch (final IllegalStateException ignored) {
+                    // The database has not been opened during this process.
+                }
+                NewPipeDatabase.close();
+                databaseRollback = manager.replaceDb(stagedDatabase);
             }
+
+            if (importedPreferences != null) {
+                manager.replacePreferences(preferences, importedPreferences);
+                cleanImport(context, preferences);
+            }
+
+            if (databaseRollback != null) {
+                manager.finishDbReplacement(databaseRollback);
+            }
+            finishImport(importDataUri);
         } catch (final Exception e) {
+            try {
+                manager.replacePreferences(preferences, previousPreferences);
+                if (databaseRollback != null) {
+                    manager.rollbackDb(databaseRollback);
+                }
+            } catch (final Exception rollbackError) {
+                e.addSuppressed(rollbackError);
+            }
             showErrorSnackbar(e, "Importing database and settings");
+        } finally {
+            if (stagedDatabase != null) {
+                manager.discardStagedDb(stagedDatabase);
+            }
         }
     }
 

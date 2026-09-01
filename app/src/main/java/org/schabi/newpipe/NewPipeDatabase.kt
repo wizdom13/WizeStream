@@ -38,11 +38,11 @@ object NewPipeDatabase {
     @Volatile
     private var databaseInstance: AppDatabase? = null
 
-    private fun getDatabase(context: Context): AppDatabase {
+    private fun getDatabase(context: Context, databaseName: String): AppDatabase {
         return databaseBuilder(
             context.applicationContext,
             AppDatabase::class.java,
-            AppDatabase.Companion.DATABASE_NAME
+            databaseName
         ).addMigrations(
             MIGRATION_1_2,
             MIGRATION_2_3,
@@ -76,7 +76,7 @@ object NewPipeDatabase {
             synchronized(NewPipeDatabase::class.java) {
                 result = databaseInstance
                 if (result == null) {
-                    databaseInstance = getDatabase(context)
+                    databaseInstance = getDatabase(context, AppDatabase.DATABASE_NAME)
                     result = databaseInstance
                 }
             }
@@ -103,6 +103,27 @@ object NewPipeDatabase {
                     databaseInstance = null
                 }
             }
+        }
+    }
+
+    /**
+     * Opens and migrates a staged database with the same Room configuration used by the app.
+     * Room validates every expected table and column before this method returns, so callers can
+     * reject foreign databases without replacing the live database first.
+     */
+    @JvmStatic
+    fun validateImportDatabase(context: Context, databaseName: String) {
+        val database = getDatabase(context, databaseName)
+        try {
+            database.openHelper.writableDatabase
+            database.query("PRAGMA quick_check", null).use { cursor ->
+                check(cursor.moveToFirst() && cursor.getString(0) == "ok") {
+                    "The imported database failed SQLite integrity validation"
+                }
+            }
+            database.query("PRAGMA wal_checkpoint(TRUNCATE)", null).close()
+        } finally {
+            database.close()
         }
     }
 }
