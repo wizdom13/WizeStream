@@ -1,0 +1,6 @@
+• Added rotate-to-fullscreen even when system orientation is locked.
+• Improved native PiP and fullscreen/minimized-player transitions.
+• Enhanced Local Media with search, refresh, browsing, and layout polish.
+• Added a Videos filter to What’s New.
+• Expanded NewPipe-compatible imports, including settings and PipePipe SponsorBlock preferences.
+• Fixed high-resolution local-video black screens and other player surface/rotation issues.
