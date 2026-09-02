@@ -3,13 +3,18 @@
  */
 package org.schabi.newpipe.local.media
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -43,6 +48,11 @@ internal fun localMediaItemLayout(itemViewMode: ItemViewMode): Int = when (itemV
 }
 
 class LocalMediaFragment : Fragment() {
+    private companion object {
+        const val STATE_QUERY = "local_media_query"
+        const val STATE_SEARCH_EXPANDED = "local_media_search_expanded"
+    }
+
     private enum class Filter { ALL, AUDIO, VIDEO, BROWSE }
     private enum class Sort { TITLE, ARTIST, ALBUM, FOLDER, RECENT }
 
@@ -52,6 +62,7 @@ class LocalMediaFragment : Fragment() {
     private var filter = Filter.ALL
     private var sort = Sort.TITLE
     private var query = ""
+    private var searchExpanded = false
     private var audioCategory = LocalMediaAudioCategory.TRACKS
     private var videoCategory = LocalMediaVideoCategory.VIDEOS
     private var activeGroup: LocalMediaGroup? = null
@@ -62,6 +73,7 @@ class LocalMediaFragment : Fragment() {
     private lateinit var viewModel: LocalMediaViewModel
     private lateinit var browserViewModel: LocalMediaBrowserViewModel
     private var browserState = LocalMediaBrowserState()
+    private var searchField: TextInputEditText? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -82,6 +94,13 @@ class LocalMediaFragment : Fragment() {
         }
     }
 
+    override fun onCreate(state: Bundle?) {
+        super.onCreate(state)
+        setHasOptionsMenu(true)
+        query = state?.getString(STATE_QUERY).orEmpty()
+        searchExpanded = state?.getBoolean(STATE_SEARCH_EXPANDED) ?: false
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -98,6 +117,7 @@ class LocalMediaFragment : Fragment() {
         adapter = LocalMediaAdapter(::play, ::showActions)
         groupAdapter = LocalMediaGroupAdapter(::openGroup)
         documentAdapter = LocalMediaDocumentAdapter(::openDocument, ::showDocumentActions)
+        searchField = view.findViewById(R.id.localMediaSearch)
         list.adapter = adapter
         applyItemViewMode()
 
@@ -160,21 +180,31 @@ class LocalMediaFragment : Fragment() {
         view.findViewById<View>(R.id.localMediaBrowseMore).setOnClickListener {
             browserState.location?.let { showFolderActions(it, browserState.title, false) }
         }
-        view.findViewById<TextInputEditText>(R.id.localMediaSearch).addTextChangedListener(
-            object : TextWatcher {
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int
-                ) = Unit
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    query = s?.toString().orEmpty()
-                    updateList()
+        searchField?.apply {
+            if (query.isNotEmpty()) setText(query)
+            addTextChangedListener(
+                object : TextWatcher {
+                    override fun beforeTextChanged(
+                        s: CharSequence?,
+                        start: Int,
+                        count: Int,
+                        after: Int
+                    ) = Unit
+
+                    override fun onTextChanged(
+                        s: CharSequence?,
+                        start: Int,
+                        before: Int,
+                        count: Int
+                    ) {
+                        query = s?.toString().orEmpty()
+                        updateList()
+                    }
+
+                    override fun afterTextChanged(s: Editable?) = Unit
                 }
-                override fun afterTextChanged(s: Editable?) = Unit
-            }
-        )
+            )
+        }
         viewModel.state.observe(viewLifecycleOwner, ::renderState)
         browserViewModel.state.observe(viewLifecycleOwner, ::renderBrowserState)
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -188,6 +218,7 @@ class LocalMediaFragment : Fragment() {
                 }
             }
         )
+        updateSearchVisibility()
         loadOrExplainPermission()
     }
 
@@ -195,6 +226,44 @@ class LocalMediaFragment : Fragment() {
         super.onResume()
         ThemeHelper.setTitleToAppCompatActivity(activity, getString(R.string.local_media))
         if (::adapter.isInitialized) applyItemViewMode()
+        requireActivity().invalidateOptionsMenu()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_QUERY, query)
+        outState.putBoolean(STATE_SEARCH_EXPANDED, searchExpanded)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.menu_local_media, menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        menu.findItem(R.id.menu_item_search_content)?.isVisible = filter != Filter.BROWSE
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_item_search_content -> {
+                toggleSearch()
+                true
+            }
+
+            R.id.menu_item_local_media_refresh -> {
+                refreshLocalMedia()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onDestroyView() {
+        searchField = null
+        super.onDestroyView()
     }
 
     override fun onDestroy() {
@@ -215,6 +284,50 @@ class LocalMediaFragment : Fragment() {
         viewModel.load(access)
     }
 
+    private fun refreshLocalMedia() {
+        if (!::viewModel.isInitialized || !::browserViewModel.isInitialized) return
+        val access = LocalMediaPermissionPolicy.access(requireContext())
+        if (!access.hasAnyAccess) {
+            showMessage(R.string.local_media_permission_description, true)
+            return
+        }
+        view?.findViewById<View>(R.id.localMediaMessagePanel)?.visibility = View.GONE
+        viewModel.load(access, force = true)
+        if (filter == Filter.BROWSE) browserViewModel.refresh()
+    }
+
+    private fun toggleSearch() {
+        if (filter == Filter.BROWSE) return
+        searchExpanded = !searchExpanded
+        if (!searchExpanded) searchField?.text?.clear()
+        updateSearchVisibility(focus = searchExpanded)
+    }
+
+    private fun updateSearchVisibility(focus: Boolean = false) {
+        val shouldShow = searchExpanded && filter != Filter.BROWSE
+        view?.findViewById<View>(R.id.localMediaSearchLayout)?.visibility =
+            if (shouldShow) View.VISIBLE else View.GONE
+
+        val field = searchField ?: return
+        if (shouldShow) {
+            if (focus) {
+                field.requestFocus()
+                field.post {
+                    val inputMethodManager = requireContext().getSystemService(
+                        Context.INPUT_METHOD_SERVICE
+                    ) as InputMethodManager
+                    inputMethodManager.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT)
+                }
+            }
+        } else {
+            field.clearFocus()
+            val inputMethodManager = requireContext().getSystemService(
+                Context.INPUT_METHOD_SERVICE
+            ) as InputMethodManager
+            inputMethodManager.hideSoftInputFromWindow(field.windowToken, 0)
+        }
+    }
+
     private fun renderState(state: LocalMediaLibraryState) {
         if (!isAdded || view == null) return
         view?.findViewById<View>(R.id.localMediaProgress)?.visibility =
@@ -232,11 +345,11 @@ class LocalMediaFragment : Fragment() {
             if (selected == Filter.VIDEO) View.VISIBLE else View.GONE
         view?.findViewById<View>(R.id.localMediaBrowseNavigation)?.visibility =
             if (selected == Filter.BROWSE) View.VISIBLE else View.GONE
-        view?.findViewById<View>(R.id.localMediaSearchLayout)?.visibility =
-            if (selected == Filter.BROWSE) View.GONE else View.VISIBLE
+        updateSearchVisibility()
         view?.findViewById<View>(R.id.localMediaSort)?.visibility =
             if (selected == Filter.BROWSE) View.GONE else View.VISIBLE
         view?.findViewById<View>(R.id.localMediaGroupHeader)?.visibility = View.GONE
+        requireActivity().invalidateOptionsMenu()
         if (selected == Filter.BROWSE) renderBrowserState(browserState) else updateList()
     }
 
