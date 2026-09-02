@@ -1,0 +1,226 @@
+name: Apply PR 387 viewport race fix
+
+on:
+  push:
+    branches:
+      - fix-fullscreen-exit-aspect-ratio
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: fix-fullscreen-exit-aspect-ratio
+
+      - name: Patch viewport-stable player geometry
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          fragment_path = Path('app/src/main/java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java')
+          source = fragment_path.read_text()
+
+          old = '''        binding.getRoot().post(() -> {
+              updateDetailContentTopMargin(isFullscreen());
+              updateDetailContentStartMargins(isFullscreen());
+              updateDetailNavigationBottomInset();
+          });
+          pageAdapter = new TabAdapter(getChildFragmentManager());
+          '''
+          new = '''        binding.getRoot().post(() -> {
+              updateDetailContentTopMargin(isFullscreen());
+              updateDetailContentStartMargins(isFullscreen());
+              updateDetailNavigationBottomInset();
+          });
+          binding.getRoot().addOnLayoutChangeListener((view, left, top, right, bottom,
+                                                       oldLeft, oldTop, oldRight, oldBottom) -> {
+              final int width = right - left;
+              final int height = bottom - top;
+              final int oldWidth = oldRight - oldLeft;
+              final int oldHeight = oldBottom - oldTop;
+              if (width == oldWidth && height == oldHeight) {
+                  return;
+              }
+              view.post(() -> {
+                  if (binding != null && isPlayerAvailable() && getView() != null) {
+                      setHeightThumbnail();
+                  }
+              });
+          });
+          pageAdapter = new TabAdapter(getChildFragmentManager());
+          '''
+          old = '\n'.join(line[8:] if line.startswith('        ') else line for line in old.splitlines()) + '\n'
+          new = '\n'.join(line[8:] if line.startswith('        ') else line for line in new.splitlines()) + '\n'
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one root post block, found {source.count(old)}')
+          source = source.replace(old, new, 1)
+
+          start = source.index('    private final ViewTreeObserver.OnPreDrawListener preDrawListener =')
+          end = source.index('    static boolean isPhoneDetailLayout', start)
+          replacement = '''    private final ViewTreeObserver.OnPreDrawListener preDrawListener =
+              new ViewTreeObserver.OnPreDrawListener() {
+                  @Override
+                  public boolean onPreDraw() {
+                      if (getView() != null) {
+                          getView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+                          setHeightThumbnail();
+                      }
+                      return false;
+                  }
+              };
+
+      /**
+       * Method which controls the size of thumbnail and the size of main player inside
+       * a layout with thumbnail. It decides what height the player should have in both
+       * screen orientations. It knows about multiWindow feature
+       * and about videos with aspectRatio ZOOM (the height for them will be a bit higher,
+       * {@link #MAX_PLAYER_HEIGHT})
+       */
+      private void setHeightThumbnail() {
+          final DisplayMetrics metrics = getResources().getDisplayMetrics();
+          final View root = requireView();
+          final int viewportWidth = root.getWidth() > 0 ? root.getWidth() : metrics.widthPixels;
+          final int viewportHeight = root.getHeight() > 0 ? root.getHeight() : metrics.heightPixels;
+          final boolean isPortrait = viewportHeight > viewportWidth;
+          final boolean fullscreenForCurrentOrientation =
+                  isFullscreenForCurrentOrientation(viewportWidth, viewportHeight);
+          root.getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+
+          if (fullscreenForCurrentOrientation) {
+              if (viewportHeight != 0) {
+                  setHeightThumbnail(viewportHeight, viewportHeight, viewportWidth);
+              } else {
+                  root.getViewTreeObserver().addOnPreDrawListener(preDrawListener);
+              }
+          } else {
+              final int height = (int) (isPortrait
+                      ? viewportWidth / (16.0f / 9.0f)
+                      : viewportHeight / 2.0f);
+              setHeightThumbnail(height, viewportHeight, viewportWidth);
+          }
+      }
+
+      private void setHeightThumbnail(final int newHeight,
+                                      final int viewportHeight,
+                                      final int viewportWidth) {
+          binding.detailThumbnailImageView.setLayoutParams(
+                  new FrameLayout.LayoutParams(
+                          RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
+          binding.detailThumbnailImageView.setMinimumHeight(newHeight);
+          updatePinnedPlayerLayout(newHeight);
+          if (isPlayerAvailable()) {
+              final int maxHeight = (int) (viewportHeight * MAX_PLAYER_HEIGHT);
+              final boolean fullscreenForCurrentOrientation =
+                      isFullscreenForCurrentOrientation(viewportWidth, viewportHeight);
+              player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
+                      ui.getBinding().surfaceView.setHeights(newHeight,
+                              fullscreenForCurrentOrientation ? newHeight : maxHeight));
+          }
+      }
+
+'''
+          replacement = '\n'.join(line[6:] if line.startswith('      ') else line for line in replacement.splitlines()) + '\n'
+          source = source[:start] + replacement + source[end:]
+
+          helper_start = source.index('    /**\n     * Resolves player geometry from the current configuration')
+          helper_end = source.index('    public boolean isNativePipEligible()', helper_start)
+          helper = '''    /**
+       * Resolves player geometry from the currently laid-out viewport instead of relying on
+       * configuration callback timing. The viewport and the height calculation therefore come
+       * from the same layout frame during fullscreen transitions.
+       *
+       * @param viewportWidth current laid-out player viewport width
+       * @param viewportHeight current laid-out player viewport height
+       * @return whether player geometry should currently use fullscreen dimensions
+       */
+      private boolean isFullscreenForCurrentOrientation(final int viewportWidth,
+                                                        final int viewportHeight) {
+          if (!isPlayerAvailable() || activity == null) {
+              return false;
+          }
+          final boolean orientationIndependent = DeviceUtils.isTablet(activity)
+                  || DeviceUtils.isTv(activity)
+                  || DeviceUtils.isDesktopMode(activity);
+          final int fallbackOrientation = getResources().getConfiguration().orientation;
+          final int orientation = orientationFromViewportDimensions(
+                  viewportWidth, viewportHeight, fallbackOrientation);
+          return player.UIs().get(MainPlayerUi.class)
+                  .map(ui -> fullscreenStateForOrientation(
+                          orientation,
+                          ui.isFullscreen(),
+                          ui.isVerticalVideo(),
+                          orientationIndependent,
+                          player.isAudioOnly()))
+                  .orElse(false);
+      }
+
+      static int orientationFromViewportDimensions(final int width,
+                                                   final int height,
+                                                   final int fallbackOrientation) {
+          if (width <= 0 || height <= 0 || width == height) {
+              return fallbackOrientation;
+          }
+          return width > height
+                  ? Configuration.ORIENTATION_LANDSCAPE
+                  : Configuration.ORIENTATION_PORTRAIT;
+      }
+
+'''
+          helper = '\n'.join(line[6:] if line.startswith('      ') else line for line in helper.splitlines()) + '\n'
+          source = source[:helper_start] + helper + source[helper_end:]
+          fragment_path.write_text(source)
+
+          test_path = Path('app/src/test/java/org/schabi/newpipe/fragments/detail/VideoDetailOrientationHandlingTest.java')
+          test = test_path.read_text()
+          test = test.replace('import static org.junit.Assert.assertFalse;\n',
+                              'import static org.junit.Assert.assertEquals;\nimport static org.junit.Assert.assertFalse;\n', 1)
+
+          old_test_start = test.index('    @Test\n    public void playerGeometryUsesTargetOrientationBeforeDeferredFullscreenSync()')
+          old_test_end = test.index('    @Test\n    public void landscapePhoneVideoEntersFullscreenRegardlessOfPlaybackState()', old_test_start)
+          new_test = '''    @Test
+      public void playerGeometryReconcilesAgainstLaidOutViewport() throws Exception {
+          final String fragment = Files.readString(projectDirectory.resolve(
+                  "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+
+          assertTrue(fragment.contains("binding.getRoot().addOnLayoutChangeListener"));
+          assertTrue(fragment.contains(
+                  "isFullscreenForCurrentOrientation(viewportWidth, viewportHeight)"));
+          assertTrue(fragment.contains("root.getWidth() > 0 ? root.getWidth()"));
+          assertTrue(fragment.contains("root.getHeight() > 0 ? root.getHeight()"));
+      }
+
+      @Test
+      public void viewportDimensionsOverrideStaleConfigurationOrientation() {
+          assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                  VideoDetailFragment.orientationFromViewportDimensions(
+                          1080, 2400, Configuration.ORIENTATION_LANDSCAPE));
+          assertEquals(Configuration.ORIENTATION_LANDSCAPE,
+                  VideoDetailFragment.orientationFromViewportDimensions(
+                          2400, 1080, Configuration.ORIENTATION_PORTRAIT));
+          assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                  VideoDetailFragment.orientationFromViewportDimensions(
+                          0, 0, Configuration.ORIENTATION_PORTRAIT));
+      }
+
+'''
+          new_test = '\n'.join(line[6:] if line.startswith('      ') else line for line in new_test.splitlines()) + '\n'
+          test = test[:old_test_start] + new_test + test[old_test_end:]
+          test_path.write_text(test)
+
+          Path('.github/workflows/temporary-pr387-viewport-race-fix.yml').unlink()
+          PY
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java app/src/test/java/org/schabi/newpipe/fragments/detail/VideoDetailOrientationHandlingTest.java .github/workflows/temporary-pr387-viewport-race-fix.yml
+          git commit -m "Remove fullscreen viewport timing race"
+          git push origin HEAD:fix-fullscreen-exit-aspect-ratio
