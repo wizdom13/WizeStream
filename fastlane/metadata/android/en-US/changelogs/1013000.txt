@@ -1,0 +1,6 @@
+• Added rotate-to-fullscreen even when Android orientation is locked.
+• Improved native PiP, queue navigation, and fullscreen/miniplayer transitions.
+• Added a Videos filter to What’s New.
+• Expanded NewPipe/PipePipe backup import with compatible settings.
+• Added Local Media search, menu, and full refresh/rescan.
+• Fixed high-resolution local video surfaces after leaving fullscreen and other player UI issues.

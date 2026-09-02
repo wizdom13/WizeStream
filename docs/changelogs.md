@@ -4,6 +4,69 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.13.0 (`1013000`)
+
+### New features
+
+- Added a **Videos** filter to What's New so standard videos can be shown separately from Shorts.
+- Added a default-enabled **Rotate device to enter fullscreen** option that responds to physical
+  rotation even when Android's system orientation is locked.
+- Expanded NewPipe/PipePipe migration with compatible settings and PipePipe SponsorBlock settings,
+  while preserving history and local-playlist migration.
+- Added a History-style Local Media toolbar with on-demand search, a compact rounded search field,
+  an overflow menu, and a full local-media refresh/rescan action.
+
+### Improvements
+
+- Made the player PiP action enter Android's native Picture-in-Picture directly while keeping the
+  legacy floating Popup player available separately.
+- Smoothed fullscreen-to-mini-player transitions and restored normal device orientation when the
+  fullscreen player is minimized.
+
+### Fixes
+
+- Prevented opening the Play Queue from triggering Picture-in-Picture and guarded PiP APIs on
+  Android versions that do not support them.
+- Improved local-video surface recovery after fullscreen changes, including a targeted fresh
+  SurfaceView lifecycle for high-resolution videos affected by stale hardware-compositor surfaces.
+
+[View the complete changes since v1.12.0](https://github.com/wizdom13/WizeStream/compare/v1.12.0...v1.13.0)
+
+## WizeStream 1.12.0 (`1012000`)
+
+### New features
+
+- Added import of history and playlists from NewPipe-compatible backups.
+- Added YouTube Music search filter chips.
+- Added adjustable comment text and optional drawer service sections.
+
+### Improvements
+
+- Improved tablet video details, fullscreen rotation, grid titles, and feeds.
+- Polished refresh and watched-progress indicators.
+
+### Fixes
+
+- Fixed BiliBili playback, blocked keywords, comments, playlist swipes, search, and avatars.
+
+[View the complete changes since v1.11.5](https://github.com/wizdom13/WizeStream/compare/v1.11.5...v1.12.0)
+
+## WizeStream 1.11.5 (`1011005`)
+
+### New features
+
+- Added optional full video titles in grid layouts.
+- Added configurable tablet grid columns with responsive thumbnails.
+- Added a copy-title action to video menus.
+
+### Improvements
+
+- Made automatic queues prefer Shorts when watching Shorts.
+- Stabilized tablet video details after rotation.
+- Made reproducible release builds portable across independent build environments.
+
+[View the complete changes since v1.11.4](https://github.com/wizdom13/WizeStream/compare/v1.11.4...v1.11.5)
+
 ## WizeStream 1.11.4 (`1011004`)
 
 ### New features
