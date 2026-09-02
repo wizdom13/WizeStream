@@ -44,9 +44,9 @@ public class ExpandableSurfaceView extends SurfaceView {
     }
 
     /**
-     * Requests a one-shot SurfaceView lifecycle restart after the current layout transition settles.
-     * Keeping the view invisible for a short frame gap forces Android to tear down the old surface
-     * and create a fresh one without changing the player's layout parameters.
+     * Requests a one-shot SurfaceView lifecycle restart after the current layout transition
+     * settles. Keeping the view invisible for a short frame gap forces Android to tear down the
+     * old surface and create a fresh one without changing the player's layout parameters.
      *
      * @param holder holder that belongs to the player surface needing recovery
      * @return whether a matching player SurfaceView was found
