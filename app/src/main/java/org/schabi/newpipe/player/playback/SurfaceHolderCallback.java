@@ -1,8 +1,6 @@
 package org.schabi.newpipe.player.playback;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.net.Uri;
 import android.view.SurfaceHolder;
 
 import com.google.android.exoplayer2.MediaItem;
@@ -101,10 +99,14 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
         if (mediaUri == null || mediaUri.isEmpty()) {
             return false;
         }
-        final String scheme = Uri.parse(mediaUri).getScheme();
-        return ContentResolver.SCHEME_CONTENT.equals(scheme)
-                || ContentResolver.SCHEME_FILE.equals(scheme)
-                || ContentResolver.SCHEME_ANDROID_RESOURCE.equals(scheme);
+        final int schemeSeparator = mediaUri.indexOf(':');
+        if (schemeSeparator <= 0) {
+            return false;
+        }
+        final String scheme = mediaUri.substring(0, schemeSeparator);
+        return "content".equalsIgnoreCase(scheme)
+                || "file".equalsIgnoreCase(scheme)
+                || "android.resource".equalsIgnoreCase(scheme);
     }
 
     static boolean isLargeSurfaceExpansion(final int previousWidth,
