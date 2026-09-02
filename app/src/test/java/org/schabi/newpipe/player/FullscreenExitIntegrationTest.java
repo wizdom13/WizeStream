@@ -47,6 +47,22 @@ public class FullscreenExitIntegrationTest {
     }
 
     @Test
+    public void initialFullscreenRotationDoesNotRequireABoundPlayer() throws Exception {
+        final String source = read(
+                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
+        final String rotation = methodBody(source,
+                "public void onScreenRotationButtonClicked()");
+
+        final int missingPlayerGuard = rotation.indexOf("if (!isPlayerAvailable())");
+        final int playerAccess = rotation.indexOf("player.UIs().get(MainPlayerUi.class)");
+        assertTrue("Missing-player guard must exist", missingPlayerGuard >= 0);
+        assertTrue("Missing-player guard must run before player access",
+                missingPlayerGuard < playerAccess);
+        assertTrue(rotation.substring(missingPlayerGuard, playerAccess).contains(
+                "SCREEN_ORIENTATION_SENSOR_LANDSCAPE"));
+    }
+
+    @Test
     public void explicitFullscreenSetterIsIdempotent() throws Exception {
         final String source = read("org/schabi/newpipe/player/ui/MainPlayerUi.java");
         final String setter = methodBody(source, "public void setFullscreen(");

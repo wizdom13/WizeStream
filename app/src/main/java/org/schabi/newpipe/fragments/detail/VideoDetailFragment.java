@@ -2775,9 +2775,19 @@ public final class VideoDetailFragment
         // from landscape to portrait every time.
         // Just turn on fullscreen mode in landscape orientation
         // or portrait & unlocked global orientation
-        final Optional<MainPlayerUi> playerUi = player.UIs().get(MainPlayerUi.class);
         final int currentOrientation = getResources().getConfiguration().orientation;
         final boolean isLandscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE;
+        if (!isPlayerAvailable()) {
+            // The initial start-fullscreen path runs before the player service connects. Rotate
+            // now and let the connection/configuration callbacks apply fullscreen afterward.
+            if (!DeviceUtils.isTv(activity) && !isLandscape) {
+                activity.setRequestedOrientation(
+                        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            }
+            return;
+        }
+
+        final Optional<MainPlayerUi> playerUi = player.UIs().get(MainPlayerUi.class);
         if (DeviceUtils.isTv(activity) || DeviceUtils.isTablet(activity)
                 && (!globalScreenOrientationLocked(activity) || isLandscape)) {
             playerUi.ifPresent(ui -> ui.setFullscreen(!ui.isFullscreen()));
