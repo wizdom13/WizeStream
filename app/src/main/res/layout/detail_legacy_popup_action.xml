@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<org.schabi.newpipe.views.NewPipeTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/detail_controls_legacy_popup"
+    style="@style/VideoDetailActionText"
+    android:layout_width="@dimen/detail_control_width"
+    android:layout_height="@dimen/detail_control_height"
+    android:layout_gravity="center_vertical"
+    android:layout_weight="1"
+    android:background="?attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:contentDescription="@string/open_in_popup_mode"
+    android:drawableTop="@drawable/ic_smart_display"
+    android:focusable="true"
+    android:gravity="center"
+    android:paddingVertical="@dimen/detail_control_padding"
+    android:text="@string/controls_popup_title"
+    android:textSize="@dimen/detail_control_text_size" />
