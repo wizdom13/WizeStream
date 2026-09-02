@@ -50,41 +50,32 @@ public class SurfaceHolderCallbackTest {
     }
 
     @Test
-    public void localMediaUriDetectionRejectsRemoteStreams() {
-        assertTrue(SurfaceHolderCallback.isLocalMediaUri("content://media/video/42"));
-        assertTrue(SurfaceHolderCallback.isLocalMediaUri("file:///storage/emulated/0/video.mp4"));
-        assertTrue(SurfaceHolderCallback.isLocalMediaUri("android.resource://app/raw/video"));
-        assertFalse(SurfaceHolderCallback.isLocalMediaUri("https://example.com/video.mp4"));
-        assertFalse(SurfaceHolderCallback.isLocalMediaUri(null));
+    public void surfaceRecoveryIsNotRestrictedToLocalMedia() throws Exception {
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/player/playback/SurfaceHolderCallback.java"));
+
+        assertFalse(source.contains("isLocalMediaUri"));
+        assertFalse(source.contains("requestSurfaceRecreation"));
     }
 
     @Test
-    public void fullscreenSizedExpansionThenShrinkQualifiesForLocalRecovery() {
-        assertTrue(SurfaceHolderCallback.isLargeSurfaceExpansion(
-                1080, 607, 2400, 1080));
-        assertTrue(SurfaceHolderCallback.shouldRecoverLocalSurface(
-                true, true, 2400, 1080, 1080, 607));
-    }
-
-    @Test
-    public void recoveryDoesNotRunForRemoteOrOrdinaryResizes() {
-        assertFalse(SurfaceHolderCallback.shouldRecoverLocalSurface(
-                false, true, 2400, 1080, 1080, 607));
-        assertFalse(SurfaceHolderCallback.shouldRecoverLocalSurface(
-                true, false, 2400, 1080, 1080, 607));
-        assertFalse(SurfaceHolderCallback.shouldRecoverLocalSurface(
-                true, true, 1080, 607, 1000, 560));
-    }
-
-    @Test
-    public void recoveryRestartsSurfaceLifecycleWithoutChangingLayout() throws Exception {
+    public void expandableSurfaceFollowsAttachmentLifecycleOnAndroid14Plus() throws Exception {
         final String source = Files.readString(sourceDirectory.resolve(
                 "org/schabi/newpipe/views/ExpandableSurfaceView.java"));
 
-        assertTrue(source.contains("requestSurfaceRecreation"));
-        assertTrue(source.contains("setVisibility(View.INVISIBLE)"));
-        assertTrue(source.contains("setVisibility(View.VISIBLE)"));
-        assertTrue(source.contains("SURFACE_RECOVERY_SETTLE_DELAY_MILLIS"));
-        assertTrue(source.contains("SURFACE_RECREATE_GAP_MILLIS"));
+        assertTrue(source.contains("SURFACE_LIFECYCLE_FOLLOWS_ATTACHMENT"));
+        assertFalse(source.contains("requestSurfaceRecreation"));
+        assertFalse(source.contains("setVisibility(View.INVISIBLE)"));
+    }
+
+    @Test
+    public void detailFragmentKeepsPlayerAttachedToTheCorrectPlaceholder() throws Exception {
+        final String source = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+
+        assertTrue(source.contains("final View playerView = playerUi.getBinding().getRoot();"));
+        assertTrue(source.contains(
+                "if (playerView.getParent() != binding.playerPlaceholder)"));
+        assertTrue(source.contains("binding.playerPlaceholder.addView(playerView);"));
     }
 }
