@@ -196,6 +196,14 @@
             app:iconSpaceReserved="false" />
 
         <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/rotate_to_fullscreen_key"
+            android:summary="@string/rotate_to_fullscreen_summary"
+            android:title="@string/rotate_to_fullscreen_title"
+            app:singleLineTitle="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/pin_video_while_scrolling_key"
             android:summary="@string/pin_video_while_scrolling_summary"

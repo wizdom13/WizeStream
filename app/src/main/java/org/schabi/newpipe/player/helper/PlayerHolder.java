@@ -76,6 +76,33 @@ public final class PlayerHolder {
         return getPlayer().map(Player::isPlaying).orElse(false);
     }
 
+    /**
+     * Returns whether a main video is in a state where physical rotation may control fullscreen.
+     *
+     * @return true when the main video player is eligible for orientation-driven fullscreen
+     */
+    public boolean isMainVideoPlayerOrientationEligible() {
+        return getPlayer().map(player -> {
+            if (player.getPlayerType() != PlayerType.MAIN
+                    || !player.videoPlayerSelected()
+                    || player.isAudioOnly()) {
+                return false;
+            }
+            final int state = player.getCurrentState();
+            return state == Player.STATE_PLAYING
+                    || state == Player.STATE_BUFFERING
+                    || state == Player.STATE_PAUSED
+                    || state == Player.STATE_PAUSED_SEEK;
+        }).orElse(false);
+    }
+
+    public boolean isMainPlayerFullscreen() {
+        return getPlayer()
+                .flatMap(player -> player.UIs().get(MainPlayerUi.class))
+                .map(MainPlayerUi::isFullscreen)
+                .orElse(false);
+    }
+
     public void rememberMainPlayerFullscreenBeforePopup(final boolean fullscreen) {
         getPlayer().ifPresent(player ->
                 player.rememberMainPlayerFullscreenBeforePopup(fullscreen));
