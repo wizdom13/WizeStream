@@ -2912,7 +2912,9 @@ public final class VideoDetailFragment
      * Resolves player geometry from the current configuration before the deferred
      * fullscreen-state synchronization runs. This prevents a horizontal video from
      * being measured with portrait fullscreen dimensions while rotating upright.
-     */
+      *
+     * @return whether player geometry should currently use fullscreen dimensions
+    */
     private boolean isFullscreenForCurrentOrientation() {
         if (!isPlayerAvailable() || activity == null) {
             return false;
