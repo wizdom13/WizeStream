@@ -58,73 +58,57 @@ jobs:
           if count != 1:
               raise SystemExit(f'Expected one surface height block, found {count}')
 
-          marker = '''    private boolean isFullscreen() {
-              return isPlayerAvailable() && player.UIs().get(VideoPlayerUi.class)
-                      .map(VideoPlayerUi::isFullscreen).orElse(false);
-          }
-          '''
-          helper = '''    private boolean isFullscreen() {
-              return isPlayerAvailable() && player.UIs().get(VideoPlayerUi.class)
-                      .map(VideoPlayerUi::isFullscreen).orElse(false);
-          }
-
-          /**
-           * Resolves player geometry from the current configuration before the deferred
-           * fullscreen-state synchronization runs. This prevents a horizontal video from being
-           * measured with portrait fullscreen dimensions while rotating back upright.
-           */
-          private boolean isFullscreenForCurrentOrientation() {
-              if (!isPlayerAvailable() || activity == null) {
-                  return false;
-              }
-              final boolean orientationIndependent = DeviceUtils.isTablet(activity)
-                      || DeviceUtils.isTv(activity)
-                      || DeviceUtils.isDesktopMode(activity);
-              final int orientation = getResources().getConfiguration().orientation;
-              return player.UIs().get(MainPlayerUi.class)
-                      .map(ui -> fullscreenStateForOrientation(
-                              orientation,
-                              ui.isFullscreen(),
-                              ui.isVerticalVideo(),
-                              orientationIndependent,
-                              player.isAudioOnly()))
-                      .orElse(false);
-          }
-          '''
-          # Normalize YAML-stripped indentation for this small marker before matching.
-          marker = '\n'.join(line[8:] if line.startswith('        ') else line
-                             for line in marker.splitlines()) + '\n'
-          helper = '\n'.join(line[8:] if line.startswith('        ') else line
-                             for line in helper.splitlines()) + '\n'
+          marker = '    public boolean isNativePipEligible() {'
+          helper = (
+              '    /**\n'
+              '     * Resolves player geometry from the current configuration before the deferred\n'
+              '     * fullscreen-state synchronization runs. This prevents a horizontal video from\n'
+              '     * being measured with portrait fullscreen dimensions while rotating upright.\n'
+              '     */\n'
+              '    private boolean isFullscreenForCurrentOrientation() {\n'
+              '        if (!isPlayerAvailable() || activity == null) {\n'
+              '            return false;\n'
+              '        }\n'
+              '        final boolean orientationIndependent = DeviceUtils.isTablet(activity)\n'
+              '                || DeviceUtils.isTv(activity)\n'
+              '                || DeviceUtils.isDesktopMode(activity);\n'
+              '        final int orientation = getResources().getConfiguration().orientation;\n'
+              '        return player.UIs().get(MainPlayerUi.class)\n'
+              '                .map(ui -> fullscreenStateForOrientation(\n'
+              '                        orientation,\n'
+              '                        ui.isFullscreen(),\n'
+              '                        ui.isVerticalVideo(),\n'
+              '                        orientationIndependent,\n'
+              '                        player.isAudioOnly()))\n'
+              '                .orElse(false);\n'
+              '    }\n\n'
+          )
           if source.count(marker) != 1:
-              raise SystemExit(f'Expected one isFullscreen helper block, found {source.count(marker)}')
-          source = source.replace(marker, helper, 1)
+              raise SystemExit(f'Expected one PiP marker, found {source.count(marker)}')
+          source = source.replace(marker, helper + marker, 1)
           fragment_path.write_text(source)
 
           test_path = Path('app/src/test/java/org/schabi/newpipe/fragments/detail/VideoDetailOrientationHandlingTest.java')
           test = test_path.read_text()
           marker = '    @Test\n    public void landscapePhoneVideoEntersFullscreenRegardlessOfPlaybackState() {'
-          addition = '''    @Test
-          public void playerGeometryUsesTargetOrientationBeforeDeferredFullscreenSync()
-                  throws Exception {
-              final String fragment = Files.readString(projectDirectory.resolve(
-                      "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
-
-              assertTrue(fragment.contains("private boolean isFullscreenForCurrentOrientation()"));
-              assertTrue(fragment.contains("final boolean fullscreenForCurrentOrientation = "
-                      + "isFullscreenForCurrentOrientation();"));
-              assertTrue(fragment.contains("if (fullscreenForCurrentOrientation)"));
-              assertTrue(fragment.contains(
-                      "fullscreenForCurrentOrientation ? newHeight : maxHeight"));
-          }
-
-          @Test
-          public void landscapePhoneVideoEntersFullscreenRegardlessOfPlaybackState() {'''
-          addition = '\n'.join(line[8:] if line.startswith('        ') else line
-                               for line in addition.splitlines())
+          addition = (
+              '    @Test\n'
+              '    public void playerGeometryUsesTargetOrientationBeforeDeferredFullscreenSync()\n'
+              '            throws Exception {\n'
+              '        final String fragment = Files.readString(projectDirectory.resolve(\n'
+              '                "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));\n\n'
+              '        assertTrue(fragment.contains(\n'
+              '                "private boolean isFullscreenForCurrentOrientation()"));\n'
+              '        assertTrue(fragment.contains("final boolean fullscreenForCurrentOrientation = "\n'
+              '                + "isFullscreenForCurrentOrientation();"));\n'
+              '        assertTrue(fragment.contains("if (fullscreenForCurrentOrientation)"));\n'
+              '        assertTrue(fragment.contains(\n'
+              '                "fullscreenForCurrentOrientation ? newHeight : maxHeight"));\n'
+              '    }\n\n'
+          )
           if test.count(marker) != 1:
               raise SystemExit(f'Expected one orientation test marker, found {test.count(marker)}')
-          test_path.write_text(test.replace(marker, addition, 1))
+          test_path.write_text(test.replace(marker, addition + marker, 1))
 
           Path('.github/workflows/temporary-fullscreen-aspect-patch.yml').unlink()
           PY
