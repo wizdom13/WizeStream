@@ -2,9 +2,18 @@ package org.schabi.newpipe.views;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+
+import androidx.annotation.NonNull;
 
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
+
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import static com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT;
 import static com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
@@ -12,6 +21,11 @@ import static com.google.android.exoplayer2.ui.AspectRatioFrameLayout.RESIZE_MOD
 public class ExpandableSurfaceView extends SurfaceView {
     public static final float MIN_USER_ZOOM = 1.0f;
     public static final float MAX_USER_ZOOM = 4.0f;
+
+    private static final long SURFACE_RECOVERY_SETTLE_DELAY_MILLIS = 120L;
+    private static final long SURFACE_RECREATE_GAP_MILLIS = 48L;
+    private static final Map<SurfaceHolder, WeakReference<ExpandableSurfaceView>> SURFACE_VIEWS =
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     private int resizeMode = RESIZE_MODE_FIT;
     private int baseHeight = 0;
@@ -22,9 +36,49 @@ public class ExpandableSurfaceView extends SurfaceView {
     private float userZoomScale = MIN_USER_ZOOM;
     private float userTranslationX;
     private float userTranslationY;
+    private int surfaceRecreationGeneration;
 
     public ExpandableSurfaceView(final Context context, final AttributeSet attrs) {
         super(context, attrs);
+        SURFACE_VIEWS.put(getHolder(), new WeakReference<>(this));
+    }
+
+    /**
+     * Requests a one-shot SurfaceView lifecycle restart after the current layout transition settles.
+     * Keeping the view invisible for a short frame gap forces Android to tear down the old surface
+     * and create a fresh one without changing the player's layout parameters.
+     *
+     * @param holder holder that belongs to the player surface needing recovery
+     * @return whether a matching player SurfaceView was found
+     */
+    public static boolean requestSurfaceRecreation(@NonNull final SurfaceHolder holder) {
+        final WeakReference<ExpandableSurfaceView> reference = SURFACE_VIEWS.get(holder);
+        final ExpandableSurfaceView surfaceView = reference == null ? null : reference.get();
+        if (surfaceView == null) {
+            SURFACE_VIEWS.remove(holder);
+            return false;
+        }
+        surfaceView.scheduleSurfaceRecreation();
+        return true;
+    }
+
+    private void scheduleSurfaceRecreation() {
+        final int generation = ++surfaceRecreationGeneration;
+        postDelayed(() -> {
+            if (generation != surfaceRecreationGeneration
+                    || !isAttachedToWindow()
+                    || getVisibility() != View.VISIBLE) {
+                return;
+            }
+
+            setVisibility(View.INVISIBLE);
+            postDelayed(() -> {
+                if (generation == surfaceRecreationGeneration
+                        && getVisibility() == View.INVISIBLE) {
+                    setVisibility(View.VISIBLE);
+                }
+            }, SURFACE_RECREATE_GAP_MILLIS);
+        }, SURFACE_RECOVERY_SETTLE_DELAY_MILLIS);
     }
 
     @Override
