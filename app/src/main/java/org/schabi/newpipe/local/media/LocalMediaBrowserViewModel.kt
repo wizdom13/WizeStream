@@ -74,6 +74,16 @@ class LocalMediaBrowserViewModel(application: Application) : AndroidViewModel(ap
         showRoots()
     }
 
+    fun refresh() {
+        val current = mutableState.value ?: LocalMediaBrowserState()
+        val location = current.location
+        if (location == null) {
+            showRoots()
+        } else {
+            load(location, current.title) { browser.list(location) }
+        }
+    }
+
     fun mediaItem(entry: LocalMediaDocumentEntry): LocalMediaItem? = browser.mediaItem(entry)
 
     fun collect(
