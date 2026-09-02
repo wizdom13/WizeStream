@@ -64,6 +64,38 @@ class StreamListFilterTest {
     }
 
     @Test
+    fun `videos excludes shorts and live streams`() {
+        assertTrue(
+            StreamListFilter.matches(
+                StreamListFilter.VIDEOS,
+                stream(duration = 181),
+                null
+            )
+        )
+        assertFalse(
+            StreamListFilter.matches(
+                StreamListFilter.VIDEOS,
+                stream(duration = 180),
+                null
+            )
+        )
+        assertFalse(
+            StreamListFilter.matches(
+                StreamListFilter.VIDEOS,
+                stream(url = "https://www.youtube.com/shorts/abcdefghijk", duration = -1),
+                null
+            )
+        )
+        assertFalse(
+            StreamListFilter.matches(
+                StreamListFilter.VIDEOS,
+                stream(duration = 600, type = StreamType.LIVE_STREAM),
+                null
+            )
+        )
+    }
+
+    @Test
     fun `shorts accepts explicit shorts urls and videos up to three minutes`() {
         assertTrue(
             StreamListFilter.matches(
@@ -100,6 +132,12 @@ class StreamListFilterTest {
             StreamListFilter.matches(
                 StreamListFilter.LIVE,
                 historyEntry(type = StreamType.LIVE_STREAM)
+            )
+        )
+        assertTrue(
+            StreamListFilter.matches(
+                StreamListFilter.VIDEOS,
+                historyEntry(duration = 600)
             )
         )
         assertTrue(
