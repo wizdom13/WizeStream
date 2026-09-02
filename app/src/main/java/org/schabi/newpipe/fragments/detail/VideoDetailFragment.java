@@ -1835,9 +1835,11 @@ public final class VideoDetailFragment
             player.UIs().get(MainPlayerUi.class).ifPresent(playerUi -> {
                 // sometimes binding would be null here, even though getView() != null above u.u
                 if (binding != null) {
-                    // prevent from re-adding a view multiple times
-                    playerUi.removeViewFromParent();
-                    binding.playerPlaceholder.addView(playerUi.getBinding().getRoot());
+                    final View playerView = playerUi.getBinding().getRoot();
+                    if (playerView.getParent() != binding.playerPlaceholder) {
+                        playerUi.removeViewFromParent();
+                        binding.playerPlaceholder.addView(playerView);
+                    }
                     playerUi.setupVideoSurfaceIfNeeded();
                     updatePinnedPlayerLayout();
                 }
