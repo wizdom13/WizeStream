@@ -1,6 +1,9 @@
 package org.schabi.newpipe.player.gesture;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -16,6 +19,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigationrail.NavigationRailView;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.player.helper.PlayerHolder;
+import org.schabi.newpipe.util.DeviceUtils;
 
 import java.util.List;
 
@@ -35,6 +40,9 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     private final BottomSheetCallback bottomNavigationCallback = new BottomSheetCallback() {
         @Override
         public void onStateChanged(@NonNull final View bottomSheet, final int newState) {
+            if (newState == STATE_COLLAPSED) {
+                restorePhoneOrientationAfterFullscreenCollapse(bottomSheet);
+            }
             if (newState == STATE_COLLAPSED || newState == STATE_EXPANDED
                     || newState == STATE_HIDDEN) {
                 updateBottomNavigation((FrameLayout) bottomSheet, newState, null);
@@ -142,6 +150,36 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         }
 
         return super.onInterceptTouchEvent(parent, child, event);
+    }
+
+    private void restorePhoneOrientationAfterFullscreenCollapse(@NonNull final View bottomSheet) {
+        final Activity activity = findActivity(bottomSheet.getContext());
+        if (activity == null
+                || DeviceUtils.isTablet(activity)
+                || DeviceUtils.isTv(activity)
+                || DeviceUtils.isDesktopMode(activity)) {
+            return;
+        }
+
+        if (PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer()) {
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+    }
+
+    @Nullable
+    private static Activity findActivity(@NonNull final Context context) {
+        Context current = context;
+        while (current instanceof ContextWrapper) {
+            if (current instanceof Activity) {
+                return (Activity) current;
+            }
+            final Context base = ((ContextWrapper) current).getBaseContext();
+            if (base == current) {
+                break;
+            }
+            current = base;
+        }
+        return null;
     }
 
     private void updateBottomNavigation(@NonNull final FrameLayout bottomSheet,
