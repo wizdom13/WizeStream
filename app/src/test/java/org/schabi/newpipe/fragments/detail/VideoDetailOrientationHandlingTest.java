@@ -51,6 +51,21 @@ public class VideoDetailOrientationHandlingTest {
     }
 
     @Test
+    public void playerGeometryUsesTargetOrientationBeforeDeferredFullscreenSync()
+            throws Exception {
+        final String fragment = Files.readString(projectDirectory.resolve(
+                "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+
+        assertTrue(fragment.contains(
+                "private boolean isFullscreenForCurrentOrientation()"));
+        assertTrue(fragment.contains("final boolean fullscreenForCurrentOrientation = "
+                + "isFullscreenForCurrentOrientation();"));
+        assertTrue(fragment.contains("if (fullscreenForCurrentOrientation)"));
+        assertTrue(fragment.contains(
+                "fullscreenForCurrentOrientation ? newHeight : maxHeight"));
+    }
+
+    @Test
     public void landscapePhoneVideoEntersFullscreenRegardlessOfPlaybackState() {
         assertTrue(VideoDetailFragment.fullscreenStateForOrientation(
                 Configuration.ORIENTATION_LANDSCAPE,

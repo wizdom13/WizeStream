@@ -1892,9 +1892,10 @@ public final class VideoDetailFragment
     private void setHeightThumbnail() {
         final DisplayMetrics metrics = getResources().getDisplayMetrics();
         final boolean isPortrait = metrics.heightPixels > metrics.widthPixels;
+        final boolean fullscreenForCurrentOrientation = isFullscreenForCurrentOrientation();
         requireView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
 
-        if (isFullscreen()) {
+        if (fullscreenForCurrentOrientation) {
             final int height = (DeviceUtils.isInMultiWindow(activity)
                     ? requireView()
                     : activity.getWindow().getDecorView()).getHeight();
@@ -1920,9 +1921,10 @@ public final class VideoDetailFragment
         updatePinnedPlayerLayout(newHeight);
         if (isPlayerAvailable()) {
             final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
+            final boolean fullscreenForCurrentOrientation = isFullscreenForCurrentOrientation();
             player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
                     ui.getBinding().surfaceView.setHeights(newHeight,
-                            ui.isFullscreen() ? newHeight : maxHeight));
+                            fullscreenForCurrentOrientation ? newHeight : maxHeight));
         }
     }
 
@@ -2904,6 +2906,29 @@ public final class VideoDetailFragment
     private boolean isFullscreen() {
         return isPlayerAvailable() && player.UIs().get(VideoPlayerUi.class)
                 .map(VideoPlayerUi::isFullscreen).orElse(false);
+    }
+
+    /**
+     * Resolves player geometry from the current configuration before the deferred
+     * fullscreen-state synchronization runs. This prevents a horizontal video from
+     * being measured with portrait fullscreen dimensions while rotating upright.
+     */
+    private boolean isFullscreenForCurrentOrientation() {
+        if (!isPlayerAvailable() || activity == null) {
+            return false;
+        }
+        final boolean orientationIndependent = DeviceUtils.isTablet(activity)
+                || DeviceUtils.isTv(activity)
+                || DeviceUtils.isDesktopMode(activity);
+        final int orientation = getResources().getConfiguration().orientation;
+        return player.UIs().get(MainPlayerUi.class)
+                .map(ui -> fullscreenStateForOrientation(
+                        orientation,
+                        ui.isFullscreen(),
+                        ui.isVerticalVideo(),
+                        orientationIndependent,
+                        player.isAudioOnly()))
+                .orElse(false);
     }
 
     public boolean isNativePipEligible() {
