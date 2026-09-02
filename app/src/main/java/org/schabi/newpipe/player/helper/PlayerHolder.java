@@ -23,6 +23,7 @@ import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceExtendedEventListener;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
+import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.util.NavigationHelper;
 
 import java.util.Optional;
@@ -84,6 +85,24 @@ public final class PlayerHolder {
         return getPlayer()
                 .map(player -> player.consumeMainPlayerFullscreenBeforePopup(fallback))
                 .orElse(fallback);
+    }
+
+    /**
+     * Exits the main player's fullscreen UI without touching playback state.
+     *
+     * @return whether a fullscreen main player was actually changed to non-fullscreen
+     */
+    public boolean exitMainPlayerFullscreenForMiniPlayer() {
+        return getPlayer()
+                .flatMap(player -> player.UIs().get(MainPlayerUi.class))
+                .map(playerUi -> {
+                    if (!playerUi.isFullscreen()) {
+                        return false;
+                    }
+                    playerUi.setFullscreen(false);
+                    return !playerUi.isFullscreen();
+                })
+                .orElse(false);
     }
 
     public boolean isPlayerOpen() {
