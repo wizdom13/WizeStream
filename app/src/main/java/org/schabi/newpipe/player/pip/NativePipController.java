@@ -66,6 +66,33 @@ public final class NativePipController {
         }
     }
 
+    /**
+     * Enters native PiP immediately from an explicit user action.
+     *
+     * <p>Unlike the Home-button path, this deliberately avoids changing the fullscreen/detail
+     * layout before asking Android to start the PiP transition. The normal PiP mode callback will
+     * perform the existing player preparation after the system has started the transition.</p>
+     *
+     * @return whether Android accepted the PiP entry request
+     */
+    public boolean enterPictureInPicture() {
+        if (!isSupported()) {
+            return false;
+        }
+        final VideoDetailFragment fragment = currentFragment().orElse(null);
+        if (fragment == null || !fragment.isNativePipEligible()) {
+            return false;
+        }
+
+        final PictureInPictureParams params = buildParams(fragment);
+        try {
+            activity.setPictureInPictureParams(params);
+            return activity.enterPictureInPictureMode(params);
+        } catch (final IllegalArgumentException | IllegalStateException ignored) {
+            return false;
+        }
+    }
+
     public void onPictureInPictureModeChanged(final boolean inPictureInPictureMode) {
         currentFragment().ifPresent(fragment ->
                 fragment.onNativePipModeChanged(inPictureInPictureMode));
