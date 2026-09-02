@@ -1,6 +1,8 @@
 package org.schabi.newpipe.player.pip;
 
+import android.app.ActivityManager;
 import android.app.PictureInPictureParams;
+import android.content.ComponentName;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.os.Build;
@@ -15,6 +17,7 @@ import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
+import org.schabi.newpipe.player.PlayQueueActivity;
 import org.schabi.newpipe.util.DeviceUtils;
 
 import java.util.Optional;
@@ -48,6 +51,11 @@ public final class NativePipController {
         }
         final VideoDetailFragment fragment = currentFragment().orElse(null);
         if (fragment == null || !fragment.isNativePipEligible()) {
+            return;
+        }
+
+        if (isOpeningPlayQueueActivity()) {
+            disableAutoEnterForInternalNavigation(fragment);
             return;
         }
 
@@ -101,6 +109,45 @@ public final class NativePipController {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private boolean isOpeningPlayQueueActivity() {
+        final ActivityManager activityManager = activity.getSystemService(ActivityManager.class);
+        if (activityManager == null) {
+            return false;
+        }
+        try {
+            for (final ActivityManager.RunningTaskInfo taskInfo
+                    : activityManager.getRunningTasks(3)) {
+                final ComponentName topActivity = taskInfo.topActivity;
+                if (topActivity != null
+                        && activity.getPackageName().equals(topActivity.getPackageName())) {
+                    return isInternalPlayQueueTarget(
+                            activity.getPackageName(), topActivity.getPackageName(),
+                            topActivity.getClassName());
+                }
+            }
+        } catch (final SecurityException ignored) {
+            // Some vendor builds restrict task inspection more aggressively than Android itself.
+        }
+        return false;
+    }
+
+    static boolean isInternalPlayQueueTarget(@NonNull final String appPackageName,
+                                             @NonNull final String topPackageName,
+                                             @NonNull final String topClassName) {
+        return appPackageName.equals(topPackageName)
+                && PlayQueueActivity.class.getName().equals(topClassName);
+    }
+
+    private void disableAutoEnterForInternalNavigation(
+            @NonNull final VideoDetailFragment fragment) {
+        try {
+            activity.setPictureInPictureParams(buildParams(fragment, false));
+        } catch (final IllegalArgumentException | IllegalStateException ignored) {
+            // Internal navigation must continue even if a vendor build rejects the PiP update.
+        }
+    }
+
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
     private boolean isSupported() {
         // Keep this guard before evaluating any newer Activity APIs. Java evaluates method
@@ -125,6 +172,14 @@ public final class NativePipController {
                 && !isTv && !isInMultiWindowMode;
     }
 
+    static boolean shouldAutoEnter(final boolean allowAutoEnter,
+                                   final boolean enabled,
+                                   final boolean hasFragment,
+                                   final boolean eligible,
+                                   final boolean playing) {
+        return allowAutoEnter && enabled && hasFragment && eligible && playing;
+    }
+
     private boolean isEnabled() {
         return PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(
                 activity.getString(R.string.native_pip_key), false);
@@ -141,6 +196,13 @@ public final class NativePipController {
     @RequiresApi(Build.VERSION_CODES.O)
     @NonNull
     private PictureInPictureParams buildParams(final VideoDetailFragment fragment) {
+        return buildParams(fragment, true);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @NonNull
+    private PictureInPictureParams buildParams(final VideoDetailFragment fragment,
+                                               final boolean allowAutoEnter) {
         final PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder();
         if (fragment != null) {
             final float aspectRatio = sanitizeAspectRatio(fragment.getNativePipAspectRatio());
@@ -151,8 +213,12 @@ public final class NativePipController {
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            final boolean autoEnter = isEnabled() && fragment != null
-                    && fragment.isNativePipEligible() && fragment.isNativePipPlaying();
+            final boolean autoEnter = shouldAutoEnter(
+                    allowAutoEnter,
+                    isEnabled(),
+                    fragment != null,
+                    fragment != null && fragment.isNativePipEligible(),
+                    fragment != null && fragment.isNativePipPlaying());
             builder.setAutoEnterEnabled(autoEnter);
             builder.setSeamlessResizeEnabled(true);
         }

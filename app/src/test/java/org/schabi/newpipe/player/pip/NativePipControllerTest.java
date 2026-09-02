@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import android.os.Build;
 
 import org.junit.Test;
+import org.schabi.newpipe.player.PlayQueueActivity;
 
 public class NativePipControllerTest {
     private static final float TOLERANCE = 0.001f;
@@ -43,5 +44,28 @@ public class NativePipControllerTest {
                 Build.VERSION_CODES.O, true, true, false));
         assertFalse(NativePipController.isSupportedEnvironment(
                 Build.VERSION_CODES.O, true, false, true));
+    }
+
+    @Test
+    public void playQueueActivityIsRecognizedAsInternalNavigation() {
+        assertTrue(NativePipController.isInternalPlayQueueTarget(
+                "org.wisso.newpipematerial",
+                "org.wisso.newpipematerial",
+                PlayQueueActivity.class.getName()));
+        assertFalse(NativePipController.isInternalPlayQueueTarget(
+                "org.wisso.newpipematerial",
+                "com.example.external",
+                PlayQueueActivity.class.getName()));
+        assertFalse(NativePipController.isInternalPlayQueueTarget(
+                "org.wisso.newpipematerial",
+                "org.wisso.newpipematerial",
+                "org.schabi.newpipe.MainActivity"));
+    }
+
+    @Test
+    public void internalNavigationCanDisableAutoEnterWithoutChangingEligibility() {
+        assertTrue(NativePipController.shouldAutoEnter(true, true, true, true, true));
+        assertFalse(NativePipController.shouldAutoEnter(false, true, true, true, true));
+        assertFalse(NativePipController.shouldAutoEnter(true, true, true, true, false));
     }
 }
