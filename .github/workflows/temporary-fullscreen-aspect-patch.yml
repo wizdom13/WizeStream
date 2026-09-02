@@ -1,0 +1,143 @@
+name: Apply fullscreen exit aspect ratio patch
+
+on:
+  push:
+    branches:
+      - fix-fullscreen-exit-aspect-ratio
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix-fullscreen-exit-aspect-ratio
+
+      - name: Patch orientation-aware player geometry
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          fragment_path = Path('app/src/main/java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java')
+          source = fragment_path.read_text()
+
+          old = '''        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+          final boolean isPortrait = metrics.heightPixels > metrics.widthPixels;
+          requireView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+
+          if (isFullscreen()) {
+          '''
+          new = '''        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+          final boolean isPortrait = metrics.heightPixels > metrics.widthPixels;
+          final boolean fullscreenForCurrentOrientation = isFullscreenForCurrentOrientation();
+          requireView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+
+          if (fullscreenForCurrentOrientation) {
+          '''
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one setHeightThumbnail fullscreen block, found {source.count(old)}')
+          source = source.replace(old, new, 1)
+
+          old = '''        if (isPlayerAvailable()) {
+              final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
+              player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
+                      ui.getBinding().surfaceView.setHeights(newHeight,
+                              ui.isFullscreen() ? newHeight : maxHeight));
+          }
+          '''
+          new = '''        if (isPlayerAvailable()) {
+              final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
+              final boolean fullscreenForCurrentOrientation = isFullscreenForCurrentOrientation();
+              player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
+                      ui.getBinding().surfaceView.setHeights(newHeight,
+                              fullscreenForCurrentOrientation ? newHeight : maxHeight));
+          }
+          '''
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one surface height block, found {source.count(old)}')
+          source = source.replace(old, new, 1)
+
+          old = '''    private boolean isFullscreen() {
+          return isPlayerAvailable() && player.UIs().get(VideoPlayerUi.class)
+                  .map(VideoPlayerUi::isFullscreen).orElse(false);
+          }
+
+          public boolean isNativePipEligible() {
+          '''
+          new = '''    private boolean isFullscreen() {
+          return isPlayerAvailable() && player.UIs().get(VideoPlayerUi.class)
+                  .map(VideoPlayerUi::isFullscreen).orElse(false);
+          }
+
+          /**
+           * Resolves the geometry target from the current configuration instead of waiting for the
+           * deferred fullscreen-state synchronization. This prevents a horizontal video from being
+           * measured with fullscreen portrait dimensions for a frame while rotating back upright.
+           */
+          private boolean isFullscreenForCurrentOrientation() {
+              if (!isPlayerAvailable() || activity == null) {
+                  return false;
+              }
+              final boolean orientationIndependent = DeviceUtils.isTablet(activity)
+                      || DeviceUtils.isTv(activity)
+                      || DeviceUtils.isDesktopMode(activity);
+              final int orientation = getResources().getConfiguration().orientation;
+              return player.UIs().get(MainPlayerUi.class)
+                      .map(ui -> fullscreenStateForOrientation(
+                              orientation,
+                              ui.isFullscreen(),
+                              ui.isVerticalVideo(),
+                              orientationIndependent,
+                              player.isAudioOnly()))
+                      .orElse(false);
+          }
+
+          public boolean isNativePipEligible() {
+          '''
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected one isFullscreen helper block, found {source.count(old)}')
+          source = source.replace(old, new, 1)
+          fragment_path.write_text(source)
+
+          test_path = Path('app/src/test/java/org/schabi/newpipe/fragments/detail/VideoDetailOrientationHandlingTest.java')
+          test = test_path.read_text()
+          marker = '''    @Test
+          public void landscapePhoneVideoEntersFullscreenRegardlessOfPlaybackState() {
+          '''
+          addition = '''    @Test
+          public void playerGeometryUsesTargetOrientationBeforeDeferredFullscreenSync()
+                  throws Exception {
+              final String fragment = Files.readString(projectDirectory.resolve(
+                      "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+
+              assertTrue(fragment.contains("private boolean isFullscreenForCurrentOrientation()"));
+              assertTrue(fragment.contains("final boolean fullscreenForCurrentOrientation = "
+                      + "isFullscreenForCurrentOrientation();"));
+              assertTrue(fragment.contains("if (fullscreenForCurrentOrientation)"));
+              assertTrue(fragment.contains(
+                      "fullscreenForCurrentOrientation ? newHeight : maxHeight"));
+          }
+
+          @Test
+          public void landscapePhoneVideoEntersFullscreenRegardlessOfPlaybackState() {
+          '''
+          if test.count(marker) != 1:
+              raise SystemExit(f'Expected one orientation test marker, found {test.count(marker)}')
+          test_path.write_text(test.replace(marker, addition, 1))
+
+          Path('.github/workflows/temporary-fullscreen-aspect-patch.yml').unlink()
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java app/src/test/java/org/schabi/newpipe/fragments/detail/VideoDetailOrientationHandlingTest.java .github/workflows/temporary-fullscreen-aspect-patch.yml
+          git commit -m "Keep video aspect ratio stable while exiting fullscreen"
+          git push origin HEAD:fix-fullscreen-exit-aspect-ratio
