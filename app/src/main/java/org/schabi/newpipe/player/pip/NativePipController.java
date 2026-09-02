@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player.pip;
 
 import android.app.PictureInPictureParams;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.Rational;
@@ -34,7 +35,11 @@ public final class NativePipController {
         if (!isSupported()) {
             return;
         }
-        activity.setPictureInPictureParams(buildParams(currentFragment().orElse(null)));
+        try {
+            activity.setPictureInPictureParams(buildParams(currentFragment().orElse(null)));
+        } catch (final IllegalStateException ignored) {
+            // Some vendor builds reject PiP calls even after advertising support.
+        }
     }
 
     public void onUserLeaveHint() {
@@ -48,16 +53,16 @@ public final class NativePipController {
 
         fragment.prepareNativePipEntry();
         final PictureInPictureParams params = buildParams(fragment);
-        activity.setPictureInPictureParams(params);
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !fragment.isNativePipPlaying()) {
-            try {
+        try {
+            activity.setPictureInPictureParams(params);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                    || !fragment.isNativePipPlaying()) {
                 if (!activity.enterPictureInPictureMode(params)) {
                     fragment.onNativePipModeChanged(false);
                 }
-            } catch (final IllegalStateException ignored) {
-                fragment.onNativePipModeChanged(false);
             }
+        } catch (final IllegalStateException ignored) {
+            fragment.onNativePipModeChanged(false);
         }
     }
 
@@ -71,8 +76,20 @@ public final class NativePipController {
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
     private boolean isSupported() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && !DeviceUtils.isTv(activity) && !activity.isInMultiWindowMode();
+        return isSupportedEnvironment(
+                Build.VERSION.SDK_INT,
+                activity.getPackageManager().hasSystemFeature(
+                        PackageManager.FEATURE_PICTURE_IN_PICTURE),
+                DeviceUtils.isTv(activity),
+                activity.isInMultiWindowMode());
+    }
+
+    static boolean isSupportedEnvironment(final int sdkInt,
+                                          final boolean hasSystemFeature,
+                                          final boolean isTv,
+                                          final boolean isInMultiWindowMode) {
+        return sdkInt >= Build.VERSION_CODES.O && hasSystemFeature
+                && !isTv && !isInMultiWindowMode;
     }
 
     private boolean isEnabled() {
