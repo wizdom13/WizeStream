@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -25,6 +27,7 @@ import org.schabi.newpipe.util.DeviceUtils;
 import java.util.List;
 
 public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> {
+    private static final long SURFACE_RESTORE_DELAY_MILLIS = 180L;
 
     private final Rect globalRect = new Rect();
     private boolean skippingInterception = false;
@@ -37,9 +40,25 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
             R.id.itemsListPanel, R.id.view_pager, R.id.tab_layout, R.id.bottomControls,
             R.id.playPauseButton, R.id.playPreviousButton, R.id.playNextButton);
 
+    private boolean playerTransitionActive;
+    private int playerTransitionGeneration;
+    private int controlsOriginalVisibility = View.GONE;
+    private float controlsOriginalAlpha = 1.0f;
+    private int surfaceForegroundOriginalVisibility = View.GONE;
+    private float surfaceForegroundOriginalAlpha = 1.0f;
+    @Nullable
+    private Drawable loadingPanelOriginalBackground;
+
     private final BottomSheetCallback bottomNavigationCallback = new BottomSheetCallback() {
         @Override
         public void onStateChanged(@NonNull final View bottomSheet, final int newState) {
+            if (PlayerSheetTransitionCalculator.isActiveTransitionState(newState)) {
+                beginPlayerTransition(bottomSheet);
+            } else if (newState == STATE_COLLAPSED || newState == STATE_EXPANDED
+                    || newState == STATE_HALF_EXPANDED || newState == STATE_HIDDEN) {
+                finishPlayerTransition(bottomSheet, newState);
+            }
+
             if (newState == STATE_COLLAPSED) {
                 restorePhoneOrientationAfterFullscreenCollapse(bottomSheet);
             }
@@ -51,6 +70,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
 
         @Override
         public void onSlide(@NonNull final View bottomSheet, final float slideOffset) {
+            updatePlayerTransition(bottomSheet, getState(), slideOffset);
             updateBottomNavigation((FrameLayout) bottomSheet, getState(), slideOffset);
         }
     };
@@ -69,6 +89,9 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         applyPlayerPeekHeight(child, isBottomNavigationRequested(child));
         final boolean handled = super.onLayoutChild(parent, child, layoutDirection);
         updateBottomNavigation(child, getState(), null);
+        if (!playerTransitionActive) {
+            resetMiniPlayerChrome(child);
+        }
         return handled;
     }
 
@@ -150,6 +173,134 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         }
 
         return super.onInterceptTouchEvent(parent, child, event);
+    }
+
+    private void beginPlayerTransition(@NonNull final View bottomSheet) {
+        if (playerTransitionActive) {
+            return;
+        }
+        playerTransitionActive = true;
+        playerTransitionGeneration++;
+
+        final View controls = bottomSheet.findViewById(R.id.playbackControlRoot);
+        if (controls != null) {
+            controlsOriginalVisibility = controls.getVisibility();
+            controlsOriginalAlpha = controls.getAlpha();
+        }
+
+        final View surfaceForeground = bottomSheet.findViewById(R.id.surfaceForeground);
+        if (surfaceForeground != null) {
+            surfaceForegroundOriginalVisibility = surfaceForeground.getVisibility();
+            surfaceForegroundOriginalAlpha = surfaceForeground.getAlpha();
+        }
+
+        final View loadingPanel = bottomSheet.findViewById(R.id.loading_panel);
+        loadingPanelOriginalBackground = loadingPanel == null ? null : loadingPanel.getBackground();
+    }
+
+    private void updatePlayerTransition(@NonNull final View bottomSheet,
+                                        final int state,
+                                        final float slideOffset) {
+        if (!PlayerSheetTransitionCalculator.isActiveTransitionState(state)) {
+            return;
+        }
+        beginPlayerTransition(bottomSheet);
+
+        final float expandedFraction = PlayerSheetTransitionCalculator
+                .expandedFractionForState(state, slideOffset);
+        final View controls = bottomSheet.findViewById(R.id.playbackControlRoot);
+        if (controls != null && controlsOriginalVisibility == View.VISIBLE) {
+            controls.animate().cancel();
+            controls.setVisibility(View.VISIBLE);
+            controls.setAlpha(controlsOriginalAlpha
+                    * PlayerSheetTransitionCalculator.playerChromeAlpha(expandedFraction));
+        }
+
+        final float miniPlayerAlpha = PlayerSheetTransitionCalculator
+                .miniPlayerChromeAlpha(expandedFraction);
+        setMiniPlayerChromeAlpha(bottomSheet.findViewById(R.id.overlay_metadata_layout),
+                miniPlayerAlpha);
+        setMiniPlayerChromeAlpha(bottomSheet.findViewById(R.id.overlay_buttons_layout),
+                miniPlayerAlpha);
+        suppressSurfaceBlackout(bottomSheet);
+    }
+
+    private void finishPlayerTransition(@NonNull final View bottomSheet, final int state) {
+        if (!playerTransitionActive) {
+            return;
+        }
+        suppressSurfaceBlackout(bottomSheet);
+
+        final boolean expanded = state == STATE_EXPANDED || state == STATE_HALF_EXPANDED;
+        final View controls = bottomSheet.findViewById(R.id.playbackControlRoot);
+        if (controls != null) {
+            controls.animate().cancel();
+            controls.setAlpha(controlsOriginalAlpha);
+            final int targetVisibility = !expanded && controlsOriginalVisibility == View.VISIBLE
+                    ? View.GONE : controlsOriginalVisibility;
+            controls.setVisibility(targetVisibility);
+        }
+        resetMiniPlayerChrome(bottomSheet);
+
+        playerTransitionActive = false;
+        final int restoreGeneration = ++playerTransitionGeneration;
+        bottomSheet.postDelayed(
+                () -> restoreSurfaceProtection(bottomSheet, restoreGeneration),
+                SURFACE_RESTORE_DELAY_MILLIS);
+    }
+
+    private static void setMiniPlayerChromeAlpha(@Nullable final View view, final float alpha) {
+        if (view == null) {
+            return;
+        }
+        view.animate().cancel();
+        view.setAlpha(alpha);
+    }
+
+    private static void resetMiniPlayerChrome(@NonNull final View bottomSheet) {
+        setMiniPlayerChromeAlpha(bottomSheet.findViewById(R.id.overlay_metadata_layout), 1.0f);
+        setMiniPlayerChromeAlpha(bottomSheet.findViewById(R.id.overlay_buttons_layout), 1.0f);
+    }
+
+    private static void suppressSurfaceBlackout(@NonNull final View bottomSheet) {
+        final View surfaceForeground = bottomSheet.findViewById(R.id.surfaceForeground);
+        if (surfaceForeground != null) {
+            surfaceForeground.animate().cancel();
+            surfaceForeground.setAlpha(0.0f);
+            surfaceForeground.setVisibility(View.INVISIBLE);
+        }
+        final View loadingPanel = bottomSheet.findViewById(R.id.loading_panel);
+        if (loadingPanel != null) {
+            loadingPanel.setBackgroundColor(Color.TRANSPARENT);
+        }
+    }
+
+    private void restoreSurfaceProtection(@NonNull final View bottomSheet,
+                                          final int restoreGeneration) {
+        if (playerTransitionActive || restoreGeneration != playerTransitionGeneration) {
+            return;
+        }
+
+        final View loadingPanel = bottomSheet.findViewById(R.id.loading_panel);
+        final boolean loadingVisible = loadingPanel != null
+                && loadingPanel.getVisibility() == View.VISIBLE;
+        if (loadingPanel != null && loadingPanelOriginalBackground != null
+                && (!loadingVisible || surfaceForegroundOriginalVisibility == View.VISIBLE)) {
+            loadingPanel.setBackground(loadingPanelOriginalBackground);
+        }
+
+        final View surfaceForeground = bottomSheet.findViewById(R.id.surfaceForeground);
+        if (surfaceForeground != null) {
+            surfaceForeground.animate().cancel();
+            if (surfaceForegroundOriginalVisibility == View.VISIBLE && !loadingVisible) {
+                surfaceForeground.setAlpha(0.0f);
+                surfaceForeground.setVisibility(View.GONE);
+            } else {
+                surfaceForeground.setAlpha(surfaceForegroundOriginalAlpha);
+                surfaceForeground.setVisibility(surfaceForegroundOriginalVisibility);
+            }
+        }
+        loadingPanelOriginalBackground = null;
     }
 
     private void restorePhoneOrientationAfterFullscreenCollapse(@NonNull final View bottomSheet) {

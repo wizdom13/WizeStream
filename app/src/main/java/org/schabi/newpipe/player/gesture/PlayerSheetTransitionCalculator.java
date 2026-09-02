@@ -31,6 +31,10 @@ final class PlayerSheetTransitionCalculator {
         return Math.max(0.0f, Math.min(1.0f, expandedFraction));
     }
 
+    static boolean isActiveTransitionState(final int state) {
+        return state == STATE_DRAGGING || state == STATE_SETTLING;
+    }
+
     static float expandedFractionForState(final int state,
                                           @Nullable final Float slideOffset) {
         if (state == STATE_COLLAPSED || state == STATE_HIDDEN) {
@@ -39,10 +43,22 @@ final class PlayerSheetTransitionCalculator {
         if (state == STATE_EXPANDED || state == STATE_HALF_EXPANDED) {
             return 1.0f;
         }
-        if ((state == STATE_DRAGGING || state == STATE_SETTLING) && slideOffset != null) {
+        if (isActiveTransitionState(state) && slideOffset != null) {
             return clampExpandedFraction(slideOffset);
         }
         return 0.0f;
+    }
+
+    static float playerChromeAlpha(final float expandedFraction) {
+        return smoothStep(clampExpandedFraction(expandedFraction));
+    }
+
+    static float miniPlayerChromeAlpha(final float expandedFraction) {
+        return smoothStep(1.0f - clampExpandedFraction(expandedFraction));
+    }
+
+    private static float smoothStep(final float value) {
+        return value * value * (3.0f - 2.0f * value);
     }
 
     static float bottomNavigationTranslation(final int bottomNavigationHeight,
