@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rotate_to_fullscreen_key" translatable="false">rotate_to_fullscreen</string>
+    <string name="rotate_to_fullscreen_title">Rotate device to enter fullscreen</string>
+    <string name="rotate_to_fullscreen_summary">When system rotation is locked, turn your phone sideways to enter fullscreen and return it upright to exit fullscreen.</string>
+</resources>

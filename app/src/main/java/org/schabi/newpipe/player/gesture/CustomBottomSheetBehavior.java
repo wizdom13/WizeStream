@@ -39,6 +39,8 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
             R.id.detail_content_root_layout, R.id.relatedItemsLayout,
             R.id.itemsListPanel, R.id.view_pager, R.id.tab_layout, R.id.bottomControls,
             R.id.playPauseButton, R.id.playPreviousButton, R.id.playNextButton);
+    private final LockedOrientationFullscreenController lockedOrientationFullscreenController =
+            new LockedOrientationFullscreenController();
 
     private boolean playerTransitionActive;
     private int playerTransitionGeneration;
@@ -52,6 +54,8 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
     private final BottomSheetCallback bottomNavigationCallback = new BottomSheetCallback() {
         @Override
         public void onStateChanged(@NonNull final View bottomSheet, final int newState) {
+            lockedOrientationFullscreenController.onPlayerSheetStateChanged(newState);
+
             if (PlayerSheetTransitionCalculator.isActiveTransitionState(newState)) {
                 beginPlayerTransition(bottomSheet);
             } else if (newState == STATE_COLLAPSED || newState == STATE_EXPANDED
@@ -88,6 +92,7 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         bottomSheetView = child;
         applyPlayerPeekHeight(child, isBottomNavigationRequested(child));
         final boolean handled = super.onLayoutChild(parent, child, layoutDirection);
+        lockedOrientationFullscreenController.attach(child, getState());
         updateBottomNavigation(child, getState(), null);
         if (!playerTransitionActive) {
             resetMiniPlayerChrome(child);
