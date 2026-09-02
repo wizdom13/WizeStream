@@ -10,6 +10,7 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
     NONE(0),
     UNWATCHED(R.id.filter_unwatched),
     LIVE(R.id.filter_live),
+    VIDEOS(R.id.filter_videos),
     SHORTS(R.id.filter_shorts),
     PARTIALLY_WATCHED(R.id.filter_partially_watched);
 
@@ -31,6 +32,8 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
             UNWATCHED -> state == null || !state.isValid(stream.duration)
 
             LIVE -> StreamTypeUtil.isLiveStream(stream.streamType)
+
+            VIDEOS -> !StreamTypeUtil.isLiveStream(stream.streamType) && !isShort(stream)
 
             SHORTS -> isShort(stream)
 
