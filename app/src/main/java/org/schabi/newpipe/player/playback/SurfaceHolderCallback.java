@@ -35,7 +35,7 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(final SurfaceHolder holder) {
-        player.setVideoSurface(holder.getSurface());
+        bindVideoSurface(holder);
     }
 
     @Override
@@ -43,6 +43,14 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
                                final int format,
                                final int width,
                                final int height) {
+        // Some devices keep the same SurfaceView across fullscreen/orientation transitions and
+        // only resize its underlying surface. Rebind on every structural surface change so the
+        // decoder cannot remain attached to the placeholder/stale fullscreen output.
+        bindVideoSurface(holder);
+    }
+
+    private void bindVideoSurface(final SurfaceHolder holder) {
+        player.setVideoSurface(holder.getSurface());
     }
 
     @Override
