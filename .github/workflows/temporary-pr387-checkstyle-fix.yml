@@ -24,25 +24,20 @@ jobs:
           from pathlib import Path
           path = Path('app/src/main/java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java')
           source = path.read_text()
-          old = '''     * fullscreen-state synchronization runs. This prevents a horizontal video from
-           * being measured with portrait fullscreen dimensions while rotating upright.
-           */
-          private boolean isFullscreenForCurrentOrientation() {
-          '''
-          new = '''     * fullscreen-state synchronization runs. This prevents a horizontal video from
-           * being measured with portrait fullscreen dimensions while rotating upright.
-           *
-           * @return whether player geometry should currently use fullscreen dimensions
-           */
-          private boolean isFullscreenForCurrentOrientation() {
-          '''
-          # YAML indentation can be stripped from block content, so normalize both variants.
-          if source.count(old) != 1:
-              old = old.replace('          ', '')
-              new = new.replace('          ', '')
-          if source.count(old) != 1:
-              raise SystemExit(f'Expected one helper Javadoc block, found {source.count(old)}')
-          path.write_text(source.replace(old, new, 1))
+          method = '    private boolean isFullscreenForCurrentOrientation() {'
+          method_index = source.find(method)
+          if method_index < 0:
+              raise SystemExit('Fullscreen geometry helper not found')
+          javadoc_start = source.rfind('    /**', 0, method_index)
+          javadoc_end = source.rfind('    */', javadoc_start, method_index)
+          if javadoc_start < 0 or javadoc_end < 0:
+              raise SystemExit('Helper Javadoc not found')
+          javadoc = source[javadoc_start:javadoc_end]
+          if '@return' not in javadoc:
+              insertion = ('     *\n'
+                           '     * @return whether player geometry should currently use fullscreen dimensions\n')
+              source = source[:javadoc_end] + insertion + source[javadoc_end:]
+          path.write_text(source)
           Path('.github/workflows/temporary-pr387-checkstyle-fix.yml').unlink()
           PY
 
