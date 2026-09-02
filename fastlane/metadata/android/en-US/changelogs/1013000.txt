@@ -1,0 +1,5 @@
+• Expanded Local Media with audio/video categories, folder browsing, search, refresh and sorting.
+• Added NewPipe/PipePipe migration for history, playlists, compatible settings and SponsorBlock.
+• Added rotate-to-fullscreen even when system rotation is locked.
+• Added Videos filter plus background equalizer/visualizer controls.
+• Improved native PiP, fullscreen/miniplayer transitions and local-video surface recovery.
