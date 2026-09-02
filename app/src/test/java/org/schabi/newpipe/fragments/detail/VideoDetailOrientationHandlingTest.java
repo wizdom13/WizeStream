@@ -57,6 +57,9 @@ public class VideoDetailOrientationHandlingTest {
                 "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
 
         assertTrue(fragment.contains("binding.getRoot().addOnLayoutChangeListener"));
+        assertTrue(fragment.contains("syncFullscreenWithCurrentViewport();"));
+        assertTrue(fragment.contains(
+                "private void syncFullscreenWithCurrentViewport()"));
         assertTrue(fragment.contains(
                 "isFullscreenForCurrentOrientation(viewportWidth, viewportHeight)"));
         assertTrue(fragment.contains("root.getWidth() > 0 ? root.getWidth()"));

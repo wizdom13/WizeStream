@@ -481,8 +481,7 @@ public final class VideoDetailFragment
         // transition that previously ran when the player reconnected after rotation.
         binding.getRoot().post(() -> {
             if (binding != null && player != null && isAdded()) {
-                syncFullscreenWithOrientation(
-                        player.UIs().get(MainPlayerUi.class), orientation);
+                syncFullscreenWithCurrentViewport();
             }
         });
     }
@@ -495,6 +494,23 @@ public final class VideoDetailFragment
                 : getResources().getConfiguration().orientation;
         pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
         syncFullscreenWithOrientation(playerUi, orientation);
+    }
+
+    /**
+     * Reconciles the logical fullscreen state from the viewport that is actually laid out.
+     * Configuration callbacks can arrive before or after the final rotation layout, so the
+     * viewport is the authoritative source once it has non-zero dimensions.
+     */
+    private void syncFullscreenWithCurrentViewport() {
+        if (binding == null || player == null || getView() == null) {
+            return;
+        }
+        final View root = requireView();
+        final int orientation = orientationFromViewportDimensions(
+                root.getWidth(),
+                root.getHeight(),
+                getResources().getConfiguration().orientation);
+        syncFullscreenWithOrientation(player.UIs().get(MainPlayerUi.class), orientation);
     }
 
     private void syncFullscreenWithOrientation(
@@ -961,6 +977,7 @@ public final class VideoDetailFragment
             }
             view.post(() -> {
                 if (binding != null && isPlayerAvailable() && getView() != null) {
+                    syncFullscreenWithCurrentViewport();
                     setHeightThumbnail();
                 }
             });
