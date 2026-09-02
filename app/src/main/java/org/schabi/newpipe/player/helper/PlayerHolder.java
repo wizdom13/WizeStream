@@ -78,6 +78,8 @@ public final class PlayerHolder {
 
     /**
      * Returns whether a main video is in a state where physical rotation may control fullscreen.
+     *
+     * @return true when the main video player is eligible for orientation-driven fullscreen
      */
     public boolean isMainVideoPlayerOrientationEligible() {
         return getPlayer().map(player -> {

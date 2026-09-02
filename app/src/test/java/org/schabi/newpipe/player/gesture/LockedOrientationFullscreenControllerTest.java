@@ -41,27 +41,21 @@ public class LockedOrientationFullscreenControllerTest {
     @Test
     public void lockedExpandedVideoCanEnterFullscreenAutomatically() {
         assertTrue(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, true, true, false, false, false, false));
+                true, true, true, true, false));
     }
 
     @Test
-    public void automaticEntryDoesNotTakeOverManualOrUnsupportedSessions() {
+    public void automaticEntryHonorsEligibilityAndProtectedPlayerState() {
         assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                false, true, true, true, false, false, false, false));
+                false, true, true, true, false));
         assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, false, true, true, false, false, false, false));
+                true, false, true, true, false));
         assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, false, true, false, false, false, false));
+                true, true, false, true, false));
         assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, true, false, false, false, false, false));
+                true, true, true, false, false));
         assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, true, true, true, false, false, false));
-        assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, true, true, false, true, false, false));
-        assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, true, true, false, false, true, false));
-        assertFalse(LockedOrientationFullscreenController.shouldAutoEnterFullscreen(
-                true, true, true, true, false, false, false, true));
+                true, true, true, true, true));
     }
 
     @Test
@@ -93,10 +87,13 @@ public class LockedOrientationFullscreenControllerTest {
         final String behavior = Files.readString(projectDirectory.resolve(
                 "java/org/schabi/newpipe/player/gesture/CustomBottomSheetBehavior.java"));
 
-        final int preference = settings.indexOf("android:key=\"@string/rotate_to_fullscreen_key\"");
-        final int defaultValue = settings.lastIndexOf("android:defaultValue=\"true\"", preference);
+        final int preference = settings.indexOf(
+                "android:key=\"@string/rotate_to_fullscreen_key\"");
+        final int defaultValue = settings.lastIndexOf(
+                "android:defaultValue=\"true\"", preference);
         assertTrue(preference >= 0 && defaultValue >= 0 && preference - defaultValue < 100);
-        assertTrue(behavior.contains("lockedOrientationFullscreenController.attach(child, getState())"));
+        assertTrue(behavior.contains(
+                "lockedOrientationFullscreenController.attach(child, getState())"));
         assertTrue(behavior.contains(
                 "lockedOrientationFullscreenController.onPlayerSheetStateChanged(newState)"));
     }

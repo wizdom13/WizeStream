@@ -225,16 +225,17 @@ final class LockedOrientationFullscreenController {
                     currentActivity.getRequestedOrientation());
             final boolean inPictureInPicture = isInPictureInPicture(currentActivity);
             final boolean largeScreenDevice = isLargeScreenDevice(currentActivity);
+            final boolean playerStateBlocksEntry = alreadyFullscreen
+                    || explicitLandscapeRequest
+                    || inPictureInPicture
+                    || largeScreenDevice;
 
             if (shouldAutoEnterFullscreen(
                     featureEnabled,
                     systemRotationLocked,
                     playerExpanded,
                     videoPlayerEligible,
-                    alreadyFullscreen,
-                    explicitLandscapeRequest,
-                    inPictureInPicture,
-                    largeScreenDevice)) {
+                    playerStateBlocksEntry)) {
                 autoEnteredFullscreen = true;
                 currentActivity.setRequestedOrientation(
                         ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
@@ -289,18 +290,12 @@ final class LockedOrientationFullscreenController {
                                              final boolean systemRotationLocked,
                                              final boolean playerExpanded,
                                              final boolean videoPlayerEligible,
-                                             final boolean alreadyFullscreen,
-                                             final boolean explicitLandscapeRequest,
-                                             final boolean inPictureInPicture,
-                                             final boolean largeScreenDevice) {
+                                             final boolean playerStateBlocksEntry) {
         return featureEnabled
                 && systemRotationLocked
                 && playerExpanded
                 && videoPlayerEligible
-                && !alreadyFullscreen
-                && !explicitLandscapeRequest
-                && !inPictureInPicture
-                && !largeScreenDevice;
+                && !playerStateBlocksEntry;
     }
 
     static boolean shouldAutoExitFullscreen(final boolean autoEnteredFullscreen,
