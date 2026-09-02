@@ -1,5 +1,6 @@
 package org.schabi.newpipe.fragments.detail;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -51,18 +52,28 @@ public class VideoDetailOrientationHandlingTest {
     }
 
     @Test
-    public void playerGeometryUsesTargetOrientationBeforeDeferredFullscreenSync()
-            throws Exception {
+    public void playerGeometryReconcilesAgainstLaidOutViewport() throws Exception {
         final String fragment = Files.readString(projectDirectory.resolve(
                 "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
 
+        assertTrue(fragment.contains("binding.getRoot().addOnLayoutChangeListener"));
         assertTrue(fragment.contains(
-                "private boolean isFullscreenForCurrentOrientation()"));
-        assertTrue(fragment.contains("final boolean fullscreenForCurrentOrientation = "
-                + "isFullscreenForCurrentOrientation();"));
-        assertTrue(fragment.contains("if (fullscreenForCurrentOrientation)"));
-        assertTrue(fragment.contains(
-                "fullscreenForCurrentOrientation ? newHeight : maxHeight"));
+                "isFullscreenForCurrentOrientation(viewportWidth, viewportHeight)"));
+        assertTrue(fragment.contains("root.getWidth() > 0 ? root.getWidth()"));
+        assertTrue(fragment.contains("root.getHeight() > 0 ? root.getHeight()"));
+    }
+
+    @Test
+    public void viewportDimensionsOverrideStaleConfigurationOrientation() {
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                VideoDetailFragment.orientationFromViewportDimensions(
+                        1080, 2400, Configuration.ORIENTATION_LANDSCAPE));
+        assertEquals(Configuration.ORIENTATION_LANDSCAPE,
+                VideoDetailFragment.orientationFromViewportDimensions(
+                        2400, 1080, Configuration.ORIENTATION_PORTRAIT));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                VideoDetailFragment.orientationFromViewportDimensions(
+                        0, 0, Configuration.ORIENTATION_PORTRAIT));
     }
 
     @Test

@@ -950,6 +950,21 @@ public final class VideoDetailFragment
             updateDetailContentStartMargins(isFullscreen());
             updateDetailNavigationBottomInset();
         });
+        binding.getRoot().addOnLayoutChangeListener((view, left, top, right, bottom,
+                                                     oldLeft, oldTop, oldRight, oldBottom) -> {
+            final int width = right - left;
+            final int height = bottom - top;
+            final int oldWidth = oldRight - oldLeft;
+            final int oldHeight = oldBottom - oldTop;
+            if (width == oldWidth && height == oldHeight) {
+                return;
+            }
+            view.post(() -> {
+                if (binding != null && isPlayerAvailable() && getView() != null) {
+                    setHeightThumbnail();
+                }
+            });
+        });
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -1869,14 +1884,9 @@ public final class VideoDetailFragment
             new ViewTreeObserver.OnPreDrawListener() {
                 @Override
                 public boolean onPreDraw() {
-                    final DisplayMetrics metrics = getResources().getDisplayMetrics();
-
                     if (getView() != null) {
-                        final int height = (DeviceUtils.isInMultiWindow(activity)
-                                ? requireView()
-                                : activity.getWindow().getDecorView()).getHeight();
-                        setHeightThumbnail(height, metrics);
                         getView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+                        setHeightThumbnail();
                     }
                     return false;
                 }
@@ -1891,37 +1901,40 @@ public final class VideoDetailFragment
      */
     private void setHeightThumbnail() {
         final DisplayMetrics metrics = getResources().getDisplayMetrics();
-        final boolean isPortrait = metrics.heightPixels > metrics.widthPixels;
-        final boolean fullscreenForCurrentOrientation = isFullscreenForCurrentOrientation();
-        requireView().getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
+        final View root = requireView();
+        final int viewportWidth = root.getWidth() > 0 ? root.getWidth() : metrics.widthPixels;
+        final int viewportHeight = root.getHeight() > 0 ? root.getHeight() : metrics.heightPixels;
+        final boolean isPortrait = viewportHeight > viewportWidth;
+        final boolean fullscreenForCurrentOrientation =
+                isFullscreenForCurrentOrientation(viewportWidth, viewportHeight);
+        root.getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
 
         if (fullscreenForCurrentOrientation) {
-            final int height = (DeviceUtils.isInMultiWindow(activity)
-                    ? requireView()
-                    : activity.getWindow().getDecorView()).getHeight();
-            // Height is zero when the view is not yet displayed like after orientation change
-            if (height != 0) {
-                setHeightThumbnail(height, metrics);
+            if (viewportHeight != 0) {
+                setHeightThumbnail(viewportHeight, viewportHeight, viewportWidth);
             } else {
-                requireView().getViewTreeObserver().addOnPreDrawListener(preDrawListener);
+                root.getViewTreeObserver().addOnPreDrawListener(preDrawListener);
             }
         } else {
             final int height = (int) (isPortrait
-                    ? metrics.widthPixels / (16.0f / 9.0f)
-                    : metrics.heightPixels / 2.0f);
-            setHeightThumbnail(height, metrics);
+                    ? viewportWidth / (16.0f / 9.0f)
+                    : viewportHeight / 2.0f);
+            setHeightThumbnail(height, viewportHeight, viewportWidth);
         }
     }
 
-    private void setHeightThumbnail(final int newHeight, final DisplayMetrics metrics) {
+    private void setHeightThumbnail(final int newHeight,
+                                    final int viewportHeight,
+                                    final int viewportWidth) {
         binding.detailThumbnailImageView.setLayoutParams(
                 new FrameLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
         binding.detailThumbnailImageView.setMinimumHeight(newHeight);
         updatePinnedPlayerLayout(newHeight);
         if (isPlayerAvailable()) {
-            final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
-            final boolean fullscreenForCurrentOrientation = isFullscreenForCurrentOrientation();
+            final int maxHeight = (int) (viewportHeight * MAX_PLAYER_HEIGHT);
+            final boolean fullscreenForCurrentOrientation =
+                    isFullscreenForCurrentOrientation(viewportWidth, viewportHeight);
             player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
                     ui.getBinding().surfaceView.setHeights(newHeight,
                             fullscreenForCurrentOrientation ? newHeight : maxHeight));
@@ -2909,20 +2922,25 @@ public final class VideoDetailFragment
     }
 
     /**
-     * Resolves player geometry from the current configuration before the deferred
-     * fullscreen-state synchronization runs. This prevents a horizontal video from
-     * being measured with portrait fullscreen dimensions while rotating upright.
-      *
+     * Resolves player geometry from the currently laid-out viewport instead of relying on
+     * configuration callback timing. The viewport and height calculation therefore come from
+     * the same layout frame during fullscreen transitions.
+     *
+     * @param viewportWidth current laid-out player viewport width
+     * @param viewportHeight current laid-out player viewport height
      * @return whether player geometry should currently use fullscreen dimensions
-    */
-    private boolean isFullscreenForCurrentOrientation() {
+     */
+    private boolean isFullscreenForCurrentOrientation(final int viewportWidth,
+                                                      final int viewportHeight) {
         if (!isPlayerAvailable() || activity == null) {
             return false;
         }
         final boolean orientationIndependent = DeviceUtils.isTablet(activity)
                 || DeviceUtils.isTv(activity)
                 || DeviceUtils.isDesktopMode(activity);
-        final int orientation = getResources().getConfiguration().orientation;
+        final int fallbackOrientation = getResources().getConfiguration().orientation;
+        final int orientation = orientationFromViewportDimensions(
+                viewportWidth, viewportHeight, fallbackOrientation);
         return player.UIs().get(MainPlayerUi.class)
                 .map(ui -> fullscreenStateForOrientation(
                         orientation,
@@ -2931,6 +2949,17 @@ public final class VideoDetailFragment
                         orientationIndependent,
                         player.isAudioOnly()))
                 .orElse(false);
+    }
+
+    static int orientationFromViewportDimensions(final int width,
+                                                 final int height,
+                                                 final int fallbackOrientation) {
+        if (width <= 0 || height <= 0 || width == height) {
+            return fallbackOrientation;
+        }
+        return width > height
+                ? Configuration.ORIENTATION_LANDSCAPE
+                : Configuration.ORIENTATION_PORTRAIT;
     }
 
     public boolean isNativePipEligible() {
