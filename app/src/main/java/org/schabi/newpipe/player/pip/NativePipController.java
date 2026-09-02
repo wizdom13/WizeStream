@@ -76,6 +76,12 @@ public final class NativePipController {
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
     private boolean isSupported() {
+        // Keep this guard before evaluating any newer Activity APIs. Java evaluates method
+        // arguments eagerly, so passing isInMultiWindowMode() into the helper on API 23 would
+        // still invoke that API even though the helper itself rejects pre-Oreo versions.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return false;
+        }
         return isSupportedEnvironment(
                 Build.VERSION.SDK_INT,
                 activity.getPackageManager().hasSystemFeature(
