@@ -144,8 +144,6 @@
     <string name="settings_file_replacement_character_title">ファイル名の自動修正</string>
     <string name="charset_letters_and_digits">文字と数字</string>
     <string name="charset_most_special_characters">文字と数字と、多くの特殊文字</string>
-    <string name="donation_title">寄付</string>
-    <string name="donation_encouragement">NewPipe は、あなたに最高の体験を提供するために、ボランティアが自分たちの時間を使って開発しています。開発者たちがコーヒーを飲みながら NewPipe を継続的に改良できるよう、ご支援をお願いします。</string>
     <string name="website_title">Webサイト</string>
     <string name="website_encouragement">WizeStream の詳しい情報や最新情報については、ウェブサイトをご覧ください。</string>
     <string name="title_activity_history">履歴</string>
@@ -261,7 +259,6 @@
         <item quantity="other">再生回数 %s回</item>
     </plurals>
     <string name="one_item_deleted">1 つのアイテムが削除されました。</string>
-    <string name="give_back">支援する</string>
     <string name="privacy_policy_encouragement">WizeStream プロジェクトはあなたのプライバシーを非常に大切にしています。あなたの同意がない限り、アプリはいかなるデータも収集しません。
 \nWizeStream のプライバシー・ポリシーでは、クラッシュリポート送信時にどのような種類のデータが送信・記録されるかを詳細に説明しています。</string>
     <string name="app_license">WizeStream はコピーレフトなソフトウェアです。あなたは自由にそれを使用し、研究し、共有し、そして改善することができます。あなたは、GNU フリーソフトウェア財団が公開する GNU General Public ライセンス バージョン3以降の下に、自由に再配布・修正を行うことができます。</string>

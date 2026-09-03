@@ -312,8 +312,6 @@
     <string name="tab_licenses">ଲାଇସେନ୍ସ ଗୁଡ଼ିକ</string>
     <string name="contribution_title">ଯୋଗଦାନ କରନ୍ତୁ</string>
     <string name="view_on_github">GitHub ରେ ଦେଖନ୍ତୁ</string>
-    <string name="donation_title">ଦାନ କରନ୍ତୁ</string>
-    <string name="donation_encouragement">ସ୍ଵେଚ୍ଛାସେବୀ ସେମାନଙ୍କର ସର୍ବୋତ୍ତମ ସମୟ ଆପଣଙ୍କୁ ସର୍ବୋତ୍ତମ ଉପଭୋକ୍ତା ଅଭିଜ୍ଞତା ଆଣିବା ଦ୍ୱାରା ନୂତନ ପାଇପ୍ ବିକଶିତ କରନ୍ତି । ଡେଭଲପର୍ମାନଙ୍କୁ ଏକ କପ୍ କଫି ଉପଭୋଗ କରୁଥିବାବେଳେ NewPipe କୁ ଆହୁରି ଉନ୍ନତ କରିବାରେ ସାହାଯ୍ୟ କରିବାକୁ ଫେରନ୍ତୁ ।</string>
     <string name="privacy_policy_title">WizeStream ର ଗୋପନୀୟତା ନୀତି</string>
     <string name="read_privacy_policy">ଗୋପନୀୟତା ନୀତି ପଢ଼ନ୍ତୁ</string>
     <string name="app_license_title">WizeStream ର ଲାଇସେନ୍ସ</string>
@@ -414,7 +412,6 @@
     <string name="description_select_disable">ବର୍ଣ୍ଣନାରେ ପାଠ ବାଛିବା ଅକ୍ଷମ କରନ୍ତୁ</string>
     <string name="error_ssl_exception">ଏକ ସୁରକ୍ଷିତ ସଂଯୋଗ ସ୍ଥାପନ କରିପାରିଲା ନାହିଁ</string>
     <string name="drawer_header_description">ଟୋଗଲ୍ ସେବା, ବର୍ତ୍ତମାନ ମନୋନୀତ:</string>
-    <string name="give_back">ଫେରସ୍ତ କର</string>
     <string name="overwrite">ଓଭର୍ ରାଇଟ୍ କରନ୍ତୁ</string>
     <string name="metadata_host">ହୋଷ୍ଟ</string>
     <string name="metadata_privacy_public">ସାର୍ଵଜନୀନ</string>

@@ -152,9 +152,6 @@
     <string name="contribution_title">기여</string>
     <string name="contribution_encouragement">번역, 디자인, 코딩 등 다양한 기여를 언제나 환영합니다. 더 나아지도록 도와주세요!</string>
     <string name="view_on_github">GitHub에서 보기</string>
-    <string name="donation_title">후원</string>
-    <string name="donation_encouragement">여러분들의 더 나은 경험을 위해 많은 사람들이 NewPipe를 개발하는데 노력을 기울이고 있습니다. NewPipe에 참여하는 개발자들이 커피 한 잔을 즐길 수 있도록 기부해주세요.</string>
-    <string name="give_back">보답하기</string>
     <string name="website_title">웹사이트</string>
     <string name="website_encouragement">WizeStream에 관한 더 많은 정보를 얻으려면 웹사이트를 방문하세요.</string>
     <string name="app_license_title">WizeStream가 채택한 라이센스</string>

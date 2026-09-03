@@ -149,7 +149,6 @@
     <string name="tab_licenses">Ліцензії</string>
     <string name="contribution_title">Посприяти</string>
     <string name="view_on_github">Переглянути на GitHub</string>
-    <string name="donation_title">Фінансова допомога</string>
     <string name="website_title">Вебсайт</string>
     <string name="title_activity_history">Історія</string>
     <string name="export_complete_toast">Експортовано</string>
@@ -204,8 +203,6 @@
     <string name="title_activity_recaptcha">Перевірка reCAPTCHA</string>
     <string name="recaptcha_request_toast">Запит перевірки reCAPTCHA</string>
     <string name="copyright" formatted="true">© %1$s, %2$s під %3$s</string>
-    <string name="donation_encouragement">NewPipe розроблений добровольцями, які витрачають власний час заради вашого задоволення. Допоможіть розробникам зробити NewPipe ще ліпшим, насолоджуючись філіжанкою кави.</string>
-    <string name="give_back">Ваша допомога</string>
     <string name="website_encouragement">Завітайте на офіційний сайт WizeStream, щоб отримати більше інформації та новин.</string>
     <string name="app_license_title">Ліцензія WizeStream</string>
     <string name="read_full_license">Прочитати ліцензію</string>

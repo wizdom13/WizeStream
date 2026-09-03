@@ -183,9 +183,6 @@
     <string name="unknown_content">[Neznámý]</string>
     <string name="start_here_on_background">Začít přehrávat na pozadí</string>
     <string name="start_here_on_popup">Začít přehrávat v pop-upu</string>
-    <string name="donation_title">Přispět</string>
-    <string name="donation_encouragement">NewPipe je vyvíjen dobrovolníky, kteří tráví svůj volný čas tím, že vám přinášejí ten nejlepší uživatelský zážitek. Odměňte snahu vývojářů zlepšovat NewPipe a dopřejte jim šálek kávy.</string>
-    <string name="give_back">Odměnit</string>
     <string name="website_title">Webové stránky</string>
     <string name="website_encouragement">Pro další informace a novinky navštivte webovou stránku WizeStream.</string>
     <string name="default_content_country_title">Země výchozího obsahu</string>

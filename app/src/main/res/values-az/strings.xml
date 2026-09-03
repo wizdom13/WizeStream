@@ -322,7 +322,6 @@
     <string name="tab_about">Haqqında &amp; FAQ</string>
     <string name="contribution_title">Töhfə ver</string>
     <string name="contribution_encouragement">Fikirlərinizin olub-olmaması; tərcümə, dizayn dəyişiklikləri, kod təmizlənməsi və ya ciddi kod dəyişiklikləri - kömək həmişə xoşdur. Nə qədər çox edilsə, bir o qədər yaxşı olar!</string>
-    <string name="give_back">İanə et</string>
     <string name="website_title">Veb sayt</string>
     <string name="website_encouragement">Əlavə məlumat və xəbərlər üçün WizeStream Veb saytını ziyarət et.</string>
     <string name="privacy_policy_title">WizeStream Məxfilik Siyasəti</string>
@@ -446,8 +445,6 @@
     <string name="select_night_theme_toast">Sevdiyiniz gecə koloritin aşağıda seçə bilərsiniz</string>
     <string name="notification_colorize_summary">Android\'in bildiriş rəngini miniatürdəki əsas rəngə uyğun fərdiləşdirməsini təmin et (qeyd edək ki, bu, bütün cihazlarda mövcud deyil)</string>
     <string name="view_on_github">GitHub-da Bax</string>
-    <string name="donation_title">İanə et</string>
-    <string name="donation_encouragement">NewPipe, sizə ən yaxşı istifadəçi təcrübəsini göstərmək üçün boş vaxtını sərf edən könüllülər tərəfindən hazırlanmışdır. Tərtibatçıların bir fincan qəhvə ilə ləzzət alarkən NewPipe-ı daha da yaxşılaşdırmasına ianə etməklə kömək edin.</string>
     <string name="most_liked">Ən çox bəyənildi</string>
     <string name="enqueued">Növbəyə salındı</string>
     <string name="preferred_open_action_settings_summary">Məzmunu açarkən standart hərəkət — %s</string>

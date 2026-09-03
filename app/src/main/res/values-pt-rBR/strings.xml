@@ -183,9 +183,6 @@
     <string name="unknown_content">[Desconhecido]</string>
     <string name="start_here_on_background">Reproduzir em segundo plano</string>
     <string name="start_here_on_popup">Reproduzir em um Popup</string>
-    <string name="donation_title">Doar</string>
-    <string name="donation_encouragement">O NewPipe é desenvolvido por voluntários que passam seu tempo livre trazendo a você a melhor experiência de usuário. Retribua para ajudar os desenvolvedores a tornar o NewPipe ainda melhor enquanto tomam uma xícara de café.</string>
-    <string name="give_back">Retribuir</string>
     <string name="website_title">Site</string>
     <string name="website_encouragement">Visite o site do WizeStream para mais informações e novidades.</string>
     <string name="no_player_found_toast">O player de vídeo não foi encontrado, mas você pode instalar o VLC para tentar reproduzi-lo.</string>

@@ -44,7 +44,6 @@
     <string name="msg_error">هەڵە</string>
     <string name="override_current_data">ئەمە لەسەر ڕێکخستنەکانی ئێستات جێگیر دەبێت.</string>
     <string name="notification_channel_name">پەیامەکانی WizeStream</string>
-    <string name="donation_encouragement">نیوپایپ لەلایەن چەند خۆبەخشێکەوە دروستکراوە کە کاته‌كانی خۆیان پێ بەخشیووە تاکو باشترین خزمەتگوزاریت پێشکەش بکەن. هیچ نەبێت بە کڕینی کوپێک قاوە یارمەتی گەشەپێدەرەکانمان بدە بۆ ئەوەی کاتی زیاتر تەرخان بکەین بۆ بەرەوپێشبردنی نیوپایپ.</string>
     <string name="show_search_suggestions_title">گەڕانی پێشنیارکراوەکان</string>
     <string name="playback_tempo">خێرا</string>
     <string name="file_deleted">فایل سڕایەوە</string>
@@ -435,7 +434,6 @@
     <string name="rename">ناولێنانه‌وه‌</string>
     <string name="background_player">لێده‌ری پاشبنەما</string>
     <string name="error_file_creation">ناتوانرێت ئه‌و فایله‌ ساز بکرێت</string>
-    <string name="give_back">پێدانەوە</string>
     <string name="create_playlist">خشتەلێدانی نوێ</string>
     <plurals name="hours">
         <item quantity="one">%d کاتژمێر</item>
@@ -486,7 +484,6 @@
     <string name="content_not_supported">ئەم بابەتە هێشتا پشتگیری نەکراوە لەلایەن WizeStreamەوە.
 \n
 \nخوازیارین کە بتوانین لە وەشانەکانی داهاتوودا پشتگیری بکەین.</string>
-    <string name="donation_title">بەخشین</string>
     <string name="no_one_listening">كه‌س گوێبیستی نییه‌</string>
     <string name="search_history_deleted">مێژووی گەڕانەکانت سڕانەوە</string>
     <string name="video">ڤیدیۆ</string>

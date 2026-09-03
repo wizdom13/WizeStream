@@ -179,9 +179,6 @@
     <string name="hold_to_append">Håll för att köa</string>
     <string name="start_here_on_background">Börja spela i bakgrunden</string>
     <string name="start_here_on_popup">Börja spela i en popup</string>
-    <string name="donation_title">Donera</string>
-    <string name="donation_encouragement">NewPipe utvecklas av frivilliga som ägnar sin fritid åt att ge dig den bästa användarupplevelsen. Ge något tillbaka genom att hjälpa utvecklarna att göra NewPipe ännu bättre medan de njuter av en kopp kaffe.</string>
-    <string name="give_back">Ge tillbaka</string>
     <string name="website_title">Webbplats</string>
     <string name="website_encouragement">För att få mer information och de senaste nyheterna om WizeStream, besök vår webbplats.</string>
     <string name="show_info">Visa info</string>

@@ -150,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_LEARNING = -6;
     private static final int ITEM_ID_LOCAL_MEDIA = -7;
     private static final int ITEM_ID_SETTINGS = 0;
-    private static final int ITEM_ID_DONATION = 1;
     private static final int ITEM_ID_ABOUT = 2;
     private static final int ITEM_ID_KIOSK_BASE = 100;
     private static final int ITEM_ID_YOUTUBE_MUSIC = 10_000;
@@ -278,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, false).apply();
         Log.d(TAG, "App moved to foreground");
-        nativePipController.updatePictureInPictureParams();
+        nativePipController.onMainActivityStarted();
     }
 
     @Override
@@ -384,9 +383,6 @@ public class MainActivity extends AppCompatActivity {
         final Menu menu = drawerLayoutBinding.navigation.getMenu();
         menu.add(R.id.menu_options_about_group, ITEM_ID_SETTINGS, ORDER, R.string.settings)
                 .setIcon(R.drawable.ic_settings);
-        menu.add(R.id.menu_options_about_group, ITEM_ID_DONATION, ORDER,
-                R.string.donation_title)
-                .setIcon(R.drawable.volunteer_activism_ic);
         menu.add(R.id.menu_options_about_group, ITEM_ID_ABOUT, ORDER, R.string.tab_about)
                 .setIcon(R.drawable.ic_info_outline);
     }
@@ -522,12 +518,11 @@ public class MainActivity extends AppCompatActivity {
     private void optionsAboutSelected(final MenuItem item) {
         switch (item.getItemId()) {
             case ITEM_ID_SETTINGS:
+                nativePipController.prepareForInternalActivityNavigation();
                 NavigationHelper.openSettings(this);
                 break;
-            case ITEM_ID_DONATION:
-                ShareUtils.openUrlInBrowser(this, getString(R.string.donation_url));
-                break;
             case ITEM_ID_ABOUT:
+                nativePipController.prepareForInternalActivityNavigation();
                 NavigationHelper.openAbout(this);
                 break;
         }

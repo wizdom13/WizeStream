@@ -189,9 +189,6 @@
     <string name="create">Vytvoriť</string>
     <string name="dismiss">Zrušiť</string>
     <string name="rename">Premenovať</string>
-    <string name="donation_title">Darovať</string>
-    <string name="donation_encouragement">NewPipe vyvíjajú dobrovoľníci, ktorí vo voľnom čase pracujú na tom, aby vám poskytli čo najlepší používateľský zážitok. Odmeňte vývojárov, aby mohli NewPipe ešte vylepšiť, zatiaľ čo si vychutnávajú šálku kávy.</string>
-    <string name="give_back">Odmeniť</string>
     <string name="website_title">Webová stránka</string>
     <string name="website_encouragement">Pre viac informácií a noviniek navštívte webstránku WizeStream.</string>
     <string name="delete_item_search_history">Chcete odstrániť túto položku z histórie vyhľadávania?</string>

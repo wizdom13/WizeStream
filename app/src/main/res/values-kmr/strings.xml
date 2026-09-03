@@ -518,9 +518,6 @@
     <string name="privacy_policy_title">Siyaseta taybetîtiyê ya WizeStream</string>
     <string name="website_encouragement">Ji bo bêtir agahdarî û nûçeyan biçin Malpera WizeStream.</string>
     <string name="website_title">Malper</string>
-    <string name="give_back">Vegerînin</string>
-    <string name="donation_encouragement">NewPipe ji hêla dilxwazan ve dema xweya vala derbas dikin ji we re ezmûna bikarhênerê çêtirîn anîne pêşve xistin. Vegerînin da ku ji pêşdebiran re bibin alîkar ku NewPipe hê çêtir bikin dema ku ew ji fîncanek qehweyê kêfê bigirin.</string>
-    <string name="donation_title">Bêşdan</string>
     <string name="view_on_github">GitHub-ê bibînin</string>
     <string name="contribution_encouragement">Ka ramanên we hene; werger, guherandinên sêwiranê, paqijkirina kodê, an guherînên koda giran ên rastîn-alîkarî her gav bi xêr hatî. Ya ku çêdibe çêtir dibe!</string>
     <string name="contribution_title">Paraxwe dayin</string>

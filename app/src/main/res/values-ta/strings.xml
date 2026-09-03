@@ -386,7 +386,6 @@
     <string name="no_one_listening">யாரும் கேட்கவில்லை</string>
     <string name="recaptcha_solve">தீர்க்க</string>
     <string name="view_on_github">கிட்அப்பில் காண்க</string>
-    <string name="donation_title">நன்கொடை</string>
     <string name="audio_track">ஆடியோ டிராக்</string>
     <string name="resize_fill">நிரப்பவும்</string>
     <string name="resize_zoom">பெரிதாக்கு</string>
@@ -508,7 +507,6 @@
     <string name="feed_hide_streams_title">பின்வரும் நீரோடைகளைக் காட்டு</string>
     <string name="feed_show_hide_streams">ச்ட்ரீம்களைக் காட்டு/மறைக்க</string>
     <string name="georestricted_content">இந்த உள்ளடக்கம் உங்கள் நாட்டில் கிடைக்கவில்லை.</string>
-    <string name="give_back">திருப்பித் தரவும்</string>
     <string name="remove_watched_popup_partially_watched_streams">ஆம், மற்றும் ஓரளவு பார்த்த வீடியோக்கள்</string>
     <string name="feed_oldest_subscription_update">கடைசியாக புதுப்பிக்கப்பட்டது: %s</string>
     <plurals name="listening">
@@ -594,7 +592,6 @@
     <string name="app_description">ஆண்ட்ராய்டு இல் லிப்ரே லைட்வெயிட் ச்ட்ரீமிங்.</string>
     <string name="contribution_title">பங்களிப்பு</string>
     <string name="contribution_encouragement">உங்களிடம் சிந்தனைகள் உள்ளதா; மொழிபெயர்ப்பு, வடிவமைப்பு மாற்றங்கள், குறியீடு தூய்மை அல்லது உண்மையான கனமான குறியீடு மாற்றங்கள் - உதவி எப்போதும் வரவேற்கத்தக்கது. மேலும் சிறப்பாகச் செய்யப்படுகிறது!</string>
-    <string name="donation_encouragement">புதிய பயனர் அனுபவத்தை கொண்டு வரும் தன்னார்வலர்கள் தங்கள் இலவச நேரத்தை செலவழிப்பதன் மூலம் புதிய பாடத்தை உருவாக்கியுள்ளனர். உருவாக்குபவர்கள் ஒரு கப் காபியை அனுபவிக்கும் போது புதிய பக்கத்தை இன்னும் சிறப்பாக செய்ய உதவ உதவுகின்றன.</string>
     <string name="website_encouragement">மேலும் செய்தி மற்றும் செய்திகளுக்கு WizeStream வலைத்தளத்தைப் பார்வையிடவும்.</string>
     <string name="privacy_policy_encouragement">WizeStream திட்டம் உங்கள் தனியுரிமையை மிகவும் தீவிரமாக எடுத்துக்கொள்கிறது. எனவே, பயன்பாடு உங்கள் அனுமதியின்றி எந்த தரவையும் சேகரிக்காது.\n நீங்கள் ஒரு செயலிழப்பு அறிக்கையை அனுப்பும்போது என்ன தரவு அனுப்பப்படுகிறது மற்றும் சேமிக்கப்படுகிறது என்பதை நியூபிப்பின் தனியுரிமைக் கொள்கை விரிவாக விளக்குகிறது.</string>
     <string name="app_license_title">WizeStreamபின் உரிமம்</string>

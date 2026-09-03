@@ -201,9 +201,6 @@
     <string name="contribution_title">Közreműködés</string>
     <string name="contribution_encouragement">Legyen szó fordításról, dizájnmódosításokról, kódtisztításról vagy komolyabb fejlesztésekről, minden segítséget szívesen fogadunk. Minél többen járulnak hozzá, annál jobb lesz a projekt!</string>
     <string name="view_on_github">Megtekintés a GitHubon</string>
-    <string name="donation_title">Adakozás</string>
-    <string name="donation_encouragement">A NewPipe-ot önkéntesek fejlesztik a szabadidejükben, hogy a lehető legjobb felhasználói élményt nyújtsák. Támogatásával hozzájárulhat ahhoz, hogy a fejlesztők egy csésze kávé mellett még jobbá tehessék a NewPipe-ot.</string>
-    <string name="give_back">Támogatás</string>
     <string name="website_title">Weboldal</string>
     <string name="website_encouragement">Látogasson el a WizeStream weboldalára további információkért és hírekért.</string>
     <string name="privacy_policy_title">A WizeStream adatvédelmi irányelvei</string>

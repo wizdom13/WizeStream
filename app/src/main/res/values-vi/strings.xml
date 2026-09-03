@@ -209,9 +209,6 @@
     <string name="settings_file_replacement_character_title">Ký tự thay thế</string>
     <string name="charset_letters_and_digits">Chỉ chữ cái và chữ số</string>
     <string name="charset_most_special_characters">Hầu hết các ký tự đặc biệt</string>
-    <string name="donation_title">Quyên góp</string>
-    <string name="donation_encouragement">Newpipe được phát triển bởi các tình nguyện viên dành thời gian rảnh để mang trải nghiệm người dùng tốt nhất. Gửi lại để giúp nhà phát triển làm NewPipe tốt hơn nữa trong khi họ tận hưởng một ly cà phê.</string>
-    <string name="give_back">Gửi lại</string>
     <string name="website_title">Trang web</string>
     <string name="website_encouragement">Truy cập website chính thức của WizeStream để biết thêm thông tin và tin tức.</string>
     <string name="privacy_policy_title">Chính sách bảo mật của WizeStream</string>

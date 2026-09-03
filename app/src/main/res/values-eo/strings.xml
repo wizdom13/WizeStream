@@ -294,9 +294,6 @@
     <string name="no_channel_subscribed_yet">Neniuj kanalaj abonoj ankoraŭ</string>
     <string name="select_a_kiosk">Elekti kioskon</string>
     <string name="start_here_on_background">Komenci ludi fone</string>
-    <string name="donation_title">Donaci</string>
-    <string name="donation_encouragement">NewPipe estas programadita par volontuoj, elspezante lia tempo por alporti vin la plej bona uzanta sperto. Redoni por helpi programistojn plibonigi NewPipe dum ili ĝuas tason da kafo.</string>
-    <string name="give_back">Redoni</string>
     <string name="website_title">Retejo</string>
     <string name="website_encouragement">Viziti la retejon de WizeStream por pli da informoj kaj novaĵoj.</string>
     <string name="drawer_open">Malfermi la tirkeston</string>

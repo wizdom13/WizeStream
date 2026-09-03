@@ -196,9 +196,6 @@
     <string name="contribution_title">Допринеси</string>
     <string name="contribution_encouragement">Ако имаш идеи за; превод, дизајн, чистење или големи промени во кодот - помошта е секогаш добредојдена. Што повеќе се работи, подобра е апликацијата!</string>
     <string name="view_on_github">Види на GitHub</string>
-    <string name="donation_title">Донирај</string>
-    <string name="donation_encouragement">NewPipe е разработуван од доброволци, кои го вложуваат нивното слободно време за да ви го овозможат најдоброто корисничко искуство. Возвратете им на програмерите со една чаша кафе, за да можат да го направат NewPipe уште подобар.</string>
-    <string name="give_back">Возврати</string>
     <string name="website_title">Вебсајт</string>
     <string name="website_encouragement">За повеќе информации и новости за WizeStream посети ја вебстраната.</string>
     <string name="app_license_title">Лиценцата на WizeStream</string>

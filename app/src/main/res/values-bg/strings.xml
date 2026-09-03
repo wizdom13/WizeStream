@@ -189,9 +189,6 @@
     <string name="copyright" formatted="true">© %1$s от %2$s под лиценза %3$s</string>
     <string name="contribution_title">Допринесете</string>
     <string name="contribution_encouragement">Независимо дали имате идеи за превод, промени в дизайна, почистване на кода или наистина сериозни промени в кода – помощта винаги е добре дошла. Колкото повече се направи, толкова по-добре става!</string>
-    <string name="donation_title">Дарете</string>
-    <string name="donation_encouragement">NewPipe е разработен от доброволци, които прекарват свободното си време, за да ви осигурят най-доброто потребителско изживяване. Дарете, за да помогнете на разработчиците да направят NewPipe още по-добър, докато се наслаждават на чаша кафе.</string>
-    <string name="give_back">Върни обратно</string>
     <string name="website_title">Уебсайт</string>
     <string name="website_encouragement">Посетете сайта на WizeStream за повече информация и новини.</string>
     <string name="privacy_policy_title">Политиката на WizeStream за личните данни</string>

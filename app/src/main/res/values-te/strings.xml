@@ -322,7 +322,6 @@
     <string name="no_playlist_bookmarked_yet">ప్లేజాబితా బుక్‌మార్క్‌లు ఇంకా లేవు</string>
     <string name="read_privacy_policy">గోప్యతా విధానాన్ని చదవండి</string>
     <string name="detail_uploader_thumbnail_view_description">అప్‌లోడర్ అవతార్ థంబ్‌నెయిల్</string>
-    <string name="donation_title">విరాళం ఇవ్వండి</string>
     <string name="select_a_kiosk">కియోస్క్‌ని ఎంచుకోండి</string>
     <string name="recaptcha_cookies_cleared">reCAPTCHA కుక్కీలను క్లియర్ చేయండి</string>
     <string name="msg_popup_permission">దీనికి ఈ అనుమతి అవసరం
@@ -345,8 +344,6 @@
     <string name="done">పూర్తి</string>
     <string name="charset_most_special_characters">చాలా ప్రత్యేక పాత్రలు</string>
     <string name="app_description">ఆండ్రాయిడ్‌లో లిబ్రే తేలికపాటి స్ట్రీమింగ్.</string>
-    <string name="donation_encouragement">వాలంటీర్లు తమ ఖాళీ సమయాన్ని వెచ్చిస్తూ మీకు ఉత్తమ వినియోగదారు అనుభవాన్ని అందించడం ద్వారా NewPipe అభివృద్ధి చేయబడింది. డెవలపర్‌లు ఒక కప్పు కాఫీని ఆస్వాదిస్తున్నప్పుడు న్యూపైప్‌ని మరింత మెరుగ్గా చేయడంలో సహాయపడటానికి తిరిగి ఇవ్వండి.</string>
-    <string name="give_back">తిరిగి ఇవ్వండి</string>
     <string name="website_title">వెబ్సైట్</string>
     <string name="privacy_policy_title">WizeStream యొక్క గోప్యతా విధానం</string>
     <string name="title_most_played">ఎక్కువగా ఆడినవి</string>

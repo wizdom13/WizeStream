@@ -109,9 +109,6 @@
     <string name="unknown_content">[Desconozse]</string>
     <string name="start_here_on_background">Reproducir en segundu planu</string>
     <string name="start_here_on_popup">Reproducir nun ventanu</string>
-    <string name="donation_title">Donación</string>
-    <string name="donation_encouragement">NewPipe ta desendolcáu por xente voluntario que pasa\'l tiempu llibre ufriéndote la meyor esperiencia d\'usuariu. Devolvi\'l favor p\'ayudar a los desendolcadores p\'ameyorar NewPipe tovía más mentanto esfruten d\'una taza de café.</string>
-    <string name="give_back">Donar</string>
     <string name="website_title">Sitiu web</string>
     <string name="website_encouragement">Visita\'l sitiu web de WizeStream pa más información y noticies.</string>
     <string name="default_content_country_title">País predetermináu del conteníu</string>

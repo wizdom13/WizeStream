@@ -206,8 +206,6 @@
     <string name="contribution_title">สนับสนุน</string>
     <string name="contribution_encouragement">ไม่ว่าคุณจะมีความคิดที่จะช่วยแปลภาษา เปลี่ยนดีไซน์ แก้ไขโค้ดของโปรแกรมให้ดีขึ้นทั้งในระดับเล็กน้อยหรือจะเปลี่ยนแปลงกันแบบขนานใหญ่ เรายินดีให้คุณได้ร่วมช่วยเหลือเสมอ… ยิ่งทำมาก ยิ่งช่วยให้ดีขึ้นมาก!</string>
     <string name="view_on_github">ดูบน GitHub</string>
-    <string name="donation_title">บริจาค</string>
-    <string name="give_back">คืนให้</string>
     <string name="website_title">เว็บไซต์</string>
     <string name="website_encouragement">เยี่ยมชมเว็บไซต์ WizeStream สำหรับข้อมูลเพิ่มเติมและข่าวสาร</string>
     <string name="privacy_policy_title">นโยบายความเป็นส่วนตัวของ WizeStream</string>

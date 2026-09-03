@@ -183,9 +183,6 @@
     <string name="show_hold_to_append_title">Mostrar la sugerencia \"Mantener presionado para poner a la cola\"</string>
     <string name="new_and_hot">Lo nuevo y lo mejor</string>
     <string name="hold_to_append">Mantener pulsado para añadir a la cola</string>
-    <string name="donation_title">Donar</string>
-    <string name="donation_encouragement">NewPipe es desarrollado por voluntarios que dedican su tiempo libre a ofrecerle la mejor experiencia de usuario. Colabore para ayudar a los desarrolladores a hacer que NewPipe sea aún mejor mientras disfrutan de una taza de café.</string>
-    <string name="give_back">Colaborar</string>
     <string name="website_title">Sito web</string>
     <string name="website_encouragement">Visita el sitio web de WizeStream para más información y noticias.</string>
     <string name="default_content_country_title">País predefinido del contenido</string>

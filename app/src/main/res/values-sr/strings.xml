@@ -189,9 +189,6 @@
     <string name="just_once">Само једном</string>
     <string name="unknown_content">[Непознато]</string>
     <string name="show_hold_to_append_title">Прикажи савет „Задржати за стављање у редослед”</string>
-    <string name="donation_title">Донација</string>
-    <string name="donation_encouragement">NewPipe је развијен од стране волонтера који проводе своје слободно време доносећи вам најбоље корисничко искуство. Узвратите програмерима како би учинили NewPipe још бољим, док уживају у шољици кафе.</string>
-    <string name="give_back">Узврати</string>
     <string name="website_title">Веб-сајт</string>
     <string name="website_encouragement">За више информација и новости посетите WizeStream веб-сајт.</string>
     <string name="hold_to_append">Задржати за стављање у редослед</string>

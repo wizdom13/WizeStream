@@ -342,9 +342,6 @@
     <string name="contribution_title">Doprinesite</string>
     <string name="contribution_encouragement">Bez obzira da li imate ideje za: prevod, promjene dizajna, čišćenje koda ili zaista velike promjene koda - pomoć je uvijek dobrodošla. Što se više uradi, to bolje postaje!</string>
     <string name="view_on_github">Pogledajte na GitHubu</string>
-    <string name="donation_title">Donirajte</string>
-    <string name="donation_encouragement">NewPipe je razvijen od strane volontera koji svoje slobodno vrijeme provode pružajući vam najbolje korisničko iskustvo. Doprinesite programerima kako biste ih učinili još boljim dok uživaju u šoljici kafe.</string>
-    <string name="give_back">Vratite</string>
     <string name="website_title">Web stranica</string>
     <string name="website_encouragement">Posjetite web stranicu WizeStream za više informacija i novosti.</string>
     <string name="privacy_policy_title">Politika privatnosti kompanije WizeStream</string>
