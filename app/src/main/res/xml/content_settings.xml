@@ -117,6 +117,17 @@
         app:iconSpaceReserved="false" />
 
     <ListPreference
+        android:defaultValue="@string/search_button_behavior_current_tab_value"
+        android:entries="@array/search_button_behavior_entries"
+        android:entryValues="@array/search_button_behavior_values"
+        android:key="@string/search_button_behavior_key"
+        android:summary="@string/search_button_behavior_summary"
+        android:title="@string/search_button_behavior_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
         android:defaultValue="@string/image_quality_default"
         android:entries="@array/image_quality_description"
         android:entryValues="@array/image_quality_values"
