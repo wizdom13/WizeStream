@@ -179,10 +179,13 @@ public class MainFragment extends BaseFragment
                 }
                 updateTitleForTab(position);
                 updateBottomNavigationSelection(position);
+                rememberMainTabPosition(position);
                 requireActivity().invalidateOptionsMenu();
             }
         });
         setupTabs();
+        restorePendingMainTabSelection();
+        rememberMainTabPosition(binding.pager.getCurrentItem());
         initContextualSearchToolbar();
         initContextualSearchInsets();
         if (contextualSearchOpen) {
@@ -290,6 +293,22 @@ public class MainFragment extends BaseFragment
         navigationRailView = null;
         super.onDestroyView();
         binding = null;
+    }
+
+    private void rememberMainTabPosition(final int position) {
+        if (activity instanceof MainActivity) {
+            ((MainActivity) activity).rememberMainTabPosition(position);
+        }
+    }
+
+    private void restorePendingMainTabSelection() {
+        if (!(activity instanceof MainActivity) || binding == null) {
+            return;
+        }
+        final int position = ((MainActivity) activity).consumePendingMainTabPosition();
+        if (position >= 0 && position < tabsList.size()) {
+            binding.pager.setCurrentItem(position, false);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////

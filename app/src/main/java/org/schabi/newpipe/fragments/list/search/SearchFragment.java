@@ -44,6 +44,7 @@ import com.evernote.android.state.State;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
+import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.feed.model.SavedSearchFeedEntity;
 import org.schabi.newpipe.databinding.FragmentSearchBinding;
@@ -377,6 +378,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public void onPause() {
+        if (activity instanceof MainActivity) {
+            ((MainActivity) activity).hideMainNavigationForSearch();
+        }
         super.onPause();
 
         wasSearchFocused = searchEditText.hasFocus();
@@ -397,6 +401,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             Log.d(TAG, "onResume() called");
         }
         super.onResume();
+        if (activity instanceof MainActivity) {
+            ((MainActivity) activity).showMainNavigationForSearch();
+        }
 
         if (suggestionDisposable == null || suggestionDisposable.isDisposed()) {
             initSuggestionObserver();
