@@ -143,6 +143,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         groupId = arguments?.getLong(KEY_GROUP_ID, FeedGroupEntity.GROUP_ALL_ID)
             ?: FeedGroupEntity.GROUP_ALL_ID
         groupName = arguments?.getString(KEY_GROUP_NAME) ?: ""
+        val storedFilter = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getString(streamFilterPreferenceKey(groupId), StreamListFilter.NONE.name)
+        selectedStreamFilter = restoreStreamFilter(storedFilter)
 
         onSettingsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (getString(R.string.list_view_mode_key).equals(key) ||
@@ -265,6 +268,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 selectedStreamFilter = StreamListFilter.fromChipId(
                     checkedIds.firstOrNull() ?: View.NO_ID
                 )
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                    putString(streamFilterPreferenceKey(groupId), selectedStreamFilter.name)
+                }
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
     }
@@ -876,6 +882,13 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     companion object {
         const val KEY_GROUP_ID = "ARG_GROUP_ID"
         const val KEY_GROUP_NAME = "ARG_GROUP_NAME"
+        private const val STREAM_FILTER_PREF_PREFIX = "feed_stream_filter_"
+
+        internal fun streamFilterPreferenceKey(groupId: Long): String = "$STREAM_FILTER_PREF_PREFIX$groupId"
+
+        internal fun restoreStreamFilter(storedValue: String?): StreamListFilter = storedValue?.let { value ->
+            runCatching { StreamListFilter.valueOf(value) }.getOrDefault(StreamListFilter.NONE)
+        } ?: StreamListFilter.NONE
 
         @JvmStatic
         fun newInstance(groupId: Long = FeedGroupEntity.GROUP_ALL_ID, groupName: String? = null): FeedFragment {
