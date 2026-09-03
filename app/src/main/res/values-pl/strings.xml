@@ -169,9 +169,6 @@
         <item quantity="other">%s wideo</item>
     </plurals>
     <string name="charset_most_special_characters">Większość znaków specjalnych</string>
-    <string name="donation_title">Dotacja</string>
-    <string name="donation_encouragement">NewPipe jest rozwijany przez wolontariuszy, którzy poświęcają swój wolny czas, zapewniając Ci najlepsze wrażenia z użytkowania. To dobry moment na wsparcie programistów i sprawienie, aby NewPipe był jeszcze lepszy, podczas gdy oni będą mogli delektować się filiżanką kawy.</string>
-    <string name="give_back">Wspomóż</string>
     <string name="website_title">Strona internetowa</string>
     <string name="website_encouragement">Odwiedź stronę WizeStream, aby uzyskać więcej informacji i najnowsze wiadomości.</string>
     <string name="delete_item_search_history">Czy chcesz usunąć tę pozycję z historii wyszukiwania?</string>

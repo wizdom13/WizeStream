@@ -186,7 +186,6 @@
     <string name="rename_playlist">নাম পরিবর্তন</string>
     <string name="action_history">ইতিহাস</string>
     <string name="read_full_license">লাইসেন্স পড়ুন</string>
-    <string name="donation_title">দান করুন</string>
     <string name="create">তৈরি করুন</string>
     <string name="retry">পুনরায় চেষ্টা করুন</string>
     <string name="watch_history_deleted">দেখার ইতিহাস মুছে গেছে</string>
@@ -235,7 +234,6 @@
     <string name="local">স্থানীয়</string>
     <string name="title_most_played">সবথেকে বেশি চালানো</string>
     <string name="title_last_played">শেষ চালানো</string>
-    <string name="give_back">ফিরিয়ে দিন</string>
     <string name="contribution_title">যোগদান</string>
     <string name="title_activity_about">WizeStream এর সম্বন্ধে</string>
     <string name="charset_letters_and_digits">শব্দ ও নম্বর</string>

@@ -144,8 +144,6 @@
     <string name="settings_file_replacement_character_title">ファイルみいなじちゃーしゅうせい</string>
     <string name="charset_letters_and_digits">むじんでぃすーいんじ</string>
     <string name="charset_most_special_characters">むじんでぃすーいんじんでぃ、おおくぬとぅくしゅむじ</string>
-    <string name="donation_title">ちーふ</string>
-    <string name="donation_encouragement">NewPipeー、うんじゅんかいさいこうぬたいきんていきょうすんでぃ、ボランティアぬじぶんぬちゃーぬじかんちかてぃかいはちそーいびーん。かいはちしゃぬちゃーがコーヒーぬまがちーNewPipeけいずいちゅてぃちーにかいりょうないるよう、ぐさいんうにげーさびら。</string>
     <string name="website_title">ウェブサイト</string>
     <string name="website_encouragement">WizeStreamぬくわしさんじょうほうやさいしんじょうほうにちいてぃは、ウェブサイトんーちくぃみそーれー。</string>
     <string name="title_activity_history">りりき</string>
@@ -263,7 +261,6 @@
         <item quantity="other">さいせいかいすん %sかい</item>
     </plurals>
     <string name="one_item_deleted">てぃーちぬアイテムぬさちゅるじょさりやびたん。</string>
-    <string name="give_back">しーいんすん</string>
     <string name="privacy_policy_encouragement">WizeStreamプロジェクトーうんじゅがプライバシーふぃじょうにてーしちなちょーいびーん。うんじゅがちゃーいがねーんかぎり、アプレーいかなるデータんしゅうしゅうさびらん。
 \nWizeStreamぬプライバシー・ポリシーっしぇー、クラッシュリポートそうしんじんかいちゃぬぐとーるしゅるいぬデータぬあんしん・きるくされいがしーょうさいにしちめいそーいびーん。</string>
     <string name="app_license">WizeStreamーコピーレフトなソフトウェアやいびーん。うんじょーじゆうにうりさし、きんきゅうしー、きょうゆうし、あんしがいじんするくとぅがなやびーん。うんじょー、GNUフリーソフトウェアじぇーやんんがかんかいすん GNU General Publicライセンスバージョン3いかぬむとぅんかい、じゆうにさえーいーん・しゅうせいうくないるくとぅがなやびーん。</string>

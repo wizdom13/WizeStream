@@ -215,9 +215,6 @@
     <string name="unknown_content">[未知]</string>
     <string name="start_here_on_background">开始后台播放</string>
     <string name="start_here_on_popup">开始在悬浮窗中播放</string>
-    <string name="donation_title">捐赠</string>
-    <string name="donation_encouragement">NewPipe 由志愿者开发，他们利用自己的空闲时间，为您带来最佳的用户体验。是时候回馈他们，让他们享受一杯咖啡，帮助开发者们让 NewPipe 变得更好。</string>
-    <string name="give_back">回馈</string>
     <string name="website_title">官网</string>
     <string name="website_encouragement">请访问 WizeStream 网站以了解更多信息和新闻。</string>
     <string name="default_content_country_title">视频默认国家/地区</string>

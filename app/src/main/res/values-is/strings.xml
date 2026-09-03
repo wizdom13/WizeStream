@@ -256,8 +256,6 @@
     <string name="contribution_title">Taka þátt</string>
     <string name="contribution_encouragement">Allt er velkomið — hugmyndir, þýðingar, endurhönnun, kóðahreinsun eða miklar kóðabreytingar. Því fleiri, því betra!</string>
     <string name="view_on_github">Skoða á GitHub</string>
-    <string name="donation_title">Gefa pening</string>
-    <string name="give_back">Gefa</string>
     <string name="website_title">Vefsíða</string>
     <string name="read_privacy_policy">Lesa persónuverndarstefnu</string>
     <string name="title_activity_history">Áhorf</string>
@@ -348,7 +346,6 @@
     <string name="radio">Útvarp</string>
     <string name="metadata_category">Flokkur</string>
     <string name="metadata_tags">Merki</string>
-    <string name="donation_encouragement">NewPipe er þróað af sjálfboðaliðum sem eyða frítíma sínum í að færa þér bestu notendaupplifunina. Gefðu til baka til að hjálpa forriturum að gera NewPipe enn betri á meðan þeir njóta kaffibolla.</string>
     <string name="show_description_summary">Slökktu á til að fela lýsingu og viðbótarupplýsingar myndskeiðs</string>
     <string name="error_occurred_detail">Villa kom upp: %1$s</string>
     <string name="title_activity_recaptcha">Þraut reCAPTCHA</string>

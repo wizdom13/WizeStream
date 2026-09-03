@@ -175,7 +175,6 @@
     <string name="play_queue_remove">Odstrani</string>
     <string name="play_queue_stream_detail">Podrobnosti</string>
     <string name="play_queue_audio_settings">Nastavitve zvoka</string>
-    <string name="donation_title">Donacija</string>
     <string name="website_title">Spletišče</string>
     <string name="controls_download_desc">Prenesi pretočno datoteko</string>
     <string name="show_info">Pokaži podrobnosti</string>
@@ -353,8 +352,6 @@
     <string name="app_license">WizeStream je prosta in odprta programska oprema: lahko jo uporabljaš, preučuješ in izboljšaš po želji. Lahko jo distributiraš in/ali spremeniš pod pogoji GNU General Public Licence, kot jo je izdala Free Software Foundation v različici 3 ali po izbiri v katerikoli novejši različici.</string>
     <string name="privacy_policy_encouragement">Projekt WizeStream jemlje vašo zasebnost zelo resno. Aplikacija zato ne zbira kakršnih koli podatkov brez vašega dovoljenja.
 \nPolitika zasebnosti WizeStream-a podrobno pojasnjuje, kateri podatki so poslani in shranjeni, ko pošljete poročilo o zrušitvi.</string>
-    <string name="give_back">Pomagaj</string>
-    <string name="donation_encouragement">NewPipe razvijajo prostovoljci, ki preživljajo svoj prosti čas, da vam prinašajo najboljšo uporabniško izkušnjo. Pomagajte razvijalcem pri izdelavi še boljšega NewPipe-a medtem ko uživajo skodelico kave.</string>
     <string name="subtitle_activity_recaptcha">Pritisni \"končano\" ko je rešena</string>
     <string name="one_item_deleted">Odstranjen 1 element.</string>
     <string name="msg_calculating_hash">Izračun zgoščevalne funkcije je v teku</string>

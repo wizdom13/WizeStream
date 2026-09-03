@@ -202,9 +202,6 @@
     <string name="create">बनाइये</string>
     <string name="dismiss">ख़ारिज करें</string>
     <string name="rename">नाम बदलें</string>
-    <string name="donation_title">दान करें</string>
-    <string name="donation_encouragement">न्यूपाइप वॉलंटियर्स द्वारा विकसित किया जाता है जो आपको अच्छा अनुभव देने के लिए अपना खाली समय इस एप्लिकेशन को देते हैं। डेवलपर्स को मदद भेजे, ताकि वह न्यूपाइप को और अच्छा बना सके।</string>
-    <string name="give_back">वापस दो</string>
     <string name="website_title">वेबसाइट</string>
     <string name="website_encouragement">अधिक जानकारी और खबरों के लिए WizeStream की वेबसाइट पर जाएं।</string>
     <string name="title_last_played">पिछला चलाया गया</string>

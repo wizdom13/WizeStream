@@ -181,9 +181,6 @@
     <string name="create">Buat</string>
     <string name="dismiss">Abaikan</string>
     <string name="rename">Ubah nama</string>
-    <string name="donation_title">Donasi</string>
-    <string name="donation_encouragement">NewPipe dikembangkan oleh para sukarelawan yang meluangkan waktu luang mereka untuk memberikan Anda pengalaman pengguna terbaik. Berikan dukungan untuk membantu para pengembang membuat NewPipe menjadi lebih baik lagi sementara mereka menikmati secangkir kopi.</string>
-    <string name="give_back">Berikan</string>
     <string name="website_title">Situs web</string>
     <string name="website_encouragement">Kunjungi situs web WizeStream untuk melihat info dan berita lebih lanjut.</string>
     <string name="delete_item_search_history">Apakah ingin hapus butir ini dari riwayat pencarian?</string>

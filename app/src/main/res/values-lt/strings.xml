@@ -162,9 +162,6 @@
     <string name="contribution_title">Prisidėti</string>
     <string name="contribution_encouragement">Jei turite idėjų dėl: vertimų, išvaizdos pakeitimų, kodo supaprastinimo, arba rimtų kodo pakeitimų - pagalba visada laukiama!</string>
     <string name="view_on_github">Peržiūrėti per GitHub</string>
-    <string name="donation_title">Paremti</string>
-    <string name="donation_encouragement">NewPipe yra vystoma savanorių, kurie skiria savo laisvą laiką, kad sukurtų geriausią patirtį Jums. Dabar yra laikas paremti juos, kad kūrėjai galėtų NewPipe paversti dar geresne programėle.</string>
-    <string name="give_back">Duokite grąžos</string>
     <string name="website_title">Interneto puslapis</string>
     <string name="website_encouragement">Kad sužinotumėte daugiau apie WizeStream apsilankykite mūsų interneto puslapyje.</string>
     <string name="app_license_title">WizeStream licencija</string>

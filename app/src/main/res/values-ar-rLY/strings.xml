@@ -86,7 +86,6 @@
     <string name="feed_show_partially_watched">تمت مشاهدتها جزئيا</string>
     <string name="controls_add_to_playlist_title">إضافة إلى</string>
     <string name="unsupported_url">رابط غير مدعوم</string>
-    <string name="donation_title">تبرَّع</string>
     <string name="get_notified">الحصول على إشعار</string>
     <string name="radio">إذاعة</string>
     <plurals name="download_finished_notification">
@@ -619,7 +618,6 @@
     <string name="wifi_only">فقط على شبكة Wi-Fi</string>
     <string name="show_thumbnail_title">إظهار الصورة المصغرة</string>
     <string name="playback_speed_control">ضوابط سرعة التشغيل</string>
-    <string name="give_back">رد الجميل</string>
     <string name="watch_history_deleted">تم حذف سجل المشاهدة</string>
     <string name="settings_category_history_title">سجل المشاهَدة و ذاكرة التخزين المؤقتة</string>
     <string name="percent">النسبة المئوية</string>
@@ -740,7 +738,6 @@
     <string name="unhook_checkbox">إلغاء الإرتباط (قد يسبب تشويه)</string>
     <string name="settings_category_clear_data_title">امسح البيانات</string>
     <string name="no_playlist_bookmarked_yet">لا توجد إشارات مرجعية لقائمة التشغيل بعدُ</string>
-    <string name="donation_encouragement">يتم تطوير NewPipe من قبل متطوعين يقضون وقت فراغهم لتقديم أفضل تجربة لك. حان الوقت لرد المساعدة مع المطورين وجعل NewPipe أكثر و أفضل بينما يستمتعون بفنجان من القهوة.</string>
     <string name="show_comments_title">إظهار التعليقات</string>
     <string name="msg_copied">تم نسخه إلى الحافظة</string>
     <string name="more_options">المزيد من الخيارات</string>

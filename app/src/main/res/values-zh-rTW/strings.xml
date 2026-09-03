@@ -168,13 +168,11 @@
     <string name="external_player_unsupported_link_type">外部播放器不支援此類型連結</string>
     <string name="video_streams_empty">找不到影片串流</string>
     <string name="audio_streams_empty">找不到音訊串流</string>
-    <string name="donation_title">捐款</string>
     <string name="website_title">網站</string>
     <string name="import_data_title">匯入資料庫</string>
     <string name="export_data_title">匯出資料庫</string>
     <string name="import_data_summary">覆寫您目前的歷史記錄、訂閱與設定 (選用)</string>
     <string name="export_data_summary">匯出歷史記錄、訂閱內容、播放清單、設定</string>
-    <string name="give_back">回饋</string>
     <string name="website_encouragement">如欲了解更多有關 WizeStream 的資訊和新聞，請造訪我們的網站。</string>
     <string name="main_page_content">首頁內容</string>
     <string name="blank_page_summary">空白頁面</string>
@@ -197,7 +195,6 @@
     <string name="start_here_on_background">在背景開始播放</string>
     <string name="start_here_on_popup">在彈出式視窗中開始播放</string>
     <string name="hold_to_append">長按以新增至佇列</string>
-    <string name="donation_encouragement">NewPipe 由志願者所開發，他們花費他們的空閒時間務求為您帶來最佳的使用體驗。現在是時候回過頭來，讓我們的開發人員能夠在使 NewPipe 更臻完美的同時，享受一杯咖啡。</string>
     <string name="drawer_open">打開抽屜</string>
     <string name="drawer_close">關閉抽屜</string>
     <string name="video_player">影片播放器</string>

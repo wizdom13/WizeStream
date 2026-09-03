@@ -18,7 +18,6 @@
     <string name="sha1">SHA-1</string>
     <string name="recaptcha">reCAPTCHA</string>
     <string name="github_url">https://github.com/wizdom13/WizeStream</string>
-    <string name="donation_url">https://newpipe.net/donate/</string>
     <string name="website_url">https://github.com/wizdom13/WizeStream</string>
     <string name="privacy_policy_url">https://github.com/wizdom13/WizeStream/blob/pipe/PRIVACY.md</string>
     <string name="faq_url">https://github.com/wizdom13/WizeStream/blob/pipe/docs/faq.md</string>

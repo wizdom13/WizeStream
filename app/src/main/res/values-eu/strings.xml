@@ -167,9 +167,6 @@
     <string name="player_stream_failure">Ezin izan da igorpen hau erreproduzitu</string>
     <string name="player_unrecoverable_failure">Erreproduzitzailearen errore berreskuraezina gertatu da</string>
     <string name="player_recoverable_failure">Erreproduzitzailearen erroretik berreskuratzen</string>
-    <string name="donation_title">Egin dohaintza</string>
-    <string name="donation_encouragement">NewPipe boluntarioek garatu dute, haien denbora librea erabiltzaile esperientzia onena eskaintzen emanez. Eman dohaintza garatzaileei NewPipe are hobea izan dadin kafe bat hartzen duten bitartean.</string>
-    <string name="give_back">Egin dohaintza</string>
     <string name="website_title">Webgunea</string>
     <string name="website_encouragement">Bisitatu WizeStream webgunea informazio gehiagorako eta berriak irakurtzeko.</string>
     <string name="delete_item_search_history">Elementu hau bilaketa-historiatik ezabatu nahi duzu?</string>

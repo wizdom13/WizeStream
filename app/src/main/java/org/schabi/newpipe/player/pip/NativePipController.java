@@ -29,6 +29,7 @@ public final class NativePipController {
 
     @NonNull
     private final AppCompatActivity activity;
+    private boolean internalActivityNavigationPending;
 
     public NativePipController(@NonNull final AppCompatActivity activity) {
         this.activity = activity;
@@ -39,13 +40,30 @@ public final class NativePipController {
             return;
         }
         try {
-            activity.setPictureInPictureParams(buildParams(currentFragment().orElse(null)));
+            activity.setPictureInPictureParams(buildParams(
+                    currentFragment().orElse(null), !internalActivityNavigationPending));
         } catch (final IllegalStateException ignored) {
             // Some vendor builds reject PiP calls even after advertising support.
         }
     }
 
+    public void prepareForInternalActivityNavigation() {
+        internalActivityNavigationPending = true;
+        if (!isSupported()) {
+            return;
+        }
+        currentFragment().ifPresent(this::disableAutoEnterForInternalNavigation);
+    }
+
+    public void onMainActivityStarted() {
+        internalActivityNavigationPending = false;
+        updatePictureInPictureParams();
+    }
+
     public void onUserLeaveHint() {
+        if (internalActivityNavigationPending) {
+            return;
+        }
         if (!isSupported() || !isEnabled()) {
             return;
         }

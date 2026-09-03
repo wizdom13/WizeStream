@@ -194,9 +194,6 @@
     <string name="contribution_title">تعاون کریں</string>
     <string name="contribution_encouragement">جو بھی آپ کے خیالات ہوں؛ ترجمہ، ڈیزائن میں تبدیلیاں، کوڈ کی درستی، یا حقیقتاً کوڈ میں بڑی تبدیلی—مدد کا ہمیشہ خیرمقدم ہے۔ جتنا زیادہ ہوگا اتنی ہی بہتری ہو گی!</string>
     <string name="view_on_github">گٹ ہب پر دیکھیں</string>
-    <string name="donation_title">عطیہ</string>
-    <string name="donation_encouragement">نیو پائپ رضاکاروں کے ذریعہ تیار کیا گیا ہے جو آپ کو بہترین تجربہ فراہم کرنے میں وقت صرف کرتے ہیں۔ ایک کپ کافی سے لطف اندوز ہوتے ہوئے ڈویلپرز کو نیو پائپ کو اور بہتر بنانے میں بہتر تعاون کریں</string>
-    <string name="give_back">بدلہ دیں</string>
     <string name="website_title">ویب سائٹ</string>
     <string name="website_encouragement">مزید معلومات اور خبروں کے لئے WizeStream ویب سائٹ ملاحظہ کریں۔</string>
     <string name="app_license_title">WizeStream کا لائسنس</string>

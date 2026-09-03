@@ -181,7 +181,6 @@
     <string name="recaptcha_request_toast">Desafio reCAPTCHA solicitado</string>
     <string name="autoplay_title">Reprodução automática</string>
     <string name="peertube_instance_add_exists">Instância já existe</string>
-    <string name="donation_encouragement">NewPipe é desenvolvido por voluntários que utilizam o seu tempo livre para nos proporcionar a melhor experiência. Retribua para ajudar os programadores a tornarem NewPipe ainda melhor.</string>
     <string name="auto_queue_summary">Continuar (sem repetição) a fila de reprodução anexando um vídeo relacionado</string>
     <string name="always">Sempre</string>
     <string name="start_accept_privacy_policy">Para cumprir com o Regulamento Geral da Proteção de Dados (RGPD), chamamos a sua atenção para a política de privacidade do WizeStream. Por favor, leia com atenção.
@@ -432,7 +431,6 @@
     <string name="caption_none">Sem legendas</string>
     <string name="website_title">Site oficial</string>
     <string name="tab_subscriptions">Subscrições</string>
-    <string name="give_back">Contribuir</string>
     <string name="default_audio_format_title">Formato padrão de áudio</string>
     <string name="invalid_file">O ficheiro não existe ou não tem permissões para ler e/ou escrever</string>
     <string name="feed_group_dialog_empty_name">O nome do grupo está vazio</string>
@@ -486,7 +484,6 @@
     <string name="error_timeout">Ligação expirada</string>
     <string name="show_higher_resolutions_summary">Apenas alguns dispositivos conseguem reproduzir vídeos em 2K/4K</string>
     <string name="settings_category_appearance_title">Aparência</string>
-    <string name="donation_title">Doar</string>
     <string name="error_report_open_github_notice">Verifique se o seu erro já foi reportado. A criação de erros em duplicado tira-nos tempo que pode ser utilizado para corrigir os erros.</string>
     <string name="content_not_available">Conteúdo indisponível</string>
     <string name="subscribed_button_title">Subscrito</string>

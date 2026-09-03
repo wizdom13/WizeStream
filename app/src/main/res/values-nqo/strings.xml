@@ -383,8 +383,6 @@
     <string name="settings_category_downloads_title">ߟߊ߬ߖߌ߰ߟߌ</string>
     <string name="tab_licenses">ߟߊ߬ߘߌߢߍ ߟߎ߬</string>
     <string name="view_on_github">ߊ߬ ߡߊߝߍߣߍ߲߫ GitHub ߞߊ߲߬</string>
-    <string name="donation_title">ߊ߲ ߞߣߐߘߐߘߌߦߊ߫</string>
-    <string name="give_back">ߞߊ߬ ߓߟߏߢߐ߲߯ߠߊߛߊ߬ߦߌ߬</string>
     <string name="contribution_encouragement">ߊ߬ ߞߍ߫ ߘߊ߫ ߘߟߊߡߌߣߊߟߌ߫ ߡߙߌߦߊ߫ ߘߌ߫ ߓߊ߬߸ ߥߟߊ߫ ߡߊ߬ߞߙߍ߬ߟߌ߫߸ ߥߟߊ߫ ߘߏߝߙߍߕߍ߫ ߟߛߊߣߌ߲ߧߊ߫߸ ߤߊߡߊ߲ߕߍ߫ ߘߏߝߙߍߕߍ߫ ߡߝߊߟߋ߲. ߘߍ߬ߡߍ߲ ߞߍ߫ ߘߊ߫ ߢߊ߫ ߛߌ߫ ߡߊ߬߸ ߊ߬ ߞߊߢߌ߲߬. ߏ߬ ߟߋ ߦߴߊ߬ ߟߊߢߊ߬ ߟߊ߫ ߓߘߍߞߍ߹</string>
     <string name="website_title">ߗߍߦߙߐ</string>
     <string name="website_encouragement">WizeStream ߟߊ߫ ߗߍߦߙߐ ߡߊߝߍߣߍ߲߫ ߞߊ߬ ߟߌ߬ߤߟߊ ߟߎ߬ ߣߌ߫ ߗߍߞߎߘߊ ߟߎ߫ ߛߐ߬ߘߐ߲߬.</string>
@@ -443,7 +441,6 @@
     <string name="no_available_dir">ߘߌ߬ߢߍ߬ ߦߋ߫ ߟߊ߬ߖߌ߰ߟߌ߬ ߞߎ߲ߓߍ߲ ߛߎߥߊ߲ߘߌ߫ ߢߊߓߐߟߌ ߟߎ߬ ߘߐ߫ ߞߐߟߊ߫</string>
     <string name="charset_letters_and_digits">ߛߓߍߘߋ߲ ߣߋ߫ ߖߊ߬ߕߋ߬ߘߋ߲ ߠߎ߬</string>
     <string name="app_description">ߥߦߏ߬ ߘߐ߬ߞߊ߬ߙߊ߲߬ߠߊ ߞߊߟߌ߲ ߣߌ߫ ߝߍ߯ߡߊ߲ ߊ߲ߘߙߏߦߌߘ ߞߊ߲߬.</string>
-    <string name="donation_encouragement">ߣߌߎߔߌߔ ߟߊߥߙߌߞߌߣߍ߲߫ ߓߐߒߖߘߍߘߐߓߊ߮ ߟߎ߫ ߟߋ߬ ߓߟߏ߫ ߊ߬ߟߎ߬ ߟߊ߫ ߕߎ߬ߡߊ߬ ߘߐ߬ߞߏߟߏ߲ ߠߎ߬ ߘߐ߫߸ ߞߴߊ߬ ߟߊߢߊ߬ ߊ߬ߟߎ߬ ߛߋߞߏ߫ ߘߊ߬ߡߊ߬ߦߌߙߊ ߟߊ߫. ߌ ߘߌ߫ ߛߋ߫ ߝߌ߬ߙߋ߲߬ߕߎ߬ ߛߐ߲ߞߐ ߘߌ߫ ߟߴߊ߬ߟߎ߫ ߡߊ߬߸ ߞߴߊ߬ߟߎ߬ ߞߣߐߘߐߘߌߦߊ߫ ߟߢߊ߬ߟߌ ߟߊ߫ ߓߘߍߞߍ.</string>
     <string name="privacy_policy_encouragement">WizeStream ߘߊߞߎ߲ ߦߴߊߟߎ߫ ߜߎ߲߬ߘߎ߬ߞߏ ߕߊ߬ ߟߊ߫ ߛߍ߬ߓߍ ߖߍ߬ߘߍߖߍ߬ߘߍ ߟߋ߬ ߟߊ߫. ߏ߬ ߘߐ߫߸ ߟߥߊߟߌߟߊ߲ ߕߍ߫ ߟߐ߲ߕߊ߫ ߛߌ߫ ߟߥߊ߫ ߟߊ߫ ߣߴߊ߬ ߡߴߌ ߟߊ߫ ߘߌ߬ߢߍ ߢߌߣߌ߲߫.
 \nWizeStream ߟߊ߫ ߜߎ߲߬ߘߎ߬ߞߏ ߓߘߍ߬ߓߘߍ߬ߟߌ ߦߴߊ߬ ߝߊߙߊ߲ߝߊ߯ߛߌ߫ ߟߴߌ ߢߍ߫ ߟߋ߬ ߥߘߋ߬ߥߘߋ߬ߟߌ ߘߝߊߣߍ߲ ߘߐ߫߸ ߟߐ߲ߕߊ߫ ߢߌ߬ߡߊ߲߬ ߠߥߊߕߐ߫ ߊ߬ ߣߌ߫ ߢߌ߬ߡߊ߲߬ ߠߊߞߎ߲߬ߘߎ߲߬ߕߐ߫ ߌ ߓߊ߫ ߞߍ߫ ߜߊߛߊ߲ߠߌ߲߫ ߘߊ߲߬ߕߍ߰ߟߌ ߟߥߊ߫ ߟߊ߫.</string>
     <string name="app_license">WizeStream (WizeStream) ߦߋ߫ ߡߊ߬ߞߏ߬ߟߊ߬ߓߐ߬ ߛߎ߲ߝߘߍ߫ ߟߊߓߌ߬ߟߊ߬ߣߍ߲ ߠߋ߬ ߘߌ߫: ߌ ߘߌ߫ ߛߴߊ߬ ߟߊߓߊ߯ߙߊ߫ ߟߊ߫߸ ߞߵߊ߬ ߞߊ߬ߙߊ߲߬߸ ߞߵߊ߬ ߘߐߕߟߊ߫߸ ߊ߬ߣߌ߫ ߞߵߊ߬ ߟߊߢߊ߬ ߦߏ߫ ߊ߬ ߘߎߡߊ߲߫ ߌ ߢߍ߫ ߢߊ ߡߍ߲. ߊ߬ ߕߌ߯ߕߌ߮ ߘߐ߫߸ ߌ ߘߌ߫ ߛߴߊ߬ ߟߊߖߍ߲ߛߍ߲߫ ߠߊ߫ ߥߟߊ߫ ߞߊ߬ ߘߐ߬ߝߊ߬ߟߋ߲߬ߠߌ߲ ߞߍ߫ ߊ߬ ߘߐ߫ ߝߘߏ߬ߓߊ߬ ߟߊߘߌߢߍ߫ ߛߙߊߕߌ ߟߎ߬ ߞߘߐ߫ (GNU General Public License) ߦߏ߫ ߊ߬ ߟߊߖߍ߲ߛߍ߲ߣߍ߲߫ ߛߎ߲ߝߘߍ߫ ߟߊߓߌ߬ߟߊ߬ߣߍ߲ ߠߎ߬ ߛߌ߲ߘߌߘߊ ߓߟߏ߫ ߢߊ ߡߍ߲ (Free Software Foundation) ߊ߬ ߓߐߞߏ߫ ߃߲ ߘߐ߫߸ ߥߟߊ߫߸ ߌ ߛߊ߬ߥߏ߬ߣߍ߲߬ߕߊ ߟߊ߫ ߞߊ߬ ߓߍ߲߬ ߊ߬ ߓߐߞߏ߫ ߞߘߐ߫ ߛߌ߫ ߡߊ߬.</string>

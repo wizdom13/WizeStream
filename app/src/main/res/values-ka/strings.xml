@@ -298,8 +298,6 @@
     <string name="contribution_title">წვლილი შეიტანეთ</string>
     <string name="contribution_encouragement">გაქვთ თუ არა იდეები; თარგმანი, დიზაინის ცვლილებები, კოდის გაწმენდა ან კოდის რეალური მძიმე ცვლილებები — დახმარება ყოველთვის მისასალმებელია. რაც მეტი კეთდება მით უკეთესი!</string>
     <string name="view_on_github">ნახვა GitHub-ზე</string>
-    <string name="donation_title">შემოწირულობა</string>
-    <string name="give_back">დაბრუნება</string>
     <string name="website_title">საიტი</string>
     <string name="website_encouragement">ეწვიეთ WizeStream ვებსაიტს დამატებითი ინფორმაციისა და სიახლეებისთვის.</string>
     <string name="privacy_policy_title">WizeStream-ის კონფიდენციალურობის პოლიტიკა</string>
@@ -619,7 +617,6 @@
     <string name="tab_about">შესახებ &amp; ხშირად დასმული კითხვები</string>
     <string name="title_licenses">მესამე მხარის ლიცენზიები</string>
     <string name="copyright">© %1$s მიერ %2$s %3$s-ის ქვეშ</string>
-    <string name="donation_encouragement">NewPipe შემუშავებულია მოხალისეების მიერ, რომლებიც ატარებენ თავისუფალ დროს და მოგაქვთ საუკეთესო მომხმარებლის გამოცდილება. დაეხმარეთ დეველოპერებს, გააუმჯობესონ NewPipe, სანამ ფინჯანი ყავით ტკბებიან.</string>
     <string name="import_youtube_instructions">YouTube გამოწერების იმპორტი Google takeout-დან:
 \n
 \n 1. გადადით ამ URL-ზე: %1$s

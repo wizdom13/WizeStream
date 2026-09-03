@@ -204,9 +204,6 @@
     <string name="external_player_unsupported_link_type">Внешние плееры не поддерживают эти типы ссылок</string>
     <string name="video_streams_empty">Видеопотоки не найдены</string>
     <string name="audio_streams_empty">Аудиопотоки не найдены</string>
-    <string name="donation_title">Пожертвовать</string>
-    <string name="donation_encouragement">NewPipe разрабатывают волонтёры, которые тратят свободное время, чтобы сделать приложение как можно удобнее. Поддержите разработчиков и помогите им сделать NewPipe ещё лучше - хотя бы за чашкой кофе.</string>
-    <string name="give_back">Поддержать проект</string>
     <string name="website_title">Веб-сайт</string>
     <string name="website_encouragement">Для получения более подробной информации и последних новостей о WizeStream посетите наш веб-сайт.</string>
     <string name="drawer_open">Открыть боковую панель</string>

@@ -102,7 +102,6 @@
     <string name="msg_popup_permission">ᱱᱚᱶᱟ ᱞᱟᱹᱠᱛᱤᱭᱟᱱ ᱞᱟᱹᱠᱛᱤ ᱠᱟᱱᱟ_x000D_
 \nᱯᱚᱯ-ᱟᱯ ᱢᱚᱰ ᱨᱮ ᱮᱛᱦᱚᱵ ᱢᱮ</string>
     <string name="subtitle_activity_recaptcha">ᱡᱚᱠᱷᱚᱱ ᱥᱟᱦᱟᱣ ᱟᱠᱟᱱᱟ \"Done\" ᱚᱞ ᱢᱮ</string>
-    <string name="give_back">ᱨᱩᱣᱟ.</string>
     <string name="select_a_kiosk">ᱠᱤᱭᱳᱥᱠ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
     <string name="new_and_hot">ᱱᱟᱣᱟ ᱟᱨ ᱦᱮᱴ</string>
     <string name="recently_added">ᱱᱟᱦᱟᱜ ᱥᱮᱞᱮᱫ ᱟᱠᱟᱱᱟ</string>
@@ -480,7 +479,6 @@
     <string name="done">ᱜᱚᱴᱟ ᱟᱠᱟᱱᱟ</string>
     <string name="title_activity_about">WizeStream ᱵᱟᱵᱚᱛ</string>
     <string name="title_licenses">ᱯᱮᱨᱟᱜ ᱞᱟᱭᱥᱮᱱᱥ</string>
-    <string name="donation_title">ᱰᱳᱱᱮᱴ ᱢᱮ</string>
     <string name="no_one_listening">ᱡᱟᱦᱟᱸᱭ ᱜᱮᱭ ᱟᱸᱡᱚᱢᱟ</string>
     <string name="infinite_videos">∞ ᱵᱷᱤᱰᱤᱭᱳ</string>
     <string name="no_comments">ᱵᱟᱦᱟ ᱵᱟᱹᱱᱩᱜᱼᱟ</string>
@@ -492,7 +490,6 @@
     <string name="one_item_deleted">ᱢᱤᱫᱴᱟᱹᱝ ᱡᱤᱱᱤᱥ ᱵᱚᱫᱚᱞ ᱟᱠᱟᱱᱟ</string>
     <string name="recaptcha_request_toast">reCAPTCHA challenge ᱞᱟᱹᱠᱛᱤ ᱠᱟᱱᱟ</string>
     <string name="recaptcha_solve">ᱥᱚᱞᱦᱮ</string>
-    <string name="donation_encouragement">ᱱᱤᱭᱩ ᱯᱟᱭᱤᱯ ᱫᱚ ᱱᱤᱡᱮᱨᱟᱜ ᱚᱠᱛᱚ ᱟᱢᱟᱜ ᱵᱮᱵᱷᱟᱨᱤᱭᱟᱹ ᱵᱷᱟᱹᱜᱤ ᱵᱷᱟᱹᱜᱤ ᱥᱟᱹᱜᱟᱹᱭ ᱮᱢ ᱠᱟᱛᱮ ᱵᱮᱱᱟᱣ ᱟᱠᱟᱱᱟ ᱾ ᱱᱤᱣ ᱯᱟᱭᱤᱯ ᱵᱮᱨᱮᱫ ᱞᱟᱹᱜᱤᱫ ᱮᱱᱮᱢᱤᱭᱟᱹ ᱠᱚ ᱜᱚᱲᱚ ᱥᱚᱦᱚᱫ ᱮᱢ ᱢᱮ ᱾</string>
     <string name="website_title">ᱣᱮᱵᱽᱥᱟᱭᱤᱴ</string>
     <string name="app_license_title">WizeStream ᱨᱮᱭᱟᱜ ᱞᱟᱭᱥᱮᱱᱥ</string>
     <string name="app_license">ᱱᱤᱭᱩ ᱯᱟᱭᱯ ᱫᱚ ᱠᱚᱯᱤᱞᱮᱠᱴ ᱞᱤᱵᱨᱮ ᱥᱚᱯᱷᱴᱣᱮᱭᱟᱨ ᱠᱟᱱᱟ ᱾ ᱟᱢ ᱱᱚᱶᱟ ᱵᱮᱵᱷᱟᱨ, ᱯᱟᱲᱦᱟᱣ, ᱮᱴᱟᱜ ᱦᱚᱲ ᱥᱟᱶ ᱮᱢ ᱟᱨ ᱵᱮᱵᱚᱥᱛᱟ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾ ᱟᱢ ᱱᱚᱶᱟ GNU General Public License ᱞᱮᱠᱟᱛᱮ ᱯᱟᱨᱥᱟᱞ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱟᱨ/ᱟᱨᱵᱟᱝ Free Software Foundation ᱦᱚᱛᱮᱛᱮ ᱵᱮᱵᱦᱟᱨ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ, ᱡᱟᱦᱟᱸ ᱫᱚ ᱞᱟᱭᱥᱮᱱᱥ ᱨᱮᱱᱟᱜ ᱵᱟᱨᱥᱚᱱ ᱓ ᱥᱮ (ᱛᱟᱢᱟᱜ ᱵᱟᱪᱷᱟᱣ ᱞᱮᱠᱟᱛᱮ) ᱡᱟᱦᱟᱸᱱᱟᱜ ᱛᱟᱭᱚᱢ ᱵᱟᱨᱥᱚᱱ ᱠᱟᱱᱟ ᱾</string>

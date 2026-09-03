@@ -211,7 +211,6 @@
     <string name="error_report_title">चुकांचा अहवाल द्या</string>
     <string name="disabled">बंद झालेले</string>
     <string name="clear">साफ करा</string>
-    <string name="donation_title">दान करा</string>
     <string name="import_title">आत टाका</string>
     <string name="overwrite">आधी वर दबाव टाका</string>
     <string name="metadata_privacy_internal">आंतरिक</string>

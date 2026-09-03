@@ -700,9 +700,6 @@
     <string name="contribution_title">Contribute to WizeStream</string>
     <string name="contribution_encouragement">Report issues, review code, or contribute to the WizeStream fork on GitHub.</string>
     <string name="view_on_github">View on GitHub</string>
-    <string name="donation_title">Donate</string>
-    <string name="donation_encouragement">NewPipe is developed by volunteers spending their free time bringing you the best user experience. Give back to help developers make NewPipe even better while they enjoy a cup of coffee.</string>
-    <string name="give_back">Give back</string>
     <string name="website_title">Website</string>
     <string name="website_encouragement">Visit the WizeStream Website for more info and news.</string>
     <string name="privacy_policy_title">WizeStream\'s Privacy Policy</string>

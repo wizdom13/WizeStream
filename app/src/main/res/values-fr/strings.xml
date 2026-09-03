@@ -183,11 +183,8 @@
     <string name="hold_to_append">Maintenir pour ajouter à la file</string>
     <string name="start_here_on_background">Démarrer la lecture en arrière-plan</string>
     <string name="start_here_on_popup">Démarrer la lecture dans une fenêtre flottante</string>
-    <string name="donation_title">Faire un don</string>
-    <string name="donation_encouragement">NewPipe est développé par des bénévoles qui consacrent leur temps libre à vous offrir la meilleure expérience utilisateur possible. Contribuez à aider les développeurs à améliorer encore NewPipe tout en leur permettant de s\'offrir une tasse de café.</string>
     <string name="website_title">Site web</string>
     <string name="website_encouragement">Visitez le site Web de WizeStream pour plus d’informations et de nouvelles.</string>
-    <string name="give_back">Redonner</string>
     <string name="default_content_country_title">Pays du contenu par défaut</string>
     <string name="switch_to_background">Basculer en arrière-plan</string>
     <string name="switch_to_popup">Basculer en mode flottant</string>

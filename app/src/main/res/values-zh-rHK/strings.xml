@@ -378,7 +378,6 @@
     <string name="charset_letters_and_digits">字母同數目字</string>
     <string name="charset_most_special_characters">大部份嘅特殊字元</string>
     <string name="settings_category_downloads_title">下載</string>
-    <string name="donation_title">課金</string>
     <string name="subscriptions_export_unsuccessful">匯出唔到訂閱</string>
     <string name="caption_setting_description">修改播放器字幕大細同背景款式。要重新開過個 app 先會生效</string>
     <string name="subtitle_activity_recaptcha">執好就撳一下「搞掂」</string>
@@ -590,7 +589,6 @@
     <string name="tracks">單曲</string>
     <string name="clear_playback_states_summary">全部剷走晒播放到邊個位</string>
     <string name="error_report_open_github_notice">請睇過係咪已經有人喺度講緊你呢次彈 app 嘅狀況。若然重複發表已有嘅議題，就會嘥咗我哋可以真正用嚟修復其他錯漏嘅時間㗎喇。</string>
-    <string name="donation_encouragement">NewPipe 係由一班熱心人用空閒時間義務咁開發㗎，為咗帶畀你最佳嘅使用體驗。係時候慷慨解囊，撐返開發者嘅付出，使 NewPipe 更臻完美，同時畀杯咖啡佢哋嘆下。</string>
     <string name="local">站內</string>
     <string name="conferences">聚首</string>
     <string name="minimize_on_exit_title">轉 app 嘅時候借過</string>
@@ -614,7 +612,6 @@
     <string name="feed_use_dedicated_fetch_method_title">有得攞就攞特設摘要</string>
     <string name="feed_use_dedicated_fetch_method_enable_button">啟用快速模式</string>
     <string name="feed_use_dedicated_fetch_method_disable_button">停用快速模式</string>
-    <string name="give_back">少少無拘</string>
     <string name="watch_history_states_deleted">全部剷走咗播放到邊個位</string>
     <string name="select_quality_external_players">揀選外面嘅播放器用咩畫質</string>
     <string name="selected_stream_external_player_not_supported">外面嘅播放器唔支援揀選嘅串流</string>

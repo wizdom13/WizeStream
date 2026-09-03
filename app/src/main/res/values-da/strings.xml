@@ -215,9 +215,6 @@
     <string name="contribution_title">Bidrag</string>
     <string name="contribution_encouragement">Uanset om du har idéer til oversættelse, designændringer, oprydning i koden eller virkelig store kodeændringer, er hjælp altid velkommen. Jo mere der bliver gjort, jo bedre bliver det!</string>
     <string name="view_on_github">Se på GitHub</string>
-    <string name="donation_title">Donér</string>
-    <string name="donation_encouragement">NewPipe er udviklet af frivillige, der bruger deres fritid på at give dig den bedste brugeroplevelse. Giv noget tilbage og hjælp udviklerne med at gøre NewPipe endnu bedre, mens de nyder en kop kaffe.</string>
-    <string name="give_back">Giv tilbage</string>
     <string name="website_title">Hjemmeside</string>
     <string name="website_encouragement">Besøg WizeStream\'s hjemmeside for flere oplysninger og nyheder.</string>
     <string name="privacy_policy_title">WizeStream\'s Privatlivspolitik</string>

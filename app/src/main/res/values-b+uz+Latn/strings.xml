@@ -196,9 +196,6 @@
     <string name="privacy_policy_title">WizeStream-ning maxfiylik siyosati</string>
     <string name="website_encouragement">Qo\'shimcha ma\'lumot va yangiliklar uchun WizeStream veb-saytiga tashrif buyuring.</string>
     <string name="website_title">Websayt</string>
-    <string name="give_back">Qaytarib berish</string>
-    <string name="donation_title">Hadya etish</string>
-    <string name="donation_encouragement">NewPipe ko\'ngillilar tomonidan bo\'sh vaqtlarini sarflash orqali sizga eng yaxshi foydalanuvchi tajribasini taqdim etadi. Ishlab chiquvchilarga bir chashka qahvadan zavqlanib, NewPipe-ni yanada yaxshiroq qilishlariga yordam berish.</string>
     <string name="view_on_github">GitHubda ko\'rish</string>
     <string name="contribution_encouragement">Sizda g\'oyalar bormi; tarjima, dizayndagi o\'zgarishlar, kodni tozalash yoki haqiqiy og\'ir kodni o\'zgartirish - yordam har doim mamnuniyat bilan qabul qilinadi. Qancha ko\'p ish qilinsa, shuncha yaxshi bo\'ladi!</string>
     <string name="contribution_title">Hissa qo\'shish</string>
