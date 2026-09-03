@@ -4,6 +4,33 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.14.0 (`1014000`)
+
+### New features
+
+- Added a configurable global-search default so Search can prefer the current tab/context or the
+  current streaming service.
+- Kept the main bottom navigation or navigation rail available while Search is open, with direct
+  handoff back to the selected main destination.
+- Added a quick return-to-top action for What's New by reselecting the active What's New
+  navigation destination.
+
+### Improvements
+
+- Remembered What's New stream filters separately for each subscription group across app restarts.
+- Updated the live-stream-not-started prompt to use WizeStream's Material 3 dialog styling while
+  preserving Close and Retry behavior.
+
+### Fixes
+
+- Fixed the fullscreen-orientation regression that could fail to enter fullscreen in landscape,
+  remain fullscreen after returning to portrait, or leave a black video surface after exiting
+  fullscreen on affected devices.
+- Stabilized the video surface and fullscreen handoff so phone landscape rotation no longer gets
+  interrupted by the wide video-detail layout transition.
+
+[View the complete changes since v1.13.0](https://github.com/wizdom13/WizeStream/compare/v1.13.0...v1.14.0)
+
 ## WizeStream 1.13.0 (`1013000`)
 
 ### New features
