@@ -421,6 +421,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             // Close it because when changing orientation from portrait
             // (in fullscreen mode) the size of queue layout can be larger than the screen size
             closeItemsList();
+            syncFullscreenWithCurrentOrientation();
         } else if (ACTION_PLAY_PAUSE.equals(intent.getAction())) {
             // Ensure that we have audio-only stream playing when a user
             // started to play from notification's play button from outside of the app
@@ -1116,6 +1117,15 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 && !DeviceUtils.isTablet(context)) {
             setFullscreen(true);
         }
+    }
+
+    private void syncFullscreenWithCurrentOrientation() {
+        setFullscreen(VideoDetailFragment.fullscreenStateForOrientation(
+                context.getResources().getConfiguration().orientation,
+                isFullscreen,
+                isVerticalVideo,
+                DeviceUtils.isTablet(context),
+                player.isAudioOnly()));
     }
     //endregion
 

@@ -119,4 +119,20 @@ public class VideoDetailOrientationHandlingTest {
         assertFalse(VideoDetailFragment.shouldKeepDetailLayoutWhileFullscreen(
                 Configuration.ORIENTATION_LANDSCAPE, true, true));
     }
+
+    @Test
+    public void fullscreenReentryUsesAuthoritativeConfigurationOrientation() throws Exception {
+        final String fragment = Files.readString(projectDirectory.resolve(
+                "java/org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+        final String playerUi = Files.readString(projectDirectory.resolve(
+                "java/org/schabi/newpipe/player/ui/MainPlayerUi.java"));
+
+        assertTrue(fragment.contains("getResources().getConfiguration().orientation\n"
+                + "                                == Configuration.ORIENTATION_LANDSCAPE"));
+        assertFalse(fragment.contains("if (DeviceUtils.isLandscape(requireContext())\n"
+                + "                                && isPlayerAvailable()"));
+        assertTrue(playerUi.contains("syncFullscreenWithCurrentOrientation();"));
+        assertTrue(playerUi.contains(
+                "VideoDetailFragment.fullscreenStateForOrientation("));
+    }
 }

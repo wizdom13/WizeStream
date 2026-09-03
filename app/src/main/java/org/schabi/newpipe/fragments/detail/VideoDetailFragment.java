@@ -518,7 +518,7 @@ public final class VideoDetailFragment
         }
     }
 
-    static boolean fullscreenStateForOrientation(final int orientation,
+    public static boolean fullscreenStateForOrientation(final int orientation,
                                                  final boolean fullscreen,
                                                  final boolean verticalVideo,
                                                  final boolean tablet,
@@ -3317,7 +3317,8 @@ public final class VideoDetailFragment
                         setOverlayElementsClickable(false);
                         hideSystemUiIfNeeded();
                         // Conditions when the player should be expanded to fullscreen
-                        if (DeviceUtils.isLandscape(requireContext())
+                        if (getResources().getConfiguration().orientation
+                                == Configuration.ORIENTATION_LANDSCAPE
                                 && isPlayerAvailable()
                                 && player.isPlaying()
                                 && !isFullscreen()
