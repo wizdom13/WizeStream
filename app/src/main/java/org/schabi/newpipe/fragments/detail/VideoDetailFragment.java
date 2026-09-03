@@ -63,6 +63,7 @@ import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationBarView;
 
 import org.schabi.newpipe.App;
@@ -1354,7 +1355,7 @@ public final class VideoDetailFragment
             return;
         }
 
-        liveNotStartedDialog = new AlertDialog.Builder(activity)
+        liveNotStartedDialog = new MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.live_stream_not_started_title)
                 .setMessage(R.string.live_stream_not_started_message)
                 .setNegativeButton(R.string.close, null)

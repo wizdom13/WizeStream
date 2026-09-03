@@ -43,6 +43,11 @@ public class VideoDetailLiveStreamErrorTest {
 
         final String dialog = source.substring(dialogStart, dialogEnd);
         assertTrue(dialog.contains("handleError();"));
+        assertTrue(source.contains(
+                "import com.google.android.material.dialog."
+                        + "MaterialAlertDialogBuilder;"));
+        assertTrue(dialog.contains(
+                "new MaterialAlertDialogBuilder(activity)"));
         assertTrue(dialog.contains(
                 ".setTitle(R.string.live_stream_not_started_title)"));
         assertTrue(dialog.contains(
