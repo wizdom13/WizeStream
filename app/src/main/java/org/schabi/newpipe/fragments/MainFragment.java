@@ -323,7 +323,7 @@ public class MainFragment extends BaseFragment
     public boolean onOptionsItemSelected(final MenuItem item) {
         if (item.getItemId() == R.id.action_search) {
             final ContextualSearchable searchable = getCurrentContextualSearchable();
-            if (searchable != null) {
+            if (shouldUseContextualSearch(prefersGlobalSearch(), searchable != null)) {
                 openContextualSearch(searchable);
                 return true;
             }
@@ -336,6 +336,19 @@ public class MainFragment extends BaseFragment
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean prefersGlobalSearch() {
+        final String defaultValue = getString(R.string.search_button_behavior_current_tab_value);
+        final String configuredValue = prefs.getString(
+                getString(R.string.search_button_behavior_key), defaultValue);
+        return getString(R.string.search_button_behavior_current_service_value)
+                .equals(configuredValue);
+    }
+
+    static boolean shouldUseContextualSearch(final boolean preferGlobalSearch,
+                                             final boolean contextualSearchAvailable) {
+        return !preferGlobalSearch && contextualSearchAvailable;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

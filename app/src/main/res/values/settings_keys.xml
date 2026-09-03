@@ -1745,4 +1745,17 @@
     <string name="sponsor_block_category_non_music_key">sponsor_block_category_non_music</string>
     <string name="sponsor_block_category_preview_key">sponsor_block_category_preview</string>
     <string name="sponsor_block_category_filler_key">sponsor_block_category_filler</string>
+
+    <!-- Search behavior -->
+    <string name="search_button_behavior_key">search_button_behavior</string>
+    <string name="search_button_behavior_current_tab_value">current_tab</string>
+    <string name="search_button_behavior_current_service_value">current_service</string>
+    <string-array name="search_button_behavior_values">
+        <item>@string/search_button_behavior_current_tab_value</item>
+        <item>@string/search_button_behavior_current_service_value</item>
+    </string-array>
+    <string-array name="search_button_behavior_entries">
+        <item>@string/search_button_behavior_current_tab</item>
+        <item>@string/search_button_behavior_current_service</item>
+    </string-array>
 </resources>

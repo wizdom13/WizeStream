@@ -1579,4 +1579,9 @@
     <string name="delete_saved_search_feed">Delete saved search feed</string>
     <string name="delete_saved_search_feed_confirmation">Delete this saved search feed and its cached results?</string>
     <string name="saved_search_feed_delete_failed">Could not delete this saved search feed</string>
+
+    <string name="search_button_behavior_title">Search button behavior</string>
+    <string name="search_button_behavior_summary">Choose whether Search filters the current tab first or opens search for the current service</string>
+    <string name="search_button_behavior_current_tab">Search current tab</string>
+    <string name="search_button_behavior_current_service">Search current service</string>
 </resources>
