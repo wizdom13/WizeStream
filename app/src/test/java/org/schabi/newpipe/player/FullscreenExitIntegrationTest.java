@@ -18,52 +18,54 @@ public class FullscreenExitIntegrationTest {
                 "org/schabi/newpipe/player/gesture/MainPlayerGestureListener.kt");
         final String onScrollEnd = methodBody(source, "override fun onScrollEnd");
 
-        assertTrue(onScrollEnd.contains("playerUi.toggleFullscreenWithOrientation()"));
+        assertTrue(onScrollEnd.contains(
+                "playerUi.toggleFullscreenWithOrientation()"));
         assertFalse(onScrollEnd.contains("playerUi.toggleFullscreen()"));
     }
 
     @Test
-    public void orientationAwareActionUsesRotationCallbackWithDirectFallback() throws Exception {
+    public void orientationAwareActionUsesRotationCallbackWithDirectFallback()
+            throws Exception {
         final String source = read("org/schabi/newpipe/player/ui/MainPlayerUi.java");
-        final String toggle = methodBody(source, "public void toggleFullscreenWithOrientation()");
+        final String toggle = methodBody(
+                source, "public void toggleFullscreenWithOrientation()");
 
-        assertTrue(toggle.contains("PlayerServiceEventListener::onScreenRotationButtonClicked"));
+        assertTrue(toggle.contains(
+                "PlayerServiceEventListener::onScreenRotationButtonClicked"));
         assertTrue(toggle.contains("toggleFullscreen();"));
     }
 
     @Test
-    public void rotationButtonDefersFullscreenUntilTargetOrientation() throws Exception {
+    public void rotationButtonLetsConfigurationCallbackOwnFullscreenState()
+            throws Exception {
         final String source = read(
                 "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
-        final String rotation = methodBody(source,
-                "public void onScreenRotationButtonClicked()");
+        final String rotation = methodBody(
+                source, "public void onScreenRotationButtonClicked()");
 
-        assertTrue(rotation.contains(
-                "if (isTargetFullscreenOrientation(currentOrientation, fullscreen))"));
-        assertTrue(rotation.contains("ui.setFullscreen(fullscreen);"));
+        assertTrue(rotation.contains("DeviceUtils.isLandscape(requireContext())"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_SENSOR_LANDSCAPE"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_PORTRAIT"));
-        assertFalse(rotation.contains("DeviceUtils.isLandscape(requireContext())"));
+        assertTrue(rotation.contains(
+                "activity.setRequestedOrientation(newOrientation)"));
+        assertFalse(rotation.contains("isTargetFullscreenOrientation"));
+        assertFalse(rotation.contains("ui.setFullscreen(fullscreen)"));
+    }
+
+
+    @Test
+    public void landscapeAutoFullscreenDoesNotDependOnTransientPlaybackState()
+            throws Exception {
+        final String playerUi = read("org/schabi/newpipe/player/ui/MainPlayerUi.java");
+        final String checkLandscape = methodBody(
+                playerUi, "public void checkLandscape()");
+        assertTrue(checkLandscape.contains("setFullscreen(true);"));
+        assertFalse(checkLandscape.contains("STATE_COMPLETED"));
+        assertFalse(checkLandscape.contains("STATE_PAUSED"));
     }
 
     @Test
-    public void initialFullscreenRotationDoesNotRequireABoundPlayer() throws Exception {
-        final String source = read(
-                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
-        final String rotation = methodBody(source,
-                "public void onScreenRotationButtonClicked()");
-
-        final int missingPlayerGuard = rotation.indexOf("if (!isPlayerAvailable())");
-        final int playerAccess = rotation.indexOf("player.UIs().get(MainPlayerUi.class)");
-        assertTrue("Missing-player guard must exist", missingPlayerGuard >= 0);
-        assertTrue("Missing-player guard must run before player access",
-                missingPlayerGuard < playerAccess);
-        assertTrue(rotation.substring(missingPlayerGuard, playerAccess).contains(
-                "SCREEN_ORIENTATION_SENSOR_LANDSCAPE"));
-    }
-
-    @Test
-    public void explicitFullscreenSetterIsIdempotent() throws Exception {
+    public void explicitFullscreenSetterRemainsIdempotent() throws Exception {
         final String source = read("org/schabi/newpipe/player/ui/MainPlayerUi.java");
         final String setter = methodBody(source, "public void setFullscreen(");
 
@@ -76,7 +78,8 @@ public class FullscreenExitIntegrationTest {
     public void backExitsFullscreenWithoutPausingPlayback() throws Exception {
         final String source = read(
                 "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
-        final String onBackPressed = methodBody(source, "public boolean onBackPressed()");
+        final String onBackPressed = methodBody(
+                source, "public boolean onBackPressed()");
 
         assertTrue(onBackPressed.contains("restoreDefaultOrientation();"));
         assertFalse(onBackPressed.contains("player.pause();"));

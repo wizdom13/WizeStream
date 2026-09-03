@@ -1106,6 +1106,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         return !verticalVideo || landscape && screenOrientationLocked;
     }
 
+
     public void checkLandscape() {
         // check if landscape is correct
         final boolean videoInLandscapeButNotInFullscreen = isLandscape()
@@ -1117,6 +1118,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             setFullscreen(true);
         }
     }
+
     //endregion
 
 
