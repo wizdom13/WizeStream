@@ -1,0 +1,6 @@
+• Added configurable global search behavior.
+• Kept main navigation visible while Search is open.
+• Remembered What's New filters per subscription group.
+• Reselect What's New to jump quickly back to the top.
+• Fixed fullscreen rotation and black video after exiting fullscreen.
+• Updated the live-not-started prompt to a Material 3 dialog.
