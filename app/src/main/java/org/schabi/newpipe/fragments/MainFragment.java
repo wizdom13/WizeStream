@@ -52,6 +52,7 @@ import org.schabi.newpipe.databinding.FragmentMainBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
+import org.schabi.newpipe.local.feed.FeedFragment;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
@@ -473,6 +474,7 @@ public class MainFragment extends BaseFragment
             final int position = getBottomNavigationItemPosition(item.getItemId());
             if (position >= 0 && position < tabsList.size()) {
                 updateTitleForTab(position);
+                scrollCurrentFeedToTop(position);
             }
         });
     }
@@ -496,6 +498,17 @@ public class MainFragment extends BaseFragment
             return;
         }
         setTitle(tabsList.get(tabPosition).getTabName(requireContext()));
+    }
+
+    private void scrollCurrentFeedToTop(final int position) {
+        if (pagerAdapter == null || position < 0 || position >= tabsList.size()
+                || tabsList.get(position).getTabId() != Tab.FeedTab.ID) {
+            return;
+        }
+        final Fragment primaryFragment = pagerAdapter.getPrimaryFragment();
+        if (primaryFragment instanceof FeedFragment feedFragment) {
+            feedFragment.scrollToTop();
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -1020,6 +1033,7 @@ public class MainFragment extends BaseFragment
             Log.d(TAG, "onTabReselected() called with: tab = [" + tab + "]");
         }
         updateTitleForTab(tab.getPosition());
+        scrollCurrentFeedToTop(tab.getPosition());
     }
 
     public static final class SelectedTabsPagerAdapter

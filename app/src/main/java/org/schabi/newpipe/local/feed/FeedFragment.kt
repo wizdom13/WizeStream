@@ -259,9 +259,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             !feedHeaderExpanded || feedBinding.itemsList.canScrollVertically(-1)
         }
         feedBinding.newItemsLoadedButton.setOnClickListener {
-            hideNewItemsLoaded(true)
-            feedBinding.itemsList.scrollToPosition(0)
-            feedBinding.feedHeader.setExpanded(true, true)
+            scrollToTop()
         }
         feedBinding.streamFilterChips.streamFilterChipGroup
             .setOnCheckedStateChangeListener { _, checkedIds ->
@@ -273,6 +271,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 }
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
+    }
+
+    fun scrollToTop() {
+        val binding = _feedBinding ?: return
+        if (tryGetNewItemsLoadedButton()?.isVisible == true) {
+            hideNewItemsLoaded(true)
+        }
+        binding.itemsList.stopScroll()
+        binding.itemsList.scrollToPosition(0)
+        binding.feedHeader.setExpanded(true, true)
     }
 
     // /////////////////////////////////////////////////////////////////////////
