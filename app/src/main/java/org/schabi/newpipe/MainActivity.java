@@ -53,6 +53,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
+import androidx.core.view.MenuItemCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
@@ -60,6 +61,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.navigation.NavigationBarView;
 
 import org.schabi.newpipe.databinding.ActivityMainBinding;
 import org.schabi.newpipe.databinding.DrawerHeaderBinding;
@@ -81,6 +83,7 @@ import org.schabi.newpipe.fragments.list.search.SearchFragment;
 import org.schabi.newpipe.local.feed.notifications.NotificationWorker;
 import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.pip.NativePipController;
@@ -90,6 +93,10 @@ import org.schabi.newpipe.settings.tabs.DrawerServiceSectionsPolicy;
 import org.schabi.newpipe.settings.tabs.HomeDestinationKey;
 import org.schabi.newpipe.settings.tabs.HomeDestinationResolver;
 import org.schabi.newpipe.settings.tabs.HomeDrawerPolicy;
+import org.schabi.newpipe.settings.tabs.HomeNavigationMode;
+import org.schabi.newpipe.settings.tabs.HomeNavigationModeResolver;
+import org.schabi.newpipe.settings.tabs.Tab;
+import org.schabi.newpipe.settings.tabs.TabletNavigationPositionResolver;
 import org.schabi.newpipe.settings.tabs.TabsManager;
 import org.schabi.newpipe.settings.migration.MigrationManager;
 import org.schabi.newpipe.util.Constants;
@@ -149,11 +156,17 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_YOUTUBE_MUSIC = 10_000;
 
     private static final int ORDER = 0;
+    private static final int SEARCH_BOTTOM_NAVIGATION_MAX_ITEM_COUNT = 5;
+    private static final int SEARCH_NAVIGATION_RAIL_MAX_ITEM_COUNT = 7;
+    private static final int SEARCH_NAVIGATION_ITEM_ID_BASE = 20_000;
     public static final String KEY_IS_IN_BACKGROUND = "is_in_background";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
     private NativePipController nativePipController;
+    private boolean searchNavigationActive;
+    private int lastMainTabPosition;
+    private int pendingMainTabPosition = -1;
     /*//////////////////////////////////////////////////////////////////////////
     // Activity's LifeCycle
     //////////////////////////////////////////////////////////////////////////*/
@@ -956,6 +969,242 @@ public class MainActivity extends AppCompatActivity {
     public void setContextualSearchToolbarActive(final boolean active) {
         contextualSearchToolbarActive = active;
         updateDrawerNavigation();
+    }
+
+    public void rememberMainTabPosition(final int position) {
+        if (position >= 0) {
+            lastMainTabPosition = position;
+        }
+    }
+
+    public int consumePendingMainTabPosition() {
+        final int pendingPosition = pendingMainTabPosition;
+        pendingMainTabPosition = -1;
+        return pendingPosition;
+    }
+
+    public void showMainNavigationForSearch() {
+        searchNavigationActive = true;
+        final List<Tab> tabs = TabsManager.getManager(this).getTabs();
+        if (tabs.isEmpty()) {
+            hideSearchNavigationViews();
+            return;
+        }
+
+        final int orientation = getResources().getConfiguration().orientation;
+        final int positionKey = orientation == Configuration.ORIENTATION_LANDSCAPE
+                ? R.string.tablet_navigation_landscape_position_key
+                : R.string.tablet_navigation_portrait_position_key;
+        final String defaultPosition = getString(R.string.tablet_navigation_position_default_value);
+        final String configuredPosition = sharedPreferences.getString(
+                getString(positionKey), defaultPosition);
+        final boolean tablet = DeviceUtils.isTablet(this);
+        final boolean useNavigationRail = TabletNavigationPositionResolver.useNavigationRail(
+                tablet, orientation, configuredPosition);
+        final NavigationBarView navigation = useNavigationRail
+                ? mainBinding.mainNavigationRail : mainBinding.mainBottomNavigation;
+        final NavigationBarView otherNavigation = useNavigationRail
+                ? mainBinding.mainBottomNavigation : mainBinding.mainNavigationRail;
+        clearSearchNavigationView(otherNavigation);
+
+        final int itemLimit = useNavigationRail
+                ? SEARCH_NAVIGATION_RAIL_MAX_ITEM_COUNT
+                : SEARCH_BOTTOM_NAVIGATION_MAX_ITEM_COUNT;
+        final boolean mainTabsAtBottom = sharedPreferences.getBoolean(
+                getString(R.string.main_tabs_position_key), true);
+        final HomeNavigationMode navigationMode = HomeNavigationModeResolver
+                .resolveNavigationMode(tabs.size(), mainTabsAtBottom);
+        final boolean showNavigation = shouldShowSearchNavigation(
+                tablet,
+                tabs.size(),
+                itemLimit,
+                navigationMode == HomeNavigationMode.BOTTOM_NAVIGATION);
+        if (!showNavigation) {
+            clearSearchNavigationView(navigation);
+            resetSearchNavigationContentInsets();
+            notifySearchNavigationVisibilityChanged();
+            return;
+        }
+
+        populateSearchNavigation(navigation, tabs);
+        applySearchNavigationContentInsets(useNavigationRail);
+        navigation.setTag(Boolean.TRUE);
+        if (playerCoversMainNavigation()) {
+            navigation.setVisibility(View.INVISIBLE);
+        } else {
+            navigation.setVisibility(View.VISIBLE);
+        }
+        navigation.bringToFront();
+        notifySearchNavigationVisibilityChanged();
+    }
+
+    public void hideMainNavigationForSearch() {
+        if (!searchNavigationActive) {
+            return;
+        }
+        searchNavigationActive = false;
+        hideSearchNavigationViews();
+    }
+
+    private void hideSearchNavigationViews() {
+        clearSearchNavigationView(mainBinding.mainBottomNavigation);
+        clearSearchNavigationView(mainBinding.mainNavigationRail);
+        resetSearchNavigationContentInsets();
+        notifySearchNavigationVisibilityChanged();
+    }
+
+    private void populateSearchNavigation(@NonNull final NavigationBarView navigation,
+                                          @NonNull final List<Tab> tabs) {
+        navigation.setOnItemSelectedListener(null);
+        navigation.setOnItemReselectedListener(null);
+        final Menu menu = navigation.getMenu();
+        menu.clear();
+
+        final int selectedPosition = normalizeSearchNavigationTabPosition(
+                lastMainTabPosition, tabs.size());
+        lastMainTabPosition = selectedPosition;
+        for (int index = 0; index < tabs.size(); index++) {
+            final Tab tab = tabs.get(index);
+            final String tabName = tab.getTabName(this);
+            final MenuItem item = menu.add(Menu.NONE,
+                    SEARCH_NAVIGATION_ITEM_ID_BASE + index,
+                    index,
+                    getSearchNavigationDisplayLabel(tab, tabName));
+            final int iconRes = tab.getTabIconRes(this);
+            item.setIcon(iconRes > 0 ? iconRes : R.drawable.ic_asterisk);
+            item.setCheckable(true);
+            item.setChecked(index == selectedPosition);
+            MenuItemCompat.setContentDescription(item, tabName);
+        }
+        applySearchNavigationLabelVisibility(navigation);
+        navigation.setAlpha(1.0f);
+        navigation.setTranslationX(0.0f);
+        navigation.setTranslationY(0.0f);
+        navigation.setOnItemSelectedListener(item -> {
+            final int position = item.getItemId() - SEARCH_NAVIGATION_ITEM_ID_BASE;
+            if (position < 0 || position >= tabs.size()) {
+                return false;
+            }
+            lastMainTabPosition = position;
+            pendingMainTabPosition = position;
+            NavigationHelper.gotoMainFragment(getSupportFragmentManager());
+            return true;
+        });
+    }
+
+    private String getSearchNavigationDisplayLabel(@NonNull final Tab tab,
+                                                   @NonNull final String tabName) {
+        if (tab instanceof Tab.KioskTab
+                && "live".equals(((Tab.KioskTab) tab).getKioskId())) {
+            return getString(R.string.duration_live);
+        }
+        if (tab instanceof Tab.DefaultKioskTab
+                && getString(R.string.recommended_lives).equals(tabName)) {
+            return getString(R.string.duration_live);
+        }
+        if (tab.getTabId() == Tab.BookmarksTab.ID) {
+            return getString(R.string.bottom_navigation_tab_bookmarks);
+        }
+        return tabName;
+    }
+
+    private void applySearchNavigationLabelVisibility(@NonNull final NavigationBarView navigation) {
+        final String defaultValue = getString(R.string.bottom_navigation_labels_default_value);
+        final String configuredValue = sharedPreferences.getString(
+                getString(R.string.bottom_navigation_labels_key), defaultValue);
+        final int labelVisibilityMode;
+        if (getString(R.string.bottom_navigation_labels_always_value)
+                .equals(configuredValue)) {
+            labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_LABELED;
+        } else if (getString(R.string.bottom_navigation_labels_hidden_value)
+                .equals(configuredValue)) {
+            labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_UNLABELED;
+        } else {
+            labelVisibilityMode = NavigationBarView.LABEL_VISIBILITY_SELECTED;
+        }
+        navigation.setLabelVisibilityMode(labelVisibilityMode);
+    }
+
+    private void clearSearchNavigationView(@NonNull final NavigationBarView navigation) {
+        navigation.setOnItemSelectedListener(null);
+        navigation.setOnItemReselectedListener(null);
+        navigation.getMenu().clear();
+        navigation.setTag(Boolean.FALSE);
+        navigation.setAlpha(1.0f);
+        navigation.setTranslationX(0.0f);
+        navigation.setTranslationY(0.0f);
+        navigation.setVisibility(View.GONE);
+    }
+
+    private boolean playerCoversMainNavigation() {
+        final BottomSheetBehavior<?> behavior = BottomSheetBehavior.from(
+                mainBinding.fragmentPlayerHolder);
+        final int state = behavior.getState();
+        return state == BottomSheetBehavior.STATE_EXPANDED
+                || state == BottomSheetBehavior.STATE_DRAGGING
+                || state == BottomSheetBehavior.STATE_SETTLING
+                || state == BottomSheetBehavior.STATE_HALF_EXPANDED;
+    }
+
+    private void applySearchNavigationContentInsets(final boolean navigationRail) {
+        final int startInset = navigationRail
+                ? getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width) : 0;
+        final int bottomInset = navigationRail
+                ? 0 : getResources().getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
+        setSearchNavigationStartMargin(mainBinding.fragmentHolder, startInset);
+        setSearchNavigationStartMargin(mainBinding.toolbarLayout.getRoot(), startInset);
+        setSearchNavigationBottomMargin(mainBinding.fragmentHolder, bottomInset);
+    }
+
+    private void resetSearchNavigationContentInsets() {
+        setSearchNavigationStartMargin(mainBinding.fragmentHolder, 0);
+        setSearchNavigationStartMargin(mainBinding.toolbarLayout.getRoot(), 0);
+        setSearchNavigationBottomMargin(mainBinding.fragmentHolder, 0);
+    }
+
+    private static void setSearchNavigationStartMargin(@NonNull final View view,
+                                                       final int margin) {
+        if (!(view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        final ViewGroup.MarginLayoutParams params =
+                (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+        if (params.getMarginStart() != margin) {
+            params.setMarginStart(margin);
+            view.setLayoutParams(params);
+        }
+    }
+
+    private static void setSearchNavigationBottomMargin(@NonNull final View view,
+                                                        final int margin) {
+        if (!(view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        final ViewGroup.MarginLayoutParams params =
+                (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+        if (params.bottomMargin != margin) {
+            params.bottomMargin = margin;
+            view.setLayoutParams(params);
+        }
+    }
+
+    private void notifySearchNavigationVisibilityChanged() {
+        final BottomSheetBehavior<?> behavior = BottomSheetBehavior.from(
+                mainBinding.fragmentPlayerHolder);
+        if (behavior instanceof CustomBottomSheetBehavior customBehavior) {
+            customBehavior.onBottomNavigationVisibilityChanged();
+        }
+    }
+
+    static boolean shouldShowSearchNavigation(final boolean tablet,
+                                              final int tabCount,
+                                              final int itemLimit,
+                                              final boolean phoneUsesBottomNavigation) {
+        return tablet ? tabCount <= itemLimit : phoneUsesBottomNavigation;
+    }
+
+    static int normalizeSearchNavigationTabPosition(final int position, final int tabCount) {
+        return position >= 0 && position < tabCount ? position : 0;
     }
 
     private void handleIntent(final Intent intent) {
