@@ -58,12 +58,14 @@ public class SleepTimerResourcesTest {
     @Test
     public void playerHandlesDurationAndNaturalPlaybackEndpoints() throws Exception {
         final String player = Files.readString(sourceDirectory.resolve(
-                "org/schabi/newpipe/player/Player.java"));
+                "org/schabi/newpipe/player/Player.kt"));
+        final String listenerController = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/player/PlayerMedia3ListenerController.kt"));
         final String controller = Files.readString(sourceDirectory.resolve(
                 "org/schabi/newpipe/player/SleepTimerPlaybackController.kt"));
 
-        assertTrue(player.contains("sleepTimerController.onItemEnded"));
-        assertTrue(player.contains("DISCONTINUITY_REASON_AUTO_TRANSITION"));
+        assertTrue(listenerController.contains("sleepTimerController.onItemEnded"));
+        assertTrue(listenerController.contains("DISCONTINUITY_REASON_AUTO_TRANSITION"));
         assertTrue(player.contains("sleepTimerController.startDuration"));
         assertTrue(controller.contains("timer.hasDurationExpired()"));
         assertTrue(controller.contains("setVolumeMultiplier(1.0f)"));

@@ -29,18 +29,18 @@ public class VideoPlayerUiAspectRatioTransitionTest {
     @Test
     public void cachedPreviousQueueItemAlsoClearsThePreviousVideoAspectRatio() throws Exception {
         final String playerSource = Files.readString(mainDirectory.resolve(
-                "java/org/schabi/newpipe/player/Player.java"));
+                "java/org/schabi/newpipe/player/PlayerMedia3ListenerController.kt"));
         final String uiSource = Files.readString(mainDirectory.resolve(
                 "java/org/schabi/newpipe/player/ui/VideoPlayerUi.java"));
 
         final int itemChangeStart = playerSource.indexOf(
                 "if (newIndex != oldPosition.mediaItemIndex)");
         final int discontinuitySwitchStart = playerSource.indexOf(
-                "switch (discontinuityReason)", itemChangeStart);
+                "when (reason)", itemChangeStart);
         assertTrue(itemChangeStart >= 0);
         assertTrue(discontinuitySwitchStart > itemChangeStart);
         assertTrue(playerSource.substring(itemChangeStart, discontinuitySwitchStart)
-                .contains("UIs.call(PlayerUi::onMediaItemTransition)"));
+                .contains("player.UIs().call(PlayerUi::onMediaItemTransition)"));
         final int transitionMethodStart = uiSource.indexOf(
                 "public void onMediaItemTransition()");
         final int playingMethodStart = uiSource.indexOf(

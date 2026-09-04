@@ -30,12 +30,15 @@ public class LocalPlaylistShuffleIntegrationTest {
 
     @Test
     public void playerRestoresTheQueueShuffleState() throws Exception {
-        final String player = read("java/org/schabi/newpipe/player/Player.java");
+        final String lifecycleController = read(
+                "java/org/schabi/newpipe/player/PlayerLifecycleController.kt");
+        final String queueModeController = read(
+                "java/org/schabi/newpipe/player/PlayerQueueModeController.kt");
 
-        assertTrue(player.contains(
-                "simpleExoPlayer.setShuffleModeEnabled(playQueue.isShuffled())"));
-        assertTrue(player.contains("shuffleModeEnabled && !playQueue.isShuffled()"));
-        assertTrue(player.contains("!shuffleModeEnabled && playQueue.isShuffled()"));
+        assertTrue(lifecycleController.contains(
+                "player.exoPlayer.shuffleModeEnabled = queue.isShuffled"));
+        assertTrue(queueModeController.contains("shuffleModeEnabled && !queue.isShuffled"));
+        assertTrue(queueModeController.contains("!shuffleModeEnabled && queue.isShuffled"));
     }
 
     private String read(final String relativePath) throws Exception {
