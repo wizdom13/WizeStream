@@ -36,4 +36,25 @@ public class PlayQueueItemTest {
                 "Local", URL, 1, null, null, null, null, 1, false, null);
         assertFalse(local.isSameItem(PlayQueueTest.makeItemWithUrl(URL)));
     }
+
+    @Test
+    public void embeddedLocalMetadataReplacesScannerValuesAndPreservesMissingTags() {
+        final PlayQueueItem local = PlayQueueItem.localMedia(
+                "Music folder", URL, 0, "Scanner artist", "Scanner album",
+                "Music folder", "audio/ogg", 1, false, null);
+
+        assertTrue(local.applyLocalMetadata("Embedded title", "Embedded artist", null, 182));
+        assertEquals("Embedded title", local.getTitle());
+        assertEquals("Embedded artist", local.getUploader());
+        assertEquals("Scanner album", local.getAlbum());
+        assertEquals(182, local.getDuration());
+        assertFalse(local.applyLocalMetadata(null, "", null, 0));
+    }
+
+    @Test
+    public void remoteMetadataCannotBeMutatedByTheLocalMetadataPath() {
+        final PlayQueueItem remote = PlayQueueTest.makeItemWithUrl(URL);
+
+        assertFalse(remote.applyLocalMetadata("Changed", "Changed", "Changed", 999));
+    }
 }
