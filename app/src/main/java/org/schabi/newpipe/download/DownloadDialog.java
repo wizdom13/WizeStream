@@ -846,61 +846,45 @@ public class DownloadDialog extends DialogFragment
 
     private void prepareSelectedDownload() {
         final StoredDirectoryHelper mainStorage;
-        final MediaFormat format;
+        final DownloadOutputPlan outputPlan;
         final String selectedMediaType;
-        long size;
 
         // first, build the filename and get the output folder (if possible)
         // later, run a very very very large file checking logic
 
-        filenameTmp = getNameEditText().concat(".");
+        final String baseFilename = getNameEditText();
 
         final int checkedRadioButtonId = dialogBinding.videoAudioGroup.getCheckedRadioButtonId();
         if (checkedRadioButtonId == R.id.audio_button) {
             selectedMediaType = getString(R.string.last_download_type_audio_key);
             mainStorage = mainStorageAudio;
-            format = audioStreamsAdapter.getItem(selectedAudioIndex).getFormat();
-            size = getWrappedAudioStreams().getSizeInBytes(selectedAudioIndex);
-            if (isMp3OutputSelected()) {
-                mimeTmp = MediaFormat.MP3.mimeType;
-                filenameTmp += MediaFormat.MP3.getSuffix();
-                if (Mp3DownloadPolicy.shouldTranscode(true, format)) {
-                    size = Mp3OutputOptions.estimateRequiredBytes(size,
-                            currentInfo.getDuration(), getSelectedMp3Bitrate());
-                }
-            } else if (format == MediaFormat.WEBMA_OPUS) {
-                mimeTmp = "audio/ogg";
-                filenameTmp += "opus";
-            } else if (format != null) {
-                mimeTmp = format.mimeType;
-                filenameTmp += format.getSuffix();
-            }
+            outputPlan = DownloadOutputPlanFactory.forAudio(
+                    baseFilename,
+                    audioStreamsAdapter.getItem(selectedAudioIndex).getFormat(),
+                    getWrappedAudioStreams().getSizeInBytes(selectedAudioIndex),
+                    currentInfo.getDuration(),
+                    isMp3OutputSelected(),
+                    getSelectedMp3Bitrate());
         } else if (checkedRadioButtonId == R.id.video_button) {
             selectedMediaType = getString(R.string.last_download_type_video_key);
             mainStorage = mainStorageVideo;
-            format = videoStreamsAdapter.getItem(selectedVideoIndex).getFormat();
-            size = wrappedVideoStreams.getSizeInBytes(selectedVideoIndex);
-            if (format != null) {
-                mimeTmp = format.mimeType;
-                filenameTmp += format.getSuffix();
-            }
+            outputPlan = DownloadOutputPlanFactory.forVideo(
+                    baseFilename,
+                    videoStreamsAdapter.getItem(selectedVideoIndex).getFormat(),
+                    wrappedVideoStreams.getSizeInBytes(selectedVideoIndex));
         } else if (checkedRadioButtonId == R.id.subtitle_button) {
             selectedMediaType = getString(R.string.last_download_type_subtitle_key);
             mainStorage = mainStorageVideo; // subtitle & video files go together
-            format = subtitleStreamsAdapter.getItem(selectedSubtitleIndex).getFormat();
-            size = wrappedSubtitleStreams.getSizeInBytes(selectedSubtitleIndex);
-            if (format != null) {
-                mimeTmp = format.mimeType;
-            }
-
-            if (format == MediaFormat.TTML) {
-                filenameTmp += MediaFormat.SRT.getSuffix();
-            } else if (format != null) {
-                filenameTmp += format.getSuffix();
-            }
+            outputPlan = DownloadOutputPlanFactory.forSubtitle(
+                    baseFilename,
+                    subtitleStreamsAdapter.getItem(selectedSubtitleIndex).getFormat(),
+                    wrappedSubtitleStreams.getSizeInBytes(selectedSubtitleIndex));
         } else {
             throw new RuntimeException("No stream selected");
         }
+
+        filenameTmp = outputPlan.getFilename();
+        mimeTmp = outputPlan.getMimeType();
 
         if (!askForSavePath && (mainStorage == null
                 || mainStorage.isDirect() == NewPipeSettings.useStorageAccessFramework(context)
@@ -945,7 +929,7 @@ public class DownloadDialog extends DialogFragment
 
         // Check for free storage space
         final long freeSpace = mainStorage.getFreeStorageSpace();
-        if (freeSpace <= size) {
+        if (freeSpace <= outputPlan.getEstimatedSize()) {
             Toast.makeText(context, getString(R.
                     string.error_insufficient_storage), Toast.LENGTH_LONG).show();
             // move the user to storage setting tab
