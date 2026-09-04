@@ -164,20 +164,21 @@ internal class SleepTimerPlaybackController(private val player: Player) {
         }
     }
 
-    fun remainingMillis(): Long =
-        when (timer.mode) {
-            SleepTimer.Mode.DURATION -> timer.durationRemainingMillis
-            SleepTimer.Mode.END_OF_CURRENT -> {
-                if (currentQueueItem() === currentItemTarget) {
-                    currentItemRemainingMillis()
-                } else {
-                    SleepTimer.REMAINING_TIME_UNSET
-                }
-            }
+    fun remainingMillis(): Long = when (timer.mode) {
+        SleepTimer.Mode.DURATION -> timer.durationRemainingMillis
 
-            SleepTimer.Mode.END_OF_QUEUE -> queueTargetRemainingMillis()
-            SleepTimer.Mode.NONE -> SleepTimer.REMAINING_TIME_UNSET
+        SleepTimer.Mode.END_OF_CURRENT -> {
+            if (currentQueueItem() === currentItemTarget) {
+                currentItemRemainingMillis()
+            } else {
+                SleepTimer.REMAINING_TIME_UNSET
+            }
         }
+
+        SleepTimer.Mode.END_OF_QUEUE -> queueTargetRemainingMillis()
+
+        SleepTimer.Mode.NONE -> SleepTimer.REMAINING_TIME_UNSET
+    }
 
     private fun prepareStart() {
         resetState()
@@ -233,27 +234,27 @@ internal class SleepTimerPlaybackController(private val player: Player) {
         Toast.makeText(player.context, R.string.sleep_timer_finished, Toast.LENGTH_SHORT).show()
     }
 
-    private fun fadeOutRemainingMillis(): Long =
-        when (timer.mode) {
-            SleepTimer.Mode.DURATION -> timer.durationRemainingMillis
-            SleepTimer.Mode.END_OF_CURRENT -> {
-                if (currentQueueItem() === currentItemTarget) {
-                    currentItemRemainingMillis()
-                } else {
-                    SleepTimer.REMAINING_TIME_UNSET
-                }
-            }
+    private fun fadeOutRemainingMillis(): Long = when (timer.mode) {
+        SleepTimer.Mode.DURATION -> timer.durationRemainingMillis
 
-            SleepTimer.Mode.END_OF_QUEUE -> {
-                if (currentQueueItem() === queueTarget) {
-                    currentItemRemainingMillis()
-                } else {
-                    SleepTimer.REMAINING_TIME_UNSET
-                }
+        SleepTimer.Mode.END_OF_CURRENT -> {
+            if (currentQueueItem() === currentItemTarget) {
+                currentItemRemainingMillis()
+            } else {
+                SleepTimer.REMAINING_TIME_UNSET
             }
-
-            SleepTimer.Mode.NONE -> SleepTimer.REMAINING_TIME_UNSET
         }
+
+        SleepTimer.Mode.END_OF_QUEUE -> {
+            if (currentQueueItem() === queueTarget) {
+                currentItemRemainingMillis()
+            } else {
+                SleepTimer.REMAINING_TIME_UNSET
+            }
+        }
+
+        SleepTimer.Mode.NONE -> SleepTimer.REMAINING_TIME_UNSET
+    }
 
     private fun queueTargetRemainingMillis(): Long {
         val queue = player.playQueue ?: return SleepTimer.REMAINING_TIME_UNSET
