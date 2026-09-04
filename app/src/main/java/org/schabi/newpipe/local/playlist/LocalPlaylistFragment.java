@@ -432,6 +432,10 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             createShareConfirmationDialog();
         } else if (item.getItemId() == R.id.menu_item_download_playlist) {
             showBulkDownloadDialog();
+        } else if (item.getItemId() == R.id.menu_item_shuffle_playlist) {
+            final PlayQueue playQueue = getCompletePlaylistPlayQueue();
+            playQueue.shuffleFromStart();
+            NavigationHelper.playOnMainPlayer(requireContext(), playQueue, false);
         } else if (item.getItemId() == R.id.menu_item_rename_playlist) {
             createRenameDialog();
         } else if (item.getItemId() == R.id.menu_item_remove_watched) {
@@ -1216,7 +1220,20 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             return new SinglePlayQueue(Collections.emptyList(), 0);
         }
 
-        final List<LocalItem> infoItems = itemListAdapter.getItemsList();
+        return getPlayQueue(itemListAdapter.getItemsList(), index);
+    }
+
+    private PlayQueue getCompletePlaylistPlayQueue() {
+        if (itemListAdapter == null) {
+            return new SinglePlayQueue(Collections.emptyList(), 0);
+        }
+
+        final List<? extends LocalItem> infoItems = ContextualSearchHelper.isActive(
+                contextualSearchQuery) ? unfilteredItems : itemListAdapter.getItemsList();
+        return getPlayQueue(infoItems, 0);
+    }
+
+    private PlayQueue getPlayQueue(final List<? extends LocalItem> infoItems, final int index) {
         final List<PlayQueueItem> queueItems = new ArrayList<>(infoItems.size());
         for (final LocalItem item : infoItems) {
             if (item instanceof PlaylistStreamEntry) {

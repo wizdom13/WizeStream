@@ -474,6 +474,29 @@ public abstract class PlayQueue implements Serializable {
     }
 
     /**
+     * Shuffles the entire queue before playback starts, including the item at the current index.
+     * The original order is retained so {@link #unshuffle()} can restore it.
+     */
+    public synchronized void shuffleFromStart() {
+        if (size() <= 1) {
+            return;
+        }
+
+        if (backup == null) {
+            backup = new ArrayList<>(streams);
+        }
+
+        final int originalIndex = getIndex();
+        Collections.shuffle(streams);
+        queueIndex.set(0);
+
+        history.clear();
+        history.add(streams.get(0));
+
+        broadcast(new ReorderEvent(originalIndex, 0));
+    }
+
+    /**
      * Unshuffles the current play queue if a backup play queue exists.
      * <p>
      * This method undoes shuffling and index will be set to the previously playing item if found,
@@ -572,4 +595,3 @@ public abstract class PlayQueue implements Serializable {
         }
     }
 }
-

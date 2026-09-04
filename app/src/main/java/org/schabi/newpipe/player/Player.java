@@ -706,6 +706,7 @@ public final class Player implements PlaybackListener, Listener {
 
         playQueue = queue;
         playQueue.init();
+        simpleExoPlayer.setShuffleModeEnabled(playQueue.isShuffled());
         retargetSleepTimerForNewQueue();
         reloadPlayQueueManager();
 
@@ -1715,9 +1716,9 @@ public final class Player implements PlaybackListener, Listener {
         }
 
         if (playQueue != null) {
-            if (shuffleModeEnabled) {
+            if (shuffleModeEnabled && !playQueue.isShuffled()) {
                 playQueue.shuffle();
-            } else {
+            } else if (!shuffleModeEnabled && playQueue.isShuffled()) {
                 playQueue.unshuffle();
             }
             if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE) {
