@@ -21,14 +21,14 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.SeekParameters;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
-import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout.ResizeMode;
-import com.google.android.exoplayer2.ui.CaptionStyleCompat;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.exoplayer.SeekParameters;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection;
+import androidx.media3.exoplayer.trackselection.ExoTrackSelection;
+import androidx.media3.ui.AspectRatioFrameLayout;
+import androidx.media3.ui.AspectRatioFrameLayout.ResizeMode;
+import androidx.media3.ui.CaptionStyleCompat;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.InfoItem;

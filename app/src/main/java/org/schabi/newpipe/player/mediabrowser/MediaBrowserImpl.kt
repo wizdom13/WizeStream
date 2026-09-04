@@ -4,15 +4,21 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaDescriptionCompat
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.core.net.toUri
-import androidx.media.MediaBrowserServiceCompat
-import androidx.media.MediaBrowserServiceCompat.BrowserRoot.EXTRA_RECENT
-import androidx.media.MediaBrowserServiceCompat.Result
-import androidx.media.utils.MediaConstants
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService.LibraryParams
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
+import androidx.media3.session.MediaSession.ControllerInfo
+import androidx.media3.session.SessionError
+import androidx.media3.session.legacy.MediaConstants
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -79,32 +85,38 @@ class MediaBrowserImpl(
     }
     //endregion
 
-    //region onGetRoot
-    fun onGetRoot(
-        clientPackageName: String,
-        clientUid: Int,
-        rootHints: Bundle?
-    ): MediaBrowserServiceCompat.BrowserRoot? {
+    //region Library root
+    fun onGetLibraryRoot(
+        browser: ControllerInfo,
+        params: LibraryParams?
+    ): ListenableFuture<LibraryResult<MediaItem>> {
         if (DEBUG) {
-            Log.d(TAG, "onGetRoot($clientPackageName, $clientUid, $rootHints)")
+            Log.d(TAG, "onGetLibraryRoot($browser, $params)")
         }
 
-        if (!packageValidator.isKnownCaller(clientPackageName, clientUid)) {
-            // this is a caller we can't trust (see PackageValidator's rules taken from uamp)
-            return null
+        if (!packageValidator.isKnownCaller(browser.packageName, browser.uid)) {
+            return immediateResult(LibraryResult.ofError(SessionError.ERROR_PERMISSION_DENIED))
         }
 
-        if (rootHints?.getBoolean(EXTRA_RECENT, false) == true) {
-            return MediaBrowserServiceCompat.BrowserRoot(ID_RECENT, createRootExtras(true))
-        }
+        val recent = params?.isRecent == true
+        val rootId = if (recent) ID_RECENT else ID_ROOT
+        val root = createRootMediaItem(
+            rootId,
+            context.getString(R.string.app_name),
+            R.drawable.ic_headset
+        )
+        val resultParams = LibraryParams.Builder()
+            .setRecent(recent)
+            .setExtras(createRootExtras(recent))
+            .build()
 
-        return MediaBrowserServiceCompat.BrowserRoot(ID_ROOT, createRootExtras())
+        return immediateResult(LibraryResult.ofItem(root, resultParams))
     }
 
     private fun createRootExtras(recent: Boolean = false): Bundle = Bundle().apply {
         putBoolean(MediaConstants.BROWSER_SERVICE_EXTRAS_KEY_SEARCH_SUPPORTED, true)
         if (recent) {
-            putBoolean(EXTRA_RECENT, true)
+            putBoolean("android.service.media.extra.RECENT", true)
         }
         putInt(
             MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
@@ -118,28 +130,35 @@ class MediaBrowserImpl(
     //endregion
 
     //region onLoadChildren
-    fun onLoadChildren(parentId: String, result: Result<List<MediaBrowserCompat.MediaItem>>) {
+    fun onGetChildren(
+        parentId: String,
+        page: Int,
+        pageSize: Int,
+        params: LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
         if (DEBUG) {
-            Log.d(TAG, "onLoadChildren($parentId)")
+            Log.d(TAG, "onGetChildren($parentId, $page, $pageSize)")
         }
 
-        result.detach() // allows sendResult() to happen later
+        val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
         disposables.add(
-            onLoadChildren(parentId)
+            loadChildren(parentId)
                 .timeout(CarBrowsePolicy.LOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .subscribeOn(Schedulers.io())
                 .subscribe(
-                    { result.sendResult(it) },
+                    { items ->
+                        future.set(LibraryResult.ofItemList(paginate(items, page, pageSize), params))
+                    },
                     { throwable ->
-                        // null indicates an error, see the docs of MediaSessionCompat.onSearch()
-                        result.sendResult(null)
+                        future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
                         Log.e(TAG, "onLoadChildren error for parentId=$parentId: $throwable")
                     }
                 )
         )
+        return future
     }
 
-    private fun onLoadChildren(parentId: String): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun loadChildren(parentId: String): Single<List<MediaItem>> {
         try {
             val parentIdUri = parentId.toUri()
             val path = ArrayList(parentIdUri.pathSegments)
@@ -198,66 +217,61 @@ class MediaBrowserImpl(
     }
 
     private fun createRootMediaItem(
-        mediaId: String?,
-        folderName: String?,
+        mediaId: String,
+        folderName: String,
         @DrawableRes iconResId: Int
-    ): MediaBrowserCompat.MediaItem {
-        val builder = MediaDescriptionCompat.Builder()
-        builder.setMediaId(mediaId)
-        builder.setTitle(folderName)
-        builder.setIconUri(resourceUri(iconResId))
-
-        val extras = Bundle()
-        extras.putString(
-            MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE,
-            context.getString(R.string.app_name)
-        )
-        builder.setExtras(extras)
-        return MediaBrowserCompat.MediaItem(
-            builder.build(),
-            MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
+    ): MediaItem {
+        val extras = Bundle().apply {
+            putString(
+                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE,
+                context.getString(R.string.app_name)
+            )
+        }
+        return libraryItem(
+            mediaId,
+            MediaMetadata.Builder()
+                .setTitle(folderName)
+                .setArtworkUri(resourceUri(iconResId))
+                .setExtras(extras),
+            browsable = true
         )
     }
 
-    private fun createPlaylistMediaItem(playlist: PlaylistLocalItem): MediaBrowserCompat.MediaItem {
-        val builder = MediaDescriptionCompat.Builder()
-        builder
-            .setMediaId(createMediaIdForInfoItem(playlist is PlaylistRemoteEntity, playlist.uid))
+    private fun createPlaylistMediaItem(playlist: PlaylistLocalItem): MediaItem {
+        val metadata = MediaMetadata.Builder()
             .setTitle(playlist.orderingName)
-            .setIconUri(imageUriOrNullIfDisabled(playlist.thumbnailUrl))
+            .setArtworkUri(imageUriOrNullIfDisabled(playlist.thumbnailUrl))
 
-        val extras = Bundle()
-        extras.putString(
-            MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE,
-            context.resources.getString(R.string.tab_bookmarks)
+        metadata.setExtras(
+            Bundle().apply {
+                putString(
+                    MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE,
+                    context.resources.getString(R.string.tab_bookmarks)
+                )
+            }
         )
-        builder.setExtras(extras)
-        return MediaBrowserCompat.MediaItem(
-            builder.build(),
-            MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
+        return libraryItem(
+            createMediaIdForInfoItem(playlist is PlaylistRemoteEntity, playlist.uid),
+            metadata,
+            browsable = true
         )
     }
 
-    private fun createInfoItemMediaItem(item: InfoItem): MediaBrowserCompat.MediaItem? {
-        val builder = MediaDescriptionCompat.Builder()
-        builder.setMediaId(createMediaIdForInfoItem(item))
-            .setTitle(item.name)
+    private fun createInfoItemMediaItem(item: InfoItem): MediaItem? {
+        val metadata = MediaMetadata.Builder().setTitle(item.name)
 
         when (item.infoType) {
-            InfoType.STREAM -> builder.setSubtitle((item as StreamInfoItem).uploaderName)
-            InfoType.PLAYLIST -> builder.setSubtitle((item as PlaylistInfoItem).uploaderName)
-            InfoType.CHANNEL -> builder.setSubtitle((item as ChannelInfoItem).description)
+            InfoType.STREAM -> metadata.setArtist((item as StreamInfoItem).uploaderName)
+            InfoType.PLAYLIST -> metadata.setArtist((item as PlaylistInfoItem).uploaderName)
+            InfoType.CHANNEL -> metadata.setDescription((item as ChannelInfoItem).description)
             else -> return null
         }
 
         ImageStrategy.choosePreferredImage(ExtractorImageCompat.thumbnailImages(item))?.let {
-            builder.setIconUri(imageUriOrNullIfDisabled(it))
+            metadata.setArtworkUri(imageUriOrNullIfDisabled(it))
         }
 
-        return MediaBrowserCompat.MediaItem(
-            builder.build(),
-            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
-        )
+        return libraryItem(createMediaIdForInfoItem(item), metadata, browsable = false)
     }
 
     private fun buildMediaId(): Uri.Builder {
@@ -292,16 +306,16 @@ class MediaBrowserImpl(
         playlistId: Long,
         item: PlaylistStreamEntry,
         index: Int
-    ): MediaBrowserCompat.MediaItem {
-        val builder = MediaDescriptionCompat.Builder()
-        builder.setMediaId(createMediaIdForPlaylistIndex(false, playlistId, index))
+    ): MediaItem {
+        val metadata = MediaMetadata.Builder()
             .setTitle(item.streamEntity.title)
-            .setSubtitle(item.streamEntity.uploader)
-            .setIconUri(imageUriOrNullIfDisabled(item.streamEntity.thumbnailUrl))
+            .setArtist(item.streamEntity.uploader)
+            .setArtworkUri(imageUriOrNullIfDisabled(item.streamEntity.thumbnailUrl))
 
-        return MediaBrowserCompat.MediaItem(
-            builder.build(),
-            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+        return libraryItem(
+            createMediaIdForPlaylistIndex(false, playlistId, index),
+            metadata,
+            browsable = false
         )
     }
 
@@ -309,19 +323,19 @@ class MediaBrowserImpl(
         playlistId: Long,
         item: StreamInfoItem,
         index: Int
-    ): MediaBrowserCompat.MediaItem {
-        val builder = MediaDescriptionCompat.Builder()
-        builder.setMediaId(createMediaIdForPlaylistIndex(true, playlistId, index))
+    ): MediaItem {
+        val metadata = MediaMetadata.Builder()
             .setTitle(item.name)
-            .setSubtitle(item.uploaderName)
+            .setArtist(item.uploaderName)
 
         ImageStrategy.choosePreferredImage(ExtractorImageCompat.thumbnailImages(item))?.let {
-            builder.setIconUri(imageUriOrNullIfDisabled(it))
+            metadata.setArtworkUri(imageUriOrNullIfDisabled(it))
         }
 
-        return MediaBrowserCompat.MediaItem(
-            builder.build(),
-            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+        return libraryItem(
+            createMediaIdForPlaylistIndex(true, playlistId, index),
+            metadata,
+            browsable = false
         )
     }
 
@@ -339,49 +353,45 @@ class MediaBrowserImpl(
         return buildInfoItemMediaId(item).build().toString()
     }
 
-    private fun populateHistory(): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun populateHistory(): Single<List<MediaItem>> {
         val history = database.streamHistoryDAO().history.firstOrError()
         return history.map { items ->
             CarBrowsePolicy.browse(items).map { this.createHistoryMediaItem(it) }
         }
     }
 
-    private fun populateContinueListening(): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun populateContinueListening(): Single<List<MediaItem>> {
         return database.streamHistoryDAO().history.firstOrError().map { items ->
             CarBrowsePolicy.continueListening(items).map(this::createHistoryMediaItem)
         }
     }
 
-    private fun populateResumption(): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun populateResumption(): Single<List<MediaItem>> {
         return database.streamHistoryDAO().history.firstOrError().map { items ->
             CarBrowsePolicy.resumption(items).map(this::createHistoryMediaItem)
         }
     }
 
-    private fun createHistoryMediaItem(streamHistoryEntry: StreamHistoryEntry): MediaBrowserCompat.MediaItem {
-        val builder = MediaDescriptionCompat.Builder()
+    private fun createHistoryMediaItem(streamHistoryEntry: StreamHistoryEntry): MediaItem {
         val mediaId = buildMediaId()
             .appendPath(ID_HISTORY)
             .appendPath(streamHistoryEntry.streamId.toString())
             .build().toString()
-        builder.setMediaId(mediaId)
+        val metadata = MediaMetadata.Builder()
             .setTitle(
                 streamHistoryEntry.streamEntity.title.takeUnless { it.isBlank() }
                     ?: context.getString(R.string.app_name)
             )
-            .setSubtitle(
+            .setArtist(
                 streamHistoryEntry.streamEntity.uploader.takeUnless { it.isNullOrBlank() }
                     ?: context.getString(R.string.app_name)
             )
-            .setIconUri(
+            .setArtworkUri(
                 imageUriOrNullIfDisabled(streamHistoryEntry.streamEntity.thumbnailUrl)
                     ?: resourceUri(R.drawable.ic_headset)
             )
 
-        return MediaBrowserCompat.MediaItem(
-            builder.build(),
-            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
-        )
+        return libraryItem(mediaId, metadata, browsable = false)
     }
 
     private fun getMergedPlaylists(): Flowable<MutableList<PlaylistLocalItem>> {
@@ -391,14 +401,14 @@ class MediaBrowserImpl(
         )
     }
 
-    private fun populateBookmarks(): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun populateBookmarks(): Single<List<MediaItem>> {
         val playlists = getMergedPlaylists().firstOrError()
         return playlists.map { playlist ->
             CarBrowsePolicy.browse(playlist).map { this.createPlaylistMediaItem(it) }
         }
     }
 
-    private fun populateLocalPlaylist(playlistId: Long): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun populateLocalPlaylist(playlistId: Long): Single<List<MediaItem>> {
         val playlist = LocalPlaylistManager(database).getPlaylistStreams(playlistId).firstOrError()
         return playlist.map { items ->
             CarBrowsePolicy.browse(items).mapIndexed { index, item ->
@@ -407,7 +417,7 @@ class MediaBrowserImpl(
         }
     }
 
-    private fun populateRemotePlaylist(playlistId: Long): Single<List<MediaBrowserCompat.MediaItem>> {
+    private fun populateRemotePlaylist(playlistId: Long): Single<List<MediaItem>> {
         return RemotePlaylistManager(database).getPlaylist(playlistId).firstOrError()
             .flatMap { ExtractorHelper.getPlaylistInfo(it.serviceId, it.url, false) }
             .map {
@@ -422,32 +432,62 @@ class MediaBrowserImpl(
 
     //region Search
     fun onSearch(
+        session: MediaLibrarySession,
+        browser: ControllerInfo,
         query: String,
-        result: Result<List<MediaBrowserCompat.MediaItem>>
-    ) {
+        params: LibraryParams?
+    ): ListenableFuture<LibraryResult<Void>> {
         if (DEBUG) {
             Log.d(TAG, "onSearch($query)")
         }
 
-        result.detach() // allows sendResult() to happen later
+        val future = SettableFuture.create<LibraryResult<Void>>()
         disposables.add(
-            searchMusicBySongTitle(query)
-                // ignore it.errors, i.e. ignore errors about specific items, since there would
-                // be no way to show the error properly in Android Auto anyway
-                .map {
-                    CarBrowsePolicy.search(it.relatedItems)
-                        .mapNotNull(this::createInfoItemMediaItem)
-                }
+            search(query)
                 .subscribeOn(Schedulers.io())
                 .subscribe(
-                    { result.sendResult(it) },
+                    { items ->
+                        session.notifySearchResultChanged(browser, query, items.size, params)
+                        future.set(LibraryResult.ofVoid(params))
+                    },
                     { throwable ->
-                        // null indicates an error, see the docs of MediaSessionCompat.onSearch()
-                        result.sendResult(null)
+                        future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
                         Log.e(TAG, "Search error for query=\"$query\": $throwable")
                     }
                 )
         )
+        return future
+    }
+
+    fun onGetSearchResult(
+        query: String,
+        page: Int,
+        pageSize: Int,
+        params: LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+        val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
+        disposables.add(
+            search(query)
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                    { items ->
+                        future.set(LibraryResult.ofItemList(paginate(items, page, pageSize), params))
+                    },
+                    { throwable ->
+                        future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
+                        Log.e(TAG, "Search result error for query=\"$query\": $throwable")
+                    }
+                )
+        )
+        return future
+    }
+
+    private fun search(query: String): Single<List<MediaItem>> {
+        return searchMusicBySongTitle(query).map {
+            // Item-specific extraction errors cannot be displayed by Android Auto, so keep all
+            // successfully converted results.
+            CarBrowsePolicy.search(it.relatedItems).mapNotNull(this::createInfoItemMediaItem)
+        }
     }
 
     private fun searchMusicBySongTitle(query: String?): Single<SearchInfo> {
@@ -455,6 +495,28 @@ class MediaBrowserImpl(
         return ExtractorHelper.searchFor(serviceId, query, listOf(), "")
     }
     //endregion
+
+    private fun libraryItem(
+        mediaId: String,
+        metadata: MediaMetadata.Builder,
+        browsable: Boolean
+    ): MediaItem = MediaItem.Builder()
+        .setMediaId(mediaId)
+        .setMediaMetadata(
+            metadata
+                .setIsBrowsable(browsable)
+                .setIsPlayable(!browsable)
+                .build()
+        )
+        .build()
+
+    private fun paginate(items: List<MediaItem>, page: Int, pageSize: Int): ImmutableList<MediaItem> {
+        val fromIndex = (page.toLong() * pageSize).coerceAtMost(items.size.toLong()).toInt()
+        val toIndex = (fromIndex.toLong() + pageSize).coerceAtMost(items.size.toLong()).toInt()
+        return ImmutableList.copyOf(items.subList(fromIndex, toIndex))
+    }
+
+    private fun <T> immediateResult(result: T): ListenableFuture<T> = Futures.immediateFuture(result)
 
     companion object {
         private val TAG: String = MediaBrowserImpl::class.java.getSimpleName()

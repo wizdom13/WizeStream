@@ -24,24 +24,35 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ServiceCompat;
-import androidx.media.MediaBrowserServiceCompat;
-
-import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+import androidx.media3.common.ForwardingPlayer;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.session.LibraryResult;
+import androidx.media3.session.MediaLibraryService;
+import androidx.media3.session.MediaLibraryService.LibraryParams;
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession;
+import androidx.media3.session.MediaSession;
+import androidx.media3.session.SessionCommand;
+import androidx.media3.session.SessionCommands;
+import androidx.media3.session.SessionResult;
 
 import org.schabi.newpipe.ktx.BundleKt;
 import org.schabi.newpipe.player.mediabrowser.MediaBrowserImpl;
 import org.schabi.newpipe.player.mediabrowser.MediaBrowserPlaybackPreparer;
-import org.schabi.newpipe.player.mediasession.MediaSessionPlayerUi;
+import org.schabi.newpipe.player.mediasession.MediaSessionActionProvider;
 import org.schabi.newpipe.player.notification.NotificationPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationUtil;
 import org.schabi.newpipe.util.ThemeHelper;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -51,7 +62,7 @@ import java.util.function.Consumer;
 /**
  * One service for all players.
  */
-public final class PlayerService extends MediaBrowserServiceCompat {
+public final class PlayerService extends MediaLibraryService {
     private static final String TAG = PlayerService.class.getSimpleName();
     private static final boolean DEBUG = Player.DEBUG;
 
@@ -64,10 +75,10 @@ public final class PlayerService extends MediaBrowserServiceCompat {
     private MediaBrowserImpl mediaBrowserImpl;
     private MediaBrowserPlaybackPreparer mediaBrowserPlaybackPreparer;
 
-    // these are instantiated in onCreate() as per
-    // https://developer.android.com/training/cars/media#browser_workflow
-    private MediaSessionCompat mediaSession;
-    private MediaSessionConnector sessionConnector;
+    private MediaLibrarySession mediaSession;
+    private ExoPlayer browserExoPlayer;
+    private androidx.media3.common.Player browserPlayer;
+    private boolean shouldIgnoreHardwareMediaButtons;
 
     @Nullable
     private Player player;
@@ -92,25 +103,24 @@ public final class PlayerService extends MediaBrowserServiceCompat {
         }
         ThemeHelper.setTheme(this);
 
-        mediaBrowserImpl = new MediaBrowserImpl(this, this::notifyChildrenChanged);
-
-        // see https://developer.android.com/training/cars/media#browser_workflow
-        mediaSession = new MediaSessionCompat(this, "MediaSessionPlayerServ");
-        setSessionToken(mediaSession.getSessionToken());
-        sessionConnector = new MediaSessionConnector(mediaSession);
-        sessionConnector.setMetadataDeduplicationEnabled(true);
+        mediaBrowserImpl = new MediaBrowserImpl(this, this::notifyLibraryChildrenChanged);
 
         mediaBrowserPlaybackPreparer = new MediaBrowserPlaybackPreparer(
                 this,
-                sessionConnector::setCustomErrorMessage,
-                () -> sessionConnector.setCustomErrorMessage(null),
-                (playWhenReady) -> {
-                    if (player != null) {
-                        player.onPrepare();
-                    }
-                }
+                (message, errorCode) -> mediaSession.setPlaybackException(
+                        new PlaybackException(message.toString(), null, errorCode)),
+                () -> mediaSession.setPlaybackException(null)
         );
-        sessionConnector.setPlaybackPreparer(mediaBrowserPlaybackPreparer);
+
+        // MediaLibrarySession requires a player even when the service is started only for
+        // browsing. This lightweight player intercepts browsed-item playback and starts the real
+        // WizeStream player, which is still created lazily.
+        browserExoPlayer = new ExoPlayer.Builder(this).build();
+        browserPlayer = new MediaBrowserPlayer(browserExoPlayer, mediaBrowserPlaybackPreparer);
+        mediaSession = new MediaLibrarySession.Builder(this, browserPlayer,
+                createMediaSessionCallback())
+                .setId("WizeStreamPlayer")
+                .build();
 
         // Note: you might be tempted to create the player instance and call startForeground here,
         // but be aware that the Android system might start the service just to perform media
@@ -129,6 +139,10 @@ public final class PlayerService extends MediaBrowserServiceCompat {
                     + "], flags = [" + flags + "], startId = [" + startId + "]");
         }
 
+        if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+            return super.onStartCommand(intent, flags, startId);
+        }
+
         // All internal WizeStream intents used to interact with the player, that are sent to the
         // PlayerService using startForegroundService(), will have SHOULD_START_FOREGROUND_EXTRA,
         // to ensure startForeground() is called (otherwise Android will force-crash the app).
@@ -136,7 +150,7 @@ public final class PlayerService extends MediaBrowserServiceCompat {
             final boolean playerWasNull = (player == null);
             if (playerWasNull) {
                 // make sure the player exists, in case the service was resumed
-                player = new Player(this, mediaSession, sessionConnector);
+                player = new Player(this, mediaSession, browserPlayer);
             }
 
             // Be sure that the player notification is set and the service is started in foreground,
@@ -173,9 +187,6 @@ public final class PlayerService extends MediaBrowserServiceCompat {
         final PlayerType oldPlayerType = player.getPlayerType();
         player.handleIntent(intent);
         player.handleIntentPost(oldPlayerType);
-        player.UIs().get(MediaSessionPlayerUi.class)
-                .ifPresent(ui -> ui.handleMediaButtonIntent(intent));
-
         return START_NOT_STICKY;
     }
 
@@ -208,13 +219,13 @@ public final class PlayerService extends MediaBrowserServiceCompat {
         if (DEBUG) {
             Log.d(TAG, "destroy() called");
         }
-        super.onDestroy();
-
         cleanup();
 
         mediaBrowserPlaybackPreparer.dispose();
         mediaSession.release();
+        browserExoPlayer.release();
         mediaBrowserImpl.dispose();
+        super.onDestroy();
     }
 
     private void cleanup() {
@@ -226,9 +237,6 @@ public final class PlayerService extends MediaBrowserServiceCompat {
             player.destroy();
             player = null;
         }
-
-        // Should already be handled by MediaSessionPlayerUi, but just to be sure.
-        mediaSession.setActive(false);
 
         // Should already be handled by NotificationUtil.cancelNotificationAndStopForeground() in
         // NotificationPlayerUi, but let's make sure that the foreground service is stopped.
@@ -277,14 +285,9 @@ public final class PlayerService extends MediaBrowserServiceCompat {
             // after unbind() has been called: https://stackoverflow.com/a/8794930 .
             return mBinder;
 
-        } else if (MediaBrowserServiceCompat.SERVICE_INTERFACE.equals(intent.getAction())) {
-            // MediaBrowserService also uses its own binder, so for actions related to the media
-            // browser service, pass the onBind to the superclass.
-            return super.onBind(intent);
-
         } else {
-            // This is an unknown request, avoid returning any binder to not leak objects.
-            return null;
+            // MediaLibraryService handles Media3 and legacy media-browser bind actions.
+            return super.onBind(intent);
         }
     }
 
@@ -324,25 +327,216 @@ public final class PlayerService extends MediaBrowserServiceCompat {
     }
     //endregion
 
-    //region Media browser
+    //region Media session and browser
     @Override
-    public BrowserRoot onGetRoot(@NonNull final String clientPackageName,
-                                 final int clientUid,
-                                 @Nullable final Bundle rootHints) {
-        return mediaBrowserImpl.onGetRoot(clientPackageName, clientUid, rootHints);
+    @Nullable
+    public MediaLibrarySession onGetSession(
+            @NonNull final MediaSession.ControllerInfo controllerInfo) {
+        return mediaSession;
+    }
+
+    @NonNull
+    public MediaLibrarySession getMediaSession() {
+        return mediaSession;
+    }
+
+    public void setShouldIgnoreHardwareMediaButtons(final boolean shouldIgnore) {
+        shouldIgnoreHardwareMediaButtons = shouldIgnore;
     }
 
     @Override
-    public void onLoadChildren(@NonNull final String parentId,
-                               @NonNull final Result<List<MediaBrowserCompat.MediaItem>> result) {
-        mediaBrowserImpl.onLoadChildren(parentId, result);
+    public void onUpdateNotification(@NonNull final MediaSession session,
+                                     final boolean startInForegroundRequired) {
+        // NotificationPlayerUi owns WizeStream's configurable notification and foreground state.
     }
 
-    @Override
-    public void onSearch(@NonNull final String query,
-                         final Bundle extras,
-                         @NonNull final Result<List<MediaBrowserCompat.MediaItem>> result) {
-        mediaBrowserImpl.onSearch(query, result);
+    private void notifyLibraryChildrenChanged(@NonNull final String parentId) {
+        if (mediaSession != null) {
+            mediaSession.notifyChildrenChanged(parentId, Integer.MAX_VALUE, null);
+        }
+    }
+
+    @NonNull
+    private MediaLibrarySession.Callback createMediaSessionCallback() {
+        return new MediaLibrarySession.Callback() {
+            @Override
+            @NonNull
+            public MediaSession.ConnectionResult onConnect(
+                    @NonNull final MediaSession session,
+                    @NonNull final MediaSession.ControllerInfo controller) {
+                final SessionCommands.Builder commands = new SessionCommands.Builder()
+                        .addSessionCommands((controller.isTrusted()
+                                ? MediaSession.ConnectionResult
+                                        .DEFAULT_SESSION_AND_LIBRARY_COMMANDS
+                                : MediaSession.ConnectionResult
+                                        .DEFAULT_UNTRUSTED_SESSION_AND_LIBRARY_COMMANDS).commands);
+                for (final String action : MediaSessionActionProvider.supportedActions()) {
+                    commands.add(MediaSessionActionProvider.commandFor(action));
+                }
+                return new MediaSession.ConnectionResult.AcceptedResultBuilder(
+                        session, controller)
+                        .setAvailableSessionCommands(commands.build())
+                        .build();
+            }
+
+            @Override
+            public boolean onMediaButtonEvent(@NonNull final MediaSession session,
+                                              @NonNull final MediaSession.ControllerInfo controller,
+                                              @NonNull final Intent intent) {
+                return shouldIgnoreHardwareMediaButtons;
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<SessionResult> onCustomCommand(
+                    @NonNull final MediaSession session,
+                    @NonNull final MediaSession.ControllerInfo controller,
+                    @NonNull final SessionCommand command,
+                    @NonNull final Bundle args) {
+                if (!MediaSessionActionProvider.isSupported(command)) {
+                    return Futures.immediateFuture(
+                            new SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED));
+                }
+                sendBroadcast(new Intent(command.customAction).setPackage(getPackageName()));
+                return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<List<MediaItem>> onAddMediaItems(
+                    @NonNull final MediaSession session,
+                    @NonNull final MediaSession.ControllerInfo controller,
+                    @NonNull final List<MediaItem> mediaItems) {
+                // MediaBrowserPlayer resolves these IDs into WizeStream PlayQueues.
+                return Futures.immediateFuture(mediaItems);
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<LibraryResult<MediaItem>> onGetLibraryRoot(
+                    @NonNull final MediaLibrarySession session,
+                    @NonNull final MediaSession.ControllerInfo browser,
+                    @Nullable final LibraryParams params) {
+                return mediaBrowserImpl.onGetLibraryRoot(browser, params);
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> onGetChildren(
+                    @NonNull final MediaLibrarySession session,
+                    @NonNull final MediaSession.ControllerInfo browser,
+                    @NonNull final String parentId,
+                    final int page,
+                    final int pageSize,
+                    @Nullable final LibraryParams params) {
+                return mediaBrowserImpl.onGetChildren(parentId, page, pageSize, params);
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<LibraryResult<Void>> onSubscribe(
+                    @NonNull final MediaLibrarySession session,
+                    @NonNull final MediaSession.ControllerInfo browser,
+                    @NonNull final String parentId,
+                    @Nullable final LibraryParams params) {
+                session.notifyChildrenChanged(browser, parentId, Integer.MAX_VALUE, params);
+                return Futures.immediateFuture(LibraryResult.ofVoid(params));
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<LibraryResult<Void>> onSearch(
+                    @NonNull final MediaLibrarySession session,
+                    @NonNull final MediaSession.ControllerInfo browser,
+                    @NonNull final String query,
+                    @Nullable final LibraryParams params) {
+                return mediaBrowserImpl.onSearch(session, browser, query, params);
+            }
+
+            @Override
+            @NonNull
+            public ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> onGetSearchResult(
+                    @NonNull final MediaLibrarySession session,
+                    @NonNull final MediaSession.ControllerInfo browser,
+                    @NonNull final String query,
+                    final int page,
+                    final int pageSize,
+                    @Nullable final LibraryParams params) {
+                return mediaBrowserImpl.onGetSearchResult(query, page, pageSize, params);
+            }
+        };
+    }
+
+    private static final class MediaBrowserPlayer extends ForwardingPlayer {
+        private final MediaBrowserPlaybackPreparer playbackPreparer;
+
+        MediaBrowserPlayer(@NonNull final androidx.media3.common.Player player,
+                           @NonNull final MediaBrowserPlaybackPreparer playbackPreparer) {
+            super(player);
+            this.playbackPreparer = playbackPreparer;
+        }
+
+        @Override
+        public void play() {
+            playbackPreparer.setPlayWhenReady(true);
+        }
+
+        @Override
+        public void pause() {
+            playbackPreparer.setPlayWhenReady(false);
+        }
+
+        @Override
+        public void setPlayWhenReady(final boolean playWhenReady) {
+            playbackPreparer.setPlayWhenReady(playWhenReady);
+        }
+
+        @Override
+        public void setMediaItem(@NonNull final MediaItem mediaItem) {
+            prepare(mediaItem);
+        }
+
+        @Override
+        public void setMediaItem(@NonNull final MediaItem mediaItem,
+                                 final long startPositionMs) {
+            prepare(mediaItem);
+        }
+
+        @Override
+        public void setMediaItem(@NonNull final MediaItem mediaItem,
+                                 final boolean resetPosition) {
+            prepare(mediaItem);
+        }
+
+        @Override
+        public void setMediaItems(@NonNull final List<MediaItem> mediaItems) {
+            prepare(mediaItems, 0);
+        }
+
+        @Override
+        public void setMediaItems(@NonNull final List<MediaItem> mediaItems,
+                                  final boolean resetPosition) {
+            prepare(mediaItems, 0);
+        }
+
+        @Override
+        public void setMediaItems(@NonNull final List<MediaItem> mediaItems,
+                                  final int startIndex,
+                                  final long startPositionMs) {
+            prepare(mediaItems, startIndex);
+        }
+
+        private void prepare(@NonNull final MediaItem mediaItem) {
+            playbackPreparer.prepareFromMediaItem(mediaItem);
+        }
+
+        private void prepare(@NonNull final List<MediaItem> mediaItems, final int startIndex) {
+            if (mediaItems.isEmpty()) {
+                return;
+            }
+            final int safeIndex = Math.max(0, Math.min(startIndex, mediaItems.size() - 1));
+            prepare(mediaItems.get(safeIndex));
+        }
     }
     //endregion
 }

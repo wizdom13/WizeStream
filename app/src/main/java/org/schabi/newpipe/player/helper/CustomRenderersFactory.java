@@ -5,13 +5,13 @@ import android.os.Handler;
 
 import androidx.annotation.Nullable;
 
-import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.Renderer;
-import com.google.android.exoplayer2.audio.AudioProcessor;
-import com.google.android.exoplayer2.audio.AudioSink;
-import com.google.android.exoplayer2.audio.DefaultAudioSink;
-import com.google.android.exoplayer2.mediacodec.MediaCodecSelector;
-import com.google.android.exoplayer2.video.VideoRendererEventListener;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
+import androidx.media3.exoplayer.Renderer;
+import androidx.media3.common.audio.AudioProcessor;
+import androidx.media3.exoplayer.audio.AudioSink;
+import androidx.media3.exoplayer.audio.DefaultAudioSink;
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector;
+import androidx.media3.exoplayer.video.VideoRendererEventListener;
 
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor;
 
@@ -75,14 +75,10 @@ public final class CustomRenderersFactory extends DefaultRenderersFactory {
     @Override
     protected AudioSink buildAudioSink(final Context context,
                                        final boolean enableFloatOutput,
-                                       final boolean enableAudioTrackPlaybackParams,
-                                       final boolean enableOffload) {
+                                       final boolean enableAudioOutputPlaybackParams) {
         return new DefaultAudioSink.Builder(context)
                 .setEnableFloatOutput(enableFloatOutput)
-                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-                .setOffloadMode(enableOffload
-                        ? DefaultAudioSink.OFFLOAD_MODE_ENABLED_GAPLESS_REQUIRED
-                        : DefaultAudioSink.OFFLOAD_MODE_DISABLED)
+                .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
                 .setAudioProcessors(new AudioProcessor[] {visualizerAudioProcessor})
                 .build();
     }

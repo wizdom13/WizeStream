@@ -5,12 +5,12 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.android.exoplayer2.source.dash.manifest.DashManifest;
-import com.google.android.exoplayer2.source.dash.manifest.DashManifestParser;
-import com.google.android.exoplayer2.source.dash.manifest.Period;
-import com.google.android.exoplayer2.source.dash.manifest.ProgramInformation;
-import com.google.android.exoplayer2.source.dash.manifest.ServiceDescriptionElement;
-import com.google.android.exoplayer2.source.dash.manifest.UtcTimingElement;
+import androidx.media3.exoplayer.dash.manifest.DashManifest;
+import androidx.media3.exoplayer.dash.manifest.DashManifestParser;
+import androidx.media3.exoplayer.dash.manifest.Period;
+import androidx.media3.exoplayer.dash.manifest.ProgramInformation;
+import androidx.media3.exoplayer.dash.manifest.ServiceDescriptionElement;
+import androidx.media3.exoplayer.dash.manifest.UtcTimingElement;
 
 import java.util.List;
 
