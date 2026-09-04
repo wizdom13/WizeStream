@@ -30,9 +30,7 @@ import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static androidx.media3.common.Player.RepeatMode;
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
-import static org.schabi.newpipe.player.helper.PlayerHelper.retrievePlaybackParametersFromPrefs;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
-import static org.schabi.newpipe.player.helper.PlayerHelper.savePlaybackParametersToPrefs;
 import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_CLOSE;
 import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_FAST_FORWARD;
 import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_FAST_REWIND;
@@ -229,6 +227,8 @@ public final class Player implements PlaybackListener, Listener {
 
     @NonNull
     private final SponsorBlockPlaybackController sponsorBlockController;
+    @NonNull
+    private final PlaybackParametersController playbackParametersController;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Player
@@ -334,6 +334,7 @@ public final class Player implements PlaybackListener, Listener {
         recordManager = new HistoryRecordManager(context);
         learningSessionTracker = new LearningSessionTracker(context);
         sponsorBlockController = new SponsorBlockPlaybackController(this);
+        playbackParametersController = new PlaybackParametersController(this);
         sleepTimerController = new SleepTimerPlaybackController(this);
 
         setupBroadcastReceiver();
@@ -676,8 +677,10 @@ public final class Player implements PlaybackListener, Listener {
         initPlayer(playOnReady);
         final boolean playbackSkipSilence = getPrefs().getBoolean(getContext().getString(
                 R.string.playback_skip_silence_key), getPlaybackSkipSilence());
-        final PlaybackParameters savedParameters = retrievePlaybackParametersFromPrefs(this);
-        applyPlaybackParameters(savedParameters.speed, savedParameters.pitch, playbackSkipSilence);
+        final PlaybackParameters savedParameters =
+                PlayerHelper.retrievePlaybackParametersFromPrefs(this);
+        playbackParametersController.applyParameters(
+                savedParameters.speed, savedParameters.pitch, playbackSkipSilence);
 
         playQueue = queue;
         playQueue.init();
@@ -1035,33 +1038,27 @@ public final class Player implements PlaybackListener, Listener {
     //region Playback parameters
 
     public float getPlaybackSpeed() {
-        return getPlaybackParameters().speed;
+        return playbackParametersController.getSpeed();
     }
 
     public void setPlaybackSpeed(final float speed) {
-        setPlaybackParameters(speed, getPlaybackPitch(), getPlaybackSkipSilence());
+        playbackParametersController.setSpeed(speed);
     }
 
     public void setPlaybackSpeedTemporarily(final float speed) {
-        if (!exoPlayerIsNull()) {
-            simpleExoPlayer.setPlaybackParameters(
-                    new PlaybackParameters(speed, getPlaybackPitch()));
-        }
+        playbackParametersController.setSpeedTemporarily(speed);
     }
 
     public float getPlaybackPitch() {
-        return getPlaybackParameters().pitch;
+        return playbackParametersController.getPitch();
     }
 
     public boolean getPlaybackSkipSilence() {
-        return !exoPlayerIsNull() && simpleExoPlayer.getSkipSilenceEnabled();
+        return playbackParametersController.getSkipSilence();
     }
 
     public PlaybackParameters getPlaybackParameters() {
-        if (exoPlayerIsNull()) {
-            return PlaybackParameters.DEFAULT;
-        }
-        return simpleExoPlayer.getPlaybackParameters();
+        return playbackParametersController.getParameters();
     }
 
     /**
@@ -1074,45 +1071,7 @@ public final class Player implements PlaybackListener, Listener {
      */
     public void setPlaybackParameters(final float speed, final float pitch,
                                       final boolean skipSilence) {
-        final float roundedSpeed = Math.round(speed * 100.0f) / 100.0f;
-        final float roundedPitch = Math.round(pitch * 100.0f) / 100.0f;
-
-        final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
-        if (ChannelPlaybackProfileManager.saveSpeed(
-                context, currentInfo, currentItem, roundedSpeed)) {
-            prefs.edit()
-                    .putFloat(context.getString(R.string.playback_pitch_key), roundedPitch)
-                    .putBoolean(context.getString(R.string.playback_skip_silence_key), skipSilence)
-                    .apply();
-        } else {
-            savePlaybackParametersToPrefs(this, roundedSpeed, roundedPitch, skipSilence);
-        }
-        applyPlaybackParameters(roundedSpeed, roundedPitch, skipSilence);
-    }
-
-    private void applyPlaybackParameters(final float speed, final float pitch,
-                                         final boolean skipSilence) {
-        simpleExoPlayer.setPlaybackParameters(
-                new PlaybackParameters(speed, pitch));
-        simpleExoPlayer.setSkipSilenceEnabled(skipSilence);
-    }
-
-    private void applyPlaybackSpeedProfile(@NonNull final PlayQueueItem item) {
-        if (ChannelPlaybackProfileManager.isAvailable(context, item)) {
-            applyPlaybackSpeedProfile(ChannelPlaybackProfileManager.getSpeed(context, item));
-        }
-    }
-
-    private void applyPlaybackSpeedProfile(@NonNull final StreamInfo info) {
-        if (ChannelPlaybackProfileManager.isAvailable(context, info)) {
-            applyPlaybackSpeedProfile(ChannelPlaybackProfileManager.getSpeed(context, info));
-        }
-    }
-
-    private void applyPlaybackSpeedProfile(@Nullable final Float profileSpeed) {
-        final float speed = profileSpeed != null
-                ? profileSpeed : retrievePlaybackParametersFromPrefs(this).speed;
-        simpleExoPlayer.setPlaybackParameters(new PlaybackParameters(speed, getPlaybackPitch()));
+        playbackParametersController.setParameters(speed, pitch, skipSilence);
     }
     //endregion
 
@@ -1661,7 +1620,7 @@ public final class Player implements PlaybackListener, Listener {
             // A live timeline can reset ExoPlayer's playback parameters while it is prepared or
             // refreshed. Restore the active channel profile (or the global playback speed) after
             // the dynamic timeline is available.
-            applyPlaybackSpeedProfile(currentItem);
+            playbackParametersController.applySpeedProfile(currentItem);
         }
     }
 
@@ -2033,7 +1992,7 @@ public final class Player implements PlaybackListener, Listener {
         currentItem = item;
         learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
                 audioPlayerSelected());
-        applyPlaybackSpeedProfile(item);
+        playbackParametersController.applySpeedProfile(item);
 
         if (playQueueIndex != playQueue.getIndex()) {
             // wrong window (this should be impossible, as this method is called with
@@ -2305,7 +2264,7 @@ public final class Player implements PlaybackListener, Listener {
 
         cancelLocalMetadataLoading();
 
-        applyPlaybackSpeedProfile(info);
+        playbackParametersController.applySpeedProfile(info);
         sponsorBlockController.updateSegments(info);
         maybeAutoQueueNextStream(info);
 
