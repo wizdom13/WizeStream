@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.schabi.newpipe.R
 import us.shandian.giga.service.MissionState
 
-class DownloadStorageConflictPolicyTest {
+internal class DownloadStorageConflictPolicyTest {
     @ParameterizedTest
     @MethodSource("conflicts")
     fun `maps mission state to its conflict prompt`(
