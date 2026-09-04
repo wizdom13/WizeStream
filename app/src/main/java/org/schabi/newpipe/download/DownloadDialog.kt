@@ -136,8 +136,6 @@ class DownloadDialog :
     private val requestDownloadPickVideoFolderLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(StartActivityForResult(), ::requestDownloadPickVideoFolderResult)
 
-    constructor() : super()
-
     constructor(context: Context, info: StreamInfo) : this() {
         currentInfo = info
         val catalog = DownloadStreamCatalogFactory.create(context, info)
@@ -583,7 +581,12 @@ class DownloadDialog :
     private fun launchSaveAsPicker(filename: String, mimeType: String?, initialPath: Uri?) {
         NoFileManagerSafeGuard.launchSafe(
             requestDownloadSaveAsLauncher,
-            StoredFileHelper.getNewPicker(dialogContext, filename, mimeType, initialPath),
+            StoredFileHelper.getNewPicker(
+                dialogContext,
+                filename,
+                mimeType ?: StoredFileHelper.DEFAULT_MIME,
+                initialPath
+            ),
             TAG,
             dialogContext
         )
