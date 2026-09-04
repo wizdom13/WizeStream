@@ -1517,6 +1517,7 @@
     <string name="equalizer_settings_summary_enabled">On · %1$s</string>
     <!-- Local media -->
     <string name="local_media">Local media</string>
+    <string name="local_media_browse_all_songs">Browse all songs</string>
     <string name="local_media_on_device">On this device</string>
     <string name="local_media_permission_description">Allow WizeStream to find music and videos stored on this device. Access is requested only when you open Local media.</string>
     <string name="local_media_grant_access">Allow media access</string>

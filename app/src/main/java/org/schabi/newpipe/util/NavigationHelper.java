@@ -624,6 +624,13 @@ public final class NavigationHelper {
                 .commit();
     }
 
+    public static void openLocalMediaAudioFragment(final FragmentManager fragmentManager) {
+        defaultTransaction(fragmentManager)
+                .replace(R.id.fragment_holder, LocalMediaFragment.newAudioTracksInstance())
+                .addToBackStack(null)
+                .commit();
+    }
+
     public static void openSubscriptionFragment(final FragmentManager fragmentManager) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, new SubscriptionFragment())

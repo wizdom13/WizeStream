@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.PlaybackParameters;
 
+import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.ActivityPlayerQueueControlBinding;
 import org.schabi.newpipe.download.BulkDownloadDialog;
@@ -160,6 +161,10 @@ public final class PlayQueueActivity extends AppCompatActivity
                     .setChecked(player.getEqualizerState().isEnabled());
             menu.findItem(R.id.action_visualizer)
                     .setVisible(player.audioPlayerSelected());
+            final PlayQueueItem currentItem = player.getPlayQueue() == null
+                    ? null : player.getPlayQueue().getItem();
+            menu.findItem(R.id.action_browse_local_media)
+                    .setVisible(shouldShowLocalMediaBrowser(currentItem));
             updateVisualizerMenuItem();
         }
         return super.onPrepareOptionsMenu(m);
@@ -203,6 +208,9 @@ public final class PlayQueueActivity extends AppCompatActivity
         } else if (itemId == R.id.action_download_queue) {
             showBulkDownloadDialog();
             return true;
+        } else if (itemId == R.id.action_browse_local_media) {
+            openLocalMediaBrowser();
+            return true;
         } else if (itemId == R.id.action_switch_main) {
             this.player.setRecovery();
             NavigationHelper.playOnMainPlayer(this, player.getPlayQueue(), true);
@@ -225,6 +233,17 @@ public final class PlayQueueActivity extends AppCompatActivity
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    static boolean shouldShowLocalMediaBrowser(@Nullable final PlayQueueItem item) {
+        return item != null && item.isLocalMedia();
+    }
+
+    private void openLocalMediaBrowser() {
+        final Intent intent = new Intent(this, MainActivity.class)
+                .putExtra(MainActivity.KEY_OPEN_LOCAL_MEDIA_AUDIO, true)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
     }
 
     private void showBulkDownloadDialog() {
@@ -589,6 +608,7 @@ public final class PlayQueueActivity extends AppCompatActivity
             adapter.setSelectedListener(getOnSelectedListener());
             queueControlBinding.playQueue.setAdapter(adapter);
         }
+        invalidateOptionsMenu();
     }
 
     @Override
