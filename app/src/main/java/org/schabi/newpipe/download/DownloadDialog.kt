@@ -51,7 +51,8 @@ import org.schabi.newpipe.util.ThemeHelper
 import us.shandian.giga.service.DownloadManager
 import us.shandian.giga.service.DownloadManagerService
 
-class DownloadDialog : DialogFragment(),
+class DownloadDialog :
+    DialogFragment(),
     RadioGroup.OnCheckedChangeListener,
     AdapterView.OnItemSelectedListener {
 
