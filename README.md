@@ -155,13 +155,15 @@ Sensitive areas such as playback, downloads, background playback, popup playback
 
 WizeStream supports these services through extractor source integrated directly into the app:
 
-- YouTube and YouTube Music
-- Bilibili
-- Niconico
-- PeerTube
-- Bandcamp
+- YouTube, including dedicated YouTube Music and YouTube Shorts destinations
 - SoundCloud
 - media.ccc.de
+- PeerTube
+- Bandcamp
+- Bilibili
+- Niconico
+- BitChute
+- Rumble
 
 YouTube playback and downloads use conventional progressive, DASH, and HLS stream URLs exposed by
 the bundled extractor source.
@@ -195,12 +197,19 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   keywords using locally stored rules under **Settings > Content > Blocked content**
 - Browse video details, related content, comments, playlists, and channel tabs where supported
 - Sort channel videos by latest, popular, or oldest, and use podcast tabs on supported channels
+- Browse read-only YouTube channel posts with text, images, polls, links, videos, playlists, and
+  pagination
 - See channel avatars directly in stream lists, open channels from their identity areas, and view
   view or subscriber counts where the service provides them
+- Copy stream titles, share streams and playlists, open supported links directly in WizeStream, and
+  open a channel's RSS feed where available
 - View YouTube dislike counts where available
 - Optionally replace YouTube titles and thumbnails with accepted community contributions from DeArrow
 - Identify membership-restricted videos with a **Members only** badge, receive a clear explanation
   instead of an unplayable native request, or hide those videos from content lists
+- Configure app and content languages, content country, YouTube Restricted Mode, age-restricted
+  content visibility, image quality, search suggestions, global search-button behavior, and the
+  preferred PeerTube instance
 
 ### Playback
 
@@ -208,15 +217,21 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Switch a video to audio-only Listen mode without losing the queue or playback position, and choose
   from 15 waveform, spectrum, meter, radial, and particle visualizers under **Settings > Video and
   audio > Visualizer style**
+- Tune playback with a built-in 10-band equalizer, five presets, a saved custom curve, and automatic
+  clipping headroom
 - Browse and resume audio safely through Android Auto, including voice search and a bounded
   **Continue listening** section; video and visualizers are never shown on the driving surface
 - Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
   newer, with play, pause, stop, and receiver-switching controls
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
+- Control autoplay and automatic queue continuation, enqueue items next or last, reorder the play
+  queue, and automatically prefer Shorts recommendations while watching Shorts
 - Select available video resolutions and formats, including higher adaptive qualities when exposed by
   the service
 - Select multi-audio tracks with original, dubbed, descriptive, and secondary labels, with preferences
   for original or descriptive audio
+- Set separate default video and popup resolutions, preferred video and audio formats, and a mobile
+  data resolution limit
 - Save playback speed, quality, and caption choices in per-channel playback profiles
 - Retain playback speed for live streams
 - Use swipe seeking, fullscreen volume and brightness swipes, hold-to-speed-up, configurable
@@ -225,6 +240,9 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Optionally keep visible video playback in Android's native picture-in-picture window on Android 8
   and newer
 - Optionally keep the video visible while scrolling its details page
+- Configure the preferred action when opening a stream, start or rotate directly into fullscreen even
+  when Android orientation is locked, choose the exit/minimize behavior, and remember popup size and
+  position
 - Set a sleep timer using presets, a custom duration, the end of the current video, or the end of the
   queue, with optional fade-out
 - Skip or mark SponsorBlock categories with per-category behavior, colors, notifications, seek-bar
@@ -235,17 +253,27 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Subscribe to channels without a platform account and organize subscriptions into channel groups
 - Keep independent **Subscriptions** and **What's New** scopes and refresh state for each service,
   including separate YouTube and YouTube Music scopes
-- Create local playlists, bookmark remote playlists, and sort remote playlist contents
+- Receive configurable new-stream notifications for selected subscriptions, with checking-frequency,
+  network, and per-channel title-keyword controls
+- Create, rename, search, play, shuffle, share, and bulk-manage local playlists; remove watched or
+  duplicate entries, bookmark remote playlists, and sort remote playlist contents
 - Swipe a video out of a local playlist with an **Undo** action
+- Browse and play local audio and video files with search, filters, sorting, thumbnails, detailed
+  metadata, refresh/rescan controls, and main, background, or popup playback
 - Search locally within subscriptions, playlists, feeds, watch history, and Downloads, then carry a
   query into the selected service's online search
 - Store watch history, search history, and playback progress locally under user-controlled settings
+- Browse watch history by date with fast scrolling and a calendar date picker
 - Download video, audio, and captions where supported, with resumable downloads and queue controls
-- Bulk-download complete remote playlists or the current play queue as video or audio, optionally
-  prefixing filenames with track numbers
-- Embed title, uploader, genre, upload date, and source URL metadata in generated M4A, MP4, and Opus
-  downloads
-- Import and export compatible app data for migration and backup
+- Bulk-download complete local or remote playlists and the current play queue as video or audio,
+  optionally prefixing filenames with track numbers
+- Download MP3 audio with selectable quality, and embed title, uploader, genre, upload date, and source
+  URL metadata in generated MP3, M4A, MP4, and Opus files
+- Choose Storage Access Framework or compatible legacy storage locations, separate audio and video
+  folders, mobile-network behavior, retry limits, filename handling, and a serial download queue
+- Import or export subscriptions separately, create complete WizeStream backups, and merge compatible
+  watch history, playback positions, local playlists, settings, and SponsorBlock data from NewPipe-style
+  backups without replacing existing data
 
 ### Learning Mode
 
@@ -275,11 +303,27 @@ data migration, and synchronization details.
 ### Interface and customization
 
 - Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
-- Dynamic Material You colors where available, plus manual theme color presets
+- Dynamic Material You colors where available, plus Light, Dark, Black, Follow system, and manual
+  theme color options
 - A customizable home screen and configurable default main tab
 - Bottom navigation for up to five main sections and a scrollable tab layout for larger tab sets
 - Bottom-navigation labels that can be always visible, active only, or hidden
-- Phone, tablet, landscape, and Android TV layouts
+- Optional service sections in the navigation drawer and configurable global search behavior
+- List and grid display modes, responsive or fixed tablet grid columns, optional full grid titles,
+  adjustable comment text, and Android caption-style integration
+- Configurable player-notification actions, artwork, colorization, and lock-screen thumbnails
+- Searchable settings and resettable preferences
+- Phone, tablet, landscape, and Android TV layouts, with configurable left-rail or bottom navigation on
+  tablets
+
+### Privacy and network
+
+- Use WizeStream without a platform account or Google Play Services
+- Route remote requests through an HTTP or SOCKS5 proxy with optional username/password
+  authentication; proxy passwords are encrypted with Android Keystore and excluded from backups
+- Keep local and LAN traffic outside the proxy so device synchronization and casting remain available
+- Independently enable, disable, or clear watch history, playback positions, search history, cached
+  metadata, and cookies
 
 ### Device synchronization
 
