@@ -49,8 +49,15 @@ internal fun localMediaItemLayout(itemViewMode: ItemViewMode): Int = when (itemV
 
 class LocalMediaFragment : Fragment() {
     private companion object {
+        const val ARG_OPEN_AUDIO_TRACKS = "open_audio_tracks"
         const val STATE_QUERY = "local_media_query"
         const val STATE_SEARCH_EXPANDED = "local_media_search_expanded"
+        const val STATE_FILTER = "local_media_filter"
+
+        @JvmStatic
+        fun newAudioTracksInstance() = LocalMediaFragment().apply {
+            arguments = Bundle().apply { putBoolean(ARG_OPEN_AUDIO_TRACKS, true) }
+        }
     }
 
     private enum class Filter { ALL, AUDIO, VIDEO, BROWSE }
@@ -99,6 +106,13 @@ class LocalMediaFragment : Fragment() {
         setHasOptionsMenu(true)
         query = state?.getString(STATE_QUERY).orEmpty()
         searchExpanded = state?.getBoolean(STATE_SEARCH_EXPANDED) ?: false
+        filter = state?.getString(STATE_FILTER)
+            ?.let { saved -> Filter.entries.firstOrNull { it.name == saved } }
+            ?: if (arguments?.getBoolean(ARG_OPEN_AUDIO_TRACKS) == true) {
+                Filter.AUDIO
+            } else {
+                Filter.ALL
+            }
     }
 
     override fun onCreateView(
@@ -218,6 +232,8 @@ class LocalMediaFragment : Fragment() {
                 }
             }
         )
+        view.findViewById<Chip>(filterChipId(filter)).isChecked = true
+        selectFilter(filter)
         updateSearchVisibility()
         loadOrExplainPermission()
     }
@@ -233,6 +249,7 @@ class LocalMediaFragment : Fragment() {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_QUERY, query)
         outState.putBoolean(STATE_SEARCH_EXPANDED, searchExpanded)
+        outState.putString(STATE_FILTER, filter.name)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -351,6 +368,13 @@ class LocalMediaFragment : Fragment() {
         view?.findViewById<View>(R.id.localMediaGroupHeader)?.visibility = View.GONE
         requireActivity().invalidateOptionsMenu()
         if (selected == Filter.BROWSE) renderBrowserState(browserState) else updateList()
+    }
+
+    private fun filterChipId(selected: Filter): Int = when (selected) {
+        Filter.ALL -> R.id.localMediaAll
+        Filter.AUDIO -> R.id.localMediaAudio
+        Filter.VIDEO -> R.id.localMediaVideo
+        Filter.BROWSE -> R.id.localMediaBrowse
     }
 
     private fun selectAudioCategory(selected: LocalMediaAudioCategory) {

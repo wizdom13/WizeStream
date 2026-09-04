@@ -159,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SEARCH_NAVIGATION_RAIL_MAX_ITEM_COUNT = 7;
     private static final int SEARCH_NAVIGATION_ITEM_ID_BASE = 20_000;
     public static final String KEY_IS_IN_BACKGROUND = "is_in_background";
+    public static final String KEY_OPEN_LOCAL_MEDIA_AUDIO = "open_local_media_audio";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
@@ -915,7 +916,8 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "initFragments() called");
         }
         StateSaver.clearStateFiles();
-        if (getIntent() != null && getIntent().hasExtra(Constants.KEY_LINK_TYPE)) {
+        if (getIntent() != null && (getIntent().hasExtra(Constants.KEY_LINK_TYPE)
+                || getIntent().getBooleanExtra(KEY_OPEN_LOCAL_MEDIA_AUDIO, false))) {
             // When user watch a video inside popup and then tries to open the video in main player
             // while the app is closed he will see a blank fragment on place of kiosk.
             // Let's open it first
@@ -1253,6 +1255,9 @@ public class MainActivity extends AppCompatActivity {
                         getSupportFragmentManager(),
                         serviceId,
                         searchString);
+
+            } else if (intent.getBooleanExtra(KEY_OPEN_LOCAL_MEDIA_AUDIO, false)) {
+                NavigationHelper.openLocalMediaAudioFragment(getSupportFragmentManager());
 
             } else {
                 NavigationHelper.gotoMainFragment(getSupportFragmentManager());

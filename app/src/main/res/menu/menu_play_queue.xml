@@ -4,6 +4,13 @@
     tools:context=".player.PlayQueueActivity">
 
     <item
+        android:id="@+id/action_browse_local_media"
+        android:orderInCategory="0"
+        android:title="@string/local_media_browse_all_songs"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_append_playlist"
         android:icon="@drawable/ic_playlist_add"
         android:title="@string/add_to_playlist"
