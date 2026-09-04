@@ -97,7 +97,6 @@ import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.media.LocalMediaMetadataLoader;
 import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
-import org.schabi.newpipe.player.equalizer.EqualizerController;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
@@ -237,7 +236,7 @@ public final class Player implements PlaybackListener, Listener {
     private ExoPlayer simpleExoPlayer;
     private AudioReactor audioReactor;
     @NonNull
-    private final EqualizerController equalizerController;
+    private final PlayerAudioController audioController;
 
     @NonNull
     private final DefaultTrackSelector trackSelector;
@@ -266,8 +265,6 @@ public final class Player implements PlaybackListener, Listener {
 
     @NonNull
     private final SleepTimerPlaybackController sleepTimerController;
-    private boolean muted;
-
     // audio only mode does not mean that player type is background, but that the player was
     // minimized to background but will resume automatically to the original player type
     private boolean isAudioOnly = false;
@@ -330,7 +327,7 @@ public final class Player implements PlaybackListener, Listener {
         this.service = service;
         context = service;
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        equalizerController = new EqualizerController(context);
+        audioController = new PlayerAudioController(this);
         recordManager = new HistoryRecordManager(context);
         learningSessionTracker = new LearningSessionTracker(context);
         sponsorBlockController = new SponsorBlockPlaybackController(this);
@@ -710,7 +707,7 @@ public final class Player implements PlaybackListener, Listener {
         simpleExoPlayer.setSeekParameters(PlayerHelper.getSeekParameters(context));
         simpleExoPlayer.setWakeMode(C.WAKE_MODE_NETWORK);
         simpleExoPlayer.setHandleAudioBecomingNoisy(true);
-        equalizerController.attachAudioSession(simpleExoPlayer.getAudioSessionId());
+        audioController.attachAudioSession(simpleExoPlayer.getAudioSessionId());
 
         audioReactor = new AudioReactor(context, simpleExoPlayer);
 
@@ -738,7 +735,7 @@ public final class Player implements PlaybackListener, Listener {
         mediaUrlRecoveryGuard.reset();
         learningSessionTracker.stop();
         UIs.call(PlayerUi::destroyPlayer);
-        equalizerController.releaseAudioSession();
+        audioController.releaseAudioSession();
 
         if (!exoPlayerIsNull()) {
             simpleExoPlayer.removeListener(this);
@@ -1423,66 +1420,38 @@ public final class Player implements PlaybackListener, Listener {
     //region Mute / Unmute
 
     public void toggleMute() {
-        if (exoPlayerIsNull() || audioReactor == null) {
-            return;
-        }
-        muted = !muted;
-        applyPlayerVolume();
-        if (!muted) {
-            audioReactor.requestAudioFocus();
-        } else {
-            audioReactor.abandonAudioFocus();
-        }
-        UIs.call(playerUi -> playerUi.onMuteUnmuteChanged(muted));
-        notifyPlaybackUpdateToListeners();
+        audioController.toggleMute();
     }
 
     public boolean isMuted() {
-        return muted;
+        return audioController.isMuted();
     }
 
     @NonNull
     public EqualizerState getEqualizerState() {
-        return equalizerController.getState();
+        return audioController.getEqualizerState();
     }
 
     public boolean isEqualizerAvailable() {
-        return equalizerController.isAvailable();
+        return audioController.isEqualizerAvailable();
     }
 
     public boolean isEqualizerOperational() {
-        return equalizerController.isOperational();
+        return audioController.isEqualizerOperational();
     }
 
     public void previewEqualizerState(@NonNull final EqualizerState state) {
-        applyEqualizerState(state, false);
+        audioController.previewEqualizerState(state);
     }
 
     public void updateEqualizerState(@NonNull final EqualizerState state) {
-        applyEqualizerState(state, true);
+        audioController.updateEqualizerState(state);
     }
 
-    private void applyEqualizerState(@NonNull final EqualizerState state,
-                                     final boolean persist) {
-        final boolean enabledChanged =
-                equalizerController.getState().isEnabled() != state.isEnabled();
-        if (persist) {
-            equalizerController.updateState(state);
-        } else {
-            equalizerController.previewState(state);
-        }
-        applyPlayerVolume();
-        if (enabledChanged) {
-            updateAudioTunneling();
-        }
-        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
-                state, equalizerController.isOperational()));
-    }
-
-    private void updateAudioTunneling() {
+    void updateAudioTunneling() {
         final boolean tunnelingEnabled = !prefs.getBoolean(
                 context.getString(R.string.disable_media_tunneling_key), false)
-                && !equalizerController.getState().isEnabled()
+                && !audioController.getEqualizerState().isEnabled()
                 && !playbackPresentationMode.allowsVisualizer();
         trackSelector.setParameters(trackSelector.buildUponParameters()
                 .setTunnelingEnabled(tunnelingEnabled));
@@ -1490,8 +1459,8 @@ public final class Player implements PlaybackListener, Listener {
 
     void applyPlayerVolume() {
         if (!exoPlayerIsNull()) {
-            final float equalizerHeadroom = equalizerController.getHeadroomMultiplier();
-            simpleExoPlayer.setVolume(muted
+            final float equalizerHeadroom = audioController.getEqualizerHeadroomMultiplier();
+            simpleExoPlayer.setVolume(audioController.isMuted()
                     ? 0.0f : sleepTimerController.getVolumeMultiplier() * equalizerHeadroom);
         }
     }
@@ -1547,10 +1516,7 @@ public final class Player implements PlaybackListener, Listener {
 
     @Override
     public void onAudioSessionIdChanged(final int audioSessionId) {
-        equalizerController.attachAudioSession(audioSessionId);
-        applyPlayerVolume();
-        UIs.call(playerUi -> playerUi.onEqualizerStateChanged(
-                equalizerController.getState(), equalizerController.isOperational()));
+        audioController.onAudioSessionChanged(audioSessionId);
     }
 
     /**
@@ -2634,7 +2600,7 @@ public final class Player implements PlaybackListener, Listener {
         }
     }
 
-    private void notifyPlaybackUpdateToListeners() {
+    void notifyPlaybackUpdateToListeners() {
         if (fragmentListener != null && !exoPlayerIsNull() && playQueue != null) {
             fragmentListener.onPlaybackUpdate(currentState, getRepeatMode(),
                     playQueue.isShuffled(), simpleExoPlayer.getPlaybackParameters());
