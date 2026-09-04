@@ -21,11 +21,15 @@ public class VideoDetailLiveStreamErrorTest {
 
         final String workerFlow = source.substring(workerStart, dialogStart);
         final int liveCheck = workerFlow.indexOf(
-                "if (throwable instanceof LiveNotStartException)");
+                "if (throwable instanceof LiveNotStartException");
+        final int unreleasedCheck = workerFlow.indexOf(
+                "throwable instanceof VideoNotReleaseException", liveCheck);
         final int liveDialog = workerFlow.indexOf("showLiveNotStartedDialog()", liveCheck);
         final int genericError = workerFlow.indexOf("showError(new ErrorInfo(", liveDialog);
 
         assertTrue(liveCheck >= 0);
+        assertTrue(unreleasedCheck > liveCheck);
+        assertTrue(unreleasedCheck < liveDialog);
         assertTrue(liveDialog > liveCheck);
         assertTrue(genericError > liveDialog);
     }
