@@ -5,13 +5,13 @@
 
 package org.schabi.newpipe.download
 
+import java.util.stream.Stream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.schabi.newpipe.R
 import us.shandian.giga.service.MissionState
-import java.util.stream.Stream
 
 class DownloadStorageConflictPolicyTest {
     @ParameterizedTest
