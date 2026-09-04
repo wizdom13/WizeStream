@@ -1,6 +1,5 @@
 package org.schabi.newpipe.download;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -29,14 +28,11 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.DialogFragment;
 import androidx.preference.PreferenceManager;
 
 import com.evernote.android.state.State;
 import com.livefront.bridge.Bridge;
-import com.nononsenseapps.filepicker.Utils;
-
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.DownloadDialogBinding;
@@ -56,7 +52,6 @@ import org.schabi.newpipe.streams.io.StoredDirectoryHelper;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.AudioTrackAdapter;
 import org.schabi.newpipe.util.AudioTrackAdapter.AudioTracksWrapper;
-import org.schabi.newpipe.util.FilePickerActivityHelper;
 import org.schabi.newpipe.util.FilenameUtils;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.PermissionHelper;
@@ -66,7 +61,6 @@ import org.schabi.newpipe.util.StreamItemAdapter;
 import org.schabi.newpipe.util.StreamItemAdapter.StreamInfoWrapper;
 import org.schabi.newpipe.util.ThemeHelper;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -129,9 +123,11 @@ public class DownloadDialog extends DialogFragment
 
     private SharedPreferences prefs;
 
-    // Variables for file name and MIME type when picking new folder because it's not set yet
-    private String filenameTmp;
-    private String mimeTmp;
+    // Preserve output metadata while an external picker is open.
+    @State
+    String filenameTmp;
+    @State
+    String mimeTmp;
 
     private final ActivityResultLauncher<Intent> requestDownloadSaveAsLauncher =
             registerForActivityResult(
@@ -462,74 +458,24 @@ public class DownloadDialog extends DialogFragment
     //////////////////////////////////////////////////////////////////////////*/
 
     private void requestDownloadPickAudioFolderResult(final ActivityResult result) {
-        requestDownloadPickFolderResult(
-                result, getString(R.string.download_path_audio_key), DownloadManager.TAG_AUDIO);
+        newPickerResultHandler().handleFolder(result,
+                getString(R.string.download_path_audio_key), DownloadManager.TAG_AUDIO,
+                filenameTmp, mimeTmp);
     }
 
     private void requestDownloadPickVideoFolderResult(final ActivityResult result) {
-        requestDownloadPickFolderResult(
-                result, getString(R.string.download_path_video_key), DownloadManager.TAG_VIDEO);
+        newPickerResultHandler().handleFolder(result,
+                getString(R.string.download_path_video_key), DownloadManager.TAG_VIDEO,
+                filenameTmp, mimeTmp);
     }
 
     private void requestDownloadSaveAsResult(@NonNull final ActivityResult result) {
-        if (result.getResultCode() != Activity.RESULT_OK) {
-            return;
-        }
-
-        if (result.getData() == null || result.getData().getData() == null) {
-            showFailedDialog(R.string.general_error);
-            return;
-        }
-
-        if (FilePickerActivityHelper.isOwnFileUri(context, result.getData().getData())) {
-            final File file = Utils.getFileForUri(result.getData().getData());
-            checkSelectedDownload(null, Uri.fromFile(file), file.getName(),
-                    StoredFileHelper.DEFAULT_MIME);
-            return;
-        }
-
-        final DocumentFile docFile = DocumentFile.fromSingleUri(context,
-                result.getData().getData());
-        if (docFile == null) {
-            showFailedDialog(R.string.general_error);
-            return;
-        }
-
-        // check if the selected file was previously used
-        checkSelectedDownload(null, result.getData().getData(), docFile.getName(),
-                docFile.getType());
+        newPickerResultHandler().handleSaveAs(result);
     }
 
-    private void requestDownloadPickFolderResult(@NonNull final ActivityResult result,
-                                                 final String key,
-                                                 final String tag) {
-        if (result.getResultCode() != Activity.RESULT_OK) {
-            return;
-        }
-
-        if (result.getData() == null || result.getData().getData() == null) {
-            showFailedDialog(R.string.general_error);
-            return;
-        }
-
-        Uri uri = result.getData().getData();
-        if (FilePickerActivityHelper.isOwnFileUri(context, uri)) {
-            uri = Uri.fromFile(Utils.getFileForUri(uri));
-        } else {
-            context.grantUriPermission(context.getPackageName(), uri,
-                    StoredDirectoryHelper.PERMISSION_FLAGS);
-        }
-
-        PreferenceManager.getDefaultSharedPreferences(context).edit().putString(key,
-                uri.toString()).apply();
-
-        try {
-            final StoredDirectoryHelper mainStorage = new StoredDirectoryHelper(context, uri, tag);
-            checkSelectedDownload(mainStorage, mainStorage.findFile(filenameTmp),
-                    filenameTmp, mimeTmp);
-        } catch (final IOException e) {
-            showFailedDialog(R.string.general_error);
-        }
+    private DownloadPickerResultHandler newPickerResultHandler() {
+        return new DownloadPickerResultHandler(requireContext(), downloadManager,
+                this::continueSelectedDownload, this::showFailedDialog);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
