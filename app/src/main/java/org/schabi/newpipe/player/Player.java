@@ -59,7 +59,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -144,7 +143,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import coil3.target.Target;
@@ -191,7 +189,6 @@ public final class Player implements PlaybackListener, Listener {
 
     public static final int PLAY_PREV_ACTIVATION_LIMIT_MILLIS = 5000; // 5 seconds
     public static final int PROGRESS_LOOP_INTERVAL_MILLIS = 1000; // 1 second
-    private static final int SLEEP_TIMER_UPDATE_INTERVAL_MILLIS = 1000; // 1 second
 
     /*//////////////////////////////////////////////////////////////////////////
     // Other constants
@@ -268,17 +265,7 @@ public final class Player implements PlaybackListener, Listener {
             new PopupPlayerReturnState();
 
     @NonNull
-    private final SleepTimer sleepTimer = new SleepTimer();
-    @NonNull
-    private final Handler sleepTimerHandler = new Handler(Looper.getMainLooper());
-    @NonNull
-    private final Runnable sleepTimerTick = this::onSleepTimerTick;
-    @Nullable
-    private PlayQueueItem sleepTimerCurrentTarget;
-    @Nullable
-    private PlayQueueItem sleepTimerQueueTarget;
-    private boolean sleepTimerQueueTargetFollowsLoading;
-    private float sleepTimerVolumeMultiplier = 1.0f;
+    private final SleepTimerPlaybackController sleepTimerController;
     private boolean muted;
 
     // audio only mode does not mean that player type is background, but that the player was
@@ -347,6 +334,7 @@ public final class Player implements PlaybackListener, Listener {
         recordManager = new HistoryRecordManager(context);
         learningSessionTracker = new LearningSessionTracker(context);
         sponsorBlockController = new SponsorBlockPlaybackController(this);
+        sleepTimerController = new SleepTimerPlaybackController(this);
 
         setupBroadcastReceiver();
 
@@ -694,7 +682,7 @@ public final class Player implements PlaybackListener, Listener {
         playQueue = queue;
         playQueue.init();
         simpleExoPlayer.setShuffleModeEnabled(playQueue.isShuffled());
-        retargetSleepTimerForNewQueue();
+        sleepTimerController.onQueueReplaced();
         reloadPlayQueueManager();
 
         UIs.call(PlayerUi::initPlayback);
@@ -775,7 +763,7 @@ public final class Player implements PlaybackListener, Listener {
 
         cancelThumbnailLoading();
         cancelLocalMetadataLoading();
-        clearSleepTimer();
+        sleepTimerController.clear();
         saveStreamProgressState();
         setRecovery();
         stopActivityBinding();
@@ -1236,7 +1224,8 @@ public final class Player implements PlaybackListener, Listener {
                 changeState(playWhenReady ? STATE_PLAYING : STATE_PAUSED);
                 break;
             case androidx.media3.common.Player.STATE_ENDED: // 4
-                maybeFinishSleepTimerAtEndOfItem(currentQueueItem(), false);
+                sleepTimerController.onItemEnded(
+                        playQueue == null ? null : playQueue.getItem(), false);
                 changeState(STATE_COMPLETED);
                 saveStreamProgressStateCompleted();
                 isPrepared = false;
@@ -1453,11 +1442,7 @@ public final class Player implements PlaybackListener, Listener {
             } else if (!shuffleModeEnabled && playQueue.isShuffled()) {
                 playQueue.unshuffle();
             }
-            if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE) {
-                sleepTimerQueueTarget = lastQueueItem();
-                sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
-                notifySleepTimerUpdateToListeners();
-            }
+            sleepTimerController.onShuffleModeChanged();
         }
 
         UIs.call(playerUi -> playerUi.onShuffleModeEnabledChanged(shuffleModeEnabled));
@@ -1544,11 +1529,11 @@ public final class Player implements PlaybackListener, Listener {
                 .setTunnelingEnabled(tunnelingEnabled));
     }
 
-    private void applyPlayerVolume() {
+    void applyPlayerVolume() {
         if (!exoPlayerIsNull()) {
             final float equalizerHeadroom = equalizerController.getHeadroomMultiplier();
             simpleExoPlayer.setVolume(muted
-                    ? 0.0f : sleepTimerVolumeMultiplier * equalizerHeadroom);
+                    ? 0.0f : sleepTimerController.getVolumeMultiplier() * equalizerHeadroom);
         }
     }
     //endregion
@@ -1561,281 +1546,36 @@ public final class Player implements PlaybackListener, Listener {
     //region Sleep timer
 
     public void startSleepTimer(final long durationMillis, final boolean fadeOut) {
-        prepareSleepTimerStart();
-        sleepTimer.startDuration(durationMillis, fadeOut);
-        startSleepTimerUpdates();
+        sleepTimerController.startDuration(durationMillis, fadeOut);
     }
 
     public boolean startSleepTimerAtEndOfCurrent(final boolean fadeOut) {
-        final PlayQueueItem item = currentQueueItem();
-        if (item == null) {
-            return false;
-        }
-
-        prepareSleepTimerStart();
-        sleepTimerCurrentTarget = item;
-        sleepTimer.startEndOfCurrent(fadeOut);
-        startSleepTimerUpdates();
-        return true;
+        return sleepTimerController.startAtEndOfCurrent(fadeOut);
     }
 
     public boolean startSleepTimerAtEndOfQueue(final boolean fadeOut) {
-        final PlayQueueItem item = lastQueueItem();
-        if (item == null || playQueue == null) {
-            return false;
-        }
-
-        prepareSleepTimerStart();
-        sleepTimerQueueTarget = item;
-        sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
-        sleepTimer.startEndOfQueue(fadeOut);
-        startSleepTimerUpdates();
-        return true;
-    }
-
-    private void prepareSleepTimerStart() {
-        resetSleepTimerState();
-        setSleepTimerVolumeMultiplier(1.0f);
+        return sleepTimerController.startAtEndOfQueue(fadeOut);
     }
 
     public void cancelSleepTimer() {
-        if (!sleepTimer.isActive()) {
-            return;
-        }
-        resetSleepTimerState();
-        setSleepTimerVolumeMultiplier(1.0f);
-        notifySleepTimerUpdateToListeners();
-    }
-
-    private void clearSleepTimer() {
-        resetSleepTimerState();
-        setSleepTimerVolumeMultiplier(1.0f);
-    }
-
-    private void resetSleepTimerState() {
-        sleepTimerHandler.removeCallbacks(sleepTimerTick);
-        sleepTimer.cancel();
-        sleepTimerCurrentTarget = null;
-        sleepTimerQueueTarget = null;
-        sleepTimerQueueTargetFollowsLoading = false;
-    }
-
-    private void startSleepTimerUpdates() {
-        sleepTimerHandler.removeCallbacks(sleepTimerTick);
-        sleepTimerHandler.post(sleepTimerTick);
-    }
-
-    private void onSleepTimerTick() {
-        if (!sleepTimer.isActive()) {
-            return;
-        }
-        if (sleepTimer.hasDurationExpired()) {
-            finishSleepTimer(true);
-            return;
-        }
-
-        updateSleepTimerFadeOut();
-        notifySleepTimerUpdateToListeners();
-        sleepTimerHandler.postDelayed(sleepTimerTick, SLEEP_TIMER_UPDATE_INTERVAL_MILLIS);
-    }
-
-    private void updateSleepTimerFadeOut() {
-        final float volumeMultiplier = sleepTimer.getFadeOutVolumeMultiplier(
-                getSleepTimerFadeOutRemainingMillis());
-        setSleepTimerVolumeMultiplier(volumeMultiplier);
-    }
-
-    private void setSleepTimerVolumeMultiplier(final float volumeMultiplier) {
-        final float clampedMultiplier = Math.max(0.0f, Math.min(1.0f, volumeMultiplier));
-        if (Math.abs(sleepTimerVolumeMultiplier - clampedMultiplier) < 0.001f) {
-            return;
-        }
-        sleepTimerVolumeMultiplier = clampedMultiplier;
-        applyPlayerVolume();
-    }
-
-    private void maybeFinishSleepTimerAtEndOfItem(@Nullable final PlayQueueItem endedItem,
-                                                   final boolean pausePlayback) {
-        if (endedItem == null || !sleepTimer.isActive()) {
-            return;
-        }
-
-        final boolean targetReached = (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
-                && isSameQueueItem(endedItem, sleepTimerCurrentTarget))
-                || (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE
-                && isSameQueueItem(endedItem, sleepTimerQueueTarget));
-        if (targetReached) {
-            finishSleepTimer(pausePlayback);
-        }
-    }
-
-    private void finishSleepTimer(final boolean pausePlayback) {
-        if (!sleepTimer.isActive()) {
-            return;
-        }
-
-        resetSleepTimerState();
-        if (pausePlayback && !exoPlayerIsNull() && getPlayWhenReady()) {
-            pause();
-        }
-        setSleepTimerVolumeMultiplier(1.0f);
-        notifySleepTimerUpdateToListeners();
-        Toast.makeText(context, R.string.sleep_timer_finished, Toast.LENGTH_SHORT).show();
-    }
-
-    private void retargetSleepTimerForNewQueue() {
-        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
-            sleepTimerCurrentTarget = currentQueueItem();
-            if (sleepTimerCurrentTarget == null) {
-                clearSleepTimer();
-            }
-        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE && playQueue != null) {
-            sleepTimerQueueTarget = lastQueueItem();
-            sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
-            if (sleepTimerQueueTarget == null) {
-                clearSleepTimer();
-            }
-        }
-    }
-
-    private void retargetEndOfCurrentSleepTimer() {
-        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
-            sleepTimerCurrentTarget = currentQueueItem();
-            notifySleepTimerUpdateToListeners();
-        }
-    }
-
-    private void validateSleepTimerTargetsAfterQueueEdit() {
-        if (playQueue == null) {
-            return;
-        }
-        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
-                && findQueueItemIndex(sleepTimerCurrentTarget) < 0) {
-            sleepTimerCurrentTarget = currentQueueItem();
-            if (sleepTimerCurrentTarget == null) {
-                clearSleepTimer();
-            }
-        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE
-                && (sleepTimerQueueTargetFollowsLoading
-                || findQueueItemIndex(sleepTimerQueueTarget) < 0)) {
-            sleepTimerQueueTarget = lastQueueItem();
-            sleepTimerQueueTargetFollowsLoading = !playQueue.isComplete();
-            if (sleepTimerQueueTarget == null) {
-                clearSleepTimer();
-            }
-        }
-    }
-
-    private long getSleepTimerFadeOutRemainingMillis() {
-        if (sleepTimer.getMode() == SleepTimer.Mode.DURATION) {
-            return sleepTimer.getDurationRemainingMillis();
-        }
-        if ((sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
-                && isSameQueueItem(currentQueueItem(), sleepTimerCurrentTarget))
-                || (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE
-                && isSameQueueItem(currentQueueItem(), sleepTimerQueueTarget))) {
-            return getCurrentItemRemainingMillis();
-        }
-        return SleepTimer.REMAINING_TIME_UNSET;
+        sleepTimerController.cancel();
     }
 
     public long getSleepTimerRemainingMillis() {
-        if (sleepTimer.getMode() == SleepTimer.Mode.DURATION) {
-            return sleepTimer.getDurationRemainingMillis();
-        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
-            return isSameQueueItem(currentQueueItem(), sleepTimerCurrentTarget)
-                    ? getCurrentItemRemainingMillis() : SleepTimer.REMAINING_TIME_UNSET;
-        } else if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_QUEUE) {
-            return getQueueTargetRemainingMillis();
-        }
-        return SleepTimer.REMAINING_TIME_UNSET;
-    }
-
-    private long getQueueTargetRemainingMillis() {
-        if (playQueue == null || exoPlayerIsNull()) {
-            return SleepTimer.REMAINING_TIME_UNSET;
-        }
-        final int currentIndex = playQueue.getIndex();
-        final int targetIndex = findQueueItemIndex(sleepTimerQueueTarget);
-        if (targetIndex < currentIndex || targetIndex < 0) {
-            return SleepTimer.REMAINING_TIME_UNSET;
-        }
-
-        long remainingMillis = getCurrentItemRemainingMillis();
-        if (remainingMillis == SleepTimer.REMAINING_TIME_UNSET) {
-            return SleepTimer.REMAINING_TIME_UNSET;
-        }
-        for (int i = currentIndex + 1; i <= targetIndex; i++) {
-            final PlayQueueItem item = playQueue.getItem(i);
-            if (item == null || item.getDuration() <= 0L) {
-                return SleepTimer.REMAINING_TIME_UNSET;
-            }
-            final long itemDurationMillis = playbackTimeToWallClockMillis(
-                    TimeUnit.SECONDS.toMillis(item.getDuration()));
-            if (Long.MAX_VALUE - remainingMillis < itemDurationMillis) {
-                return SleepTimer.REMAINING_TIME_UNSET;
-            }
-            remainingMillis += itemDurationMillis;
-        }
-        return remainingMillis;
-    }
-
-    private long getCurrentItemRemainingMillis() {
-        if (exoPlayerIsNull()) {
-            return SleepTimer.REMAINING_TIME_UNSET;
-        }
-        long durationMillis = simpleExoPlayer.getDuration();
-        if (durationMillis == C.TIME_UNSET || durationMillis <= 0L) {
-            final PlayQueueItem item = currentQueueItem();
-            if (item == null || item.getDuration() <= 0L) {
-                return SleepTimer.REMAINING_TIME_UNSET;
-            }
-            durationMillis = TimeUnit.SECONDS.toMillis(item.getDuration());
-        }
-        final long mediaRemainingMillis = Math.max(0L,
-                durationMillis - Math.max(0L, simpleExoPlayer.getCurrentPosition()));
-        return playbackTimeToWallClockMillis(mediaRemainingMillis);
-    }
-
-    private long playbackTimeToWallClockMillis(final long playbackTimeMillis) {
-        final float speed = Math.max(0.01f, getPlaybackSpeed());
-        return (long) (playbackTimeMillis / speed);
-    }
-
-    @Nullable
-    private PlayQueueItem currentQueueItem() {
-        return playQueue == null ? null : playQueue.getItem();
-    }
-
-    @Nullable
-    private PlayQueueItem lastQueueItem() {
-        return playQueue == null || playQueue.isEmpty()
-                ? null : playQueue.getItem(playQueue.size() - 1);
-    }
-
-    private int findQueueItemIndex(@Nullable final PlayQueueItem target) {
-        if (playQueue == null || target == null) {
-            return -1;
-        }
-        return playQueue.indexOf(target);
-    }
-
-    private static boolean isSameQueueItem(@Nullable final PlayQueueItem first,
-                                           @Nullable final PlayQueueItem second) {
-        return first != null && first == second;
+        return sleepTimerController.remainingMillis();
     }
 
     public boolean isSleepTimerActive() {
-        return sleepTimer.isActive();
+        return sleepTimerController.isActive();
     }
 
     @NonNull
     public SleepTimer.Mode getSleepTimerMode() {
-        return sleepTimer.getMode();
+        return sleepTimerController.getMode();
     }
 
     public boolean isSleepTimerFadeOutEnabled() {
-        return sleepTimer.isFadeOutEnabled();
+        return sleepTimerController.isFadeOutEnabled();
     }
     //endregion
 
@@ -1970,7 +1710,8 @@ public final class Player implements PlaybackListener, Listener {
             mediaUrlRecoveryGuard.reset();
         }
         if (discontinuityReason == DISCONTINUITY_REASON_AUTO_TRANSITION) {
-            maybeFinishSleepTimerAtEndOfItem(playQueue.getItem(oldPosition.mediaItemIndex), true);
+            sleepTimerController.onItemEnded(
+                    playQueue.getItem(oldPosition.mediaItemIndex), true);
         }
         switch (discontinuityReason) {
             case DISCONTINUITY_REASON_AUTO_TRANSITION:
@@ -2000,10 +1741,8 @@ public final class Player implements PlaybackListener, Listener {
                 break; // only makes Android Studio linter happy, as there are no ads
         }
 
-        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT
-                && discontinuityReason != DISCONTINUITY_REASON_AUTO_TRANSITION) {
-            sleepTimerCurrentTarget = playQueue.getItem(newIndex);
-            notifySleepTimerUpdateToListeners();
+        if (discontinuityReason != DISCONTINUITY_REASON_AUTO_TRANSITION) {
+            sleepTimerController.onPositionDiscontinuity(playQueue.getItem(newIndex));
         }
     }
 
@@ -2440,7 +2179,7 @@ public final class Player implements PlaybackListener, Listener {
             saveStreamProgressState();
             playQueue.offsetIndex(-1);
         }
-        retargetEndOfCurrentSleepTimer();
+        sleepTimerController.onCurrentItemChanged();
         triggerProgressUpdate();
     }
 
@@ -2454,7 +2193,7 @@ public final class Player implements PlaybackListener, Listener {
 
         saveStreamProgressState();
         playQueue.offsetIndex(+1);
-        retargetEndOfCurrentSleepTimer();
+        sleepTimerController.onCurrentItemChanged();
         triggerProgressUpdate();
     }
 
@@ -2706,15 +2445,12 @@ public final class Player implements PlaybackListener, Listener {
             saveStreamProgressState();
         }
         playQueue.setIndex(index);
-        if (sleepTimer.getMode() == SleepTimer.Mode.END_OF_CURRENT) {
-            sleepTimerCurrentTarget = item;
-            notifySleepTimerUpdateToListeners();
-        }
+        sleepTimerController.onQueueItemSelected(item);
     }
 
     @Override
     public void onPlayQueueEdited() {
-        validateSleepTimerTargetsAfterQueueEdit();
+        sleepTimerController.onQueueEdited();
         notifyPlaybackUpdateToListeners();
         notifySleepTimerUpdateToListeners();
         UIs.call(PlayerUi::onPlayQueueEdited);
@@ -2970,10 +2706,10 @@ public final class Player implements PlaybackListener, Listener {
         }
     }
 
-    private void notifySleepTimerUpdateToListeners() {
-        final SleepTimer.Mode mode = sleepTimer.getMode();
+    void notifySleepTimerUpdateToListeners() {
+        final SleepTimer.Mode mode = sleepTimerController.getMode();
         final long remainingMillis = getSleepTimerRemainingMillis();
-        final boolean fadeOutEnabled = sleepTimer.isFadeOutEnabled();
+        final boolean fadeOutEnabled = sleepTimerController.isFadeOutEnabled();
         UIs.call(playerUi -> playerUi.onSleepTimerChanged(
                 mode, remainingMillis, fadeOutEnabled));
         if (fragmentListener != null) {

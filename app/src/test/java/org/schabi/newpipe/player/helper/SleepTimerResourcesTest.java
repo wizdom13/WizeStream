@@ -59,12 +59,15 @@ public class SleepTimerResourcesTest {
     public void playerHandlesDurationAndNaturalPlaybackEndpoints() throws Exception {
         final String player = Files.readString(sourceDirectory.resolve(
                 "org/schabi/newpipe/player/Player.java"));
+        final String controller = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/player/SleepTimerPlaybackController.kt"));
 
-        assertTrue(player.contains("sleepTimer.hasDurationExpired()"));
+        assertTrue(player.contains("sleepTimerController.onItemEnded"));
         assertTrue(player.contains("DISCONTINUITY_REASON_AUTO_TRANSITION"));
-        assertTrue(player.contains("maybeFinishSleepTimerAtEndOfItem"));
-        assertTrue(player.contains("setSleepTimerVolumeMultiplier(1.0f)"));
-        assertTrue(player.contains("pause();"));
+        assertTrue(player.contains("sleepTimerController.startDuration"));
+        assertTrue(controller.contains("timer.hasDurationExpired()"));
+        assertTrue(controller.contains("setVolumeMultiplier(1.0f)"));
+        assertTrue(controller.contains("player.pause()"));
     }
 
     private Element findByAndroidId(final Document document, final String id) {
