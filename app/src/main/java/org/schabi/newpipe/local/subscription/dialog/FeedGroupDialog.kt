@@ -256,7 +256,12 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
             showScreen(SubscriptionsPickerScreen)
         }
 
-        val headerMenu = feedGroupCreateBinding.subscriptionsHeaderToolbar.menu
+        val headerToolbar = feedGroupCreateBinding.subscriptionsHeaderToolbar
+        headerToolbar.setNavigationIcon(R.drawable.ic_arrow_back)
+        headerToolbar.setNavigationContentDescription(R.string.back)
+        headerToolbar.setNavigationOnClickListener { onBackPressed() }
+
+        val headerMenu = headerToolbar.menu
         requireActivity().menuInflater.inflate(R.menu.menu_feed_group_dialog, headerMenu)
 
         headerMenu.findItem(R.id.action_search).setOnMenuItemClickListener {
