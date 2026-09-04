@@ -86,7 +86,6 @@ import us.shandian.giga.postprocessing.Mp3OutputOptions;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
 import us.shandian.giga.service.DownloadManagerService.DownloadManagerBinder;
-import us.shandian.giga.service.MissionState;
 
 public class DownloadDialog extends DialogFragment
         implements RadioGroup.OnCheckedChangeListener, AdapterView.OnItemSelectedListener {
@@ -972,151 +971,9 @@ public class DownloadDialog extends DialogFragment
                                        final Uri targetFile,
                                        final String filename,
                                        final String mime) {
-        StoredFileHelper storage;
-
-        try {
-            if (mainStorage == null) {
-                // using SAF on older android version
-                storage = new StoredFileHelper(context, null, targetFile, "");
-            } else if (targetFile == null) {
-                // the file does not exist, but it is probably used in a pending download
-                storage = new StoredFileHelper(mainStorage.getUri(), filename, mime,
-                        mainStorage.getTag());
-            } else {
-                // the target filename is already use, attempt to use it
-                storage = new StoredFileHelper(context, mainStorage.getUri(), targetFile,
-                        mainStorage.getTag());
-            }
-        } catch (final Exception e) {
-            ErrorUtil.createNotification(requireContext(),
-                    new ErrorInfo(e, UserAction.DOWNLOAD_FAILED, "Getting storage"));
-            return;
-        }
-
-        // get state of potential mission referring to the same file
-        final MissionState state = downloadManager.checkForExistingMission(storage);
-        @StringRes final int msgBtn;
-        @StringRes final int msgBody;
-
-        // this switch checks if there is already a mission referring to the same file
-        switch (state) {
-            case Finished: // there is already a finished mission
-                msgBtn = R.string.overwrite;
-                msgBody = R.string.overwrite_finished_warning;
-                break;
-            case Pending:
-                msgBtn = R.string.overwrite;
-                msgBody = R.string.download_already_pending;
-                break;
-            case PendingRunning:
-                msgBtn = R.string.generate_unique_name;
-                msgBody = R.string.download_already_running;
-                break;
-            case None: // there is no mission referring to the same file
-                if (mainStorage == null) {
-                    // This part is called if:
-                    // * using SAF on older android version
-                    // * save path not defined
-                    // * if the file exists overwrite it, is not necessary ask
-                    if (!storage.existsAsFile() && !storage.create()) {
-                        showFailedDialog(R.string.error_file_creation);
-                        return;
-                    }
-                    continueSelectedDownload(storage);
-                    return;
-                } else if (targetFile == null) {
-                    // This part is called if:
-                    // * the filename is not used in a pending/finished download
-                    // * the file does not exists, create
-
-                    if (!mainStorage.mkdirs()) {
-                        showFailedDialog(R.string.error_path_creation);
-                        return;
-                    }
-
-                    storage = mainStorage.createFile(filename, mime);
-                    if (storage == null || !storage.canWrite()) {
-                        showFailedDialog(R.string.error_file_creation);
-                        return;
-                    }
-
-                    continueSelectedDownload(storage);
-                    return;
-                }
-                msgBtn = R.string.overwrite;
-                msgBody = R.string.overwrite_unrelated_warning;
-                break;
-            default:
-                return; // unreachable
-        }
-
-        final AlertDialog.Builder askDialog = new AlertDialog.Builder(context)
-                .setTitle(R.string.download_dialog_title)
-                .setMessage(msgBody)
-                .setNegativeButton(R.string.cancel, null);
-        final StoredFileHelper finalStorage = storage;
-
-
-        if (mainStorage == null) {
-            // This part is called if:
-            // * using SAF on older android version
-            // * save path not defined
-            switch (state) {
-                case Pending:
-                case Finished:
-                    askDialog.setPositiveButton(msgBtn, (dialog, which) -> {
-                        dialog.dismiss();
-                        downloadManager.forgetMission(finalStorage);
-                        continueSelectedDownload(finalStorage);
-                    });
-                    break;
-            }
-
-            askDialog.show();
-            return;
-        }
-
-        askDialog.setPositiveButton(msgBtn, (dialog, which) -> {
-            dialog.dismiss();
-
-            StoredFileHelper storageNew;
-            switch (state) {
-                case Finished:
-                case Pending:
-                    downloadManager.forgetMission(finalStorage);
-                case None:
-                    if (targetFile == null) {
-                        storageNew = mainStorage.createFile(filename, mime);
-                    } else {
-                        try {
-                            // try take (or steal) the file
-                            storageNew = new StoredFileHelper(context, mainStorage.getUri(),
-                                    targetFile, mainStorage.getTag());
-                        } catch (final IOException e) {
-                            Log.e(TAG, "Failed to take (or steal) the file in "
-                                    + targetFile.toString());
-                            storageNew = null;
-                        }
-                    }
-
-                    if (storageNew != null && storageNew.canWrite()) {
-                        continueSelectedDownload(storageNew);
-                    } else {
-                        showFailedDialog(R.string.error_file_creation);
-                    }
-                    break;
-                case PendingRunning:
-                    storageNew = mainStorage.createUniqueFile(filename, mime);
-                    if (storageNew == null) {
-                        showFailedDialog(R.string.error_file_creation);
-                    } else {
-                        continueSelectedDownload(storageNew);
-                    }
-                    break;
-            }
-        });
-
-        askDialog.show();
+        new DownloadStorageCoordinator(requireContext(), downloadManager,
+                this::continueSelectedDownload, this::showFailedDialog)
+                .check(mainStorage, targetFile, filename, mime);
     }
 
     private void continueSelectedDownload(@NonNull final StoredFileHelper storage) {
