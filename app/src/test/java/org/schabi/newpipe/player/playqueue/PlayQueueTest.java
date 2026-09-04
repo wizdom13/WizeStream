@@ -199,4 +199,54 @@ public class PlayQueueTest {
             assertFalse(queue1.equalStreams(queue2));
         }
     }
+
+    public static class ShuffleFromStartTests {
+        private final List<PlayQueueItem> items = List.of(
+                makeItemWithUrl("URL_1"),
+                makeItemWithUrl("URL_2"),
+                makeItemWithUrl("URL_3"),
+                makeItemWithUrl("URL_4")
+        );
+
+        @Test
+        public void shufflesTheWholeQueueAndCanRestoreTheOriginalOrder() {
+            final PlayQueue queue = makePlayQueue(2, items);
+
+            queue.shuffleFromStart();
+
+            assertTrue(queue.isShuffled());
+            assertEquals(0, queue.getIndex());
+            assertEquals(items.size(), queue.getStreams().size());
+            assertTrue(queue.getStreams().containsAll(items));
+            assertFalse(queue.previous());
+
+            queue.unshuffle();
+
+            assertFalse(queue.isShuffled());
+            assertEquals(items, queue.getStreams());
+        }
+
+        @Test
+        public void twoItemQueueStartsAtTheBeginningWithoutDroppingAnItem() {
+            final List<PlayQueueItem> twoItems = items.subList(0, 2);
+            final PlayQueue queue = makePlayQueue(0, twoItems);
+
+            queue.shuffleFromStart();
+
+            assertTrue(queue.isShuffled());
+            assertEquals(0, queue.getIndex());
+            assertEquals(2, queue.getStreams().size());
+            assertTrue(queue.getStreams().containsAll(twoItems));
+        }
+
+        @Test
+        public void singleItemQueueRemainsUnshuffled() {
+            final PlayQueue queue = makePlayQueue(0, items.subList(0, 1));
+
+            queue.shuffleFromStart();
+
+            assertFalse(queue.isShuffled());
+            assertEquals(items.subList(0, 1), queue.getStreams());
+        }
+    }
 }
