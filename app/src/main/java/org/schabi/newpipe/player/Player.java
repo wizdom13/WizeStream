@@ -105,6 +105,7 @@ import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.player.equalizer.EqualizerController;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
@@ -153,6 +154,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -227,6 +229,8 @@ public final class Player implements PlaybackListener, Listener {
     private Bitmap currentThumbnail;
     @Nullable
     private coil3.request.Disposable thumbnailDisposable;
+    @Nullable
+    private Future<?> localThumbnailFuture;
     @NonNull
     private final PlayerHttpErrorRecovery.RecoveryGuard mediaUrlRecoveryGuard =
         new PlayerHttpErrorRecovery.RecoveryGuard();
@@ -786,6 +790,7 @@ public final class Player implements PlaybackListener, Listener {
             Log.d(TAG, "destroy() called");
         }
 
+        cancelThumbnailLoading();
         clearSleepTimer();
         saveStreamProgressState();
         setRecovery();
@@ -982,10 +987,7 @@ public final class Player implements PlaybackListener, Listener {
                     + thumbnails.size() + "]");
         }
 
-        // Cancel any ongoing image loading
-        if (thumbnailDisposable != null) {
-            thumbnailDisposable.dispose();
-        }
+        cancelThumbnailLoading();
 
         // Unset currentThumbnail, since it is now outdated. This ensures it is not used in media
         // session metadata while the new thumbnail is being loaded by Coil.
@@ -1021,6 +1023,17 @@ public final class Player implements PlaybackListener, Listener {
         };
         thumbnailDisposable = CoilHelper.INSTANCE
                 .loadScaledDownThumbnail(context, thumbnails, thumbnailTarget);
+    }
+
+    private void cancelThumbnailLoading() {
+        if (thumbnailDisposable != null) {
+            thumbnailDisposable.dispose();
+            thumbnailDisposable = null;
+        }
+        if (localThumbnailFuture != null) {
+            localThumbnailFuture.cancel(true);
+            localThumbnailFuture = null;
+        }
     }
 
 
@@ -2874,7 +2887,22 @@ public final class Player implements PlaybackListener, Listener {
         sponsorBlockSegments = Collections.emptyList();
         hideSponsorBlockManualSkipButton();
         clearSponsorBlockSeekBarMarkers();
+        cancelThumbnailLoading();
         onThumbnailLoaded(null);
+        localThumbnailFuture = LocalMediaThumbnailLoader.INSTANCE.loadBitmap(
+                context,
+                item,
+                bitmap -> {
+                    if (currentMetadata instanceof LocalMediaItemTag
+                            && ((LocalMediaItemTag) currentMetadata).getItem().isSameItem(item)) {
+                        final Bitmap displayedBitmap = bitmap != null || item.getStreamType()
+                                != StreamType.AUDIO_STREAM
+                                ? bitmap
+                                : LocalMediaThumbnailLoader.INSTANCE
+                                        .audioPlaceholderBitmap(context);
+                        onThumbnailLoaded(displayedBitmap);
+                    }
+                });
         databaseUpdateDisposable.add(recordManager.onViewed(item)
                 .onErrorComplete().subscribe());
         notifyMetadataUpdateToListeners();

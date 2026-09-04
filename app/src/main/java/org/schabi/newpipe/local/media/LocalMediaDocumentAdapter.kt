@@ -34,19 +34,23 @@ class LocalMediaDocumentAdapter(
 
     override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(entries[position])
 
+    override fun onViewRecycled(holder: Holder) {
+        holder.recycle()
+        super.onViewRecycled(holder)
+    }
+
     inner class Holder(view: View) : RecyclerView.ViewHolder(view) {
         private val icon = view.findViewById<ImageView>(R.id.localMediaDocumentIcon)
         private val title = view.findViewById<TextView>(R.id.localMediaDocumentTitle)
         private val subtitle = view.findViewById<TextView>(R.id.localMediaDocumentSubtitle)
 
         fun bind(entry: LocalMediaDocumentEntry) {
-            icon.setImageResource(
-                when {
-                    entry.isDirectory -> R.drawable.ic_create_new_folder
-                    entry.isVideo -> R.drawable.ic_movie
-                    else -> R.drawable.ic_music_note
-                }
-            )
+            if (entry.isDirectory) {
+                LocalMediaThumbnailLoader.clear(icon)
+                icon.setImageResource(R.drawable.ic_create_new_folder)
+            } else {
+                LocalMediaThumbnailLoader.load(icon, entry)
+            }
             title.text = entry.name
             subtitle.text = when {
                 !entry.isAvailable -> itemView.context.getString(
@@ -70,6 +74,10 @@ class LocalMediaDocumentAdapter(
                 if (entry.isAvailable) onLongClick(entry)
                 entry.isAvailable
             }
+        }
+
+        fun recycle() {
+            LocalMediaThumbnailLoader.clear(icon)
         }
     }
 }

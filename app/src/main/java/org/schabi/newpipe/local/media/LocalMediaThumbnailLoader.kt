@@ -4,7 +4,12 @@
 package org.schabi.newpipe.local.media
 
 import android.content.ContentResolver
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -13,23 +18,45 @@ import android.util.LruCache
 import android.util.Size
 import android.widget.ImageView
 import androidx.annotation.WorkerThread
+import androidx.core.content.ContextCompat
 import coil3.util.CoilUtils
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
-import org.schabi.newpipe.util.image.CoilHelper
 import org.schabi.newpipe.util.image.ImageStrategy
 
-/** Loads device-local artwork without treating a video content URI as an online image URL. */
+/** Loads thumbnails and embedded artwork from device-local media. */
 object LocalMediaThumbnailLoader {
     private const val THUMBNAIL_WIDTH = 512
     private const val THUMBNAIL_HEIGHT = 288
+    private const val ARTWORK_MAX_DIMENSION = 512
     private const val CACHE_SIZE_BYTES = 16 * 1024 * 1024
+    private const val MAXIMUM_PENDING_THUMBNAILS = 64
 
-    private val executor = Executors.newFixedThreadPool(2)
+    private val thumbnailExecutor = ThreadPoolExecutor(
+        2,
+        2,
+        0L,
+        TimeUnit.MILLISECONDS,
+        ArrayBlockingQueue(MAXIMUM_PENDING_THUMBNAILS),
+        ThreadPoolExecutor.DiscardOldestPolicy()
+    )
+    private val playerExecutor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val cache = object : LruCache<String, Bitmap>(CACHE_SIZE_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.allocationByteCount
+    }
+
+    @Volatile
+    private var audioPlaceholder: Bitmap? = null
+
+    fun interface BitmapCallback {
+        fun onLoaded(bitmap: Bitmap?)
     }
 
     fun load(target: ImageView, item: LocalMediaItem) {
@@ -41,9 +68,62 @@ object LocalMediaThumbnailLoader {
             target,
             item.url,
             item.localMediaId,
-            item.streamType == org.schabi.newpipe.extractor.stream.StreamType.VIDEO_STREAM,
+            item.streamType == StreamType.VIDEO_STREAM,
             item.localThumbnailUrl
         )
+    }
+
+    fun load(target: ImageView, entry: LocalMediaDocumentEntry) {
+        load(
+            target,
+            entry.contentUri,
+            -1L,
+            entry.isVideo,
+            entry.contentUri.takeIf { entry.isVideo }
+        )
+    }
+
+    /**
+     * Loads artwork for the player without retaining an Activity or View reference.
+     * The callback is always dispatched on the main thread.
+     */
+    fun loadBitmap(
+        context: Context,
+        item: PlayQueueItem,
+        callback: BitmapCallback
+    ): Future<*> = playerExecutor.submit {
+        val bitmap = if (ImageStrategy.shouldLoadImages()) {
+            loadBitmap(
+                context.applicationContext.contentResolver,
+                item.url,
+                item.localMediaId,
+                item.streamType == StreamType.VIDEO_STREAM,
+                item.localThumbnailUrl
+            )
+        } else {
+            null
+        }
+        if (!Thread.currentThread().isInterrupted) {
+            mainHandler.post { callback.onLoaded(bitmap) }
+        }
+    }
+
+    @Synchronized
+    fun audioPlaceholderBitmap(context: Context): Bitmap? {
+        audioPlaceholder?.let { return it }
+        val drawable = ContextCompat.getDrawable(
+            context.applicationContext,
+            R.drawable.placeholder_thumbnail_audio
+        ) ?: return null
+        val bitmap = Bitmap.createBitmap(
+            THUMBNAIL_WIDTH,
+            THUMBNAIL_HEIGHT,
+            Bitmap.Config.ARGB_8888
+        )
+        drawable.setBounds(0, 0, bitmap.width, bitmap.height)
+        drawable.draw(Canvas(bitmap))
+        audioPlaceholder = bitmap
+        return bitmap
     }
 
     private fun load(
@@ -54,14 +134,17 @@ object LocalMediaThumbnailLoader {
         thumbnailUri: String?
     ) {
         clear(target)
-        val requestKey = contentUri
+        target.setImageResource(
+            if (isVideo) {
+                R.drawable.placeholder_thumbnail_video
+            } else {
+                R.drawable.placeholder_thumbnail_audio
+            }
+        )
+        val requestKey = "$isVideo:$contentUri"
         target.tag = requestKey
 
         if (!ImageStrategy.shouldLoadImages()) return
-        if (!isVideo) {
-            CoilHelper.loadThumbnail(target, thumbnailUri)
-            return
-        }
 
         cache[requestKey]?.let {
             target.setImageBitmap(it)
@@ -69,8 +152,14 @@ object LocalMediaThumbnailLoader {
         }
 
         val resolver = target.context.applicationContext.contentResolver
-        executor.execute {
-            val bitmap = loadVideoThumbnail(resolver, contentUri, mediaStoreId)
+        thumbnailExecutor.execute {
+            val bitmap = loadBitmap(
+                resolver,
+                contentUri,
+                mediaStoreId,
+                isVideo,
+                thumbnailUri
+            )
             if (bitmap != null) cache.put(requestKey, bitmap)
             mainHandler.post {
                 if (target.tag == requestKey && bitmap != null) target.setImageBitmap(bitmap)
@@ -82,6 +171,83 @@ object LocalMediaThumbnailLoader {
         target.tag = null
         CoilUtils.dispose(target)
         target.setImageResource(R.drawable.placeholder_thumbnail_video)
+    }
+
+    @WorkerThread
+    private fun loadBitmap(
+        resolver: ContentResolver,
+        contentUri: String,
+        mediaStoreId: Long,
+        isVideo: Boolean,
+        thumbnailUri: String?
+    ): Bitmap? {
+        val requestKey = "$isVideo:$contentUri"
+        cache[requestKey]?.let { return it }
+        val bitmap = if (isVideo) {
+            loadVideoThumbnail(resolver, contentUri, mediaStoreId)
+        } else {
+            loadEmbeddedArtwork(resolver, contentUri)
+                ?: loadArtworkUri(resolver, thumbnailUri)
+        }
+        if (bitmap != null) cache.put(requestKey, bitmap)
+        return bitmap
+    }
+
+    @WorkerThread
+    private fun loadEmbeddedArtwork(
+        resolver: ContentResolver,
+        contentUri: String
+    ): Bitmap? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            resolver.openFileDescriptor(Uri.parse(contentUri), "r")?.use {
+                retriever.setDataSource(it.fileDescriptor)
+            } ?: return null
+            retriever.embeddedPicture?.let(::decodeArtwork)
+        } catch (_: Exception) {
+            null
+        } finally {
+            retriever.release()
+        }
+    }
+
+    @WorkerThread
+    private fun loadArtworkUri(resolver: ContentResolver, artworkUri: String?): Bitmap? {
+        if (artworkUri.isNullOrBlank()) return null
+        return try {
+            val uri = Uri.parse(artworkUri)
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it, null, bounds)
+            }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = calculateArtworkSampleSize(
+                    bounds.outWidth,
+                    bounds.outHeight,
+                    ARTWORK_MAX_DIMENSION
+                )
+            }
+            resolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it, null, options)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun decodeArtwork(bytes: ByteArray): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = calculateArtworkSampleSize(
+                bounds.outWidth,
+                bounds.outHeight,
+                ARTWORK_MAX_DIMENSION
+            )
+        }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
     @WorkerThread
@@ -110,4 +276,14 @@ object LocalMediaThumbnailLoader {
             null
         }
     }
+}
+
+internal fun calculateArtworkSampleSize(width: Int, height: Int, maximumDimension: Int): Int {
+    if (width <= 0 || height <= 0 || maximumDimension <= 0) return 1
+    var sampleSize = 1
+    val largestDimension = maxOf(width, height)
+    while (largestDimension / (sampleSize * 2) >= maximumDimension) {
+        sampleSize *= 2
+    }
+    return sampleSize
 }

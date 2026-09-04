@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
 
+import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.image.CoilHelper;
@@ -39,9 +40,9 @@ public class PlayQueueItemBuilder {
         }
 
         if (item.isLocalMedia()) {
-            CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
-                    item.getLocalThumbnailUrl());
+            LocalMediaThumbnailLoader.INSTANCE.load(holder.itemThumbnailView, item);
         } else {
+            LocalMediaThumbnailLoader.INSTANCE.clear(holder.itemThumbnailView);
             CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
                     ExtractorImageCompat.thumbnailImages(item));
         }

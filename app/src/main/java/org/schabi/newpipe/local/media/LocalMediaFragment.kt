@@ -758,6 +758,11 @@ private class LocalMediaGroupAdapter(
 
     override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(items[position])
 
+    override fun onViewRecycled(holder: Holder) {
+        holder.recycle()
+        super.onViewRecycled(holder)
+    }
+
     inner class Holder(view: View) : RecyclerView.ViewHolder(view) {
         private val icon = view.findViewById<ImageView>(R.id.localMediaGroupIcon)
         private val title = view.findViewById<TextView>(R.id.localMediaGroupItemTitle)
@@ -774,18 +779,17 @@ private class LocalMediaGroupAdapter(
                 group.items.size,
                 group.items.size
             )
-            icon.setImageResource(
-                when (group.kind) {
-                    LocalMediaGroupKind.ARTIST -> R.drawable.ic_person
-                    LocalMediaGroupKind.VIDEO_FOLDER -> R.drawable.ic_movie
-                    else -> R.drawable.ic_music_note
-                }
-            )
+            group.items.firstOrNull()?.let { LocalMediaThumbnailLoader.load(icon, it) }
+                ?: icon.setImageResource(R.drawable.ic_music_note)
             title.text = group.title
             subtitle.text = listOf(group.subtitle, count)
                 .filter(String::isNotBlank)
                 .joinToString(" • ")
             itemView.setOnClickListener { onClick(group) }
+        }
+
+        fun recycle() {
+            LocalMediaThumbnailLoader.clear(icon)
         }
     }
 }
