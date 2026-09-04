@@ -83,6 +83,7 @@ import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.LiveNotStartException;
+import org.schabi.newpipe.extractor.exceptions.VideoNotReleaseException;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
@@ -1337,7 +1338,8 @@ public final class VideoDetailFragment
                         }
                     }
                 }, throwable -> {
-                    if (throwable instanceof LiveNotStartException) {
+                    if (throwable instanceof LiveNotStartException
+                            || throwable instanceof VideoNotReleaseException) {
                         showLiveNotStartedDialog();
                     } else {
                         showError(new ErrorInfo(throwable, UserAction.REQUESTED_STREAM,
