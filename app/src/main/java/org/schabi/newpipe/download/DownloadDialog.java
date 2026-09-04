@@ -14,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -39,9 +38,6 @@ import org.schabi.newpipe.databinding.DownloadDialogBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
-import org.schabi.newpipe.extractor.MediaFormat;
-import org.schabi.newpipe.extractor.NewPipe;
-import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
@@ -62,13 +58,10 @@ import org.schabi.newpipe.util.StreamItemAdapter.StreamInfoWrapper;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import us.shandian.giga.postprocessing.Mp3OutputOptions;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
 import us.shandian.giga.service.DownloadManagerService.DownloadManagerBinder;
@@ -100,10 +93,6 @@ public class DownloadDialog extends DialogFragment
     int selectedMp3BitrateIndex = 1;
     @State
     int muxedAudioFallbackVideoIndex = -1;
-
-    private static final int AUDIO_OUTPUT_ORIGINAL = 0;
-    private static final int AUDIO_OUTPUT_MP3 = 1;
-    private static final int[] MP3_BITRATES = {128, 192, 256, 320};
 
     private StoredDirectoryHelper mainStorageAudio = null;
     private StoredDirectoryHelper mainStorageVideo = null;
@@ -260,7 +249,8 @@ public class DownloadDialog extends DialogFragment
         selectedAudioIndex = ListHelper.getDefaultAudioFormat(getContext(),
                 getWrappedAudioStreams().getStreamsList());
 
-        selectedSubtitleIndex = getSubtitleIndexBy(subtitleStreamsAdapter.getAll());
+        selectedSubtitleIndex = DownloadSubtitleSelectionPolicy.preferredIndex(
+                subtitleStreamsAdapter.getAll());
 
         dialogBinding.qualitySpinner.setOnItemSelectedListener(this);
         dialogBinding.audioStreamSpinner.setOnItemSelectedListener(this);
@@ -269,19 +259,8 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.mp3BitrateSpinner.setOnItemSelectedListener(this);
         dialogBinding.videoAudioGroup.setOnCheckedChangeListener(this);
 
-        final ArrayAdapter<CharSequence> outputFormatAdapter = ArrayAdapter.createFromResource(
-                requireContext(), R.array.audio_output_format_entries,
-                android.R.layout.simple_spinner_item);
-        outputFormatAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        dialogBinding.audioOutputFormatSpinner.setAdapter(outputFormatAdapter);
-        dialogBinding.audioOutputFormatSpinner.setSelection(selectedAudioOutputIndex);
-
-        final ArrayAdapter<CharSequence> bitrateAdapter = ArrayAdapter.createFromResource(
-                requireContext(), R.array.mp3_bitrate_entries,
-                android.R.layout.simple_spinner_item);
-        bitrateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        dialogBinding.mp3BitrateSpinner.setAdapter(bitrateAdapter);
-        dialogBinding.mp3BitrateSpinner.setSelection(selectedMp3BitrateIndex);
+        newOptionsController().setupOutputSpinners(
+                selectedAudioOutputIndex, selectedMp3BitrateIndex);
 
         initToolbar(dialogBinding.toolbarLayout.toolbar);
         setupDownloadOptions();
@@ -383,73 +362,20 @@ public class DownloadDialog extends DialogFragment
                                 "Downloading subtitle stream size", currentInfo))));
     }
 
-    private void setupAudioTrackSpinner() {
-        if (getContext() == null) {
-            return;
-        }
-
-        dialogBinding.audioTrackSpinner.setAdapter(audioTrackAdapter);
-        dialogBinding.audioTrackSpinner.setSelection(selectedAudioTrackIndex);
-    }
-
     private void setupAudioSpinner() {
-        if (getContext() == null) {
-            return;
-        }
-
-        dialogBinding.qualitySpinner.setVisibility(View.GONE);
-        setRadioButtonsState(true);
-        dialogBinding.audioStreamSpinner.setAdapter(audioStreamsAdapter);
-        dialogBinding.audioStreamSpinner.setSelection(selectedAudioIndex);
-        dialogBinding.audioStreamSpinner.setVisibility(View.VISIBLE);
-        dialogBinding.audioTrackSpinner.setVisibility(
-                wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
-        dialogBinding.audioTrackPresentInVideoText.setText(
-                R.string.audio_extracted_from_video_notice);
-        dialogBinding.audioTrackPresentInVideoText.setVisibility(
-                hasMuxedAudioFallback() ? View.VISIBLE : View.GONE);
-        dialogBinding.audioOutputFormatLabel.setVisibility(View.VISIBLE);
-        dialogBinding.audioOutputFormatSpinner.setVisibility(View.VISIBLE);
-        updateMp3BitrateVisibility();
+        newOptionsController().showAudio(selectedAudioIndex, selectedAudioOutputIndex);
     }
 
     private void setupVideoSpinner() {
-        if (getContext() == null) {
-            return;
-        }
-
-        dialogBinding.qualitySpinner.setAdapter(videoStreamsAdapter);
-        dialogBinding.qualitySpinner.setSelection(selectedVideoIndex);
-        dialogBinding.qualitySpinner.setVisibility(View.VISIBLE);
-        setRadioButtonsState(true);
-        dialogBinding.audioStreamSpinner.setVisibility(View.GONE);
-        hideAudioOutputOptions();
-        onVideoStreamSelected();
+        newOptionsController().showVideo(selectedVideoIndex);
     }
 
     private void onVideoStreamSelected() {
-        final boolean isVideoOnly = videoStreamsAdapter.getItem(selectedVideoIndex).isVideoOnly();
-
-        dialogBinding.audioTrackPresentInVideoText.setText(R.string.audio_track_present_in_video);
-        dialogBinding.audioTrackSpinner.setVisibility(
-                isVideoOnly && wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
-        dialogBinding.audioTrackPresentInVideoText.setVisibility(
-                !isVideoOnly && wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
+        newOptionsController().updateVideoAudioTrackVisibility(selectedVideoIndex);
     }
 
     private void setupSubtitleSpinner() {
-        if (getContext() == null) {
-            return;
-        }
-
-        dialogBinding.qualitySpinner.setAdapter(subtitleStreamsAdapter);
-        dialogBinding.qualitySpinner.setSelection(selectedSubtitleIndex);
-        dialogBinding.qualitySpinner.setVisibility(View.VISIBLE);
-        setRadioButtonsState(true);
-        dialogBinding.audioStreamSpinner.setVisibility(View.GONE);
-        hideAudioOutputOptions();
-        dialogBinding.audioTrackSpinner.setVisibility(View.GONE);
-        dialogBinding.audioTrackPresentInVideoText.setVisibility(View.GONE);
+        newOptionsController().showSubtitle(selectedSubtitleIndex);
     }
 
 
@@ -581,87 +507,26 @@ public class DownloadDialog extends DialogFragment
     //////////////////////////////////////////////////////////////////////////*/
 
     protected void setupDownloadOptions() {
-        setRadioButtonsState(false);
-        setupAudioTrackSpinner();
-
-        final boolean isVideoStreamsAvailable = videoStreamsAdapter.getCount() > 0;
-        final boolean isAudioStreamsAvailable = audioStreamsAdapter.getCount() > 0;
-        final boolean isSubtitleStreamsAvailable = subtitleStreamsAdapter.getCount() > 0;
-
-        dialogBinding.audioButton.setVisibility(isAudioStreamsAvailable ? View.VISIBLE
-                : View.GONE);
-        dialogBinding.videoButton.setVisibility(isVideoStreamsAvailable ? View.VISIBLE
-                : View.GONE);
-        dialogBinding.subtitleButton.setVisibility(isSubtitleStreamsAvailable
-                ? View.VISIBLE : View.GONE);
-
-        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        final String defaultMedia = prefs.getString(getString(R.string.last_used_download_type),
-                getString(R.string.last_download_type_video_key));
-
-        if (isVideoStreamsAvailable
-                && (defaultMedia.equals(getString(R.string.last_download_type_video_key)))) {
-            dialogBinding.videoButton.setChecked(true);
-            setupVideoSpinner();
-        } else if (isAudioStreamsAvailable
-                && (defaultMedia.equals(getString(R.string.last_download_type_audio_key)))) {
-            dialogBinding.audioButton.setChecked(true);
-            setupAudioSpinner();
-        } else if (isSubtitleStreamsAvailable
-                && (defaultMedia.equals(getString(R.string.last_download_type_subtitle_key)))) {
-            dialogBinding.subtitleButton.setChecked(true);
-            setupSubtitleSpinner();
-        } else if (isVideoStreamsAvailable) {
-            dialogBinding.videoButton.setChecked(true);
-            setupVideoSpinner();
-        } else if (isAudioStreamsAvailable) {
-            dialogBinding.audioButton.setChecked(true);
-            setupAudioSpinner();
-        } else if (isSubtitleStreamsAvailable) {
-            dialogBinding.subtitleButton.setChecked(true);
-            setupSubtitleSpinner();
-        } else {
-            Toast.makeText(getContext(), R.string.no_streams_available_download,
-                    Toast.LENGTH_SHORT).show();
+        if (!newOptionsController().setupInitial(selectedAudioTrackIndex, selectedAudioIndex,
+                selectedVideoIndex, selectedSubtitleIndex, selectedAudioOutputIndex)) {
             dismiss();
         }
-    }
-
-    private void setRadioButtonsState(final boolean enabled) {
-        dialogBinding.audioButton.setEnabled(enabled);
-        dialogBinding.videoButton.setEnabled(enabled);
-        dialogBinding.subtitleButton.setEnabled(enabled);
-    }
-
-    private void hideAudioOutputOptions() {
-        dialogBinding.audioOutputFormatLabel.setVisibility(View.GONE);
-        dialogBinding.audioOutputFormatSpinner.setVisibility(View.GONE);
-        dialogBinding.mp3BitrateLabel.setVisibility(View.GONE);
-        dialogBinding.mp3BitrateSpinner.setVisibility(View.GONE);
     }
 
     private void updateMp3BitrateVisibility() {
         if (dialogBinding == null) {
             return;
         }
-        final boolean visible = selectedAudioOutputIndex == AUDIO_OUTPUT_MP3
-                && audioStreamsAdapter != null
-                && selectedAudioIndex >= 0
-                && selectedAudioIndex < audioStreamsAdapter.getCount()
-                && audioStreamsAdapter.getItem(selectedAudioIndex).getFormat() != MediaFormat.MP3;
-        dialogBinding.mp3BitrateLabel.setVisibility(visible ? View.VISIBLE : View.GONE);
-        dialogBinding.mp3BitrateSpinner.setVisibility(visible ? View.VISIBLE : View.GONE);
+        newOptionsController().updateMp3BitrateVisibility(
+                selectedAudioOutputIndex, selectedAudioIndex);
     }
 
     private boolean isMp3OutputSelected() {
-        return selectedAudioOutputIndex == AUDIO_OUTPUT_MP3;
+        return DownloadAudioOutputPolicy.isMp3Output(selectedAudioOutputIndex);
     }
 
     private int getSelectedMp3Bitrate() {
-        if (selectedMp3BitrateIndex < 0 || selectedMp3BitrateIndex >= MP3_BITRATES.length) {
-            return Mp3OutputOptions.DEFAULT_BITRATE_KBPS;
-        }
-        return MP3_BITRATES[selectedMp3BitrateIndex];
+        return DownloadAudioOutputPolicy.bitrateForIndex(selectedMp3BitrateIndex);
     }
 
     private StreamInfoWrapper<AudioStream> getWrappedAudioStreams() {
@@ -682,30 +547,10 @@ public class DownloadDialog extends DialogFragment
                 ? wrappedVideoStreams.getStreamsList().get(muxedAudioFallbackVideoIndex) : null;
     }
 
-    private int getSubtitleIndexBy(@NonNull final List<SubtitlesStream> streams) {
-        final Localization preferredLocalization = NewPipe.getPreferredLocalization();
-
-        int candidate = 0;
-        for (int i = 0; i < streams.size(); i++) {
-            final Locale streamLocale = streams.get(i).getLocale();
-
-            final boolean languageEquals = streamLocale.getLanguage() != null
-                    && preferredLocalization.getLanguageCode() != null
-                    && streamLocale.getLanguage()
-                    .equals(new Locale(preferredLocalization.getLanguageCode()).getLanguage());
-            final boolean countryEquals = streamLocale.getCountry() != null
-                    && streamLocale.getCountry().equals(preferredLocalization.getCountryCode());
-
-            if (languageEquals) {
-                if (countryEquals) {
-                    return i;
-                }
-
-                candidate = i;
-            }
-        }
-
-        return candidate;
+    private DownloadOptionsController newOptionsController() {
+        return new DownloadOptionsController(requireContext(), dialogBinding,
+                audioTrackAdapter, audioStreamsAdapter, videoStreamsAdapter,
+                subtitleStreamsAdapter, wrappedAudioTracks, hasMuxedAudioFallback());
     }
 
     @NonNull
