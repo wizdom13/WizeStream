@@ -268,7 +268,7 @@ internal class SponsorBlockPlaybackController(private val player: Player) {
             (
                 segment.action == SponsorBlockAction.SKIP ||
                     segment.action == SponsorBlockAction.POI
-            ) &&
+                ) &&
             categoryStateProvider.isEnabled(segment.category)
     }
 
