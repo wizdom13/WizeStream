@@ -11,9 +11,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -57,7 +55,6 @@ import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.SubtitlesStream;
 import org.schabi.newpipe.extractor.stream.VideoStream;
-import org.schabi.newpipe.settings.NewPipeSettings;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredDirectoryHelper;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
@@ -839,8 +836,11 @@ public class DownloadDialog extends DialogFragment
                 .show();
     }
 
-    private void launchDirectoryPicker(final ActivityResultLauncher<Intent> launcher) {
-        NoFileManagerSafeGuard.launchSafe(launcher, StoredDirectoryHelper.getPicker(context), TAG,
+    private void launchSaveAsPicker(@NonNull final String filename,
+                                    @Nullable final String mimeType,
+                                    @Nullable final Uri initialPath) {
+        NoFileManagerSafeGuard.launchSafe(requestDownloadSaveAsLauncher,
+                StoredFileHelper.getNewPicker(context, filename, mimeType, initialPath), TAG,
                 context);
     }
 
@@ -886,65 +886,15 @@ public class DownloadDialog extends DialogFragment
         filenameTmp = outputPlan.getFilename();
         mimeTmp = outputPlan.getMimeType();
 
-        if (!askForSavePath && (mainStorage == null
-                || mainStorage.isDirect() == NewPipeSettings.useStorageAccessFramework(context)
-                || mainStorage.isInvalidSafStorage())) {
-            // Pick new download folder if one of:
-            // - Download folder is not set
-            // - Download folder uses SAF while SAF is disabled
-            // - Download folder doesn't use SAF while SAF is enabled
-            // - Download folder uses SAF but the user manually revoked access to it
-            Toast.makeText(context, getString(R.string.no_dir_yet),
-                    Toast.LENGTH_LONG).show();
-
-            if (dialogBinding.videoAudioGroup.getCheckedRadioButtonId() == R.id.audio_button) {
-                launchDirectoryPicker(requestDownloadPickAudioFolderLauncher);
-            } else {
-                launchDirectoryPicker(requestDownloadPickVideoFolderLauncher);
-            }
-
+        final boolean usedConfiguredStorage = new DownloadDestinationCoordinator(
+                requireContext(), this::launchSaveAsPicker,
+                requestDownloadPickAudioFolderLauncher, requestDownloadPickVideoFolderLauncher,
+                this::checkSelectedDownload)
+                .prepare(checkedRadioButtonId == R.id.audio_button, mainStorage, outputPlan,
+                        askForSavePath);
+        if (!usedConfiguredStorage) {
             return;
         }
-
-        if (askForSavePath) {
-            final Uri initialPath;
-            if (NewPipeSettings.useStorageAccessFramework(context)) {
-                initialPath = null;
-            } else {
-                final File initialSavePath;
-                if (dialogBinding.videoAudioGroup.getCheckedRadioButtonId() == R.id.audio_button) {
-                    initialSavePath = NewPipeSettings.getDir(Environment.DIRECTORY_MUSIC);
-                } else {
-                    initialSavePath = NewPipeSettings.getDir(Environment.DIRECTORY_MOVIES);
-                }
-                initialPath = Uri.parse(initialSavePath.getAbsolutePath());
-            }
-
-            NoFileManagerSafeGuard.launchSafe(requestDownloadSaveAsLauncher,
-                    StoredFileHelper.getNewPicker(context, filenameTmp, mimeTmp, initialPath), TAG,
-                    context);
-
-            return;
-        }
-
-        // Check for free storage space
-        final long freeSpace = mainStorage.getFreeStorageSpace();
-        if (freeSpace <= outputPlan.getEstimatedSize()) {
-            Toast.makeText(context, getString(R.
-                    string.error_insufficient_storage), Toast.LENGTH_LONG).show();
-            // move the user to storage setting tab
-            final Intent storageSettingsIntent = new Intent(Settings.
-                    ACTION_INTERNAL_STORAGE_SETTINGS);
-            if (storageSettingsIntent.resolveActivity(context.getPackageManager())
-                    != null) {
-                startActivity(storageSettingsIntent);
-            }
-            return;
-        }
-
-        // check for existing file with the same name
-        checkSelectedDownload(mainStorage, mainStorage.findFile(filenameTmp), filenameTmp,
-                mimeTmp);
 
         // remember the last media type downloaded by the user
         prefs.edit().putString(getString(R.string.last_used_download_type), selectedMediaType)
