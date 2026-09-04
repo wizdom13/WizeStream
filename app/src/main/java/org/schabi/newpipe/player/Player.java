@@ -105,6 +105,7 @@ import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.media.LocalMediaMetadataLoader;
 import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.player.equalizer.EqualizerController;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
@@ -231,6 +232,8 @@ public final class Player implements PlaybackListener, Listener {
     private coil3.request.Disposable thumbnailDisposable;
     @Nullable
     private Future<?> localThumbnailFuture;
+    @Nullable
+    private Future<?> localMetadataFuture;
     @NonNull
     private final PlayerHttpErrorRecovery.RecoveryGuard mediaUrlRecoveryGuard =
         new PlayerHttpErrorRecovery.RecoveryGuard();
@@ -791,6 +794,7 @@ public final class Player implements PlaybackListener, Listener {
         }
 
         cancelThumbnailLoading();
+        cancelLocalMetadataLoading();
         clearSleepTimer();
         saveStreamProgressState();
         setRecovery();
@@ -1033,6 +1037,13 @@ public final class Player implements PlaybackListener, Listener {
         if (localThumbnailFuture != null) {
             localThumbnailFuture.cancel(true);
             localThumbnailFuture = null;
+        }
+    }
+
+    private void cancelLocalMetadataLoading() {
+        if (localMetadataFuture != null) {
+            localMetadataFuture.cancel(true);
+            localMetadataFuture = null;
         }
     }
 
@@ -2869,6 +2880,8 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
+        cancelLocalMetadataLoading();
+
         applyPlaybackSpeedProfile(info);
         updateSponsorBlockSegments(info);
         maybeAutoQueueNextStream(info);
@@ -2902,6 +2915,30 @@ public final class Player implements PlaybackListener, Listener {
                                         .audioPlaceholderBitmap(context);
                         onThumbnailLoaded(displayedBitmap);
                     }
+                });
+        cancelLocalMetadataLoading();
+        localMetadataFuture = LocalMediaMetadataLoader.INSTANCE.load(
+                context,
+                item,
+                metadata -> {
+                    if (!(currentMetadata instanceof LocalMediaItemTag)
+                            || !((LocalMediaItemTag) currentMetadata)
+                                    .getItem().isSameItem(item)) {
+                        return;
+                    }
+                    if (!item.applyLocalMetadata(
+                            metadata.getTitle(),
+                            metadata.getArtist(),
+                            metadata.getAlbum(),
+                            metadata.getDurationSeconds())) {
+                        return;
+                    }
+                    if (playQueue != null) {
+                        playQueue.notifyChange();
+                    }
+                    notifyMetadataUpdateToListeners();
+                    notifyAudioTrackUpdateToListeners();
+                    UIs.call(playerUi -> playerUi.onMetadataChanged(currentMetadata));
                 });
         databaseUpdateDisposable.add(recordManager.onViewed(item)
                 .onErrorComplete().subscribe());

@@ -28,15 +28,15 @@ public class PlayQueueItem implements Serializable {
     }
 
     @NonNull
-    private final String title;
+    private String title;
     @NonNull
     private final String url;
     private final int serviceId;
-    private final long duration;
+    private long duration;
     @NonNull
     private final List<Image> thumbnailImages;
     @NonNull
-    private final String uploader;
+    private String uploader;
     private final String uploaderUrl;
     @NonNull
     private final StreamType streamType;
@@ -46,7 +46,7 @@ public class PlayQueueItem implements Serializable {
     @Nullable
     private final String mimeType;
     @Nullable
-    private final String album;
+    private String album;
     @Nullable
     private final String folder;
     private final long localMediaId;
@@ -186,6 +186,46 @@ public class PlayQueueItem implements Serializable {
 
     public boolean isLocalMedia() {
         return sourceType == SourceType.LOCAL;
+    }
+
+    /**
+     * Applies tags read directly from a local file while preserving every existing fallback when
+     * the corresponding embedded value is absent.
+     *
+     * @param embeddedTitle title read from the file, or null when absent
+     * @param embeddedArtist artist read from the file, or null when absent
+     * @param embeddedAlbum album read from the file, or null when absent
+     * @param embeddedDuration duration read from the file in seconds, or zero when unavailable
+     * @return whether any displayed metadata changed
+     */
+    public boolean applyLocalMetadata(@Nullable final String embeddedTitle,
+                                      @Nullable final String embeddedArtist,
+                                      @Nullable final String embeddedAlbum,
+                                      final long embeddedDuration) {
+        if (!isLocalMedia()) {
+            return false;
+        }
+        boolean changed = false;
+        if (embeddedTitle != null && !embeddedTitle.isBlank()
+                && !embeddedTitle.equals(title)) {
+            title = embeddedTitle;
+            changed = true;
+        }
+        if (embeddedArtist != null && !embeddedArtist.isBlank()
+                && !embeddedArtist.equals(uploader)) {
+            uploader = embeddedArtist;
+            changed = true;
+        }
+        if (embeddedAlbum != null && !embeddedAlbum.isBlank()
+                && !embeddedAlbum.equals(album)) {
+            album = embeddedAlbum;
+            changed = true;
+        }
+        if (embeddedDuration > 0L && embeddedDuration != duration) {
+            duration = embeddedDuration;
+            changed = true;
+        }
+        return changed;
     }
 
     @Nullable
