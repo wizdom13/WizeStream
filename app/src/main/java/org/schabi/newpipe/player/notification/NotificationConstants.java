@@ -78,16 +78,16 @@ public final class NotificationConstants {
     @DrawableRes
     public static final int[] ACTION_ICONS = {
             0,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_previous,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_next,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_rewind,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_fastforward,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_previous,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_next,
+            androidx.media3.ui.R.drawable.exo_icon_previous,
+            androidx.media3.ui.R.drawable.exo_icon_next,
+            androidx.media3.ui.R.drawable.exo_icon_rewind,
+            androidx.media3.ui.R.drawable.exo_icon_fastforward,
+            androidx.media3.ui.R.drawable.exo_icon_previous,
+            androidx.media3.ui.R.drawable.exo_icon_next,
             R.drawable.ic_pause,
             R.drawable.ic_hourglass_top,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_repeat_all,
-            com.google.android.exoplayer2.ui.R.drawable.exo_icon_shuffle_on,
+            androidx.media3.ui.R.drawable.exo_icon_repeat_all,
+            androidx.media3.ui.R.drawable.exo_icon_shuffle_on,
             R.drawable.ic_close,
     };
 
@@ -122,40 +122,40 @@ public final class NotificationConstants {
     public static String getActionName(@NonNull final Context context, @Action final int action) {
         switch (action) {
             case PREVIOUS:
-                return context.getString(com.google.android.exoplayer2.ui.R.string
+                return context.getString(androidx.media3.ui.R.string
                         .exo_controls_previous_description);
             case NEXT:
-                return context.getString(com.google.android.exoplayer2.ui.R.string
+                return context.getString(androidx.media3.ui.R.string
                         .exo_controls_next_description);
             case REWIND:
-                return context.getString(com.google.android.exoplayer2.ui.R.string
+                return context.getString(androidx.media3.ui.R.string
                         .exo_controls_rewind_description);
             case FORWARD:
-                return context.getString(com.google.android.exoplayer2.ui.R.string
+                return context.getString(androidx.media3.ui.R.string
                         .exo_controls_fastforward_description);
             case SMART_REWIND_PREVIOUS:
                 return Localization.concatenateStrings(
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_rewind_description),
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_previous_description));
             case SMART_FORWARD_NEXT:
                 return Localization.concatenateStrings(
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_fastforward_description),
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_next_description));
             case PLAY_PAUSE:
                 return Localization.concatenateStrings(
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_play_description),
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_pause_description));
             case PLAY_PAUSE_BUFFERING:
                 return Localization.concatenateStrings(
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_play_description),
-                        context.getString(com.google.android.exoplayer2.ui.R.string
+                        context.getString(androidx.media3.ui.R.string
                                 .exo_controls_pause_description),
                         context.getString(R.string.notification_action_buffering));
             case REPEAT:

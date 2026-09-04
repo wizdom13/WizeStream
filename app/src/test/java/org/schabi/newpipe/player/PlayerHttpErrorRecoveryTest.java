@@ -6,7 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.android.exoplayer2.upstream.HttpDataSource;
+import androidx.media3.datasource.HttpDataSource;
 
 import org.junit.Test;
 import org.schabi.newpipe.extractor.MediaFormat;

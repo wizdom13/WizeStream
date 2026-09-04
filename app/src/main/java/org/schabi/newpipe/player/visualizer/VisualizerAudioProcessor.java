@@ -1,8 +1,8 @@
 package org.schabi.newpipe.player.visualizer;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.audio.AudioProcessor;
-import com.google.android.exoplayer2.audio.BaseAudioProcessor;
+import androidx.media3.common.C;
+import androidx.media3.common.audio.AudioProcessor;
+import androidx.media3.common.audio.BaseAudioProcessor;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

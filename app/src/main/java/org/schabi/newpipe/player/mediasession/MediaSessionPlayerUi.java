@@ -1,23 +1,20 @@
 package org.schabi.newpipe.player.mediasession;
 
-import static org.schabi.newpipe.MainActivity.DEBUG;
 import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_RECREATE_NOTIFICATION;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Build;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.media.session.MediaButtonReceiver;
-
-import com.google.android.exoplayer2.ForwardingPlayer;
-import com.google.android.exoplayer2.Player.RepeatMode;
-import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+import androidx.media3.common.C;
+import androidx.media3.common.ForwardingPlayer;
+import androidx.media3.common.MediaMetadata;
+import androidx.media3.common.Player.RepeatMode;
+import androidx.media3.session.CommandButton;
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
@@ -37,12 +34,10 @@ import java.util.stream.IntStream;
 
 public class MediaSessionPlayerUi extends PlayerUi
         implements SharedPreferences.OnSharedPreferenceChangeListener {
-    private static final String TAG = "MediaSessUi";
-
     @NonNull
-    private final MediaSessionCompat mediaSession;
+    private final MediaLibrarySession mediaSession;
     @NonNull
-    private final MediaSessionConnector sessionConnector;
+    private final androidx.media3.common.Player browserPlayer;
 
     private final String ignoreHardwareMediaButtonsKey;
     private boolean shouldIgnoreHardwareMediaButtons = false;
@@ -52,11 +47,11 @@ public class MediaSessionPlayerUi extends PlayerUi
 
 
     public MediaSessionPlayerUi(@NonNull final Player player,
-                                @NonNull final MediaSessionCompat mediaSession,
-                                @NonNull final MediaSessionConnector sessionConnector) {
+                                @NonNull final MediaLibrarySession mediaSession,
+                                @NonNull final androidx.media3.common.Player browserPlayer) {
         super(player);
         this.mediaSession = mediaSession;
-        this.sessionConnector = sessionConnector;
+        this.browserPlayer = browserPlayer;
         this.ignoreHardwareMediaButtonsKey =
                 context.getString(R.string.ignore_hardware_media_buttons_key);
     }
@@ -66,22 +61,11 @@ public class MediaSessionPlayerUi extends PlayerUi
         super.initPlayer();
         destroyPlayer(); // release previously used resources
 
-        mediaSession.setActive(true);
-
-        sessionConnector.setQueueNavigator(new PlayQueueNavigator(mediaSession, player));
-        sessionConnector.setPlayer(getForwardingPlayer());
-
-        // It seems like events from the Media Control UI in the notification area don't go through
-        // this function, so it's safe to just ignore all events in case we want to ignore the
-        // hardware media buttons. Returning true stops all further event processing of the system.
-        sessionConnector.setMediaButtonEventHandler((p, i) -> shouldIgnoreHardwareMediaButtons);
+        mediaSession.setPlayer(getForwardingPlayer());
 
         // listen to changes to ignore_hardware_media_buttons_key
         updateShouldIgnoreHardwareMediaButtons(player.getPrefs());
         player.getPrefs().registerOnSharedPreferenceChangeListener(this);
-
-        sessionConnector.setMetadataDeduplicationEnabled(true);
-        sessionConnector.setMediaMetadataProvider(exoPlayer -> buildMediaMetadata());
 
         // force updating media session actions by resetting the previous ones
         prevNotificationActions = List.of();
@@ -92,18 +76,18 @@ public class MediaSessionPlayerUi extends PlayerUi
     public void destroyPlayer() {
         super.destroyPlayer();
         player.getPrefs().unregisterOnSharedPreferenceChangeListener(this);
-        sessionConnector.setMediaButtonEventHandler(null);
-        sessionConnector.setPlayer(null);
-        sessionConnector.setQueueNavigator(null);
-        mediaSession.setActive(false);
+        player.getService().setShouldIgnoreHardwareMediaButtons(false);
+        if (mediaSession.getPlayer() != browserPlayer) {
+            mediaSession.setPlayer(browserPlayer);
+        }
         prevNotificationActions = List.of();
     }
 
     @Override
     public void onThumbnailLoaded(@Nullable final Bitmap bitmap) {
         super.onThumbnailLoaded(bitmap);
-        // the thumbnail is now loaded: invalidate the metadata to trigger a metadata update
-        sessionConnector.invalidateMediaSessionMetadata();
+        // Artwork is published through the Media3 MediaItem metadata. The custom notification
+        // continues to use the already-loaded bitmap directly.
     }
 
 
@@ -118,15 +102,12 @@ public class MediaSessionPlayerUi extends PlayerUi
     public void updateShouldIgnoreHardwareMediaButtons(final SharedPreferences sharedPreferences) {
         shouldIgnoreHardwareMediaButtons =
                 sharedPreferences.getBoolean(ignoreHardwareMediaButtonsKey, false);
+        player.getService().setShouldIgnoreHardwareMediaButtons(
+                shouldIgnoreHardwareMediaButtons);
     }
 
-
-    public void handleMediaButtonIntent(final Intent intent) {
-        MediaButtonReceiver.handleIntent(mediaSession, intent);
-    }
-
-    public Optional<MediaSessionCompat.Token> getSessionToken() {
-        return Optional.ofNullable(mediaSession).map(MediaSessionCompat::getSessionToken);
+    public Optional<MediaLibrarySession> getMediaSession() {
+        return Optional.of(mediaSession);
     }
 
 
@@ -146,37 +127,59 @@ public class MediaSessionPlayerUi extends PlayerUi
             public void pause() {
                 player.pause();
             }
+
+            @Override
+            public void seekToNextMediaItem() {
+                player.playNext();
+            }
+
+            @Override
+            public void seekToNext() {
+                player.playNext();
+            }
+
+            @Override
+            public void seekToPreviousMediaItem() {
+                player.playPrevious();
+            }
+
+            @Override
+            public void seekToPrevious() {
+                player.playPrevious();
+            }
+
+            @Override
+            public void seekTo(final int mediaItemIndex, final long positionMs) {
+                if (player.getPlayQueue() != null
+                        && mediaItemIndex >= 0
+                        && mediaItemIndex < player.getPlayQueue().size()) {
+                    player.selectQueueItem(player.getPlayQueue().getItem(mediaItemIndex));
+                    if (positionMs != C.TIME_UNSET && positionMs > 0) {
+                        player.seekTo(positionMs);
+                    }
+                } else {
+                    super.seekTo(mediaItemIndex, positionMs);
+                }
+            }
+
+            @NonNull
+            @Override
+            public MediaMetadata getMediaMetadata() {
+                final MediaMetadata current = super.getMediaMetadata();
+                final MediaMetadata.Builder builder = current.buildUpon()
+                        .setTitle(player.getVideoTitle())
+                        .setArtist(player.getUploaderName());
+
+                final long durationMs = Optional.ofNullable(player.getCurrentMetadata())
+                        .filter(tag -> !StreamTypeUtil.isLiveStream(tag.getStreamType()))
+                        .map(tag -> tag.getDurationSeconds() * 1000L)
+                        .orElse(C.TIME_UNSET);
+                if (durationMs != C.TIME_UNSET) {
+                    builder.setDurationMs(durationMs);
+                }
+                return builder.build();
+            }
         };
-    }
-
-    private MediaMetadataCompat buildMediaMetadata() {
-        if (DEBUG) {
-            Log.d(TAG, "buildMediaMetadata called");
-        }
-
-        // set title and artist
-        final MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, player.getVideoTitle())
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, player.getUploaderName());
-
-        // set duration (-1 for livestreams or if unknown, see the METADATA_KEY_DURATION docs)
-        final long duration = Optional.ofNullable(player.getCurrentMetadata())
-                .filter(tag -> !StreamTypeUtil.isLiveStream(tag.getStreamType()))
-                .map(tag -> tag.getDurationSeconds() * 1000L)
-                .orElse(-1L);
-        builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
-
-        // set album art, unless the user asked not to, or there is no thumbnail available
-        final boolean showThumbnail = player.getPrefs().getBoolean(
-                context.getString(R.string.show_thumbnail_key), true);
-        Optional.ofNullable(player.getThumbnail())
-                .filter(bitmap -> showThumbnail)
-                .ifPresent(bitmap -> {
-                    builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bitmap);
-                    builder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, bitmap);
-                });
-
-        return builder.build();
     }
 
 
@@ -194,8 +197,7 @@ public class MediaSessionPlayerUi extends PlayerUi
             return;
         }
 
-        if (!mediaSession.isActive()) {
-            // mediaSession will be inactive after destroyPlayer is called
+        if (mediaSession.getPlayer() == browserPlayer) {
             return;
         }
 
@@ -213,10 +215,11 @@ public class MediaSessionPlayerUi extends PlayerUi
         // avoid costly notification actions update, if nothing changed from last time
         if (!newNotificationActions.equals(prevNotificationActions)) {
             prevNotificationActions = newNotificationActions;
-            sessionConnector.setCustomActionProviders(
-                    newNotificationActions.stream()
-                            .map(data -> new SessionConnectorActionProvider(data, context))
-                            .toArray(SessionConnectorActionProvider[]::new));
+            final List<CommandButton> buttons = IntStream.range(0, newNotificationActions.size())
+                    .mapToObj(index -> MediaSessionActionProvider.buttonFor(
+                            newNotificationActions.get(index), index == 0))
+                    .collect(Collectors.toList());
+            mediaSession.setMediaButtonPreferences(buttons);
         }
     }
 

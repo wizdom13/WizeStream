@@ -1,7 +1,6 @@
 package org.schabi.newpipe.player.notification;
 
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
-import static androidx.media.app.NotificationCompat.MediaStyle;
 import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_CLOSE;
 
 import android.annotation.SuppressLint;
@@ -21,13 +20,13 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.PendingIntentCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
+import androidx.media3.session.MediaStyleNotificationHelper.MediaStyle;
 
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerIntentType;
 import org.schabi.newpipe.player.PlayerService;
-import org.schabi.newpipe.player.mediasession.MediaSessionPlayerUi;
 import org.schabi.newpipe.util.NavigationHelper;
 
 import java.util.ArrayList;
@@ -99,18 +98,14 @@ public final class NotificationUtil {
         notificationManager = NotificationManagerCompat.from(player.getContext());
 
         // setup media style (compact notification slots and media session)
-        final MediaStyle mediaStyle = new MediaStyle();
+        final MediaStyle mediaStyle = new MediaStyle(
+                player.getService().getMediaSession());
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             // notification actions are ignored on Android 13+, and are replaced by code in
             // MediaSessionPlayerUi
             final int[] compactSlots = initializeNotificationSlots();
             mediaStyle.setShowActionsInCompactView(compactSlots);
         }
-        player.UIs()
-                .get(MediaSessionPlayerUi.class)
-                .flatMap(MediaSessionPlayerUi::getSessionToken)
-                .ifPresent(mediaStyle::setMediaSession);
-
         // setup notification builder
         final var builder = setupNotificationBuilder(player.getContext(), mediaStyle)
                 .setColorized(player.getPrefs().getBoolean(
@@ -164,7 +159,8 @@ public final class NotificationUtil {
     }
 
     public static void startForegroundWithDummyNotification(final PlayerService service) {
-        final var builder = setupNotificationBuilder(service, new MediaStyle());
+        final var builder = setupNotificationBuilder(service,
+                new MediaStyle(service.getMediaSession()));
         startForeground(service, builder.build());
     }
 

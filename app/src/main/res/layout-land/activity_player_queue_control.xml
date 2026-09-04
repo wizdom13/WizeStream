@@ -124,7 +124,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:scaleType="fitCenter"
-                android:src="@drawable/exo_controls_rewind"
+                android:src="@drawable/exo_legacy_controls_rewind"
                 android:contentDescription="@string/rewind"
                 app:tint="?attr/colorAccent" />
 
@@ -174,7 +174,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:scaleType="fitCenter"
-                android:src="@drawable/exo_controls_fastforward"
+                android:src="@drawable/exo_legacy_controls_fastforward"
                 android:contentDescription="@string/forward"
                 app:tint="?attr/colorAccent" />
         </RelativeLayout>

@@ -10,7 +10,7 @@ import android.content.Context;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
-import com.google.android.exoplayer2.Player;
+import androidx.media3.common.Player;
 
 import org.junit.Test;
 

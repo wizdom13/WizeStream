@@ -3,8 +3,8 @@ package org.schabi.newpipe.player.visualizer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.audio.AudioProcessor;
+import androidx.media3.common.C;
+import androidx.media3.common.audio.AudioProcessor;
 
 import org.junit.Test;
 

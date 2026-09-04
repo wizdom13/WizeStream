@@ -7,4 +7,6 @@
     <issue id="MissingTranslation" severity="ignore" />
     <issue id="MissingQuantity" severity="ignore" />
     <issue id="ImpliedQuantity" severity="ignore" />
+    <!-- WizeStream intentionally customizes Media3's advanced playback APIs. -->
+    <issue id="UnsafeOptInUsageError" severity="ignore" />
 </lint>

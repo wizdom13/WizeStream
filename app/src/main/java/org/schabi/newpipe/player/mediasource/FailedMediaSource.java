@@ -2,15 +2,15 @@ package org.schabi.newpipe.player.mediasource;
 
 import android.util.Log;
 
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.source.BaseMediaSource;
-import com.google.android.exoplayer2.source.MediaPeriod;
-import com.google.android.exoplayer2.source.SilenceMediaSource;
-import com.google.android.exoplayer2.source.SinglePeriodTimeline;
-import com.google.android.exoplayer2.upstream.Allocator;
-import com.google.android.exoplayer2.upstream.TransferListener;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Timeline;
+import androidx.media3.exoplayer.source.BaseMediaSource;
+import androidx.media3.exoplayer.source.MediaPeriod;
+import androidx.media3.exoplayer.source.SilenceMediaSource;
+import androidx.media3.exoplayer.source.SinglePeriodTimeline;
+import androidx.media3.exoplayer.upstream.Allocator;
+import androidx.media3.datasource.TransferListener;
 
 import org.schabi.newpipe.player.mediaitem.ExceptionTag;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
@@ -118,10 +118,10 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
      * If the error is not known, e.g. network issue, then the exception is not swallowed here in
      * {@link FailedMediaSource}. The exception is then propagated to the player, which
      * {@link org.schabi.newpipe.player.Player Player} can react to inside
-     * {@link com.google.android.exoplayer2.Player.Listener#onPlayerError(PlaybackException)}.
+     * {@link androidx.media3.common.Player.Listener#onPlayerError(PlaybackException)}.
      *
      * @throws IOException An error which will always result in
-     * {@link com.google.android.exoplayer2.PlaybackException#ERROR_CODE_IO_UNSPECIFIED}.
+     * {@link androidx.media3.common.PlaybackException#ERROR_CODE_IO_UNSPECIFIED}.
      */
     @Override
     public void maybeThrowSourceInfoRefreshError() throws IOException {
