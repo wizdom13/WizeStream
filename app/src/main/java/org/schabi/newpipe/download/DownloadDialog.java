@@ -61,7 +61,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
 import us.shandian.giga.service.DownloadManagerService.DownloadManagerBinder;
@@ -106,7 +105,7 @@ public class DownloadDialog extends DialogFragment
     private StreamItemAdapter<VideoStream, AudioStream> videoStreamsAdapter;
     private StreamItemAdapter<SubtitlesStream, Stream> subtitleStreamsAdapter;
 
-    private final CompositeDisposable disposables = new CompositeDisposable();
+    private DownloadStreamSizeLoader streamSizeLoader;
 
     private DownloadDialogBinding dialogBinding;
 
@@ -186,6 +185,9 @@ public class DownloadDialog extends DialogFragment
         this.audioTrackAdapter = new AudioTrackAdapter(wrappedAudioTracks);
         this.subtitleStreamsAdapter = new StreamItemAdapter<>(wrappedSubtitleStreams);
         updateSecondaryStreams();
+        streamSizeLoader = new DownloadStreamSizeLoader(wrappedVideoStreams,
+                this::getWrappedAudioStreams, wrappedSubtitleStreams,
+                this::onStreamSizeLoaded, this::onStreamSizeLoadError);
 
         final Intent intent = new Intent(context, DownloadManagerService.class);
         context.startService(intent);
@@ -309,13 +311,10 @@ public class DownloadDialog extends DialogFragment
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        disposables.clear();
-    }
-
-    @Override
     public void onDestroyView() {
+        if (streamSizeLoader != null) {
+            streamSizeLoader.clear();
+        }
         dialogBinding = null;
         super.onDestroyView();
     }
@@ -332,34 +331,21 @@ public class DownloadDialog extends DialogFragment
     //////////////////////////////////////////////////////////////////////////*/
 
     private void fetchStreamsSize() {
-        disposables.clear();
-        disposables.add(StreamInfoWrapper.fetchMoreInfoForWrapper(wrappedVideoStreams)
-                .subscribe(result -> {
-                    if (dialogBinding.videoAudioGroup.getCheckedRadioButtonId()
-                            == R.id.video_button) {
-                        setupVideoSpinner();
-                    }
-                }, throwable -> ErrorUtil.showSnackbar(context,
-                        new ErrorInfo(throwable, UserAction.DOWNLOAD_OPEN_DIALOG,
-                                "Downloading video stream size", currentInfo))));
-        disposables.add(StreamInfoWrapper.fetchMoreInfoForWrapper(getWrappedAudioStreams())
-                .subscribe(result -> {
-                    if (dialogBinding.videoAudioGroup.getCheckedRadioButtonId()
-                            == R.id.audio_button) {
-                        setupAudioSpinner();
-                    }
-                }, throwable -> ErrorUtil.showSnackbar(context,
-                        new ErrorInfo(throwable, UserAction.DOWNLOAD_OPEN_DIALOG,
-                                "Downloading audio stream size", currentInfo))));
-        disposables.add(StreamInfoWrapper.fetchMoreInfoForWrapper(wrappedSubtitleStreams)
-                .subscribe(result -> {
-                    if (dialogBinding.videoAudioGroup.getCheckedRadioButtonId()
-                            == R.id.subtitle_button) {
-                        setupSubtitleSpinner();
-                    }
-                }, throwable -> ErrorUtil.showSnackbar(context,
-                        new ErrorInfo(throwable, UserAction.DOWNLOAD_OPEN_DIALOG,
-                                "Downloading subtitle stream size", currentInfo))));
+        streamSizeLoader.refresh();
+    }
+
+    private void onStreamSizeLoaded(final DownloadMediaOption option) {
+        if (dialogBinding == null) {
+            return;
+        }
+        newOptionsController().refreshLoadedOption(option, selectedVideoIndex,
+                selectedAudioIndex, selectedSubtitleIndex, selectedAudioOutputIndex);
+    }
+
+    private void onStreamSizeLoadError(final DownloadMediaOption option,
+                                       final Throwable throwable) {
+        ErrorUtil.showSnackbar(context, new ErrorInfo(throwable,
+                UserAction.DOWNLOAD_OPEN_DIALOG, option.getSizeRequestDescription(), currentInfo));
     }
 
     private void setupAudioSpinner() {

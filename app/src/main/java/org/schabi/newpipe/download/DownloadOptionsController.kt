@@ -24,10 +24,10 @@ import org.schabi.newpipe.util.AudioTrackAdapter.AudioTracksWrapper
 import org.schabi.newpipe.util.StreamItemAdapter
 import us.shandian.giga.postprocessing.Mp3OutputOptions
 
-internal enum class DownloadMediaOption {
-    VIDEO,
-    AUDIO,
-    SUBTITLE
+internal enum class DownloadMediaOption(val sizeRequestDescription: String) {
+    VIDEO("Downloading video stream size"),
+    AUDIO("Downloading audio stream size"),
+    SUBTITLE("Downloading subtitle stream size")
 }
 
 internal object DownloadMediaOptionPolicy {
@@ -256,6 +256,28 @@ internal class DownloadOptionsController(
         )
         binding.mp3BitrateLabel.visibility = visibility(visible)
         binding.mp3BitrateSpinner.visibility = visibility(visible)
+    }
+
+    fun refreshLoadedOption(
+        option: DownloadMediaOption,
+        selectedVideoIndex: Int,
+        selectedAudioIndex: Int,
+        selectedSubtitleIndex: Int,
+        selectedAudioOutputIndex: Int
+    ) {
+        when (option) {
+            DownloadMediaOption.VIDEO -> if (binding.videoButton.isChecked) {
+                showVideo(selectedVideoIndex)
+            }
+
+            DownloadMediaOption.AUDIO -> if (binding.audioButton.isChecked) {
+                showAudio(selectedAudioIndex, selectedAudioOutputIndex)
+            }
+
+            DownloadMediaOption.SUBTITLE -> if (binding.subtitleButton.isChecked) {
+                showSubtitle(selectedSubtitleIndex)
+            }
+        }
     }
 
     private fun setRadioButtonsEnabled(enabled: Boolean) {
