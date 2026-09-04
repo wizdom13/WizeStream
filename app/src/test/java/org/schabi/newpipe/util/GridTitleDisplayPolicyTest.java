@@ -67,12 +67,14 @@ public class GridTitleDisplayPolicyTest {
     }
 
     @Test
-    public void everyStreamGridOrCardHolderAppliesTheDisplayPolicy() throws Exception {
+    public void everyFullTitleStreamHolderAppliesTheDisplayPolicy() throws Exception {
         final List<String> streamHolders = List.of(
                 "app/src/main/java/org/schabi/newpipe/info_list/holder/"
                         + "StreamGridInfoItemHolder.java",
                 "app/src/main/java/org/schabi/newpipe/info_list/holder/"
                         + "StreamCardInfoItemHolder.java",
+                "app/src/main/java/org/schabi/newpipe/info_list/holder/"
+                        + "StreamWideRelatedInfoItemHolder.java",
                 "app/src/main/java/org/schabi/newpipe/local/holder/"
                         + "LocalPlaylistStreamGridItemHolder.java",
                 "app/src/main/java/org/schabi/newpipe/local/holder/"
@@ -82,6 +84,18 @@ public class GridTitleDisplayPolicyTest {
             assertTrue(read(streamHolder).contains(
                     "GridTitleDisplayPolicy.apply(itemVideoTitleView);"));
         }
+    }
+
+    @Test
+    public void wideRelatedVideosUseTheFullTitleAwareHolder() throws Exception {
+        final String adapter = read(
+                "app/src/main/java/org/schabi/newpipe/info_list/InfoListAdapter.java");
+
+        assertTrue(adapter.contains("case WIDE_RELATED_STREAM_HOLDER_TYPE:"));
+        assertTrue(adapter.contains(
+                "return new StreamWideRelatedInfoItemHolder(infoItemBuilder, parent);"));
+        assertFalse(adapter.contains(
+                "R.layout.list_stream_related_wide_item, parent"));
     }
 
     @Test

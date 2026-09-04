@@ -11,7 +11,6 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.PignateFooterBinding;
 import org.schabi.newpipe.dearrow.DeArrowService;
 import org.schabi.newpipe.extractor.InfoItem;
@@ -34,6 +33,7 @@ import org.schabi.newpipe.info_list.holder.StreamCardInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamGridInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamMiniInfoItemHolder;
+import org.schabi.newpipe.info_list.holder.StreamWideRelatedInfoItemHolder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.FallbackViewHolder;
@@ -354,8 +354,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             case STREAM_HOLDER_TYPE:
                 return new StreamInfoItemHolder(infoItemBuilder, parent);
             case WIDE_RELATED_STREAM_HOLDER_TYPE:
-                return new StreamInfoItemHolder(
-                        infoItemBuilder, R.layout.list_stream_related_wide_item, parent);
+                return new StreamWideRelatedInfoItemHolder(infoItemBuilder, parent);
             case GRID_STREAM_HOLDER_TYPE:
                 return new StreamGridInfoItemHolder(infoItemBuilder, parent);
             case CARD_STREAM_HOLDER_TYPE:
