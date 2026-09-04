@@ -52,6 +52,7 @@ internal class DownloadPickerResultHandler(
         val resolved = resolve(result)
         when (resolved.action) {
             DownloadPickerResultAction.CANCELLED -> return
+
             DownloadPickerResultAction.INVALID -> {
                 failureListener.onDownloadFailure(R.string.general_error)
                 return
@@ -95,6 +96,7 @@ internal class DownloadPickerResultHandler(
         val resolved = resolve(result)
         when (resolved.action) {
             DownloadPickerResultAction.CANCELLED -> return
+
             DownloadPickerResultAction.INVALID -> {
                 failureListener.onDownloadFailure(R.string.general_error)
                 return
