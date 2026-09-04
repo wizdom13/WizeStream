@@ -12,18 +12,13 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.LocalItem.LocalItemType
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.feed.model.FeedGroupSubscriptionEntity
-import org.schabi.newpipe.database.sync.StructuredPreferenceSyncChangeEntity
 import org.schabi.newpipe.database.sync.StructuredPreferenceSyncFeedGroupMapEntity
-import org.schabi.newpipe.database.sync.StructuredPreferenceSyncLocalStateEntity
-import org.schabi.newpipe.database.sync.StructuredPreferenceSyncOriginStateEntity
-import org.schabi.newpipe.database.sync.StructuredPreferenceSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.StructuredPreferenceSyncRecordEntity
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
 import org.schabi.newpipe.settings.tabs.Tab
@@ -66,7 +61,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         PreferenceManager.getDefaultSharedPreferences(context),
     private val finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context)
 ) : StructuredPreferenceSyncStore {
-    private val syncDao = database.structuredPreferenceSyncDAO()
+    private val recordRepository = StructuredPreferenceRecordRepository(database, localPeerId)
     private val feedGroupDao = database.feedGroupDAO()
     private val subscriptionDao = database.subscriptionDAO()
     private val playlistDao = database.playlistDAO()
@@ -75,13 +70,14 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     override fun reconcileLocal(category: StructuredPreferenceCategory) {
         database.runInTransaction {
             val currentSnapshot = snapshotHash(category)
-            val localState = syncDao.getLocalState(category.name)
-            if (localState?.snapshotHash == currentSnapshot) {
+            val hasSnapshot = recordRepository.hasSnapshot(category)
+            val isCurrent = recordRepository.isSnapshotCurrent(category, currentSnapshot)
+            if (isCurrent) {
                 return@runInTransaction
             }
             when (category) {
                 StructuredPreferenceCategory.FEED_GROUPS ->
-                    reconcileFeedGroups(bootstrap = localState == null)
+                    reconcileFeedGroups(bootstrap = !hasSnapshot)
 
                 StructuredPreferenceCategory.HOME_TABS -> reconcileHomeTabs()
 
@@ -95,16 +91,14 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
                     reconcileCompletedDownloads()
             }
-            saveSnapshot(category)
+            recordRepository.saveSnapshot(category, snapshotHash(category))
         }
     }
 
     override fun getKnownRevisions(
         category: StructuredPreferenceCategory
     ): Map<String, Long> {
-        return syncDao.getOriginStates(category.name).associate {
-            it.originPeerId to it.contiguousRevision
-        }
+        return recordRepository.getKnownRevisions(category)
     }
 
     override fun getPendingChanges(
@@ -112,33 +106,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         peerId: String,
         limit: Int
     ): StructuredPreferenceChangeBatch {
-        require(limit > 0)
-        val acknowledged = syncDao.getPeerStates(category.name, peerId).associate {
-            it.originPeerId to it.acknowledgedRevision
-        }
-        val origins = (
-            syncDao.getChangeOrigins(category.name) +
-                getKnownRevisions(category).keys
-            ).distinct()
-        val pending = origins.flatMap { origin ->
-            syncDao.getChangesAfter(
-                category.name,
-                origin,
-                acknowledged[origin] ?: 0,
-                limit + 1
-            )
-        }.map(::decodeChange)
-            .sortedBy(StructuredPreferenceChange::versionStamp)
-        return StructuredPreferenceChangeBatch(
-            changes = pending.take(limit),
-            hasMore = pending.size > limit || origins.any { origin ->
-                syncDao.countChangesAfter(
-                    category.name,
-                    origin,
-                    acknowledged[origin] ?: 0
-                ) > pending.count { it.originPeerId == origin }
-            }
-        )
+        return recordRepository.getPendingChanges(category, peerId, limit)
     }
 
     override fun acknowledgePeer(
@@ -146,81 +114,30 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         peerId: String,
         knownRevisions: Map<String, Long>
     ) {
-        StructuredPreferenceSyncValidation.validateKnownRevisions(knownRevisions)
-        val localKnowledge = getKnownRevisions(category)
-        knownRevisions.forEach { (originPeerId, revision) ->
-            val safeRevision = minOf(revision, localKnowledge[originPeerId] ?: 0)
-            val current = syncDao.getPeerStates(category.name, peerId)
-                .firstOrNull { it.originPeerId == originPeerId }
-                ?.acknowledgedRevision
-                ?: 0
-            if (safeRevision > current) {
-                syncDao.upsertPeerState(
-                    StructuredPreferenceSyncPeerStateEntity(
-                        category = category.name,
-                        peerId = peerId,
-                        originPeerId = originPeerId,
-                        acknowledgedRevision = safeRevision
-                    )
-                )
-            }
-        }
+        recordRepository.acknowledgePeer(category, peerId, knownRevisions)
     }
 
     override fun applyChanges(
         category: StructuredPreferenceCategory,
         changes: List<StructuredPreferenceChange>
     ): StructuredPreferenceApplyResult {
-        StructuredPreferenceSyncValidation.validateChanges(category, changes)
-        return database.runInTransaction<StructuredPreferenceApplyResult> {
-            var acceptedChanges = 0
-            var affectedRecords = 0
-            changes.forEach { change ->
-                if (
-                    syncDao.hasChange(
-                        category.name,
-                        change.originPeerId,
-                        change.originRevision
-                    )
-                ) {
-                    return@forEach
-                }
-                check(syncDao.insertChange(change.toEntity()) != -1L) {
-                    "A structured preference revision was inserted concurrently"
-                }
-                acceptedChanges += 1
-                advanceKnownRevision(category, change.originPeerId)
-                val current = syncDao.getRecord(category.name, change.recordId)
-                if (
-                    current == null ||
-                    change.versionStamp > current.versionStamp
-                ) {
-                    syncDao.upsertRecord(change.toRecordEntity())
-                    affectedRecords += 1
-                }
-            }
-            if (affectedRecords > 0) {
-                materialize(category)
-                saveSnapshot(category)
-            }
-            StructuredPreferenceApplyResult(
-                acceptedChanges = acceptedChanges,
-                affectedRecords = affectedRecords
-            )
+        return recordRepository.applyChanges(category, changes) {
+            materialize(category)
+            recordRepository.saveSnapshot(category, snapshotHash(category))
         }
     }
 
     override fun clearPeerKnowledge() {
-        syncDao.deleteAllPeerStates()
+        recordRepository.clearPeerKnowledge()
     }
 
     internal fun getCompletedDownloadMetadata(): List<SyncedCompletedDownload> {
-        return syncDao.getRecordsByType(
-            StructuredPreferenceCategory.COMPLETED_DOWNLOADS.name,
-            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD.name
+        return recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .mapNotNull { record ->
-                decodeRecord(record).completedDownload
+                recordRepository.decodeRecord(record).completedDownload
             }
             .sortedByDescending(SyncedCompletedDownload::completedAtEpochMillis)
     }
@@ -234,7 +151,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         }
         val duplicateOrdinals = linkedMapOf<Pair<String, Int>, Int>()
         val mappings = groups.associateWith { group ->
-            syncDao.getFeedGroupMapping(group.uid)
+            recordRepository.getFeedGroupMapping(group.uid)
                 ?: run {
                     val identity = group.name.trim() to group.icon.id
                     val ordinal = duplicateOrdinals[identity] ?: 0
@@ -251,7 +168,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                     StructuredPreferenceSyncFeedGroupMapEntity(
                         groupRecordId = recordId,
                         groupUid = group.uid
-                    ).also(syncDao::upsertFeedGroupMapping)
+                    ).also(recordRepository::saveFeedGroupMapping)
                 }
         }
         val desiredGroupIds = mappings.values.mapTo(hashSetOf()) {
@@ -259,7 +176,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         }
         groups.forEach { group ->
             val recordId = requireNotNull(mappings[group]).groupRecordId
-            saveLocalUpsert(
+            recordRepository.saveLocalUpsert(
                 category = StructuredPreferenceCategory.FEED_GROUPS,
                 recordId = recordId,
                 recordType = StructuredPreferenceRecordType.FEED_GROUP,
@@ -271,12 +188,12 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 )
             )
         }
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.FEED_GROUPS.name,
-            StructuredPreferenceRecordType.FEED_GROUP.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.FEED_GROUPS,
+            StructuredPreferenceRecordType.FEED_GROUP
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .filterNot { it.recordId in desiredGroupIds }
-            .forEach(::saveLocalDelete)
+            .forEach(recordRepository::saveLocalDelete)
 
         val subscriptionsById = subscriptionDao.getAllDirect().associateBy { it.uid }
         val desiredMemberships = linkedMapOf<String, Pair<String, SyncedFeedGroupMembership>>()
@@ -300,7 +217,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                         membership.subscriptionUrl
                     )
                     desiredMemberships[recordId] = groupRecordId to membership
-                    saveLocalUpsert(
+                    recordRepository.saveLocalUpsert(
                         category = StructuredPreferenceCategory.FEED_GROUPS,
                         recordId = recordId,
                         recordType =
@@ -312,14 +229,14 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                     )
                 }
         }
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.FEED_GROUPS.name,
-            StructuredPreferenceRecordType.FEED_GROUP_MEMBERSHIP.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.FEED_GROUPS,
+            StructuredPreferenceRecordType.FEED_GROUP_MEMBERSHIP
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .filterNot { it.recordId in desiredMemberships }
-            .forEach(::saveLocalDelete)
+            .forEach(recordRepository::saveLocalDelete)
 
-        saveLocalUpsert(
+        recordRepository.saveLocalUpsert(
             category = StructuredPreferenceCategory.FEED_GROUPS,
             recordId = StructuredPreferenceRecordId.feedGroupOrder(),
             recordType = StructuredPreferenceRecordType.FEED_GROUP_ORDER,
@@ -341,20 +258,20 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         val desiredTabs = tabs.mapNotNull(::toSyncedHomeTab)
             .associateBy(StructuredPreferenceRecordId::homeTab)
         desiredTabs.forEach { (recordId, tab) ->
-            saveLocalUpsert(
+            recordRepository.saveLocalUpsert(
                 category = StructuredPreferenceCategory.HOME_TABS,
                 recordId = recordId,
                 recordType = StructuredPreferenceRecordType.HOME_TAB,
                 record = SyncedStructuredPreferenceRecord(homeTab = tab)
             )
         }
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.HOME_TABS.name,
-            StructuredPreferenceRecordType.HOME_TAB.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.HOME_TABS,
+            StructuredPreferenceRecordType.HOME_TAB
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .filterNot { it.recordId in desiredTabs }
-            .forEach(::saveLocalDelete)
-        saveLocalUpsert(
+            .forEach(recordRepository::saveLocalDelete)
+        recordRepository.saveLocalUpsert(
             category = StructuredPreferenceCategory.HOME_TABS,
             recordId = StructuredPreferenceRecordId.homeTabOrder(),
             recordType = StructuredPreferenceRecordType.HOME_TAB_ORDER,
@@ -372,7 +289,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
             StructuredPreferenceRecordId.channelProfileField(it)
         }
         desired.forEach { (recordId, field) ->
-            saveLocalUpsert(
+            recordRepository.saveLocalUpsert(
                 category = StructuredPreferenceCategory.CHANNEL_PROFILES,
                 recordId = recordId,
                 recordType =
@@ -382,12 +299,12 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 )
             )
         }
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.CHANNEL_PROFILES.name,
-            StructuredPreferenceRecordType.CHANNEL_PROFILE_FIELD.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.CHANNEL_PROFILES,
+            StructuredPreferenceRecordType.CHANNEL_PROFILE_FIELD
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .filterNot { it.recordId in desired }
-            .forEach(::saveLocalDelete)
+            .forEach(recordRepository::saveLocalDelete)
     }
 
     private fun reconcileFilters() {
@@ -396,7 +313,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 filterId = spec.id,
                 values = currentFilterValues(spec).sorted()
             )
-            saveLocalUpsert(
+            recordRepository.saveLocalUpsert(
                 category = StructuredPreferenceCategory.FILTERS,
                 recordId = StructuredPreferenceRecordId.filterSet(spec.id),
                 recordType = StructuredPreferenceRecordType.FILTER_SET,
@@ -412,19 +329,19 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
             }
         }.toMap()
         desired.forEach { (recordId, setting) ->
-            saveLocalUpsert(
+            recordRepository.saveLocalUpsert(
                 category = StructuredPreferenceCategory.SETTINGS,
                 recordId = recordId,
                 recordType = StructuredPreferenceRecordType.PORTABLE_SETTING,
                 record = SyncedStructuredPreferenceRecord(portableSetting = setting)
             )
         }
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.SETTINGS.name,
-            StructuredPreferenceRecordType.PORTABLE_SETTING.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.SETTINGS,
+            StructuredPreferenceRecordType.PORTABLE_SETTING
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .filterNot { it.recordId in desired }
-            .forEach(::saveLocalDelete)
+            .forEach(recordRepository::saveLocalDelete)
     }
 
     private fun reconcileCompletedDownloads() {
@@ -432,7 +349,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
             SyncedCompletedDownload::syncId
         )
         desired.forEach { (recordId, download) ->
-            saveLocalUpsert(
+            recordRepository.saveLocalUpsert(
                 category = StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
                 recordId = recordId,
                 recordType = StructuredPreferenceRecordType.COMPLETED_DOWNLOAD,
@@ -441,99 +358,15 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 )
             )
         }
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.COMPLETED_DOWNLOADS.name,
-            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS,
+            StructuredPreferenceRecordType.COMPLETED_DOWNLOAD
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .filter { record ->
-                decodeRecord(record).completedDownload?.ownerPeerId == localPeerId
+                recordRepository.decodeRecord(record).completedDownload?.ownerPeerId == localPeerId
             }
             .filterNot { it.recordId in desired }
-            .forEach(::saveLocalDelete)
-    }
-
-    private fun saveLocalUpsert(
-        category: StructuredPreferenceCategory,
-        recordId: String,
-        recordType: StructuredPreferenceRecordType,
-        record: SyncedStructuredPreferenceRecord,
-        parentRecordId: String? = null
-    ) {
-        val current = syncDao.getRecord(category.name, recordId)
-        if (
-            current != null &&
-            !current.isDeleted &&
-            current.recordType == recordType.name &&
-            current.parentRecordId == parentRecordId &&
-            decodeRecord(current) == record
-        ) {
-            return
-        }
-        saveLocalChange(
-            category = category,
-            recordId = recordId,
-            recordType = recordType,
-            parentRecordId = parentRecordId,
-            type = StructuredPreferenceChangeType.UPSERT,
-            record = record
-        )
-    }
-
-    private fun saveLocalDelete(current: StructuredPreferenceSyncRecordEntity) {
-        saveLocalChange(
-            category = StructuredPreferenceCategory.valueOf(current.category),
-            recordId = current.recordId,
-            recordType = StructuredPreferenceRecordType.valueOf(current.recordType),
-            parentRecordId = current.parentRecordId,
-            type = StructuredPreferenceChangeType.DELETE,
-            record = decodeRecord(current)
-        )
-    }
-
-    private fun saveLocalChange(
-        category: StructuredPreferenceCategory,
-        recordId: String,
-        recordType: StructuredPreferenceRecordType,
-        parentRecordId: String?,
-        type: StructuredPreferenceChangeType,
-        record: SyncedStructuredPreferenceRecord
-    ) {
-        val categoryName = category.name
-        val current = syncDao.getRecord(categoryName, recordId)
-        val originRevision = incrementVersion(
-            syncDao.getOriginState(categoryName, localPeerId)
-                ?.contiguousRevision
-                ?: 0
-        )
-        val lamportVersion = incrementVersion(
-            maxOf(
-                syncDao.getMaximumLamportVersion(categoryName),
-                current?.lamportVersion ?: 0
-            )
-        )
-        val change = StructuredPreferenceChange(
-            category = category,
-            originPeerId = localPeerId,
-            originRevision = originRevision,
-            lamportVersion = lamportVersion,
-            recordId = recordId,
-            recordType = recordType,
-            parentRecordId = parentRecordId,
-            type = type,
-            record = record
-        )
-        StructuredPreferenceSyncValidation.validateChanges(category, listOf(change))
-        check(syncDao.insertChange(change.toEntity()) != -1L) {
-            "The local structured preference revision already exists"
-        }
-        syncDao.upsertOriginState(
-            StructuredPreferenceSyncOriginStateEntity(
-                categoryName,
-                localPeerId,
-                originRevision
-            )
-        )
-        syncDao.upsertRecord(change.toRecordEntity())
+            .forEach(recordRepository::saveLocalDelete)
     }
 
     private fun materialize(category: StructuredPreferenceCategory) {
@@ -554,24 +387,24 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     }
 
     private fun materializeFeedGroups() {
-        val category = StructuredPreferenceCategory.FEED_GROUPS.name
-        val metadataRecords = syncDao.getRecordsByType(
+        val category = StructuredPreferenceCategory.FEED_GROUPS
+        val metadataRecords = recordRepository.getRecordsByType(
             category,
-            StructuredPreferenceRecordType.FEED_GROUP.name
+            StructuredPreferenceRecordType.FEED_GROUP
         )
         metadataRecords.filter(StructuredPreferenceSyncRecordEntity::isDeleted)
             .forEach { record ->
-                syncDao.getFeedGroupMapping(record.recordId)?.let { mapping ->
+                recordRepository.getFeedGroupMapping(record.recordId)?.let { mapping ->
                     feedGroupDao.delete(mapping.groupUid)
                 }
             }
         metadataRecords.filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .forEach { record ->
-                val data = decodeRecord(record).feedGroup
+                val data = recordRepository.decodeRecord(record).feedGroup
                     ?: throw StructuredPreferenceSyncException(
                         "Stored feed group metadata is invalid"
                     )
-                val mapping = syncDao.getFeedGroupMapping(record.recordId)
+                val mapping = recordRepository.getFeedGroupMapping(record.recordId)
                 var group = mapping?.let { feedGroupDao.getGroupDirect(it.groupUid) }
                 if (group == null) {
                     val uid = feedGroupDao.insert(
@@ -581,7 +414,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                             icon = feedGroupIcon(data.iconId)
                         )
                     )
-                    syncDao.upsertFeedGroupMapping(
+                    recordRepository.saveFeedGroupMapping(
                         StructuredPreferenceSyncFeedGroupMapEntity(
                             groupRecordId = record.recordId,
                             groupUid = uid
@@ -599,9 +432,9 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         }
         metadataRecords.filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .forEach { groupRecord ->
-                val mapping = syncDao.getFeedGroupMapping(groupRecord.recordId)
+                val mapping = recordRepository.getFeedGroupMapping(groupRecord.recordId)
                     ?: return@forEach
-                val subscriptionIds = syncDao.getChildRecords(
+                val subscriptionIds = recordRepository.getChildRecords(
                     category,
                     groupRecord.recordId
                 ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
@@ -610,7 +443,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                             StructuredPreferenceRecordType.FEED_GROUP_MEMBERSHIP.name
                     }
                     .mapNotNull { record ->
-                        val data = decodeRecord(record).feedGroupMembership
+                        val data = recordRepository.decodeRecord(record).feedGroupMembership
                             ?: return@mapNotNull null
                         subscriptions[data.serviceId to data.subscriptionUrl]?.uid
                     }
@@ -620,16 +453,16 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 )
             }
 
-        val order = syncDao.getRecord(
+        val order = recordRepository.getRecord(
             category,
             StructuredPreferenceRecordId.feedGroupOrder()
         )?.takeUnless(StructuredPreferenceSyncRecordEntity::isDeleted)
-            ?.let(::decodeRecord)
+            ?.let(recordRepository::decodeRecord)
             ?.feedGroupOrder
             ?.groupRecordIds
             .orEmpty()
         val orderedUids = order.mapNotNull { recordId ->
-            syncDao.getFeedGroupMapping(recordId)?.groupUid
+            recordRepository.getFeedGroupMapping(recordId)?.groupUid
         }
         val remainingUids = feedGroupDao.getAllDirect()
             .map(FeedGroupEntity::uid)
@@ -642,22 +475,23 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     }
 
     private fun materializeHomeTabs() {
-        val category = StructuredPreferenceCategory.HOME_TABS.name
-        val records = syncDao.getRecordsByType(
+        val category = StructuredPreferenceCategory.HOME_TABS
+        val records = recordRepository.getRecordsByType(
             category,
-            StructuredPreferenceRecordType.HOME_TAB.name
+            StructuredPreferenceRecordType.HOME_TAB
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
             .associateBy(StructuredPreferenceSyncRecordEntity::recordId)
-        val order = syncDao.getRecord(
+        val order = recordRepository.getRecord(
             category,
             StructuredPreferenceRecordId.homeTabOrder()
         )?.takeUnless(StructuredPreferenceSyncRecordEntity::isDeleted)
-            ?.let(::decodeRecord)
+            ?.let(recordRepository::decodeRecord)
             ?.homeTabOrder
             ?.tabRecordIds
             .orEmpty()
         val tabs = order.mapNotNull { recordId ->
-            records[recordId]?.let(::decodeRecord)?.homeTab?.let(::toLocalHomeTab)
+            records[recordId]?.let(recordRepository::decodeRecord)?.homeTab
+                ?.let(::toLocalHomeTab)
         }
         if (tabs.isNotEmpty()) {
             preferences.edit()
@@ -670,16 +504,16 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     }
 
     private fun materializeChannelProfiles() {
-        val fields = syncDao.getRecordsByType(
-            StructuredPreferenceCategory.CHANNEL_PROFILES.name,
-            StructuredPreferenceRecordType.CHANNEL_PROFILE_FIELD.name
+        val fields = recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.CHANNEL_PROFILES,
+            StructuredPreferenceRecordType.CHANNEL_PROFILE_FIELD
         )
         val editor = preferences.edit()
         preferences.all.keys
             .filter(::isChannelProfilePreferenceKey)
             .forEach(editor::remove)
         fields.filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
-            .mapNotNull { decodeRecord(it).channelProfileField }
+            .mapNotNull { recordRepository.decodeRecord(it).channelProfileField }
             .forEach { field ->
                 val key = field.profileKey + field.field.preferenceSuffix
                 when (field.field) {
@@ -699,11 +533,11 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private fun materializeFilters() {
         val specs = filterSpecs().associateBy(FilterSpec::id)
         val editor = preferences.edit()
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.FILTERS.name,
-            StructuredPreferenceRecordType.FILTER_SET.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.FILTERS,
+            StructuredPreferenceRecordType.FILTER_SET
         ).filterNot(StructuredPreferenceSyncRecordEntity::isDeleted)
-            .mapNotNull { decodeRecord(it).filterSet }
+            .mapNotNull { recordRepository.decodeRecord(it).filterSet }
             .forEach { filter ->
                 val spec = specs[filter.filterId] ?: return@forEach
                 editor.putStringSet(spec.preferenceKey, filter.values.toSet())
@@ -714,11 +548,11 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private fun materializeSettings() {
         val specs = portableSettingSpecs(context).associateBy(PortableSettingSpec::id)
         val editor = preferences.edit()
-        syncDao.getRecordsByType(
-            StructuredPreferenceCategory.SETTINGS.name,
-            StructuredPreferenceRecordType.PORTABLE_SETTING.name
+        recordRepository.getRecordsByType(
+            StructuredPreferenceCategory.SETTINGS,
+            StructuredPreferenceRecordType.PORTABLE_SETTING
         ).forEach { entity ->
-            val setting = decodeRecord(entity).portableSetting
+            val setting = recordRepository.decodeRecord(entity).portableSetting
                 ?: throw StructuredPreferenceSyncException(
                     "Stored portable setting data is invalid"
                 )
@@ -803,7 +637,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
             }
 
             is Tab.FeedGroupTab -> {
-                val recordId = syncDao.getFeedGroupMapping(tab.feedGroupId)
+                val recordId = recordRepository.getFeedGroupMapping(tab.feedGroupId)
                     ?.groupRecordId
                     ?: return null
                 SyncedHomeTab(
@@ -863,7 +697,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
             )
 
             SyncedHomeTabType.FEED_GROUP -> {
-                val mapping = syncDao.getFeedGroupMapping(
+                val mapping = recordRepository.getFeedGroupMapping(
                     requireNotNull(tab.linkedRecordId)
                 ) ?: return null
                 val group = feedGroupDao.getGroupDirect(mapping.groupUid)
@@ -979,7 +813,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         val snapshot = when (category) {
             StructuredPreferenceCategory.FEED_GROUPS -> {
                 val subscriptions = subscriptionDao.getAllDirect().associateBy { it.uid }
-                JSON.encodeToString(
+                STRUCTURED_PREFERENCE_JSON.encodeToString(
                     feedGroupDao.getAllDirect().map { group ->
                         FeedGroupSnapshot(
                             uid = group.uid,
@@ -1002,20 +836,20 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                 TabsJsonHelper.getJsonToSave(currentTabs())
 
             StructuredPreferenceCategory.CHANNEL_PROFILES ->
-                JSON.encodeToString(currentChannelProfileFields())
+                STRUCTURED_PREFERENCE_JSON.encodeToString(currentChannelProfileFields())
 
-            StructuredPreferenceCategory.FILTERS -> JSON.encodeToString(
+            StructuredPreferenceCategory.FILTERS -> STRUCTURED_PREFERENCE_JSON.encodeToString(
                 filterSpecs().map { spec ->
                     FilterSnapshot(spec.id, currentFilterValues(spec).sorted())
                 }
             )
 
-            StructuredPreferenceCategory.SETTINGS -> JSON.encodeToString(
+            StructuredPreferenceCategory.SETTINGS -> STRUCTURED_PREFERENCE_JSON.encodeToString(
                 portableSettingSpecs(context).mapNotNull(::currentPortableSetting)
             )
 
             StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
-                JSON.encodeToString(currentCompletedDownloads())
+                STRUCTURED_PREFERENCE_JSON.encodeToString(currentCompletedDownloads())
         }
         return digest(snapshot)
     }
@@ -1079,115 +913,6 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         return runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false)
     }
 
-    private fun saveSnapshot(category: StructuredPreferenceCategory) {
-        syncDao.upsertLocalState(
-            StructuredPreferenceSyncLocalStateEntity(
-                category = category.name,
-                snapshotHash = snapshotHash(category)
-            )
-        )
-    }
-
-    private fun advanceKnownRevision(
-        category: StructuredPreferenceCategory,
-        originPeerId: String
-    ) {
-        var contiguous = syncDao.getOriginState(category.name, originPeerId)
-            ?.contiguousRevision
-            ?: 0
-        while (
-            contiguous < MAX_SYNC_REVISION &&
-            syncDao.hasChange(category.name, originPeerId, contiguous + 1)
-        ) {
-            contiguous += 1
-        }
-        syncDao.upsertOriginState(
-            StructuredPreferenceSyncOriginStateEntity(
-                category.name,
-                originPeerId,
-                contiguous
-            )
-        )
-    }
-
-    private fun incrementVersion(value: Long): Long {
-        if (value >= MAX_SYNC_REVISION) {
-            throw StructuredPreferenceSyncException(
-                "The structured preference synchronization revision limit was reached"
-            )
-        }
-        return value + 1
-    }
-
-    private fun decodeChange(
-        entity: StructuredPreferenceSyncChangeEntity
-    ): StructuredPreferenceChange {
-        val record = try {
-            JSON.decodeFromString<SyncedStructuredPreferenceRecord>(entity.recordJson)
-        } catch (error: Exception) {
-            throw StructuredPreferenceSyncException(
-                "Stored structured preference change data is invalid",
-                error
-            )
-        }
-        return StructuredPreferenceChange(
-            category = StructuredPreferenceCategory.valueOf(entity.category),
-            originPeerId = entity.originPeerId,
-            originRevision = entity.originRevision,
-            lamportVersion = entity.lamportVersion,
-            recordId = entity.recordId,
-            recordType = StructuredPreferenceRecordType.valueOf(entity.recordType),
-            parentRecordId = entity.parentRecordId,
-            type = StructuredPreferenceChangeType.valueOf(entity.changeType),
-            record = record
-        )
-    }
-
-    private fun decodeRecord(
-        entity: StructuredPreferenceSyncRecordEntity
-    ): SyncedStructuredPreferenceRecord {
-        return try {
-            JSON.decodeFromString(entity.recordJson)
-        } catch (error: Exception) {
-            throw StructuredPreferenceSyncException(
-                "Stored structured preference record data is invalid",
-                error
-            )
-        }
-    }
-
-    private fun StructuredPreferenceChange.toEntity() = StructuredPreferenceSyncChangeEntity(
-        category = category.name,
-        originPeerId = originPeerId,
-        originRevision = originRevision,
-        lamportVersion = lamportVersion,
-        recordId = recordId,
-        recordType = recordType.name,
-        parentRecordId = parentRecordId,
-        changeType = type.name,
-        recordJson = JSON.encodeToString(requireNotNull(record))
-    )
-
-    private fun StructuredPreferenceChange.toRecordEntity() = StructuredPreferenceSyncRecordEntity(
-        category = category.name,
-        recordId = recordId,
-        recordType = recordType.name,
-        parentRecordId = parentRecordId,
-        lamportVersion = lamportVersion,
-        originPeerId = originPeerId,
-        originRevision = originRevision,
-        isDeleted = type == StructuredPreferenceChangeType.DELETE,
-        recordJson = JSON.encodeToString(requireNotNull(record))
-    )
-
-    private val StructuredPreferenceSyncRecordEntity.versionStamp:
-        StructuredPreferenceVersionStamp
-        get() = StructuredPreferenceVersionStamp(
-            lamportVersion,
-            originPeerId,
-            originRevision
-        )
-
     private fun feedGroupIcon(iconId: Int): FeedGroupIcon {
         return FeedGroupIcon.entries.firstOrNull { it.id == iconId }
             ?: throw StructuredPreferenceSyncException("Unknown feed group icon")
@@ -1225,11 +950,6 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         private const val QUALITY_SUFFIX = ".quality"
         private const val CAPTION_SUFFIX = ".caption"
         private val SUPPORTED_LOCAL_DOWNLOAD_KINDS = setOf('a', 'v', 's', '?')
-        private val JSON = Json {
-            encodeDefaults = true
-            explicitNulls = false
-            ignoreUnknownKeys = false
-        }
 
         @Volatile
         private var instance: RoomStructuredPreferenceSyncStore? = null

@@ -214,6 +214,110 @@ class RoomStructuredPreferenceSyncStoreTest {
         assertEquals(false, tabletPreferences.getBoolean(learningBackgroundKey, true))
     }
 
+    @Test
+    fun recordRepositoryKeepsRevisionAndLamportBookkeepingCategoryIndependent() {
+        val localPeerId = newPeerId()
+        val remotePeerId = newPeerId()
+        val repository = StructuredPreferenceRecordRepository(phoneDatabase, localPeerId)
+        val category = StructuredPreferenceCategory.FILTERS
+        val recordId = StructuredPreferenceRecordId.filterSet(
+            StructuredFilterId.SEARCH_SUGGESTIONS
+        )
+        val localRecord = SyncedStructuredPreferenceRecord(
+            filterSet = SyncedFilterSet(
+                StructuredFilterId.SEARCH_SUGGESTIONS,
+                listOf("local")
+            )
+        )
+        repository.saveLocalUpsert(
+            category = category,
+            recordId = recordId,
+            recordType = StructuredPreferenceRecordType.FILTER_SET,
+            record = localRecord
+        )
+
+        assertEquals(mapOf(localPeerId to 1L), repository.getKnownRevisions(category))
+        assertEquals(
+            listOf(localRecord),
+            repository.getPendingChanges(category, remotePeerId, 8)
+                .changes
+                .map(StructuredPreferenceChange::record)
+        )
+        repository.acknowledgePeer(category, remotePeerId, mapOf(localPeerId to 100L))
+        assertTrue(repository.getPendingChanges(category, remotePeerId, 8).changes.isEmpty())
+
+        val newerRemoteRecord = SyncedStructuredPreferenceRecord(
+            filterSet = SyncedFilterSet(
+                StructuredFilterId.SEARCH_SUGGESTIONS,
+                listOf("remote")
+            )
+        )
+        val remoteRevisionTwo = filterChange(
+            category = category,
+            originPeerId = remotePeerId,
+            originRevision = 2,
+            lamportVersion = 3,
+            recordId = recordId,
+            record = newerRemoteRecord
+        )
+        var materializations = 0
+        assertEquals(
+            StructuredPreferenceApplyResult(1, 1),
+            repository.applyChanges(category, listOf(remoteRevisionTwo)) {
+                materializations += 1
+            }
+        )
+        assertEquals(0L, repository.getKnownRevisions(category)[remotePeerId])
+
+        val remoteRevisionOne = filterChange(
+            category = category,
+            originPeerId = remotePeerId,
+            originRevision = 1,
+            lamportVersion = 2,
+            recordId = recordId,
+            record = localRecord
+        )
+        assertEquals(
+            StructuredPreferenceApplyResult(1, 0),
+            repository.applyChanges(category, listOf(remoteRevisionOne)) {
+                materializations += 1
+            }
+        )
+        assertEquals(2L, repository.getKnownRevisions(category)[remotePeerId])
+        assertEquals(1, materializations)
+        assertEquals(
+            newerRemoteRecord,
+            repository.getRecord(category, recordId)?.let(repository::decodeRecord)
+        )
+        assertEquals(
+            StructuredPreferenceApplyResult(0, 0),
+            repository.applyChanges(category, listOf(remoteRevisionTwo)) {
+                materializations += 1
+            }
+        )
+        assertEquals(1, materializations)
+    }
+
+    private fun filterChange(
+        category: StructuredPreferenceCategory,
+        originPeerId: String,
+        originRevision: Long,
+        lamportVersion: Long,
+        recordId: String,
+        record: SyncedStructuredPreferenceRecord
+    ): StructuredPreferenceChange {
+        return StructuredPreferenceChange(
+            category = category,
+            originPeerId = originPeerId,
+            originRevision = originRevision,
+            lamportVersion = lamportVersion,
+            recordId = recordId,
+            recordType = StructuredPreferenceRecordType.FILTER_SET,
+            type = StructuredPreferenceChangeType.UPSERT,
+            record = record
+        )
+    }
+
     private fun seedFeedGroups(database: AppDatabase, memberUrl: String) {
         val phone = SubscriptionEntity(
             serviceId = SERVICE_ID,
