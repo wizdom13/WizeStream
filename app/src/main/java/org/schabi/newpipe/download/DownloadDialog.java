@@ -1,13 +1,10 @@
 package org.schabi.newpipe.download;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -63,7 +60,6 @@ import java.util.Optional;
 
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
-import us.shandian.giga.service.DownloadManagerService.DownloadManagerBinder;
 
 public class DownloadDialog extends DialogFragment
         implements RadioGroup.OnCheckedChangeListener, AdapterView.OnItemSelectedListener {
@@ -106,6 +102,7 @@ public class DownloadDialog extends DialogFragment
     private StreamItemAdapter<SubtitlesStream, Stream> subtitleStreamsAdapter;
 
     private DownloadStreamSizeLoader streamSizeLoader;
+    private DownloadServiceConnector serviceConnector;
 
     private DownloadDialogBinding dialogBinding;
 
@@ -189,29 +186,19 @@ public class DownloadDialog extends DialogFragment
                 this::getWrappedAudioStreams, wrappedSubtitleStreams,
                 this::onStreamSizeLoaded, this::onStreamSizeLoadError);
 
-        final Intent intent = new Intent(context, DownloadManagerService.class);
-        context.startService(intent);
+        serviceConnector = new DownloadServiceConnector(context,
+                this::onDownloadServiceConnected);
+        serviceConnector.connect();
+    }
 
-        context.bindService(intent, new ServiceConnection() {
-            @Override
-            public void onServiceConnected(final ComponentName cname, final IBinder service) {
-                final DownloadManagerBinder mgr = (DownloadManagerBinder) service;
-
-                mainStorageAudio = mgr.getMainStorageAudio();
-                mainStorageVideo = mgr.getMainStorageVideo();
-                downloadManager = mgr.getDownloadManager();
-                askForSavePath = mgr.askForSavePath();
-
-                okButton.setEnabled(true);
-
-                context.unbindService(this);
-            }
-
-            @Override
-            public void onServiceDisconnected(final ComponentName name) {
-                // nothing to do
-            }
-        }, Context.BIND_AUTO_CREATE);
+    private void onDownloadServiceConnected(final DownloadServiceState state) {
+        mainStorageAudio = state.getMainStorageAudio();
+        mainStorageVideo = state.getMainStorageVideo();
+        downloadManager = state.getDownloadManager();
+        askForSavePath = state.getAskForSavePath();
+        if (okButton != null) {
+            okButton.setEnabled(true);
+        }
     }
 
     /**
@@ -299,7 +286,7 @@ public class DownloadDialog extends DialogFragment
         toolbar.setNavigationContentDescription(R.string.cancel);
 
         okButton = toolbar.getMenu().findItem(R.id.okay);
-        okButton.setEnabled(false); // disable until the download service connection is done
+        okButton.setEnabled(downloadManager != null);
 
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.okay) {
@@ -317,6 +304,14 @@ public class DownloadDialog extends DialogFragment
         }
         dialogBinding = null;
         super.onDestroyView();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (serviceConnector != null) {
+            serviceConnector.disconnect();
+        }
+        super.onDestroy();
     }
 
     @Override
