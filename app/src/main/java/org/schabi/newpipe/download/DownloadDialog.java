@@ -1,8 +1,5 @@
 package org.schabi.newpipe.download;
 
-import static org.schabi.newpipe.extractor.stream.DeliveryMethod.PROGRESSIVE_HTTP;
-import static org.schabi.newpipe.util.ListHelper.getStreamsOfSpecifiedDelivery;
-
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -32,7 +29,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
-import androidx.collection.SparseArrayCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.DialogFragment;
 import androidx.preference.PreferenceManager;
@@ -72,7 +68,6 @@ import org.schabi.newpipe.util.ThemeHelper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -168,41 +163,13 @@ public class DownloadDialog extends DialogFragment
      */
     public DownloadDialog(@NonNull final Context context, @NonNull final StreamInfo info) {
         this.currentInfo = info;
-
-        final List<AudioStream> audioStreams =
-                getStreamsOfSpecifiedDelivery(info.getAudioStreams(), PROGRESSIVE_HTTP);
-        final List<List<AudioStream>> groupedAudioStreams = new ArrayList<>(
-                ListHelper.getGroupedAudioStreams(context, audioStreams));
-
-        // TODO: Adapt this code when the downloader support other types of stream deliveries
-        final List<VideoStream> videoStreams = ListHelper.getSortedStreamVideosList(
-                context,
-                getStreamsOfSpecifiedDelivery(info.getVideoStreams(), PROGRESSIVE_HTTP),
-                getStreamsOfSpecifiedDelivery(info.getVideoOnlyStreams(), PROGRESSIVE_HTTP),
-                false,
-                // If there are multiple languages available, prefer streams without audio
-                // to allow language selection
-                groupedAudioStreams.size() > 1
-        );
-
-        if (groupedAudioStreams.isEmpty()) {
-            muxedAudioFallbackVideoIndex =
-                    MuxedAudioFallbackPolicy.findFallbackVideoIndex(videoStreams);
-            if (muxedAudioFallbackVideoIndex >= 0) {
-                groupedAudioStreams.add(List.of(MuxedAudioFallbackPolicy.createFallbackAudioStream(
-                        videoStreams.get(muxedAudioFallbackVideoIndex))));
-            }
-        }
-
-        this.wrappedAudioTracks = new AudioTracksWrapper(groupedAudioStreams, context);
-        this.selectedAudioTrackIndex =
-                ListHelper.getDefaultAudioTrackGroup(context, groupedAudioStreams);
-
-        this.wrappedVideoStreams = new StreamInfoWrapper<>(videoStreams, context);
-        this.wrappedSubtitleStreams = new StreamInfoWrapper<>(
-                getStreamsOfSpecifiedDelivery(info.getSubtitles(), PROGRESSIVE_HTTP), context);
-
-        this.selectedVideoIndex = ListHelper.getDefaultResolutionIndex(context, videoStreams);
+        final DownloadStreamCatalog catalog = DownloadStreamCatalogFactory.create(context, info);
+        this.wrappedAudioTracks = catalog.getAudioTracks();
+        this.wrappedVideoStreams = catalog.getVideoStreams();
+        this.wrappedSubtitleStreams = catalog.getSubtitleStreams();
+        this.selectedAudioTrackIndex = catalog.getSelectedAudioTrackIndex();
+        this.selectedVideoIndex = catalog.getSelectedVideoIndex();
+        this.muxedAudioFallbackVideoIndex = catalog.getMuxedAudioFallbackVideoIndex();
     }
 
 
@@ -264,36 +231,11 @@ public class DownloadDialog extends DialogFragment
      * Update the displayed video streams based on the selected audio track.
      */
     private void updateSecondaryStreams() {
-        final StreamInfoWrapper<AudioStream> audioStreams = getWrappedAudioStreams();
-        final StreamInfoWrapper<AudioStream> secondaryAudioStreams = hasMuxedAudioFallback()
-                ? StreamInfoWrapper.empty() : audioStreams;
-        final var secondaryStreams = new SparseArrayCompat<SecondaryStreamHelper<AudioStream>>(4);
-        final List<VideoStream> videoStreams = wrappedVideoStreams.getStreamsList();
-        wrappedVideoStreams.resetInfo();
-
-        for (int i = 0; i < videoStreams.size(); i++) {
-            if (!videoStreams.get(i).isVideoOnly()) {
-                continue;
-            }
-            final AudioStream audioStream = SecondaryStreamHelper.getAudioStreamFor(
-                    context, secondaryAudioStreams.getStreamsList(), videoStreams.get(i));
-
-            if (audioStream != null) {
-                secondaryStreams.append(i,
-                        new SecondaryStreamHelper<>(secondaryAudioStreams, audioStream));
-            } else if (DEBUG) {
-                final MediaFormat mediaFormat = videoStreams.get(i).getFormat();
-                if (mediaFormat != null) {
-                    Log.w(TAG, "No audio stream candidates for video format "
-                            + mediaFormat.name());
-                } else {
-                    Log.w(TAG, "No audio stream candidates for unknown video format");
-                }
-            }
-        }
-
-        this.videoStreamsAdapter = new StreamItemAdapter<>(wrappedVideoStreams, secondaryStreams);
-        this.audioStreamsAdapter = new StreamItemAdapter<>(audioStreams);
+        final DownloadStreamAdapters adapters = DownloadStreamAdapterFactory.create(
+                context, wrappedAudioTracks, selectedAudioTrackIndex, wrappedVideoStreams,
+                muxedAudioFallbackVideoIndex, DEBUG);
+        this.videoStreamsAdapter = adapters.getVideoStreams();
+        this.audioStreamsAdapter = adapters.getAudioStreams();
     }
 
     @Override
@@ -777,7 +719,7 @@ public class DownloadDialog extends DialogFragment
     }
 
     private StreamInfoWrapper<AudioStream> getWrappedAudioStreams() {
-        if (selectedAudioTrackIndex < 0 || selectedAudioTrackIndex > wrappedAudioTracks.size()) {
+        if (selectedAudioTrackIndex < 0 || selectedAudioTrackIndex >= wrappedAudioTracks.size()) {
             return StreamInfoWrapper.empty();
         }
         return wrappedAudioTracks.getTracksList().get(selectedAudioTrackIndex);
