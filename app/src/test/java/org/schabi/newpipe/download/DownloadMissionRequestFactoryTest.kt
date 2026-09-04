@@ -47,8 +47,10 @@ class DownloadMissionRequestFactoryTest {
             threads = 3
         )
 
-        assertEquals(Postprocessing.ALGORITHM_M4A_FROM_MP4_DEMUXER,
-            request.postprocessingName)
+        assertEquals(
+            Postprocessing.ALGORITHM_M4A_FROM_MP4_DEMUXER,
+            request.postprocessingName
+        )
         assertEquals('v', request.recoveryInfo.single().kind)
         assertEquals(MediaFormat.MPEG_4, request.recoveryInfo.single().format)
     }
@@ -67,8 +69,10 @@ class DownloadMissionRequestFactoryTest {
             arrayOf("https://example.com/video", "https://example.com/audio"),
             request.urls
         )
-        assertEquals(Postprocessing.ALGORITHM_MP4_FROM_DASH_MUXER,
-            request.postprocessingName)
+        assertEquals(
+            Postprocessing.ALGORITHM_MP4_FROM_DASH_MUXER,
+            request.postprocessingName
+        )
         assertEquals(1_200, request.nearLength)
         assertEquals(listOf('v', 'a'), request.recoveryInfo.map { it.kind })
     }
@@ -93,8 +97,10 @@ class DownloadMissionRequestFactoryTest {
 
         assertEquals('s', request.kind)
         assertEquals(1, request.threads)
-        assertEquals(Postprocessing.ALGORITHM_TTML_CONVERTER,
-            request.postprocessingName)
+        assertEquals(
+            Postprocessing.ALGORITHM_TTML_CONVERTER,
+            request.postprocessingName
+        )
         assertArrayEquals(
             arrayOf(MediaFormat.TTML.getSuffix(), "false"),
             request.postprocessingArguments
