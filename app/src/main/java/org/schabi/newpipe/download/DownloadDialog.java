@@ -82,9 +82,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import us.shandian.giga.get.MissionRecoveryInfo;
 import us.shandian.giga.postprocessing.Mp3OutputOptions;
-import us.shandian.giga.postprocessing.Postprocessing;
 import us.shandian.giga.service.DownloadManager;
 import us.shandian.giga.service.DownloadManagerService;
 import us.shandian.giga.service.DownloadManagerService.DownloadManagerBinder;
@@ -1138,103 +1136,39 @@ public class DownloadDialog extends DialogFragment
             return;
         }
 
-        final Stream selectedStream;
-        final Stream recoveryStream;
-        Stream secondaryStream = null;
-        final char kind;
-        int threads = dialogBinding.threads.getProgress() + 1;
-        final String[] urls;
-        final List<MissionRecoveryInfo> recoveryInfo;
-        String psName = null;
-        String[] psArgs = null;
-        long nearLength = 0;
+        final DownloadMissionRequest request;
+        final int threads = dialogBinding.threads.getProgress() + 1;
 
         // more download logic: select muxer, subtitle converter, etc.
         final int checkedRadioButtonId = dialogBinding.videoAudioGroup.getCheckedRadioButtonId();
         if (checkedRadioButtonId == R.id.audio_button) {
-            kind = 'a';
-            selectedStream = audioStreamsAdapter.getItem(selectedAudioIndex);
+            final AudioStream selectedStream = audioStreamsAdapter.getItem(selectedAudioIndex);
             final VideoStream muxedAudioFallbackSource = getMuxedAudioFallbackSource();
-            recoveryStream = muxedAudioFallbackSource == null
-                    ? selectedStream : muxedAudioFallbackSource;
-
-            if (Mp3DownloadPolicy.shouldTranscode(isMp3OutputSelected(),
-                    selectedStream.getFormat())) {
-                psName = Postprocessing.ALGORITHM_MP3_FROM_AUDIO;
-                psArgs = new String[] {String.valueOf(getSelectedMp3Bitrate())};
-            } else if (muxedAudioFallbackSource != null) {
-                psName = Postprocessing.ALGORITHM_M4A_FROM_MP4_DEMUXER;
-            } else if (selectedStream.getFormat() == MediaFormat.M4A) {
-                psName = Postprocessing.ALGORITHM_M4A_NO_DASH;
-            } else if (selectedStream.getFormat() == MediaFormat.WEBMA_OPUS) {
-                psName = Postprocessing.ALGORITHM_OGG_FROM_WEBM_DEMUXER;
-            }
+            request = DownloadMissionRequestFactory.forAudio(selectedStream,
+                    muxedAudioFallbackSource, isMp3OutputSelected(), getSelectedMp3Bitrate(),
+                    threads);
         } else if (checkedRadioButtonId == R.id.video_button) {
-            kind = 'v';
-            selectedStream = videoStreamsAdapter.getItem(selectedVideoIndex);
-            recoveryStream = selectedStream;
-
+            final VideoStream selectedStream = videoStreamsAdapter.getItem(selectedVideoIndex);
             final SecondaryStreamHelper<AudioStream> secondary = videoStreamsAdapter
                     .getAllSecondary()
                     .get(wrappedVideoStreams.getStreamsList().indexOf(selectedStream));
-
-            if (secondary != null) {
-                secondaryStream = secondary.getStream();
-
-                if (selectedStream.getFormat() == MediaFormat.MPEG_4) {
-                    psName = Postprocessing.ALGORITHM_MP4_FROM_DASH_MUXER;
-                } else {
-                    psName = Postprocessing.ALGORITHM_WEBM_MUXER;
-                }
-
-                final long videoSize = wrappedVideoStreams.getSizeInBytes(
-                        (VideoStream) selectedStream);
-
-                // set nearLength, only, if both sizes are fetched or known. This probably
-                // does not work on slow networks but is later updated in the downloader
-                if (secondary.getSizeInBytes() > 0 && videoSize > 0) {
-                    nearLength = secondary.getSizeInBytes() + videoSize;
-                }
-            }
+            request = DownloadMissionRequestFactory.forVideo(
+                    selectedStream,
+                    secondary == null ? null : secondary.getStream(),
+                    wrappedVideoStreams.getSizeInBytes(selectedStream),
+                    secondary == null ? 0 : secondary.getSizeInBytes(),
+                    threads);
         } else if (checkedRadioButtonId == R.id.subtitle_button) {
-            threads = 1; // use unique thread for subtitles due small file size
-            kind = 's';
-            selectedStream = subtitleStreamsAdapter.getItem(selectedSubtitleIndex);
-            recoveryStream = selectedStream;
-
-            if (selectedStream.getFormat() == MediaFormat.TTML) {
-                psName = Postprocessing.ALGORITHM_TTML_CONVERTER;
-                psArgs = new String[]{
-                        selectedStream.getFormat().getSuffix(),
-                        "false" // ignore empty frames
-                };
-            }
+            request = DownloadMissionRequestFactory.forSubtitle(
+                    subtitleStreamsAdapter.getItem(selectedSubtitleIndex));
         } else {
             return;
         }
 
-        if (secondaryStream == null) {
-            urls = new String[] {
-                    selectedStream.getContent()
-            };
-            recoveryInfo = List.of(new MissionRecoveryInfo(recoveryStream));
-        } else {
-            if (secondaryStream.getDeliveryMethod() != PROGRESSIVE_HTTP) {
-                throw new IllegalArgumentException("Unsupported stream delivery format"
-                        + secondaryStream.getDeliveryMethod());
-            }
-
-            urls = new String[] {
-                    selectedStream.getContent(), secondaryStream.getContent()
-            };
-            recoveryInfo = List.of(
-                    new MissionRecoveryInfo(selectedStream),
-                    new MissionRecoveryInfo(secondaryStream)
-            );
-        }
-
-        DownloadManagerService.startMission(context, urls, storage, kind, threads,
-                currentInfo, psName, psArgs, nearLength, new ArrayList<>(recoveryInfo));
+        DownloadManagerService.startMission(context, request.getUrls(), storage,
+                request.getKind(), request.getThreads(), currentInfo,
+                request.getPostprocessingName(), request.getPostprocessingArguments(),
+                request.getNearLength(), request.getRecoveryInfo());
 
         Toast.makeText(context, getString(R.string.download_has_started),
                 Toast.LENGTH_SHORT).show();
