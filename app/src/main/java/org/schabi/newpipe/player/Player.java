@@ -1117,7 +1117,7 @@ public final class Player implements PlaybackListener, Listener {
         eventDispatcher.stopBindings();
     }
 
-    private void notifyQueueUpdateToListeners() {
+    void notifyQueueUpdateToListeners() {
         eventDispatcher.notifyQueueUpdate();
     }
 
