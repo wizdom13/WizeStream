@@ -31,8 +31,10 @@ class LocalMediaArtworkTest {
                 "java/org/schabi/newpipe/local/media/LocalMediaThumbnailLoader.kt"
             )
         )
-        val player = Files.readString(
-            projectDirectory.resolve("java/org/schabi/newpipe/player/Player.java")
+        val thumbnailController = Files.readString(
+            projectDirectory.resolve(
+                "java/org/schabi/newpipe/player/PlayerThumbnailController.kt"
+            )
         )
         val queue = Files.readString(
             projectDirectory.resolve(
@@ -43,7 +45,7 @@ class LocalMediaArtworkTest {
         assertTrue(loader.contains("retriever.embeddedPicture"))
         assertTrue(loader.indexOf("loadEmbeddedArtwork") < loader.indexOf("loadArtworkUri"))
         assertTrue(loader.contains("ArrayBlockingQueue(MAXIMUM_PENDING_THUMBNAILS)"))
-        assertTrue(player.contains("LocalMediaThumbnailLoader.INSTANCE.loadBitmap"))
+        assertTrue(thumbnailController.contains("LocalMediaThumbnailLoader.loadBitmap"))
         assertTrue(queue.contains("LocalMediaThumbnailLoader.INSTANCE.load"))
     }
 }
