@@ -8,8 +8,12 @@ import android.provider.Settings;
 import android.text.format.DateUtils;
 import android.widget.Toast;
 
+import androidx.core.os.ConfigurationCompat;
+import androidx.core.os.LocaleListCompat;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -20,8 +24,12 @@ import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.PermissionHelper;
 
+import java.text.Collator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class VideoAudioSettingsFragment extends BasePreferenceFragment {
     private SharedPreferences.OnSharedPreferenceChangeListener listener;
@@ -33,6 +41,7 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
         updateSeekOptions();
         updateResolutionOptions();
         setupEqualizerPreference();
+        setupCaptionTranslationPreferences();
         requirePreference(R.string.native_pip_key)
                 .setVisible(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
         listener = (sharedPreferences, key) -> {
@@ -57,8 +66,70 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
                 updateSeekOptions();
             } else if (getString(R.string.show_higher_resolutions_key).equals(key)) {
                 updateResolutionOptions();
+            } else if (getString(R.string.caption_auto_translate_key).equals(key)
+                    || getString(R.string.caption_translation_language_key).equals(key)) {
+                CaptionTranslationPreferences.syncPreferredCaptionLanguage(requireContext());
             }
         };
+    }
+
+    private void setupCaptionTranslationPreferences() {
+        final PreferenceCategory category = new PreferenceCategory(requireContext());
+        category.setLayoutResource(R.layout.settings_category_header_layout);
+        category.setTitle(R.string.caption_translation_category_title);
+        category.setIconSpaceReserved(false);
+        getPreferenceScreen().addPreference(category);
+
+        final SwitchPreferenceCompat autoTranslate = new SwitchPreferenceCompat(requireContext());
+        autoTranslate.setKey(getString(R.string.caption_auto_translate_key));
+        autoTranslate.setDefaultValue(false);
+        autoTranslate.setTitle(R.string.caption_auto_translate_title);
+        autoTranslate.setSummary(R.string.caption_auto_translate_summary);
+        autoTranslate.setIconSpaceReserved(false);
+        autoTranslate.setSingleLineTitle(false);
+        category.addPreference(autoTranslate);
+
+        final ListPreference language = new ListPreference(requireContext());
+        language.setKey(getString(R.string.caption_translation_language_key));
+        language.setDefaultValue(getString(R.string.caption_translation_system_value));
+        language.setTitle(R.string.caption_translation_language_title);
+        language.setDependency(getString(R.string.caption_auto_translate_key));
+        language.setIconSpaceReserved(false);
+        language.setSingleLineTitle(false);
+        language.setSummaryProvider(ListPreference.SimpleSummaryProvider.getInstance());
+        populateCaptionTranslationLanguages(language);
+        category.addPreference(language);
+    }
+
+    private void populateCaptionTranslationLanguages(final ListPreference preference) {
+        final LocaleListCompat configuredLocales = ConfigurationCompat.getLocales(
+                getResources().getConfiguration());
+        final Locale displayLocale = configuredLocales.isEmpty() || configuredLocales.get(0) == null
+                ? Locale.getDefault() : configuredLocales.get(0);
+        final Collator collator = Collator.getInstance(displayLocale);
+        final Map<String, String> languages = new TreeMap<>(collator::compare);
+
+        for (final String languageCode : Locale.getISOLanguages()) {
+            final Locale locale = Locale.forLanguageTag(languageCode);
+            final String displayName = locale.getDisplayLanguage(displayLocale);
+            if (!displayName.isEmpty()) {
+                languages.putIfAbsent(displayName, languageCode);
+            }
+        }
+
+        final CharSequence[] entries = new CharSequence[languages.size() + 1];
+        final CharSequence[] values = new CharSequence[languages.size() + 1];
+        entries[0] = getString(R.string.caption_translation_system_language);
+        values[0] = getString(R.string.caption_translation_system_value);
+
+        int index = 1;
+        for (final Map.Entry<String, String> language : languages.entrySet()) {
+            entries[index] = language.getKey();
+            values[index] = language.getValue();
+            index++;
+        }
+        preference.setEntries(entries);
+        preference.setEntryValues(values);
     }
 
     private void setupEqualizerPreference() {

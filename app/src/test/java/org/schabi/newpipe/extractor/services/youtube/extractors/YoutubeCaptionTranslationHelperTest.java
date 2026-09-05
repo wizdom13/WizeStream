@@ -1,0 +1,97 @@
+package org.schabi.newpipe.extractor.services.youtube.extractors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import com.grack.nanojson.JsonArray;
+import com.grack.nanojson.JsonObject;
+import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.JsonParserException;
+
+import org.junit.Test;
+
+public class YoutubeCaptionTranslationHelperTest {
+    @Test
+    public void normalizesBcp47LanguageCodes() {
+        assertEquals("el", YoutubeCaptionTranslationHelper.normalizeLanguageCode("el"));
+        assertEquals("ar", YoutubeCaptionTranslationHelper.normalizeLanguageCode(" ar "));
+        assertEquals("pt-BR", YoutubeCaptionTranslationHelper.normalizeLanguageCode("pt_BR"));
+        assertEquals("zh-Hans",
+                YoutubeCaptionTranslationHelper.normalizeLanguageCode("zh-Hans"));
+        assertNull(YoutubeCaptionTranslationHelper.normalizeLanguageCode("not a language"));
+    }
+
+    @Test
+    public void resolvesRegionalLanguageAgainstYoutubeTranslationList()
+            throws JsonParserException {
+        final JsonArray languages = JsonParser.array().from(
+                "[{\"languageCode\":\"ar\"},{\"languageCode\":\"zh-Hans\"},"
+                        + "{\"languageCode\":\"pt\"}]");
+
+        assertEquals("ar", YoutubeCaptionTranslationHelper.resolveTranslationLanguage(
+                languages, "ar"));
+        assertEquals("zh-Hans", YoutubeCaptionTranslationHelper.resolveTranslationLanguage(
+                languages, "zh-CN"));
+        assertEquals("pt", YoutubeCaptionTranslationHelper.resolveTranslationLanguage(
+                languages, "pt-BR"));
+        assertNull(YoutubeCaptionTranslationHelper.resolveTranslationLanguage(
+                languages, "el"));
+    }
+
+    @Test
+    public void missingTranslationListLetsYoutubeValidateTarget() {
+        assertEquals("el", YoutubeCaptionTranslationHelper.resolveTranslationLanguage(
+                null, "el"));
+    }
+
+    @Test
+    public void nativeTargetCaptionPreventsTranslatedDuplicate()
+            throws JsonParserException {
+        final JsonArray captions = JsonParser.array().from(
+                "[{\"languageCode\":\"en\"},{\"languageCode\":\"ar\"}]");
+
+        assertTrue(YoutubeCaptionTranslationHelper.hasNativeCaption(captions, "ar"));
+        assertFalse(YoutubeCaptionTranslationHelper.hasNativeCaption(captions, "el"));
+    }
+
+    @Test
+    public void prefersManualTranslatableCaptionOverAsr() throws JsonParserException {
+        final JsonArray captions = JsonParser.array().from(
+                "[{\"languageCode\":\"en\",\"baseUrl\":\"https://asr\","
+                        + "\"vssId\":\"a.en\",\"isTranslatable\":true},"
+                        + "{\"languageCode\":\"de\",\"baseUrl\":\"https://manual\","
+                        + "\"vssId\":\".de\",\"isTranslatable\":true}]");
+
+        final JsonObject source = YoutubeCaptionTranslationHelper.selectTranslatableSource(
+                captions);
+        assertSame(captions.getObject(1), source);
+    }
+
+    @Test
+    public void fallsBackToAsrWhenNoManualCaptionCanTranslate()
+            throws JsonParserException {
+        final JsonArray captions = JsonParser.array().from(
+                "[{\"languageCode\":\"en\",\"baseUrl\":\"https://asr\","
+                        + "\"vssId\":\"a.en\",\"isTranslatable\":true},"
+                        + "{\"languageCode\":\"de\",\"baseUrl\":\"https://manual\","
+                        + "\"vssId\":\".de\",\"isTranslatable\":false}]");
+
+        assertSame(captions.getObject(0),
+                YoutubeCaptionTranslationHelper.selectTranslatableSource(captions));
+    }
+
+    @Test
+    public void translatedUrlReplacesExistingFormatAndTarget() {
+        final String translated = YoutubeCaptionTranslationHelper.buildCaptionUrl(
+                "https://www.youtube.com/api/timedtext?lang=en&fmt=srv3&tlang=fr&v=abc#track",
+                "ttml",
+                "ar");
+
+        assertEquals(
+                "https://www.youtube.com/api/timedtext?lang=en&v=abc&fmt=ttml&tlang=ar#track",
+                translated);
+    }
+}

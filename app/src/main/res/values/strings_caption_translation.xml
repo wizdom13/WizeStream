@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="caption_auto_translate_key" translatable="false">caption_auto_translate</string>
+    <string name="caption_translation_language_key" translatable="false">caption_translation_language</string>
+    <string name="caption_translation_system_value" translatable="false">system</string>
+
+    <string name="caption_translation_category_title">Caption translation</string>
+    <string name="caption_auto_translate_title">Auto-translate captions</string>
+    <string name="caption_auto_translate_summary">Use YouTube translation when captions are not available in the selected language</string>
+    <string name="caption_translation_language_title">Translation language</string>
+    <string name="caption_translation_system_language">System language</string>
+</resources>
