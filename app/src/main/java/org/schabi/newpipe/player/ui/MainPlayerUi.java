@@ -15,6 +15,7 @@ import static org.schabi.newpipe.player.notification.NotificationConstants.ACTIO
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
@@ -1108,15 +1109,26 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
 
     public void checkLandscape() {
-        // check if landscape is correct
-        final boolean videoInLandscapeButNotInFullscreen = isLandscape()
-                && !isFullscreen
-                && !player.isAudioOnly();
-
-        if (videoInLandscapeButNotInFullscreen
-                && !DeviceUtils.isTablet(context)) {
+        final Context playerContext = getParentContext().orElse(player.getService());
+        final int orientation = playerContext.getResources().getConfiguration().orientation;
+        if (shouldEnterFullscreenForConfiguration(
+                orientation,
+                isFullscreen,
+                player.isAudioOnly(),
+                DeviceUtils.isTablet(playerContext))) {
             setFullscreen(true);
         }
+    }
+
+    static boolean shouldEnterFullscreenForConfiguration(
+            final int orientation,
+            final boolean fullscreen,
+            final boolean audioOnly,
+            final boolean tablet) {
+        return orientation == Configuration.ORIENTATION_LANDSCAPE
+                && !fullscreen
+                && !audioOnly
+                && !tablet;
     }
 
     //endregion
