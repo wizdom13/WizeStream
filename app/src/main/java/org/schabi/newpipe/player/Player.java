@@ -77,7 +77,6 @@ import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
-import org.schabi.newpipe.local.media.LocalMediaMetadataLoader;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
@@ -119,7 +118,6 @@ import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -187,8 +185,6 @@ public final class Player implements PlaybackListener, Listener {
     private PlayQueueItem currentItem;
     @Nullable
     private MediaItemTag currentMetadata;
-    @Nullable
-    private Future<?> localMetadataFuture;
     @NonNull
     private final PlayerHttpErrorRecovery.RecoveryGuard mediaUrlRecoveryGuard =
         new PlayerHttpErrorRecovery.RecoveryGuard();
@@ -260,6 +256,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerEventDispatcher eventDispatcher;
     @NonNull
     private final PlayerThumbnailController thumbnailController;
+    @NonNull
+    private final PlayerLocalMetadataController localMetadataController;
 
     @NonNull
     private final SerialDisposable progressUpdateDisposable = new SerialDisposable();
@@ -309,6 +307,7 @@ public final class Player implements PlaybackListener, Listener {
         queueModeController = new PlayerQueueModeController(this, sleepTimerController);
         eventDispatcher = new PlayerEventDispatcher(this);
         thumbnailController = new PlayerThumbnailController(this);
+        localMetadataController = new PlayerLocalMetadataController(this);
         broadcastController = new PlayerBroadcastController(this);
 
         trackSelector = new DefaultTrackSelector(context, PlayerHelper.getQualitySelector());
@@ -737,7 +736,7 @@ public final class Player implements PlaybackListener, Listener {
         }
 
         thumbnailController.cancel();
-        cancelLocalMetadataLoading();
+        localMetadataController.cancel();
         sleepTimerController.clear();
         saveStreamProgressState();
         setRecovery();
@@ -804,14 +803,6 @@ public final class Player implements PlaybackListener, Listener {
     }
     //endregion
 
-
-
-    private void cancelLocalMetadataLoading() {
-        if (localMetadataFuture != null) {
-            localMetadataFuture.cancel(true);
-            localMetadataFuture = null;
-        }
-    }
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -1972,7 +1963,7 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
-        cancelLocalMetadataLoading();
+        localMetadataController.cancel();
 
         playbackParametersController.applySpeedProfile(info);
         sponsorBlockController.updateSegments(info);
@@ -1989,30 +1980,7 @@ public final class Player implements PlaybackListener, Listener {
     private void updateMetadataForLocalMedia(@NonNull final PlayQueueItem item) {
         sponsorBlockController.reset();
         thumbnailController.loadLocal(item);
-        cancelLocalMetadataLoading();
-        localMetadataFuture = LocalMediaMetadataLoader.INSTANCE.load(
-                context,
-                item,
-                metadata -> {
-                    if (!(currentMetadata instanceof LocalMediaItemTag)
-                            || !((LocalMediaItemTag) currentMetadata)
-                                    .getItem().isSameItem(item)) {
-                        return;
-                    }
-                    if (!item.applyLocalMetadata(
-                            metadata.getTitle(),
-                            metadata.getArtist(),
-                            metadata.getAlbum(),
-                            metadata.getDurationSeconds())) {
-                        return;
-                    }
-                    if (playQueue != null) {
-                        playQueue.notifyChange();
-                    }
-                    notifyMetadataUpdateToListeners();
-                    notifyAudioTrackUpdateToListeners();
-                    UIs.call(playerUi -> playerUi.onMetadataChanged(currentMetadata));
-                });
+        localMetadataController.load(item);
         databaseUpdateDisposable.add(recordManager.onViewed(item)
                 .onErrorComplete().subscribe());
         notifyMetadataUpdateToListeners();
