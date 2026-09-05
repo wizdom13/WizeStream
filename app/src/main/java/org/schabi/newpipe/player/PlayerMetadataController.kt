@@ -118,7 +118,8 @@ internal class PlayerMetadataController(
         historyController.registerViewed(item)
         player.notifyMetadataUpdateToListeners()
         player.notifyAudioTrackUpdateToListeners()
-        player.UIs().call { ui -> ui.onMetadataChanged(currentMetadata) }
+        val metadata = checkNotNull(currentMetadata)
+        player.UIs().call { ui -> ui.onMetadataChanged(metadata) }
     }
 
     fun videoUrl(): String = currentMetadata?.streamUrl
@@ -142,7 +143,7 @@ internal class PlayerMetadataController(
     fun uploaderName(): String = currentMetadata?.uploaderName
         ?: context.getString(R.string.unknown_content)
 
-    fun thumbnail(): Bitmap? = thumbnailController.currentThumbnail
+    fun thumbnail(): Bitmap? = thumbnailController.getCurrentThumbnail()
 
     fun selectedVideoStream(): Optional<VideoStream> = Optional.ofNullable(currentMetadata)
         .flatMap(MediaItemTag::getMaybeQuality)
