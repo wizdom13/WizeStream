@@ -329,7 +329,7 @@ class MainPlayerGestureListener(
 
     private fun onScrollVolume(distanceY: Float) {
         val bar: ProgressBar = binding.volumeProgressBar
-        val audioReactor: AudioReactor = player.audioReactor
+        val audioReactor: AudioReactor = player.audioReactor ?: return
 
         // If we just started sliding, change the progress bar to match the system volume
         if (!binding.volumeRelativeLayout.isVisible) {
