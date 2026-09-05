@@ -22,7 +22,6 @@ import android.view.LayoutInflater;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.IntentCompat;
 import androidx.core.math.MathUtils;
 import androidx.preference.PreferenceManager;
 
@@ -44,9 +43,6 @@ import androidx.media3.common.VideoSize;
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.PlayerBinding;
-import org.schabi.newpipe.error.ErrorInfo;
-import org.schabi.newpipe.error.ErrorUtil;
-import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -66,7 +62,6 @@ import org.schabi.newpipe.player.playback.MediaSourceManager;
 import org.schabi.newpipe.player.playback.PlaybackListener;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
-import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.resolver.AudioPlaybackResolver;
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver;
 import org.schabi.newpipe.player.ui.BackgroundPlayerUi;
@@ -76,20 +71,12 @@ import org.schabi.newpipe.player.ui.PlayerUiList;
 import org.schabi.newpipe.player.ui.PopupPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor;
-import org.schabi.newpipe.util.DependentPreferenceHelper;
-import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ListHelper;
-import org.schabi.newpipe.util.NavigationHelper;
-import org.schabi.newpipe.util.SerializedCache;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public final class Player implements PlaybackListener, Listener {
     public static final boolean DEBUG = MainActivity.DEBUG;
@@ -207,6 +194,8 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerErrorController errorController;
     @NonNull
+    private final PlayerIntentController intentController;
+    @NonNull
     private final PlayerThumbnailController thumbnailController;
     @NonNull
     private final PlayerLocalMetadataController localMetadataController;
@@ -305,6 +294,9 @@ public final class Player implements PlaybackListener, Listener {
                 dataSource, loadController);
         presentationController = new PlayerPresentationController(this, videoResolver,
                 trackSelector, visualizerAudioProcessor);
+        intentController = new PlayerIntentController(this, context, historyController,
+                presentationController, popupPlayerReturnState, videoResolver,
+                streamItemDisposable);
         errorController = new PlayerErrorController(this, eventDispatcher, videoResolver);
 
         // The UIs added here should always be present. They will be initialized when the player
@@ -344,230 +336,16 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
     //region Playback initialization via intent
 
-    @SuppressWarnings("MethodLength")
     public void handleIntent(@NonNull final Intent intent) {
-        final var playerIntentType = IntentCompat.getSerializableExtra(intent, PLAYER_INTENT_TYPE,
-                PlayerIntentType.class);
-        if (playerIntentType == null) {
-            return;
-        }
-        // TODO: this should be in the second switch below, but I’m not sure whether I
-        // can move the initUIs stuff without breaking the setup for edge cases somehow.
-        // when playing from a timestamp, keep the current player as-is.
-        if (playerIntentType != PlayerIntentType.TimestampChange) {
-            historyController.updateLearningSession();
-            @Nullable final PlayerType requestedPlayerType = IntentCompat.getSerializableExtra(
-                    intent, PLAYER_TYPE, PlayerType.class);
-            if (playerType == PlayerType.MAIN && requestedPlayerType == PlayerType.POPUP
-                    && !popupPlayerReturnState.isRemembered()) {
-                popupPlayerReturnState.remember(UIs.get(MainPlayerUi.class)
-                        .map(MainPlayerUi::isFullscreen)
-                        .orElse(false));
-            }
-            playerType = requestedPlayerType;
-            historyController.updateLearningSession();
-        }
-        initUIsForCurrentPlayerType();
-        final PlaybackPresentationMode requestedMode = IntentCompat.getSerializableExtra(
-                intent, PLAYBACK_PRESENTATION_MODE, PlaybackPresentationMode.class);
-        presentationController.updateFromIntent(audioPlayerSelected(), requestedMode,
-                playerIntentType != PlayerIntentType.TimestampChange);
-
-        if (intent.hasExtra(PLAYBACK_QUALITY)) {
-            videoResolver.setPlaybackQuality(intent.getStringExtra(PLAYBACK_QUALITY));
-        }
-
-        final boolean playWhenReady = intent.getBooleanExtra(PLAY_WHEN_READY, true);
-
-        switch (playerIntentType) {
-            case Enqueue -> {
-                if (playQueue != null) {
-                    final PlayQueue newQueue = getPlayQueueFromCache(intent);
-                    if (newQueue == null) {
-                        return;
-                    }
-                    playQueue.append(newQueue.getStreams());
-                    return;
-                }
-
-                // TODO: This falls through to the old logic, there was no playQueue
-                // yet so we should start the player and add the new video
-                break;
-            }
-            case EnqueueNext -> {
-                if (playQueue != null) {
-                    final PlayQueue newQueue = getPlayQueueFromCache(intent);
-                    if (newQueue == null) {
-                        return;
-                    }
-                    final PlayQueueItem newItem = newQueue.getStreams().get(0);
-                    playQueue.enqueueNext(newItem, false);
-                    return;
-                }
-
-                // TODO: This falls through to the old logic, there was no playQueue
-                // yet so we should start the player and add the new video
-                break;
-            }
-            case TimestampChange -> {
-                final var data = Objects.requireNonNull(IntentCompat.getParcelableExtra(intent,
-                        PLAYER_INTENT_DATA, TimestampChangeData.class));
-                final Single<StreamInfo> single =
-                        ExtractorHelper.getStreamInfo(data.getServiceId(), data.getUrl(), false);
-                streamItemDisposable.add(single.subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(info -> {
-                            final @Nullable PlayQueue oldPlayQueue = playQueue;
-                            info.setStartPosition(data.getSeconds());
-                            final PlayQueueItem playQueueItem = new PlayQueueItem(info);
-
-                            // If the stream is already playing,
-                            // we can just seek to the appropriate timestamp
-                            if (oldPlayQueue != null
-                                    && playQueueItem.isSameItem(oldPlayQueue.getItem())) {
-                                // Player can have state = IDLE when playback is stopped or failed
-                                // and we should retry in this case
-                                if (simpleExoPlayer.getPlaybackState()
-                                        == androidx.media3.common.Player.STATE_IDLE) {
-                                    simpleExoPlayer.prepare();
-                                }
-                                simpleExoPlayer.seekTo(oldPlayQueue.getIndex(),
-                                        data.getSeconds() * 1000L);
-                                simpleExoPlayer.setPlayWhenReady(playWhenReady);
-
-                            } else {
-                                final PlayQueue newPlayQueue;
-
-                                // If there is no queue yet, just add our item
-                                if (oldPlayQueue == null) {
-                                    newPlayQueue = new SinglePlayQueue(playQueueItem);
-
-                                // else we add the timestamped stream behind the current video
-                                // and start playing it.
-                                } else {
-                                    oldPlayQueue.enqueueNext(playQueueItem, true);
-                                    oldPlayQueue.offsetIndex(1);
-                                    newPlayQueue = oldPlayQueue;
-                                }
-                                initPlayback(newPlayQueue, playWhenReady);
-                            }
-
-                        }, throwable -> {
-                            // This will only show a snackbar if the passed context has a root view:
-                            // otherwise it will resort to showing a notification, so we are safe
-                            // here.
-                            final var info = new ErrorInfo(throwable, UserAction.PLAY_ON_POPUP,
-                                    data.getUrl(), null, data.getUrl());
-                            ErrorUtil.createNotification(context, info);
-                        }));
-                return;
-            }
-            case AllOthers -> {
-                // fallthrough; TODO: put other intent data in separate cases
-            }
-        }
-
-        final PlayQueue newQueue = getPlayQueueFromCache(intent);
-        if (newQueue == null) {
-            return;
-        }
-
-        // branching parameters for below
-        final boolean samePlayQueue = playQueue != null && playQueue.equalStreamsAndIndex(newQueue);
-
-        /*
-         * TODO As seen in #7427 this does not work:
-         * There are 3 situations when playback shouldn't be started from scratch (zero timestamp):
-         * 1. User pressed on a timestamp link and the same video should be rewound to the timestamp
-         * 2. User changed a player from, for example. main to popup, or from audio to main, etc
-         * 3. User chose to resume a video based on a saved timestamp from history of played videos
-         * In those cases time will be saved because re-init of the play queue is a not an instant
-         *  task and requires network calls
-         * */
-        // seek to timestamp if stream is already playing
-        if (!exoPlayerIsNull()
-                && newQueue.size() == 1 && newQueue.getItem() != null
-                && playQueue != null && playQueue.size() == 1 && playQueue.getItem() != null
-                && newQueue.getItem().isSameItem(playQueue.getItem())
-                && newQueue.getItem().getRecoveryPosition() != PlayQueueItem.RECOVERY_UNSET) {
-            // Player can have state = IDLE when playback is stopped or failed
-            // and we should retry in this case
-            if (simpleExoPlayer.getPlaybackState()
-                    == androidx.media3.common.Player.STATE_IDLE) {
-                simpleExoPlayer.prepare();
-            }
-            simpleExoPlayer.seekTo(playQueue.getIndex(), newQueue.getItem().getRecoveryPosition());
-            simpleExoPlayer.setPlayWhenReady(playWhenReady);
-
-        } else if (!exoPlayerIsNull()
-                && samePlayQueue
-                && playQueue != null
-                && !playQueue.isDisposed()) {
-            // Do not re-init the same PlayQueue. Save time
-            // Player can have state = IDLE when playback is stopped or failed
-            // and we should retry in this case
-            if (simpleExoPlayer.getPlaybackState()
-                    == androidx.media3.common.Player.STATE_IDLE) {
-                simpleExoPlayer.prepare();
-            }
-            simpleExoPlayer.setPlayWhenReady(playWhenReady);
-
-        } else if (intent.getBooleanExtra(RESUME_PLAYBACK, false)
-                && DependentPreferenceHelper.getResumePlaybackEnabled(context)
-                // !samePlayQueue
-                && (playQueue == null || !playQueue.equalStreamsAndIndex(newQueue))
-                && !newQueue.isEmpty()
-                && newQueue.getItem() != null
-                && newQueue.getItem().getRecoveryPosition() == PlayQueueItem.RECOVERY_UNSET) {
-            historyController.restoreStreamState(newQueue.getItem(),
-                    state -> {
-                        if (!state.isFinished(newQueue.getItem().getDuration())) {
-                            // resume playback only if the stream was not played to the end
-                            newQueue.setRecovery(newQueue.getIndex(), state.getProgressMillis());
-                        }
-                        initPlayback(newQueue, playWhenReady);
-                    },
-                    error -> {
-                        if (DEBUG) {
-                            Log.w(TAG, "Failed to start playback", error);
-                        }
-                        // In case any error we can start playback without history
-                        initPlayback(newQueue, playWhenReady);
-                    },
-                    () -> {
-                        // Completed but not found in history
-                        initPlayback(newQueue, playWhenReady);
-                    });
-        } else {
-            // Good to go...
-            // In a case of equal PlayQueues we can re-init old one but only when it is disposed
-            initPlayback(samePlayQueue ? playQueue : newQueue, playWhenReady);
-        }
-
+        intentController.handle(intent);
     }
 
 
     public void handleIntentPost(final PlayerType oldPlayerType) {
-        if (oldPlayerType != playerType && playQueue != null) {
-            // If playerType changes from one to another we should reload the player
-            // (to disable/enable video stream or to set quality)
-            reloadPlayQueueManager();
-        }
-
-        UIs.call(PlayerUi::setupAfterIntent);
-        NavigationHelper.sendPlayerStartedEvent(context);
+        intentController.handlePost(oldPlayerType);
     }
 
-    @Nullable
-    private static PlayQueue getPlayQueueFromCache(@NonNull final Intent intent) {
-        final String queueCache = intent.getStringExtra(PLAY_QUEUE_KEY);
-        if (queueCache == null) {
-            return null;
-        }
-        return SerializedCache.getInstance().take(queueCache, PlayQueue.class);
-    }
-
-    private void initUIsForCurrentPlayerType() {
+    void initUIsForCurrentPlayerType() {
         if ((UIs.get(MainPlayerUi.class).isPresent() && playerType == PlayerType.MAIN)
                 || (UIs.get(BackgroundPlayerUi.class).isPresent() && playerType == PlayerType.AUDIO)
                 || (UIs.get(PopupPlayerUi.class).isPresent() && playerType == PlayerType.POPUP)) {
@@ -603,8 +381,7 @@ public final class Player implements PlaybackListener, Listener {
         }
     }
 
-    private void initPlayback(@NonNull final PlayQueue queue,
-                              final boolean playOnReady) {
+    void initPlayback(@NonNull final PlayQueue queue, final boolean playOnReady) {
         destroyPlayer();
         initPlayer(playOnReady);
         final boolean playbackSkipSilence = getPrefs().getBoolean(getContext().getString(
@@ -1545,6 +1322,10 @@ public final class Player implements PlaybackListener, Listener {
 
     public PlayerType getPlayerType() {
         return playerType;
+    }
+
+    void setPlayerTypeForIntent(@NonNull final PlayerType newPlayerType) {
+        playerType = newPlayerType;
     }
 
     public void rememberMainPlayerFullscreenBeforePopup(final boolean fullscreen) {
