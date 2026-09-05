@@ -3,6 +3,7 @@ package org.schabi.newpipe.settings;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
 import androidx.core.os.ConfigurationCompat;
 import androidx.core.os.LocaleListCompat;
 import androidx.preference.PreferenceManager;
@@ -11,8 +12,6 @@ import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
 
 import java.util.Locale;
-
-import javax.annotation.Nullable;
 
 public final class CaptionTranslationPreferences {
     private CaptionTranslationPreferences() {
@@ -31,7 +30,8 @@ public final class CaptionTranslationPreferences {
     public static String getTargetLanguage(final Context context) {
         final SharedPreferences preferences =
                 PreferenceManager.getDefaultSharedPreferences(context);
-        if (!preferences.getBoolean(context.getString(R.string.caption_auto_translate_key), false)) {
+        if (!preferences.getBoolean(
+                context.getString(R.string.caption_auto_translate_key), false)) {
             return null;
         }
 
