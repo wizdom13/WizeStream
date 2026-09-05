@@ -22,10 +22,8 @@ import android.view.LayoutInflater;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.math.MathUtils;
 import androidx.preference.PreferenceManager;
 
-import androidx.media3.common.C;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.common.PlaybackException;
@@ -129,9 +127,6 @@ public final class Player implements PlaybackListener, Listener {
     private PlayQueue playQueue;
 
     @Nullable
-    private MediaSourceManager playQueueManager;
-
-    @Nullable
     private PlayQueueItem currentItem;
     @NonNull
     private final SponsorBlockPlaybackController sponsorBlockController;
@@ -199,6 +194,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerThumbnailController thumbnailController;
     @NonNull
     private final PlayerLocalMetadataController localMetadataController;
+    @NonNull
+    private final PlayerLifecycleController lifecycleController;
     @NonNull
     private final PlayerMetadataController metadataController;
     @NonNull
@@ -307,6 +304,11 @@ public final class Player implements PlaybackListener, Listener {
                 new MediaSessionPlayerUi(this, mediaSession, browserPlayer),
                 new NotificationPlayerUi(this)
         );
+        lifecycleController = new PlayerLifecycleController(this, context, service, renderFactory,
+                trackSelector, loadController, audioController, broadcastController,
+                errorController, historyController, thumbnailController, localMetadataController,
+                sleepTimerController, progressController, playbackParametersController,
+                streamItemDisposable);
     }
 
     private VideoPlaybackResolver.QualityResolver getQualityResolver() {
@@ -382,53 +384,19 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     void initPlayback(@NonNull final PlayQueue queue, final boolean playOnReady) {
-        destroyPlayer();
-        initPlayer(playOnReady);
-        final boolean playbackSkipSilence = getPrefs().getBoolean(getContext().getString(
-                R.string.playback_skip_silence_key), getPlaybackSkipSilence());
-        final PlaybackParameters savedParameters =
-                PlayerHelper.retrievePlaybackParametersFromPrefs(this);
-        playbackParametersController.applyParameters(
-                savedParameters.speed, savedParameters.pitch, playbackSkipSilence);
-
-        playQueue = queue;
-        playQueue.init();
-        simpleExoPlayer.setShuffleModeEnabled(playQueue.isShuffled());
-        sleepTimerController.onQueueReplaced();
-        reloadPlayQueueManager();
-
-        UIs.call(PlayerUi::initPlayback);
-
-        applyPlayerVolume();
-        notifyQueueUpdateToListeners();
-        notifySleepTimerUpdateToListeners();
+        lifecycleController.initPlayback(queue, playOnReady);
     }
 
-    private void initPlayer(final boolean playOnReady) {
-        if (DEBUG) {
-            Log.d(TAG, "initPlayer() called with: playOnReady = [" + playOnReady + "]");
-        }
+    void setPlayQueueForLifecycle(@NonNull final PlayQueue queue) {
+        playQueue = queue;
+    }
 
-        simpleExoPlayer = new ExoPlayer.Builder(context, renderFactory)
-                .setTrackSelector(trackSelector)
-                .setLoadControl(loadController)
-                .setUsePlatformDiagnostics(false)
-                .build();
-        simpleExoPlayer.addListener(this);
-        simpleExoPlayer.setPlayWhenReady(playOnReady);
-        simpleExoPlayer.setSeekParameters(PlayerHelper.getSeekParameters(context));
-        simpleExoPlayer.setWakeMode(C.WAKE_MODE_NETWORK);
-        simpleExoPlayer.setHandleAudioBecomingNoisy(true);
-        audioController.attachAudioSession(simpleExoPlayer.getAudioSessionId());
+    void setExoPlayerForLifecycle(@NonNull final ExoPlayer exoPlayer) {
+        simpleExoPlayer = exoPlayer;
+    }
 
-        audioReactor = new AudioReactor(context, simpleExoPlayer);
-
-        broadcastController.register();
-
-        // Setup UIs
-        UIs.call(PlayerUi::initPlayer);
-
-        updateAudioTunneling();
+    void setAudioReactorForLifecycle(@NonNull final AudioReactor reactor) {
+        audioReactor = reactor;
     }
     //endregion
 
@@ -439,104 +407,25 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
     //region Destroy and recovery
 
-    private void destroyPlayer() {
-        if (DEBUG) {
-            Log.d(TAG, "destroyPlayer() called");
-        }
-        errorController.resetRecovery();
-        historyController.stopLearningSession();
-        UIs.call(PlayerUi::destroyPlayer);
-        audioController.releaseAudioSession();
-
-        if (!exoPlayerIsNull()) {
-            simpleExoPlayer.removeListener(this);
-            simpleExoPlayer.stop();
-            simpleExoPlayer.release();
-        }
-        if (isProgressLoopRunning()) {
-            stopProgressLoop();
-        }
-        if (playQueue != null) {
-            playQueue.dispose();
-        }
-        if (audioReactor != null) {
-            audioReactor.dispose();
-        }
-        if (playQueueManager != null) {
-            playQueueManager.dispose();
-        }
-    }
-
     public void destroy() {
-        if (DEBUG) {
-            Log.d(TAG, "destroy() called");
-        }
-
-        thumbnailController.cancel();
-        localMetadataController.cancel();
-        sleepTimerController.clear();
-        saveStreamProgressState();
-        setRecovery();
-        stopActivityBinding();
-
-        destroyPlayer();
-        broadcastController.unregister();
-
-        historyController.clear();
-        progressController.clear();
-        streamItemDisposable.clear();
-
-        UIs.destroyAll(Object.class); // destroy every UI: obviously every UI extends Object
+        lifecycleController.destroy();
     }
 
     public void setRecovery() {
-        if (playQueue == null || exoPlayerIsNull()) {
-            return;
-        }
-
-        final int queuePos = playQueue.getIndex();
-        final long windowPos = simpleExoPlayer.getCurrentPosition();
-        final long duration = simpleExoPlayer.getDuration();
-
-        // No checks due to https://github.com/TeamNewPipe/NewPipe/pull/7195#issuecomment-962624380
-        setRecovery(queuePos, MathUtils.clamp(windowPos, 0, duration));
-    }
-
-    private void setRecovery(final int queuePos, final long windowPos) {
-        if (playQueue == null || playQueue.size() <= queuePos) {
-            return;
-        }
-
-        if (DEBUG) {
-            Log.d(TAG, "Setting recovery, queue: " + queuePos + ", pos: " + windowPos);
-        }
-        playQueue.setRecovery(queuePos, windowPos);
+        lifecycleController.setRecovery();
     }
 
     public void reloadPlayQueueManager() {
-        if (playQueueManager != null) {
-            playQueueManager.dispose();
-        }
-
-        if (playQueue != null) {
-            playQueueManager = new MediaSourceManager(this, playQueue);
-        }
+        lifecycleController.reloadPlayQueueManager();
     }
 
     @Override // own playback listener
     public void onPlaybackShutdown() {
-        if (DEBUG) {
-            Log.d(TAG, "onPlaybackShutdown() called");
-        }
-        // destroys the service, which in turn will destroy the player
-        service.destroyPlayerAndStopService();
+        lifecycleController.shutdown();
     }
 
     public void smoothStopForImmediateReusing() {
-        // Pausing would make transition from one stream to a new stream not smooth, so only stop
-        simpleExoPlayer.stop();
-        setRecovery();
-        UIs.call(PlayerUi::smoothStopForImmediateReusing);
+        lifecycleController.smoothStopForImmediateReusing();
     }
     //endregion
 
@@ -596,7 +485,7 @@ public final class Player implements PlaybackListener, Listener {
         progressController.start();
     }
 
-    private void stopProgressLoop() {
+    void stopProgressLoop() {
         progressController.stop();
     }
 
@@ -1228,7 +1117,7 @@ public final class Player implements PlaybackListener, Listener {
         eventDispatcher.stopBindings();
     }
 
-    private void notifyQueueUpdateToListeners() {
+    void notifyQueueUpdateToListeners() {
         eventDispatcher.notifyQueueUpdate();
     }
 
