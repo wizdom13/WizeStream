@@ -13,7 +13,6 @@ import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static androidx.media3.common.Player.RepeatMode;
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
-import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
 
@@ -230,6 +229,8 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerProgressController progressController;
     @NonNull
+    private final PlayerSeekController seekController;
+    @NonNull
     private final CompositeDisposable streamItemDisposable = new CompositeDisposable();
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -271,6 +272,7 @@ public final class Player implements PlaybackListener, Listener {
         eventDispatcher = new PlayerEventDispatcher(this);
         progressController = new PlayerProgressController(this, historyController,
                 sponsorBlockController, eventDispatcher);
+        seekController = new PlayerSeekController(this);
         thumbnailController = new PlayerThumbnailController(this);
         localMetadataController = new PlayerLocalMetadataController(this);
         broadcastController = new PlayerBroadcastController(this);
@@ -1409,15 +1411,7 @@ public final class Player implements PlaybackListener, Listener {
 
     @Override // own playback listener (this is a getter)
     public boolean isApproachingPlaybackEdge(final long timeToEndMillis) {
-        // If live, then not near playback edge
-        // If not playing, then not approaching playback edge
-        if (exoPlayerIsNull() || isLive() || !isPlaying()) {
-            return false;
-        }
-
-        final long currentPositionMillis = simpleExoPlayer.getCurrentPosition();
-        final long currentDurationMillis = simpleExoPlayer.getDuration();
-        return currentDurationMillis - currentPositionMillis < timeToEndMillis;
+        return seekController.isApproachingPlaybackEdge(timeToEndMillis);
     }
 
     /**
@@ -1427,20 +1421,7 @@ public final class Player implements PlaybackListener, Listener {
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isLiveEdge() {
-        if (exoPlayerIsNull() || !isLive()) {
-            return false;
-        }
-
-        final Timeline currentTimeline = simpleExoPlayer.getCurrentTimeline();
-        final int currentWindowIndex = simpleExoPlayer.getCurrentMediaItemIndex();
-        if (currentTimeline.isEmpty() || currentWindowIndex < 0
-                || currentWindowIndex >= currentTimeline.getWindowCount()) {
-            return false;
-        }
-
-        final Timeline.Window timelineWindow = new Timeline.Window();
-        currentTimeline.getWindow(currentWindowIndex, timelineWindow);
-        return timelineWindow.getDefaultPositionMs() <= simpleExoPlayer.getCurrentPosition();
+        return seekController.isLiveEdge();
     }
 
     @Override // own playback listener
@@ -1501,27 +1482,11 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public void seekTo(final long positionMillis) {
-        if (DEBUG) {
-            Log.d(TAG, "seekBy() called with: position = [" + positionMillis + "]");
-        }
-        if (!exoPlayerIsNull()) {
-            // prevent invalid positions when fast-forwarding/-rewinding
-            simpleExoPlayer.seekTo(MathUtils.clamp(positionMillis, 0,
-                    simpleExoPlayer.getDuration()));
-        }
-    }
-
-    private void seekBy(final long offsetMillis) {
-        if (DEBUG) {
-            Log.d(TAG, "seekBy() called with: offsetMillis = [" + offsetMillis + "]");
-        }
-        seekTo(simpleExoPlayer.getCurrentPosition() + offsetMillis);
+        seekController.seekTo(positionMillis);
     }
 
     public void seekToDefault() {
-        if (!exoPlayerIsNull()) {
-            simpleExoPlayer.seekToDefaultPosition();
-        }
+        seekController.seekToDefault();
     }
     //endregion
 
@@ -1628,19 +1593,11 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public void fastForward() {
-        if (DEBUG) {
-            Log.d(TAG, "fastRewind() called");
-        }
-        seekBy(retrieveSeekDurationFromPreferences(this));
-        triggerProgressUpdate();
+        seekController.fastForward();
     }
 
     public void fastRewind() {
-        if (DEBUG) {
-            Log.d(TAG, "fastRewind() called");
-        }
-        seekBy(-retrieveSeekDurationFromPreferences(this));
-        triggerProgressUpdate();
+        seekController.fastRewind();
     }
     //endregion
 
@@ -2166,15 +2123,7 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     private boolean isLive() {
-        try {
-            return !exoPlayerIsNull() && simpleExoPlayer.isCurrentMediaItemDynamic();
-        } catch (final IndexOutOfBoundsException e) {
-            // Why would this even happen =(... but lets log it anyway, better safe than sorry
-            if (DEBUG) {
-                Log.d(TAG, "player.isCurrentWindowDynamic() failed: ", e);
-            }
-            return false;
-        }
+        return seekController.isLive();
     }
 
     public void setPlaybackQuality(@Nullable final String quality) {
