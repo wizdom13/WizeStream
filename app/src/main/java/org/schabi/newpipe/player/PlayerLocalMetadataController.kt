@@ -19,7 +19,7 @@ internal class PlayerLocalMetadataController(private val player: Player) {
         load = LocalMediaMetadataLoader.load(
             player.context,
             item
-        ) metadataLoaded@ { metadata ->
+        ) metadataLoaded@{ metadata ->
             val currentMetadata = player.currentMetadata
             if (currentMetadata !is LocalMediaItemTag ||
                 !currentMetadata.item.isSameItem(item)
