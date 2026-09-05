@@ -15,7 +15,7 @@ public class NativePipButtonIntegrationTest {
             ? Path.of("src/main/res") : Path.of("app/src/main/res");
 
     @Test
-    public void dedicatedPipEntryAvoidsPreTransitionFullscreenPreparation() throws Exception {
+    public void pipEntryAvoidsPreTransitionFullscreenPreparation() throws Exception {
         final String source = readSource(
                 "org/schabi/newpipe/player/pip/NativePipController.java");
         final String dedicatedEntry = methodBody(source,
@@ -24,7 +24,7 @@ public class NativePipButtonIntegrationTest {
 
         assertTrue(dedicatedEntry.contains("activity.enterPictureInPictureMode(params)"));
         assertFalse(dedicatedEntry.contains("prepareNativePipEntry()"));
-        assertTrue(homeEntry.contains("prepareNativePipEntry()"));
+        assertFalse(homeEntry.contains("prepareNativePipEntry()"));
     }
 
     @Test
