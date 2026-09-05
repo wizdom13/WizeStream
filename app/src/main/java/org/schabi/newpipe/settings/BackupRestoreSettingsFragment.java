@@ -495,65 +495,78 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
     private void importDatabase(final StoredFileHelper file, final Uri importDataUri,
                                 final ImportExportManager.BackupContents contents,
                                 final boolean importSettings) {
-        final Context context = requireContext();
-        final SharedPreferences preferences = PreferenceManager
-                .getDefaultSharedPreferences(context);
-        final Map<String, ?> previousPreferences = new HashMap<>(preferences.getAll());
-        ImportExportManager.DatabaseRollback databaseRollback = null;
-        Path stagedDatabase = null;
+        final Activity activity = requireActivity();
+        final Context context = activity.getApplicationContext();
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            final SharedPreferences preferences = PreferenceManager
+                    .getDefaultSharedPreferences(context);
+            final Map<String, ?> previousPreferences = new HashMap<>(preferences.getAll());
+            ImportExportManager.DatabaseRollback databaseRollback = null;
+            Path stagedDatabase = null;
 
-        try {
-            manager.ensureDbDirectoryExists();
-
-            final Map<String, ?> importedPreferences;
-            if (!importSettings) {
-                importedPreferences = null;
-            } else if (contents.getHasJsonPreferences()) {
-                importedPreferences = manager.readJsonPrefs(file);
-            } else {
-                importedPreferences = manager.readSerializedPrefs(file);
-            }
-
-            if (contents.getHasDatabase()) {
-                stagedDatabase = manager.stageDb(file);
-                if (stagedDatabase == null) {
-                    throw new IOException("The backup database could not be staged");
-                }
-                NewPipeDatabase.validateImportDatabase(
-                        context, stagedDatabase.getFileName().toString());
-                try {
-                    NewPipeDatabase.checkpoint();
-                } catch (final IllegalStateException ignored) {
-                    // The database has not been opened during this process.
-                }
-                NewPipeDatabase.close();
-                databaseRollback = manager.replaceDb(stagedDatabase);
-            }
-
-            if (importedPreferences != null) {
-                manager.replacePreferences(preferences, importedPreferences);
-                cleanImport(context, preferences);
-            }
-
-            if (databaseRollback != null) {
-                manager.finishDbReplacement(databaseRollback);
-            }
-            finishImport(importDataUri);
-        } catch (final Exception e) {
             try {
-                manager.replacePreferences(preferences, previousPreferences);
-                if (databaseRollback != null) {
-                    manager.rollbackDb(databaseRollback);
+                manager.ensureDbDirectoryExists();
+
+                final Map<String, ?> importedPreferences;
+                if (!importSettings) {
+                    importedPreferences = null;
+                } else if (contents.getHasJsonPreferences()) {
+                    importedPreferences = manager.readJsonPrefs(file);
+                } else {
+                    importedPreferences = manager.readSerializedPrefs(file);
                 }
-            } catch (final Exception rollbackError) {
-                e.addSuppressed(rollbackError);
+
+                if (contents.getHasDatabase()) {
+                    stagedDatabase = manager.stageDb(file);
+                    if (stagedDatabase == null) {
+                        throw new IOException("The backup database could not be staged");
+                    }
+                    NewPipeDatabase.validateImportDatabase(
+                            context, stagedDatabase.getFileName().toString());
+                    try {
+                        NewPipeDatabase.checkpoint();
+                    } catch (final IllegalStateException ignored) {
+                        // The database has not been opened during this process.
+                    }
+                    NewPipeDatabase.close();
+                    databaseRollback = manager.replaceDb(stagedDatabase);
+                }
+
+                if (importedPreferences != null) {
+                    manager.replacePreferences(preferences, importedPreferences);
+                    cleanImport(context, preferences);
+                }
+
+                if (databaseRollback != null) {
+                    manager.finishDbReplacement(databaseRollback);
+                }
+                activity.runOnUiThread(() -> {
+                    if (isAdded()) {
+                        finishImport(importDataUri);
+                    }
+                });
+            } catch (final Exception e) {
+                try {
+                    manager.replacePreferences(preferences, previousPreferences);
+                    if (databaseRollback != null) {
+                        manager.rollbackDb(databaseRollback);
+                    }
+                } catch (final Exception rollbackError) {
+                    e.addSuppressed(rollbackError);
+                }
+                activity.runOnUiThread(() -> {
+                    if (isAdded()) {
+                        showErrorSnackbar(e, "Importing database and settings");
+                    }
+                });
+            } finally {
+                if (stagedDatabase != null) {
+                    manager.discardStagedDb(stagedDatabase);
+                }
+                executor.shutdown();
             }
-            showErrorSnackbar(e, "Importing database and settings");
-        } finally {
-            if (stagedDatabase != null) {
-                manager.discardStagedDb(stagedDatabase);
-            }
-        }
+        });
     }
 
     /**
