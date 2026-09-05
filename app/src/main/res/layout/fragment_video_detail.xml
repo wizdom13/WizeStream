@@ -36,7 +36,6 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
-                    android:translationZ="1dp"
                     app:layout_collapseMode="parallax">
 
                     <ImageView

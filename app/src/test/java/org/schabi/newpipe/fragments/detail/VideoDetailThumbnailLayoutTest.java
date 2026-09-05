@@ -25,11 +25,25 @@ public class VideoDetailThumbnailLayoutTest {
         assertThumbnailFillsFrame("layout-w840dp-land/fragment_video_detail.xml");
     }
 
+    @Test
+    public void thumbnailLayerDoesNotForceItselfAboveSongDetails() throws Exception {
+        assertThumbnailDoesNotForceForegroundLayer("layout/fragment_video_detail.xml");
+        assertThumbnailDoesNotForceForegroundLayer(
+                "layout-w840dp-land/fragment_video_detail.xml");
+    }
+
     private void assertThumbnailFillsFrame(final String layout) throws Exception {
         final Element thumbnail = findById(parse(layout), "detail_thumbnail_image_view");
         assertNotNull(layout, thumbnail);
         assertEquals(layout, "centerCrop",
                 thumbnail.getAttributeNS(ANDROID_NAMESPACE, "scaleType"));
+    }
+
+    private void assertThumbnailDoesNotForceForegroundLayer(final String layout) throws Exception {
+        final Element thumbnailRoot = findById(parse(layout), "detail_thumbnail_root_layout");
+        assertNotNull(layout, thumbnailRoot);
+        assertEquals(layout, "",
+                thumbnailRoot.getAttributeNS(ANDROID_NAMESPACE, "translationZ"));
     }
 
     private Element findById(final Document document, final String id) {
