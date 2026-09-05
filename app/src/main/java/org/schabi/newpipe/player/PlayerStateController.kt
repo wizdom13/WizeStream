@@ -128,11 +128,13 @@ internal class PlayerStateController(
 
         when (playbackState) {
             Media3Player.STATE_IDLE -> isPrepared = false
+
             Media3Player.STATE_BUFFERING -> {
                 if (isPrepared) {
                     changeState(Player.STATE_BUFFERING)
                 }
             }
+
             Media3Player.STATE_READY -> {
                 if (!isPrepared) {
                     isPrepared = true
@@ -140,6 +142,7 @@ internal class PlayerStateController(
                 }
                 changeState(if (playWhenReady) Player.STATE_PLAYING else Player.STATE_PAUSED)
             }
+
             Media3Player.STATE_ENDED -> {
                 sleepTimerController.onItemEnded(player.playQueue?.item, false)
                 changeState(Player.STATE_COMPLETED)
