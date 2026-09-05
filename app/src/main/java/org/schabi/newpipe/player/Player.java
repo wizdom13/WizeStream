@@ -44,8 +44,6 @@ import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import static coil3.Image_androidKt.toBitmap;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -87,7 +85,6 @@ import org.schabi.newpipe.databinding.PlayerBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
-import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
@@ -96,7 +93,6 @@ import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.learning.LearningSessionTracker;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.media.LocalMediaMetadataLoader;
-import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
@@ -133,7 +129,6 @@ import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SerializedCache;
 import org.schabi.newpipe.util.StreamTypeUtil;
-import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
@@ -142,7 +137,6 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
-import coil3.target.Target;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
@@ -208,12 +202,6 @@ public final class Player implements PlaybackListener, Listener {
     private PlayQueueItem currentItem;
     @Nullable
     private MediaItemTag currentMetadata;
-    @Nullable
-    private Bitmap currentThumbnail;
-    @Nullable
-    private coil3.request.Disposable thumbnailDisposable;
-    @Nullable
-    private Future<?> localThumbnailFuture;
     @Nullable
     private Future<?> localMetadataFuture;
     @NonNull
@@ -283,6 +271,8 @@ public final class Player implements PlaybackListener, Listener {
     private IntentFilter intentFilter;
     @NonNull
     private final PlayerEventDispatcher eventDispatcher;
+    @NonNull
+    private final PlayerThumbnailController thumbnailController;
 
     @NonNull
     private final SerialDisposable progressUpdateDisposable = new SerialDisposable();
@@ -332,6 +322,7 @@ public final class Player implements PlaybackListener, Listener {
         playbackParametersController = new PlaybackParametersController(this);
         sleepTimerController = new SleepTimerPlaybackController(this);
         eventDispatcher = new PlayerEventDispatcher(this);
+        thumbnailController = new PlayerThumbnailController(this);
 
         setupBroadcastReceiver();
 
@@ -760,7 +751,7 @@ public final class Player implements PlaybackListener, Listener {
             Log.d(TAG, "destroy() called");
         }
 
-        cancelThumbnailLoading();
+        thumbnailController.cancel();
         cancelLocalMetadataLoading();
         sleepTimerController.clear();
         saveStreamProgressState();
@@ -947,85 +938,12 @@ public final class Player implements PlaybackListener, Listener {
 
 
 
-    /*//////////////////////////////////////////////////////////////////////////
-    // Thumbnail loading
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Thumbnail loading
-
-    private void loadCurrentThumbnail(final List<Image> thumbnails) {
-        if (DEBUG) {
-            Log.d(TAG, "Thumbnail - loadCurrentThumbnail() called with thumbnails = ["
-                    + thumbnails.size() + "]");
-        }
-
-        cancelThumbnailLoading();
-
-        // Unset currentThumbnail, since it is now outdated. This ensures it is not used in media
-        // session metadata while the new thumbnail is being loaded by Coil.
-        onThumbnailLoaded(null);
-        if (thumbnails.isEmpty()) {
-            return;
-        }
-
-        // scale down the notification thumbnail for performance
-        final var thumbnailTarget = new Target() {
-            @Override
-            public void onError(@Nullable final coil3.Image error) {
-                Log.e(TAG, "Thumbnail - onError() called");
-                // there is a new thumbnail, so e.g. the end screen thumbnail needs to change, too.
-                onThumbnailLoaded(null);
-            }
-
-            @Override
-            public void onStart(@Nullable final coil3.Image placeholder) {
-                if (DEBUG) {
-                    Log.d(TAG, "Thumbnail - onStart() called");
-                }
-            }
-
-            @Override
-            public void onSuccess(@NonNull final coil3.Image result) {
-                if (DEBUG) {
-                    Log.d(TAG, "Thumbnail - onSuccess() called with: drawable = [" + result + "]");
-                }
-                // there is a new thumbnail, so e.g. the end screen thumbnail needs to change, too.
-                onThumbnailLoaded(toBitmap(result));
-            }
-        };
-        thumbnailDisposable = CoilHelper.INSTANCE
-                .loadScaledDownThumbnail(context, thumbnails, thumbnailTarget);
-    }
-
-    private void cancelThumbnailLoading() {
-        if (thumbnailDisposable != null) {
-            thumbnailDisposable.dispose();
-            thumbnailDisposable = null;
-        }
-        if (localThumbnailFuture != null) {
-            localThumbnailFuture.cancel(true);
-            localThumbnailFuture = null;
-        }
-    }
-
     private void cancelLocalMetadataLoading() {
         if (localMetadataFuture != null) {
             localMetadataFuture.cancel(true);
             localMetadataFuture = null;
         }
     }
-
-
-    private void onThumbnailLoaded(@Nullable final Bitmap bitmap) {
-        // Avoid useless thumbnail updates, if the thumbnail has not actually changed. Based on the
-        // thumbnail loading code, this if would be skipped only when both bitmaps are `null`, since
-        // onThumbnailLoaded won't be called twice with the same nonnull bitmap by Coil's target.
-        if (currentThumbnail != bitmap) {
-            currentThumbnail = bitmap;
-            UIs.call(playerUi -> playerUi.onThumbnailLoaded(bitmap));
-        }
-    }
-    //endregion
-
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -1977,7 +1895,7 @@ public final class Player implements PlaybackListener, Listener {
 
             if (removeThumbnailBeforeSync) {
                 // unset the current (now outdated) thumbnail to ensure it is not used during sync
-                onThumbnailLoaded(null);
+                thumbnailController.clear();
             }
 
             // sync the player index with the queue index, and seek to the correct position
@@ -2229,7 +2147,7 @@ public final class Player implements PlaybackListener, Listener {
         sponsorBlockController.updateSegments(info);
         maybeAutoQueueNextStream(info);
 
-        loadCurrentThumbnail(ExtractorImageCompat.thumbnailImages(info));
+        thumbnailController.load(ExtractorImageCompat.thumbnailImages(info));
         registerStreamViewed();
 
         notifyMetadataUpdateToListeners();
@@ -2239,22 +2157,7 @@ public final class Player implements PlaybackListener, Listener {
 
     private void updateMetadataForLocalMedia(@NonNull final PlayQueueItem item) {
         sponsorBlockController.reset();
-        cancelThumbnailLoading();
-        onThumbnailLoaded(null);
-        localThumbnailFuture = LocalMediaThumbnailLoader.INSTANCE.loadBitmap(
-                context,
-                item,
-                bitmap -> {
-                    if (currentMetadata instanceof LocalMediaItemTag
-                            && ((LocalMediaItemTag) currentMetadata).getItem().isSameItem(item)) {
-                        final Bitmap displayedBitmap = bitmap != null || item.getStreamType()
-                                != StreamType.AUDIO_STREAM
-                                ? bitmap
-                                : LocalMediaThumbnailLoader.INSTANCE
-                                        .audioPlaceholderBitmap(context);
-                        onThumbnailLoaded(displayedBitmap);
-                    }
-                });
+        thumbnailController.loadLocal(item);
         cancelLocalMetadataLoading();
         localMetadataFuture = LocalMediaMetadataLoader.INSTANCE.load(
                 context,
@@ -2321,7 +2224,7 @@ public final class Player implements PlaybackListener, Listener {
 
     @Nullable
     public Bitmap getThumbnail() {
-        return currentThumbnail;
+        return thumbnailController.getCurrentThumbnail();
     }
     //endregion
 
