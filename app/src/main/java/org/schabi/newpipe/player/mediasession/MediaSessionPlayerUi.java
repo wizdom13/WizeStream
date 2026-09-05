@@ -236,6 +236,8 @@ public class MediaSessionPlayerUi extends PlayerUi
      * media-notification controller. If the custom commands are not explicitly available there,
      * Android 13+ drops the corresponding platform PlaybackState custom actions, which removes
      * WizeStream's fourth and fifth controls (Repeat and Close by default).</p>
+     *
+     * @param buttons the currently configured Android 13+ media action buttons
      */
     private void syncMediaNotificationController(@NonNull final List<CommandButton> buttons) {
         final MediaSession.ControllerInfo notificationController =
@@ -245,7 +247,8 @@ public class MediaSessionPlayerUi extends PlayerUi
         }
 
         final SessionCommands.Builder sessionCommands = new SessionCommands.Builder()
-                .addSessionCommands(MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.commands);
+                .addSessionCommands(
+                        MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.commands);
         MediaSessionActionProvider.supportedActions().stream()
                 .map(MediaSessionActionProvider::commandFor)
                 .forEach(sessionCommands::add);
