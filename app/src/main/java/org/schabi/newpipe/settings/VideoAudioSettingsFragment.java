@@ -93,12 +93,14 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
         language.setKey(getString(R.string.caption_translation_language_key));
         language.setDefaultValue(getString(R.string.caption_translation_system_value));
         language.setTitle(R.string.caption_translation_language_title);
-        language.setDependency(getString(R.string.caption_auto_translate_key));
         language.setIconSpaceReserved(false);
         language.setSingleLineTitle(false);
         language.setSummaryProvider(ListPreference.SimpleSummaryProvider.getInstance());
         populateCaptionTranslationLanguages(language);
         category.addPreference(language);
+        // Programmatic preferences need to be attached before setDependency() can resolve
+        // their dependency through the PreferenceManager hierarchy.
+        language.setDependency(getString(R.string.caption_auto_translate_key));
     }
 
     private void populateCaptionTranslationLanguages(final ListPreference preference) {
