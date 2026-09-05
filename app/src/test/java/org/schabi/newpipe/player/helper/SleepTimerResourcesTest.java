@@ -58,7 +58,7 @@ public class SleepTimerResourcesTest {
     @Test
     public void playerHandlesDurationAndNaturalPlaybackEndpoints() throws Exception {
         final String player = Files.readString(sourceDirectory.resolve(
-                "org/schabi/newpipe/player/Player.java"));
+                "org/schabi/newpipe/player/Player.kt"));
         final String listenerController = Files.readString(sourceDirectory.resolve(
                 "org/schabi/newpipe/player/PlayerMedia3ListenerController.kt"));
         final String controller = Files.readString(sourceDirectory.resolve(
