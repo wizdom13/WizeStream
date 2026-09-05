@@ -17,8 +17,11 @@ internal class PlayerQueueModeController(
     private val sleepTimerController: SleepTimerPlaybackController
 ) {
     @RepeatMode
-    fun getRepeatMode(): Int =
-        if (player.exoPlayerIsNull()) REPEAT_MODE_OFF else player.exoPlayer.repeatMode
+    fun getRepeatMode(): Int = if (player.exoPlayerIsNull()) {
+        REPEAT_MODE_OFF
+    } else {
+        player.exoPlayer.repeatMode
+    }
 
     fun cycleNextRepeatMode() {
         if (player.exoPlayerIsNull()) {
