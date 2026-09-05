@@ -8,6 +8,7 @@ package org.schabi.newpipe.player
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.media3.common.Player as Media3Player
+import java.util.Optional
 import org.schabi.newpipe.R
 import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
@@ -20,7 +21,6 @@ import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
 import org.schabi.newpipe.player.mediaitem.MediaItemTag
 import org.schabi.newpipe.util.image.ExtractorImageCompat
-import java.util.Optional
 
 /** Owns current media metadata and the work triggered when it changes. */
 internal class PlayerMetadataController(
@@ -85,8 +85,8 @@ internal class PlayerMetadataController(
         currentMetadata = null
     }
 
-    fun currentStreamInfo(): Optional<StreamInfo> =
-        Optional.ofNullable(currentMetadata).flatMap(MediaItemTag::getMaybeStreamInfo)
+    fun currentStreamInfo(): Optional<StreamInfo> = Optional.ofNullable(currentMetadata)
+        .flatMap(MediaItemTag::getMaybeStreamInfo)
 
     fun updateMetadataWith(info: StreamInfo) {
         if (Player.DEBUG) {
@@ -121,8 +121,8 @@ internal class PlayerMetadataController(
         player.UIs().call { ui -> ui.onMetadataChanged(currentMetadata) }
     }
 
-    fun videoUrl(): String =
-        currentMetadata?.streamUrl ?: context.getString(R.string.unknown_content)
+    fun videoUrl(): String = currentMetadata?.streamUrl
+        ?: context.getString(R.string.unknown_content)
 
     fun videoUrlAtCurrentTime(): String {
         val timeSeconds = player.exoPlayer.currentPosition / 1000
@@ -136,16 +136,15 @@ internal class PlayerMetadataController(
         }
     }
 
-    fun videoTitle(): String =
-        currentMetadata?.title ?: context.getString(R.string.unknown_content)
+    fun videoTitle(): String = currentMetadata?.title
+        ?: context.getString(R.string.unknown_content)
 
-    fun uploaderName(): String =
-        currentMetadata?.uploaderName ?: context.getString(R.string.unknown_content)
+    fun uploaderName(): String = currentMetadata?.uploaderName
+        ?: context.getString(R.string.unknown_content)
 
     fun thumbnail(): Bitmap? = thumbnailController.currentThumbnail
 
-    fun selectedVideoStream(): Optional<VideoStream> =
-        Optional.ofNullable(currentMetadata)
+    fun selectedVideoStream(): Optional<VideoStream> = Optional.ofNullable(currentMetadata)
             .flatMap(MediaItemTag::getMaybeQuality)
             .filter { quality ->
                 quality.selectedVideoStreamIndex >= 0 &&
@@ -155,8 +154,7 @@ internal class PlayerMetadataController(
                 quality.sortedVideoStreams[quality.selectedVideoStreamIndex]
             }
 
-    fun selectedAudioStream(): Optional<AudioStream> =
-        Optional.ofNullable(currentMetadata)
+    fun selectedAudioStream(): Optional<AudioStream> = Optional.ofNullable(currentMetadata)
             .flatMap(MediaItemTag::getMaybeAudioTrack)
             .map(MediaItemTag.AudioTrack::getSelectedAudioStream)
 
