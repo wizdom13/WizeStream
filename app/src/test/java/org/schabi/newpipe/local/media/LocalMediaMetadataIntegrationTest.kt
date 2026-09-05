@@ -18,19 +18,21 @@ class LocalMediaMetadataIntegrationTest {
 
     @Test
     fun `player resolves tags lazily and rejects stale asynchronous results`() {
-        val player = Files.readString(
-            projectDirectory.resolve("java/org/schabi/newpipe/player/Player.java")
+        val controller = Files.readString(
+            projectDirectory.resolve(
+                "java/org/schabi/newpipe/player/PlayerLocalMetadataController.kt"
+            )
         )
-        val loaderCall = player.indexOf("LocalMediaMetadataLoader.INSTANCE.load")
-        val staleItemCheck = player.indexOf(".getItem().isSameItem(item)", loaderCall)
-        val metadataMutation = player.indexOf("item.applyLocalMetadata", staleItemCheck)
+        val loaderCall = controller.indexOf("LocalMediaMetadataLoader.load")
+        val staleItemCheck = controller.indexOf("currentMetadata.item.isSameItem(item)", loaderCall)
+        val metadataMutation = controller.indexOf("item.applyLocalMetadata", staleItemCheck)
 
         assertTrue(loaderCall >= 0)
         assertTrue(staleItemCheck > loaderCall)
         assertTrue(metadataMutation > staleItemCheck)
-        assertTrue(player.indexOf("playQueue.notifyChange()", metadataMutation) > metadataMutation)
+        assertTrue(controller.indexOf("playQueue?.notifyChange()", metadataMutation) > metadataMutation)
         assertTrue(
-            player.indexOf("notifyMetadataUpdateToListeners()", metadataMutation) >
+            controller.indexOf("notifyMetadataUpdateToListeners()", metadataMutation) >
                 metadataMutation
         )
     }
