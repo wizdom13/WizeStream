@@ -145,18 +145,18 @@ internal class PlayerMetadataController(
     fun thumbnail(): Bitmap? = thumbnailController.currentThumbnail
 
     fun selectedVideoStream(): Optional<VideoStream> = Optional.ofNullable(currentMetadata)
-            .flatMap(MediaItemTag::getMaybeQuality)
-            .filter { quality ->
-                quality.selectedVideoStreamIndex >= 0 &&
-                    quality.selectedVideoStreamIndex < quality.sortedVideoStreams.size
-            }
-            .map { quality ->
-                quality.sortedVideoStreams[quality.selectedVideoStreamIndex]
-            }
+        .flatMap(MediaItemTag::getMaybeQuality)
+        .filter { quality ->
+            quality.selectedVideoStreamIndex >= 0 &&
+                quality.selectedVideoStreamIndex < quality.sortedVideoStreams.size
+        }
+        .map { quality ->
+            quality.sortedVideoStreams[quality.selectedVideoStreamIndex]
+        }
 
     fun selectedAudioStream(): Optional<AudioStream> = Optional.ofNullable(currentMetadata)
-            .flatMap(MediaItemTag::getMaybeAudioTrack)
-            .map(MediaItemTag.AudioTrack::getSelectedAudioStream)
+        .flatMap(MediaItemTag::getMaybeAudioTrack)
+        .map(MediaItemTag.AudioTrack::getSelectedAudioStream)
 
     private fun maybeAutoQueueNextStream(info: StreamInfo) {
         val playQueue = player.playQueue ?: return
