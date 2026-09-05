@@ -250,17 +250,17 @@ class ErrorInfo private constructor(
                 throwable is YoutubeMusicPremiumContentException ->
                     ErrorMessage(R.string.youtube_music_premium_content)
 
+                throwable is ServiceTemporaryBlockedException ->
+                    ErrorMessage(
+                        R.string.service_temporary_block,
+                        getServiceName(serviceId)
+                    )
+
                 throwable is AntiBotException || isSignInBotCheckException(throwable) ->
                     ErrorMessage(
                         R.string.sign_in_confirm_not_bot_error,
                         getServiceName(serviceId),
                         YOUTUBE_IP_BAN_FAQ_URL
-                    )
-
-                throwable is ServiceTemporaryBlockedException ->
-                    ErrorMessage(
-                        R.string.service_temporary_block,
-                        getServiceName(serviceId)
                     )
 
                 throwable is ContentNotAvailableException ->
