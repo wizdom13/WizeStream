@@ -57,9 +57,12 @@ public class LocalMediaLibraryNavigationTest {
         when(localItem.isLocalMedia()).thenReturn(true);
         final LocalMediaPlayQueue queue = new LocalMediaPlayQueue(List.of(localItem), 0);
 
+        assertFalse(queue.shouldOpenQueueOnStart());
         assertFalse(queue.consumeOpenQueueOnStart());
         queue.requestOpenQueueOnStart();
+        assertTrue(queue.shouldOpenQueueOnStart());
         assertTrue(queue.consumeOpenQueueOnStart());
+        assertFalse(queue.shouldOpenQueueOnStart());
         assertFalse(queue.consumeOpenQueueOnStart());
     }
 
@@ -90,6 +93,8 @@ public class LocalMediaLibraryNavigationTest {
                 "java/org/schabi/newpipe/player/PlayerIntentController.kt"));
         final String localPlaylist = Files.readString(mainDirectory.resolve(
                 "java/org/schabi/newpipe/local/playlist/LocalPlaylistFragment.java"));
+        final String navigation = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/util/NavigationHelper.java"));
 
         assertTrue(groupBuilder.contains("0,\n        true"));
         assertTrue(playButtonHelper.contains("mainPlaybackQueue(fragment)"));
@@ -98,5 +103,11 @@ public class LocalMediaLibraryNavigationTest {
         assertTrue(intentController.contains("PlayQueueActivity::class.java"));
         assertTrue(localPlaylist.contains("getPlayQueueStartingAt(entry)"));
         assertFalse(localPlaylist.contains("requestOpenQueueOnStart"));
+        assertTrue(navigation.contains("playQueuedLocalMediaDirectly(activity, playQueue)"));
+        assertTrue(navigation.contains("playQueuedLocalMediaDirectly(context, playQueue)"));
+        assertTrue(navigation.contains("localQueue.shouldOpenQueueOnStart()"));
+        assertTrue(navigation.contains(
+                "getPlayerIntent(context, PlayerService.class, playQueue,"));
+        assertTrue(navigation.contains("ContextCompat.startForegroundService(context, intent);"));
     }
 }

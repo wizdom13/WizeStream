@@ -29,6 +29,11 @@ public final class LocalMediaPlayQueue extends PlayQueue {
         openQueueOnStart = true;
     }
 
+    /** @return whether the next main-player start should open the Play queue. */
+    public boolean shouldOpenQueueOnStart() {
+        return openQueueOnStart;
+    }
+
     /** @return whether this queue contains at least one device-local item. */
     public boolean containsLocalMedia() {
         return getStreams().stream().anyMatch(PlayQueueItem::isLocalMedia);
