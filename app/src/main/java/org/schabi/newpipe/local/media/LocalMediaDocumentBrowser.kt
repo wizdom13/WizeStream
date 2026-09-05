@@ -7,6 +7,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import java.util.ArrayDeque
+import java.util.Locale
 
 data class LocalMediaDocumentLocation(
     val rootUri: String,
@@ -22,11 +23,49 @@ data class LocalMediaDocumentEntry(
     val isRoot: Boolean = false,
     val isAvailable: Boolean = true,
     val sizeBytes: Long = 0L,
-    val lastModified: Long = 0L
+    val lastModified: Long = 0L,
+    val folderArtworkUri: String? = null
 ) {
     val isVideo: Boolean
         get() = mimeType.startsWith("video/")
 }
+
+internal data class LocalFolderArtworkCandidate(
+    val name: String,
+    val mimeType: String?,
+    val uri: String
+)
+
+internal fun chooseLocalFolderArtwork(candidates: List<LocalFolderArtworkCandidate>): String? {
+    val supported = candidates
+        .filter { isSupportedLocalFolderArtwork(it.name, it.mimeType) }
+        .sortedBy { it.name.lowercase(Locale.ROOT) }
+    if (supported.isEmpty()) return null
+
+    folderArtworkNames.forEach { preferredName ->
+        supported.firstOrNull { candidate ->
+            candidate.name.substringBeforeLast('.', candidate.name)
+                .lowercase(Locale.ROOT) == preferredName
+        }?.let { return it.uri }
+    }
+
+    return supported.singleOrNull()?.uri
+}
+
+internal fun isSupportedLocalFolderArtwork(name: String, mimeType: String?): Boolean {
+    val extension = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+    val normalizedMimeType = mimeType?.lowercase(Locale.ROOT).orEmpty()
+    return extension in folderArtworkExtensions || normalizedMimeType in folderArtworkMimeTypes
+}
+
+private val folderArtworkNames = listOf("cover", "folder", "albumart", "front")
+private val folderArtworkExtensions = setOf("jpg", "jpeg", "png", "webp")
+private val folderArtworkMimeTypes = setOf(
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp"
+)
 
 class LocalMediaDocumentBrowser(private val context: Context) {
     fun roots(rootUris: Set<String>): List<LocalMediaDocumentEntry> = rootUris.map { rootUri ->
@@ -49,10 +88,13 @@ class LocalMediaDocumentBrowser(private val context: Context) {
 
     fun list(location: LocalMediaDocumentLocation): List<LocalMediaDocumentEntry> {
         val directory = resolve(location) ?: return emptyList()
-        return runCatching { directory.listFiles().toList() }
-            .getOrDefault(emptyList())
+        val children = runCatching { directory.listFiles().toList() }.getOrDefault(emptyList())
+        val folderArtworkUri = chooseLocalFolderArtwork(
+            children.filterNot(DocumentFile::isDirectory).map { it.toArtworkCandidate() }
+        )
+        return children
             .filter { it.isDirectory || isSupportedMedia(it.name.orEmpty(), it.type) }
-            .map { document -> document.toEntry(location) }
+            .map { document -> document.toEntry(location, folderArtworkUri) }
             .sortedWith(entryComparator)
     }
 
@@ -69,13 +111,16 @@ class LocalMediaDocumentBrowser(private val context: Context) {
             val (directory, folder) = pending.removeFirst()
             if (!visited.add(directory.uri.toString())) continue
             val children = runCatching { directory.listFiles() }.getOrDefault(emptyArray())
+            val folderArtworkUri = chooseLocalFolderArtwork(
+                children.filterNot(DocumentFile::isDirectory).map { it.toArtworkCandidate() }
+            )
             children.forEach { document ->
                 if (result.size >= maximumItems) return@forEach
                 when {
                     document.isDirectory -> pending.add(document to document.name.orEmpty())
 
                     isSupportedMedia(document.name.orEmpty(), document.type) -> {
-                        result += document.toMediaItem(folder)
+                        result += document.toMediaItem(folder, folderArtworkUri)
                     }
                 }
             }
@@ -98,7 +143,7 @@ class LocalMediaDocumentBrowser(private val context: Context) {
             durationSeconds = 0L,
             addedAtSeconds = entry.lastModified / 1000L,
             isVideo = video,
-            thumbnailUri = entry.contentUri.takeIf { video },
+            thumbnailUri = if (video) entry.contentUri else entry.folderArtworkUri,
             relativePath = entry.location.path.dropLast(1).joinToString("/"),
             sizeBytes = entry.sizeBytes
         )
@@ -116,8 +161,14 @@ class LocalMediaDocumentBrowser(private val context: Context) {
         return document.takeIf { it.isDirectory && it.canRead() }
     }
 
+    private fun DocumentFile.toArtworkCandidate(): LocalFolderArtworkCandidate {
+        val displayName = name.orEmpty().ifBlank { uri.lastPathSegment.orEmpty() }
+        return LocalFolderArtworkCandidate(displayName, type, uri.toString())
+    }
+
     private fun DocumentFile.toEntry(
-        parent: LocalMediaDocumentLocation
+        parent: LocalMediaDocumentLocation,
+        folderArtworkUri: String?
     ): LocalMediaDocumentEntry {
         val displayName = name.orEmpty().ifBlank { uri.lastPathSegment.orEmpty() }
         return LocalMediaDocumentEntry(
@@ -127,11 +178,15 @@ class LocalMediaDocumentBrowser(private val context: Context) {
             mimeType = type.orEmpty().ifBlank { mimeTypeForName(displayName) },
             isDirectory = isDirectory,
             sizeBytes = runCatching { length() }.getOrDefault(0L),
-            lastModified = runCatching { lastModified() }.getOrDefault(0L)
+            lastModified = runCatching { lastModified() }.getOrDefault(0L),
+            folderArtworkUri = folderArtworkUri.takeUnless { isDirectory }
         )
     }
 
-    private fun DocumentFile.toMediaItem(folder: String): LocalMediaItem {
+    private fun DocumentFile.toMediaItem(
+        folder: String,
+        folderArtworkUri: String?
+    ): LocalMediaItem {
         val displayName = name.orEmpty().ifBlank { uri.lastPathSegment.orEmpty() }
         val contentType = type.orEmpty().ifBlank { mimeTypeForName(displayName) }
         val video = contentType.startsWith("video/")
@@ -146,7 +201,7 @@ class LocalMediaDocumentBrowser(private val context: Context) {
             durationSeconds = 0L,
             addedAtSeconds = runCatching { lastModified() / 1000L }.getOrDefault(0L),
             isVideo = video,
-            thumbnailUri = uri.toString().takeIf { video },
+            thumbnailUri = if (video) uri.toString() else folderArtworkUri,
             relativePath = folder,
             sizeBytes = runCatching { length() }.getOrDefault(0L)
         )

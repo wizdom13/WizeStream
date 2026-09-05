@@ -29,7 +29,7 @@ import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.util.image.ImageStrategy
 
-/** Loads thumbnails and embedded artwork from device-local media. */
+/** Loads thumbnails plus embedded or fallback artwork from device-local media. */
 object LocalMediaThumbnailLoader {
     private const val THUMBNAIL_WIDTH = 512
     private const val THUMBNAIL_HEIGHT = 288
@@ -87,7 +87,7 @@ object LocalMediaThumbnailLoader {
             -1L,
             entry.isVideo,
             entry.mimeType,
-            entry.contentUri.takeIf { entry.isVideo }
+            if (entry.isVideo) entry.contentUri else entry.folderArtworkUri
         )
     }
 
