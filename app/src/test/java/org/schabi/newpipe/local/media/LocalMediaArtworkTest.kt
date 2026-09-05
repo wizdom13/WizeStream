@@ -25,10 +25,15 @@ class LocalMediaArtworkTest {
     }
 
     @Test
-    fun `local audio prefers embedded artwork and updates player surfaces`() {
+    fun `local audio uses shared embedded metadata and updates player surfaces`() {
         val loader = Files.readString(
             projectDirectory.resolve(
                 "java/org/schabi/newpipe/local/media/LocalMediaThumbnailLoader.kt"
+            )
+        )
+        val metadataLoader = Files.readString(
+            projectDirectory.resolve(
+                "java/org/schabi/newpipe/local/media/LocalMediaMetadataLoader.kt"
             )
         )
         val thumbnailController = Files.readString(
@@ -42,9 +47,12 @@ class LocalMediaArtworkTest {
             )
         )
 
-        assertTrue(loader.contains("retriever.embeddedPicture"))
+        assertTrue(loader.contains("LocalMediaMetadataLoader.readCached"))
         assertTrue(loader.indexOf("loadEmbeddedArtwork") < loader.indexOf("loadArtworkUri"))
         assertTrue(loader.contains("ArrayBlockingQueue(MAXIMUM_PENDING_THUMBNAILS)"))
+        assertTrue(metadataLoader.contains("retriever.embeddedPicture"))
+        assertTrue(metadataLoader.contains("METADATA_BLOCK_PICTURE"))
+        assertTrue(metadataLoader.contains("COVERART"))
         assertTrue(thumbnailController.contains("LocalMediaThumbnailLoader.loadBitmap"))
         assertTrue(queue.contains("LocalMediaThumbnailLoader.INSTANCE.load"))
     }

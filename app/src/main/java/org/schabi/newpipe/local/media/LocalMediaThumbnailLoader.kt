@@ -8,7 +8,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -60,7 +59,14 @@ object LocalMediaThumbnailLoader {
     }
 
     fun load(target: ImageView, item: LocalMediaItem) {
-        load(target, item.contentUri, item.mediaStoreId, item.isVideo, item.thumbnailUri)
+        load(
+            target,
+            item.contentUri,
+            item.mediaStoreId,
+            item.isVideo,
+            item.mimeType,
+            item.thumbnailUri
+        )
     }
 
     fun load(target: ImageView, item: PlayQueueItem) {
@@ -69,6 +75,7 @@ object LocalMediaThumbnailLoader {
             item.url,
             item.localMediaId,
             item.streamType == StreamType.VIDEO_STREAM,
+            item.mimeType,
             item.localThumbnailUrl
         )
     }
@@ -79,6 +86,7 @@ object LocalMediaThumbnailLoader {
             entry.contentUri,
             -1L,
             entry.isVideo,
+            entry.mimeType,
             entry.contentUri.takeIf { entry.isVideo }
         )
     }
@@ -98,6 +106,7 @@ object LocalMediaThumbnailLoader {
                 item.url,
                 item.localMediaId,
                 item.streamType == StreamType.VIDEO_STREAM,
+                item.mimeType,
                 item.localThumbnailUrl
             )
         } else {
@@ -131,6 +140,7 @@ object LocalMediaThumbnailLoader {
         contentUri: String,
         mediaStoreId: Long,
         isVideo: Boolean,
+        mimeType: String?,
         thumbnailUri: String?
     ) {
         clear(target)
@@ -158,6 +168,7 @@ object LocalMediaThumbnailLoader {
                 contentUri,
                 mediaStoreId,
                 isVideo,
+                mimeType,
                 thumbnailUri
             )
             if (bitmap != null) cache.put(requestKey, bitmap)
@@ -179,6 +190,7 @@ object LocalMediaThumbnailLoader {
         contentUri: String,
         mediaStoreId: Long,
         isVideo: Boolean,
+        mimeType: String?,
         thumbnailUri: String?
     ): Bitmap? {
         val requestKey = "$isVideo:$contentUri"
@@ -186,7 +198,7 @@ object LocalMediaThumbnailLoader {
         val bitmap = if (isVideo) {
             loadVideoThumbnail(resolver, contentUri, mediaStoreId)
         } else {
-            loadEmbeddedArtwork(resolver, contentUri)
+            loadEmbeddedArtwork(resolver, contentUri, mimeType)
                 ?: loadArtworkUri(resolver, thumbnailUri)
         }
         if (bitmap != null) cache.put(requestKey, bitmap)
@@ -196,19 +208,15 @@ object LocalMediaThumbnailLoader {
     @WorkerThread
     private fun loadEmbeddedArtwork(
         resolver: ContentResolver,
-        contentUri: String
+        contentUri: String,
+        mimeType: String?
     ): Bitmap? {
-        val retriever = MediaMetadataRetriever()
-        return try {
-            resolver.openFileDescriptor(Uri.parse(contentUri), "r")?.use {
-                retriever.setDataSource(it.fileDescriptor)
-            } ?: return null
-            retriever.embeddedPicture?.let(::decodeArtwork)
-        } catch (_: Exception) {
-            null
-        } finally {
-            retriever.release()
-        }
+        val artwork = LocalMediaMetadataLoader.readCached(
+            resolver,
+            contentUri,
+            mimeType
+        ).artwork ?: return null
+        return decodeArtwork(artwork)
     }
 
     @WorkerThread
@@ -259,7 +267,7 @@ object LocalMediaThumbnailLoader {
         return try {
             if (Build.VERSION.SDK_INT >= 29) {
                 resolver.loadThumbnail(
-                    android.net.Uri.parse(contentUri),
+                    Uri.parse(contentUri),
                     Size(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT),
                     null
                 )
