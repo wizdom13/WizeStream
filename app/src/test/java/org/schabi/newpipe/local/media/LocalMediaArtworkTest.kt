@@ -31,6 +31,11 @@ class LocalMediaArtworkTest {
                 "java/org/schabi/newpipe/local/media/LocalMediaThumbnailLoader.kt"
             )
         )
+        val documentBrowser = Files.readString(
+            projectDirectory.resolve(
+                "java/org/schabi/newpipe/local/media/LocalMediaDocumentBrowser.kt"
+            )
+        )
         val metadataLoader = Files.readString(
             projectDirectory.resolve(
                 "java/org/schabi/newpipe/local/media/LocalMediaMetadataLoader.kt"
@@ -49,7 +54,10 @@ class LocalMediaArtworkTest {
 
         assertTrue(loader.contains("LocalMediaMetadataLoader.readCached"))
         assertTrue(loader.indexOf("loadEmbeddedArtwork") < loader.indexOf("loadArtworkUri"))
+        assertTrue(loader.contains("entry.folderArtworkUri"))
         assertTrue(loader.contains("ArrayBlockingQueue(MAXIMUM_PENDING_THUMBNAILS)"))
+        assertTrue(documentBrowser.contains("chooseLocalFolderArtwork"))
+        assertTrue(documentBrowser.contains("folderArtworkUri"))
         assertTrue(metadataLoader.contains("retriever.embeddedPicture"))
         assertTrue(metadataLoader.contains("METADATA_BLOCK_PICTURE"))
         assertTrue(metadataLoader.contains("COVERART"))
