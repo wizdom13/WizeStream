@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player.pip;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -25,18 +26,25 @@ public class InternalActivityNavigationPipTest {
     }
 
     @Test
-    public void controllerBlocksPipPreparationDuringInternalNavigation()
+    public void controllerDefersPipPreparationUntilTransitionIsConfirmed()
             throws Exception {
         final String controller = Files.readString(sourceDirectory.resolve(
                 "org/schabi/newpipe/player/pip/NativePipController.java"));
         final String leaveHint = methodBody(controller, "public void onUserLeaveHint()");
         final int internalGuard = leaveHint.indexOf("internalActivityNavigationPending");
-        final int preparePip = leaveHint.indexOf("fragment.prepareNativePipEntry()");
+        final int pipRequest = leaveHint.indexOf("activity.enterPictureInPictureMode(params)");
 
         assertTrue(internalGuard >= 0);
-        assertTrue(preparePip > internalGuard);
+        assertTrue(pipRequest > internalGuard);
+        assertFalse(leaveHint.contains("fragment.prepareNativePipEntry()"));
         assertTrue(controller.contains(
                 "currentFragment().orElse(null), !internalActivityNavigationPending"));
+
+        final String detailFragment = Files.readString(sourceDirectory.resolve(
+                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java"));
+        final String pipModeChanged = methodBody(detailFragment,
+                "public void onNativePipModeChanged(final boolean inPictureInPictureMode)");
+        assertTrue(pipModeChanged.contains("prepareNativePipEntry();"));
     }
 
     @Test
