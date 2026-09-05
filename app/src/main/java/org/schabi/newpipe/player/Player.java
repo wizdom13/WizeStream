@@ -1,14 +1,7 @@
 package org.schabi.newpipe.player;
 
-import static androidx.media3.common.Player.DISCONTINUITY_REASON_AUTO_TRANSITION;
-import static androidx.media3.common.Player.DISCONTINUITY_REASON_INTERNAL;
-import static androidx.media3.common.Player.DISCONTINUITY_REASON_REMOVE;
-import static androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK;
-import static androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT;
-import static androidx.media3.common.Player.DISCONTINUITY_REASON_SKIP;
 import static androidx.media3.common.Player.DiscontinuityReason;
 import static androidx.media3.common.Player.Listener;
-import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static androidx.media3.common.Player.RepeatMode;
 import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
@@ -197,6 +190,8 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerLifecycleController lifecycleController;
     @NonNull
+    private final PlayerMedia3ListenerController media3ListenerController;
+    @NonNull
     private final PlayerMetadataController metadataController;
     @NonNull
     private final PlayerProgressController progressController;
@@ -295,6 +290,9 @@ public final class Player implements PlaybackListener, Listener {
                 presentationController, popupPlayerReturnState, videoResolver,
                 streamItemDisposable);
         errorController = new PlayerErrorController(this, eventDispatcher, videoResolver);
+        media3ListenerController = new PlayerMedia3ListenerController(this, audioController,
+                metadataController, playbackParametersController, sponsorBlockController,
+                errorController, sleepTimerController);
 
         // The UIs added here should always be present. They will be initialized when the player
         // reaches the initialization step. Make sure the media session ui is before the
@@ -677,7 +675,7 @@ public final class Player implements PlaybackListener, Listener {
 
     @Override
     public void onAudioSessionIdChanged(final int audioSessionId) {
-        audioController.onAudioSessionChanged(audioSessionId);
+        media3ListenerController.onAudioSessionIdChanged(audioSessionId);
     }
 
     /**
@@ -697,107 +695,40 @@ public final class Player implements PlaybackListener, Listener {
     public void onEvents(@NonNull final androidx.media3.common.Player player,
                          @NonNull final androidx.media3.common.Player.Events events) {
         Listener.super.onEvents(player, events);
-        metadataController.onEvents(player);
+        media3ListenerController.onEvents(player);
     }
 
     @Override
     public void onTimelineChanged(@NonNull final Timeline timeline, final int reason) {
-        if (currentItem != null && isLive()) {
-            // A live timeline can reset ExoPlayer's playback parameters while it is prepared or
-            // refreshed. Restore the active channel profile (or the global playback speed) after
-            // the dynamic timeline is available.
-            playbackParametersController.applySpeedProfile(currentItem);
-        }
+        media3ListenerController.onTimelineChanged(timeline, reason);
     }
 
     @Override
     public void onTracksChanged(@NonNull final Tracks tracks) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - onTracksChanged(), "
-                    + "track group size = " + tracks.getGroups().size());
-        }
-        UIs.call(playerUi -> playerUi.onTextTracksChanged(tracks));
+        media3ListenerController.onTracksChanged(tracks);
     }
 
     @Override
     public void onPlaybackParametersChanged(@NonNull final PlaybackParameters playbackParameters) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - playbackParameters(), speed = [" + playbackParameters.speed
-                    + "], pitch = [" + playbackParameters.pitch + "]");
-        }
-        UIs.call(playerUi -> playerUi.onPlaybackParametersChanged(playbackParameters));
+        media3ListenerController.onPlaybackParametersChanged(playbackParameters);
     }
 
     @Override
     public void onPositionDiscontinuity(@NonNull final PositionInfo oldPosition,
                                         @NonNull final PositionInfo newPosition,
                                         @DiscontinuityReason final int discontinuityReason) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - onPositionDiscontinuity() called with "
-                    + "oldPositionIndex = [" + oldPosition.mediaItemIndex + "], "
-                    + "oldPositionMs = [" + oldPosition.positionMs + "], "
-                    + "newPositionIndex = [" + newPosition.mediaItemIndex + "], "
-                    + "newPositionMs = [" + newPosition.positionMs + "], "
-                    + "discontinuityReason = [" + discontinuityReason + "]");
-        }
-        if (playQueue == null) {
-            return;
-        }
-
-        sponsorBlockController.onPositionDiscontinuity(
-                discontinuityReason == DISCONTINUITY_REASON_SEEK, newPosition.positionMs);
-
-        // Refresh the playback if there is a transition to the next video
-        final int newIndex = newPosition.mediaItemIndex;
-        if (newIndex != oldPosition.mediaItemIndex) {
-            UIs.call(PlayerUi::onMediaItemTransition);
-            errorController.resetRecovery();
-        }
-        if (discontinuityReason == DISCONTINUITY_REASON_AUTO_TRANSITION) {
-            sleepTimerController.onItemEnded(
-                    playQueue.getItem(oldPosition.mediaItemIndex), true);
-        }
-        switch (discontinuityReason) {
-            case DISCONTINUITY_REASON_AUTO_TRANSITION:
-            case DISCONTINUITY_REASON_REMOVE:
-                // When player is in single repeat mode and a period transition occurs,
-                // we need to register a view count here since no metadata has changed
-                if (getRepeatMode() == REPEAT_MODE_ONE && newIndex == playQueue.getIndex()) {
-                    registerStreamViewed();
-                    break;
-                }
-            case DISCONTINUITY_REASON_SEEK:
-                if (DEBUG) {
-                    Log.d(TAG, "ExoPlayer - onSeekProcessed() called");
-                }
-                if (stateController.isPrepared()) {
-                    saveStreamProgressState();
-                }
-            case DISCONTINUITY_REASON_SEEK_ADJUSTMENT:
-            case DISCONTINUITY_REASON_INTERNAL:
-                // Player index may be invalid when playback is blocked
-                if (getCurrentState() != STATE_BLOCKED && newIndex != playQueue.getIndex()) {
-                    saveStreamProgressStateCompleted(); // current stream has ended
-                    playQueue.setIndex(newIndex);
-                }
-                break;
-            case DISCONTINUITY_REASON_SKIP:
-                break; // only makes Android Studio linter happy, as there are no ads
-        }
-
-        if (discontinuityReason != DISCONTINUITY_REASON_AUTO_TRANSITION) {
-            sleepTimerController.onPositionDiscontinuity(playQueue.getItem(newIndex));
-        }
+        media3ListenerController.onPositionDiscontinuity(
+                oldPosition, newPosition, discontinuityReason);
     }
 
     @Override
     public void onRenderedFirstFrame() {
-        UIs.call(PlayerUi::onRenderedFirstFrame);
+        media3ListenerController.onRenderedFirstFrame();
     }
 
     @Override
     public void onCues(@NonNull final CueGroup cueGroup) {
-        UIs.call(playerUi -> playerUi.onCues(cueGroup.cues));
+        media3ListenerController.onCues(cueGroup);
     }
 
     //endregion
@@ -926,7 +857,7 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
     //region StreamInfo history: views and progress
 
-    private void registerStreamViewed() {
+    void registerStreamViewed() {
         historyController.registerViewed();
     }
 
@@ -1079,15 +1010,7 @@ public final class Player implements PlaybackListener, Listener {
     //region Video size
     @Override // exoplayer listener
     public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
-        if (DEBUG) {
-            Log.d(TAG, "onVideoSizeChanged() called with: "
-                    + "width / height = [" + videoSize.width + " / " + videoSize.height
-                    + " = " + (((float) videoSize.width) / videoSize.height) + "], "
-                    + "unappliedRotationDegrees = [" + videoSize.unappliedRotationDegrees + "], "
-                    + "pixelWidthHeightRatio = [" + videoSize.pixelWidthHeightRatio + "]");
-        }
-
-        UIs.call(playerUi -> playerUi.onVideoSizeChanged(videoSize));
+        media3ListenerController.onVideoSizeChanged(videoSize);
     }
     //endregion
 
