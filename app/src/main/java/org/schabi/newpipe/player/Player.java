@@ -8,10 +8,8 @@ import static androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT
 import static androidx.media3.common.Player.DISCONTINUITY_REASON_SKIP;
 import static androidx.media3.common.Player.DiscontinuityReason;
 import static androidx.media3.common.Player.Listener;
-import static androidx.media3.common.Player.REPEAT_MODE_OFF;
 import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static androidx.media3.common.Player.RepeatMode;
-import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
 
@@ -86,7 +84,6 @@ import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SerializedCache;
-import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 import java.util.Objects;
@@ -152,8 +149,6 @@ public final class Player implements PlaybackListener, Listener {
 
     @Nullable
     private PlayQueueItem currentItem;
-    @Nullable
-    private MediaItemTag currentMetadata;
     @NonNull
     private final SponsorBlockPlaybackController sponsorBlockController;
     @NonNull
@@ -217,6 +212,8 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerLocalMetadataController localMetadataController;
     @NonNull
+    private final PlayerMetadataController metadataController;
+    @NonNull
     private final PlayerProgressController progressController;
     @NonNull
     private final PlayerPresentationController presentationController;
@@ -278,6 +275,9 @@ public final class Player implements PlaybackListener, Listener {
         queueSynchronizer = new PlayerQueueSynchronizer(this, historyController,
                 playbackParametersController, thumbnailController);
         localMetadataController = new PlayerLocalMetadataController(this);
+        metadataController = new PlayerMetadataController(this, context, historyController,
+                playbackParametersController, sponsorBlockController, thumbnailController,
+                localMetadataController);
         broadcastController = new PlayerBroadcastController(this);
 
         trackSelector = new DefaultTrackSelector(context, PlayerHelper.getQualitySelector());
@@ -1027,48 +1027,7 @@ public final class Player implements PlaybackListener, Listener {
     public void onEvents(@NonNull final androidx.media3.common.Player player,
                          @NonNull final androidx.media3.common.Player.Events events) {
         Listener.super.onEvents(player, events);
-        MediaItemTag.from(player.getCurrentMediaItem()).ifPresent(tag -> {
-            if (tag == currentMetadata) {
-                return; // we still have the same metadata, no need to do anything
-            }
-            final StreamInfo previousInfo = Optional.ofNullable(currentMetadata)
-                    .flatMap(MediaItemTag::getMaybeStreamInfo).orElse(null);
-            final MediaItemTag.AudioTrack previousAudioTrack =
-                    Optional.ofNullable(currentMetadata)
-                            .flatMap(MediaItemTag::getMaybeAudioTrack).orElse(null);
-            currentMetadata = tag;
-
-            if (!currentMetadata.getErrors().isEmpty()) {
-                // new errors might have been added even if previousInfo == tag.getMaybeStreamInfo()
-                final ErrorInfo errorInfo = new ErrorInfo(
-                        currentMetadata.getErrors(),
-                        UserAction.PLAY_STREAM,
-                        "Loading failed for [" + currentMetadata.getTitle()
-                                + "]: " + currentMetadata.getStreamUrl(),
-                        currentMetadata.getServiceId(),
-                        currentMetadata.getStreamUrl());
-                ErrorUtil.createNotification(context, errorInfo);
-            }
-
-            currentMetadata.getMaybeStreamInfo().ifPresent(info -> {
-                if (DEBUG) {
-                    Log.d(TAG, "ExoPlayer - onEvents() update stream info: " + info.getName());
-                }
-                if (previousInfo == null || !previousInfo.getUrl().equals(info.getUrl())) {
-                    // only update with the new stream info if it has actually changed
-                    updateMetadataWith(info);
-                } else if (previousAudioTrack == null
-                        || tag.getMaybeAudioTrack()
-                        .map(t -> t.getSelectedAudioStreamIndex()
-                                != previousAudioTrack.getSelectedAudioStreamIndex())
-                        .orElse(false)) {
-                    notifyAudioTrackUpdateToListeners();
-                }
-            });
-            if (currentMetadata instanceof LocalMediaItemTag) {
-                updateMetadataForLocalMedia(((LocalMediaItemTag) currentMetadata).getItem());
-            }
-        });
+        metadataController.onEvents(player);
     }
 
     @Override
@@ -1306,7 +1265,7 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public void saveStreamProgressState() {
-        if (exoPlayerIsNull() || currentMetadata == null || playQueue == null
+        if (exoPlayerIsNull() || getCurrentMetadata() == null || playQueue == null
                 || playQueue.getIndex() != simpleExoPlayer.getCurrentMediaItemIndex()) {
             // Make sure play queue and current window index are equal, to prevent saving state for
             // the wrong stream on discontinuity (e.g. when the stream just changed but the
@@ -1337,74 +1296,29 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
     //region Metadata
 
-    private void updateMetadataWith(@NonNull final StreamInfo info) {
-        if (DEBUG) {
-            Log.d(TAG, "Playback - onMetadataChanged() called, playing: " + info.getName());
-        }
-        if (exoPlayerIsNull()) {
-            return;
-        }
-
-        localMetadataController.cancel();
-
-        playbackParametersController.applySpeedProfile(info);
-        sponsorBlockController.updateSegments(info);
-        maybeAutoQueueNextStream(info);
-
-        thumbnailController.load(ExtractorImageCompat.thumbnailImages(info));
-        registerStreamViewed();
-
-        notifyMetadataUpdateToListeners();
-        notifyAudioTrackUpdateToListeners();
-        UIs.call(playerUi -> playerUi.onMetadataChanged(info));
-    }
-
-    private void updateMetadataForLocalMedia(@NonNull final PlayQueueItem item) {
-        sponsorBlockController.reset();
-        thumbnailController.loadLocal(item);
-        localMetadataController.load(item);
-        historyController.registerViewed(item);
-        notifyMetadataUpdateToListeners();
-        notifyAudioTrackUpdateToListeners();
-        UIs.call(playerUi -> playerUi.onMetadataChanged(currentMetadata));
-    }
-
     @NonNull
     public String getVideoUrl() {
-        return currentMetadata == null
-                ? context.getString(R.string.unknown_content)
-                : currentMetadata.getStreamUrl();
+        return metadataController.videoUrl();
     }
 
     @NonNull
     public String getVideoUrlAtCurrentTime() {
-        final long timeSeconds = simpleExoPlayer.getCurrentPosition() / 1000;
-        String videoUrl = getVideoUrl();
-        if (!isLive() && timeSeconds >= 0 && currentMetadata != null
-                && currentMetadata.getServiceId() == YouTube.getServiceId()) {
-            // Timestamp doesn't make sense in a live stream so drop it
-            videoUrl += ("&t=" + timeSeconds);
-        }
-        return videoUrl;
+        return metadataController.videoUrlAtCurrentTime();
     }
 
     @NonNull
     public String getVideoTitle() {
-        return currentMetadata == null
-                ? context.getString(R.string.unknown_content)
-                : currentMetadata.getTitle();
+        return metadataController.videoTitle();
     }
 
     @NonNull
     public String getUploaderName() {
-        return currentMetadata == null
-                ? context.getString(R.string.unknown_content)
-                : currentMetadata.getUploaderName();
+        return metadataController.uploaderName();
     }
 
     @Nullable
     public Bitmap getThumbnail() {
-        return thumbnailController.getCurrentThumbnail();
+        return metadataController.thumbnail();
     }
     //endregion
 
@@ -1414,23 +1328,6 @@ public final class Player implements PlaybackListener, Listener {
     // Play queue, segments and streams
     //////////////////////////////////////////////////////////////////////////*/
     //region Play queue, segments and streams
-
-    private void maybeAutoQueueNextStream(@NonNull final StreamInfo info) {
-        if (playQueue == null || playQueue.getIndex() != playQueue.size() - 1
-                || getRepeatMode() != REPEAT_MODE_OFF
-                || !PlayerHelper.isAutoQueueEnabled(context)) {
-            return;
-        }
-        // auto queue when starting playback on the last item when not repeating
-        final PlayQueueItem currentQueueItem = playQueue.getItem();
-        final boolean preferShortFormContent = info.isShortFormContent()
-                || (currentQueueItem != null && currentQueueItem.isShortFormContent());
-        final PlayQueue autoQueue = PlayerHelper.autoQueueOf(info,
-                playQueue.getStreams(), preferShortFormContent);
-        if (autoQueue != null) {
-            playQueue.append(autoQueue.getStreams());
-        }
-    }
 
     public void selectQueueItem(final PlayQueueItem item) {
         if (playQueue == null || exoPlayerIsNull()) {
@@ -1504,21 +1401,11 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public Optional<VideoStream> getSelectedVideoStream() {
-        return Optional.ofNullable(currentMetadata)
-                .flatMap(MediaItemTag::getMaybeQuality)
-                .filter(quality -> {
-                    final int selectedStreamIndex = quality.getSelectedVideoStreamIndex();
-                    return selectedStreamIndex >= 0
-                            && selectedStreamIndex < quality.getSortedVideoStreams().size();
-                })
-                .map(quality -> quality.getSortedVideoStreams()
-                        .get(quality.getSelectedVideoStreamIndex()));
+        return metadataController.selectedVideoStream();
     }
 
     public Optional<AudioStream> getSelectedAudioStream() {
-        return Optional.ofNullable(currentMetadata)
-                .flatMap(MediaItemTag::getMaybeAudioTrack)
-                .map(MediaItemTag.AudioTrack::getSelectedAudioStream);
+        return metadataController.selectedAudioStream();
     }
     //endregion
 
@@ -1664,7 +1551,7 @@ public final class Player implements PlaybackListener, Listener {
     //region Getters
 
     public Optional<StreamInfo> getCurrentStreamInfo() {
-        return Optional.ofNullable(currentMetadata).flatMap(MediaItemTag::getMaybeStreamInfo);
+        return metadataController.currentStreamInfo();
     }
 
     public int getCurrentState() {
@@ -1695,7 +1582,7 @@ public final class Player implements PlaybackListener, Listener {
         return !exoPlayerIsNull() && simpleExoPlayer.isLoading();
     }
 
-    private boolean isLive() {
+    boolean isLive() {
         return seekController.isLive();
     }
 
@@ -1789,7 +1676,7 @@ public final class Player implements PlaybackListener, Listener {
 
     @Nullable
     public MediaItemTag getCurrentMetadata() {
-        return currentMetadata;
+        return metadataController.getCurrentMetadata();
     }
 
     @Nullable
@@ -1803,7 +1690,7 @@ public final class Player implements PlaybackListener, Listener {
 
     void clearCurrentPlaybackForBlock() {
         currentItem = null;
-        currentMetadata = null;
+        metadataController.clear();
     }
 
     public Optional<PlayerServiceEventListener> getFragmentListener() {
