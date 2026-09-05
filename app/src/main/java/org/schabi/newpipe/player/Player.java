@@ -32,7 +32,6 @@ import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.content.Context;
 import android.content.Intent;
@@ -119,11 +118,8 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.disposables.SerialDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public final class Player implements PlaybackListener, Listener {
@@ -256,9 +252,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerThumbnailController thumbnailController;
     @NonNull
     private final PlayerLocalMetadataController localMetadataController;
-
     @NonNull
-    private final SerialDisposable progressUpdateDisposable = new SerialDisposable();
+    private final PlayerProgressController progressController;
     @NonNull
     private final CompositeDisposable streamItemDisposable = new CompositeDisposable();
 
@@ -299,6 +294,8 @@ public final class Player implements PlaybackListener, Listener {
         sleepTimerController = new SleepTimerPlaybackController(this);
         queueModeController = new PlayerQueueModeController(this, sleepTimerController);
         eventDispatcher = new PlayerEventDispatcher(this);
+        progressController = new PlayerProgressController(this, historyController,
+                sponsorBlockController, eventDispatcher);
         thumbnailController = new PlayerThumbnailController(this);
         localMetadataController = new PlayerLocalMetadataController(this);
         broadcastController = new PlayerBroadcastController(this);
@@ -730,7 +727,7 @@ public final class Player implements PlaybackListener, Listener {
         broadcastController.unregister();
 
         historyController.clear();
-        progressUpdateDisposable.set(null);
+        progressController.clear();
         streamItemDisposable.clear();
 
         UIs.destroyAll(Object.class); // destroy every UI: obviously every UI extends Object
@@ -839,44 +836,24 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
     //region Progress loop and updates
 
-    private void onUpdateProgress(final int currentProgress,
-                                  final int duration,
-                                  final int bufferPercent) {
-        if (isPrepared) {
-            UIs.call(ui -> ui.onUpdateProgress(currentProgress, duration, bufferPercent));
-            notifyProgressUpdateToListeners(currentProgress, duration, bufferPercent);
-        }
-    }
-
     public void startProgressLoop() {
-        progressUpdateDisposable.set(getProgressUpdateDisposable());
+        progressController.start();
     }
 
     private void stopProgressLoop() {
-        progressUpdateDisposable.set(null);
+        progressController.stop();
     }
 
     public boolean isProgressLoopRunning() {
-        return progressUpdateDisposable.get() != null;
+        return progressController.isRunning();
     }
 
     public void triggerProgressUpdate() {
-        if (exoPlayerIsNull()) {
-            return;
-        }
-
-        historyController.updateLearningSession();
-        sponsorBlockController.onProgress();
-        onUpdateProgress(Math.max((int) simpleExoPlayer.getCurrentPosition(), 0),
-                (int) simpleExoPlayer.getDuration(), simpleExoPlayer.getBufferedPercentage());
+        progressController.trigger();
     }
 
-    private Disposable getProgressUpdateDisposable() {
-        return Observable.interval(PROGRESS_LOOP_INTERVAL_MILLIS, MILLISECONDS,
-                        AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(ignored -> triggerProgressUpdate(),
-                        error -> Log.e(TAG, "Progress update failure: ", error));
+    boolean isPreparedForProgressUpdates() {
+        return isPrepared;
     }
 
     //endregion
@@ -2202,12 +2179,6 @@ public final class Player implements PlaybackListener, Listener {
 
     void notifyPlaybackUpdateToListeners() {
         eventDispatcher.notifyPlaybackUpdate();
-    }
-
-    private void notifyProgressUpdateToListeners(final int currentProgress,
-                                                 final int duration,
-                                                 final int bufferPercent) {
-        eventDispatcher.notifyProgressUpdate(currentProgress, duration, bufferPercent);
     }
 
     void notifyAudioTrackUpdateToListeners() {
