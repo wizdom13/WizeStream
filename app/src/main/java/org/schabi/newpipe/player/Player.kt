@@ -235,11 +235,13 @@ class Player(
     )
 
     private fun qualityResolver() = object : VideoPlaybackResolver.QualityResolver {
-        override fun getDefaultResolutionIndex(sortedVideos: MutableList<VideoStream>): Int = if (videoPlayerSelected()) {
-                ListHelper.getDefaultResolutionIndex(appContext, sortedVideos)
-            } else {
-                ListHelper.getPopupDefaultResolutionIndex(appContext, sortedVideos)
-            }
+        override fun getDefaultResolutionIndex(
+            sortedVideos: MutableList<VideoStream>
+        ): Int = if (videoPlayerSelected()) {
+            ListHelper.getDefaultResolutionIndex(appContext, sortedVideos)
+        } else {
+            ListHelper.getPopupDefaultResolutionIndex(appContext, sortedVideos)
+        }
 
         override fun getOverrideResolutionIndex(
             sortedVideos: MutableList<VideoStream>,
@@ -256,16 +258,12 @@ class Player(
     fun handleIntentPost(oldPlayerType: PlayerType) = intentController.handlePost(oldPlayerType)
 
     fun initUIsForCurrentPlayerType() {
-        if (
-            (playerUis.get(MainPlayerUi::class.java).isPresent &&
-                activePlayerType == PlayerType.MAIN) ||
-            (playerUis.get(BackgroundPlayerUi::class.java).isPresent &&
-                activePlayerType == PlayerType.AUDIO) ||
-            (playerUis.get(PopupPlayerUi::class.java).isPresent &&
-                activePlayerType == PlayerType.POPUP)
-        ) {
-            return
+        val correctUiAlreadyPresent = when (activePlayerType) {
+            PlayerType.MAIN -> playerUis.get(MainPlayerUi::class.java).isPresent
+            PlayerType.AUDIO -> playerUis.get(BackgroundPlayerUi::class.java).isPresent
+            PlayerType.POPUP -> playerUis.get(PopupPlayerUi::class.java).isPresent
         }
+        if (correctUiAlreadyPresent) return
 
         val existingVideoUi = playerUis.get(VideoPlayerUi::class.java)
         val binding: PlayerBinding? = when {
@@ -465,8 +463,7 @@ class Player(
 
     fun registerStreamViewed() = historyController.registerViewed()
 
-    private fun saveStreamProgressState(progressMillis: Long) =
-        historyController.saveProgress(progressMillis)
+    private fun saveStreamProgressState(progressMillis: Long) = historyController.saveProgress(progressMillis)
 
     fun saveStreamProgressState() {
         val exoPlayer = media3Player ?: return
