@@ -194,7 +194,6 @@ public final class Player implements PlaybackListener, Listener {
     //////////////////////////////////////////////////////////////////////////*/
 
     private PlayerType playerType = PlayerType.MAIN;
-    private int currentState = STATE_PREFLIGHT;
     private final PopupPlayerReturnState popupPlayerReturnState =
             new PopupPlayerReturnState();
 
@@ -207,7 +206,6 @@ public final class Player implements PlaybackListener, Listener {
     private boolean isAudioOnly = false;
     @NonNull
     private PlaybackPresentationMode playbackPresentationMode = PlaybackPresentationMode.VIDEO;
-    private boolean isPrepared = false;
 
     /*//////////////////////////////////////////////////////////////////////////
     // UIs, listeners and disposables
@@ -232,6 +230,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerQueueSynchronizer queueSynchronizer;
     @NonNull
     private final PlayerSeekController seekController;
+    @NonNull
+    private final PlayerStateController stateController;
     @NonNull
     private final PlayerTransportController transportController;
     @NonNull
@@ -276,6 +276,8 @@ public final class Player implements PlaybackListener, Listener {
         eventDispatcher = new PlayerEventDispatcher(this);
         progressController = new PlayerProgressController(this, historyController,
                 sponsorBlockController, eventDispatcher);
+        stateController = new PlayerStateController(this, historyController,
+                sleepTimerController, sponsorBlockController, progressController, eventDispatcher);
         seekController = new PlayerSeekController(this);
         transportController = new PlayerTransportController(this, sleepTimerController);
         thumbnailController = new PlayerThumbnailController(this);
@@ -837,7 +839,7 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     boolean isPreparedForProgressUpdates() {
-        return isPrepared;
+        return stateController.isPrepared();
     }
 
     //endregion
@@ -849,217 +851,35 @@ public final class Player implements PlaybackListener, Listener {
     //region Playback states
     @Override
     public void onPlayWhenReadyChanged(final boolean playWhenReady, final int reason) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - onPlayWhenReadyChanged() called with: "
-                    + "playWhenReady = [" + playWhenReady + "], "
-                    + "reason = [" + reason + "]");
-        }
-        final int playbackState = exoPlayerIsNull()
-                ? androidx.media3.common.Player.STATE_IDLE
-                : simpleExoPlayer.getPlaybackState();
-        updatePlaybackState(playWhenReady, playbackState);
+        stateController.onPlayWhenReadyChanged(playWhenReady, reason);
     }
 
     @Override
     public void onPlaybackStateChanged(final int playbackState) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - onPlaybackStateChanged() called with: "
-                    + "playbackState = [" + playbackState + "]");
-        }
-        updatePlaybackState(getPlayWhenReady(), playbackState);
-    }
-
-    private void updatePlaybackState(final boolean playWhenReady, final int playbackState) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - updatePlaybackState() called with: "
-                    + "playWhenReady = [" + playWhenReady + "], "
-                    + "playbackState = [" + playbackState + "]");
-        }
-
-        if (currentState == STATE_PAUSED_SEEK) {
-            if (DEBUG) {
-                Log.d(TAG, "updatePlaybackState() is currently blocked");
-            }
-            return;
-        }
-
-        switch (playbackState) {
-            case androidx.media3.common.Player.STATE_IDLE: // 1
-                isPrepared = false;
-                break;
-            case androidx.media3.common.Player.STATE_BUFFERING: // 2
-                if (isPrepared) {
-                    changeState(STATE_BUFFERING);
-                }
-                break;
-            case androidx.media3.common.Player.STATE_READY: //3
-                if (!isPrepared) {
-                    isPrepared = true;
-                    onPrepared(playWhenReady);
-                }
-                changeState(playWhenReady ? STATE_PLAYING : STATE_PAUSED);
-                break;
-            case androidx.media3.common.Player.STATE_ENDED: // 4
-                sleepTimerController.onItemEnded(
-                        playQueue == null ? null : playQueue.getItem(), false);
-                changeState(STATE_COMPLETED);
-                saveStreamProgressStateCompleted();
-                isPrepared = false;
-                break;
-        }
+        stateController.onPlaybackStateChanged(playbackState);
     }
 
     @Override // exoplayer listener
     public void onIsLoadingChanged(final boolean isLoading) {
-        if (!isLoading && currentState == STATE_PAUSED && isProgressLoopRunning()) {
-            stopProgressLoop();
-        } else if (isLoading && !isProgressLoopRunning()) {
-            startProgressLoop();
-        }
+        stateController.onIsLoadingChanged(isLoading);
     }
 
     @Override // own playback listener
     public void onPlaybackBlock() {
-        if (exoPlayerIsNull()) {
-            return;
-        }
-        if (DEBUG) {
-            Log.d(TAG, "Playback - onPlaybackBlock() called");
-        }
-
-        currentItem = null;
-        currentMetadata = null;
-        simpleExoPlayer.stop();
-        isPrepared = false;
-
-        changeState(STATE_BLOCKED);
+        stateController.block();
     }
 
     @Override // own playback listener
     public void onPlaybackUnblock(final MediaSource mediaSource) {
-        if (DEBUG) {
-            Log.d(TAG, "Playback - onPlaybackUnblock() called");
-        }
-
-        if (exoPlayerIsNull()) {
-            return;
-        }
-        if (currentState == STATE_BLOCKED) {
-            changeState(STATE_BUFFERING);
-        }
-        simpleExoPlayer.setMediaSource(mediaSource, false);
-        simpleExoPlayer.prepare();
+        stateController.unblock(mediaSource);
     }
 
     public void changeState(final int state) {
-        if (DEBUG) {
-            Log.d(TAG, "changeState() called with: state = [" + state + "]");
-        }
-        currentState = state;
-        historyController.updateLearningSession();
-        switch (state) {
-            case STATE_BLOCKED:
-                onBlocked();
-                break;
-            case STATE_PLAYING:
-                onPlaying();
-                break;
-            case STATE_BUFFERING:
-                onBuffering();
-                break;
-            case STATE_PAUSED:
-                onPaused();
-                break;
-            case STATE_PAUSED_SEEK:
-                onPausedSeek();
-                break;
-            case STATE_COMPLETED:
-                onCompleted();
-                break;
-        }
-        notifyPlaybackUpdateToListeners();
-    }
-
-    private void onPrepared(final boolean playWhenReady) {
-        if (DEBUG) {
-            Log.d(TAG, "onPrepared() called with: playWhenReady = [" + playWhenReady + "]");
-        }
-
-        UIs.call(PlayerUi::onPrepared);
-
-        if (playWhenReady && !isMuted()) {
-            audioReactor.requestAudioFocus();
-        }
-    }
-
-    private void onBlocked() {
-        if (DEBUG) {
-            Log.d(TAG, "onBlocked() called");
-        }
-        if (!isProgressLoopRunning()) {
-            startProgressLoop();
-        }
-
-        sponsorBlockController.hideManualSkipButton();
-        UIs.call(PlayerUi::onBlocked);
-    }
-
-    private void onPlaying() {
-        if (DEBUG) {
-            Log.d(TAG, "onPlaying() called");
-        }
-        if (!isProgressLoopRunning()) {
-            startProgressLoop();
-        }
-
-        UIs.call(PlayerUi::onPlaying);
+        stateController.changeState(state);
     }
 
     void onBuffering() {
-        if (DEBUG) {
-            Log.d(TAG, "onBuffering() called");
-        }
-
-        UIs.call(PlayerUi::onBuffering);
-    }
-
-    private void onPaused() {
-        if (DEBUG) {
-            Log.d(TAG, "onPaused() called");
-        }
-
-        if (isProgressLoopRunning()) {
-            stopProgressLoop();
-        }
-
-        sponsorBlockController.hideManualSkipButton();
-        UIs.call(PlayerUi::onPaused);
-    }
-
-    private void onPausedSeek() {
-        if (DEBUG) {
-            Log.d(TAG, "onPausedSeek() called");
-        }
-        UIs.call(PlayerUi::onPausedSeek);
-    }
-
-    private void onCompleted() {
-        if (DEBUG) {
-            Log.d(TAG, "onCompleted() called" + (playQueue == null ? ". playQueue is null" : ""));
-        }
-        if (playQueue == null) {
-            return;
-        }
-
-        sponsorBlockController.hideManualSkipButton();
-        UIs.call(PlayerUi::onCompleted);
-
-        if (playQueue.getIndex() < playQueue.size() - 1) {
-            playQueue.offsetIndex(+1);
-        }
-        if (isProgressLoopRunning()) {
-            stopProgressLoop();
-        }
+        stateController.onBuffering();
     }
     //endregion
 
@@ -1332,7 +1152,7 @@ public final class Player implements PlaybackListener, Listener {
                 if (DEBUG) {
                     Log.d(TAG, "ExoPlayer - onSeekProcessed() called");
                 }
-                if (isPrepared) {
+                if (stateController.isPrepared()) {
                     saveStreamProgressState();
                 }
             case DISCONTINUITY_REASON_SEEK_ADJUSTMENT:
@@ -1975,7 +1795,7 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public int getCurrentState() {
-        return currentState;
+        return stateController.getCurrentState();
     }
 
     public boolean exoPlayerIsNull() {
@@ -2106,6 +1926,11 @@ public final class Player implements PlaybackListener, Listener {
 
     void setCurrentItemForPlaybackSynchronization(@NonNull final PlayQueueItem item) {
         currentItem = item;
+    }
+
+    void clearCurrentPlaybackForBlock() {
+        currentItem = null;
+        currentMetadata = null;
     }
 
     public Optional<PlayerServiceEventListener> getFragmentListener() {
