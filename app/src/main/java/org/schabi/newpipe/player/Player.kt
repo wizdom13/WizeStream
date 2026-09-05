@@ -303,6 +303,10 @@ class Player(
         media3Player = exoPlayer
     }
 
+    fun clearExoPlayerForLifecycle() {
+        media3Player = null
+    }
+
     fun setAudioReactorForLifecycle(reactor: AudioReactor) {
         activeAudioReactor = reactor
     }
@@ -593,8 +597,11 @@ class Player(
 
     fun exoPlayerIsNull(): Boolean = media3Player == null
 
+    @get:JvmName("requireExoPlayer")
     val exoPlayer: ExoPlayer
         get() = checkNotNull(media3Player)
+
+    fun getExoPlayer(): ExoPlayer? = media3Player
 
     val isStopped: Boolean
         get() = media3Player?.playbackState == null ||
