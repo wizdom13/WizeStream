@@ -235,8 +235,7 @@ class Player(
     )
 
     private fun qualityResolver() = object : VideoPlaybackResolver.QualityResolver {
-        override fun getDefaultResolutionIndex(sortedVideos: MutableList<VideoStream>): Int =
-            if (videoPlayerSelected()) {
+        override fun getDefaultResolutionIndex(sortedVideos: MutableList<VideoStream>): Int = if (videoPlayerSelected()) {
                 ListHelper.getDefaultResolutionIndex(appContext, sortedVideos)
             } else {
                 ListHelper.getPopupDefaultResolutionIndex(appContext, sortedVideos)
@@ -257,7 +256,8 @@ class Player(
     fun handleIntentPost(oldPlayerType: PlayerType) = intentController.handlePost(oldPlayerType)
 
     fun initUIsForCurrentPlayerType() {
-        if ((playerUis.get(MainPlayerUi::class.java).isPresent &&
+        if (
+            (playerUis.get(MainPlayerUi::class.java).isPresent &&
                 activePlayerType == PlayerType.MAIN) ||
             (playerUis.get(BackgroundPlayerUi::class.java).isPresent &&
                 activePlayerType == PlayerType.AUDIO) ||
@@ -294,8 +294,7 @@ class Player(
         }
     }
 
-    fun initPlayback(queue: PlayQueue, playOnReady: Boolean) =
-        lifecycleController.initPlayback(queue, playOnReady)
+    fun initPlayback(queue: PlayQueue, playOnReady: Boolean) = lifecycleController.initPlayback(queue, playOnReady)
 
     fun setPlayQueueForLifecycle(queue: PlayQueue) {
         activePlayQueue = queue
@@ -323,8 +322,7 @@ class Player(
 
     fun setPlaybackSpeed(speed: Float) = playbackParametersController.setSpeed(speed)
 
-    fun setPlaybackSpeedTemporarily(speed: Float) =
-        playbackParametersController.setSpeedTemporarily(speed)
+    fun setPlaybackSpeedTemporarily(speed: Float) = playbackParametersController.setSpeedTemporarily(speed)
 
     fun getPlaybackPitch(): Float = playbackParametersController.pitch
 
@@ -332,8 +330,7 @@ class Player(
 
     fun getPlaybackParameters(): PlaybackParameters = playbackParametersController.parameters
 
-    fun setPlaybackParameters(speed: Float, pitch: Float, skipSilence: Boolean) =
-        playbackParametersController.setParameters(speed, pitch, skipSilence)
+    fun setPlaybackParameters(speed: Float, pitch: Float, skipSilence: Boolean) = playbackParametersController.setParameters(speed, pitch, skipSilence)
 
     fun startProgressLoop() = progressController.start()
 
@@ -345,14 +342,11 @@ class Player(
 
     fun isPreparedForProgressUpdates(): Boolean = stateController.isPrepared
 
-    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) =
-        stateController.onPlayWhenReadyChanged(playWhenReady, reason)
+    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = stateController.onPlayWhenReadyChanged(playWhenReady, reason)
 
-    override fun onPlaybackStateChanged(playbackState: Int) =
-        stateController.onPlaybackStateChanged(playbackState)
+    override fun onPlaybackStateChanged(playbackState: Int) = stateController.onPlaybackStateChanged(playbackState)
 
-    override fun onIsLoadingChanged(isLoading: Boolean) =
-        stateController.onIsLoadingChanged(isLoading)
+    override fun onIsLoadingChanged(isLoading: Boolean) = stateController.onIsLoadingChanged(isLoading)
 
     override fun onPlaybackBlock() = stateController.block()
 
@@ -366,11 +360,9 @@ class Player(
 
     fun cycleNextRepeatMode() = queueModeController.cycleNextRepeatMode()
 
-    override fun onRepeatModeChanged(repeatMode: Int) =
-        queueModeController.onRepeatModeChanged(repeatMode)
+    override fun onRepeatModeChanged(repeatMode: Int) = queueModeController.onRepeatModeChanged(repeatMode)
 
-    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) =
-        queueModeController.onShuffleModeEnabledChanged(shuffleModeEnabled)
+    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) = queueModeController.onShuffleModeEnabledChanged(shuffleModeEnabled)
 
     fun toggleShuffleModeEnabled() = queueModeController.toggleShuffleModeEnabled()
 
@@ -409,14 +401,11 @@ class Player(
         }
     }
 
-    fun startSleepTimer(durationMillis: Long, fadeOut: Boolean) =
-        sleepTimerController.startDuration(durationMillis, fadeOut)
+    fun startSleepTimer(durationMillis: Long, fadeOut: Boolean) = sleepTimerController.startDuration(durationMillis, fadeOut)
 
-    fun startSleepTimerAtEndOfCurrent(fadeOut: Boolean): Boolean =
-        sleepTimerController.startAtEndOfCurrent(fadeOut)
+    fun startSleepTimerAtEndOfCurrent(fadeOut: Boolean): Boolean = sleepTimerController.startAtEndOfCurrent(fadeOut)
 
-    fun startSleepTimerAtEndOfQueue(fadeOut: Boolean): Boolean =
-        sleepTimerController.startAtEndOfQueue(fadeOut)
+    fun startSleepTimerAtEndOfQueue(fadeOut: Boolean): Boolean = sleepTimerController.startAtEndOfQueue(fadeOut)
 
     fun cancelSleepTimer() = sleepTimerController.cancel()
 
@@ -428,20 +417,15 @@ class Player(
 
     fun isSleepTimerFadeOutEnabled(): Boolean = sleepTimerController.isFadeOutEnabled
 
-    override fun onAudioSessionIdChanged(audioSessionId: Int) =
-        media3ListenerController.onAudioSessionIdChanged(audioSessionId)
+    override fun onAudioSessionIdChanged(audioSessionId: Int) = media3ListenerController.onAudioSessionIdChanged(audioSessionId)
 
-    override fun onEvents(player: Media3Player, events: Media3Player.Events) =
-        media3ListenerController.onEvents(player)
+    override fun onEvents(player: Media3Player, events: Media3Player.Events) = media3ListenerController.onEvents(player)
 
-    override fun onTimelineChanged(timeline: Timeline, reason: Int) =
-        media3ListenerController.onTimelineChanged(timeline, reason)
+    override fun onTimelineChanged(timeline: Timeline, reason: Int) = media3ListenerController.onTimelineChanged(timeline, reason)
 
-    override fun onTracksChanged(tracks: Tracks) =
-        media3ListenerController.onTracksChanged(tracks)
+    override fun onTracksChanged(tracks: Tracks) = media3ListenerController.onTracksChanged(tracks)
 
-    override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) =
-        media3ListenerController.onPlaybackParametersChanged(playbackParameters)
+    override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) = media3ListenerController.onPlaybackParametersChanged(playbackParameters)
 
     override fun onPositionDiscontinuity(
         oldPosition: PositionInfo,
@@ -455,13 +439,11 @@ class Player(
 
     override fun onPlayerError(error: PlaybackException) = errorController.onPlayerError(error)
 
-    override fun isApproachingPlaybackEdge(timeToEndMillis: Long): Boolean =
-        seekController.isApproachingPlaybackEdge(timeToEndMillis)
+    override fun isApproachingPlaybackEdge(timeToEndMillis: Long): Boolean = seekController.isApproachingPlaybackEdge(timeToEndMillis)
 
     fun isLiveEdge(): Boolean = seekController.isLiveEdge
 
-    override fun onPlaybackSynchronize(item: PlayQueueItem, wasBlocked: Boolean) =
-        queueSynchronizer.synchronize(item, wasBlocked)
+    override fun onPlaybackSynchronize(item: PlayQueueItem, wasBlocked: Boolean) = queueSynchronizer.synchronize(item, wasBlocked)
 
     fun seekTo(positionMillis: Long) = seekController.seekTo(positionMillis)
 
@@ -538,11 +520,9 @@ class Player(
         playerUis.call(PlayerUi::onPlayQueueEdited)
     }
 
-    override fun sourceOf(item: PlayQueueItem, info: StreamInfo): MediaSource? =
-        streamController.sourceOf(info)
+    override fun sourceOf(item: PlayQueueItem, info: StreamInfo): MediaSource? = streamController.sourceOf(info)
 
-    override fun sourceOfLocal(item: PlayQueueItem): MediaSource? =
-        streamController.sourceOfLocal(item)
+    override fun sourceOfLocal(item: PlayQueueItem): MediaSource? = streamController.sourceOfLocal(item)
 
     fun disablePreloadingOfCurrentTrack() = streamController.disablePreloadingOfCurrentTrack()
 
@@ -556,20 +536,15 @@ class Player(
 
     fun setCaptionPreference(language: String?) = captionController.setPreference(language)
 
-    override fun onVideoSizeChanged(videoSize: VideoSize) =
-        media3ListenerController.onVideoSizeChanged(videoSize)
+    override fun onVideoSizeChanged(videoSize: VideoSize) = media3ListenerController.onVideoSizeChanged(videoSize)
 
-    fun setFragmentListener(listener: PlayerServiceEventListener) =
-        eventDispatcher.setFragmentListener(listener)
+    fun setFragmentListener(listener: PlayerServiceEventListener) = eventDispatcher.setFragmentListener(listener)
 
-    fun removeFragmentListener(listener: PlayerServiceEventListener) =
-        eventDispatcher.removeFragmentListener(listener)
+    fun removeFragmentListener(listener: PlayerServiceEventListener) = eventDispatcher.removeFragmentListener(listener)
 
-    fun setActivityListener(listener: PlayerEventListener) =
-        eventDispatcher.setActivityListener(listener)
+    fun setActivityListener(listener: PlayerEventListener) = eventDispatcher.setActivityListener(listener)
 
-    fun removeActivityListener(listener: PlayerEventListener) =
-        eventDispatcher.removeActivityListener(listener)
+    fun removeActivityListener(listener: PlayerEventListener) = eventDispatcher.removeActivityListener(listener)
 
     fun stopActivityBinding() = eventDispatcher.stopBindings()
 
@@ -583,11 +558,9 @@ class Player(
 
     fun notifySleepTimerUpdateToListeners() = eventDispatcher.notifySleepTimerUpdate()
 
-    fun useVideoAndSubtitles(videoAndSubtitlesEnabled: Boolean) =
-        presentationController.useVideoAndSubtitles(videoAndSubtitlesEnabled)
+    fun useVideoAndSubtitles(videoAndSubtitlesEnabled: Boolean) = presentationController.useVideoAndSubtitles(videoAndSubtitlesEnabled)
 
-    fun setPlaybackPresentationMode(newMode: PlaybackPresentationMode) =
-        presentationController.setMode(newMode)
+    fun setPlaybackPresentationMode(newMode: PlaybackPresentationMode) = presentationController.setMode(newMode)
 
     fun getCurrentStreamInfo(): Optional<StreamInfo> = metadataController.currentStreamInfo()
 
@@ -597,8 +570,7 @@ class Player(
 
     fun getExoPlayer(): ExoPlayer = checkNotNull(media3Player)
 
-    fun isStopped(): Boolean =
-        media3Player?.playbackState == null || media3Player?.playbackState == ExoPlayer.STATE_IDLE
+    fun isStopped(): Boolean = media3Player?.playbackState == null || media3Player?.playbackState == ExoPlayer.STATE_IDLE
 
     fun isPlaying(): Boolean = media3Player?.isPlaying == true
 
@@ -622,11 +594,9 @@ class Player(
         activePlayerType = newPlayerType
     }
 
-    fun rememberMainPlayerFullscreenBeforePopup(fullscreen: Boolean) =
-        popupPlayerReturnState.remember(fullscreen)
+    fun rememberMainPlayerFullscreenBeforePopup(fullscreen: Boolean) = popupPlayerReturnState.remember(fullscreen)
 
-    fun consumeMainPlayerFullscreenBeforePopup(fallback: Boolean): Boolean =
-        popupPlayerReturnState.consume(fallback)
+    fun consumeMainPlayerFullscreenBeforePopup(fallback: Boolean): Boolean = popupPlayerReturnState.consume(fallback)
 
     fun audioPlayerSelected(): Boolean = activePlayerType == PlayerType.AUDIO
 
@@ -661,8 +631,7 @@ class Player(
         metadataController.clear()
     }
 
-    fun getFragmentListener(): Optional<PlayerServiceEventListener> =
-        eventDispatcher.fragmentListener
+    fun getFragmentListener(): Optional<PlayerServiceEventListener> = eventDispatcher.fragmentListener
 
     @Suppress("FunctionName")
     fun UIs(): PlayerUiList = playerUis
