@@ -26,6 +26,7 @@ import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.preference.PreferenceManager
 import io.reactivex.rxjava3.disposables.CompositeDisposable
+import java.util.Optional
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.PlayerBinding
@@ -57,7 +58,6 @@ import org.schabi.newpipe.player.ui.PopupPlayerUi
 import org.schabi.newpipe.player.ui.VideoPlayerUi
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor
 import org.schabi.newpipe.util.ListHelper
-import java.util.Optional
 
 /** Coordinates playback controllers and exposes the player API used by services and UIs. */
 class Player(
@@ -280,11 +280,13 @@ class Player(
                 playerUis.destroyAll(BackgroundPlayerUi::class.java)
                 playerUis.addAndPrepare(MainPlayerUi(this, requireNotNull(binding)))
             }
+
             PlayerType.POPUP -> {
                 playerUis.destroyAll(MainPlayerUi::class.java)
                 playerUis.destroyAll(BackgroundPlayerUi::class.java)
                 playerUis.addAndPrepare(PopupPlayerUi(this, requireNotNull(binding)))
             }
+
             PlayerType.AUDIO -> {
                 playerUis.destroyAll(VideoPlayerUi::class.java)
                 playerUis.addAndPrepare(BackgroundPlayerUi(this))
