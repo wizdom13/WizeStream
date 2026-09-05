@@ -92,11 +92,15 @@ internal class PlayerBroadcastController(private val player: Player) {
             ACTION_SHUFFLE -> player.toggleShuffleModeEnabled()
             Intent.ACTION_SCREEN_OFF -> isScreenOn = false
             Intent.ACTION_SCREEN_ON -> isScreenOn = true
-            Intent.ACTION_CONFIGURATION_CHANGED -> if (Player.DEBUG) {
-                Log.d(Player.TAG, "ACTION_CONFIGURATION_CHANGED received")
-            }
+            Intent.ACTION_CONFIGURATION_CHANGED -> logConfigurationChanged()
         }
 
         player.UIs().call { ui -> ui.onBroadcastReceived(intent) }
+    }
+
+    private fun logConfigurationChanged() {
+        if (Player.DEBUG) {
+            Log.d(Player.TAG, "ACTION_CONFIGURATION_CHANGED received")
+        }
     }
 }
