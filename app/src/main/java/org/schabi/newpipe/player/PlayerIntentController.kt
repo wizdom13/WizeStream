@@ -208,7 +208,7 @@ internal class PlayerIntentController(
         playWhenReady: Boolean
     ) {
         val oldQueue = player.playQueue
-        info.startPosition = data.seconds
+        info.startPosition = data.seconds.toLong()
         val item = PlayQueueItem(info)
         if (oldQueue != null && item.isSameItem(oldQueue.item)) {
             prepareIfIdle()
