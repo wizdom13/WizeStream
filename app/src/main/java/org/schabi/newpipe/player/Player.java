@@ -1,21 +1,5 @@
 package org.schabi.newpipe.player;
 
-import static androidx.media3.common.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_NO_PERMISSION;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_IO_UNSPECIFIED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_TIMEOUT;
-import static androidx.media3.common.PlaybackException.ERROR_CODE_UNSPECIFIED;
 import static androidx.media3.common.Player.DISCONTINUITY_REASON_AUTO_TRANSITION;
 import static androidx.media3.common.Player.DISCONTINUITY_REASON_INTERNAL;
 import static androidx.media3.common.Player.DISCONTINUITY_REASON_REMOVE;
@@ -37,8 +21,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 
@@ -105,7 +87,6 @@ import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
-import org.schabi.newpipe.util.InfoCache;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SerializedCache;
@@ -180,14 +161,6 @@ public final class Player implements PlaybackListener, Listener {
     @Nullable
     private MediaItemTag currentMetadata;
     @NonNull
-    private final PlayerHttpErrorRecovery.RecoveryGuard mediaUrlRecoveryGuard =
-        new PlayerHttpErrorRecovery.RecoveryGuard();
-    @NonNull
-    private final Handler mediaUrlRecoveryHandler = new Handler(Looper.getMainLooper());
-    @Nullable
-    private Runnable pendingMediaUrlRecovery;
-
-    @NonNull
     private final SponsorBlockPlaybackController sponsorBlockController;
     @NonNull
     private final PlaybackParametersController playbackParametersController;
@@ -248,6 +221,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerBroadcastController broadcastController;
     @NonNull
     private final PlayerEventDispatcher eventDispatcher;
+    @NonNull
+    private final PlayerErrorController errorController;
     @NonNull
     private final PlayerThumbnailController thumbnailController;
     @NonNull
@@ -319,6 +294,7 @@ public final class Player implements PlaybackListener, Listener {
 
         videoResolver = new VideoPlaybackResolver(context, dataSource, getQualityResolver());
         audioResolver = new AudioPlaybackResolver(context, dataSource);
+        errorController = new PlayerErrorController(this, eventDispatcher, videoResolver);
 
         // The UIs added here should always be present. They will be initialized when the player
         // reaches the initialization step. Make sure the media session ui is before the
@@ -686,8 +662,7 @@ public final class Player implements PlaybackListener, Listener {
         if (DEBUG) {
             Log.d(TAG, "destroyPlayer() called");
         }
-        cancelPendingMediaUrlRecovery();
-        mediaUrlRecoveryGuard.reset();
+        errorController.resetRecovery();
         historyController.stopLearningSession();
         UIs.call(PlayerUi::destroyPlayer);
         audioController.releaseAudioSession();
@@ -1031,7 +1006,7 @@ public final class Player implements PlaybackListener, Listener {
         UIs.call(PlayerUi::onPlaying);
     }
 
-    private void onBuffering() {
+    void onBuffering() {
         if (DEBUG) {
             Log.d(TAG, "onBuffering() called");
         }
@@ -1329,8 +1304,7 @@ public final class Player implements PlaybackListener, Listener {
         final int newIndex = newPosition.mediaItemIndex;
         if (newIndex != oldPosition.mediaItemIndex) {
             UIs.call(PlayerUi::onMediaItemTransition);
-            cancelPendingMediaUrlRecovery();
-            mediaUrlRecoveryGuard.reset();
+            errorController.resetRecovery();
         }
         if (discontinuityReason == DISCONTINUITY_REASON_AUTO_TRANSITION) {
             sleepTimerController.onItemEnded(
@@ -1420,171 +1394,9 @@ public final class Player implements PlaybackListener, Listener {
     // Any error code not explicitly covered here is either unrelated to the WizeStream use case
     // (e.g. DRM) or not recoverable (e.g. Decoder error). In both cases, the player should
     // shutdown.
-    @SuppressWarnings("SwitchIntDef")
     @Override
     public void onPlayerError(@NonNull final PlaybackException error) {
-        Log.e(TAG, "ExoPlayer - onPlayerError() called with:", error);
-
-        saveStreamProgressState();
-        boolean isCatchableException = false;
-
-        if (tryRecoverFromYouTubeMediaUrlFailure(error)) {
-            return;
-        }
-
-        switch (error.errorCode) {
-            case ERROR_CODE_BEHIND_LIVE_WINDOW:
-                isCatchableException = true;
-                simpleExoPlayer.seekToDefaultPosition();
-                simpleExoPlayer.prepare();
-                // Inform the user that we are reloading the stream by
-                // switching to the buffering state
-                onBuffering();
-                break;
-            case ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE:
-            case ERROR_CODE_IO_BAD_HTTP_STATUS:
-            case ERROR_CODE_IO_FILE_NOT_FOUND:
-            case ERROR_CODE_IO_NO_PERMISSION:
-            case ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED:
-            case ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE:
-            case ERROR_CODE_PARSING_CONTAINER_MALFORMED:
-            case ERROR_CODE_PARSING_MANIFEST_MALFORMED:
-            case ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED:
-            case ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED:
-                // Source errors, signal on playQueue and move on:
-                if (!exoPlayerIsNull() && playQueue != null) {
-                    playQueue.error();
-                }
-                break;
-            case ERROR_CODE_TIMEOUT:
-            case ERROR_CODE_IO_UNSPECIFIED:
-            case ERROR_CODE_IO_NETWORK_CONNECTION_FAILED:
-            case ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT:
-            case ERROR_CODE_UNSPECIFIED:
-                // Reload playback on unexpected errors:
-                setRecovery();
-                reloadPlayQueueManager();
-                break;
-            default:
-                // API, remote and renderer errors belong here:
-                onPlaybackShutdown();
-                break;
-        }
-
-        if (!isCatchableException) {
-            createErrorNotification(error);
-        }
-
-        eventDispatcher.notifyPlayerError(error, isCatchableException);
-    }
-
-
-    private boolean tryRecoverFromYouTubeMediaUrlFailure(@NonNull final PlaybackException error) {
-        if (playQueue == null) {
-            return false;
-        }
-
-        final PlayQueueItem item = playQueue.getItem();
-        if (!PlayerHttpErrorRecovery.isRecoverableYouTubeMediaUrlFailure(error, item)) {
-            return false;
-        }
-
-        final String recoveryKey = item.getServiceId() + ":" + item.getUrl();
-        final PlayerHttpErrorRecovery.RecoveryAttempt attempt =
-                mediaUrlRecoveryGuard.acquireAttempt(recoveryKey);
-        if (attempt == null) {
-            Log.w(TAG, "YouTube media URL recovery exhausted after "
-                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + " attempts");
-            cancelPendingMediaUrlRecovery();
-            invalidateYouTubeMediaCaches(item);
-            mediaUrlRecoveryGuard.reset();
-            if (!exoPlayerIsNull()) {
-                simpleExoPlayer.pause();
-            }
-            changeState(STATE_PAUSED);
-            createErrorNotification(error, "recovery=exhausted, attempts="
-                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + "/"
-                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS);
-            eventDispatcher.notifyPlayerError(error, true);
-            return true;
-        }
-
-        setRecovery();
-        onBuffering();
-        cancelPendingMediaUrlRecovery();
-
-        final Runnable recovery = () -> {
-            pendingMediaUrlRecovery = null;
-            if (playQueue == null) {
-                return;
-            }
-            final PlayQueueItem currentQueueItem = playQueue.getItem();
-            if (currentQueueItem == null
-                    || currentQueueItem.getServiceId() != item.getServiceId()
-                    || !currentQueueItem.getUrl().equals(item.getUrl())) {
-                return;
-            }
-
-            final Integer responseCode = PlayerHttpErrorRecovery.findInvalidResponseCode(error);
-            Log.w(TAG, "Refreshing YouTube StreamInfo after recoverable media URL failure"
-                    + " (status=" + (responseCode == null ? "network" : responseCode)
-                    + ", attempt=" + attempt.getNumber() + "/"
-                    + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + ")");
-            getSelectedVideoStream()
-                    .filter(stream -> PlayerHttpErrorRecovery
-                            .shouldAvoidAndroidVrAv1HfrStream(error, stream))
-                    .ifPresent(stream -> videoResolver.rejectVideoStreamOnce(
-                            item.getUrl(), stream.getItag()));
-            invalidateYouTubeMediaCaches(item);
-            reloadPlayQueueManager();
-        };
-        pendingMediaUrlRecovery = recovery;
-        mediaUrlRecoveryHandler.postDelayed(recovery, attempt.getDelayMillis());
-        return true;
-    }
-
-    private void cancelPendingMediaUrlRecovery() {
-        if (pendingMediaUrlRecovery == null) {
-            return;
-        }
-        mediaUrlRecoveryHandler.removeCallbacks(pendingMediaUrlRecovery);
-        pendingMediaUrlRecovery = null;
-    }
-
-    private static void invalidateYouTubeMediaCaches(@NonNull final PlayQueueItem item) {
-        PlayerDataSource.invalidateYoutubeManifestCaches();
-        InfoCache.getInstance().removeInfo(item.getServiceId(), item.getUrl(),
-                InfoCache.Type.STREAM);
-    }
-
-    private void createErrorNotification(@NonNull final PlaybackException error) {
-        createErrorNotification(error, null);
-    }
-
-    private void createErrorNotification(@NonNull final PlaybackException error,
-                                         @Nullable final String recoveryDiagnostic) {
-        final String safeErrorContext = PlayerHttpErrorRecovery.buildSafeErrorContext(error);
-        final StringBuilder diagnosticSuffix = new StringBuilder();
-        if (safeErrorContext != null) {
-            diagnosticSuffix.append(" [").append(safeErrorContext).append(']');
-        }
-        if (recoveryDiagnostic != null) {
-            diagnosticSuffix.append(" [").append(recoveryDiagnostic).append(']');
-        }
-
-        final ErrorInfo errorInfo;
-        if (currentMetadata == null) {
-            errorInfo = new ErrorInfo(error, UserAction.PLAY_STREAM,
-                    "Player error[type=" + error.getErrorCodeName()
-                            + "] occurred, currentMetadata is null" + diagnosticSuffix);
-        } else {
-            errorInfo = new ErrorInfo(error, UserAction.PLAY_STREAM,
-                    "Player error[type=" + error.getErrorCodeName()
-                            + "] occurred while playing " + currentMetadata.getStreamUrl()
-                            + diagnosticSuffix,
-                    currentMetadata.getServiceId(), currentMetadata.getStreamUrl());
-        }
-        ErrorUtil.createNotification(context, errorInfo);
+        errorController.onPlayerError(error);
     }
     //endregion
 
