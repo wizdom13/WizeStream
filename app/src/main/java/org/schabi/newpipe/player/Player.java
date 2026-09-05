@@ -54,14 +54,12 @@ import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.helper.AudioReactor;
-import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager;
 import org.schabi.newpipe.player.helper.CustomRenderersFactory;
 import org.schabi.newpipe.player.helper.LoadController;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.SleepTimer;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
-import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag;
 import org.schabi.newpipe.player.mediasession.MediaSessionPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationPlayerUi;
 import org.schabi.newpipe.player.playback.MediaSourceManager;
@@ -71,7 +69,6 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.resolver.AudioPlaybackResolver;
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver;
-import org.schabi.newpipe.player.resolver.VideoPlaybackResolver.SourceType;
 import org.schabi.newpipe.player.ui.BackgroundPlayerUi;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUi;
@@ -204,6 +201,8 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerBroadcastController broadcastController;
     @NonNull
+    private final PlayerCaptionController captionController;
+    @NonNull
     private final PlayerEventDispatcher eventDispatcher;
     @NonNull
     private final PlayerErrorController errorController;
@@ -223,6 +222,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerSeekController seekController;
     @NonNull
     private final PlayerStateController stateController;
+    @NonNull
+    private final PlayerStreamController streamController;
     @NonNull
     private final PlayerTransportController transportController;
     @NonNull
@@ -299,6 +300,9 @@ public final class Player implements PlaybackListener, Listener {
 
         videoResolver = new VideoPlaybackResolver(context, dataSource, getQualityResolver());
         audioResolver = new AudioPlaybackResolver(context, dataSource);
+        captionController = new PlayerCaptionController(this, context, prefs, trackSelector);
+        streamController = new PlayerStreamController(this, context, audioResolver, videoResolver,
+                dataSource, loadController);
         presentationController = new PlayerPresentationController(this, videoResolver,
                 trackSelector, visualizerAudioProcessor);
         errorController = new PlayerErrorController(this, eventDispatcher, videoResolver);
@@ -1359,45 +1363,17 @@ public final class Player implements PlaybackListener, Listener {
     @Override // own playback listener
     @Nullable
     public MediaSource sourceOf(final PlayQueueItem item, final StreamInfo info) {
-        if (audioPlayerSelected()) {
-            return audioResolver.resolve(info);
-        }
-
-        if (isAudioOnly() && videoResolver.getStreamSourceType().orElse(
-                SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY)
-                == SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY) {
-            // If the current info has only video streams with audio and if the stream is played as
-            // audio, we need to use the audio resolver, otherwise the video stream will be played
-            // in background.
-            return audioResolver.resolve(info);
-        }
-
-        // Even if the stream is played in background, we need to use the video resolver if the
-        // info played is separated video-only and audio-only streams; otherwise, if the audio
-        // resolver was called when the app was in background, the app will only stream audio when
-        // the user come back to the app and will never fetch the video stream.
-        // Note that the video is not fetched when the app is in background because the video
-        // renderer is fully disabled (see useVideoAndSubtitles method), except for HLS streams
-        // (see https://github.com/google/ExoPlayer/issues/9282).
-        if (ChannelPlaybackProfileManager.isAvailable(context, info)) {
-            return videoResolver.resolve(
-                    info, ChannelPlaybackProfileManager.getQuality(context, info));
-        }
-        return videoResolver.resolve(info);
+        return streamController.sourceOf(info);
     }
 
     @Override
     @Nullable
     public MediaSource sourceOfLocal(final PlayQueueItem item) {
-        if (!item.isLocalMedia()) {
-            return null;
-        }
-        return dataSource.getProgressiveMediaSourceFactory()
-                .createMediaSource(LocalMediaItemTag.of(item).asMediaItem());
+        return streamController.sourceOfLocal(item);
     }
 
     public void disablePreloadingOfCurrentTrack() {
-        loadController.disablePreloadingOfCurrentTrack();
+        streamController.disablePreloadingOfCurrentTrack();
     }
 
     public Optional<VideoStream> getSelectedVideoStream() {
@@ -1417,55 +1393,16 @@ public final class Player implements PlaybackListener, Listener {
     //region Captions (text tracks)
 
     public int getCaptionRendererIndex() {
-        if (exoPlayerIsNull()) {
-            return RENDERER_UNAVAILABLE;
-        }
-
-        for (int t = 0; t < simpleExoPlayer.getRendererCount(); t++) {
-            if (simpleExoPlayer.getRendererType(t) == C.TRACK_TYPE_TEXT) {
-                return t;
-            }
-        }
-
-        return RENDERER_UNAVAILABLE;
+        return captionController.rendererIndex();
     }
 
     @Nullable
     public String getCaptionPreference() {
-        final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
-        if (currentInfo != null
-                && ChannelPlaybackProfileManager.hasCaptionPreference(context, currentInfo)) {
-            return ChannelPlaybackProfileManager.getCaptionPreference(context, currentInfo);
-        }
-        return prefs.getString(context.getString(R.string.caption_user_set_key), null);
+        return captionController.preference();
     }
 
     public void setCaptionPreference(@Nullable final String language) {
-        final int textRendererIndex = getCaptionRendererIndex();
-        if (textRendererIndex != RENDERER_UNAVAILABLE) {
-            if (language == null) {
-                trackSelector.setParameters(trackSelector.buildUponParameters()
-                        .setRendererDisabled(textRendererIndex, true));
-            } else {
-                trackSelector.setParameters(trackSelector.buildUponParameters()
-                        .setPreferredTextLanguages(
-                                language, PlayerHelper.captionLanguageStemOf(language))
-                        .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
-                        .setRendererDisabled(textRendererIndex, false));
-            }
-        }
-
-        final StreamInfo currentInfo = getCurrentStreamInfo().orElse(null);
-        if (!ChannelPlaybackProfileManager.saveCaptionPreference(
-                context, currentInfo, currentItem, language)) {
-            final SharedPreferences.Editor editor = prefs.edit();
-            if (language == null) {
-                editor.remove(context.getString(R.string.caption_user_set_key));
-            } else {
-                editor.putString(context.getString(R.string.caption_user_set_key), language);
-            }
-            editor.apply();
-        }
+        captionController.setPreference(language);
     }
     //endregion
 
@@ -1587,22 +1524,11 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public void setPlaybackQuality(@Nullable final String quality) {
-        saveStreamProgressState();
-        setRecovery();
-        if (quality != null) {
-            ChannelPlaybackProfileManager.saveQuality(
-                    context, getCurrentStreamInfo().orElse(null), currentItem, quality);
-        }
-        videoResolver.setPlaybackQuality(quality);
-        reloadPlayQueueManager();
+        streamController.setPlaybackQuality(quality);
     }
 
     public void setAudioTrack(@Nullable final String audioTrackId) {
-        saveStreamProgressState();
-        setRecovery();
-        videoResolver.setAudioTrack(audioTrackId);
-        audioResolver.setAudioTrack(audioTrackId);
-        reloadPlayQueueManager();
+        streamController.setAudioTrack(audioTrackId);
     }
 
 
