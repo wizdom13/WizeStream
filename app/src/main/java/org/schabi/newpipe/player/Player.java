@@ -231,6 +231,8 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerSeekController seekController;
     @NonNull
+    private final PlayerTransportController transportController;
+    @NonNull
     private final CompositeDisposable streamItemDisposable = new CompositeDisposable();
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -273,6 +275,7 @@ public final class Player implements PlaybackListener, Listener {
         progressController = new PlayerProgressController(this, historyController,
                 sponsorBlockController, eventDispatcher);
         seekController = new PlayerSeekController(this);
+        transportController = new PlayerTransportController(this, sleepTimerController);
         thumbnailController = new PlayerThumbnailController(this);
         localMetadataController = new PlayerLocalMetadataController(this);
         broadcastController = new PlayerBroadcastController(this);
@@ -1498,98 +1501,23 @@ public final class Player implements PlaybackListener, Listener {
     //region Player actions (play, pause, previous, fast-forward, ...)
 
     public void play() {
-        if (DEBUG) {
-            Log.d(TAG, "play() called");
-        }
-        if (audioReactor == null || playQueue == null || exoPlayerIsNull()) {
-            return;
-        }
-
-        if (!isMuted()) {
-            audioReactor.requestAudioFocus();
-        }
-
-        if (currentState == STATE_COMPLETED) {
-            if (playQueue.getIndex() == 0) {
-                seekToDefault();
-            } else {
-                playQueue.setIndex(0);
-            }
-        }
-
-        if (isStopped()) {
-            // Some phones suspend a paused player after 10 minutes. This causes the player to
-            // enter STATE_IDLE, causing playback to fail. So we try to recover from that here.
-            setRecovery();
-            reloadPlayQueueManager();
-        }
-
-        simpleExoPlayer.play();
-        saveStreamProgressState();
+        transportController.play();
     }
 
     public void pause() {
-        if (DEBUG) {
-            Log.d(TAG, "pause() called");
-        }
-        if (audioReactor == null || exoPlayerIsNull()) {
-            return;
-        }
-
-        audioReactor.abandonAudioFocus();
-        simpleExoPlayer.pause();
-        saveStreamProgressState();
+        transportController.pause();
     }
 
     public void playPause() {
-        if (DEBUG) {
-            Log.d(TAG, "onPlayPause() called");
-        }
-
-        if (getPlayWhenReady()
-                // When state is completed (replay button is shown) then (re)play and do not pause
-                && currentState != STATE_COMPLETED) {
-            pause();
-        } else {
-            play();
-        }
+        transportController.playPause();
     }
 
     public void playPrevious() {
-        if (DEBUG) {
-            Log.d(TAG, "onPlayPrevious() called");
-        }
-        if (exoPlayerIsNull() || playQueue == null) {
-            return;
-        }
-
-        /* If current playback has run for PLAY_PREV_ACTIVATION_LIMIT_MILLIS milliseconds,
-         * restart current track. Also restart the track if the current track
-         * is the first in a queue.*/
-        if (simpleExoPlayer.getCurrentPosition() > PLAY_PREV_ACTIVATION_LIMIT_MILLIS
-                || playQueue.getIndex() == 0) {
-            seekToDefault();
-            playQueue.offsetIndex(0);
-        } else {
-            saveStreamProgressState();
-            playQueue.offsetIndex(-1);
-        }
-        sleepTimerController.onCurrentItemChanged();
-        triggerProgressUpdate();
+        transportController.playPrevious();
     }
 
     public void playNext() {
-        if (DEBUG) {
-            Log.d(TAG, "onPlayNext() called");
-        }
-        if (playQueue == null) {
-            return;
-        }
-
-        saveStreamProgressState();
-        playQueue.offsetIndex(+1);
-        sleepTimerController.onCurrentItemChanged();
-        triggerProgressUpdate();
+        transportController.playNext();
     }
 
     public void fastForward() {
