@@ -75,8 +75,6 @@ import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
-import org.schabi.newpipe.learning.LearningSessionTracker;
-import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
@@ -262,8 +260,6 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final SerialDisposable progressUpdateDisposable = new SerialDisposable();
     @NonNull
-    private final CompositeDisposable databaseUpdateDisposable = new CompositeDisposable();
-    @NonNull
     private final CompositeDisposable streamItemDisposable = new CompositeDisposable();
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -275,9 +271,7 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final SharedPreferences prefs;
     @NonNull
-    private final HistoryRecordManager recordManager;
-    @NonNull
-    private final LearningSessionTracker learningSessionTracker;
+    private final PlayerHistoryController historyController;
     @NonNull
     private final PlayerDataSource dataSource;
 
@@ -299,8 +293,7 @@ public final class Player implements PlaybackListener, Listener {
         context = service;
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         audioController = new PlayerAudioController(this);
-        recordManager = new HistoryRecordManager(context);
-        learningSessionTracker = new LearningSessionTracker(context);
+        historyController = new PlayerHistoryController(this);
         sponsorBlockController = new SponsorBlockPlaybackController(this);
         playbackParametersController = new PlaybackParametersController(this);
         sleepTimerController = new SleepTimerPlaybackController(this);
@@ -378,8 +371,7 @@ public final class Player implements PlaybackListener, Listener {
         // can move the initUIs stuff without breaking the setup for edge cases somehow.
         // when playing from a timestamp, keep the current player as-is.
         if (playerIntentType != PlayerIntentType.TimestampChange) {
-            learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
-                    audioPlayerSelected());
+            historyController.updateLearningSession();
             @Nullable final PlayerType requestedPlayerType = IntentCompat.getSerializableExtra(
                     intent, PLAYER_TYPE, PlayerType.class);
             if (playerType == PlayerType.MAIN && requestedPlayerType == PlayerType.POPUP
@@ -389,8 +381,7 @@ public final class Player implements PlaybackListener, Listener {
                         .orElse(false));
             }
             playerType = requestedPlayerType;
-            learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
-                    audioPlayerSelected());
+            historyController.updateLearningSession();
         }
         initUIsForCurrentPlayerType();
         isAudioOnly = audioPlayerSelected();
@@ -551,32 +542,25 @@ public final class Player implements PlaybackListener, Listener {
                 && !newQueue.isEmpty()
                 && newQueue.getItem() != null
                 && newQueue.getItem().getRecoveryPosition() == PlayQueueItem.RECOVERY_UNSET) {
-            databaseUpdateDisposable.add(recordManager.loadStreamState(newQueue.getItem())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    // Do not place initPlayback() in doFinally() because
-                    // it restarts playback after destroy()
-                    //.doFinally()
-                    .subscribe(
-                            state -> {
-                                if (!state.isFinished(newQueue.getItem().getDuration())) {
-                                    // resume playback only if the stream was not played to the end
-                                    newQueue.setRecovery(newQueue.getIndex(),
-                                            state.getProgressMillis());
-                                }
-                                initPlayback(newQueue, playWhenReady);
-                            },
-                            error -> {
-                                if (DEBUG) {
-                                    Log.w(TAG, "Failed to start playback", error);
-                                }
-                                // In case any error we can start playback without history
-                                initPlayback(newQueue, playWhenReady);
-                            },
-                            () -> {
-                                // Completed but not found in history
-                                initPlayback(newQueue, playWhenReady);
-                            }
-                    ));
+            historyController.restoreStreamState(newQueue.getItem(),
+                    state -> {
+                        if (!state.isFinished(newQueue.getItem().getDuration())) {
+                            // resume playback only if the stream was not played to the end
+                            newQueue.setRecovery(newQueue.getIndex(), state.getProgressMillis());
+                        }
+                        initPlayback(newQueue, playWhenReady);
+                    },
+                    error -> {
+                        if (DEBUG) {
+                            Log.w(TAG, "Failed to start playback", error);
+                        }
+                        // In case any error we can start playback without history
+                        initPlayback(newQueue, playWhenReady);
+                    },
+                    () -> {
+                        // Completed but not found in history
+                        initPlayback(newQueue, playWhenReady);
+                    });
         } else {
             // Good to go...
             // In a case of equal PlayQueues we can re-init old one but only when it is disposed
@@ -707,7 +691,7 @@ public final class Player implements PlaybackListener, Listener {
         }
         cancelPendingMediaUrlRecovery();
         mediaUrlRecoveryGuard.reset();
-        learningSessionTracker.stop();
+        historyController.stopLearningSession();
         UIs.call(PlayerUi::destroyPlayer);
         audioController.releaseAudioSession();
 
@@ -745,7 +729,7 @@ public final class Player implements PlaybackListener, Listener {
         destroyPlayer();
         broadcastController.unregister();
 
-        databaseUpdateDisposable.clear();
+        historyController.clear();
         progressUpdateDisposable.set(null);
         streamItemDisposable.clear();
 
@@ -881,8 +865,7 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
-        learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
-                audioPlayerSelected());
+        historyController.updateLearningSession();
         sponsorBlockController.onProgress();
         onUpdateProgress(Math.max((int) simpleExoPlayer.getCurrentPosition(), 0),
                 (int) simpleExoPlayer.getDuration(), simpleExoPlayer.getBufferedPercentage());
@@ -1012,8 +995,7 @@ public final class Player implements PlaybackListener, Listener {
             Log.d(TAG, "changeState() called with: state = [" + state + "]");
         }
         currentState = state;
-        learningSessionTracker.update(currentItem, state == STATE_PLAYING,
-                audioPlayerSelected());
+        historyController.updateLearningSession();
         switch (state) {
             case STATE_BLOCKED:
                 onBlocked();
@@ -1689,10 +1671,9 @@ public final class Player implements PlaybackListener, Listener {
                 || currentItem.getServiceId() != item.getServiceId()
                 || !currentItem.getUrl().equals(item.getUrl());
 
-        learningSessionTracker.stop();
+        historyController.stopLearningSession();
         currentItem = item;
-        learningSessionTracker.update(currentItem, currentState == STATE_PLAYING,
-                audioPlayerSelected());
+        historyController.updateLearningSession();
         playbackParametersController.applySpeedProfile(item);
 
         if (playQueueIndex != playQueue.getIndex()) {
@@ -1882,45 +1863,11 @@ public final class Player implements PlaybackListener, Listener {
     //region StreamInfo history: views and progress
 
     private void registerStreamViewed() {
-        if (currentItem != null && currentItem.isLocalMedia()) {
-            databaseUpdateDisposable.add(recordManager.onViewed(currentItem)
-                    .onErrorComplete().subscribe());
-        } else {
-            getCurrentStreamInfo().ifPresent(info -> databaseUpdateDisposable
-                    .add(recordManager.onViewed(info).onErrorComplete().subscribe()));
-        }
+        historyController.registerViewed();
     }
 
     private void saveStreamProgressState(final long progressMillis) {
-        if (currentItem != null && currentItem.isLocalMedia()) {
-            if (!prefs.getBoolean(context.getString(R.string.enable_watch_history_key), true)) {
-                return;
-            }
-            databaseUpdateDisposable.add(recordManager.saveStreamState(currentItem, progressMillis)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .onErrorComplete()
-                    .subscribe());
-            return;
-        }
-        getCurrentStreamInfo().ifPresent(info -> {
-            if (!prefs.getBoolean(context.getString(R.string.enable_watch_history_key), true)) {
-                return;
-            }
-            if (DEBUG) {
-                Log.d(TAG, "saveStreamProgressState() called with: progressMillis=" + progressMillis
-                        + ", currentMetadata=[" + info.getName() + "]");
-            }
-
-            databaseUpdateDisposable.add(recordManager.saveStreamState(info, progressMillis)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnError(e -> {
-                        if (DEBUG) {
-                            e.printStackTrace();
-                        }
-                    })
-                    .onErrorComplete()
-                    .subscribe());
-        });
+        historyController.saveProgress(progressMillis);
     }
 
     public void saveStreamProgressState() {
@@ -1981,8 +1928,7 @@ public final class Player implements PlaybackListener, Listener {
         sponsorBlockController.reset();
         thumbnailController.loadLocal(item);
         localMetadataController.load(item);
-        databaseUpdateDisposable.add(recordManager.onViewed(item)
-                .onErrorComplete().subscribe());
+        historyController.registerViewed(item);
         notifyMetadataUpdateToListeners();
         notifyAudioTrackUpdateToListeners();
         UIs.call(playerUi -> playerUi.onMetadataChanged(currentMetadata));
