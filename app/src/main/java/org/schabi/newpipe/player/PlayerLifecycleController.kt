@@ -50,8 +50,13 @@ internal class PlayerLifecycleController(
             player.playbackSkipSilence
         )
         val parameters = PlayerHelper.retrievePlaybackParametersFromPrefs(player)
+        val initialSpeed = PlaybackParametersController.resolvePlaybackSpeed(
+            queue.item?.streamType,
+            null,
+            parameters.speed
+        )
         playbackParametersController.applyParameters(
-            parameters.speed,
+            initialSpeed,
             parameters.pitch,
             skipSilence
         )
