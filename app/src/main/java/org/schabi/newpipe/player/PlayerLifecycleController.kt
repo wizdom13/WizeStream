@@ -139,9 +139,14 @@ internal class PlayerLifecycleController(
         player.UIs().call(PlayerUi::destroyPlayer)
         audioController.releaseAudioSession()
         if (!player.exoPlayerIsNull()) {
-            player.exoPlayer.removeListener(player)
-            player.exoPlayer.stop()
-            player.exoPlayer.release()
+            val exoPlayer = player.exoPlayer
+            try {
+                exoPlayer.removeListener(player)
+                exoPlayer.stop()
+                exoPlayer.release()
+            } finally {
+                player.clearExoPlayerForLifecycle()
+            }
         }
         if (player.isProgressLoopRunning) player.stopProgressLoop()
         player.playQueue?.dispose()
