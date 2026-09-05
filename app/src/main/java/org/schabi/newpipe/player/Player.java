@@ -24,7 +24,6 @@ import static androidx.media3.common.Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT
 import static androidx.media3.common.Player.DISCONTINUITY_REASON_SKIP;
 import static androidx.media3.common.Player.DiscontinuityReason;
 import static androidx.media3.common.Player.Listener;
-import static androidx.media3.common.Player.REPEAT_MODE_ALL;
 import static androidx.media3.common.Player.REPEAT_MODE_OFF;
 import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static androidx.media3.common.Player.RepeatMode;
@@ -239,6 +238,8 @@ public final class Player implements PlaybackListener, Listener {
 
     @NonNull
     private final SleepTimerPlaybackController sleepTimerController;
+    @NonNull
+    private final PlayerQueueModeController queueModeController;
     // audio only mode does not mean that player type is background, but that the player was
     // minimized to background but will resume automatically to the original player type
     private boolean isAudioOnly = false;
@@ -305,6 +306,7 @@ public final class Player implements PlaybackListener, Listener {
         sponsorBlockController = new SponsorBlockPlaybackController(this);
         playbackParametersController = new PlaybackParametersController(this);
         sleepTimerController = new SleepTimerPlaybackController(this);
+        queueModeController = new PlayerQueueModeController(this, sleepTimerController);
         eventDispatcher = new PlayerEventDispatcher(this);
         thumbnailController = new PlayerThumbnailController(this);
         broadcastController = new PlayerBroadcastController(this);
@@ -1136,62 +1138,25 @@ public final class Player implements PlaybackListener, Listener {
 
     @RepeatMode
     public int getRepeatMode() {
-        return exoPlayerIsNull() ? REPEAT_MODE_OFF : simpleExoPlayer.getRepeatMode();
+        return queueModeController.getRepeatMode();
     }
 
     public void cycleNextRepeatMode() {
-        if (!exoPlayerIsNull()) {
-            @RepeatMode final int repeatMode;
-            switch (simpleExoPlayer.getRepeatMode()) {
-                case REPEAT_MODE_OFF:
-                    repeatMode = REPEAT_MODE_ONE;
-                    break;
-                case REPEAT_MODE_ONE:
-                    repeatMode = REPEAT_MODE_ALL;
-                    break;
-                case REPEAT_MODE_ALL:
-                default:
-                    repeatMode = REPEAT_MODE_OFF;
-                    break;
-            }
-            simpleExoPlayer.setRepeatMode(repeatMode);
-        }
+        queueModeController.cycleNextRepeatMode();
     }
 
     @Override
     public void onRepeatModeChanged(@RepeatMode final int repeatMode) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - onRepeatModeChanged() called with: "
-                    + "repeatMode = [" + repeatMode + "]");
-        }
-        UIs.call(playerUi -> playerUi.onRepeatModeChanged(repeatMode));
-        notifyPlaybackUpdateToListeners();
+        queueModeController.onRepeatModeChanged(repeatMode);
     }
 
     @Override
     public void onShuffleModeEnabledChanged(final boolean shuffleModeEnabled) {
-        if (DEBUG) {
-            Log.d(TAG, "ExoPlayer - onShuffleModeEnabledChanged() called with: "
-                    + "mode = [" + shuffleModeEnabled + "]");
-        }
-
-        if (playQueue != null) {
-            if (shuffleModeEnabled && !playQueue.isShuffled()) {
-                playQueue.shuffle();
-            } else if (!shuffleModeEnabled && playQueue.isShuffled()) {
-                playQueue.unshuffle();
-            }
-            sleepTimerController.onShuffleModeChanged();
-        }
-
-        UIs.call(playerUi -> playerUi.onShuffleModeEnabledChanged(shuffleModeEnabled));
-        notifyPlaybackUpdateToListeners();
+        queueModeController.onShuffleModeEnabledChanged(shuffleModeEnabled);
     }
 
     public void toggleShuffleModeEnabled() {
-        if (!exoPlayerIsNull()) {
-            simpleExoPlayer.setShuffleModeEnabled(!simpleExoPlayer.getShuffleModeEnabled());
-        }
+        queueModeController.toggleShuffleModeEnabled();
     }
     //endregion
 
