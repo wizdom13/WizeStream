@@ -68,6 +68,7 @@ import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.TimestampChangeData;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.PlayerHolder;
+import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.settings.SettingsActivity;
@@ -124,6 +125,9 @@ public final class NavigationHelper {
     /* PLAY */
     public static void playOnMainPlayer(final AppCompatActivity activity,
                                         @NonNull final PlayQueue playQueue) {
+        if (playQueuedLocalMediaDirectly(activity, playQueue)) {
+            return;
+        }
         final PlayQueueItem item = playQueue.getItem();
         if (item != null) {
             openVideoDetailFragment(activity, activity.getSupportFragmentManager(),
@@ -135,12 +139,31 @@ public final class NavigationHelper {
     public static void playOnMainPlayer(final Context context,
                                         @NonNull final PlayQueue playQueue,
                                         final boolean switchingPlayers) {
+        if (!switchingPlayers && playQueuedLocalMediaDirectly(context, playQueue)) {
+            return;
+        }
         final PlayQueueItem item = playQueue.getItem();
         if (item != null) {
             openVideoDetail(context,
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,
                     switchingPlayers);
         }
+    }
+
+    private static boolean playQueuedLocalMediaDirectly(final Context context,
+                                                        final PlayQueue playQueue) {
+        if (!(playQueue instanceof LocalMediaPlayQueue)) {
+            return false;
+        }
+        final LocalMediaPlayQueue localQueue = (LocalMediaPlayQueue) playQueue;
+        if (!localQueue.containsLocalMedia() || !localQueue.shouldOpenQueueOnStart()) {
+            return false;
+        }
+
+        final Intent intent = getPlayerIntent(context, PlayerService.class, playQueue,
+                PlayerIntentType.AllOthers);
+        ContextCompat.startForegroundService(context, intent);
+        return true;
     }
 
     public static void playOnPopupPlayer(final Context context,
