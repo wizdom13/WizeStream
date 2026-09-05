@@ -144,7 +144,7 @@ internal class PlayerMedia3ListenerController(
         newIndex: Int
     ) {
         if (Player.DEBUG) Log.d(Player.TAG, "ExoPlayer - onSeekProcessed() called")
-        if (player.isPreparedForProgressUpdates()) {
+        if (player.isPreparedForProgressUpdates) {
             player.saveStreamProgressState()
         }
         synchronizeQueueIndex(queue, newIndex)
