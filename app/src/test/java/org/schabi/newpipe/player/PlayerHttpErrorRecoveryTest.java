@@ -136,21 +136,21 @@ public class PlayerHttpErrorRecoveryTest {
         final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
                 ? Path.of("src/main/java") : Path.of("app/src/main/java");
         final String source = Files.readString(sourceDirectory.resolve(
-                "org/schabi/newpipe/player/Player.java"));
+                "org/schabi/newpipe/player/PlayerErrorController.kt"));
         final int methodStart = source.indexOf(
-                "private boolean tryRecoverFromYouTubeMediaUrlFailure");
+                "private fun tryRecoverFromYouTubeMediaUrlFailure");
         final int methodEnd = source.indexOf(
-                "private void cancelPendingMediaUrlRecovery", methodStart);
+                "private fun cancelPendingMediaUrlRecovery", methodStart);
         assertTrue(methodStart >= 0);
         assertTrue(methodEnd > methodStart);
         final String recoveryMethod = source.substring(methodStart, methodEnd);
 
-        assertTrue(recoveryMethod.contains("setRecovery();"));
-        assertTrue(recoveryMethod.indexOf("setRecovery();")
+        assertTrue(recoveryMethod.contains("player.setRecovery()"));
+        assertTrue(recoveryMethod.indexOf("player.setRecovery()")
                 < recoveryMethod.indexOf("postDelayed"));
         assertTrue(recoveryMethod.contains("invalidateYouTubeMediaCaches(item)"));
         assertTrue(recoveryMethod.contains("rejectVideoStreamOnce"));
-        assertTrue(recoveryMethod.contains("changeState(STATE_PAUSED);"));
+        assertTrue(recoveryMethod.contains("player.changeState(Player.STATE_PAUSED)"));
         assertFalse(recoveryMethod.contains("playQueue.error()"));
     }
 
