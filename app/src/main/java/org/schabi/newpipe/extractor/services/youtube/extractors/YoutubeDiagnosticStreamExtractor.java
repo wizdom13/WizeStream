@@ -3,15 +3,20 @@ package org.schabi.newpipe.extractor.services.youtube.extractors;
 import com.grack.nanojson.JsonArray;
 import com.grack.nanojson.JsonObject;
 
+import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.linkhandler.LinkHandler;
 import org.schabi.newpipe.extractor.services.youtube.WatchDataCache;
+import org.schabi.newpipe.extractor.stream.SubtitlesStream;
+import org.schabi.newpipe.settings.CaptionTranslationPreferences;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,6 +31,22 @@ public final class YoutubeDiagnosticStreamExtractor
                                             final LinkHandler linkHandler,
                                             final WatchDataCache watchDataCache) {
         super(service, linkHandler, watchDataCache);
+    }
+
+    @Override
+    @Nonnull
+    public List<SubtitlesStream> getSubtitles(final MediaFormat format) throws ParsingException {
+        final List<SubtitlesStream> subtitles = new ArrayList<>(super.getSubtitles(format));
+        try {
+            YoutubeCaptionTranslationHelper.addTranslatedSubtitle(
+                    subtitles,
+                    getPrivateJsonObject("playerCaptionsTracklistRenderer"),
+                    format,
+                    CaptionTranslationPreferences.getTargetLanguage());
+        } catch (final RuntimeException ignored) {
+            // Caption translation must never make an otherwise playable video fail.
+        }
+        return subtitles;
     }
 
     @Override
