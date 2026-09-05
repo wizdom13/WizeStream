@@ -94,6 +94,7 @@ internal class PlayerIntentController(
                     return
                 }
             }
+
             PlayerIntentType.EnqueueNext -> {
                 player.playQueue?.let { queue ->
                     val newQueue = playQueueFromCache(intent) ?: return
@@ -101,10 +102,12 @@ internal class PlayerIntentController(
                     return
                 }
             }
+
             PlayerIntentType.TimestampChange -> {
                 handleTimestampChange(intent, playWhenReady)
                 return
             }
+
             PlayerIntentType.AllOthers -> Unit
         }
 
