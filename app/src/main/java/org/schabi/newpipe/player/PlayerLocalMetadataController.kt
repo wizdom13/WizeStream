@@ -38,7 +38,7 @@ internal class PlayerLocalMetadataController(private val player: Player) {
             player.playQueue?.notifyChange()
             player.notifyMetadataUpdateToListeners()
             player.notifyAudioTrackUpdateToListeners()
-            player.UIs().call { ui -> ui.onMetadataChanged(player.currentMetadata) }
+            player.UIs().call { ui -> ui.onMetadataChanged(currentMetadata) }
         }
     }
 
