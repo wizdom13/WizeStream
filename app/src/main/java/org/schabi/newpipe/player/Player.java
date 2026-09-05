@@ -260,7 +260,6 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final SerialDisposable progressUpdateDisposable = new SerialDisposable();
     @NonNull
-    @NonNull
     private final CompositeDisposable streamItemDisposable = new CompositeDisposable();
 
     /*//////////////////////////////////////////////////////////////////////////
