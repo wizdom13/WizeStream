@@ -15,6 +15,8 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.PlaylistControlBinding
 import org.schabi.newpipe.fragments.list.playlist.PlaylistControlViewHolder
 import org.schabi.newpipe.player.PlayerType
+import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue
+import org.schabi.newpipe.player.playqueue.PlayQueue
 
 /**
  * Utility class for play buttons and their respective click listeners.
@@ -38,7 +40,7 @@ object PlayButtonHelper {
     ) {
         // click listener
         playlistControlBinding.playlistCtrlPlayAllButton.setOnClickListener {
-            NavigationHelper.playOnMainPlayer(activity, fragment.getPlayQueue())
+            NavigationHelper.playOnMainPlayer(activity, mainPlaybackQueue(fragment))
             showHoldToAppendToastIfNeeded(activity)
         }
         playlistControlBinding.playlistCtrlPlayPopupButton.setOnClickListener {
@@ -62,6 +64,14 @@ object PlayButtonHelper {
         playlistControlBinding.playlistCtrlPlayBgButton.setOnLongClickListener {
             NavigationHelper.enqueueOnPlayer(activity, fragment.getPlayQueue(), PlayerType.AUDIO)
             true
+        }
+    }
+
+    private fun mainPlaybackQueue(fragment: PlaylistControlViewHolder): PlayQueue {
+        return fragment.getPlayQueue().also { queue ->
+            if (queue is LocalMediaPlayQueue && queue.containsLocalMedia()) {
+                queue.requestOpenQueueOnStart()
+            }
         }
     }
 

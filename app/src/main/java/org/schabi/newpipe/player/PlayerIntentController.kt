@@ -19,6 +19,7 @@ import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.stream.StreamInfo
+import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue
 import org.schabi.newpipe.player.playqueue.PlayQueue
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
@@ -40,7 +41,10 @@ internal class PlayerIntentController(
     private val videoResolver: VideoPlaybackResolver,
     private val streamItemDisposable: CompositeDisposable
 ) {
+    private var openPlayQueueAfterIntent = false
+
     fun handle(intent: Intent) {
+        openPlayQueueAfterIntent = false
         val intentType = IntentCompat.getSerializableExtra(
             intent,
             Player.PLAYER_INTENT_TYPE,
@@ -112,6 +116,8 @@ internal class PlayerIntentController(
         }
 
         val newQueue = playQueueFromCache(intent) ?: return
+        openPlayQueueAfterIntent = player.playerType == PlayerType.MAIN &&
+            (newQueue as? LocalMediaPlayQueue)?.consumeOpenQueueOnStart() == true
         val currentQueue = player.playQueue
         val samePlayQueue =
             currentQueue != null && currentQueue.equalStreamsAndIndex(newQueue)
@@ -170,6 +176,13 @@ internal class PlayerIntentController(
         }
         player.UIs().call(PlayerUi::setupAfterIntent)
         NavigationHelper.sendPlayerStartedEvent(context)
+        if (openPlayQueueAfterIntent) {
+            openPlayQueueAfterIntent = false
+            context.startActivity(
+                Intent(context, PlayQueueActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
     }
 
     private fun handleTimestampChange(intent: Intent, playWhenReady: Boolean) {

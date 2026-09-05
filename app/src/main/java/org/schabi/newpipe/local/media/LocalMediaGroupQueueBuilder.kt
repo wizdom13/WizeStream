@@ -13,7 +13,8 @@ object LocalMediaGroupQueueBuilder {
         random: Random = Random.Default
     ): LocalMediaPlayQueue = LocalMediaPlayQueue(
         items(group, shuffle, random).map(LocalMediaItem::toPlayQueueItem),
-        0
+        0,
+        true
     )
 
     internal fun items(
