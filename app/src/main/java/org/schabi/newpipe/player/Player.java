@@ -12,7 +12,6 @@ import static androidx.media3.common.Player.REPEAT_MODE_OFF;
 import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static androidx.media3.common.Player.RepeatMode;
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
-import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
 
@@ -41,7 +40,6 @@ import androidx.media3.session.MediaLibraryService.MediaLibrarySession;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.common.text.CueGroup;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
-import androidx.media3.exoplayer.trackselection.MappingTrackSelector;
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
 import androidx.media3.common.VideoSize;
 
@@ -53,7 +51,6 @@ import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
-import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
 import org.schabi.newpipe.player.event.PlayerEventListener;
@@ -89,13 +86,11 @@ import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.SerializedCache;
-import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -203,9 +198,6 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerQueueModeController queueModeController;
     // audio only mode does not mean that player type is background, but that the player was
     // minimized to background but will resume automatically to the original player type
-    private boolean isAudioOnly = false;
-    @NonNull
-    private PlaybackPresentationMode playbackPresentationMode = PlaybackPresentationMode.VIDEO;
 
     /*//////////////////////////////////////////////////////////////////////////
     // UIs, listeners and disposables
@@ -226,6 +218,8 @@ public final class Player implements PlaybackListener, Listener {
     private final PlayerLocalMetadataController localMetadataController;
     @NonNull
     private final PlayerProgressController progressController;
+    @NonNull
+    private final PlayerPresentationController presentationController;
     @NonNull
     private final PlayerQueueSynchronizer queueSynchronizer;
     @NonNull
@@ -305,6 +299,8 @@ public final class Player implements PlaybackListener, Listener {
 
         videoResolver = new VideoPlaybackResolver(context, dataSource, getQualityResolver());
         audioResolver = new AudioPlaybackResolver(context, dataSource);
+        presentationController = new PlayerPresentationController(this, videoResolver,
+                trackSelector, visualizerAudioProcessor);
         errorController = new PlayerErrorController(this, eventDispatcher, videoResolver);
 
         // The UIs added here should always be present. They will be initialized when the player
@@ -368,17 +364,10 @@ public final class Player implements PlaybackListener, Listener {
             historyController.updateLearningSession();
         }
         initUIsForCurrentPlayerType();
-        isAudioOnly = audioPlayerSelected();
-        if (playerIntentType != PlayerIntentType.TimestampChange) {
-            final PlaybackPresentationMode requestedMode = IntentCompat.getSerializableExtra(
-                    intent, PLAYBACK_PRESENTATION_MODE, PlaybackPresentationMode.class);
-            playbackPresentationMode = requestedMode != null
-                    ? requestedMode
-                    : audioPlayerSelected()
-                            ? PlaybackPresentationMode.AUDIO_BACKGROUND
-                            : PlaybackPresentationMode.VIDEO;
-            visualizerAudioProcessor.setEnabled(playbackPresentationMode.allowsVisualizer());
-        }
+        final PlaybackPresentationMode requestedMode = IntentCompat.getSerializableExtra(
+                intent, PLAYBACK_PRESENTATION_MODE, PlaybackPresentationMode.class);
+        presentationController.updateFromIntent(audioPlayerSelected(), requestedMode,
+                playerIntentType != PlayerIntentType.TimestampChange);
 
         if (intent.hasExtra(PLAYBACK_QUALITY)) {
             videoResolver.setPlaybackQuality(intent.getStringExtra(PLAYBACK_QUALITY));
@@ -954,7 +943,7 @@ public final class Player implements PlaybackListener, Listener {
         final boolean tunnelingEnabled = !prefs.getBoolean(
                 context.getString(R.string.disable_media_tunneling_key), false)
                 && !audioController.getEqualizerState().isEnabled()
-                && !playbackPresentationMode.allowsVisualizer();
+                && !getPlaybackPresentationMode().allowsVisualizer();
         trackSelector.setParameters(trackSelector.buildUponParameters()
                 .setTunnelingEnabled(tunnelingEnabled));
     }
@@ -1477,7 +1466,7 @@ public final class Player implements PlaybackListener, Listener {
             return audioResolver.resolve(info);
         }
 
-        if (isAudioOnly && videoResolver.getStreamSourceType().orElse(
+        if (isAudioOnly() && videoResolver.getStreamSourceType().orElse(
                 SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY)
                 == SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY) {
             // If the current info has only video streams with audio and if the stream is played as
@@ -1659,128 +1648,12 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public void useVideoAndSubtitles(final boolean videoAndSubtitlesEnabled) {
-        if (playQueue == null) {
-            return;
-        }
-
-        isAudioOnly = !videoAndSubtitlesEnabled;
-
-        final var item = playQueue.getItem();
-        final boolean hasPendingRecovery =
-                item != null && item.getRecoveryPosition() != PlayQueueItem.RECOVERY_UNSET;
-        final boolean hasTimeline =
-                !exoPlayerIsNull() && !simpleExoPlayer.getCurrentTimeline().isEmpty();
-
-
-        getCurrentStreamInfo().ifPresentOrElse(info -> {
-            // In case we don't know the source type, fall back to either video-with-audio, or
-            // audio-only source type
-            final SourceType sourceType = videoResolver.getStreamSourceType()
-                    .orElse(SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY);
-
-            if (hasTimeline || !hasPendingRecovery) {
-                // making sure to save playback position before reloadPlayQueueManager()
-                setRecovery();
-            }
-
-            if (playQueueManagerReloadingNeeded(sourceType, info, getVideoRendererIndex())) {
-                reloadPlayQueueManager();
-            }
-        }, () -> {
-            /*
-            The current metadata may be null sometimes (for e.g. when using an unstable connection
-            in livestreams) so we will be not able to execute the block above
-
-            Reload the play queue manager in this case, which is the behavior when we don't know the
-            index of the video renderer or playQueueManagerReloadingNeeded returns true
-            */
-            if (hasTimeline || !hasPendingRecovery) {
-                // making sure to save playback position before reloadPlayQueueManager()
-                setRecovery();
-            }
-            reloadPlayQueueManager();
-        });
-
-        // Disable or enable video and subtitles renderers depending of the
-        // videoAndSubtitlesEnabled value
-        trackSelector.setParameters(trackSelector.buildUponParameters()
-                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !videoAndSubtitlesEnabled)
-                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, !videoAndSubtitlesEnabled));
+        presentationController.useVideoAndSubtitles(videoAndSubtitlesEnabled);
     }
 
     public void setPlaybackPresentationMode(
             @NonNull final PlaybackPresentationMode newMode) {
-        if (playbackPresentationMode == newMode) {
-            return;
-        }
-        playbackPresentationMode = newMode;
-        visualizerAudioProcessor.setEnabled(newMode.allowsVisualizer());
-        useVideoAndSubtitles(newMode.rendersVideo());
-        updateAudioTunneling();
-        UIs.call(playerUi -> playerUi.onPlaybackPresentationModeChanged(newMode));
-    }
-
-    /**
-     * Return whether the play queue manager needs to be reloaded when switching player type.
-     *
-     * <p>
-     * The play queue manager needs to be reloaded if the video renderer index is not known and if
-     * the content is not an audio content, but also if none of the following cases is met:
-     *
-     * <ul>
-     *     <li>the content is an {@link StreamType#AUDIO_STREAM audio stream}, an
-     *     {@link StreamType#AUDIO_LIVE_STREAM audio live stream}, or a
-     *     {@link StreamType#POST_LIVE_AUDIO_STREAM ended audio live stream};</li>
-     *     <li>the content is a {@link StreamType#LIVE_STREAM live stream} and the source type is a
-     *     {@link SourceType#LIVE_STREAM live source};</li>
-     *     <li>the content's source is {@link SourceType#VIDEO_WITH_SEPARATED_AUDIO a video stream
-     *     with a separated audio source} or has no audio-only streams available <b>and</b> is a
-     *     {@link StreamType#VIDEO_STREAM video stream}, an
-     *     {@link StreamType#POST_LIVE_STREAM ended live stream}, or a
-     *     {@link StreamType#LIVE_STREAM live stream}.
-     *     </li>
-     * </ul>
-     * </p>
-     *
-     * @param sourceType         the {@link SourceType} of the stream
-     * @param streamInfo         the {@link StreamInfo} of the stream
-     * @param videoRendererIndex the video renderer index of the video source, if that's a video
-     *                           source (or {@link #RENDERER_UNAVAILABLE})
-     * @return whether the play queue manager needs to be reloaded
-     */
-    private boolean playQueueManagerReloadingNeeded(final SourceType sourceType,
-                                                    @NonNull final StreamInfo streamInfo,
-                                                    final int videoRendererIndex) {
-        final StreamType streamType = streamInfo.getStreamType();
-        final boolean isStreamTypeAudio = StreamTypeUtil.isAudio(streamType);
-
-        if (videoRendererIndex == RENDERER_UNAVAILABLE && !isStreamTypeAudio) {
-            return true;
-        }
-
-        // The content is an audio stream, an audio live stream, or a live stream with a live
-        // source: it's not needed to reload the play queue manager because the stream source will
-        // be the same
-        if (isStreamTypeAudio || (streamType == StreamType.LIVE_STREAM
-                && sourceType == SourceType.LIVE_STREAM)) {
-            return false;
-        }
-
-        // The content's source is a video with separated audio or a video with audio -> the video
-        // and its fetch may be disabled
-        // The content's source is a video with embedded audio and the content has no separated
-        // audio stream available: it's probably not needed to reload the play queue manager
-        // because the stream source will be probably the same as the current played
-        if (sourceType == SourceType.VIDEO_WITH_SEPARATED_AUDIO
-                || (sourceType == SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY
-                && isNullOrEmpty(streamInfo.getAudioStreams()))) {
-            // It's not needed to reload the play queue manager only if the content's stream type
-            // is a video stream, a live stream or an ended live stream
-            return !StreamTypeUtil.isVideo(streamType);
-        }
-
-        // Other cases: the play queue manager reload is needed
-        return true;
+        presentationController.setMode(newMode);
     }
     //endregion
 
@@ -1896,12 +1769,12 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public boolean isAudioOnly() {
-        return isAudioOnly;
+        return presentationController.isAudioOnly();
     }
 
     @NonNull
     public PlaybackPresentationMode getPlaybackPresentationMode() {
-        return playbackPresentationMode;
+        return presentationController.getMode();
     }
 
     @NonNull
@@ -1945,33 +1818,6 @@ public final class Player implements PlaybackListener, Listener {
         return UIs;
     }
 
-    /**
-     * Get the video renderer index of the current playing stream.
-     * <p>
-     * This method returns the video renderer index of the current
-     * {@link MappingTrackSelector.MappedTrackInfo} or {@link #RENDERER_UNAVAILABLE} if the current
-     * {@link MappingTrackSelector.MappedTrackInfo} is null or if there is no video renderer index.
-     *
-     * @return the video renderer index or {@link #RENDERER_UNAVAILABLE} if it cannot be get
-     */
-    private int getVideoRendererIndex() {
-        final MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector
-                .getCurrentMappedTrackInfo();
-
-        if (mappedTrackInfo == null) {
-            return RENDERER_UNAVAILABLE;
-        }
-
-        // Check every renderer
-        return IntStream.range(0, mappedTrackInfo.getRendererCount())
-                // Check the renderer is a video renderer and has at least one track
-                .filter(i -> !mappedTrackInfo.getTrackGroups(i).isEmpty()
-                        && simpleExoPlayer.getRendererType(i) == C.TRACK_TYPE_VIDEO)
-                // Return the first index found (there is at most one renderer per renderer type)
-                .findFirst()
-                // No video renderer index with at least one track found: return unavailable index
-                .orElse(RENDERER_UNAVAILABLE);
-    }
     //endregion
 
     /**
