@@ -15,6 +15,8 @@ import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player.RepeatMode;
 import androidx.media3.session.CommandButton;
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession;
+import androidx.media3.session.MediaSession;
+import androidx.media3.session.SessionCommands;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
@@ -212,15 +214,50 @@ public class MediaSessionPlayerUi extends PlayerUi
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        // avoid costly notification actions update, if nothing changed from last time
+        final List<CommandButton> buttons = IntStream.range(0, newNotificationActions.size())
+                .mapToObj(index -> MediaSessionActionProvider.buttonFor(
+                        newNotificationActions.get(index), index == 0))
+                .collect(Collectors.toList());
+
+        // Avoid the global broadcast when the actions did not change. The media-notification
+        // controller is synchronized below on every update because it can connect after the
+        // initial player setup.
         if (!newNotificationActions.equals(prevNotificationActions)) {
             prevNotificationActions = newNotificationActions;
-            final List<CommandButton> buttons = IntStream.range(0, newNotificationActions.size())
-                    .mapToObj(index -> MediaSessionActionProvider.buttonFor(
-                            newNotificationActions.get(index), index == 0))
-                    .collect(Collectors.toList());
             mediaSession.setMediaButtonPreferences(buttons);
         }
+        syncMediaNotificationController(buttons);
+    }
+
+    /**
+     * Keeps Android's System UI controller authorized for the custom buttons published above.
+     *
+     * <p>Media3 filters media button preferences against the commands available to its special
+     * media-notification controller. If the custom commands are not explicitly available there,
+     * Android 13+ drops the corresponding platform PlaybackState custom actions, which removes
+     * WizeStream's fourth and fifth controls (Repeat and Close by default).</p>
+     *
+     * @param buttons the currently configured Android 13+ media action buttons
+     */
+    private void syncMediaNotificationController(@NonNull final List<CommandButton> buttons) {
+        final MediaSession.ControllerInfo notificationController =
+                mediaSession.getMediaNotificationControllerInfo();
+        if (notificationController == null) {
+            return;
+        }
+
+        final SessionCommands.Builder sessionCommands = new SessionCommands.Builder()
+                .addSessionCommands(
+                        MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.commands);
+        MediaSessionActionProvider.supportedActions().stream()
+                .map(MediaSessionActionProvider::commandFor)
+                .forEach(sessionCommands::add);
+
+        mediaSession.setAvailableCommands(
+                notificationController,
+                sessionCommands.build(),
+                mediaSession.getPlayer().getAvailableCommands());
+        mediaSession.setMediaButtonPreferences(notificationController, buttons);
     }
 
     @Override

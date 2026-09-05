@@ -77,18 +77,20 @@ public final class NativePipController {
             return;
         }
 
-        fragment.prepareNativePipEntry();
+        // Do not prepare the fragment for PiP yet. onUserLeaveHint() is also dispatched when
+        // Android opens transient activities such as the share chooser. Preparing here forces the
+        // detail player fullscreen even though no PiP transition follows, leaving the fragment in
+        // that prepared state until another lifecycle event happens. The confirmed PiP callback
+        // below is the single place that should mutate the player/detail layout.
         final PictureInPictureParams params = buildParams(fragment);
         try {
             activity.setPictureInPictureParams(params);
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S
                     || !fragment.isNativePipPlaying()) {
-                if (!activity.enterPictureInPictureMode(params)) {
-                    fragment.onNativePipModeChanged(false);
-                }
+                activity.enterPictureInPictureMode(params);
             }
-        } catch (final IllegalStateException ignored) {
-            fragment.onNativePipModeChanged(false);
+        } catch (final IllegalArgumentException | IllegalStateException ignored) {
+            // No PiP preparation has happened yet, so there is no layout state to unwind.
         }
     }
 
