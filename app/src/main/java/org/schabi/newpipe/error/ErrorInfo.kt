@@ -15,6 +15,7 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.ServiceList.YouTube
 import org.schabi.newpipe.extractor.exceptions.AccountTerminatedException
 import org.schabi.newpipe.extractor.exceptions.AgeRestrictedContentException
+import org.schabi.newpipe.extractor.exceptions.AntiBotException
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
@@ -249,7 +250,7 @@ class ErrorInfo private constructor(
                 throwable is YoutubeMusicPremiumContentException ->
                     ErrorMessage(R.string.youtube_music_premium_content)
 
-                isSignInBotCheckException(throwable) ->
+                throwable is AntiBotException || isSignInBotCheckException(throwable) ->
                     ErrorMessage(
                         R.string.sign_in_confirm_not_bot_error,
                         getServiceName(serviceId),
@@ -319,8 +320,8 @@ class ErrorInfo private constructor(
                 // we know the content is not supported, no need to let the user report it
                 is ContentNotSupportedException -> false
 
-                // Temporary anti-bot blocks are service/network conditions, not app defects.
-                is ServiceTemporaryBlockedException -> false
+                // Anti-bot blocks are service/network conditions, not app defects.
+                is AntiBotException -> false
 
                 // happens often when there is no internet connection; we don't use
                 // `throwable.isNetworkRelated` since any `IOException` would make that function
