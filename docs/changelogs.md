@@ -4,6 +4,39 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.15.0 (`1015000`)
+
+### New features
+
+- Added YouTube caption auto-translation with a configurable target language.
+- Expanded local music metadata and artwork support, including embedded OGG/Opus artwork and
+  same-folder `cover`, `folder`, `albumart`, or `front` image fallbacks.
+- Added one-tap local playlist shuffle plus direct Play All / Shuffle navigation into the Play queue
+  for local albums, artists, genres, folders, and playlists.
+- Added local-library navigation from the Play queue so users can jump back to all local songs.
+
+### Improvements
+
+- Migrated playback and media-session internals to AndroidX Media3 and decomposed the Player core
+  into focused Kotlin controllers for improved maintainability and playback stability.
+- Improved local-media metadata propagation across the player, Play queue, notifications,
+  lock screen, and Android Auto.
+- Moved backup import validation off the UI thread and decomposed structured preference sync storage
+  to reduce blocking work and simplify synchronization maintenance.
+
+### Fixes
+
+- Forced live streams to play at normal 1.0x speed while preserving saved speed preferences for
+  non-live videos.
+- Fixed Share and Picture-in-Picture transitions that could force distorted fullscreen states, and
+  restored Repeat / Close actions in Android System UI media controls.
+- Fixed a crash when opening caption translation settings because the language preference registered
+  its dependency before the parent preference was attached.
+- Improved handling of YouTube anti-bot access blocks and unreleased premieres.
+- Fixed local audio artwork covering the song title after playback starts.
+
+[View the complete changes since v1.14.0](https://github.com/wizdom13/WizeStream/compare/v1.14.0...v1.15.0)
+
 ## WizeStream 1.14.0 (`1014000`)
 
 ### New features
