@@ -344,7 +344,8 @@ class Player(
 
     fun triggerProgressUpdate() = progressController.trigger()
 
-    fun isPreparedForProgressUpdates(): Boolean = stateController.isPrepared
+    val isPreparedForProgressUpdates: Boolean
+        get() = stateController.isPrepared
 
     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = stateController.onPlayWhenReadyChanged(playWhenReady, reason)
 
