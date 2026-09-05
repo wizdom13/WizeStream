@@ -281,10 +281,8 @@ public final class Player implements PlaybackListener, Listener {
 
     private BroadcastReceiver broadcastReceiver;
     private IntentFilter intentFilter;
-    @Nullable
-    private PlayerServiceEventListener fragmentListener = null;
-    @Nullable
-    private PlayerEventListener activityListener = null;
+    @NonNull
+    private final PlayerEventDispatcher eventDispatcher;
 
     @NonNull
     private final SerialDisposable progressUpdateDisposable = new SerialDisposable();
@@ -333,6 +331,7 @@ public final class Player implements PlaybackListener, Listener {
         sponsorBlockController = new SponsorBlockPlaybackController(this);
         playbackParametersController = new PlaybackParametersController(this);
         sleepTimerController = new SleepTimerPlaybackController(this);
+        eventDispatcher = new PlayerEventDispatcher(this);
 
         setupBroadcastReceiver();
 
@@ -1777,9 +1776,7 @@ public final class Player implements PlaybackListener, Listener {
             createErrorNotification(error);
         }
 
-        if (fragmentListener != null) {
-            fragmentListener.onPlayerError(error, isCatchableException);
-        }
+        eventDispatcher.notifyPlayerError(error, isCatchableException);
     }
 
 
@@ -1809,9 +1806,7 @@ public final class Player implements PlaybackListener, Listener {
             createErrorNotification(error, "recovery=exhausted, attempts="
                     + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS + "/"
                     + PlayerHttpErrorRecovery.RecoveryGuard.MAX_ATTEMPTS);
-            if (fragmentListener != null) {
-                fragmentListener.onPlayerError(error, true);
-            }
+            eventDispatcher.notifyPlayerError(error, true);
             return true;
         }
 
@@ -2530,119 +2525,49 @@ public final class Player implements PlaybackListener, Listener {
     //region Activity / fragment binding
 
     public void setFragmentListener(final PlayerServiceEventListener listener) {
-        fragmentListener = listener;
-        UIs.call(PlayerUi::onFragmentListenerSet);
-        notifyQueueUpdateToListeners();
-        notifyMetadataUpdateToListeners();
-        notifyPlaybackUpdateToListeners();
-        notifySleepTimerUpdateToListeners();
-        triggerProgressUpdate();
+        eventDispatcher.setFragmentListener(listener);
     }
 
     public void removeFragmentListener(final PlayerServiceEventListener listener) {
-        if (fragmentListener == listener) {
-            fragmentListener = null;
-        }
+        eventDispatcher.removeFragmentListener(listener);
     }
 
     void setActivityListener(final PlayerEventListener listener) {
-        activityListener = listener;
-        // TODO why not queue update?
-        notifyMetadataUpdateToListeners();
-        notifyPlaybackUpdateToListeners();
-        notifySleepTimerUpdateToListeners();
-        triggerProgressUpdate();
+        eventDispatcher.setActivityListener(listener);
     }
 
     void removeActivityListener(final PlayerEventListener listener) {
-        if (activityListener == listener) {
-            activityListener = null;
-        }
+        eventDispatcher.removeActivityListener(listener);
     }
 
     void stopActivityBinding() {
-        if (fragmentListener != null) {
-            fragmentListener.onServiceStopped();
-            fragmentListener = null;
-        }
-        if (activityListener != null) {
-            activityListener.onServiceStopped();
-            activityListener = null;
-        }
+        eventDispatcher.stopBindings();
     }
 
     private void notifyQueueUpdateToListeners() {
-        if (fragmentListener != null && playQueue != null) {
-            fragmentListener.onQueueUpdate(playQueue);
-        }
-        if (activityListener != null && playQueue != null) {
-            activityListener.onQueueUpdate(playQueue);
-        }
+        eventDispatcher.notifyQueueUpdate();
     }
 
     private void notifyMetadataUpdateToListeners() {
-        final Optional<StreamInfo> streamInfo = getCurrentStreamInfo();
-        streamInfo.ifPresent(info -> {
-            if (fragmentListener != null) {
-                fragmentListener.onMetadataUpdate(info, playQueue);
-            }
-            if (activityListener != null) {
-                activityListener.onMetadataUpdate(info, playQueue);
-            }
-        });
-        if (streamInfo.isEmpty() && currentMetadata != null && playQueue != null) {
-            if (fragmentListener != null) {
-                fragmentListener.onMetadataUpdate(currentMetadata, playQueue);
-            }
-            if (activityListener != null) {
-                activityListener.onMetadataUpdate(currentMetadata, playQueue);
-            }
-        }
+        eventDispatcher.notifyMetadataUpdate();
     }
 
     void notifyPlaybackUpdateToListeners() {
-        if (fragmentListener != null && !exoPlayerIsNull() && playQueue != null) {
-            fragmentListener.onPlaybackUpdate(currentState, getRepeatMode(),
-                    playQueue.isShuffled(), simpleExoPlayer.getPlaybackParameters());
-        }
-        if (activityListener != null && !exoPlayerIsNull() && playQueue != null) {
-            activityListener.onPlaybackUpdate(currentState, getRepeatMode(),
-                    playQueue.isShuffled(), getPlaybackParameters());
-        }
+        eventDispatcher.notifyPlaybackUpdate();
     }
 
     private void notifyProgressUpdateToListeners(final int currentProgress,
                                                  final int duration,
                                                  final int bufferPercent) {
-        if (fragmentListener != null) {
-            fragmentListener.onProgressUpdate(currentProgress, duration, bufferPercent);
-        }
-        if (activityListener != null) {
-            activityListener.onProgressUpdate(currentProgress, duration, bufferPercent);
-        }
+        eventDispatcher.notifyProgressUpdate(currentProgress, duration, bufferPercent);
     }
 
     private void notifyAudioTrackUpdateToListeners() {
-        if (fragmentListener != null) {
-            fragmentListener.onAudioTrackUpdate();
-        }
-        if (activityListener != null) {
-            activityListener.onAudioTrackUpdate();
-        }
+        eventDispatcher.notifyAudioTrackUpdate();
     }
 
     void notifySleepTimerUpdateToListeners() {
-        final SleepTimer.Mode mode = sleepTimerController.getMode();
-        final long remainingMillis = getSleepTimerRemainingMillis();
-        final boolean fadeOutEnabled = sleepTimerController.isFadeOutEnabled();
-        UIs.call(playerUi -> playerUi.onSleepTimerChanged(
-                mode, remainingMillis, fadeOutEnabled));
-        if (fragmentListener != null) {
-            fragmentListener.onSleepTimerChanged(mode, remainingMillis, fadeOutEnabled);
-        }
-        if (activityListener != null) {
-            activityListener.onSleepTimerChanged(mode, remainingMillis, fadeOutEnabled);
-        }
+        eventDispatcher.notifySleepTimerUpdate();
     }
 
     public void useVideoAndSubtitles(final boolean videoAndSubtitlesEnabled) {
@@ -2920,7 +2845,7 @@ public final class Player implements PlaybackListener, Listener {
     }
 
     public Optional<PlayerServiceEventListener> getFragmentListener() {
-        return Optional.ofNullable(fragmentListener);
+        return eventDispatcher.getFragmentListener();
     }
 
     /**
