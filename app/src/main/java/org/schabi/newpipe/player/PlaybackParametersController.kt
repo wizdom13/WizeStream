@@ -8,9 +8,11 @@ package org.schabi.newpipe.player
 import androidx.media3.common.PlaybackParameters
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.stream.StreamInfo
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
+import org.schabi.newpipe.util.StreamTypeUtil
 
 /** Owns playback parameter application, persistence, and channel-profile restoration. */
 internal class PlaybackParametersController(private val player: Player) {
@@ -79,24 +81,41 @@ internal class PlaybackParametersController(private val player: Player) {
     }
 
     fun applySpeedProfile(item: PlayQueueItem) {
-        if (ChannelPlaybackProfileManager.isAvailable(player.context, item)) {
-            applySpeedProfile(ChannelPlaybackProfileManager.getSpeed(player.context, item))
+        val profileSpeed = if (ChannelPlaybackProfileManager.isAvailable(player.context, item)) {
+            ChannelPlaybackProfileManager.getSpeed(player.context, item)
+        } else {
+            null
         }
+        val preferredSpeed = PlayerHelper.retrievePlaybackParametersFromPrefs(player).speed
+        val targetSpeed = resolvePlaybackSpeed(item.streamType, profileSpeed, preferredSpeed)
+        player.exoPlayer.playbackParameters = PlaybackParameters(targetSpeed, pitch)
     }
 
     fun applySpeedProfile(info: StreamInfo) {
-        if (ChannelPlaybackProfileManager.isAvailable(player.context, info)) {
-            applySpeedProfile(ChannelPlaybackProfileManager.getSpeed(player.context, info))
+        val profileSpeed = if (ChannelPlaybackProfileManager.isAvailable(player.context, info)) {
+            ChannelPlaybackProfileManager.getSpeed(player.context, info)
+        } else {
+            null
         }
+        val preferredSpeed = PlayerHelper.retrievePlaybackParametersFromPrefs(player).speed
+        val targetSpeed = resolvePlaybackSpeed(info.streamType, profileSpeed, preferredSpeed)
+        player.exoPlayer.playbackParameters = PlaybackParameters(targetSpeed, pitch)
     }
 
-    private fun applySpeedProfile(profileSpeed: Float?) {
-        val speed =
-            profileSpeed ?: PlayerHelper.retrievePlaybackParametersFromPrefs(player).speed
-        player.exoPlayer.playbackParameters = PlaybackParameters(speed, pitch)
-    }
+    companion object {
+        const val NORMAL_SPEED = 1.0f
+        private const val DECIMAL_SCALE = 100.0f
 
-    private companion object {
-        const val DECIMAL_SCALE = 100.0f
+        @JvmStatic
+        fun resolvePlaybackSpeed(
+            streamType: StreamType?,
+            profileSpeed: Float?,
+            preferredSpeed: Float
+        ): Float {
+            if (streamType != null && StreamTypeUtil.isLiveStream(streamType)) {
+                return NORMAL_SPEED
+            }
+            return profileSpeed ?: preferredSpeed
+        }
     }
 }
