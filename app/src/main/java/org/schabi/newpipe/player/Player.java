@@ -2250,7 +2250,7 @@ public final class Player implements PlaybackListener, Listener {
         eventDispatcher.notifyQueueUpdate();
     }
 
-    private void notifyMetadataUpdateToListeners() {
+    void notifyMetadataUpdateToListeners() {
         eventDispatcher.notifyMetadataUpdate();
     }
 
@@ -2264,7 +2264,7 @@ public final class Player implements PlaybackListener, Listener {
         eventDispatcher.notifyProgressUpdate(currentProgress, duration, bufferPercent);
     }
 
-    private void notifyAudioTrackUpdateToListeners() {
+    void notifyAudioTrackUpdateToListeners() {
         eventDispatcher.notifyAudioTrackUpdate();
     }
 
