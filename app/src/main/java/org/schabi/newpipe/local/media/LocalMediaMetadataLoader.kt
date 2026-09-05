@@ -15,6 +15,7 @@ import androidx.annotation.WorkerThread
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.Executors
@@ -25,10 +26,11 @@ data class LocalMediaEmbeddedMetadata(
     val title: String? = null,
     val artist: String? = null,
     val album: String? = null,
-    val durationSeconds: Long = 0L
+    val durationSeconds: Long = 0L,
+    val artwork: ByteArray? = null
 )
 
-/** Resolves embedded tags for only the local item being played and caches the result by URI. */
+/** Resolves embedded metadata for local media and caches the result by content URI. */
 object LocalMediaMetadataLoader {
     private const val CACHE_ENTRY_COUNT = 128
 
@@ -54,16 +56,29 @@ object LocalMediaMetadataLoader {
         item: PlayQueueItem,
         callback: MetadataCallback
     ): Future<*> = executor.submit {
-        val cached = synchronized(cache) { cache[item.url] }
-        val metadata = cached ?: read(
+        val metadata = readCached(
             context.applicationContext.contentResolver,
             item.url,
             item.mimeType
-        ).also { resolved ->
-            synchronized(cache) { cache[item.url] = resolved }
-        }
+        )
         if (!Thread.currentThread().isInterrupted) {
             mainHandler.post { callback.onLoaded(metadata) }
+        }
+    }
+
+    /**
+     * Reads metadata synchronously for callers that are already running on a worker thread.
+     * This is also used by the SAF browser before a selected file is turned into a queue item.
+     */
+    @WorkerThread
+    internal fun readCached(
+        resolver: ContentResolver,
+        contentUri: String,
+        mimeType: String?
+    ): LocalMediaEmbeddedMetadata {
+        synchronized(cache) { cache[contentUri] }?.let { return it }
+        return read(resolver, contentUri, mimeType).also { resolved ->
+            synchronized(cache) { cache[contentUri] = resolved }
         }
     }
 
@@ -74,8 +89,13 @@ object LocalMediaMetadataLoader {
         mimeType: String?
     ): LocalMediaEmbeddedMetadata {
         val retrieverMetadata = readRetrieverMetadata(resolver, contentUri)
-        if (!isOggContainer(mimeType, contentUri)) return retrieverMetadata
+        if (!shouldProbeOggComments(mimeType, contentUri, retrieverMetadata)) {
+            return retrieverMetadata
+        }
 
+        // Some document providers expose OGG/Opus files with generic MIME types and opaque
+        // content:// URIs. The Ogg reader validates the stream signature immediately, so probing
+        // incomplete metadata is safe and avoids depending on the provider's MIME classification.
         val oggMetadata = try {
             resolver.openInputStream(Uri.parse(contentUri))?.use(OggVorbisCommentReader::read)
         } catch (_: Exception) {
@@ -85,7 +105,8 @@ object LocalMediaMetadataLoader {
             title = oggMetadata?.title ?: retrieverMetadata.title,
             artist = oggMetadata?.artist ?: retrieverMetadata.artist,
             album = oggMetadata?.album ?: retrieverMetadata.album,
-            durationSeconds = retrieverMetadata.durationSeconds
+            durationSeconds = retrieverMetadata.durationSeconds,
+            artwork = oggMetadata?.artwork ?: retrieverMetadata.artwork
         )
     }
 
@@ -113,7 +134,8 @@ object LocalMediaMetadataLoader {
                         ?.toLongOrNull()
                         ?.takeIf { it > 0L }
                         ?.div(1_000L)
-                        ?: 0L
+                        ?: 0L,
+                    artwork = retriever.embeddedPicture
                 )
             } ?: LocalMediaEmbeddedMetadata()
         } catch (_: Exception) {
@@ -122,25 +144,43 @@ object LocalMediaMetadataLoader {
             retriever.release()
         }
     }
-
-    private fun isOggContainer(mimeType: String?, contentUri: String): Boolean {
-        val normalizedMimeType = mimeType?.lowercase(Locale.ROOT)
-        val normalizedUri = contentUri.lowercase(Locale.ROOT)
-        return normalizedMimeType == "audio/ogg" ||
-            normalizedMimeType == "application/ogg" ||
-            normalizedMimeType == "audio/opus" ||
-            normalizedUri.endsWith(".ogg") ||
-            normalizedUri.endsWith(".oga") ||
-            normalizedUri.endsWith(".opus")
-    }
 }
+
+internal fun shouldProbeOggComments(
+    mimeType: String?,
+    contentUri: String,
+    metadata: LocalMediaEmbeddedMetadata
+): Boolean {
+    val normalizedMimeType = mimeType?.lowercase(Locale.ROOT).orEmpty()
+    val normalizedUri = contentUri.lowercase(Locale.ROOT)
+    val looksLikeOgg = normalizedMimeType.contains("ogg") ||
+        normalizedMimeType.contains("opus") ||
+        normalizedUri.contains(".ogg") ||
+        normalizedUri.contains(".oga") ||
+        normalizedUri.contains(".opus")
+    return looksLikeOgg || metadata.title == null || metadata.artist == null ||
+        metadata.album == null || metadata.artwork == null
+}
+
+internal fun LocalMediaItem.withEmbeddedMetadata(
+    metadata: LocalMediaEmbeddedMetadata
+): LocalMediaItem = copy(
+    title = metadata.title ?: title,
+    artist = metadata.artist ?: artist,
+    album = metadata.album ?: album,
+    durationSeconds = metadata.durationSeconds.takeIf { it > 0L } ?: durationSeconds
+)
 
 internal object OggVorbisCommentReader {
     private const val PAGE_HEADER_SIZE = 27
-    private const val MAX_SCANNED_BYTES = 8 * 1024 * 1024
-    private const val MAX_PACKET_BYTES = 8 * 1024 * 1024
+    private const val MAX_SCANNED_BYTES = 16 * 1024 * 1024
+    private const val MAX_PACKET_BYTES = 16 * 1024 * 1024
     private const val MAX_COMMENT_COUNT = 4_096
-    private const val MAX_FIELD_BYTES = 2 * 1024 * 1024
+    private const val MAX_FIELD_BYTES = 12 * 1024 * 1024
+    private const val MAX_ARTWORK_BYTES = 8 * 1024 * 1024
+    private const val MAX_PICTURE_BLOCK_BYTES = 10 * 1024 * 1024
+    private const val MAX_PICTURE_TEXT_BYTES = 64 * 1024
+
     private val vorbisCommentHeader = byteArrayOf(
         3,
         'v'.code.toByte(),
@@ -209,6 +249,8 @@ internal object OggVorbisCommentReader {
         var artist: String? = null
         var albumArtist: String? = null
         var album: String? = null
+        var metadataBlockPicture: ByteArray? = null
+        var legacyCoverArt: ByteArray? = null
         repeat(commentCount) {
             val fieldLength = reader.readLength(MAX_FIELD_BYTES) ?: return null
             val field = reader.readString(fieldLength) ?: return null
@@ -218,13 +260,57 @@ internal object OggVorbisCommentReader {
             val value = cleanTag(field.substring(separator + 1)) ?: return@repeat
             when (key) {
                 "TITLE" -> if (title == null) title = value
+
                 "ARTIST" -> if (artist == null) artist = value
+
                 "ALBUMARTIST" -> if (albumArtist == null) albumArtist = value
+
                 "ALBUM" -> if (album == null) album = value
+
+                "METADATA_BLOCK_PICTURE" -> if (metadataBlockPicture == null) {
+                    metadataBlockPicture = decodeMetadataBlockPicture(value)
+                }
+
+                "COVERART" -> if (legacyCoverArt == null) {
+                    legacyCoverArt = decodeLegacyCoverArt(value)
+                }
             }
         }
-        if (title == null && artist == null && albumArtist == null && album == null) return null
-        return LocalMediaEmbeddedMetadata(title, artist ?: albumArtist, album)
+        val artwork = metadataBlockPicture ?: legacyCoverArt
+        if (title == null && artist == null && albumArtist == null && album == null &&
+            artwork == null
+        ) {
+            return null
+        }
+        return LocalMediaEmbeddedMetadata(
+            title = title,
+            artist = artist ?: albumArtist,
+            album = album,
+            artwork = artwork
+        )
+    }
+
+    private fun decodeMetadataBlockPicture(value: String): ByteArray? {
+        val block = decodeBase64(value)?.takeIf { it.size <= MAX_PICTURE_BLOCK_BYTES }
+            ?: return null
+        val reader = BigEndianPacketReader(block)
+        reader.readUnsignedInt() ?: return null // picture type
+        val mimeLength = reader.readLength(MAX_PICTURE_TEXT_BYTES) ?: return null
+        if (!reader.skip(mimeLength)) return null
+        val descriptionLength = reader.readLength(MAX_PICTURE_TEXT_BYTES) ?: return null
+        if (!reader.skip(descriptionLength)) return null
+        repeat(4) { reader.readUnsignedInt() ?: return null } // width, height, depth, colors
+        val dataLength = reader.readLength(MAX_ARTWORK_BYTES) ?: return null
+        return reader.readBytes(dataLength)
+    }
+
+    private fun decodeLegacyCoverArt(value: String): ByteArray? = decodeBase64(value)
+        ?.takeIf { it.size <= MAX_ARTWORK_BYTES }
+
+    private fun decodeBase64(value: String): ByteArray? = try {
+        Base64.getDecoder().decode(value.trim())
+    } catch (_: IllegalArgumentException) {
+        null
     }
 
     private fun ByteArray.startsWith(prefix: ByteArray): Boolean = size >= prefix.size &&
@@ -268,6 +354,36 @@ internal object OggVorbisCommentReader {
             return String(data, position, length, StandardCharsets.UTF_8).also {
                 position += length
             }
+        }
+    }
+
+    private class BigEndianPacketReader(
+        private val data: ByteArray,
+        private var position: Int = 0
+    ) {
+        fun readUnsignedInt(): Long? {
+            if (position > data.size - Integer.BYTES) return null
+            val value = ((data[position].toLong() and 0xff) shl 24) or
+                ((data[position + 1].toLong() and 0xff) shl 16) or
+                ((data[position + 2].toLong() and 0xff) shl 8) or
+                (data[position + 3].toLong() and 0xff)
+            position += Integer.BYTES
+            return value
+        }
+
+        fun readLength(maximum: Int): Int? = readUnsignedInt()
+            ?.takeIf { it <= maximum.toLong() }
+            ?.toInt()
+
+        fun skip(length: Int): Boolean {
+            if (length < 0 || position > data.size - length) return false
+            position += length
+            return true
+        }
+
+        fun readBytes(length: Int): ByteArray? {
+            if (length < 0 || position > data.size - length) return null
+            return data.copyOfRange(position, position + length).also { position += length }
         }
     }
 }

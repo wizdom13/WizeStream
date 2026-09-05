@@ -86,6 +86,25 @@ class LocalMediaBrowserViewModel(application: Application) : AndroidViewModel(ap
 
     fun mediaItem(entry: LocalMediaDocumentEntry): LocalMediaItem? = browser.mediaItem(entry)
 
+    /** Resolve embedded tags before a SAF file becomes a playback queue item. */
+    fun resolveMediaItem(
+        entry: LocalMediaDocumentEntry,
+        onReady: (LocalMediaItem?) -> Unit
+    ) {
+        scanExecutor.execute {
+            val item = browser.mediaItem(entry)?.let { unresolved ->
+                unresolved.withEmbeddedMetadata(
+                    LocalMediaMetadataLoader.readCached(
+                        getApplication<Application>().contentResolver,
+                        unresolved.contentUri,
+                        unresolved.mimeType
+                    )
+                )
+            }
+            mainHandler.post { onReady(item) }
+        }
+    }
+
     fun collect(
         location: LocalMediaDocumentLocation,
         onReady: (List<LocalMediaItem>) -> Unit

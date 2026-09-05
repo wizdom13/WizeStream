@@ -519,7 +519,8 @@ class LocalMediaFragment : Fragment() {
             browserViewModel.open(entry)
             return
         }
-        browserViewModel.mediaItem(entry)?.let { item ->
+        resolveDocumentMediaItem(entry) { item ->
+            item ?: return@resolveDocumentMediaItem
             val queue = LocalMediaPlayQueue(listOf(item.toPlayQueueItem()), 0)
             NavigationHelper.playOnMainPlayer(requireActivity() as AppCompatActivity, queue)
         }
@@ -529,7 +530,19 @@ class LocalMediaFragment : Fragment() {
         if (entry.isDirectory) {
             showFolderActions(entry.location, entry.name, entry.isRoot)
         } else {
-            browserViewModel.mediaItem(entry)?.let(::showActions)
+            resolveDocumentMediaItem(entry) { item -> item?.let(::showActions) }
+        }
+    }
+
+    private fun resolveDocumentMediaItem(
+        entry: LocalMediaDocumentEntry,
+        onReady: (LocalMediaItem?) -> Unit
+    ) {
+        view?.findViewById<View>(R.id.localMediaProgress)?.visibility = View.VISIBLE
+        browserViewModel.resolveMediaItem(entry) { item ->
+            if (!isAdded || view == null) return@resolveMediaItem
+            view?.findViewById<View>(R.id.localMediaProgress)?.visibility = View.GONE
+            onReady(item)
         }
     }
 
