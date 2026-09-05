@@ -31,26 +31,14 @@ import static androidx.media3.common.Player.RepeatMode;
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_CLOSE;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_FAST_FORWARD;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_FAST_REWIND;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_PLAY_NEXT;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_PLAY_PAUSE;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_PLAY_PREVIOUS;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_RECREATE_NOTIFICATION;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_REPEAT;
-import static org.schabi.newpipe.player.notification.NotificationConstants.ACTION_SHUFFLE;
 import static org.schabi.newpipe.util.ListHelper.getPopupResolutionIndex;
 import static org.schabi.newpipe.util.ListHelper.getResolutionIndex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -58,7 +46,6 @@ import android.view.LayoutInflater;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.IntentCompat;
 import androidx.core.math.MathUtils;
 import androidx.preference.PreferenceManager;
@@ -267,8 +254,8 @@ public final class Player implements PlaybackListener, Listener {
     @SuppressWarnings({"MemberName", "java:S116"}) // keep the unusual member name
     private final PlayerUiList UIs;
 
-    private BroadcastReceiver broadcastReceiver;
-    private IntentFilter intentFilter;
+    @NonNull
+    private final PlayerBroadcastController broadcastController;
     @NonNull
     private final PlayerEventDispatcher eventDispatcher;
     @NonNull
@@ -296,8 +283,6 @@ public final class Player implements PlaybackListener, Listener {
     @NonNull
     private final PlayerDataSource dataSource;
 
-    private boolean screenOn = true;
-
     /*//////////////////////////////////////////////////////////////////////////
     // Constructor
     //////////////////////////////////////////////////////////////////////////*/
@@ -323,8 +308,7 @@ public final class Player implements PlaybackListener, Listener {
         sleepTimerController = new SleepTimerPlaybackController(this);
         eventDispatcher = new PlayerEventDispatcher(this);
         thumbnailController = new PlayerThumbnailController(this);
-
-        setupBroadcastReceiver();
+        broadcastController = new PlayerBroadcastController(this);
 
         trackSelector = new DefaultTrackSelector(context, PlayerHelper.getQualitySelector());
         dataSource = new PlayerDataSource(context,
@@ -701,7 +685,7 @@ public final class Player implements PlaybackListener, Listener {
 
         audioReactor = new AudioReactor(context, simpleExoPlayer);
 
-        registerBroadcastReceiver();
+        broadcastController.register();
 
         // Setup UIs
         UIs.call(PlayerUi::initPlayer);
@@ -759,7 +743,7 @@ public final class Player implements PlaybackListener, Listener {
         stopActivityBinding();
 
         destroyPlayer();
-        unregisterBroadcastReceiver();
+        broadcastController.unregister();
 
         databaseUpdateDisposable.clear();
         progressUpdateDisposable.set(null);
@@ -816,123 +800,6 @@ public final class Player implements PlaybackListener, Listener {
         simpleExoPlayer.stop();
         setRecovery();
         UIs.call(PlayerUi::smoothStopForImmediateReusing);
-    }
-    //endregion
-
-
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Broadcast receiver
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Broadcast receiver
-
-    /**
-     * This function prepares the broadcast receiver and is called only in the constructor.
-     * Therefore if you want any PlayerUi to receive a broadcast action, you should add it here,
-     * even if that player ui might never be added to the player. In that case the received
-     * broadcast would not do anything.
-     */
-    private void setupBroadcastReceiver() {
-        if (DEBUG) {
-            Log.d(TAG, "setupBroadcastReceiver() called");
-        }
-
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(final Context ctx, final Intent intent) {
-                onBroadcastReceived(intent);
-            }
-        };
-        intentFilter = new IntentFilter();
-
-        intentFilter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-
-        intentFilter.addAction(ACTION_CLOSE);
-        intentFilter.addAction(ACTION_PLAY_PAUSE);
-        intentFilter.addAction(ACTION_PLAY_PREVIOUS);
-        intentFilter.addAction(ACTION_PLAY_NEXT);
-        intentFilter.addAction(ACTION_FAST_REWIND);
-        intentFilter.addAction(ACTION_FAST_FORWARD);
-        intentFilter.addAction(ACTION_REPEAT);
-        intentFilter.addAction(ACTION_SHUFFLE);
-        intentFilter.addAction(ACTION_RECREATE_NOTIFICATION);
-
-        intentFilter.addAction(VideoDetailFragment.ACTION_VIDEO_FRAGMENT_RESUMED);
-        intentFilter.addAction(VideoDetailFragment.ACTION_VIDEO_FRAGMENT_STOPPED);
-
-        intentFilter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
-        intentFilter.addAction(Intent.ACTION_SCREEN_ON);
-        intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
-        intentFilter.addAction(Intent.ACTION_HEADSET_PLUG);
-    }
-
-    private void onBroadcastReceived(final Intent intent) {
-        if (intent == null || intent.getAction() == null) {
-            return;
-        }
-
-        if (DEBUG) {
-            Log.d(TAG, "onBroadcastReceived() called with: intent = [" + intent + "]");
-        }
-
-        switch (intent.getAction()) {
-            case AudioManager.ACTION_AUDIO_BECOMING_NOISY:
-                pause();
-                break;
-            case ACTION_CLOSE:
-                service.destroyPlayerAndStopService();
-                break;
-            case ACTION_PLAY_PAUSE:
-                playPause();
-                break;
-            case ACTION_PLAY_PREVIOUS:
-                playPrevious();
-                break;
-            case ACTION_PLAY_NEXT:
-                playNext();
-                break;
-            case ACTION_FAST_REWIND:
-                fastRewind();
-                break;
-            case ACTION_FAST_FORWARD:
-                fastForward();
-                break;
-            case ACTION_REPEAT:
-                cycleNextRepeatMode();
-                break;
-            case ACTION_SHUFFLE:
-                toggleShuffleModeEnabled();
-                break;
-            case Intent.ACTION_SCREEN_OFF:
-                screenOn = false;
-                break;
-            case Intent.ACTION_SCREEN_ON:
-                screenOn = true;
-                break;
-            case Intent.ACTION_CONFIGURATION_CHANGED:
-                if (DEBUG) {
-                    Log.d(TAG, "ACTION_CONFIGURATION_CHANGED received");
-                }
-                break;
-        }
-
-        UIs.call(playerUi -> playerUi.onBroadcastReceived(intent));
-    }
-
-    private void registerBroadcastReceiver() {
-        // Try to unregister current first
-        unregisterBroadcastReceiver();
-        ContextCompat.registerReceiver(context, broadcastReceiver, intentFilter,
-                ContextCompat.RECEIVER_EXPORTED);
-    }
-
-    private void unregisterBroadcastReceiver() {
-        try {
-            context.unregisterReceiver(broadcastReceiver);
-        } catch (final IllegalArgumentException unregisteredException) {
-            Log.w(TAG, "Broadcast receiver already unregistered: "
-                    + unregisteredException.getMessage());
-        }
     }
     //endregion
 
@@ -2792,6 +2659,6 @@ public final class Player implements PlaybackListener, Listener {
      * @return whether the device screen is turned on.
      */
     public boolean isScreenOn() {
-        return screenOn;
+        return broadcastController.isScreenOn();
     }
 }
