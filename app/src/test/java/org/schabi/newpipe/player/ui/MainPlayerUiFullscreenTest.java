@@ -39,6 +39,15 @@ public class MainPlayerUiFullscreenTest {
     }
 
     @Test
+    public void undefinedOrientationNeverAutoEntersFullscreen() {
+        assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
+                Configuration.ORIENTATION_UNDEFINED,
+                false,
+                false,
+                false));
+    }
+
+    @Test
     public void landscapePhoneVideoCanAutoEnterFullscreen() {
         assertTrue(MainPlayerUi.shouldEnterFullscreenForConfiguration(
                 Configuration.ORIENTATION_LANDSCAPE,
@@ -64,5 +73,20 @@ public class MainPlayerUiFullscreenTest {
                 false,
                 false,
                 true));
+    }
+
+    @Test
+    public void combinedAudioTabletAndFullscreenFlagsStayOutOfAutoFullscreen() {
+        assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
+                Configuration.ORIENTATION_LANDSCAPE,
+                true,
+                true,
+                true));
+    }
+
+    @Test
+    public void orientationActionDoesNotDependOnFullscreenStateForHorizontalVideo() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(false, false, true));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(false, true, true));
     }
 }
