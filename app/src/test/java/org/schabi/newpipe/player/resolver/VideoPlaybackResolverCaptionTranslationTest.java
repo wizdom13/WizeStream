@@ -21,7 +21,13 @@ public class VideoPlaybackResolverCaptionTranslationTest {
         assertTrue(source.contains(
                 "YoutubeCaptionTranslationHelper.addTranslatedSubtitleFromExtractedStreams"));
         assertTrue(source.contains("CaptionTranslationPreferences.getTargetLanguage(context)"));
-        assertTrue(source.indexOf("addTranslatedSubtitleFromExtractedStreams")
-                < source.indexOf("getUrlAndNonTorrentStreams"));
+
+        final int subtitleBlock = source.indexOf("// Create subtitle sources.");
+        final int translationCall = source.indexOf(
+                "addTranslatedSubtitleFromExtractedStreams", subtitleBlock);
+        final int filteringCall = source.indexOf("getUrlAndNonTorrentStreams(", subtitleBlock);
+        assertTrue(subtitleBlock >= 0);
+        assertTrue(translationCall > subtitleBlock);
+        assertTrue(filteringCall > translationCall);
     }
 }
