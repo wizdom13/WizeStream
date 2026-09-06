@@ -121,8 +121,9 @@ configure<ApplicationExtension> {
 
     lint {
         lintConfig = file("lint.xml")
-        // Continue the debug build even when errors are found
-        abortOnError = false
+        baseline = file("lint-baseline.xml")
+        // Treat newly reported lint errors as CI failures.
+        abortOnError = true
     }
 
     compileOptions {
@@ -200,7 +201,6 @@ tasks.register<Checkstyle>("runCheckstyle") {
     exclude("**/R.java")
     exclude("**/BuildConfig.java")
     exclude("main/java/org/schabi/newpipe/extractor/**")
-    exclude("test/java/org/schabi/newpipe/extractor/**")
     exclude("main/java/us/shandian/giga/**")
 
     classpath = configurations.getByName("checkstyle")

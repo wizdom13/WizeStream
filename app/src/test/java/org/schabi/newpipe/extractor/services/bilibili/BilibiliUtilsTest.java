@@ -35,7 +35,8 @@ public class BilibiliUtilsTest {
                 utils.getUrl("https://www.bilibili.com/video/BV17x411w7KC", "BV17x411w7KC"));
         assertEquals(
                 "https://api.bilibili.com/x/web-interface/view?bvid=BV17x411w7KC&p=3",
-                utils.getUrl("https://www.bilibili.com/video/BV17x411w7KC?p=3&share_source=copy_web",
+                utils.getUrl(
+                        "https://www.bilibili.com/video/BV17x411w7KC?p=3&share_source=copy_web",
                         "BV17x411w7KC"));
     }
 

@@ -52,7 +52,11 @@ class AdditionalStreamingServicesTest {
                         .fromQuery("privacy", singletonList(bitChuteVideos), emptyList()).getUrl());
         assertEquals("https://rumble.com/search/channel?q=world+news",
                 ServiceList.Rumble.getSearchQHFactory()
-                        .fromQuery("world news", singletonList(rumbleChannels), emptyList()).getUrl());
+                        .fromQuery(
+                                "world news",
+                                singletonList(rumbleChannels),
+                                emptyList())
+                        .getUrl());
     }
 
     @Test

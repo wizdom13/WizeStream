@@ -21,9 +21,12 @@ public class RumbleParsingHelperTest {
 
     @Test
     public void parsesRelatedStreamDurationsAcrossSupportedShapes() throws Exception {
-        assertEquals(45, RumbleParsingHelper.parseDurationStringForRelatedStreams("0:45"));
-        assertEquals(3_723, RumbleParsingHelper.parseDurationStringForRelatedStreams("1:02:03"));
-        assertEquals(93_784, RumbleParsingHelper.parseDurationString("1d 02h 03m 04s", "\\D+"));
+        assertEquals(45,
+                RumbleParsingHelper.parseDurationStringForRelatedStreams("0:45"));
+        assertEquals(3_723,
+                RumbleParsingHelper.parseDurationStringForRelatedStreams("1:02:03"));
+        assertEquals(93_784,
+                RumbleParsingHelper.parseDurationString("1d 02h 03m 04s", "\\D+"));
     }
 
     @Test
@@ -33,7 +36,7 @@ public class RumbleParsingHelperTest {
     }
 
     @Test
-    public void extractSafelyReturnsValueOrNullWithoutEscalatingOptionalMetadata() throws Exception {
+    public void extractSafelyReturnsNullForOptionalMetadataFailure() throws Exception {
         assertEquals("ok", RumbleParsingHelper.extractSafely(false, "unused", () -> "ok"));
         assertNull(RumbleParsingHelper.extractSafely(false, "optional", () -> {
             throw new IllegalStateException("missing");
@@ -52,7 +55,8 @@ public class RumbleParsingHelperTest {
     @Test
     public void extractsEmbedIdFromScriptAndCachesIt() throws Exception {
         final String pageUrl = "https://rumble.com/v-cache-test.html";
-        final String html = "<script src=\"https://rumble.com/embed/vabc123.xyz789/\"></script>";
+        final String html =
+                "<script src=\"https://rumble.com/embed/vabc123.xyz789/\"></script>";
 
         assertEquals("yz789", RumbleParsingHelper.getEmbedVideoId(pageUrl, () -> html));
         assertEquals("yz789", RumbleParsingHelper.getEmbedVideoId(pageUrl, () -> {
@@ -62,16 +66,21 @@ public class RumbleParsingHelperTest {
 
     @Test
     public void privateForbiddenPageMapsToPrivateContent() {
-        final Document doc = Jsoup.parse("<html><head><title>Private video</title></head></html>", URL);
+        final Document doc = Jsoup.parse(
+                "<html><head><title>Private video</title></head></html>", URL);
         assertThrows(PrivateContentException.class,
-                () -> RumbleParsingHelper.checkIfContentIsAccessible(response(403, "private"), doc));
+                () -> RumbleParsingHelper.checkIfContentIsAccessible(
+                        response(403, "private"), doc));
     }
 
     @Test
     public void ordinaryMissingPageMapsToContentNotAvailable() {
-        final Document doc = Jsoup.parse("<html><head><title>Video not found</title></head></html>", URL);
-        final ContentNotAvailableException error = assertThrows(ContentNotAvailableException.class,
-                () -> RumbleParsingHelper.checkIfContentIsAccessible(response(404, "missing"), doc));
+        final Document doc = Jsoup.parse(
+                "<html><head><title>Video not found</title></head></html>", URL);
+        final ContentNotAvailableException error = assertThrows(
+                ContentNotAvailableException.class,
+                () -> RumbleParsingHelper.checkIfContentIsAccessible(
+                        response(404, "missing"), doc));
         assertTrue(error.getMessage().contains("404"));
     }
 
