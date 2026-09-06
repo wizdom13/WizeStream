@@ -13,6 +13,8 @@ import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.MergingMediaSource;
 
 import org.schabi.newpipe.extractor.MediaFormat;
+import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeCaptionTranslationHelper;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.SubtitlesStream;
@@ -21,6 +23,7 @@ import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
+import org.schabi.newpipe.settings.CaptionTranslationPreferences;
 import org.schabi.newpipe.util.ListHelper;
 
 import java.util.ArrayList;
@@ -158,8 +161,16 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
         // Below are auxiliary media sources
 
-        // Create subtitle sources
-        final List<SubtitlesStream> subtitlesStreams = info.getSubtitles();
+        // Create subtitle sources. StreamInfo is cached, but the translation preference can change
+        // afterwards, so synthesize the one requested YouTube translation at resolution time too.
+        final List<SubtitlesStream> subtitlesStreams = info.getSubtitles() == null
+                ? null : new ArrayList<>(info.getSubtitles());
+        if (subtitlesStreams != null
+                && info.getServiceId() == ServiceList.YouTube.getServiceId()) {
+            YoutubeCaptionTranslationHelper.addTranslatedSubtitleFromExtractedStreams(
+                    subtitlesStreams,
+                    CaptionTranslationPreferences.getTargetLanguage(context));
+        }
         if (subtitlesStreams != null) {
             // Torrent and non URL subtitles are not supported by ExoPlayer
             final List<SubtitlesStream> nonTorrentAndUrlStreams = getUrlAndNonTorrentStreams(
