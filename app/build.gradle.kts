@@ -268,7 +268,7 @@ dependencies {
     compileOnly("org.json:json:20231013")
 
     // Open casting support for FCast and Chromecast-compatible receivers
-    implementation("org.fcast:sender-sdk:0.5.0")
+    implementation("org.fcast:sender-sdk:0.6.1")
 
     // Checkstyle
     checkstyle(libs.puppycrawl.checkstyle)
