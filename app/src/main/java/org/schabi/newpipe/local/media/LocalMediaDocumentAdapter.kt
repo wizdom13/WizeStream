@@ -3,12 +3,15 @@
  */
 package org.schabi.newpipe.local.media
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
+import kotlin.math.roundToInt
 import org.schabi.newpipe.R
 
 class LocalMediaDocumentAdapter(
@@ -47,8 +50,10 @@ class LocalMediaDocumentAdapter(
         fun bind(entry: LocalMediaDocumentEntry) {
             if (entry.isDirectory) {
                 LocalMediaThumbnailLoader.clear(icon)
+                applyLocalMediaDocumentIconStyle(icon, isDirectory = true)
                 icon.setImageResource(R.drawable.ic_create_new_folder)
             } else {
+                applyLocalMediaDocumentIconStyle(icon, isDirectory = false)
                 LocalMediaThumbnailLoader.load(icon, entry)
             }
             title.text = entry.name
@@ -78,6 +83,26 @@ class LocalMediaDocumentAdapter(
 
         fun recycle() {
             LocalMediaThumbnailLoader.clear(icon)
+            applyLocalMediaDocumentIconStyle(icon, isDirectory = false)
         }
     }
 }
+
+internal fun applyLocalMediaDocumentIconStyle(icon: ImageView, isDirectory: Boolean) {
+    if (isDirectory) {
+        val tintColor = MaterialColors.getColor(
+            icon,
+            com.google.android.material.R.attr.colorOnSurfaceVariant
+        )
+        icon.imageTintList = ColorStateList.valueOf(tintColor)
+        val padding = (DIRECTORY_ICON_PADDING_DP * icon.resources.displayMetrics.density).roundToInt()
+        icon.setPadding(padding, padding, padding, padding)
+        icon.scaleType = ImageView.ScaleType.FIT_CENTER
+    } else {
+        icon.imageTintList = null
+        icon.setPadding(0, 0, 0, 0)
+        icon.scaleType = ImageView.ScaleType.CENTER_CROP
+    }
+}
+
+private const val DIRECTORY_ICON_PADDING_DP = 8
