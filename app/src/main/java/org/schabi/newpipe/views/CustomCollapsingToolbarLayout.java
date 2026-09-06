@@ -72,6 +72,10 @@ public class CustomCollapsingToolbarLayout extends CollapsingToolbarLayout {
         return current.getParent() == this ? current : null;
     }
 
+    static float playerLayerTranslationZ(final boolean playerAttached, final float density) {
+        return playerAttached ? Math.max(density, 0.0f) : 0.0f;
+    }
+
     private void updatePlayerLayerZOrder() {
         if (playerPlaceholder == null || playerLayer == null) {
             return;
@@ -80,8 +84,9 @@ public class CustomCollapsingToolbarLayout extends CollapsingToolbarLayout {
         // Keep ordinary thumbnails/artwork in the normal collapsing-toolbar stack so song details
         // can draw above them. Once the actual video player is attached, restore the one-dp layer
         // lift that keeps scrolling title/uploader content from being painted over the video.
-        final float desiredTranslationZ = playerPlaceholder.getChildCount() > 0
-                ? getResources().getDisplayMetrics().density : 0.0f;
+        final float desiredTranslationZ = playerLayerTranslationZ(
+                playerPlaceholder.getChildCount() > 0,
+                getResources().getDisplayMetrics().density);
         if (Float.compare(playerLayer.getTranslationZ(), desiredTranslationZ) != 0) {
             playerLayer.setTranslationZ(desiredTranslationZ);
         }
