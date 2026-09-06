@@ -44,6 +44,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
 
       - name: Create and checkout branch
         if: github.event_name == 'pull_request'
@@ -60,8 +62,19 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Verify source-inspection tests do not grow
+        run: python3 scripts/check-source-inspection-tests.py "$(git rev-parse HEAD^)"
+
       - name: Build debug APK and run JVM tests
         run: ./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
+
+      - name: Upload lint report when checks fail
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
 
       - name: Verify debug APK identity
         run: |
