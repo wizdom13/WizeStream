@@ -41,6 +41,15 @@
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="0.9.9" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/about_changelog_link"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="12dp"
+            android:text="@string/app_update_full_changelog" />
+
         <org.schabi.newpipe.views.NewPipeTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
