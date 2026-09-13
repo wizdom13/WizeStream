@@ -48,6 +48,7 @@ class TakeoutImporterTest {
             db.close()
         }
     }
+
     @Test
     fun preservesEmptyAndSameNamedPlaylistsRepeatedVideosAndExistingChannelSettings() {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -118,5 +119,4 @@ class TakeoutImporterTest {
             db.close()
         }
     }
-
 }

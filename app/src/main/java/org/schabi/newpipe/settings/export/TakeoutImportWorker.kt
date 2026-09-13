@@ -54,8 +54,13 @@ class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(c
             status(
                 context.getString(
                     R.string.takeout_import_result,
-                    result.playlists, result.videos, result.watches, result.skipped,
-                    result.bookmarks, result.subscriptions, result.searches
+                    result.playlists,
+                    result.videos,
+                    result.watches,
+                    result.skipped,
+                    result.bookmarks,
+                    result.subscriptions,
+                    result.searches
                 )
             )
             Result.success()

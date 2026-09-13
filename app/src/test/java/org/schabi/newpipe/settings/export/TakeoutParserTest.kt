@@ -51,6 +51,7 @@ class TakeoutParserTest {
             file.delete()
         }
     }
+
     @Test
     fun zipPreservesSeparateMetadataEmptyPlaylistsSubscriptionsAndSearches() {
         val file = File.createTempFile("takeout-data", ".zip")
@@ -108,5 +109,4 @@ class TakeoutParserTest {
             file.delete()
         }
     }
-
 }
