@@ -588,7 +588,13 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                         exportResult.getSubscriptions(),
                                         exportResult.getHistoryItems(),
                                         exportResult.getProgressItems(),
-                                        exportResult.getSkippedItems()))
+                                        exportResult.getSkippedItems(),
+                                        exportResult.getLocalPlaylists(),
+                                        exportResult.getRemotePlaylists(),
+                                        exportResult.getPlaylistItems(),
+                                        exportResult.getChannelGroups(),
+                                        exportResult.getGroupMemberships(),
+                                        exportResult.getSearchItems()))
                                 .setPositiveButton(R.string.ok, null)
                                 .show();
                     });

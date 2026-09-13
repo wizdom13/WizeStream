@@ -103,6 +103,66 @@ class NewPipeCompatibleExportManagerTest {
     }
 
     @Test
+    fun preservesPlaylistsGroupsAndSearchesWithOnlyCompatibleReferences() {
+        SQLiteDatabase.openDatabase(sourcePath.toString(), null, SQLiteDatabase.OPEN_READWRITE).use { source ->
+            source.execSQL(
+                "INSERT INTO streams VALUES " +
+                    "(40, 0, 'https://example.com/thumbnail', 'Thumbnail', 'VIDEO_STREAM', 60, " +
+                    "'Uploader', NULL, NULL, NULL, NULL, NULL, 0, 'REMOTE')"
+            )
+            source.execSQL(
+                "INSERT INTO playlists VALUES " +
+                    "(1, 'Mixed', 1, 20, 4), (2, 'Empty', 1, 999, 2), " +
+                    "(3, 'Device only', 1, 20, 1), (4, 'Custom thumbnail', 1, 40, 3)"
+            )
+            source.execSQL(
+                "INSERT INTO playlist_stream_join VALUES " +
+                    "(1, 30, 4), (1, 20, 7), (1, 10, 9), (1, 10, 11), (3, 20, 0)"
+            )
+            source.execSQL(
+                "INSERT INTO remote_playlists VALUES " +
+                    "(6, 0, 'Remote playlist', 'https://example.com/playlist', 'https://example.com/image', 'Owner', 17, 2), " +
+                    "(7, 5, 'Unsupported playlist', 'https://example.com/unsupported', NULL, NULL, 18, 1)"
+            )
+            source.execSQL("INSERT INTO feed_group VALUES (11, 'News', 8, 3), (12, 'Empty group', 999, 2)")
+            source.execSQL("INSERT INTO feed_group_subscription_join VALUES (11, 1), (11, 2)")
+            source.execSQL("INSERT INTO search_history VALUES (1000, 0, 'space', 1), (2000, 0, 'space', 2), (3000, 4, 'music', 3), (4000, 5, 'unsupported', 4)")
+        }
+        val result = NewPipeCompatibleExportManager(sourcePath, context.cacheDir.toPath()).createDatabase(destinationPath)
+        assertEquals(4, result.localPlaylists)
+        assertEquals(1, result.remotePlaylists)
+        assertEquals(3, result.playlistItems)
+        assertEquals(2, result.channelGroups)
+        assertEquals(1, result.groupMemberships)
+        assertEquals(3, result.searchItems)
+        assertEquals(8, result.skippedItems)
+        migrationTestHelper.runMigrationsAndValidate(PORTABLE_DATABASE_NAME, 9, true).close()
+        SQLiteDatabase.openDatabase(destinationPath.toString(), null, SQLiteDatabase.OPEN_READONLY).use { database ->
+            assertEquals("30,10,10", database.singleString("SELECT group_concat(stream_id) FROM (SELECT stream_id FROM playlist_stream_join WHERE playlist_id=1 ORDER BY join_index)"))
+            assertEquals(30, database.singleInt("SELECT thumbnail_stream_id FROM playlists WHERE uid=1"))
+            assertEquals(0, database.singleInt("SELECT is_thumbnail_permanent FROM playlists WHERE uid=1"))
+            assertEquals(-1, database.singleInt("SELECT thumbnail_stream_id FROM playlists WHERE uid=2"))
+            assertEquals(-1, database.singleInt("SELECT thumbnail_stream_id FROM playlists WHERE uid=3"))
+            assertEquals(40, database.singleInt("SELECT thumbnail_stream_id FROM playlists WHERE uid=4"))
+            assertEquals(1, database.singleInt("SELECT is_thumbnail_permanent FROM playlists WHERE uid=4"))
+            assertEquals(3, database.singleInt("SELECT COUNT(*) FROM streams"))
+            assertEquals(17, database.singleInt("SELECT display_index FROM remote_playlists WHERE uid=6"))
+            assertEquals("Owner", database.singleString("SELECT uploader FROM remote_playlists WHERE uid=6"))
+            assertEquals(8, database.singleInt("SELECT icon_id FROM feed_group WHERE uid=11"))
+            assertEquals(0, database.singleInt("SELECT icon_id FROM feed_group WHERE uid=12"))
+            assertEquals(1, database.singleInt("SELECT subscription_id FROM feed_group_subscription_join WHERE group_id=11"))
+            assertEquals("1000,2000", database.singleString("SELECT group_concat(creation_date) FROM (SELECT creation_date FROM search_history WHERE search='space' ORDER BY creation_date)"))
+            assertEquals("ok", database.singleString("PRAGMA quick_check"))
+            database.rawQuery("PRAGMA foreign_key_check", null).use { assertFalse(it.moveToFirst()) }
+        }
+        SQLiteDatabase.openDatabase(sourcePath.toString(), null, SQLiteDatabase.OPEN_READONLY).use { source ->
+            assertEquals(5, source.singleInt("SELECT COUNT(*) FROM playlist_stream_join"))
+            assertEquals(2, source.singleInt("SELECT COUNT(*) FROM feed_group_subscription_join"))
+            assertEquals(4, source.singleInt("SELECT COUNT(*) FROM search_history"))
+        }
+    }
+
+    @Test
     fun archiveContainsOnlyThePortableNewPipeDatabase() {
         archivePath.toFile().createNewFile()
         val file = StoredFileHelper(
@@ -165,6 +225,12 @@ class NewPipeCompatibleExportManagerTest {
                     "stream_id INTEGER PRIMARY KEY, progress_time INTEGER NOT NULL)"
             )
             database.execSQL("INSERT INTO stream_state VALUES (10, 30000), (20, 15000)")
+            database.execSQL("CREATE TABLE playlists (uid INTEGER PRIMARY KEY, name TEXT, is_thumbnail_permanent INTEGER NOT NULL, thumbnail_stream_id INTEGER NOT NULL, display_index INTEGER NOT NULL)")
+            database.execSQL("CREATE TABLE playlist_stream_join (playlist_id INTEGER NOT NULL, stream_id INTEGER NOT NULL, join_index INTEGER NOT NULL)")
+            database.execSQL("CREATE TABLE remote_playlists (uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, name TEXT, url TEXT, thumbnail_url TEXT, uploader TEXT, display_index INTEGER NOT NULL, stream_count INTEGER)")
+            database.execSQL("CREATE TABLE feed_group (uid INTEGER PRIMARY KEY, name TEXT NOT NULL, icon_id INTEGER NOT NULL, sort_order INTEGER NOT NULL)")
+            database.execSQL("CREATE TABLE feed_group_subscription_join (group_id INTEGER NOT NULL, subscription_id INTEGER NOT NULL)")
+            database.execSQL("CREATE TABLE search_history (creation_date INTEGER, service_id INTEGER NOT NULL, search TEXT, id INTEGER PRIMARY KEY)")
         }
     }
 

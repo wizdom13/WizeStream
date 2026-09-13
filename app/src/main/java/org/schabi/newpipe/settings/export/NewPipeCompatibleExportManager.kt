@@ -26,7 +26,13 @@ class NewPipeCompatibleExportManager internal constructor(
         val subscriptions: Int,
         val historyItems: Int,
         val progressItems: Int,
-        val skippedItems: Int
+        val skippedItems: Int,
+        val localPlaylists: Int,
+        val remotePlaylists: Int,
+        val playlistItems: Int,
+        val channelGroups: Int,
+        val groupMemberships: Int,
+        val searchItems: Int
     )
 
     /**
@@ -114,7 +120,17 @@ class NewPipeCompatibleExportManager internal constructor(
                 skippedItems =
                     destination.rowCount("wizestream_source.subscriptions") - subscriptions +
                         destination.rowCount("wizestream_source.stream_history") - historyItems +
-                        destination.rowCount("wizestream_source.stream_state") - progressItems
+                        destination.rowCount("wizestream_source.stream_state") - progressItems +
+                        destination.skippedRows("remote_playlists") +
+                        destination.skippedRows("playlist_stream_join") +
+                        destination.skippedRows("feed_group_subscription_join") +
+                        destination.skippedRows("search_history"),
+                localPlaylists = destination.rowCount("playlists"),
+                remotePlaylists = destination.rowCount("remote_playlists"),
+                playlistItems = destination.rowCount("playlist_stream_join"),
+                channelGroups = destination.rowCount("feed_group"),
+                groupMemberships = destination.rowCount("feed_group_subscription_join"),
+                searchItems = destination.rowCount("search_history")
             )
         } finally {
             if (sourceAttached) {
@@ -148,7 +164,12 @@ class NewPipeCompatibleExportManager internal constructor(
                 "(EXISTS (SELECT 1 FROM wizestream_source.stream_history h " +
                 "WHERE h.stream_id = s.uid) OR " +
                 "EXISTS (SELECT 1 FROM wizestream_source.stream_state st " +
-                "WHERE st.stream_id = s.uid))"
+                "WHERE st.stream_id = s.uid) OR " +
+                "EXISTS (SELECT 1 FROM wizestream_source.playlist_stream_join j " +
+                "INNER JOIN wizestream_source.playlists p ON p.uid = j.playlist_id " +
+                "WHERE j.stream_id = s.uid) OR " +
+                "EXISTS (SELECT 1 FROM wizestream_source.playlists p " +
+                "WHERE p.thumbnail_stream_id = s.uid))"
         )
         database.execSQL(
             "INSERT INTO stream_history (stream_id, access_date, repeat_count) " +
@@ -161,6 +182,57 @@ class NewPipeCompatibleExportManager internal constructor(
                 "SELECT st.stream_id, st.progress_time " +
                 "FROM wizestream_source.stream_state st " +
                 "INNER JOIN streams s ON s.uid = st.stream_id"
+        )
+        copyPlaylists(database)
+        copyGroupsAndSearches(database)
+    }
+
+    private fun copyPlaylists(database: SQLiteDatabase) {
+        database.execSQL(
+            "INSERT INTO playlists " +
+                "(uid, name, is_thumbnail_permanent, thumbnail_stream_id, display_index) " +
+                "SELECT p.uid, p.name, " +
+                "CASE WHEN EXISTS (SELECT 1 FROM streams s WHERE s.uid = p.thumbnail_stream_id) " +
+                "THEN p.is_thumbnail_permanent ELSE 0 END, " +
+                "COALESCE((SELECT s.uid FROM streams s WHERE s.uid = p.thumbnail_stream_id), " +
+                "(SELECT j.stream_id FROM wizestream_source.playlist_stream_join j " +
+                "INNER JOIN streams s ON s.uid = j.stream_id WHERE j.playlist_id = p.uid " +
+                "ORDER BY j.join_index LIMIT 1), -1), p.display_index " +
+                "FROM wizestream_source.playlists p"
+        )
+        database.execSQL(
+            "INSERT INTO playlist_stream_join (playlist_id, stream_id, join_index) " +
+                "SELECT j.playlist_id, j.stream_id, j.join_index " +
+                "FROM wizestream_source.playlist_stream_join j " +
+                "INNER JOIN playlists p ON p.uid = j.playlist_id " +
+                "INNER JOIN streams s ON s.uid = j.stream_id"
+        )
+        database.execSQL(
+            "INSERT INTO remote_playlists " +
+                "(uid, service_id, name, url, thumbnail_url, uploader, display_index, stream_count) " +
+                "SELECT uid, service_id, name, url, thumbnail_url, uploader, " +
+                "display_index, stream_count FROM wizestream_source.remote_playlists " +
+                "WHERE service_id BETWEEN $NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID"
+        )
+    }
+
+    private fun copyGroupsAndSearches(database: SQLiteDatabase) {
+        database.execSQL(
+            "INSERT INTO feed_group (uid, name, icon_id, sort_order) " +
+                "SELECT uid, name, CASE WHEN icon_id BETWEEN 0 AND $NEWPIPE_LAST_GROUP_ICON " +
+                "THEN icon_id ELSE 0 END, sort_order FROM wizestream_source.feed_group"
+        )
+        database.execSQL(
+            "INSERT INTO feed_group_subscription_join (group_id, subscription_id) " +
+                "SELECT j.group_id, j.subscription_id " +
+                "FROM wizestream_source.feed_group_subscription_join j " +
+                "INNER JOIN feed_group g ON g.uid = j.group_id " +
+                "INNER JOIN subscriptions s ON s.uid = j.subscription_id"
+        )
+        database.execSQL(
+            "INSERT INTO search_history (id, creation_date, service_id, search) " +
+                "SELECT id, creation_date, service_id, search FROM wizestream_source.search_history " +
+                "WHERE service_id BETWEEN $NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID"
         )
     }
 
@@ -189,6 +261,8 @@ class NewPipeCompatibleExportManager internal constructor(
         }
     }
 
+    private fun SQLiteDatabase.skippedRows(table: String): Int = rowCount("wizestream_source.$table") - rowCount(table)
+
     private fun SQLiteDatabase.rowCount(table: String): Int = rawQuery(
         "SELECT COUNT(*) FROM $table",
         null
@@ -202,6 +276,7 @@ class NewPipeCompatibleExportManager internal constructor(
         const val NEWPIPE_IDENTITY_HASH = "7591e8039faa74d8c0517dc867af9d3e"
         const val NEWPIPE_FIRST_SERVICE_ID = 0
         const val NEWPIPE_LAST_SERVICE_ID = 4
+        const val NEWPIPE_LAST_GROUP_ICON = 38
 
         val REQUIRED_NEWPIPE_TABLES = setOf(
             "subscriptions",
