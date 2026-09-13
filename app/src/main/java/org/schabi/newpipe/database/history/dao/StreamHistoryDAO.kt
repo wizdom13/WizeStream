@@ -10,6 +10,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
 import io.reactivex.rxjava3.core.Flowable
+import java.time.OffsetDateTime
 import org.schabi.newpipe.database.BasicDAO
 import org.schabi.newpipe.database.history.model.StreamHistoryEntity
 import org.schabi.newpipe.database.history.model.StreamHistoryEntry
@@ -64,4 +65,7 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
         """
     )
     abstract fun getStatistics(): Flowable<MutableList<StreamStatisticsEntry>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM stream_history WHERE stream_id = :streamId AND access_date = :date)")
+    abstract fun hasTakeoutEvent(streamId: Long, date: OffsetDateTime): Boolean
 }

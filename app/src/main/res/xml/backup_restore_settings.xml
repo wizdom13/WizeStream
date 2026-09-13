@@ -79,4 +79,15 @@
         android:summary="@string/import_subscriptions_summary"
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
+    <Preference
+        android:key="@string/takeout_import_key"
+        android:title="@string/takeout_import_title"
+        android:summary="@string/takeout_import_summary"
+        app:iconSpaceReserved="false" />
+    <Preference
+        android:key="@string/takeout_import_status_key"
+        android:title="@string/takeout_import_status_title"
+        android:summary="@string/takeout_import_idle"
+        app:selectable="false"
+        app:iconSpaceReserved="false" />
 </PreferenceScreen>

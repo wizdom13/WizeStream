@@ -38,6 +38,9 @@ interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
     @Query("SELECT COALESCE(MAX(join_index), -1) FROM playlist_stream_join WHERE playlist_id = :playlistId")
     fun getMaximumIndexOf(playlistId: Long): Flowable<Int>
 
+    @Query("SELECT COALESCE(MAX(join_index), -1) FROM playlist_stream_join WHERE playlist_id = :playlistId")
+    fun getMaximumIndexDirect(playlistId: Long): Int
+
     @Query(
         """
         SELECT CASE WHEN COUNT(*) != 0 then stream_id ELSE $DEFAULT_THUMBNAIL_ID END

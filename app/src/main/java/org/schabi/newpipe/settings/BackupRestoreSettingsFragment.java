@@ -33,6 +33,7 @@ import org.schabi.newpipe.settings.export.ImportExportManager;
 import org.schabi.newpipe.settings.export.NewPipeCompatibleExportManager;
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager;
 import org.schabi.newpipe.settings.export.ScheduledBackupWorker;
+import org.schabi.newpipe.settings.export.TakeoutImportWorker;
 import org.schabi.newpipe.streams.io.NoFileManagerSafeGuard;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -63,6 +64,21 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
 
     private final SimpleDateFormat exportDateFormat =
             new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
+    private final ActivityResultLauncher<String[]> requestTakeoutImport =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null) {
+                    return;
+                }
+                try {
+                    requireContext().getContentResolver().takePersistableUriPermission(uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    TakeoutImportWorker.enqueue(requireContext(), uri);
+                    Toast.makeText(requireContext(), R.string.takeout_import_queued,
+                            Toast.LENGTH_LONG).show();
+                } catch (final Exception error) {
+                    showErrorSnackbar(error, "Opening Takeout export");
+                }
+            });
     private ImportExportManager manager;
     private String importExportDataPathKey;
     private final ActivityResultLauncher<Intent> requestImportPathLauncher =
@@ -123,6 +139,27 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         importExportDataPathKey = getString(R.string.import_export_data_path);
 
         addPreferencesFromResourceRegistry();
+        requirePreference(R.string.takeout_import_key).setOnPreferenceClickListener(preference -> {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.takeout_import_title)
+                    .setMessage(R.string.takeout_import_help)
+                    .setPositiveButton(R.string.ok, (dialog, which) ->
+                            NoFileManagerSafeGuard.launchSafe(requestTakeoutImport,
+                                    new String[]{"*/*"}, TAG, requireContext()))
+                    .setNegativeButton(R.string.cancel, null).show();
+            return true;
+        });
+        androidx.work.WorkManager.getInstance(requireContext())
+                .getWorkInfosForUniqueWorkLiveData("takeout-import").observe(this, work -> {
+                    if (isAdded() && !work.isEmpty()) {
+                        final boolean pending = work.stream()
+                                .anyMatch(info -> !info.getState().isFinished());
+                        requirePreference(R.string.takeout_import_status_key).setSummary(pending
+                                ? getString(R.string.takeout_import_queued)
+                                : defaultPreferences.getString(TakeoutImportWorker.STATUS,
+                                        getString(R.string.takeout_import_idle)));
+                    }
+                });
         requirePreference(R.string.automatic_backup_directory_key)
                 .setOnPreferenceClickListener(preference -> {
                     NoFileManagerSafeGuard.launchSafe(requestBackupDirectory,
@@ -244,6 +281,9 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         super.onResume();
         defaultPreferences.registerOnSharedPreferenceChangeListener(backupStatusListener);
         updateAutomaticBackupSummary();
+        requirePreference(R.string.takeout_import_status_key).setSummary(
+                defaultPreferences.getString(TakeoutImportWorker.STATUS,
+                        getString(R.string.takeout_import_idle)));
     }
 
     @Override
