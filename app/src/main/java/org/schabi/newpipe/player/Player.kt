@@ -547,6 +547,8 @@ class Player(
 
     override fun sourceOfLocal(item: PlayQueueItem): MediaSource? = streamController.sourceOfLocal(item)
 
+    override fun sourceOfDownloaded(item: PlayQueueItem): MediaSource? = streamController.sourceOfDownloaded(item)
+
     fun disablePreloadingOfCurrentTrack() = streamController.disablePreloadingOfCurrentTrack()
 
     val selectedVideoStream: Optional<VideoStream>

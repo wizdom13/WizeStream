@@ -53,4 +53,9 @@
         android:orderInCategory="4"
         android:title="@string/open_in_browser"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_item_automatic_downloads"
+        android:title="@string/automatic_downloads"
+        android:visible="false"
+        app:showAsAction="never" />
 </menu>

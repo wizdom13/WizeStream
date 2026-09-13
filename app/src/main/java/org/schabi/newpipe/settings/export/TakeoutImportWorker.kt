@@ -17,6 +17,7 @@ import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.sync.HistorySyncRecorder
 import org.schabi.newpipe.sync.RoomPlaylistSyncStore
+import org.schabi.newpipe.sync.RoomSubscriptionSyncStore
 
 class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     override fun doWork(): Result {
@@ -43,9 +44,20 @@ class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(c
             }
             val data = TakeoutParser.parse(file, name)
             val history = HistorySyncRecorder.get(context)
-            val result = TakeoutImporter(NewPipeDatabase.getInstance(context), history::recordWatchEvent).import(data)
+            val result = TakeoutImporter(
+                NewPipeDatabase.getInstance(context),
+                recordSearch = { query, time -> history.recordSearch(0, query, time) },
+                recordSubscription = RoomSubscriptionSyncStore.get(context)::recordLocalUpsert,
+                recordWatch = history::recordWatchEvent
+            ).import(data)
             RoomPlaylistSyncStore.get(context).reconcileLocalPlaylists()
-            status(context.getString(R.string.takeout_import_result, result.playlists, result.videos, result.watches, result.skipped))
+            status(
+                context.getString(
+                    R.string.takeout_import_result,
+                    result.playlists, result.videos, result.watches, result.skipped,
+                    result.bookmarks, result.subscriptions, result.searches
+                )
+            )
             Result.success()
         } catch (error: Exception) {
             status(context.getString(R.string.takeout_import_error, error.localizedMessage ?: error.javaClass.simpleName))

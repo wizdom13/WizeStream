@@ -66,7 +66,8 @@ class FeedLoadManager(private val context: Context) {
     fun startLoading(
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
         ignoreOutdatedThreshold: Boolean = false,
-        scope: FeedScope? = null
+        scope: FeedScope? = null,
+        onlySubscriptions: Set<Long>? = null
     ): Single<List<Notification<FeedUpdateInfo>>> {
         feedScope = scope
         val defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -114,6 +115,7 @@ class FeedLoadManager(private val context: Context) {
 
         return outdatedSubscriptions
             .take(1)
+            .map { subscriptions -> subscriptions.filter { onlySubscriptions == null || it.uid in onlySubscriptions } }
             .doOnNext {
                 currentProgress.set(0)
                 maxProgress.set(it.size)

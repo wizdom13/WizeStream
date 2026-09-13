@@ -114,6 +114,7 @@ open class App :
         BridgeStateSaverInitializer.init(this)
         StateSaver.init(this)
         initNotificationChannels()
+        org.schabi.newpipe.download.AutomaticDownloads.initialize(this)
 
         ServiceHelper.initServices(this)
 

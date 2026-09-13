@@ -19,6 +19,9 @@ import org.schabi.newpipe.database.stream.StreamStatisticsEntry
 @Dao
 abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
 
+    @Query("SELECT DISTINCT service_id || ':' || url FROM streams INNER JOIN stream_history ON uid = stream_id")
+    abstract fun discoveryWatchedKeys(): List<String>
+
     @Query("SELECT * FROM stream_history")
     abstract override fun getAll(): Flowable<List<StreamHistoryEntity>>
 

@@ -434,6 +434,24 @@ public class MediaSourceManager {
                             new MediaSourceResolutionException(
                                     "Unable to open local media: " + throwable.getMessage())));
         }
+        return Single.fromCallable(() -> Optional.ofNullable(
+                        playbackListener.sourceOfDownloaded(stream)))
+                .subscribeOn(Schedulers.io())
+                .onErrorReturnItem(Optional.empty())
+                .flatMap(source -> {
+                    if (source.isPresent()) {
+                        final Optional<MediaItemTag> tag =
+                                MediaItemTag.from(source.get().getMediaItem());
+                        if (tag.isPresent()) {
+                            return Single.<ManagedMediaSource>just(new LoadedMediaSource(
+                                    source.get(), tag.get(), stream, Long.MAX_VALUE));
+                        }
+                    }
+                    return getRemoteMediaSource(stream);
+                });
+    }
+
+    private Single<ManagedMediaSource> getRemoteMediaSource(@NonNull final PlayQueueItem stream) {
         return stream.getStream()
                 .map(streamInfo -> Optional
                         .ofNullable(playbackListener.sourceOf(stream, streamInfo))

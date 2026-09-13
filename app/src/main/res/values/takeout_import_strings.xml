@@ -3,15 +3,15 @@
     <string name="takeout_import_key" translatable="false">takeout_import</string>
     <string name="takeout_import_status_key" translatable="false">takeout_import_status_preference</string>
     <string name="takeout_import_title">Import Google Takeout</string>
-    <string name="takeout_import_summary">Add YouTube playlists and watch history from ZIP, CSV, JSON or HTML</string>
-    <string name="takeout_import_help">Select a Takeout ZIP containing YouTube playlists and history, an extracted playlist CSV, or watch-history JSON/HTML. Choose JSON when exporting history for reliable dates.
+    <string name="takeout_import_summary">Add YouTube playlists, subscriptions and history from ZIP, CSV, JSON or HTML</string>
+    <string name="takeout_import_help">Select a Takeout ZIP containing YouTube playlists, subscriptions and history, an extracted playlist or subscriptions CSV, or watch-history/search-history JSON or HTML. Choose JSON when exporting history for reliable dates. Include playlist metadata CSV files in the ZIP to retain playlist titles and original links.
 
-Playlists are added with a (Takeout) suffix. Re-imports append missing videos to matching playlists and skip duplicate watch events. Existing data is kept. Video titles may be unavailable in playlist exports.
+Local playlists use a (Takeout) suffix, including empty playlists. Re-imports append missing video occurrences and skip matching subscription and history entries. Existing playlist order, channel settings and video details are kept. Original playlist links are also bookmarked when provided. Titles may be unavailable for playlist videos.
 
 Import runs on this device. Select an export under 256 MiB without uploaded video files.</string>
     <string name="takeout_import_status_title">Last Takeout import</string>
     <string name="takeout_import_idle">No import completed yet</string>
     <string name="takeout_import_queued">Takeout import queued or running. Progress is shown in Backup and restore settings.</string>
-    <string name="takeout_import_result">Added %1$d playlists, %2$d playlist videos and %3$d watch events. Skipped %4$d duplicate or unavailable entries.</string>
+    <string name="takeout_import_result">Added %1$d local playlists with %2$d videos, %5$d playlist bookmarks, %6$d subscriptions, %3$d watch events and %7$d searches. Skipped %4$d duplicate or unavailable entries.</string>
     <string name="takeout_import_error">Takeout import could not finish: %1$s</string>
 </resources>

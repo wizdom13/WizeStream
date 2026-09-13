@@ -27,6 +27,9 @@ internal class PlayerStreamController(
     private val loadController: LoadController
 ) {
     fun sourceOf(info: StreamInfo): MediaSource? {
+        if (info is org.schabi.newpipe.download.DownloadedStreamInfo) {
+            return downloadedSource(info)
+        }
         if (player.audioPlayerSelected()) {
             return audioResolver.resolve(info)
         }
@@ -52,6 +55,21 @@ internal class PlayerStreamController(
         return dataSource.progressiveMediaSourceFactory
             .createMediaSource(LocalMediaItemTag.of(item).asMediaItem())
     }
+
+    fun sourceOfDownloaded(item: PlayQueueItem): MediaSource? {
+        val info = org.schabi.newpipe.download.DownloadedCopyRepository.find(
+            context,
+            item.serviceId,
+            item.url,
+            item.title,
+            player.audioPlayerSelected() || player.isAudioOnly,
+            item
+        ) ?: return null
+        return downloadedSource(info)
+    }
+
+    private fun downloadedSource(info: org.schabi.newpipe.download.DownloadedStreamInfo): MediaSource = dataSource.progressiveMediaSourceFactory
+        .createMediaSource(org.schabi.newpipe.player.mediaitem.StreamInfoTag.of(info).asMediaItem().buildUpon().setUri(info.copyUri).build())
 
     fun disablePreloadingOfCurrentTrack() {
         loadController.disablePreloadingOfCurrentTrack()

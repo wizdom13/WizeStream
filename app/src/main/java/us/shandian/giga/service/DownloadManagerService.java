@@ -364,8 +364,19 @@ public class DownloadManagerService extends Service {
                                     char kind, int threads, StreamInfo streamInfo, String psName,
                                     String[] psArgs, long nearLength,
                                     ArrayList<MissionRecoveryInfo> recoveryInfo) {
+        startMission(context, urls, storage, kind, threads, streamInfo, psName, psArgs,
+                nearLength, recoveryInfo, null);
+    }
+
+    public static void startMission(Context context, String[] urls, StoredFileHelper storage,
+                                    char kind, int threads, StreamInfo streamInfo, String psName,
+                                    String[] psArgs, long nearLength,
+                                    ArrayList<MissionRecoveryInfo> recoveryInfo,
+                                    Boolean automaticWifiOnly) {
         final Intent intent = new Intent(context, DownloadManagerService.class)
                 .setAction(Intent.ACTION_RUN)
+                .putExtra("automatic_download", automaticWifiOnly != null)
+                .putExtra("automatic_wifi_only", Boolean.TRUE.equals(automaticWifiOnly))
                 .putExtra(EXTRA_URLS, urls)
                 .putExtra(EXTRA_KIND, kind)
                 .putExtra(EXTRA_THREADS, threads)
@@ -410,8 +421,19 @@ public class DownloadManagerService extends Service {
             ps = Postprocessing.getAlgorithm(psName, psArgs, streamInfo);
 
         final DownloadMission mission = new DownloadMission(urls, storage, kind, ps);
+        if (intent.getBooleanExtra("automatic_download", false)
+                && mManager.hasMissionForSource(streamInfo.getUrl(), kind)) {
+            storage.delete();
+            return;
+        }
+        mission.requiresUnmeteredNetwork = intent.getBooleanExtra("automatic_wifi_only", false);
         mission.threadCount = threads;
         mission.source = streamInfo.getUrl();
+        if (Postprocessing.ALGORITHM_SEGMENTS.equals(psName)) {
+            // Keep partial exports distinguishable from complete offline copies.
+            mission.source += (mission.source.contains("#") ? "&" : "#")
+                    + "wizestream-segments=" + psArgs[0];
+        }
         mission.nearLength = nearLength;
         mission.recoveryInfo = recovery.toArray(new MissionRecoveryInfo[0]);
 

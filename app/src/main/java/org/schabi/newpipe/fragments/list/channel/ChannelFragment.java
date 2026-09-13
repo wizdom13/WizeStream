@@ -113,6 +113,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     private MenuItem menuRssButton;
     private MenuItem menuNotifyButton;
     private MenuItem menuNotificationKeywordsButton;
+    private MenuItem menuAutomaticDownloadsButton;
     private SubscriptionEntity channelSubscription;
 
     public static ChannelFragment getInstance(final int serviceId, final String url,
@@ -189,6 +190,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 menuNotifyButton = menu.findItem(R.id.menu_item_notify);
                 menuNotificationKeywordsButton =
                         menu.findItem(R.id.menu_item_notification_keywords);
+                menuAutomaticDownloadsButton = menu.findItem(R.id.menu_item_automatic_downloads);
                 updateRssButton();
                 updateNotifyButton(channelSubscription);
             }
@@ -202,6 +204,12 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     setNotify(value);
                 } else if (itemId == R.id.menu_item_notification_keywords) {
                     showNotificationConfigDialog();
+                } else if (itemId == R.id.menu_item_automatic_downloads) {
+                    if (channelSubscription != null && currentInfo != null) {
+                        org.schabi.newpipe.download.AutomaticDownloads.configure(requireContext(),
+                                channelSubscription.getUid(), currentInfo.getServiceId(),
+                                currentInfo.getUrl(), currentInfo.getName());
+                    }
                 } else if (itemId == R.id.action_settings) {
                     NavigationHelper.openSettings(requireContext());
                 } else if (itemId == R.id.menu_item_rss) {
@@ -503,6 +511,9 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
         menuNotifyButton.setVisible(subscription != null);
         menuNotificationKeywordsButton.setVisible(subscription != null);
+        if (menuAutomaticDownloadsButton != null) {
+            menuAutomaticDownloadsButton.setVisible(subscription != null);
+        }
     }
 
     private void showNotificationConfigDialog() {

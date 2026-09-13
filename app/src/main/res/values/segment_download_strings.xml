@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="download_segments">Download selected segments</string>
+    <string name="download_segments_description">Choose a time range or chapters. Selected parts are joined into one MP4 video or M4A audio file. The full source is downloaded first and temporary storage is needed during export.</string>
+    <string name="download_segment_start">Start (seconds or hh:mm:ss)</string>
+    <string name="download_segment_end">End (seconds or hh:mm:ss)</string>
+    <string name="download_select_chapters">Select chapters</string>
+    <string name="download_entire_stream">Entire stream</string>
+    <string name="download_segment_invalid">Enter a valid range within the stream duration, with end after start.</string>
+    <string name="download_segments_selected">Selected segments: %1$d</string>
+</resources>

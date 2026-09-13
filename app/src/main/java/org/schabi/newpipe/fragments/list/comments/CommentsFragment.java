@@ -10,6 +10,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.preference.PreferenceManager;
+
+import com.google.android.material.chip.ChipGroup;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.UserAction;
@@ -17,7 +20,6 @@ import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
 import org.schabi.newpipe.extractor.comments.CommentSortOrder;
 import org.schabi.newpipe.extractor.ServiceList;
-import com.google.android.material.chip.ChipGroup;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
@@ -29,6 +31,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, CommentsInfo> {
+    private static final String SORT_PREFERENCE = "comment_sort_newest";
     private final CompositeDisposable disposables = new CompositeDisposable();
 
     private TextView emptyStateDesc;
@@ -56,13 +59,17 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
         super.initViews(rootView, savedInstanceState);
 
         emptyStateDesc = rootView.findViewById(R.id.empty_state_desc);
-        if (savedInstanceState != null) {
-            sortOrder = savedInstanceState.getBoolean("comments_newest", false)
-                    ? CommentSortOrder.NEWEST : CommentSortOrder.TOP;
-        }
+        final boolean supportsSorting = serviceId == ServiceList.YouTube.getServiceId();
+        final boolean newest = savedInstanceState != null
+                ? savedInstanceState.getBoolean("comments_newest", false)
+                : PreferenceManager.getDefaultSharedPreferences(requireContext())
+                        .getBoolean(SORT_PREFERENCE, false);
+        sortOrder = supportsSorting
+                ? currentInfo != null ? currentInfo.getSortOrder()
+                        : newest ? CommentSortOrder.NEWEST : CommentSortOrder.TOP
+                : CommentSortOrder.TOP;
         final ChipGroup sorting = rootView.findViewById(R.id.comment_sort);
-        sorting.setVisibility(serviceId == ServiceList.YouTube.getServiceId()
-                ? View.VISIBLE : View.GONE);
+        sorting.setVisibility(supportsSorting ? View.VISIBLE : View.GONE);
         sorting.check(sortOrder == CommentSortOrder.NEWEST
                 ? R.id.comments_newest : R.id.comments_top);
         sorting.setOnCheckedStateChangeListener((group, checkedIds) -> {
@@ -70,6 +77,8 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
                     ? CommentSortOrder.NEWEST : CommentSortOrder.TOP;
             if (sortOrder != selected) {
                 sortOrder = selected;
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
+                        .putBoolean(SORT_PREFERENCE, selected == CommentSortOrder.NEWEST).apply();
                 currentNextPage = null;
                 startLoading(true);
             }

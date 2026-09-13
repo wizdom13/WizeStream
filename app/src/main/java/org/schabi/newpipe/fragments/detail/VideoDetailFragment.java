@@ -1340,7 +1340,9 @@ public final class VideoDetailFragment
 
     private void runWorker(final boolean forceLoad, final boolean addToBackStack) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-        currentWorker = ExtractorHelper.getStreamInfo(serviceId, url, forceLoad)
+        currentWorker = org.schabi.newpipe.download.DownloadedCopyRepository.streamInfoOrNetwork(
+                        requireContext(), serviceId, url, title,
+                        ExtractorHelper.getStreamInfo(serviceId, url, forceLoad))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {

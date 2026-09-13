@@ -9,6 +9,7 @@ package org.schabi.newpipe.database.history.dao
 import androidx.room.Dao
 import androidx.room.Query
 import io.reactivex.rxjava3.core.Flowable
+import java.time.OffsetDateTime
 import org.schabi.newpipe.database.BasicDAO
 import org.schabi.newpipe.database.history.model.SearchHistoryEntry
 
@@ -17,6 +18,9 @@ interface SearchHistoryDAO : BasicDAO<SearchHistoryEntry> {
 
     @get:Query("SELECT * FROM search_history WHERE id = (SELECT MAX(id) FROM search_history)")
     val latestEntry: SearchHistoryEntry?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM search_history WHERE service_id = :serviceId AND search = :query AND creation_date = :date)")
+    fun hasTakeoutEvent(serviceId: Int, query: String, date: OffsetDateTime): Boolean
 
     @Query("DELETE FROM search_history")
     override fun deleteAll(): Int

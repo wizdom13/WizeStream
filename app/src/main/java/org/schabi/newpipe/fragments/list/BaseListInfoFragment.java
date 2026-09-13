@@ -204,7 +204,7 @@ public abstract class BaseListInfoFragment<I extends InfoItem, L extends ListInf
         super.handleNextItems(result);
 
         currentNextPage = result.getNextPage();
-        infoListAdapter.addInfoItemList(result.getItems());
+        infoListAdapter.addInfoItemList(getDisplayItems(result.getItems()));
 
         showListFooter(hasMoreItems());
 
@@ -217,6 +217,15 @@ public abstract class BaseListInfoFragment<I extends InfoItem, L extends ListInf
     @Override
     protected boolean hasMoreItems() {
         return Page.isValid(currentNextPage);
+    }
+
+    /**
+     * Produces display items without modifying cached extractor results.
+     * @param items original items from the extractor
+     * @return items to display
+     */
+    protected List<I> getDisplayItems(final List<I> items) {
+        return items;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -232,7 +241,7 @@ public abstract class BaseListInfoFragment<I extends InfoItem, L extends ListInf
 
         if (infoListAdapter.getItemsList().isEmpty()) {
             if (!result.getRelatedItems().isEmpty()) {
-                infoListAdapter.addInfoItemList(result.getRelatedItems());
+                infoListAdapter.addInfoItemList(getDisplayItems(result.getRelatedItems()));
             }
             if (!infoListAdapter.getItemsList().isEmpty()) {
                 showListFooter(hasMoreItems());

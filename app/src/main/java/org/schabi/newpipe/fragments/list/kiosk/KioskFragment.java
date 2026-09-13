@@ -36,6 +36,8 @@ import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.KioskTranslator;
 import org.schabi.newpipe.util.Localization;
 
+import java.util.List;
+
 import io.reactivex.rxjava3.core.Single;
 
 public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInfo> {
@@ -44,6 +46,8 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     String kioskTranslatedName;
     @State
     ContentCountry contentCountry;
+
+    private DiscoveryPersonalization personalization;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Views
@@ -92,7 +96,8 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     @Override
     public void onResume() {
         super.onResume();
-        if (!Localization.getPreferredContentCountry(requireContext()).equals(contentCountry)) {
+        if (!Localization.getPreferredContentCountry(requireContext()).equals(contentCountry)
+                || (currentInfo != null && personalization == null && !isLoading.get())) {
             reloadContent();
         }
         if (useAsFrontPage && activity != null) {
@@ -119,6 +124,10 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     public void onCreateOptionsMenu(@NonNull final Menu menu,
                                     @NonNull final MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
+        menu.add(R.string.discovery_personalize).setOnMenuItemClickListener(item -> {
+            DiscoveryPersonalization.configure(requireContext(), this::reloadContent);
+            return true;
+        });
         final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null && useAsFrontPage) {
             supportActionBar.setDisplayHomeAsUpEnabled(false);
@@ -132,17 +141,26 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     @Override
     public Single<KioskInfo> loadResult(final boolean forceReload) {
         contentCountry = Localization.getPreferredContentCountry(requireContext());
-        return ExtractorHelper.getKioskInfo(serviceId, url, forceReload);
+        final android.content.Context context = requireContext().getApplicationContext();
+        return ExtractorHelper.getKioskInfo(serviceId, url, forceReload)
+                .doOnSuccess(info -> personalization = DiscoveryPersonalization.load(context));
     }
 
     @Override
     public Single<ListExtractor.InfoItemsPage<StreamInfoItem>> loadMoreItemsLogic() {
-        return ExtractorHelper.getMoreKioskItems(serviceId, url, currentNextPage);
+        final android.content.Context context = requireContext().getApplicationContext();
+        return ExtractorHelper.getMoreKioskItems(serviceId, url, currentNextPage)
+                .doOnSuccess(info -> personalization = DiscoveryPersonalization.load(context));
     }
 
     /*//////////////////////////////////////////////////////////////////////////
     // Contract
     //////////////////////////////////////////////////////////////////////////*/
+
+    @Override
+    protected List<StreamInfoItem> getDisplayItems(final List<StreamInfoItem> items) {
+        return personalization == null ? items : personalization.apply(items);
+    }
 
     @Override
     public void handleResult(@NonNull final KioskInfo result) {

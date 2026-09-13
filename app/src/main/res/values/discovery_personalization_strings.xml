@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="discovery_personalize">Personalize discovery</string>
+    <string name="discovery_personalize_help">Prioritize topics within each page of this service’s discovery feed. Separate keywords with commas. These preferences apply to discovery pages only.</string>
+    <string name="discovery_interests">Preferred topics or channels</string>
+    <string name="discovery_hidden">Hidden keywords or channels</string>
+    <string name="discovery_hide_watched">Hide watched videos</string>
+    <string name="discovery_hide_shorts">Hide Shorts</string>
+    <string name="discovery_hide_live">Hide live streams</string>
+    <string name="discovery_reset">Reset preferences</string>
+</resources>

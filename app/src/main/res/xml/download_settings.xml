@@ -2,6 +2,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_downloads_title">
+    <SwitchPreferenceCompat
+        android:key="prefer_downloaded_copies"
+        android:defaultValue="true"
+        android:title="@string/prefer_downloaded_copies_title"
+        android:summary="@string/prefer_downloaded_copies_summary"
+        app:singleLineTitle="false" app:iconSpaceReserved="false" />
 
     <SwitchPreferenceCompat
         android:defaultValue="false"
@@ -79,4 +85,22 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <PreferenceCategory android:title="@string/automatic_downloads" app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:key="automatic_downloads_enabled"
+            android:defaultValue="false"
+            android:title="@string/automatic_downloads"
+            android:summary="@string/automatic_download_instructions"
+            app:iconSpaceReserved="false" app:singleLineTitle="false" />
+        <SwitchPreferenceCompat
+            android:key="automatic_downloads_wifi_only"
+            android:defaultValue="true"
+            android:title="@string/automatic_download_wifi_only"
+            app:iconSpaceReserved="false" />
+        <Preference android:key="automatic_download_channels"
+            android:title="@string/automatic_download_channels" app:iconSpaceReserved="false" />
+        <Preference android:key="automatic_download_status"
+            android:title="@string/automatic_download_status_title"
+            android:selectable="false" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
 </PreferenceScreen>

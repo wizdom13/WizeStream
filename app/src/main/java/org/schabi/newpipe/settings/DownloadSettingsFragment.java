@@ -39,6 +39,16 @@ public class DownloadSettingsFragment extends BasePreferenceFragment {
     private Preference prefStorageAsk;
 
     private Context ctx;
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        final Preference status = findPreference("automatic_download_status");
+        if (status != null) {
+            status.setSummary(defaultPreferences.getString("automatic_download_status",
+                    getString(R.string.automatic_download_waiting_status)));
+        }
+    }
     private final ActivityResultLauncher<Intent> requestDownloadVideoPathLauncher =
             registerForActivityResult(
                     new StartActivityForResult(), this::requestDownloadVideoPathResult);
@@ -79,6 +89,15 @@ public class DownloadSettingsFragment extends BasePreferenceFragment {
             updatePathPickers(!(boolean) value);
             return true;
         });
+        for (final String key : new String[]{
+                org.schabi.newpipe.download.AutomaticDownloads.ENABLED,
+                org.schabi.newpipe.download.AutomaticDownloads.WIFI_ONLY}) {
+            findPreference(key).setOnPreferenceChangeListener((preference, value) -> {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+                        org.schabi.newpipe.download.AutomaticDownloads.initialize(ctx));
+                return true;
+            });
+        }
     }
 
     @Override
@@ -167,6 +186,11 @@ public class DownloadSettingsFragment extends BasePreferenceFragment {
         }
 
         final String key = preference.getKey();
+
+        if ("automatic_download_channels".equals(key)) {
+            org.schabi.newpipe.download.AutomaticDownloads.manage(requireContext());
+            return true;
+        }
 
         if (key.equals(storageUseSafPreference)) {
             if (!NewPipeSettings.useStorageAccessFramework(ctx)) {

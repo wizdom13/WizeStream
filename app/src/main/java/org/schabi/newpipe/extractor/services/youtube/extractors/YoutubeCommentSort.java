@@ -18,7 +18,8 @@ final class YoutubeCommentSort {
                 continue;
             }
             final JsonObject command = ((JsonObject) endpoint).getObject(
-                    "reloadContinuationItemsCommand");
+                    "reloadContinuationItemsCommand",
+                    ((JsonObject) endpoint).getObject("appendContinuationItemsAction"));
             for (final Object item : command.getArray("continuationItems")) {
                 if (!(item instanceof JsonObject)) {
                     continue;

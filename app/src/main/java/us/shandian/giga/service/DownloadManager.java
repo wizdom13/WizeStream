@@ -268,7 +268,7 @@ public class DownloadManager {
 
             boolean start = !mPrefQueueLimit || getRunningMissionsCount() < 1;
 
-            if (canDownloadInCurrentNetwork() && start) {
+            if (canDownloadInCurrentNetwork(mission) && start) {
                 mission.start();
             }
         }
@@ -276,9 +276,21 @@ public class DownloadManager {
 
 
     public void resumeMission(DownloadMission mission) {
-        if (!mission.running) {
+        if (!mission.running && (!mission.requiresUnmeteredNetwork
+                || canDownloadInCurrentNetwork(mission))) {
             mission.start();
         }
+    }
+
+    public synchronized boolean hasMissionForSource(final String source, final char kind) {
+        for (final DownloadMission mission : mMissionsPending) {
+            if (kind == mission.kind && source.equals(mission.source)) return true;
+        }
+        for (final FinishedMission mission : mMissionsFinished) {
+            if (kind == mission.kind && source.equals(mission.source)
+                    && mission.storage != null && mission.storage.existsAsFile()) return true;
+        }
+        return false;
     }
 
     public void pauseMission(DownloadMission mission) {
@@ -470,7 +482,8 @@ public class DownloadManager {
 
             boolean flag = false;
             for (DownloadMission mission : mMissionsPending) {
-                if (mission.running || !mission.enqueued || mission.isFinished())
+                if (mission.running || !mission.enqueued || mission.isFinished()
+                        || !canDownloadInCurrentNetwork(mission))
                     continue;
 
                 resumeMission(mission);
@@ -506,6 +519,11 @@ public class DownloadManager {
         return !(mPrefMeteredDownloads && mLastNetworkStatus == NetworkState.MeteredOperating);
     }
 
+    private boolean canDownloadInCurrentNetwork(final DownloadMission mission) {
+        return canDownloadInCurrentNetwork() && !(mission.requiresUnmeteredNetwork
+                && mLastNetworkStatus == NetworkState.MeteredOperating);
+    }
+
     void handleConnectivityState(NetworkState currentStatus, boolean updateOnly) {
         if (currentStatus == mLastNetworkStatus) return;
 
@@ -516,15 +534,13 @@ public class DownloadManager {
             return;// don't touch anything without the user interaction
         }
 
-        boolean isMetered = mPrefMeteredDownloads && mLastNetworkStatus == NetworkState.MeteredOperating;
-
         synchronized (this) {
             for (DownloadMission mission : mMissionsPending) {
                 if (mission.isCorrupt() || mission.isPsRunning()) continue;
-
-                if (mission.running && isMetered) {
+                if (mission.running && !canDownloadInCurrentNetwork(mission)) {
                     mission.pause();
-                } else if (!mission.running && !isMetered && mission.enqueued) {
+                } else if (!mission.running && canDownloadInCurrentNetwork(mission)
+                        && mission.enqueued) {
                     mission.start();
                     if (mPrefQueueLimit) break;
                 }

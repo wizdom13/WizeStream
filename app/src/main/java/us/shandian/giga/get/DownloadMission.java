@@ -87,6 +87,7 @@ public class DownloadMission extends Mission {
      * 3: hold
      */
     public volatile int psState;
+    public boolean requiresUnmeteredNetwork;
 
     /**
      * the post-processing algorithm instance

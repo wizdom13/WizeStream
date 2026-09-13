@@ -48,6 +48,7 @@ import org.schabi.newpipe.util.SimpleOnSeekBarChangeListener
 import org.schabi.newpipe.util.StreamItemAdapter
 import org.schabi.newpipe.util.StreamItemAdapter.StreamInfoWrapper
 import org.schabi.newpipe.util.ThemeHelper
+import us.shandian.giga.postprocessing.Postprocessing
 import us.shandian.giga.service.DownloadManager
 import us.shandian.giga.service.DownloadManagerService
 
@@ -107,6 +108,10 @@ class DownloadDialog() :
     @State
     @JvmField
     var mimeTmp: String? = null
+
+    @State
+    @JvmField
+    var selectedSegments = ""
 
     private var mainStorageAudio: StoredDirectoryHelper? = null
     private var mainStorageVideo: StoredDirectoryHelper? = null
@@ -262,6 +267,17 @@ class DownloadDialog() :
 
         initToolbar(dialogBinding.toolbarLayout.toolbar)
         setupDownloadOptions()
+        dialogBinding.downloadSegments.setOnClickListener {
+            DownloadSegmentDialog.show(dialogContext, streamInfo.duration, streamInfo.streamSegments, selectedSegments) {
+                selectedSegments = it
+                if (it.isNotEmpty()) {
+                    selectedAudioOutputIndex = 0
+                    dialogBinding.audioOutputFormatSpinner.setSelection(0)
+                }
+                updateSegmentSelection()
+            }
+        }
+        updateSegmentSelection()
 
         prefs = PreferenceManager.getDefaultSharedPreferences(dialogContext)
         val threads = prefs.getInt(getString(R.string.default_download_threads), 3)
@@ -415,6 +431,15 @@ class DownloadDialog() :
             R.id.subtitle_button -> setupSubtitleSpinner()
         }
         dialogBinding.threads.isEnabled = checkedId != R.id.subtitle_button
+        updateSegmentSelection()
+    }
+
+    private fun updateSegmentSelection() {
+        if (_dialogBinding == null) return
+        val supported = streamInfo.duration > 0 && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(streamInfo.streamType) && dialogBinding.videoAudioGroup.checkedRadioButtonId != R.id.subtitle_button
+        dialogBinding.downloadSegments.isEnabled = supported
+        dialogBinding.downloadSegments.text = if (selectedSegments.isEmpty()) getString(R.string.download_segments) else getString(R.string.download_segments_selected, DownloadSegments.decode(selectedSegments).size)
+        dialogBinding.audioOutputFormatSpinner.isEnabled = selectedSegments.isEmpty() || !supported
     }
 
     override fun onItemSelected(
@@ -523,7 +548,7 @@ class DownloadDialog() :
     }
 
     private fun isMp3OutputSelected(): Boolean {
-        return DownloadAudioOutputPolicy.isMp3Output(selectedAudioOutputIndex)
+        return selectedSegments.isEmpty() && DownloadAudioOutputPolicy.isMp3Output(selectedAudioOutputIndex)
     }
 
     private fun getSelectedMp3Bitrate(): Int {
@@ -594,7 +619,7 @@ class DownloadDialog() :
 
     private fun prepareSelectedDownload() {
         val mainStorage: StoredDirectoryHelper?
-        val outputPlan: DownloadOutputPlan
+        var outputPlan: DownloadOutputPlan
         val selectedMediaType: String
         val checkedButton = dialogBinding.videoAudioGroup.checkedRadioButtonId
         val baseFilename = getNameEditText()
@@ -636,6 +661,14 @@ class DownloadDialog() :
             else -> error("No stream selected")
         }
 
+        if (selectedSegments.isNotEmpty() && checkedButton != R.id.subtitle_button) {
+            val audio = checkedButton == R.id.audio_button
+            outputPlan = DownloadOutputPlan(
+                "${baseFilename}_segments.${if (audio) "m4a" else "mp4"}",
+                if (audio) "audio/mp4" else "video/mp4",
+                outputPlan.estimatedSize
+            )
+        }
         filenameTmp = outputPlan.filename
         mimeTmp = outputPlan.mimeType
 
@@ -733,8 +766,8 @@ class DownloadDialog() :
             request.kind,
             request.threads,
             streamInfo,
-            request.postprocessingName,
-            request.postprocessingArguments,
+            if (selectedSegments.isNotEmpty() && request.kind != 's') Postprocessing.ALGORITHM_SEGMENTS else request.postprocessingName,
+            if (selectedSegments.isNotEmpty() && request.kind != 's') arrayOf(selectedSegments, request.postprocessingName.orEmpty()) + request.postprocessingArguments.orEmpty() else request.postprocessingArguments,
             request.nearLength,
             request.recoveryInfo
         )

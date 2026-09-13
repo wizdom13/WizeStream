@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="automatic_downloads">Automatic channel downloads</string>
+    <string name="automatic_download_channel_title">Download new uploads: %1$s</string>
+    <string name="automatic_download_channels">Manage automatic downloads</string>
+    <string name="automatic_download_instructions">Subscribe to a channel, then choose Automatic channel downloads in its menu. New uploads are checked hourly, with up to 3 per channel and 20 total per check. Uses your default download quality and saved folders. Existing uploads are skipped; failed downloads can be retried from Downloads.</string>
+    <string name="automatic_download_wifi_only">Use unmetered networks only</string>
+    <string name="automatic_download_off">Off</string>
+    <string name="automatic_download_success_status">Last check: queued %1$d downloads.</string>
+    <string name="automatic_download_partial_status">Last check: queued %1$d downloads. Some items could not be queued and will be checked again.</string>
+    <string name="automatic_download_waiting_status">Waiting for the next scheduled check.</string>
+    <string name="automatic_download_status_title">Last automatic download check</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prefer_downloaded_copies_title">Use downloaded copies automatically</string>
+    <string name="prefer_downloaded_copies_summary">Play complete downloaded files without fetching the stream online. Missing or unreadable files fall back to streaming. Turn off to use online quality and audio-track choices.</string>
+    <string name="playing_downloaded_copy">Playing a downloaded copy. Original stream details may be unavailable offline.</string>
+</resources>

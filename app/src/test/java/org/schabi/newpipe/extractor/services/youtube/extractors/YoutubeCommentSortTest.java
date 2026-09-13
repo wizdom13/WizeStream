@@ -2,6 +2,7 @@ package org.schabi.newpipe.extractor.services.youtube.extractors;
 
 import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonParser;
+import com.grack.nanojson.JsonWriter;
 
 import org.junit.jupiter.api.Test;
 import org.schabi.newpipe.extractor.comments.CommentSortOrder;
@@ -28,6 +29,10 @@ class YoutubeCommentSortTest {
         assertEquals("top-token", YoutubeCommentSort.continuation(response, CommentSortOrder.TOP));
         assertEquals("newest-token",
                 YoutubeCommentSort.continuation(response, CommentSortOrder.NEWEST));
+        final JsonObject appendResponse = JsonParser.object().from(JsonWriter.string(response)
+                .replace("reloadContinuationItemsCommand", "appendContinuationItemsAction"));
+        assertEquals("newest-token",
+                YoutubeCommentSort.continuation(appendResponse, CommentSortOrder.NEWEST));
     }
 
     @Test
