@@ -71,8 +71,7 @@ class LegacyTextSelectionThemeTest {
         assertEquals(color(host, R.attr.colorPrimary), color(suggestion.context, android.R.attr.textColorLink))
     }
 
-    private fun inflateToolbar(host: Context): View =
-        LayoutInflater.from(host).inflate(R.layout.toolbar_layout, null, false)
+    private fun inflateToolbar(host: Context): View = LayoutInflater.from(host).inflate(R.layout.toolbar_layout, null, false)
 
     private fun color(themed: Context, attribute: Int): Int {
         val attributes = themed.obtainStyledAttributes(intArrayOf(attribute))
