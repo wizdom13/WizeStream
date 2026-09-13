@@ -119,6 +119,11 @@
             android:windowSoftInputMode="stateAlwaysHidden" />
 
         <activity
+            android:name=".about.changelog.ChangelogActivity"
+            android:exported="false"
+            android:label="@string/changelog_title" />
+
+        <activity
             android:name=".about.AboutActivity"
             android:exported="false"
             android:label="@string/title_activity_about" />

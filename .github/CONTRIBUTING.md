@@ -246,3 +246,17 @@ changes, and follow the upstream project's reporting rules.
 By contributing to WizeStream, you agree that your contribution will be distributed under the same license as the project.
 
 WizeStream is free software based on NewPipe and is distributed under the GNU General Public License version 3 or later.
+
+## Maintaining the in-app changelog
+
+- Keep cumulative release notes in `docs/changelogs.md`, newest first. Use
+  ``## WizeStream X.Y.Z (`VERSION_CODE`)`` for release headings and `## Unreleased` for work that
+  has not shipped yet. Preserve the existing older release entries.
+- When bumping the version in `buildSrc/src/main/kotlin/ProjectConfig.kt`, move the relevant
+  Unreleased notes into a release section with the matching version name and code.
+- Run `python3 scripts/generate-changelog.py` and commit `app/src/main/assets/changelog.html`
+  together with the Markdown changes. CI runs the generator with `--check` to reject stale assets
+  and missing current-release notes. The generator uses only Python standard-library modules.
+- The first-run dialog shows the installed release when no previous acknowledgement exists.
+  Subsequent upgrades show releases newer than the last acknowledged version, up to the installed
+  release. Nightly suffixes use their named base release; Unreleased notes remain in the full history.

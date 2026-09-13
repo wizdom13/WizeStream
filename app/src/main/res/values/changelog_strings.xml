@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="changelog_new_version_title">What’s new in WizeStream %1$s</string>
+</resources>

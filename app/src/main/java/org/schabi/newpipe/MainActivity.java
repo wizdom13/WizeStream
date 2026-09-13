@@ -63,6 +63,7 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationBarView;
 
+import org.schabi.newpipe.about.changelog.ChangelogPromptController;
 import org.schabi.newpipe.databinding.ActivityMainBinding;
 import org.schabi.newpipe.databinding.DrawerHeaderBinding;
 import org.schabi.newpipe.databinding.DrawerLayoutBinding;
@@ -165,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
     private NativePipController nativePipController;
+    private ChangelogPromptController changelogPromptController;
     private boolean searchNavigationActive;
     private int lastMainTabPosition;
     private int pendingMainTabPosition = -1;
@@ -255,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         MigrationManager.showUserInfoIfPresent(this);
+        changelogPromptController = new ChangelogPromptController(this);
     }
 
     @Override
@@ -715,6 +718,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onNewIntent() called with: intent = [" + intent + "]");
         }
         if (intent != null) {
+            if (changelogPromptController != null) {
+                changelogPromptController.onNewIntent(intent);
+            }
             // Return if launched from a launcher (e.g. Nova Launcher, Pixel Launcher ...)
             // to not destroy the already created backstack
             final String action = intent.getAction();

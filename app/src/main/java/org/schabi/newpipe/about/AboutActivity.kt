@@ -1,5 +1,6 @@
 package org.schabi.newpipe.about
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -14,6 +15,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.R
+import org.schabi.newpipe.about.changelog.ChangelogActivity
 import org.schabi.newpipe.databinding.ActivityAboutBinding
 import org.schabi.newpipe.databinding.FragmentAboutBinding
 import org.schabi.newpipe.util.EdgeToEdgeHelper
@@ -75,6 +77,9 @@ class AboutActivity : AppCompatActivity() {
                     R.string.wizestream_version_format,
                     BuildConfig.VERSION_NAME
                 )
+                aboutChangelogLink.setOnClickListener {
+                    startActivity(Intent(requireContext(), ChangelogActivity::class.java))
+                }
                 aboutGithubLink.openLink(R.string.github_url)
                 aboutWebsiteLink.openLink(R.string.website_url)
                 aboutPrivacyPolicyLink.openLink(R.string.privacy_policy_url)
