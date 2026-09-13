@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.R as AppCompatR
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -31,15 +32,15 @@ class LegacyTextSelectionThemeTest {
         searchFieldIds.forEach { id ->
             val input = toolbar.findViewById<TextView>(id)
             listOf(
-                R.attr.colorPrimary,
-                R.attr.colorPrimaryDark,
-                R.attr.colorAccent,
-                R.attr.colorControlActivated,
+                AppCompatR.attr.colorPrimary,
+                AppCompatR.attr.colorPrimaryDark,
+                AppCompatR.attr.colorAccent,
+                AppCompatR.attr.colorControlActivated,
                 android.R.attr.textColorLink
             ).forEach { attribute ->
                 assertEquals(
                     host.resources.getResourceEntryName(attribute),
-                    color(host, R.attr.colorPrimary),
+                    color(host, AppCompatR.attr.colorPrimary),
                     color(input.context, attribute)
                 )
             }
@@ -66,9 +67,9 @@ class LegacyTextSelectionThemeTest {
         val popup = ContextThemeWrapper(toolbar.context, R.style.ToolbarPopupTheme)
         val suggestion = LayoutInflater.from(host).inflate(R.layout.item_search_suggestion, null, false)
         listOf(popup, suggestion.context).forEach { themed ->
-            assertEquals(color(host, R.attr.colorControlHighlight), color(themed, R.attr.colorControlHighlight))
+            assertEquals(color(host, AppCompatR.attr.colorControlHighlight), color(themed, AppCompatR.attr.colorControlHighlight))
         }
-        assertEquals(color(host, R.attr.colorPrimary), color(suggestion.context, android.R.attr.textColorLink))
+        assertEquals(color(host, AppCompatR.attr.colorPrimary), color(suggestion.context, android.R.attr.textColorLink))
     }
 
     private fun inflateToolbar(host: Context): View = LayoutInflater.from(host).inflate(R.layout.toolbar_layout, null, false)
