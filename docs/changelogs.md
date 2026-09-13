@@ -7,7 +7,7 @@ Release history is listed newest first. The number beside each release is its An
 ### New features
 
 - Added a bundled, offline changelog and a first-launch release-notes dialog with access to the full
-  release history from the dialog and About.
+  release history from the dialog, navigation drawer, and About.
 - Added downloads for selected time ranges and chapters.
 - Added optional automatic channel downloads on unmetered connections.
 - Added discovery personalization and automatic playback of available downloaded copies.

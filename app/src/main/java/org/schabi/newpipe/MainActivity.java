@@ -63,6 +63,7 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationBarView;
 
+import org.schabi.newpipe.about.changelog.ChangelogActivity;
 import org.schabi.newpipe.about.changelog.ChangelogPromptController;
 import org.schabi.newpipe.databinding.ActivityMainBinding;
 import org.schabi.newpipe.databinding.DrawerHeaderBinding;
@@ -152,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_LEARNING = -6;
     private static final int ITEM_ID_LOCAL_MEDIA = -7;
     private static final int ITEM_ID_SETTINGS = 0;
+    private static final int ITEM_ID_CHANGELOG = 1;
     private static final int ITEM_ID_ABOUT = 2;
     private static final int ITEM_ID_KIOSK_BASE = 100;
     private static final int ITEM_ID_YOUTUBE_MUSIC = 10_000;
@@ -390,6 +392,8 @@ public class MainActivity extends AppCompatActivity {
         final Menu menu = drawerLayoutBinding.navigation.getMenu();
         menu.add(R.id.menu_options_about_group, ITEM_ID_SETTINGS, ORDER, R.string.settings)
                 .setIcon(R.drawable.ic_settings);
+        menu.add(R.id.menu_options_about_group, ITEM_ID_CHANGELOG, ORDER, R.string.changelog_title)
+                .setIcon(R.drawable.ic_description_outline);
         menu.add(R.id.menu_options_about_group, ITEM_ID_ABOUT, ORDER, R.string.tab_about)
                 .setIcon(R.drawable.ic_info_outline);
     }
@@ -527,6 +531,10 @@ public class MainActivity extends AppCompatActivity {
             case ITEM_ID_SETTINGS:
                 nativePipController.prepareForInternalActivityNavigation();
                 NavigationHelper.openSettings(this);
+                break;
+            case ITEM_ID_CHANGELOG:
+                nativePipController.prepareForInternalActivityNavigation();
+                startActivity(new Intent(this, ChangelogActivity.class));
                 break;
             case ITEM_ID_ABOUT:
                 nativePipController.prepareForInternalActivityNavigation();
