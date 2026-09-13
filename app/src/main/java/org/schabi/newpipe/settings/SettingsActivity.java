@@ -178,6 +178,10 @@ public class SettingsActivity extends AppCompatActivity implements
     private void initSearch(final SettingsLayoutBinding binding) {
         searchContainer = binding.settingsToolbarLayout.toolbar
                 .findViewById(R.id.toolbar_search_container);
+        final android.view.ViewGroup.MarginLayoutParams containerParams =
+                (android.view.ViewGroup.MarginLayoutParams) searchContainer.getLayoutParams();
+        containerParams.setMarginEnd(getResources().getDimensionPixelSize(R.dimen.margin_normal));
+        searchContainer.setLayoutParams(containerParams);
         searchEditText = searchContainer.findViewById(R.id.toolbar_search_edit_text);
         searchEditText.setHint(R.string.settings_search_title);
         searchEditText.setNextFocusDownId(R.id.searchResults);
