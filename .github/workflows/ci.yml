@@ -104,6 +104,11 @@ jobs:
           - api-level: 23
             target: default
             arch: x86
+          - api-level: 28
+            target: default
+            arch: x86_64
+            # Exercise the legacy copy-toast path on the Android version reported in #522.
+            test-options: -Pandroid.testInstrumentationRunnerArguments.class=org.schabi.newpipe.util.LegacyTextSelectionThemeTest
           - api-level: 35
             target: default
             arch: x86_64
@@ -156,7 +161,7 @@ jobs:
           arch: ${{ matrix.arch }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: scripts/build.sh connected
+          script: scripts/build.sh connected ${{ matrix.test-options }}
 
       - name: Upload test report when tests fail
         uses: actions/upload-artifact@v7

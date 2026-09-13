@@ -204,7 +204,6 @@
         <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
         <item name="android:colorControlNormal">?attr/colorOnSurfaceVariant</item>
         <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
-        <item name="colorControlHighlight">?attr/colorControlHighlight</item>
         <item name="tint">?attr/colorOnSurfaceVariant</item>
         <item name="iconTint">?attr/colorOnSurfaceVariant</item>
     </style>
@@ -226,7 +225,7 @@
     </style>
 
     <style name="ToolbarSearchInputTheme">
-        <item name="colorPrimary">?attr/colorPrimary</item>
+        <!-- Inherit colorPrimary: referencing itself prevents legacy copy toasts resolving it. -->
         <item name="colorPrimaryDark">?attr/colorPrimary</item>
         <item name="colorAccent">?attr/colorPrimary</item>
         <item name="colorControlActivated">?attr/colorPrimary</item>
@@ -237,7 +236,6 @@
         <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
         <item name="tint">?attr/colorOnSurfaceVariant</item>
         <item name="iconTint">?attr/colorOnSurfaceVariant</item>
-        <item name="colorControlHighlight">?attr/colorControlHighlight</item>
     </style>
 
 

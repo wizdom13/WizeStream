@@ -2,6 +2,13 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## Unreleased
+
+### Fixes
+
+- Fixed circular search-field theme colors that could still crash copying text on Android 9/ColorOS.
+- Restored inherited highlight colors in toolbar popups and search suggestions.
+
 ## WizeStream 1.18.0 (`1018000`)
 
 ### New features
