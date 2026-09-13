@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A distinct palette for instrumentation tests; never bundled in release APKs. -->
+    <style name="ThemeOverlay_wizestream_TestPalette" parent="">
+        <item name="colorPrimary">#006A60</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#74F8E5</item>
+        <item name="colorOnPrimaryContainer">#00201C</item>
+        <item name="colorSecondary">#4A635E</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#CCE8E1</item>
+        <item name="colorOnSecondaryContainer">#05201B</item>
+        <item name="colorSurface">#F4FBF8</item>
+        <item name="colorSurfaceContainerHigh">#DFE9E4</item>
+        <item name="colorOnSurface">#161D1B</item>
+        <item name="colorOnSurfaceVariant">#3F4945</item>
+        <item name="colorOutline">#6F7975</item>
+    </style>
+</resources>

@@ -56,8 +56,8 @@
         <item name="colorOnPrimaryContainer">@color/light_m3_on_primary_container_color</item>
         <item name="colorOutline">@color/light_m3_outline_color</item>
         <item name="colorOutlineVariant">@color/light_m3_outline_variant_color</item>
-        <item name="android:windowBackground">@color/light_background_color</item>
-        <item name="windowBackground">@color/light_background_color</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="windowBackground">?attr/colorSurface</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:navigationBarColor">?attr/colorSurface</item>
 
@@ -106,8 +106,8 @@
         <item name="colorOnPrimaryContainer">@color/dark_m3_on_primary_container_color</item>
         <item name="colorOutline">@color/dark_m3_outline_color</item>
         <item name="colorOutlineVariant">@color/dark_m3_outline_variant_color</item>
-        <item name="android:windowBackground">@color/dark_background_color</item>
-        <item name="windowBackground">@color/dark_background_color</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="windowBackground">?attr/colorSurface</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:navigationBarColor">?attr/colorSurface</item>
 
@@ -301,6 +301,26 @@
     </style>
 
     <!-- Dialogs -->
+    <!-- Inherit the active palette instead of installing a complete fixed-color theme. -->
+    <style name="ThemeOverlay_wizestream_Dialog" parent="ThemeOverlay.Material3.Dialog">
+        <item name="colorSurface">?attr/colorSurfaceContainerHigh</item>
+        <item name="colorBackgroundFloating">?attr/colorSurface</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="windowBackground">?attr/colorSurface</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="actionColor">?attr/colorOnSurface</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+    </style>
+
+    <style name="ThemeOverlay_wizestream_Dialog_MinWidth"
+        parent="ThemeOverlay_wizestream_Dialog">
+        <item name="android:windowMinWidthMajor">@dimen/abc_dialog_min_width_major</item>
+        <item name="android:windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
+        <item name="windowMinWidthMajor">@dimen/abc_dialog_min_width_major</item>
+        <item name="windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
+    </style>
+
     <style name="LightDialogTheme" parent="Theme.Material3.DayNight.Dialog">
         <item name="colorPrimary">@color/light_m3_primary_color</item>
         <item name="colorPrimaryContainer">@color/light_m3_primary_container_color</item>

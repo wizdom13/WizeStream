@@ -135,7 +135,10 @@ public final class ThemeHelper {
                 ? (light ? R.style.LightDialogMinWidthTheme : R.style.DarkDialogMinWidthTheme)
                 : (light ? R.style.LightDialogTheme : R.style.DarkDialogTheme);
         if (isFollowSystemThemeColor(context)) {
-            return defaultTheme;
+            // A full dialog theme replaces the activity's Material You palette.
+            // Keep its colors (including black surfaces) and overlay only dialog styling.
+            return minWidth ? R.style.ThemeOverlay_wizestream_Dialog_MinWidth
+                    : R.style.ThemeOverlay_wizestream_Dialog;
         }
         if (isThemeColor(context, R.string.theme_color_wizestream_value,
                 "wizestream")) {
