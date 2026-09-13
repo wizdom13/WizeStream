@@ -13,9 +13,9 @@ import android.view.LayoutInflater
 import android.widget.RadioButton
 import androidx.appcompat.app.AppCompatDialog
 import androidx.preference.PreferenceManager
-import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -24,6 +24,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.R
+import com.google.android.material.R as MaterialR
 
 @RunWith(AndroidJUnit4::class)
 class DialogPaletteTest {
@@ -39,13 +40,13 @@ class DialogPaletteTest {
     )
     private val paletteRoles = intArrayOf(
         R.attr.colorPrimary,
-        R.attr.colorOnPrimary,
-        R.attr.colorPrimaryContainer,
-        R.attr.colorOnPrimaryContainer,
-        R.attr.colorSecondary,
-        R.attr.colorOnSecondary,
-        R.attr.colorSecondaryContainer,
-        R.attr.colorOnSecondaryContainer
+        MaterialR.attr.colorOnPrimary,
+        MaterialR.attr.colorPrimaryContainer,
+        MaterialR.attr.colorOnPrimaryContainer,
+        MaterialR.attr.colorSecondary,
+        MaterialR.attr.colorOnSecondary,
+        MaterialR.attr.colorSecondaryContainer,
+        MaterialR.attr.colorOnSecondaryContainer
     )
 
     @Before
@@ -65,38 +66,39 @@ class DialogPaletteTest {
     }
 
     @Test
-    @UiThreadTest
     fun systemDialogsInheritTheHostPaletteAndDownloadControlColors() {
-        modes.take(2).forEach { mode ->
-            val host = host(mode, "follow_system")
-            // Model an activity whose colors have already been supplied by Material You.
-            host.theme.applyStyle(R.style.ThemeOverlay_wizestream_TestPalette, true)
-            dialogThemes(host).forEach { theme ->
-                val dialog = AppCompatDialog(host, theme)
-                try {
-                    val themed = dialog.context
-                    assertPalette(host, themed)
-                    assertColor(host, R.attr.colorOnSurface, themed, R.attr.colorOnSurface)
-                    assertColor(host, R.attr.colorOutline, themed, R.attr.colorOutline)
-                    assertColor(host, R.attr.colorSurfaceContainerHigh, themed, R.attr.colorSurface)
-                    assertColor(themed, R.attr.colorSurface, themed, android.R.attr.windowBackground)
-                    assertColor(themed, R.attr.colorOnSurface, themed, android.R.attr.textColorPrimary)
-                    assertTrue(dialog.window!!.isFloating)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            modes.take(2).forEach { mode ->
+                val host = host(mode, "follow_system")
+                // Model an activity whose colors have already been supplied by Material You.
+                host.theme.applyStyle(R.style.ThemeOverlay_wizestream_TestPalette, true)
+                dialogThemes(host).forEach { theme ->
+                    val dialog = AppCompatDialog(host, theme)
+                    try {
+                        val themed = dialog.context
+                        assertPalette(host, themed)
+                        assertColor(host, MaterialR.attr.colorOnSurface, themed, MaterialR.attr.colorOnSurface)
+                        assertColor(host, MaterialR.attr.colorOutline, themed, MaterialR.attr.colorOutline)
+                        assertColor(host, MaterialR.attr.colorSurfaceContainerHigh, themed, MaterialR.attr.colorSurface)
+                        assertColor(themed, MaterialR.attr.colorSurface, themed, android.R.attr.windowBackground)
+                        assertColor(themed, MaterialR.attr.colorOnSurface, themed, android.R.attr.textColorPrimary)
+                        assertTrue(dialog.window!!.isFloating)
 
-                    val content = LayoutInflater.from(themed).inflate(R.layout.download_dialog, null)
-                    val video = content.findViewById<RadioButton>(R.id.video_button)
-                    assertEquals(
-                        color(host, R.attr.colorPrimary),
-                        video.buttonTintList!!.getColorForState(
-                            intArrayOf(android.R.attr.state_enabled, android.R.attr.state_checked),
-                            0
+                        val content = LayoutInflater.from(themed).inflate(R.layout.download_dialog, null)
+                        val video = content.findViewById<RadioButton>(R.id.video_button)
+                        assertEquals(
+                            color(host, R.attr.colorPrimary),
+                            video.buttonTintList!!.getColorForState(
+                                intArrayOf(android.R.attr.state_enabled, android.R.attr.state_checked),
+                                0
+                            )
                         )
-                    )
-                    val alert = MaterialAlertDialogBuilder(themed).setTitle("Playlist").create()
-                    assertPalette(host, alert.context)
-                    alert.dismiss()
-                } finally {
-                    dialog.dismiss()
+                        val alert = MaterialAlertDialogBuilder(themed).setTitle("Playlist").create()
+                        assertPalette(host, alert.context)
+                        alert.dismiss()
+                    } finally {
+                        dialog.dismiss()
+                    }
                 }
             }
         }
@@ -107,8 +109,8 @@ class DialogPaletteTest {
         modes.take(2).forEach { mode ->
             val host = host(mode, "follow_system")
             host.theme.applyStyle(R.style.ThemeOverlay_wizestream_TestPalette, true)
-            assertColor(host, R.attr.colorSurface, host, android.R.attr.windowBackground)
-            assertColor(host, R.attr.colorSurface, host, R.attr.windowBackground)
+            assertColor(host, MaterialR.attr.colorSurface, host, android.R.attr.windowBackground)
+            assertColor(host, MaterialR.attr.colorSurface, host, R.attr.windowBackground)
         }
     }
 
@@ -117,12 +119,12 @@ class DialogPaletteTest {
         val host = host(modes.last(), "follow_system")
         host.theme.applyStyle(R.style.ThemeOverlay_wizestream_TestPalette, true)
         host.theme.applyStyle(R.style.ThemeOverlay_wizestream_BlackSurfaces, true)
-        assertEquals(Color.BLACK, color(host, R.attr.colorSurface))
+        assertEquals(Color.BLACK, color(host, MaterialR.attr.colorSurface))
         assertEquals(Color.BLACK, color(host, android.R.attr.windowBackground))
         dialogThemes(host).forEach { theme ->
             val dialog = ContextThemeWrapper(host, theme)
             assertPalette(host, dialog)
-            assertColor(host, R.attr.colorSurfaceContainerHigh, dialog, R.attr.colorSurface)
+            assertColor(host, MaterialR.attr.colorSurfaceContainerHigh, dialog, MaterialR.attr.colorSurface)
         }
     }
 
