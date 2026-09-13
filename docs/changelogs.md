@@ -2,7 +2,7 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
-## Unreleased
+## WizeStream 1.18.0 (`1018000`)
 
 ### New features
 
@@ -16,7 +16,12 @@ Release history is listed newest first. The number beside each release is its An
 ### Improvements
 
 - Remembered the selected YouTube comment sorting mode.
+- Expanded NewPipe-compatible exports to include local and bookmarked playlists, channel groups,
+  and search history.
 
+### Fixes
+
+- Fixed orientation synchronization when leaving fullscreen with Back.
 
 ## WizeStream 1.17.0 (`1017000`)
 

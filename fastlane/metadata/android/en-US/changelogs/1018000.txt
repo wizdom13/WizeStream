@@ -1,0 +1,7 @@
+• Download selected time ranges and chapters.
+• Automatically download new channel videos over unmetered connections.
+• Personalize discovery and use downloaded copies for playback.
+• Import YouTube playlists, subscriptions, watch and search history from Google Takeout.
+• View release notes on first launch and the full offline changelog.
+• Remember comment sorting and improve NewPipe exports.
+• Fix fullscreen Back navigation.
