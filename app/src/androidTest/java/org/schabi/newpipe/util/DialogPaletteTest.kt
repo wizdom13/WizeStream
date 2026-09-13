@@ -38,10 +38,14 @@ class DialogPaletteTest {
         Triple(R.style.BlackTheme, R.string.black_theme_key, Configuration.UI_MODE_NIGHT_YES)
     )
     private val paletteRoles = intArrayOf(
-        R.attr.colorPrimary, R.attr.colorOnPrimary,
-        R.attr.colorPrimaryContainer, R.attr.colorOnPrimaryContainer,
-        R.attr.colorSecondary, R.attr.colorOnSecondary,
-        R.attr.colorSecondaryContainer, R.attr.colorOnSecondaryContainer
+        R.attr.colorPrimary,
+        R.attr.colorOnPrimary,
+        R.attr.colorPrimaryContainer,
+        R.attr.colorOnPrimaryContainer,
+        R.attr.colorSecondary,
+        R.attr.colorOnSecondary,
+        R.attr.colorSecondaryContainer,
+        R.attr.colorOnSecondaryContainer
     )
 
     @Before
@@ -84,7 +88,8 @@ class DialogPaletteTest {
                     assertEquals(
                         color(host, R.attr.colorPrimary),
                         video.buttonTintList!!.getColorForState(
-                            intArrayOf(android.R.attr.state_enabled, android.R.attr.state_checked), 0
+                            intArrayOf(android.R.attr.state_enabled, android.R.attr.state_checked),
+                            0
                         )
                     )
                     val alert = MaterialAlertDialogBuilder(themed).setTitle("Playlist").create()
@@ -143,8 +148,10 @@ class DialogPaletteTest {
             }
             val dialog = ContextThemeWrapper(host, ThemeHelper.getMinWidthDialogTheme(host))
             listOf(
-                android.R.attr.windowMinWidthMajor, android.R.attr.windowMinWidthMinor,
-                androidx.appcompat.R.attr.windowMinWidthMajor, androidx.appcompat.R.attr.windowMinWidthMinor
+                android.R.attr.windowMinWidthMajor,
+                android.R.attr.windowMinWidthMinor,
+                androidx.appcompat.R.attr.windowMinWidthMajor,
+                androidx.appcompat.R.attr.windowMinWidthMinor
             ).forEach { attribute ->
                 val value = TypedValue()
                 assertTrue(dialog.theme.resolveAttribute(attribute, value, true))
@@ -168,7 +175,8 @@ class DialogPaletteTest {
     }
 
     private fun dialogThemes(host: Context) = listOf(
-        ThemeHelper.getDialogTheme(host), ThemeHelper.getMinWidthDialogTheme(host)
+        ThemeHelper.getDialogTheme(host),
+        ThemeHelper.getMinWidthDialogTheme(host)
     )
 
     private fun assertPalette(host: Context, dialog: Context) {
@@ -179,6 +187,5 @@ class DialogPaletteTest {
         assertEquals(source.resources.getResourceEntryName(sourceAttr), color(source, sourceAttr), color(target, targetAttr))
     }
 
-    private fun color(context: Context, attribute: Int): Int =
-        ThemeHelper.resolveColorFromAttr(context, attribute)
+    private fun color(context: Context, attribute: Int): Int = ThemeHelper.resolveColorFromAttr(context, attribute)
 }
