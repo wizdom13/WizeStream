@@ -79,6 +79,16 @@ public interface PlaybackListener {
     MediaSource sourceOfLocal(PlayQueueItem item);
 
     /**
+     * Finds a completed download for a remote item before invoking its online extractor.
+     * @param item the requested stream
+     * @return a playable local copy, or {@code null} to use the network
+     */
+    @Nullable
+    default MediaSource sourceOfDownloaded(final PlayQueueItem item) {
+        return null;
+    }
+
+    /**
      * Called when the play queue can no longer be played or used.
      * Currently, this means the play queue is empty and complete.
      * Signals to the listener that it should shutdown.
