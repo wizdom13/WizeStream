@@ -2,6 +2,7 @@ package org.schabi.newpipe.about.changelog
 
 import android.content.Intent
 import android.util.Log
+import android.view.ViewTreeObserver
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -17,21 +18,42 @@ class ChangelogPromptController(private val activity: FragmentActivity) : Defaul
     private var load: Disposable? = null
     private var loaded = false
     private var pending: ChangelogNotice? = null
+    private var launchIntent = activity.intent
+    private val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { focused ->
+        if (focused) maybeShow()
+    }
 
     init {
+        activity.window.decorView.viewTreeObserver.addOnWindowFocusChangeListener(focusListener)
         activity.lifecycle.addObserver(this)
+    }
+
+    fun onNewIntent(intent: Intent) {
+        launchIntent = intent
+        maybeShow()
+    }
+
+    override fun onResume(owner: LifecycleOwner) {
+        // Run after FragmentActivity has finished restoring/resuming its fragments.
+        activity.window.decorView.post { maybeShow() }
     }
 
     fun maybeShow() {
         val fragments = activity.supportFragmentManager
-        if (activity.isFinishing || activity.isDestroyed || fragments.isStateSaved ||
+        if (
+            activity.isFinishing || activity.isDestroyed || fragments.isStateSaved ||
             !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !activity.hasWindowFocus() ||
             fragments.findFragmentByTag(ChangelogDialogFragment.TAG) != null
-        ) return
+        ) {
+            return
+        }
         // Leave external playback/search intents uninterrupted; show on the next normal app launch.
-        if ((activity.intent.action != null && activity.intent.action != Intent.ACTION_MAIN) ||
-            activity.intent.hasExtra(Constants.KEY_LINK_TYPE) || activity.intent.hasExtra(Constants.KEY_OPEN_SEARCH)
-        ) return
+        if (
+            (launchIntent.action != null && launchIntent.action != Intent.ACTION_MAIN) ||
+            launchIntent.hasExtra(Constants.KEY_LINK_TYPE) || launchIntent.hasExtra(Constants.KEY_OPEN_SEARCH)
+        ) {
+            return
+        }
         if (!loaded) {
             loaded = true
             val context = activity.applicationContext
@@ -40,10 +62,13 @@ class ChangelogPromptController(private val activity: FragmentActivity) : Defaul
                 ChangelogCatalog.parse(html).notice(BuildConfig.VERSION_NAME, ChangelogPreferences(context).lastSeenCode)
             }.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    pending = it
-                    maybeShow()
-                }, { Log.w(TAG, "Could not load bundled changelog", it) })
+                .subscribe(
+                    {
+                        pending = it
+                        maybeShow()
+                    },
+                    { Log.w(TAG, "Could not load bundled changelog", it) }
+                )
         } else {
             pending?.let { notice ->
                 pending = null
@@ -53,6 +78,7 @@ class ChangelogPromptController(private val activity: FragmentActivity) : Defaul
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
+        activity.window.decorView.viewTreeObserver.removeOnWindowFocusChangeListener(focusListener)
         load?.dispose()
         pending = null
     }

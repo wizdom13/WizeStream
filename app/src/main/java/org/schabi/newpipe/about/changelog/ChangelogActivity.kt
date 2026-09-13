@@ -41,10 +41,13 @@ class ChangelogActivity : AppCompatActivity() {
         load = Single.fromCallable { context.assets.open("changelog.html").bufferedReader().use { it.readText() } }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ showContent(it, scroll) }, {
-                Toast.makeText(this, R.string.changelog_load_failed, Toast.LENGTH_LONG).show()
-                finish()
-            })
+            .subscribe(
+                { showContent(it, scroll) },
+                {
+                    Toast.makeText(this, R.string.changelog_load_failed, Toast.LENGTH_LONG).show()
+                    finish()
+                }
+            )
     }
 
     private fun showContent(html: String, scroll: Int) {

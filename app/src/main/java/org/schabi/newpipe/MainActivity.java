@@ -261,22 +261,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPostResume() {
-        super.onPostResume();
-        if (changelogPromptController != null) {
-            changelogPromptController.maybeShow();
-        }
-    }
-
-    @Override
-    public void onWindowFocusChanged(final boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && changelogPromptController != null) {
-            changelogPromptController.maybeShow();
-        }
-    }
-
-    @Override
     protected void onPostCreate(final Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
 
@@ -734,6 +718,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onNewIntent() called with: intent = [" + intent + "]");
         }
         if (intent != null) {
+            if (changelogPromptController != null) {
+                changelogPromptController.onNewIntent(intent);
+            }
             // Return if launched from a launcher (e.g. Nova Launcher, Pixel Launcher ...)
             // to not destroy the already created backstack
             final String action = intent.getAction();

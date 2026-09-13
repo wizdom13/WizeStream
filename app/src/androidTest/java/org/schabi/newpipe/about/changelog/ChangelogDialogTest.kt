@@ -6,6 +6,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -32,6 +34,35 @@ class ChangelogDialogTest {
 
     private fun notice(): ChangelogNotice = context.assets.open("changelog.html").bufferedReader().use {
         ChangelogCatalog.parse(it.readText()).notice(BuildConfig.VERSION_NAME, 0)!!
+    }
+
+    @Test
+    fun controllerShowsOnResumeAndRecognizesLauncherAfterRoutedIntent() {
+        val shown = CountDownLatch(1)
+        val intent = Intent(context, AboutActivity::class.java).setAction(Intent.ACTION_VIEW)
+        ActivityScenario.launch<AboutActivity>(intent).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.supportFragmentManager.registerFragmentLifecycleCallbacks(
+                    object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                        override fun onFragmentResumed(manager: androidx.fragment.app.FragmentManager, fragment: androidx.fragment.app.Fragment) {
+                            if (fragment is ChangelogDialogFragment) shown.countDown()
+                        }
+                    },
+                    false
+                )
+                val controller = ChangelogPromptController(activity)
+                controller.maybeShow()
+                assertNull(activity.supportFragmentManager.findFragmentByTag(ChangelogDialogFragment.TAG))
+                controller.onNewIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER))
+            }
+            assertTrue("The changelog should appear after a normal launcher intent", shown.await(5, TimeUnit.SECONDS))
+            scenario.onActivity { activity ->
+                val fragment = activity.supportFragmentManager.findFragmentByTag(ChangelogDialogFragment.TAG) as ChangelogDialogFragment
+                (fragment.requireDialog() as AlertDialog).getButton(AlertDialog.BUTTON_NEGATIVE).performClick()
+            }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            assertEquals(notice().code, ChangelogPreferences(context).lastSeenCode)
+        }
     }
 
     @Test
