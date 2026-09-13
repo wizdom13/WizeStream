@@ -44,8 +44,6 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed phones being incorrectly detected as desktop windows when entering fullscreen.
 - Corrected the theme used by copy-notification toasts on older Android versions.
 
-[View the complete changes since v1.16.1](https://github.com/wizdom13/WizeStream/compare/v1.16.1...v1.17.0)
-
 ## WizeStream 1.16.1 (`1016001`)
 
 ### New features
@@ -61,8 +59,6 @@ Release history is listed newest first. The number beside each release is its An
   backups.
 - Added automatic recovery when a YouTube HLS playlist becomes stuck during playback.
 - Smoothed audio visualizer animations after the Media3 migration by pacing decoded audio frames.
-
-[View the complete changes since v1.16.0](https://github.com/wizdom13/WizeStream/compare/v1.16.0...v1.16.1)
 
 ## WizeStream 1.16.0 (`1016000`)
 
@@ -81,8 +77,6 @@ Release history is listed newest first. The number beside each release is its An
 - Improved BiliBili risk-control, invalid-response, missing-metadata, and unavailable-video handling
   so these conditions produce clear errors instead of malformed playback states.
 
-[View the complete changes since v1.15.2](https://github.com/wizdom13/WizeStream/compare/v1.15.2...v1.16.0)
-
 ## WizeStream 1.15.2 (`1015002`)
 
 ### Fixes
@@ -91,8 +85,6 @@ Release history is listed newest first. The number beside each release is its An
   some Android 16 custom ROMs.
 - Restored the video surface and correct aspect ratio after the screen is turned off and back on,
   preventing stretched or black video.
-
-[View the complete changes since v1.15.1](https://github.com/wizdom13/WizeStream/compare/v1.15.1...v1.15.2)
 
 ## WizeStream 1.15.1 (`1015001`)
 
@@ -115,8 +107,6 @@ Release history is listed newest first. The number beside each release is its An
 - Prevented video-surface detach timeouts during player teardown from being reported as playback
   crashes.
 - Kept the active video visible above scrolling details and corrected local folder artwork tinting.
-
-[View the complete changes since v1.15.0](https://github.com/wizdom13/WizeStream/compare/v1.15.0...v1.15.1)
 
 ## WizeStream 1.15.0 (`1015000`)
 
@@ -149,8 +139,6 @@ Release history is listed newest first. The number beside each release is its An
 - Improved handling of YouTube anti-bot access blocks and unreleased premieres.
 - Fixed local audio artwork covering the song title after playback starts.
 
-[View the complete changes since v1.14.0](https://github.com/wizdom13/WizeStream/compare/v1.14.0...v1.15.0)
-
 ## WizeStream 1.14.0 (`1014000`)
 
 ### New features
@@ -175,8 +163,6 @@ Release history is listed newest first. The number beside each release is its An
   fullscreen on affected devices.
 - Stabilized the video surface and fullscreen handoff so phone landscape rotation no longer gets
   interrupted by the wide video-detail layout transition.
-
-[View the complete changes since v1.13.0](https://github.com/wizdom13/WizeStream/compare/v1.13.0...v1.14.0)
 
 ## WizeStream 1.13.0 (`1013000`)
 
@@ -204,8 +190,6 @@ Release history is listed newest first. The number beside each release is its An
 - Improved local-video surface recovery after fullscreen changes, including a targeted fresh
   SurfaceView lifecycle for high-resolution videos affected by stale hardware-compositor surfaces.
 
-[View the complete changes since v1.12.0](https://github.com/wizdom13/WizeStream/compare/v1.12.0...v1.13.0)
-
 ## WizeStream 1.12.0 (`1012000`)
 
 ### New features
@@ -223,8 +207,6 @@ Release history is listed newest first. The number beside each release is its An
 
 - Fixed BiliBili playback, blocked keywords, comments, playlist swipes, search, and avatars.
 
-[View the complete changes since v1.11.5](https://github.com/wizdom13/WizeStream/compare/v1.11.5...v1.12.0)
-
 ## WizeStream 1.11.5 (`1011005`)
 
 ### New features
@@ -238,8 +220,6 @@ Release history is listed newest first. The number beside each release is its An
 - Made automatic queues prefer Shorts when watching Shorts.
 - Stabilized tablet video details after rotation.
 - Made reproducible release builds portable across independent build environments.
-
-[View the complete changes since v1.11.4](https://github.com/wizdom13/WizeStream/compare/v1.11.4...v1.11.5)
 
 ## WizeStream 1.11.4 (`1011004`)
 
@@ -255,8 +235,6 @@ Release history is listed newest first. The number beside each release is its An
 - Selected the single- or two-pane video-detail layout from the current screen width and removed
   navigation-rail gaps from expanded and fullscreen playback.
 
-[View the complete changes since v1.11.3](https://github.com/wizdom13/WizeStream/compare/v1.11.3...v1.11.4)
-
 ## WizeStream 1.11.3 (`1011003`)
 
 ### Fixes
@@ -265,8 +243,6 @@ Release history is listed newest first. The number beside each release is its An
   prevent nondeterministic DEX interface ordering across independent build environments.
 - Added a fail-fast processor-count check and limited reproducible release builds to one Gradle
   worker while retaining normal parallelism for debug and test builds.
-
-[View the complete changes since v1.11.2](https://github.com/wizdom13/WizeStream/compare/v1.11.2...v1.11.3)
 
 ## WizeStream 1.11.2 (`1011002`)
 
@@ -279,8 +255,6 @@ Release history is listed newest first. The number beside each release is its An
 - Prevented long fullscreen titles, channel names, and audio-track labels from being clipped.
 - Reset video-surface geometry between queue transitions so cached return previews fill the player
   correctly, including rotated and anamorphic video.
-
-[View the complete changes since v1.11.1](https://github.com/wizdom13/WizeStream/compare/v1.11.1...v1.11.2)
 
 ## WizeStream 1.11.1 (`1011001`)
 
@@ -296,8 +270,6 @@ Release history is listed newest first. The number beside each release is its An
 - Prevented Android 6 device-sync linkage failures, bounded the image cache, and reused player
   thumbnails to reduce memory pressure.
 - Rejected incompatible foreign databases before they could replace WizeStream data.
-
-[View the complete changes since v1.11.0](https://github.com/wizdom13/WizeStream/compare/v1.11.0...v1.11.1)
 
 ## WizeStream 1.11.0 (`1011000`)
 
@@ -320,8 +292,6 @@ Release history is listed newest first. The number beside each release is its An
 - Handled Rumble videos that do not provide related items.
 - Kept navigation and drawer content clear of status bars, display cutouts, gesture navigation,
   and three-button navigation while preserving fullscreen playback.
-
-[View the complete changes since v1.10.4](https://github.com/wizdom13/WizeStream/compare/v1.10.4...v1.11.0)
 
 ## WizeStream 1.10.4 (`1010004`)
 
@@ -346,8 +316,6 @@ Release history is listed newest first. The number beside each release is its An
 - Added Retry dialog for unstarted livestreams.
 - Fixed layout overlap in portrait videos.  
 
-[View the complete changes since v1.10.3](https://github.com/wizdom13/WizeStream/compare/v1.10.3...v1.10.4)
-
 ## WizeStream 1.10.3 (`1010003`)
 
 ### Fixes
@@ -359,8 +327,6 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed selected bottom-navigation labels occasionally being truncated until the app was
   restarted.
 
-[View the complete changes since v1.10.2](https://github.com/wizdom13/WizeStream/compare/v1.10.2...v1.10.3)
-
 ## WizeStream 1.10.2 (`1010002`)
 
 ### Fixes
@@ -370,8 +336,6 @@ Release history is listed newest first. The number beside each release is its An
 - Retried transient YouTube page-reload responses once automatically before showing an error.
 - Bounded persistent database growth by clearing feed caches and unreferenced stream metadata,
   compacting inactive sync journals while preserving paired-device synchronization state.
-
-[View the complete changes since v1.10.1](https://github.com/wizdom13/WizeStream/compare/v1.10.1...v1.10.2)
 
 ## WizeStream 1.10.1 (`1010001`)
 
@@ -388,8 +352,6 @@ Release history is listed newest first. The number beside each release is its An
   the previous state when the deletion is undone.
 - Restored channel avatars and banner artwork, including reliable banner rendering inside the
   collapsible channel header.
-
-[View the complete changes since v1.10.0](https://github.com/wizdom13/WizeStream/compare/v1.10.0...v1.10.1)
 
 ## WizeStream 1.10.0 (`1010000`)
 
@@ -419,8 +381,6 @@ Release history is listed newest first. The number beside each release is its An
 - Added date-aware fast scrolling and a calendar jump action for navigating large watch histories.
 - Added an option to prioritize main-tab swiping when viewing pinned channels.
 
-[View the complete changes since v1.9.1](https://github.com/wizdom13/WizeStream/compare/v1.9.1...v1.10.0)
-
 ## WizeStream 1.9.1 (`1009001`)
 
 ### Fixes
@@ -431,8 +391,6 @@ Release history is listed newest first. The number beside each release is its An
   back to the nearest available stream without changing the saved quality preference.
 - Fixed duplicate global and contextual search actions appearing together on channel pages.
 - Fixed channel names and avatars not opening their channels from History and local playlists.
-
-[View the complete changes since v1.9.0](https://github.com/wizdom13/WizeStream/compare/v1.9.0...v1.9.1)
 
 ## WizeStream 1.9.0 (`1009000`)
 
@@ -471,8 +429,6 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed channel metadata and Subscribe controls disappearing on channels without banners.
 - Fixed playback failing with an audio visualizer runtime error on newer Android versions.
 
-[View the complete changes since v1.8.0](https://github.com/wizdom13/WizeStream/compare/v1.8.0...v1.9.0)
-
 ## WizeStream 1.8.0 (`1008000`)
 
 ### New features
@@ -493,8 +449,6 @@ Release history is listed newest first. The number beside each release is its An
 
 - Fixed channel and playlist search crashing when restored before the initial content load completed.
 
-[View the complete changes since v1.7.1](https://github.com/wizdom13/WizeStream/compare/v1.7.1...v1.8.0)
-
 ## WizeStream 1.7.1 (`1007001`)
 
 ### Improvements
@@ -505,8 +459,6 @@ Release history is listed newest first. The number beside each release is its An
 
 - Fixed YouTube playback stopping with HTTP 403, including streams failing around the one-minute mark.
 - Fixed media.ccc.de live streams failing to open.
-
-[View the complete changes since v1.7.0](https://github.com/wizdom13/WizeStream/compare/v1.7.0...v1.7.1)
 
 ## WizeStream 1.7.0 (`1007000`)
 
@@ -526,8 +478,6 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed the app-data export picker on Android 8.
 - Fixed bookmark removal before playlist loading completes.
 
-[View the complete changes since v1.6.0](https://github.com/wizdom13/WizeStream/compare/v1.6.0...v1.7.0)
-
 ## WizeStream 1.6.0 (`1006000`)
 
 ### New features
@@ -543,8 +493,6 @@ Release history is listed newest first. The number beside each release is its An
 
 - Restored channel metadata in portrait layouts.
 - Fixed timestamped note button visibility during Learning Mode playback.
-
-[View the complete changes since v1.5.0](https://github.com/wizdom13/WizeStream/compare/v1.5.0...v1.6.0)
 
 ## WizeStream 1.5.0 (`1005000`)
 
@@ -562,8 +510,6 @@ Release history is listed newest first. The number beside each release is its An
 
 - Fixed repeated bookmark-removal actions and reduced memory usage when removing very large playlists.
 
-[View the complete changes since v1.4.1](https://github.com/wizdom13/WizeStream/compare/v1.4.1...pipe)
-
 ## WizeStream 1.4.1 (`1004001`)
 
 ### Improvements
@@ -573,8 +519,6 @@ Release history is listed newest first. The number beside each release is its An
 ### Fixes
 
 - Fixed a crash when displaying feed cards in landscape mode.
-
-[View the complete changes since v1.4.0](https://github.com/wizdom13/WizeStream/compare/v1.4.0...pipe)
 
 ## WizeStream 1.4.0 (`1004000`)
 
@@ -596,8 +540,6 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed release builds failing on duplicate Bouncy Castle license and notice metadata.
 
 **Compatibility note:** YouTube playback and downloads now use conventional stream extraction. SABR support introduced in WizeStream 1.2.0 has been removed.
-
-[View the complete changes since v1.3.0](https://github.com/wizdom13/WizeStream/compare/v1.3.0...pipe)
 
 ## WizeStream 1.3.0 (`1003000`)
 
@@ -621,8 +563,6 @@ Release history is listed newest first. The number beside each release is its An
 - Fixed Nightly release cleanup occasionally deleting the newly published build.
 
 **Compatibility note:** Official release APKs now support ARM64 and ARMv7 Android devices. x86 and x86_64 device builds are no longer included.
-
-[View the complete changes since v1.2.0](https://github.com/wizdom13/WizeStream/compare/v1.2.0...pipe)
 
 ## WizeStream 1.2.0 (`1002000`)
 

@@ -113,7 +113,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed phones being incorrectly detected as desktop windows when entering fullscreen.</li>
 <li>Corrected the theme used by copy-notification toasts on older Android versions.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.16.1...v1.17.0">View the complete changes since v1.16.1</a></p>
 </div>
 </section>
 <section id="release-1016001" data-version="1.16.1" data-version-code="1016001">
@@ -130,7 +129,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Added automatic recovery when a YouTube HLS playlist becomes stuck during playback.</li>
 <li>Smoothed audio visualizer animations after the Media3 migration by pacing decoded audio frames.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.16.0...v1.16.1">View the complete changes since v1.16.0</a></p>
 </div>
 </section>
 <section id="release-1016000" data-version="1.16.0" data-version-code="1016000">
@@ -146,7 +144,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Prevented the player-start receiver from restarting the player service while WizeStream is in the background.</li>
 <li>Improved BiliBili risk-control, invalid-response, missing-metadata, and unavailable-video handling so these conditions produce clear errors instead of malformed playback states.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.15.2...v1.16.0">View the complete changes since v1.15.2</a></p>
 </div>
 </section>
 <section id="release-1015002" data-version="1.15.2" data-version-code="1015002">
@@ -157,7 +154,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Prevented a native Android Runtime crash while OkHttp repeatedly parsed YouTube API hostnames on some Android 16 custom ROMs.</li>
 <li>Restored the video surface and correct aspect ratio after the screen is turned off and back on, preventing stretched or black video.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.15.1...v1.15.2">View the complete changes since v1.15.1</a></p>
 </div>
 </section>
 <section id="release-1015001" data-version="1.15.1" data-version-code="1015001">
@@ -179,7 +175,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Prevented video-surface detach timeouts during player teardown from being reported as playback crashes.</li>
 <li>Kept the active video visible above scrolling details and corrected local folder artwork tinting.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.15.0...v1.15.1">View the complete changes since v1.15.0</a></p>
 </div>
 </section>
 <section id="release-1015000" data-version="1.15.0" data-version-code="1015000">
@@ -206,7 +201,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Improved handling of YouTube anti-bot access blocks and unreleased premieres.</li>
 <li>Fixed local audio artwork covering the song title after playback starts.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.14.0...v1.15.0">View the complete changes since v1.14.0</a></p>
 </div>
 </section>
 <section id="release-1014000" data-version="1.14.0" data-version-code="1014000">
@@ -228,7 +222,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed the fullscreen-orientation regression that could fail to enter fullscreen in landscape, remain fullscreen after returning to portrait, or leave a black video surface after exiting fullscreen on affected devices.</li>
 <li>Stabilized the video surface and fullscreen handoff so phone landscape rotation no longer gets interrupted by the wide video-detail layout transition.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.13.0...v1.14.0">View the complete changes since v1.13.0</a></p>
 </div>
 </section>
 <section id="release-1013000" data-version="1.13.0" data-version-code="1013000">
@@ -251,7 +244,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Prevented opening the Play Queue from triggering Picture-in-Picture and guarded PiP APIs on Android versions that do not support them.</li>
 <li>Improved local-video surface recovery after fullscreen changes, including a targeted fresh SurfaceView lifecycle for high-resolution videos affected by stale hardware-compositor surfaces.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.12.0...v1.13.0">View the complete changes since v1.12.0</a></p>
 </div>
 </section>
 <section id="release-1012000" data-version="1.12.0" data-version-code="1012000">
@@ -272,7 +264,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Fixed BiliBili playback, blocked keywords, comments, playlist swipes, search, and avatars.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.11.5...v1.12.0">View the complete changes since v1.11.5</a></p>
 </div>
 </section>
 <section id="release-1011005" data-version="1.11.5" data-version-code="1011005">
@@ -290,7 +281,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Stabilized tablet video details after rotation.</li>
 <li>Made reproducible release builds portable across independent build environments.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.11.4...v1.11.5">View the complete changes since v1.11.4</a></p>
 </div>
 </section>
 <section id="release-1011004" data-version="1.11.4" data-version-code="1011004">
@@ -306,7 +296,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Made tablet grids recalculate from the available content width after navigation and orientation changes.</li>
 <li>Selected the single- or two-pane video-detail layout from the current screen width and removed navigation-rail gaps from expanded and fullscreen playback.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.11.3...v1.11.4">View the complete changes since v1.11.3</a></p>
 </div>
 </section>
 <section id="release-1011003" data-version="1.11.3" data-version-code="1011003">
@@ -317,7 +306,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Serialized the complete release pipeline, including Gradle, D8/L8, R8, and child JVMs, to prevent nondeterministic DEX interface ordering across independent build environments.</li>
 <li>Added a fail-fast processor-count check and limited reproducible release builds to one Gradle worker while retaining normal parallelism for debug and test builds.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.11.2...v1.11.3">View the complete changes since v1.11.2</a></p>
 </div>
 </section>
 <section id="release-1011002" data-version="1.11.2" data-version-code="1011002">
@@ -330,7 +318,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Prevented long fullscreen titles, channel names, and audio-track labels from being clipped.</li>
 <li>Reset video-surface geometry between queue transitions so cached return previews fill the player correctly, including rotated and anamorphic video.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.11.1...v1.11.2">View the complete changes since v1.11.1</a></p>
 </div>
 </section>
 <section id="release-1011001" data-version="1.11.1" data-version-code="1011001">
@@ -346,7 +333,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Prevented Android 6 device-sync linkage failures, bounded the image cache, and reused player thumbnails to reduce memory pressure.</li>
 <li>Rejected incompatible foreign databases before they could replace WizeStream data.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.11.0...v1.11.1">View the complete changes since v1.11.0</a></p>
 </div>
 </section>
 <section id="release-1011000" data-version="1.11.0" data-version-code="1011000">
@@ -371,7 +357,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Handled Rumble videos that do not provide related items.</li>
 <li>Kept navigation and drawer content clear of status bars, display cutouts, gesture navigation, and three-button navigation while preserving fullscreen playback.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.10.4...v1.11.0">View the complete changes since v1.10.4</a></p>
 </div>
 </section>
 <section id="release-1010004" data-version="1.10.4" data-version-code="1010004">
@@ -397,7 +382,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Added Retry dialog for unstarted livestreams.</li>
 <li>Fixed layout overlap in portrait videos.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.10.3...v1.10.4">View the complete changes since v1.10.3</a></p>
 </div>
 </section>
 <section id="release-1010003" data-version="1.10.3" data-version-code="1010003">
@@ -409,7 +393,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Kept manifest-only YouTube live streams playing by preferring their refreshable HLS source over a finite DASH DVR window.</li>
 <li>Fixed selected bottom-navigation labels occasionally being truncated until the app was restarted.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.10.2...v1.10.3">View the complete changes since v1.10.2</a></p>
 </div>
 </section>
 <section id="release-1010002" data-version="1.10.2" data-version-code="1010002">
@@ -421,7 +404,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Retried transient YouTube page-reload responses once automatically before showing an error.</li>
 <li>Bounded persistent database growth by clearing feed caches and unreferenced stream metadata, compacting inactive sync journals while preserving paired-device synchronization state.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.10.1...v1.10.2">View the complete changes since v1.10.1</a></p>
 </div>
 </section>
 <section id="release-1010001" data-version="1.10.1" data-version-code="1010001">
@@ -438,7 +420,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Stopped active or queued downloads immediately when their entries are deleted, while preserving the previous state when the deletion is undone.</li>
 <li>Restored channel avatars and banner artwork, including reliable banner rendering inside the collapsible channel header.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.10.0...v1.10.1">View the complete changes since v1.10.0</a></p>
 </div>
 </section>
 <section id="release-1010000" data-version="1.10.0" data-version-code="1010000">
@@ -463,7 +444,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Added date-aware fast scrolling and a calendar jump action for navigating large watch histories.</li>
 <li>Added an option to prioritize main-tab swiping when viewing pinned channels.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.9.1...v1.10.0">View the complete changes since v1.9.1</a></p>
 </div>
 </section>
 <section id="release-1009001" data-version="1.9.1" data-version-code="1009001">
@@ -476,7 +456,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed duplicate global and contextual search actions appearing together on channel pages.</li>
 <li>Fixed channel names and avatars not opening their channels from History and local playlists.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.9.0...v1.9.1">View the complete changes since v1.9.0</a></p>
 </div>
 </section>
 <section id="release-1009000" data-version="1.9.0" data-version-code="1009000">
@@ -505,7 +484,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed channel metadata and Subscribe controls disappearing on channels without banners.</li>
 <li>Fixed playback failing with an audio visualizer runtime error on newer Android versions.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.8.0...v1.9.0">View the complete changes since v1.8.0</a></p>
 </div>
 </section>
 <section id="release-1008000" data-version="1.8.0" data-version-code="1008000">
@@ -528,7 +506,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Fixed channel and playlist search crashing when restored before the initial content load completed.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.7.1...v1.8.0">View the complete changes since v1.7.1</a></p>
 </div>
 </section>
 <section id="release-1007001" data-version="1.7.1" data-version-code="1007001">
@@ -543,7 +520,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed YouTube playback stopping with HTTP 403, including streams failing around the one-minute mark.</li>
 <li>Fixed media.ccc.de live streams failing to open.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.7.0...v1.7.1">View the complete changes since v1.7.0</a></p>
 </div>
 </section>
 <section id="release-1007000" data-version="1.7.0" data-version-code="1007000">
@@ -565,7 +541,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed the app-data export picker on Android 8.</li>
 <li>Fixed bookmark removal before playlist loading completes.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.6.0...v1.7.0">View the complete changes since v1.6.0</a></p>
 </div>
 </section>
 <section id="release-1006000" data-version="1.6.0" data-version-code="1006000">
@@ -585,7 +560,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Restored channel metadata in portrait layouts.</li>
 <li>Fixed timestamped note button visibility during Learning Mode playback.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.5.0...v1.6.0">View the complete changes since v1.5.0</a></p>
 </div>
 </section>
 <section id="release-1005000" data-version="1.5.0" data-version-code="1005000">
@@ -605,7 +579,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Fixed repeated bookmark-removal actions and reduced memory usage when removing very large playlists.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.4.1...pipe">View the complete changes since v1.4.1</a></p>
 </div>
 </section>
 <section id="release-1004001" data-version="1.4.1" data-version-code="1004001">
@@ -619,7 +592,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Fixed a crash when displaying feed cards in landscape mode.</li>
 </ul>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.4.0...pipe">View the complete changes since v1.4.0</a></p>
 </div>
 </section>
 <section id="release-1004000" data-version="1.4.0" data-version-code="1004000">
@@ -643,7 +615,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed release builds failing on duplicate Bouncy Castle license and notice metadata.</li>
 </ul>
 <p><strong>Compatibility note:</strong> YouTube playback and downloads now use conventional stream extraction. SABR support introduced in WizeStream 1.2.0 has been removed.</p>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.3.0...pipe">View the complete changes since v1.3.0</a></p>
 </div>
 </section>
 <section id="release-1003000" data-version="1.3.0" data-version-code="1003000">
@@ -669,7 +640,6 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Fixed Nightly release cleanup occasionally deleting the newly published build.</li>
 </ul>
 <p><strong>Compatibility note:</strong> Official release APKs now support ARM64 and ARMv7 Android devices. x86 and x86_64 device builds are no longer included.</p>
-<p><a href="https://github.com/wizdom13/WizeStream/compare/v1.2.0...pipe">View the complete changes since v1.2.0</a></p>
 </div>
 </section>
 <section id="release-1002000" data-version="1.2.0" data-version-code="1002000">
