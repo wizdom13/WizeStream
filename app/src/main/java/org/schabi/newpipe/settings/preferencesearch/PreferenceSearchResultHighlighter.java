@@ -21,7 +21,11 @@ public final class PreferenceSearchResultHighlighter {
     private PreferenceSearchResultHighlighter() {
     }
 
-    /** Scroll to and highlight a preference after its fragment has created its view. */
+    /**
+     * Scroll to and highlight a preference after its fragment has created its view.
+     * @param key the preference key to highlight
+     * @param fragment the destination fragment with its view ready
+     */
     public static void highlight(final String key, final PreferenceFragmentCompat fragment) {
         final View root = fragment.getView();
         if (root == null) {

@@ -42,14 +42,18 @@ class SettingsSearchTest {
             .first { it.key == context.getString(R.string.caption_translation_language_key) }
         assertFalse(language.entries.isEmpty())
         for (category in SponsorBlockCategoryConfig.ALL) {
-            assertTrue(searcher.searchFor(context.getString(category.titleResId)).any {
-                it.key == context.getString(category.enabledKeyResId) &&
-                    it.searchIndexItemResId == R.xml.sponsor_block_categories_settings
-            })
+            assertTrue(
+                searcher.searchFor(context.getString(category.titleResId)).any {
+                    it.key == context.getString(category.enabledKeyResId) &&
+                        it.searchIndexItemResId == R.xml.sponsor_block_categories_settings
+                }
+            )
         }
-        assertTrue(searcher.searchFor(context.getString(R.string.settings_search_notification_actions)).any {
-            it.key == "notification_actions"
-        })
+        assertTrue(
+            searcher.searchFor(context.getString(R.string.settings_search_notification_actions)).any {
+                it.key == "notification_actions"
+            }
+        )
         assertEquals(
             NotificationsSettingsFragment::class.java,
             SettingsResourceRegistry.getInstance().getFragmentClass(R.xml.notifications_settings)

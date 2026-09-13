@@ -36,6 +36,7 @@ public final class SettingsSearchIndex {
                 continue;
             }
             searcher.add(parser.parse(xml).stream().filter(item -> isAvailable(context, item))
+                    .map(item -> withDeviceSummary(context, item))
                     .collect(Collectors.toList()));
         }
 
@@ -72,6 +73,17 @@ public final class SettingsSearchIndex {
         }
         searcher.add(dynamic);
         return searcher;
+    }
+
+    private static PreferenceSearchItem withDeviceSummary(final Context context,
+                                                          final PreferenceSearchItem item) {
+        if ("notification_actions".equals(item.getKey())
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return new PreferenceSearchItem(item.getKey(), item.getTitle(),
+                    context.getString(R.string.notification_actions_summary_android13),
+                    item.getEntries(), item.getBreadcrumbs(), item.getSearchIndexItemResId());
+        }
+        return item;
     }
 
     private static boolean isAvailable(final Context context, final PreferenceSearchItem item) {
