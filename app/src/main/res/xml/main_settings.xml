@@ -4,6 +4,13 @@
     android:key="general_preferences"
     android:title="@string/settings">
 
+    <Preference
+        android:key="settings_search"
+        android:icon="@drawable/ic_search"
+        android:title="@string/settings_search_title"
+        android:summary="@string/settings_search_summary"
+        app:iconSpaceReserved="false" />
+
     <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.VideoAudioSettingsFragment"
         android:icon="@drawable/ic_headset"

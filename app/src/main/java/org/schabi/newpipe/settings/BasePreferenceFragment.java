@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchResultHighlighter;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.Objects;
@@ -56,6 +57,12 @@ public abstract class BasePreferenceFragment extends PreferenceFragmentCompat {
                               @Nullable final Bundle savedInstanceState) {
         super.onViewCreated(rootView, savedInstanceState);
         setDivider(null);
+        if (getArguments() != null) {
+            final String key = getArguments().getString(PreferenceSearchResultHighlighter.ARG_KEY);
+            if (key != null) {
+                PreferenceSearchResultHighlighter.highlight(key, this);
+            }
+        }
         ThemeHelper.setTitleToAppCompatActivity(getActivity(), getPreferenceScreen().getTitle());
     }
 

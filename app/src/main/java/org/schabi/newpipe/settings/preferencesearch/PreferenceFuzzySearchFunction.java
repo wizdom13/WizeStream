@@ -1,96 +1,68 @@
 package org.schabi.newpipe.settings.preferencesearch;
 
-import android.text.TextUtils;
-import android.util.Pair;
-
 import org.apache.commons.text.similarity.FuzzyScore;
 
+import java.text.Normalizer;
 import java.util.Comparator;
 import java.util.Locale;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class PreferenceFuzzySearchFunction
         implements PreferenceSearchConfiguration.PreferenceSearchFunction {
-
     private static final FuzzyScore FUZZY_SCORE = new FuzzyScore(Locale.ROOT);
+    private static final Pattern MARKS = Pattern.compile("\\p{M}+");
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
     @Override
-    public Stream<PreferenceSearchItem> search(
-            final Stream<PreferenceSearchItem> allAvailable,
-            final String keyword
-    ) {
-        final int maxScore = (keyword.length() + 1) * 3 - 2; // First can't get +2 bonus score
-
-        return allAvailable
-                // General search
-                // Check all fields if anyone contains something that kind of matches the keyword
-                .map(item -> new FuzzySearchGeneralDTO(item, keyword))
-                .filter(dto -> dto.getScore() / maxScore >= 0.3f)
-                .map(FuzzySearchGeneralDTO::getItem)
-                // Specific search - Used for determining order of search results
-                // Calculate a score based on specific search fields
-                .map(item -> new FuzzySearchSpecificDTO(item, keyword))
-                .sorted(Comparator.comparingDouble(FuzzySearchSpecificDTO::getScore).reversed())
-                .map(FuzzySearchSpecificDTO::getItem)
-                // Limit the amount of search results
-                .limit(20);
+    public Stream<PreferenceSearchItem> search(final Stream<PreferenceSearchItem> allAvailable,
+                                              final String keyword) {
+        final String query = normalize(keyword);
+        if (query.isEmpty()) {
+            return Stream.empty();
+        }
+        final String[] words = query.split(" ");
+        return allAvailable.map(item -> new RankedItem(item, query, words))
+                .filter(result -> result.score > 0)
+                .sorted(Comparator.comparingInt((RankedItem result) -> result.score).reversed()
+                        .thenComparing(result -> result.item.getTitle())
+                        .thenComparing(result -> result.item.getBreadcrumbs())
+                        .thenComparing(result -> result.item.getKey()))
+                .map(result -> result.item);
     }
 
-    static class FuzzySearchGeneralDTO {
-        private final PreferenceSearchItem item;
-        private final float score;
-
-        FuzzySearchGeneralDTO(
-                final PreferenceSearchItem item,
-                final String keyword) {
-            this.item = item;
-            this.score = FUZZY_SCORE.fuzzyScore(
-                    TextUtils.join(";", item.getAllRelevantSearchFields()),
-                    keyword);
-        }
-
-        public PreferenceSearchItem getItem() {
-            return item;
-        }
-
-        public float getScore() {
-            return score;
-        }
+    private static String normalize(final String text) {
+        return WHITESPACE.matcher(MARKS.matcher(Normalizer.normalize(text, Normalizer.Form.NFD))
+                .replaceAll("").toLowerCase(Locale.ROOT)).replaceAll(" ").trim();
     }
 
-    static class FuzzySearchSpecificDTO {
-        private static final Map<Function<PreferenceSearchItem, String>, Float> WEIGHT_MAP = Map.of(
-                // The user will most likely look for the title -> prioritize it
-                PreferenceSearchItem::getTitle, 1.5f,
-                // The summary is also important as it usually contains a larger desc
-                // Example: Searching for '4k' → 'show higher resolution' is shown
-                PreferenceSearchItem::getSummary, 1f,
-                // Entries are also important as they provide all known/possible values
-                // Example: Searching where the resolution can be changed to 720p
-                PreferenceSearchItem::getEntries, 1f
-        );
-
+    private static final class RankedItem {
         private final PreferenceSearchItem item;
-        private final double score;
+        private final int score;
 
-        FuzzySearchSpecificDTO(final PreferenceSearchItem item, final String keyword) {
+        RankedItem(final PreferenceSearchItem item, final String query, final String[] words) {
             this.item = item;
-            this.score = WEIGHT_MAP.entrySet().stream()
-                    .map(entry -> new Pair<>(entry.getKey().apply(item), entry.getValue()))
-                    .filter(pair -> !pair.first.isEmpty())
-                    .collect(Collectors.averagingDouble(pair ->
-                            FUZZY_SCORE.fuzzyScore(pair.first, keyword) * pair.second));
-        }
-
-        public PreferenceSearchItem getItem() {
-            return item;
-        }
-
-        public double getScore() {
-            return score;
+            final String title = normalize(item.getTitle());
+            final String summary = normalize(item.getSummary());
+            final String entries = normalize(item.getEntries());
+            final String breadcrumbs = normalize(item.getBreadcrumbs());
+            int rank = title.equals(query) ? 100 : title.contains(query) ? 50 : 0;
+            for (final String word : words) {
+                if (title.contains(word)) {
+                    rank += 10;
+                } else if (summary.contains(word) || entries.contains(word)) {
+                    rank += 5;
+                } else if (breadcrumbs.contains(word)) {
+                    rank += 1;
+                } else if (word.length() >= 4
+                        && FUZZY_SCORE.fuzzyScore(title, word) >= (3 * word.length() - 2) * 0.85) {
+                    rank += 1;
+                } else {
+                    rank = 0;
+                    break;
+                }
+            }
+            score = rank;
         }
     }
 }

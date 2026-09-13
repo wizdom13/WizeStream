@@ -31,7 +31,10 @@
         android:layout="@layout/settings_category_header_layout"
         app:iconSpaceReserved="false">
 
-        <org.schabi.newpipe.settings.custom.NotificationActionsPreference />
+        <org.schabi.newpipe.settings.custom.NotificationActionsPreference
+            android:key="notification_actions"
+            android:title="@string/settings_search_notification_actions"
+            android:summary="@string/notification_actions_summary" />
     </PreferenceCategory>
 
 </PreferenceScreen>

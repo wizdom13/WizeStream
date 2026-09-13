@@ -36,9 +36,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="@string/search_no_results"
+            android:id="@+id/empty_state_text"
+            android:padding="24dp"
+            android:gravity="center"
+            android:text="@string/settings_search_hint"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="24sp" />
+            android:textSize="18sp" />
 
     </LinearLayout>
 

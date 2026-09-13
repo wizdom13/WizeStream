@@ -1,16 +1,12 @@
 package org.schabi.newpipe.settings;
 
-import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 
-import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
@@ -20,28 +16,25 @@ import androidx.fragment.app.FragmentManager;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
-import com.evernote.android.state.State;
 import com.jakewharton.rxbinding4.widget.RxTextView;
-import com.livefront.bridge.Bridge;
 
-import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.SettingsLayoutBinding;
-import org.schabi.newpipe.settings.preferencesearch.PreferenceParser;
-import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchConfiguration;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchFragment;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchItem;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchResultHighlighter;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchResultListener;
-import org.schabi.newpipe.settings.preferencesearch.PreferenceSearcher;
+import org.schabi.newpipe.settings.preferencesearch.SettingsSearchIndex;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
 import org.schabi.newpipe.util.KeyboardUtil;
-import org.schabi.newpipe.util.ReleaseVersionUtil;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.views.FocusOverlayView;
 
 import java.util.concurrent.TimeUnit;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 /*
  * Created by Christian Schabesberger on 31.08.15.
@@ -66,338 +59,227 @@ import java.util.concurrent.TimeUnit;
 public class SettingsActivity extends AppCompatActivity implements
         PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
         PreferenceSearchResultListener {
-    private static final String TAG = "SettingsActivity";
-    private static final boolean DEBUG = MainActivity.DEBUG;
-
     public static final String EXTRA_OPEN_UPDATE_SETTINGS =
             "org.schabi.newpipe.settings.OPEN_UPDATE_SETTINGS";
+    private static final String SEARCH_TEXT = "settings_search_text";
 
-    @IdRes
-    private static final int FRAGMENT_HOLDER_ID = R.id.settings_fragment_holder;
-
-    private PreferenceSearchFragment searchFragment;
-
-    @Nullable
-    private MenuItem menuSearchItem;
-
+    private final CompositeDisposable disposables = new CompositeDisposable();
     private View searchContainer;
     private EditText searchEditText;
-
-    // State
-    @State
-    String searchText;
-    @State
-    boolean wasSearchActive;
+    private String searchText = "";
 
     @Override
-    protected void onCreate(final Bundle savedInstanceBundle) {
+    protected void onCreate(@Nullable final Bundle savedInstanceState) {
         setTheme(ThemeHelper.getSettingsThemeStyle(this));
         ThemeHelper.applyThemeColor(this);
-
-        super.onCreate(savedInstanceBundle);
+        super.onCreate(savedInstanceState);
         EdgeToEdgeHelper.enable(this);
-        Bridge.restoreInstanceState(this, savedInstanceBundle);
-        final boolean restored = savedInstanceBundle != null;
 
-        final SettingsLayoutBinding settingsLayoutBinding =
-                SettingsLayoutBinding.inflate(getLayoutInflater());
-        setContentView(settingsLayoutBinding.getRoot());
-        EdgeToEdgeHelper.applySystemBarPadding(settingsLayoutBinding.getRoot());
-        initSearch(settingsLayoutBinding, restored);
-
-        setSupportActionBar(settingsLayoutBinding.settingsToolbarLayout.toolbar);
-
-        if (restored) {
-            // Restore state
-            if (this.wasSearchActive) {
-                setSearchActive(true);
-                if (!TextUtils.isEmpty(this.searchText)) {
-                    this.searchEditText.setText(this.searchText);
-                }
-            }
-        } else {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.settings_fragment_holder, createInitialFragment(getIntent()))
-                    .commit();
+        final SettingsLayoutBinding binding = SettingsLayoutBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        EdgeToEdgeHelper.applySystemBarPadding(binding.getRoot());
+        setSupportActionBar(binding.settingsToolbarLayout.toolbar);
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
+        if (savedInstanceState != null) {
+            searchText = savedInstanceState.getString(SEARCH_TEXT, "");
+        }
+        initSearch(binding);
+        getSupportFragmentManager().addOnBackStackChangedListener(this::updateSearchUi);
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                new FragmentManager.FragmentLifecycleCallbacks() {
+                    @Override
+                    public void onFragmentResumed(@NonNull final FragmentManager manager,
+                                                  @NonNull final Fragment fragment) {
+                        updateSearchUi();
+                    }
+                }, false);
+
+        if (savedInstanceState == null) {
+            final Fragment initial = getIntent().getBooleanExtra(EXTRA_OPEN_UPDATE_SETTINGS, false)
+                    ? new UpdateSettingsFragment() : new MainSettingsFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.settings_fragment_holder, initial).commit();
+        }
         if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(this);
         }
     }
 
-    private Fragment createInitialFragment(@NonNull final Intent intent) {
-        if (intent.getBooleanExtra(EXTRA_OPEN_UPDATE_SETTINGS, false)) {
-            return new UpdateSettingsFragment();
-        }
-        return new MainSettingsFragment();
-    }
-
     @Override
     protected void onSaveInstanceState(@NonNull final Bundle outState) {
+        outState.putString(SEARCH_TEXT, searchEditText.getText().toString());
         super.onSaveInstanceState(outState);
-        Bridge.saveInstanceState(this, outState);
     }
 
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
-        final ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setDisplayShowTitleEnabled(true);
-        }
-
-        return super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.menu_settings_main_fragment, menu);
+        return true;
     }
 
     @Override
-    public void onBackPressed() {
-        if (isSearchActive()) {
-            setSearchActive(false);
-            return;
+    public boolean onPrepareOptionsMenu(final Menu menu) {
+        final MenuItem search = menu.findItem(R.id.action_search);
+        if (search != null) {
+            search.setVisible(!isSearchActive());
         }
-        super.onBackPressed();
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
-    public boolean onOptionsItemSelected(final MenuItem item) {
-        final int id = item.getItemId();
-        if (id == android.R.id.home) {
-            // Check if the search is active and if so: Close it
-            if (isSearchActive()) {
-                setSearchActive(false);
-                return true;
-            }
-
-            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                finish();
-            } else {
-                getSupportFragmentManager().popBackStack();
-            }
+    public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
+        if (item.getItemId() == R.id.action_search) {
+            openSettingsSearch();
+            return true;
         }
-
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
+    public void onBackPressed() {
+        KeyboardUtil.hideKeyboard(this, searchEditText);
+        super.onBackPressed();
+    }
+
+    @Override
     public boolean onPreferenceStartFragment(@NonNull final PreferenceFragmentCompat caller,
-                                             final Preference preference) {
-        showSettingsFragment(instantiateFragment(preference.getFragment()));
+                                             @NonNull final Preference preference) {
+        final String destination = preference.getFragment();
+        if (destination == null) {
+            return false;
+        }
+        final Fragment fragment = instantiateFragment(destination);
+        fragment.setArguments(new Bundle(preference.getExtras()));
+        showSettingsFragment(fragment);
         return true;
     }
 
     private Fragment instantiateFragment(@NonNull final String className) {
-        return getSupportFragmentManager()
-                .getFragmentFactory()
-                .instantiate(this.getClassLoader(), className);
+        return getSupportFragmentManager().getFragmentFactory()
+                .instantiate(getClassLoader(), className);
     }
 
-    private void showSettingsFragment(final Fragment fragment) {
+    private void showSettingsFragment(@NonNull final Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
                 .setCustomAnimations(R.animator.custom_fade_in, R.animator.custom_fade_out,
                         R.animator.custom_fade_in, R.animator.custom_fade_out)
-                .replace(FRAGMENT_HOLDER_ID, fragment)
-                .addToBackStack(null)
-                .commit();
+                .replace(R.id.settings_fragment_holder, fragment)
+                .addToBackStack(null).commit();
     }
 
-    @Override
-    protected void onDestroy() {
-        setMenuSearchItem(null);
-        searchFragment = null;
-        super.onDestroy();
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Search
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Search
-
-    private void initSearch(
-            final SettingsLayoutBinding settingsLayoutBinding,
-            final boolean restored
-    ) {
-        searchContainer =
-                settingsLayoutBinding.settingsToolbarLayout.toolbar
-                        .findViewById(R.id.toolbar_search_container);
-
-        // Configure input field for search
+    private void initSearch(final SettingsLayoutBinding binding) {
+        searchContainer = binding.settingsToolbarLayout.toolbar
+                .findViewById(R.id.toolbar_search_container);
         searchEditText = searchContainer.findViewById(R.id.toolbar_search_edit_text);
-        RxTextView.textChanges(searchEditText)
-                // Wait some time after the last input before actually searching
-                .debounce(200, TimeUnit.MILLISECONDS)
-                .subscribe(v -> runOnUiThread(this::onSearchChanged));
-
-        // Configure clear button
+        searchEditText.setHint(R.string.settings_search_title);
+        searchEditText.setNextFocusDownId(R.id.searchResults);
+        searchEditText.setImeOptions(EditorInfo.IME_ACTION_SEARCH
+                | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        searchEditText.setText(searchText);
+        searchContainer.findViewById(R.id.toolbar_search_filter)
+                .setVisibility(View.GONE);
+        // Reuse the shared toolbar without the video filter.
+        final android.view.ViewGroup.MarginLayoutParams params =
+                (android.view.ViewGroup.MarginLayoutParams) searchEditText.getLayoutParams();
+        params.rightMargin = (int) (48 * getResources().getDisplayMetrics().density);
+        searchEditText.setLayoutParams(params);
         searchContainer.findViewById(R.id.toolbar_search_clear)
-                .setOnClickListener(ev -> resetSearchText());
-
-        ensureSearchRepresentsApplicationState();
-
-        // Build search configuration using SettingsResourceRegistry
-        final PreferenceSearchConfiguration config = new PreferenceSearchConfiguration();
-
-
-        // Build search items
-        final Context searchContext = getApplicationContext();
-        final PreferenceParser parser = new PreferenceParser(searchContext, config);
-        final PreferenceSearcher searcher = new PreferenceSearcher(config);
-
-        // Find all searchable SettingsResourceRegistry fragments
-        SettingsResourceRegistry.getInstance().getAllEntries().stream()
-                .filter(SettingsResourceRegistry.SettingRegistryEntry::isSearchable)
-                // Get the resId
-                .map(SettingsResourceRegistry.SettingRegistryEntry::getPreferencesResId)
-                // Parse
-                .map(parser::parse)
-                // Add it to the searcher
-                .forEach(searcher::add);
-
-        if (restored) {
-            searchFragment = (PreferenceSearchFragment) getSupportFragmentManager()
-                    .findFragmentByTag(PreferenceSearchFragment.NAME);
-            if (searchFragment != null) {
-                // Hide/Remove the search fragment otherwise we get an exception
-                // when adding it (because it's already present)
-                hideSearchFragment();
+                .setOnClickListener(view -> searchEditText.setText(""));
+        searchEditText.setOnEditorActionListener((view, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                updateSearchResults();
+                KeyboardUtil.hideKeyboard(this, searchEditText);
+                return true;
             }
-        }
-        if (searchFragment == null) {
-            searchFragment = new PreferenceSearchFragment();
-        }
-        searchFragment.setSearcher(searcher);
+            return false;
+        });
+        disposables.add(RxTextView.textChanges(searchEditText)
+                .debounce(200, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(ignored -> updateSearchResults()));
     }
 
-    /**
-     * Ensures that the search shows the correct/available search results.
-     * <br/>
-     * Some features are e.g. only available for debug builds, these should not
-     * be found when searching inside a release.
-     */
-    private void ensureSearchRepresentsApplicationState() {
-        // Check if the update settings are available
-        if (!ReleaseVersionUtil.INSTANCE.isReleaseApk()) {
-            SettingsResourceRegistry.getInstance()
-                    .getEntryByPreferencesResId(R.xml.update_settings)
-                    .setSearchable(false);
-        }
-
-        // Hide debug preferences in RELEASE build variant
-        if (DEBUG) {
-            SettingsResourceRegistry.getInstance()
-                    .getEntryByPreferencesResId(R.xml.debug_settings)
-                    .setSearchable(true);
-        }
-    }
-
-    public void setMenuSearchItem(final MenuItem menuSearchItem) {
-        this.menuSearchItem = menuSearchItem;
-
-        // Ensure that the item is in the correct state when adding it. This is due to
-        // Android's lifecycle (the Activity is recreated before the Fragment that registers this)
-        if (menuSearchItem != null) {
-            menuSearchItem.setVisible(!isSearchActive());
-        }
-    }
-
-    public void setSearchActive(final boolean active) {
-        if (DEBUG) {
-            Log.d(TAG, "setSearchActive called active=" + active);
-        }
-
-        // Ignore if search is already in correct state
-        if (isSearchActive() == active) {
+    public void openSettingsSearch() {
+        final FragmentManager manager = getSupportFragmentManager();
+        if (manager.isStateSaved() || isSearchActive()) {
             return;
         }
-
-        wasSearchActive = active;
-
-        searchContainer.setVisibility(active ? View.VISIBLE : View.GONE);
-        if (menuSearchItem != null) {
-            menuSearchItem.setVisible(!active);
+        // Finish pending navigation before deciding whether search already exists in the stack.
+        manager.executePendingTransactions();
+        if (isSearchActive()) {
+            return;
         }
-
-        if (active) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .add(FRAGMENT_HOLDER_ID, searchFragment, PreferenceSearchFragment.NAME)
-                    .addToBackStack(PreferenceSearchFragment.NAME)
-                    .commit();
-
-            KeyboardUtil.showKeyboard(this, searchEditText);
-        } else if (searchFragment != null) {
-            hideSearchFragment();
-            getSupportFragmentManager()
-                    .popBackStack(
-                        PreferenceSearchFragment.NAME,
-                        FragmentManager.POP_BACK_STACK_INCLUSIVE);
-
-            KeyboardUtil.hideKeyboard(this, searchEditText);
+        if (!manager.popBackStackImmediate(PreferenceSearchFragment.NAME, 0)) {
+            final PreferenceSearchFragment fragment = new PreferenceSearchFragment();
+            manager.beginTransaction()
+                    .replace(R.id.settings_fragment_holder, fragment, PreferenceSearchFragment.NAME)
+                    .addToBackStack(PreferenceSearchFragment.NAME).commit();
         }
-
-        resetSearchText();
-    }
-
-    private void hideSearchFragment() {
-        getSupportFragmentManager().beginTransaction().remove(searchFragment).commit();
-    }
-
-    private void resetSearchText() {
-        searchEditText.setText("");
+        searchEditText.post(() -> KeyboardUtil.showKeyboard(this, searchEditText));
     }
 
     private boolean isSearchActive() {
-        return searchContainer.getVisibility() == View.VISIBLE;
+        return getSupportFragmentManager().findFragmentById(R.id.settings_fragment_holder)
+                instanceof PreferenceSearchFragment;
     }
 
-    private void onSearchChanged() {
-        if (!isSearchActive()) {
-            return;
+    private void updateSearchUi() {
+        final boolean active = isSearchActive();
+        searchContainer.setVisibility(active ? View.VISIBLE : View.GONE);
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowTitleEnabled(!active);
         }
+        invalidateOptionsMenu();
+        if (active) {
+            updateSearchResults();
+        } else {
+            KeyboardUtil.hideKeyboard(this, searchEditText);
+        }
+    }
 
-        if (searchFragment != null) {
-            searchText = this.searchEditText.getText().toString();
-            searchFragment.updateSearchResults(searchText);
+    private void updateSearchResults() {
+        searchText = searchEditText.getText().toString();
+        final Fragment current = getSupportFragmentManager()
+                .findFragmentById(R.id.settings_fragment_holder);
+        if (current instanceof PreferenceSearchFragment) {
+            final PreferenceSearchFragment search = (PreferenceSearchFragment) current;
+            if (!search.hasSearcher()) {
+                search.setSearcher(SettingsSearchIndex.build(this));
+            }
+            search.updateSearchResults(searchText);
         }
     }
 
     @Override
     public void onSearchResultClicked(@NonNull final PreferenceSearchItem result) {
-        if (DEBUG) {
-            Log.d(TAG, "onSearchResultClicked called result=" + result);
-        }
-
-        // Hide the search
-        setSearchActive(false);
-
-        // -- Highlight the result --
-        // Find out which fragment class we need
-        final Class<? extends Fragment> targetedFragmentClass =
-                SettingsResourceRegistry.getInstance()
-                        .getFragmentClass(result.getSearchIndexItemResId());
-
-        if (targetedFragmentClass == null) {
-            // This should never happen
-            Log.w(TAG, "Unable to locate fragment class for resId="
-                    + result.getSearchIndexItemResId());
+        if (getSupportFragmentManager().isStateSaved()) {
             return;
         }
-
-        // Check if the currentFragment is the one which contains the result
-        Fragment currentFragment =
-                getSupportFragmentManager().findFragmentById(FRAGMENT_HOLDER_ID);
-        if (!targetedFragmentClass.equals(currentFragment.getClass())) {
-            // If it's not the correct one display the correct one
-            currentFragment = instantiateFragment(targetedFragmentClass.getName());
-            showSettingsFragment(currentFragment);
+        final Class<? extends Fragment> destination = SettingsResourceRegistry.getInstance()
+                .getFragmentClass(result.getSearchIndexItemResId());
+        if (destination == null) {
+            return;
         }
-
-        // Run the highlighting
-        if (currentFragment instanceof PreferenceFragmentCompat) {
-            PreferenceSearchResultHighlighter
-                    .highlight(result, (PreferenceFragmentCompat) currentFragment);
-        }
+        KeyboardUtil.hideKeyboard(this, searchEditText);
+        final Fragment fragment = instantiateFragment(destination.getName());
+        final Bundle arguments = new Bundle();
+        arguments.putString(PreferenceSearchResultHighlighter.ARG_KEY, result.getKey());
+        fragment.setArguments(arguments);
+        showSettingsFragment(fragment);
     }
 
-    //endregion
+    @Override
+    protected void onDestroy() {
+        disposables.dispose();
+        super.onDestroy();
+    }
 }

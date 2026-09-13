@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="settings_search_title">Search settings</string>
+    <string name="settings_search_summary">Find an option by its name, description, or available choices</string>
+    <string name="settings_search_hint">Type to find a setting</string>
+    <string name="settings_search_no_results">No matching settings. Try another word.</string>
+    <string name="settings_search_notification_actions">Notification actions</string>
+</resources>

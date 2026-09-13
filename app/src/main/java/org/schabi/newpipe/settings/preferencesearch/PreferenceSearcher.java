@@ -1,7 +1,5 @@
 package org.schabi.newpipe.settings.preferencesearch;
 
-import android.text.TextUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,13 +18,13 @@ public class PreferenceSearcher {
         allEntries.addAll(items);
     }
 
-    List<PreferenceSearchItem> searchFor(final String keyword) {
-        if (TextUtils.isEmpty(keyword)) {
+    public List<PreferenceSearchItem> searchFor(final String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
             return Collections.emptyList();
         }
 
         return configuration.getSearcher()
-                .search(allEntries.stream(), keyword)
+                .search(allEntries.stream(), keyword.trim())
                 .collect(Collectors.toList());
     }
 

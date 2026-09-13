@@ -1,6 +1,7 @@
 package org.schabi.newpipe.settings.preferencesearch;
 
 import android.content.Context;
+import android.content.res.XmlResourceParser;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -24,6 +25,7 @@ public class PreferenceParser {
     private static final String TAG = "PreferenceParser";
 
     private static final String NS_ANDROID = "http://schemas.android.com/apk/res/android";
+    private static final String NS_APP = "http://schemas.android.com/apk/res-auto";
     private static final String NS_SEARCH = "http://schemas.android.com/apk/preferencesearch";
 
     private final Context context;
@@ -35,7 +37,7 @@ public class PreferenceParser {
             final PreferenceSearchConfiguration searchConfiguration
     ) {
         this.context = context;
-        this.allPreferences =  PreferenceManager.getDefaultSharedPreferences(context).getAll();
+        this.allPreferences = PreferenceManager.getDefaultSharedPreferences(context).getAll();
         this.searchConfiguration = searchConfiguration;
     }
 
@@ -43,9 +45,7 @@ public class PreferenceParser {
             @XmlRes final int resId
     ) {
         final List<PreferenceSearchItem> results = new ArrayList<>();
-        final XmlPullParser xpp = context.getResources().getXml(resId);
-
-        try {
+        try (XmlResourceParser xpp = context.getResources().getXml(resId)) {
             xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
             xpp.setFeature(XmlPullParser.FEATURE_REPORT_NAMESPACE_ATTRIBUTES, true);
 
@@ -58,19 +58,22 @@ public class PreferenceParser {
                             resId
                     );
 
-                    if (!searchConfiguration.getParserIgnoreElements().contains(xpp.getName())
+                    if (xpp.getDepth() > 1
+                            && !searchConfiguration.getParserIgnoreElements()
+                                .contains(simpleName(xpp))
                             && result.hasData()
                             && !"true".equals(getAttribute(xpp, NS_SEARCH, "ignore"))) {
                         results.add(result);
                     }
-                    if (searchConfiguration.getParserContainerElements().contains(xpp.getName())) {
+                    if (searchConfiguration.getParserContainerElements()
+                            .contains(simpleName(xpp))) {
                         // This code adds breadcrumbs for certain containers (e.g. PreferenceScreen)
                         // Example: Video and Audio > Player
                         breadcrumbs.add(result.getTitle() == null ? "" : result.getTitle());
                     }
                 } else if (xpp.getEventType() == XmlPullParser.END_TAG
                         && searchConfiguration.getParserContainerElements()
-                            .contains(xpp.getName())) {
+                            .contains(simpleName(xpp))) {
                     breadcrumbs.remove(breadcrumbs.size() - 1);
                 }
 
@@ -90,7 +93,8 @@ public class PreferenceParser {
         if (nsSearchAttr != null) {
             return nsSearchAttr;
         }
-        return getAttribute(xpp, NS_ANDROID, attribute);
+        final String androidAttr = getAttribute(xpp, NS_ANDROID, attribute);
+        return androidAttr != null ? androidAttr : getAttribute(xpp, NS_APP, attribute);
     }
 
     private String getAttribute(
@@ -165,29 +169,22 @@ public class PreferenceParser {
         if (s == null) {
             return "";
         }
-        if (key == null) {
+        if (!s.contains("%s") && !s.contains("%1$s")) {
             return s;
         }
-
-        // Resolve value
-        Object prefValue = allPreferences.get(key);
-        if (prefValue == null) {
-            return s;
-        }
-
-        /*
-         * Resolve ListPreference values
-         *
-         * entryValues = Values/Keys that are saved
-         * entries     = Actual human readable names
-         */
-        if (entries.length > 0 && entryValues.length == entries.length) {
-            final int entryIndex = Arrays.asList(entryValues).indexOf(prefValue);
+        // Only insert a known list label. Never index stored free-form values such as passwords.
+        String label = "";
+        if (key != null && entries.length > 0 && entryValues.length == entries.length) {
+            final int entryIndex = Arrays.asList(entryValues).indexOf(allPreferences.get(key));
             if (entryIndex != -1) {
-                prefValue = entries[entryIndex];
+                label = entries[entryIndex];
             }
         }
+        return s.replace("%1$s", label).replace("%s", label).trim();
+    }
 
-        return String.format(s, prefValue.toString());
+    private static String simpleName(final XmlPullParser parser) {
+        final String name = parser.getName();
+        return name.substring(name.lastIndexOf('.') + 1);
     }
 }

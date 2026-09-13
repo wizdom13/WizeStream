@@ -4,6 +4,13 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Improvements
+
+- Added a prominent Search settings entry and search access inside settings categories.
+- Improved settings search with localized names, descriptions, available choices, and category paths,
+  including caption translation and SponsorBlock categories. Results open and highlight the option;
+  going back restores the search, and the query survives rotation.
+
 ### Fixes
 
 - Fixed circular search-field theme colors that could still crash copying text on Android 9/ColorOS.

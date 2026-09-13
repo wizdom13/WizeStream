@@ -1,15 +1,11 @@
 package org.schabi.newpipe.settings.preferencesearch;
 
-import android.content.res.Resources;
 import android.content.res.TypedArray;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.RippleDrawable;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-import android.util.TypedValue;
+import android.view.View;
 
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.preference.Preference;
@@ -19,107 +15,76 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.R;
 
-
 public final class PreferenceSearchResultHighlighter {
-    private static final String TAG = "PrefSearchResHighlter";
+    public static final String ARG_KEY = "settings_search_highlight_key";
 
     private PreferenceSearchResultHighlighter() {
     }
 
-    /**
-     * Highlight the specified preference.
-     * <br/>
-     * Note: This function is Thread independent (can be called from outside of the main thread).
-     *
-     * @param item The item to highlight
-     * @param prefsFragment The fragment where the items is located on
-     */
-    public static void highlight(
-            final PreferenceSearchItem item,
-            final PreferenceFragmentCompat prefsFragment
-    ) {
-        new Handler(Looper.getMainLooper()).post(() -> doHighlight(item, prefsFragment));
-    }
-
-    private static void doHighlight(
-            final PreferenceSearchItem item,
-            final PreferenceFragmentCompat prefsFragment
-    ) {
-        final Preference prefResult = prefsFragment.findPreference(item.getKey());
-
-        if (prefResult == null) {
-            Log.w(TAG, "Preference '" + item.getKey() + "' not found on '" + prefsFragment + "'");
+    /** Scroll to and highlight a preference after its fragment has created its view. */
+    public static void highlight(final String key, final PreferenceFragmentCompat fragment) {
+        final View root = fragment.getView();
+        if (root == null) {
             return;
         }
-
-        final RecyclerView recyclerView = prefsFragment.getListView();
-        final RecyclerView.Adapter<?> adapter = recyclerView.getAdapter();
-        if (adapter instanceof PreferenceGroup.PreferencePositionCallback) {
-            final int position = ((PreferenceGroup.PreferencePositionCallback) adapter)
-                    .getPreferenceAdapterPosition(prefResult);
-            if (position != RecyclerView.NO_POSITION) {
-                recyclerView.scrollToPosition(position);
-                recyclerView.postDelayed(() -> {
-                    final RecyclerView.ViewHolder holder =
-                            recyclerView.findViewHolderForAdapterPosition(position);
-                    if (holder != null) {
-                        final Drawable background = holder.itemView.getBackground();
-                        if (background instanceof RippleDrawable) {
-                            showRippleAnimation((RippleDrawable) background);
-                            return;
-                        }
-                    }
-                    highlightFallback(prefsFragment, prefResult);
-                }, 200);
+        root.post(() -> {
+            if (fragment.getView() != root || !fragment.isAdded()) {
                 return;
             }
+            final Preference preference = fragment.findPreference(key);
+            if (preference == null || !preference.isVisible()) {
+                return;
+            }
+            final RecyclerView list = fragment.getListView();
+            final RecyclerView.Adapter<?> adapter = list.getAdapter();
+            if (!(adapter instanceof PreferenceGroup.PreferencePositionCallback)) {
+                return;
+            }
+            final int position = ((PreferenceGroup.PreferencePositionCallback) adapter)
+                    .getPreferenceAdapterPosition(preference);
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            list.scrollToPosition(position);
+            list.postDelayed(() -> {
+                if (fragment.getView() != root || !fragment.isAdded()) {
+                    return;
+                }
+                final RecyclerView.ViewHolder holder =
+                        list.findViewHolderForAdapterPosition(position);
+                if (holder != null && holder.itemView.getBackground() instanceof RippleDrawable) {
+                    final RippleDrawable ripple = (RippleDrawable) holder.itemView.getBackground();
+                    ripple.setHotspot(holder.itemView.getWidth() / 2f,
+                            holder.itemView.getHeight() / 2f);
+                    ripple.setState(new int[]{android.R.attr.state_pressed,
+                            android.R.attr.state_enabled});
+                    list.postDelayed(() -> ripple.setState(new int[]{}), 1000);
+                } else {
+                    highlightFallback(fragment, preference);
+                }
+            }, 200);
+        });
+    }
+
+    private static void highlightFallback(final PreferenceFragmentCompat fragment,
+                                          final Preference preference) {
+        final TypedArray colors = fragment.requireContext().obtainStyledAttributes(
+                new int[]{android.R.attr.textColorPrimary});
+        final int color = colors.getColor(0, 0);
+        colors.recycle();
+        final Drawable icon = AppCompatResources.getDrawable(fragment.requireContext(),
+                R.drawable.ic_play_arrow);
+        if (icon == null) {
+            return;
         }
-        highlightFallback(prefsFragment, prefResult);
-    }
-
-    /**
-     * Alternative highlighting (shows an → arrow in front of the setting)if ripple does not work.
-     *
-     * @param prefsFragment
-     * @param prefResult
-     */
-    private static void highlightFallback(
-            final PreferenceFragmentCompat prefsFragment,
-            final Preference prefResult
-    ) {
-        // Get primary color from text for highlight icon
-        final TypedValue typedValue = new TypedValue();
-        final Resources.Theme theme = prefsFragment.getActivity().getTheme();
-        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
-        final TypedArray arr = prefsFragment.getActivity()
-                .obtainStyledAttributes(
-                        typedValue.data,
-                        new int[]{android.R.attr.textColorPrimary});
-        final int color = arr.getColor(0, 0xffE53935);
-        arr.recycle();
-
-        // Show highlight icon
-        final Drawable oldIcon = prefResult.getIcon();
-        final boolean oldSpaceReserved = prefResult.isIconSpaceReserved();
-        final Drawable highlightIcon =
-                AppCompatResources.getDrawable(
-                        prefsFragment.requireContext(),
-                        R.drawable.ic_play_arrow);
-        highlightIcon.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
-        prefResult.setIcon(highlightIcon);
-
-        prefsFragment.scrollToPreference(prefResult);
-
+        final Drawable oldIcon = preference.getIcon();
+        final boolean oldSpaceReserved = preference.isIconSpaceReserved();
+        icon.mutate().setTint(color);
+        preference.setIcon(icon);
+        fragment.scrollToPreference(preference);
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            prefResult.setIcon(oldIcon);
-            prefResult.setIconSpaceReserved(oldSpaceReserved);
+            preference.setIcon(oldIcon);
+            preference.setIconSpaceReserved(oldSpaceReserved);
         }, 1000);
-    }
-
-    private static void showRippleAnimation(final RippleDrawable rippleDrawable) {
-        rippleDrawable.setState(
-                new int[]{android.R.attr.state_pressed, android.R.attr.state_enabled});
-        new Handler(Looper.getMainLooper())
-                .postDelayed(() -> rippleDrawable.setState(new int[]{}), 1000);
     }
 }
