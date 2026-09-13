@@ -12,7 +12,8 @@ import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.BuildConfig
-import org.schabi.newpipe.util.Constants
+import org.schabi.newpipe.util.KEY_LINK_TYPE
+import org.schabi.newpipe.util.KEY_OPEN_SEARCH
 
 class ChangelogPromptController(private val activity: FragmentActivity) : DefaultLifecycleObserver {
     private var load: Disposable? = null
@@ -50,7 +51,7 @@ class ChangelogPromptController(private val activity: FragmentActivity) : Defaul
         // Leave external playback/search intents uninterrupted; show on the next normal app launch.
         if (
             (launchIntent.action != null && launchIntent.action != Intent.ACTION_MAIN) ||
-            launchIntent.hasExtra(Constants.KEY_LINK_TYPE) || launchIntent.hasExtra(Constants.KEY_OPEN_SEARCH)
+            launchIntent.hasExtra(KEY_LINK_TYPE) || launchIntent.hasExtra(KEY_OPEN_SEARCH)
         ) {
             return
         }

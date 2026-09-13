@@ -14,6 +14,10 @@ internal fun changelogTextView(context: Context, html: String, dialog: Boolean):
     val density = context.resources.displayMetrics.density
     val document = Jsoup.parse(html)
     document.select("details, nav").remove()
+    // Explicit paragraphs and bullets also render correctly with the Android 6 HTML parser.
+    document.select("li").forEach { item ->
+        item.tagName("p").prependText("• ")
+    }
     val text = NewPipeTextView(context).apply {
         setTextAppearance(MaterialR.style.TextAppearance_Material3_BodyMedium)
         setTextColor(ThemeHelper.resolveColorFromAttr(context, MaterialR.attr.colorOnSurface))

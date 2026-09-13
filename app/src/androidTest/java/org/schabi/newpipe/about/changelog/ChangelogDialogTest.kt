@@ -129,6 +129,19 @@ class ChangelogDialogTest {
     }
 
     @Test
+    fun nativeNotesKeepBulletsAndSeparateEntries() {
+        ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val scroll = changelogTextView(activity, "<h3>Fixes</h3><ul><li>First fix</li><li>Second fix</li></ul>", true)
+                val text = (scroll.getChildAt(0) as android.widget.TextView).text.toString()
+                assertTrue(text.contains("• First fix"))
+                assertTrue(text.contains("• Second fix"))
+                assertTrue(text.substringAfter("First fix").substringBefore("Second fix").contains('\n'))
+            }
+        }
+    }
+
+    @Test
     fun fullHistoryActivitySurvivesRecreation() {
         ActivityScenario.launch<ChangelogActivity>(Intent(context, ChangelogActivity::class.java)).use { scenario ->
             scenario.recreate()
