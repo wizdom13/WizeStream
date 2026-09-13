@@ -82,9 +82,9 @@ class DialogPaletteTest {
                         assertColor(host, MaterialR.attr.colorSurfaceContainerHigh, themed, MaterialR.attr.colorSurface)
                         assertColor(themed, MaterialR.attr.colorSurface, themed, android.R.attr.windowBackground)
                         assertColor(themed, MaterialR.attr.colorOnSurface, themed, android.R.attr.textColorPrimary)
-                        assertTrue(dialog.window!!.isFloating)
-
                         val content = LayoutInflater.from(themed).inflate(R.layout.download_dialog, null)
+                        dialog.setContentView(content)
+                        assertTrue("The installed dialog window must float", dialog.window!!.isFloating)
                         val video = content.findViewById<RadioButton>(R.id.video_button)
                         assertEquals(
                             color(host, R.attr.colorPrimary),
