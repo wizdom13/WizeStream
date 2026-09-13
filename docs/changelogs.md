@@ -2,13 +2,6 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
-## Unreleased
-
-### Fixes
-
-- Kept download, playlist, and channel-group dialogs consistent with the active system color palette.
-- Made screen backgrounds follow the active Material surface color while preserving AMOLED-black mode.
-
 ## WizeStream 1.18.0 (`1018000`)
 
 ### New features
@@ -29,6 +22,8 @@ Release history is listed newest first. The number beside each release is its An
 ### Fixes
 
 - Fixed orientation synchronization when leaving fullscreen with Back.
+- Kept download, playlist, and channel-group dialogs consistent with the active system color palette.
+- Made screen backgrounds follow the active Material surface color while preserving AMOLED-black mode.
 
 ## WizeStream 1.17.0 (`1017000`)
 

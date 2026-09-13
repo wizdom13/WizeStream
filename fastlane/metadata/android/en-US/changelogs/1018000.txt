@@ -5,3 +5,4 @@
 • View release notes on first launch and the full offline changelog.
 • Remember comment sorting and improve NewPipe exports.
 • Fix fullscreen Back navigation.
+• Match dialogs and backgrounds to system colors.
