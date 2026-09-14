@@ -114,14 +114,27 @@ public class YoutubePlaylistExtractor extends PlaylistExtractor {
     @Nonnull
     @Override
     public String getName() throws ParsingException {
-        final String name = getTextFromObject(playlistInfo.getObject("title"));
-        if (!isNullOrEmpty(name)) {
-            return name;
+        return extractName(getId(), playlistInfo, browseResponse);
+    }
+
+    static String extractName(final String playlistId, final JsonObject primaryInfo,
+                              final JsonObject response) throws ParsingException {
+        String name = getTextFromObject(primaryInfo.getObject("title"));
+        if (isNullOrEmpty(name)) {
+            name = response.getObject("microformat")
+                    .getObject("microformatDataRenderer")
+                    .getString("title");
         }
 
-        return browseResponse.getObject("microformat")
-                .getObject("microformatDataRenderer")
-                .getString("title");
+        // OLAK5uy_ identifies YouTube's auto-generated album playlists. The service requests
+        // Zulu to keep video titles untranslated, which adds this label to album titles.
+        // Remove only that leading label, never text from an ordinary user-created playlist.
+        final String albumPrefix = "I-albhamu - ";
+        if (playlistId.startsWith("OLAK5uy_") && !isNullOrEmpty(name)
+                && name.startsWith(albumPrefix) && name.length() > albumPrefix.length()) {
+            return name.substring(albumPrefix.length());
+        }
+        return name;
     }
 
     @Nonnull

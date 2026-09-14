@@ -20,6 +20,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Removed the unintended "I-albhamu - " prefix from YouTube Music album titles while preserving
+  user-created playlist names.
 - Fixed NicoNico video and background-audio playback authentication, including fresh session cookies
   for playlists, segments, and encryption keys. Restored the final quality option in HLS playlists.
 
