@@ -139,6 +139,4 @@ class VideoAdjustmentControllerTest {
     }
 
     // Supply the timestamp explicitly: JVM tests have no Android system clock.
-    private class TestPlaybackException(code: Int) : PlaybackException("Fixture", null, code, mock(Bundle::class.java), 0L)
-
-}
+    private class TestPlaybackException(code: Int) : PlaybackException("Fixture", null, code, mock(Bundle::class.java), 0L)}
