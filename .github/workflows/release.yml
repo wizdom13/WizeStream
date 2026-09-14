@@ -40,7 +40,8 @@ jobs:
           cache: gradle
 
       - name: Install Android SDK platform and build tools
-        run: sdkmanager "platforms;android-37" "build-tools;36.1.0"
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37" "build-tools;36.1.0"
 
       - name: Write release keystore
         env:

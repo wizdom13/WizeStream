@@ -72,7 +72,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Install Android SDK platform and build tools
-        run: sdkmanager "platforms;android-37" "build-tools;36.1.0"
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37" "build-tools;36.1.0"
 
       - name: Build release APK twice and compare SHA-256
         run: scripts/reproducible-build.sh --verify --output-dir "$RUNNER_TEMP/reproducible-release"
