@@ -99,6 +99,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
+      # Keep platform failures from cancelling coverage on the other Android versions.
+      fail-fast: false
       matrix:
         include:
           - api-level: 23
@@ -107,6 +109,8 @@ jobs:
           - api-level: 28
             target: default
             arch: x86_64
+            # The API 28 quick-boot snapshot can lose package/activity services after resuming.
+            extra-emulator-options: -no-snapshot-load
             # Exercise the legacy copy-toast path on the Android version reported in #522.
             test-options: -Pandroid.testInstrumentationRunnerArguments.class=org.schabi.newpipe.util.LegacyTextSelectionThemeTest
           - api-level: 35
@@ -160,7 +164,7 @@ jobs:
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none ${{ matrix.extra-emulator-options }}
           script: scripts/build.sh connected ${{ matrix.test-options }}
 
       - name: Upload test report when tests fail
