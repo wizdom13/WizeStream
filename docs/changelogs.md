@@ -4,6 +4,13 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### New features
+
+- Added Video adjustments to the expanded player controls, with live brightness, contrast, and
+  saturation sliders, Reset, and optional remembered settings for local and streamed SDR videos.
+  Adjustments carry across fullscreen, rotation, popup, and PiP. HDR bypasses the adjustments,
+  and processing failures fall back to normal playback.
+
 ### Improvements
 
 - Added a prominent Search settings entry and search access inside settings categories.

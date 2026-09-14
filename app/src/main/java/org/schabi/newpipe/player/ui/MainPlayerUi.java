@@ -61,6 +61,7 @@ import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.equalizer.EqualizerDialog;
 import org.schabi.newpipe.player.equalizer.EqualizerState;
+import org.schabi.newpipe.player.video.VideoAdjustmentDialog;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
@@ -171,6 +172,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         return new MainPlayerGestureListener(this);
     }
 
+    private androidx.appcompat.app.AlertDialog videoAdjustmentDialog;
+
     @Override
     protected void initListeners() {
         super.initListeners();
@@ -184,6 +187,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.equalizerButton.setOnClickListener(v ->
                 getParentActivity().ifPresent(activity -> EqualizerDialog.show(
                         activity, EqualizerDialog.forPlayer(player))));
+        binding.videoAdjustmentsButton.setOnClickListener(v ->
+                getParentActivity().ifPresent(activity -> {
+                    if (videoAdjustmentDialog == null || !videoAdjustmentDialog.isShowing()) {
+                        videoAdjustmentDialog = VideoAdjustmentDialog.show(
+                                activity, player.getVideoAdjustments());
+                    }
+                }));
         binding.listenModeButton.setOnClickListener(v -> {
             final boolean listening = player.getPlaybackPresentationMode()
                     == PlaybackPresentationMode.LISTEN_VISUALIZER;
@@ -267,6 +277,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.segmentsButton.setOnClickListener(null);
         binding.sleepTimerButton.setOnClickListener(null);
         binding.equalizerButton.setOnClickListener(null);
+        binding.videoAdjustmentsButton.setOnClickListener(null);
         binding.listenModeButton.setOnClickListener(null);
         binding.addToPlaylistButton.setOnClickListener(null);
         hideSponsorBlockSkipButton();
@@ -304,6 +315,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void destroy() {
+        if (videoAdjustmentDialog != null) {
+            videoAdjustmentDialog.dismiss();
+            videoAdjustmentDialog = null;
+        }
         setTouchLocked(false);
         super.destroy();
 
@@ -364,6 +379,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.openInBrowser.setVisibility(View.VISIBLE);
         binding.sleepTimerButton.setVisibility(View.VISIBLE);
         binding.equalizerButton.setVisibility(View.VISIBLE);
+        binding.videoAdjustmentsButton.setVisibility(View.VISIBLE);
         binding.equalizerButton.setActivated(player.getEqualizerState().isEnabled());
         binding.listenModeButton.setVisibility(View.VISIBLE);
         binding.audioVisualizer.setAudioProcessor(player.getVisualizerAudioProcessor());

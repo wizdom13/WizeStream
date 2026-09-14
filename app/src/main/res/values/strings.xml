@@ -1605,4 +1605,19 @@
     <string name="search_button_behavior_summary">Choose whether Search filters the current tab first or opens search for the current service</string>
     <string name="search_button_behavior_current_tab">Search current tab</string>
     <string name="search_button_behavior_current_service">Search current service</string>
+
+    <!-- Video color adjustments (issue #546) -->
+    <string name="video_adjustments" tools:ignore="MissingTranslation">Video adjustments</string>
+    <string name="video_adjustments_enable" tools:ignore="MissingTranslation">Enable adjustments</string>
+    <string name="video_adjustments_remember" tools:ignore="MissingTranslation">Remember adjustments</string>
+    <string name="video_adjustments_brightness" tools:ignore="MissingTranslation">Brightness</string>
+    <string name="video_adjustments_contrast" tools:ignore="MissingTranslation">Contrast</string>
+    <string name="video_adjustments_saturation" tools:ignore="MissingTranslation">Saturation</string>
+    <string name="video_adjustments_value" tools:ignore="MissingTranslation">%1$s: %2$d%%</string>
+    <string name="video_adjustments_percent" tools:ignore="MissingTranslation">%1$d%%</string>
+    <string name="video_adjustments_active" tools:ignore="MissingTranslation">Previewing adjustments</string>
+    <string name="video_adjustments_disabled" tools:ignore="MissingTranslation">Adjustments are off</string>
+    <string name="video_adjustments_hdr" tools:ignore="MissingTranslation">HDR video: adjustments are bypassed</string>
+    <string name="video_adjustments_failed" tools:ignore="MissingTranslation">Video adjustments could not run on this video or device. Continuing with adjustments off.</string>
+    <string name="video_adjustments_description" tools:ignore="MissingTranslation">Applies to SDR videos in this player, including downloaded videos. Screen brightness is separate. Remember adjustments to use them in future playback sessions.</string>
 </resources>

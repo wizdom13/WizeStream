@@ -179,6 +179,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
         binding.openInBrowser.setVisibility(View.GONE);
         binding.sleepTimerButton.setVisibility(View.GONE);
         binding.equalizerButton.setVisibility(View.GONE);
+        binding.videoAdjustmentsButton.setVisibility(View.GONE);
         binding.sleepTimerCountdown.setVisibility(View.GONE);
         binding.switchMute.setVisibility(View.GONE);
         binding.playerCloseButton.setVisibility(View.GONE);

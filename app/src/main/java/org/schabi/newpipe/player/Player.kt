@@ -57,6 +57,8 @@ import org.schabi.newpipe.player.ui.PlayerUiList
 import org.schabi.newpipe.player.ui.PlayerUiTheme
 import org.schabi.newpipe.player.ui.PopupPlayerUi
 import org.schabi.newpipe.player.ui.VideoPlayerUi
+import org.schabi.newpipe.player.video.VideoAdjustmentController
+import org.schabi.newpipe.player.video.VideoAdjustmentPreferences
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor
 import org.schabi.newpipe.util.ListHelper
 
@@ -107,6 +109,20 @@ class Player(
 
     private val popupPlayerReturnState = PopupPlayerReturnState()
     private val streamItemDisposable = CompositeDisposable()
+
+    private val videoAdjustmentPreferences = VideoAdjustmentPreferences(preferences)
+    val videoAdjustments = VideoAdjustmentController(
+        videoAdjustmentPreferences.load(),
+        videoAdjustmentPreferences::save,
+        { restartForVideoAdjustments() },
+        {
+            android.widget.Toast.makeText(
+                appContext,
+                R.string.video_adjustments_failed,
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    )
 
     private val audioController = PlayerAudioController(this)
     private val historyController = PlayerHistoryController(this)
@@ -395,12 +411,14 @@ class Player(
 
     fun updateEqualizerState(state: EqualizerState) = audioController.updateEqualizerState(state)
 
+    private fun restartForVideoAdjustments() = lifecycleController.restartForVideoAdjustments()
+
     fun updateAudioTunneling() {
         val tunnelingEnabled = !preferences.getBoolean(
             appContext.getString(R.string.disable_media_tunneling_key),
             false
         ) && !audioController.equalizerState.isEnabled &&
-            !playbackPresentationMode.allowsVisualizer()
+            !playbackPresentationMode.allowsVisualizer() && !videoAdjustments.pipelineActive
         playerTrackSelector.parameters = playerTrackSelector.buildUponParameters()
             .setTunnelingEnabled(tunnelingEnabled)
             .build()

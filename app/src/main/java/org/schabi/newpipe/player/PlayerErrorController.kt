@@ -46,6 +46,8 @@ internal class PlayerErrorController(
     fun onPlayerError(error: PlaybackException) {
         Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
 
+        if (player.videoAdjustments.recover(error)) return
+
         player.saveStreamProgressState()
         val downloaded = org.schabi.newpipe.player.mediaitem.MediaItemTag.from(player.exoPlayer.currentMediaItem)
             .flatMap { it.maybeStreamInfo }.orElse(null) as? org.schabi.newpipe.download.DownloadedStreamInfo

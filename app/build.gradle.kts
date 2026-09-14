@@ -332,6 +332,7 @@ dependencies {
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.database)
     implementation(libs.androidx.media3.datasource)
+    implementation(libs.androidx.media3.effect)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.exoplayer.hls)
