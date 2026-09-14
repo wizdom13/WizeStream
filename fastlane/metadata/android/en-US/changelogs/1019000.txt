@@ -1,0 +1,7 @@
+• Add brightness, contrast and saturation adjustments for videos.
+• Improve settings search and navigation to matching options.
+• Fix NicoNico video and background-audio playback.
+• Fix player seek-bar colors and settings search appearance.
+• Fix text-copy crashes on Android 9/ColorOS.
+• Remove unwanted prefixes from YouTube Music album titles.
+• Update playback and image-loading components.
