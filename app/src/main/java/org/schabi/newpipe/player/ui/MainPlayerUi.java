@@ -460,6 +460,11 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             // Restore video source when user returns to the fragment
             fragmentIsVisible = true;
             player.useVideoAndSubtitles(true);
+            // The fragment's first resumed frame can precede this asynchronous broadcast.
+            // Reconcile fullscreen after leaving temporary audio-only playback, before hiding
+            // system bars or restoring the surface with the previous fullscreen dimensions.
+            player.getFragmentListener().ifPresent(
+                    PlayerServiceEventListener::onVideoPlaybackResumed);
             restoreVideoSurfaceAfterResume();
 
             // When a user returns from background, the system UI will always be shown even if
@@ -1087,6 +1092,11 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
         super.onVideoSizeChanged(videoSize);
+        if (videoSize.width <= 0 || videoSize.height <= 0) {
+            // Disabling the renderer on screen-off reports 0x0. Keep the last known orientation
+            // until valid metadata returns, especially for portrait fullscreen videos.
+            return;
+        }
         isVerticalVideo = videoSize.width < videoSize.height;
 
         if (globalScreenOrientationLocked(context)

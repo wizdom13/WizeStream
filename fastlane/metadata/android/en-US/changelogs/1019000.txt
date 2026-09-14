@@ -3,5 +3,6 @@
 • Fix NicoNico video and background-audio playback.
 • Fix player seek-bar colors and settings search appearance.
 • Fix text-copy crashes on Android 9/ColorOS.
+• Fix player layout and rotation after locking in fullscreen and returning in portrait.
 • Remove unwanted prefixes from YouTube Music album titles.
 • Update playback and image-loading components.

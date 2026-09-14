@@ -7,6 +7,9 @@ public interface PlayerServiceEventListener extends PlayerEventListener {
 
     void onFullscreenStateChanged(boolean fullscreen);
 
+    /** Called after the main player has re-enabled video on return from the background. */
+    void onVideoPlaybackResumed();
+
     void onScreenRotationButtonClicked();
 
     void onMoreOptionsLongClicked();
