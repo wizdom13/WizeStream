@@ -9,7 +9,7 @@ release tag therefore records and builds the application and service extraction 
 
 - Git
 - JDK 21
-- Android SDK platform 36.1 and Build Tools 36.1.0
+- Android SDK platform 37.0 and Build Tools 36.1.0
 - Android NDK 28.2.13676358
 - Accepted Android SDK licenses
 
@@ -18,7 +18,7 @@ Gradle build. With accepted Android SDK licenses, Gradle installs missing Androi
 They can also be installed in advance with:
 
 ```bash
-sdkmanager "platforms;android-36.1" "build-tools;36.1.0" "ndk;28.2.13676358"
+sdkmanager "platforms;android-37.0" "build-tools;36.1.0" "ndk;28.2.13676358"
 ```
 
 ## Clone the exact source

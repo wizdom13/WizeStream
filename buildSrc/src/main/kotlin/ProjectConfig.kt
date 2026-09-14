@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-const val ANDROID_COMPILE_SDK_MAJOR = 36
-const val ANDROID_COMPILE_SDK_MINOR = 1
+const val ANDROID_COMPILE_SDK_MAJOR = 37
+const val ANDROID_COMPILE_SDK_MINOR = 0
 const val ANDROID_MIN_SDK = 23
 const val ANDROID_TARGET_SDK = 35
 
