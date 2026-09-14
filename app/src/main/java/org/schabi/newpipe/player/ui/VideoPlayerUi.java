@@ -16,9 +16,7 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.getTimeString;
 import static org.schabi.newpipe.player.helper.PlayerHelper.nextResizeModeAndSaveToPrefs;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -84,7 +82,6 @@ import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHolder;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
-import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
@@ -118,6 +115,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     //////////////////////////////////////////////////////////////////////////*/
 
     protected PlayerBinding binding;
+    private final PlayerUiTheme playerUiTheme;
     private final Handler controlsVisibilityHandler = new Handler(Looper.getMainLooper());
     @Nullable
     private SurfaceHolderCallback surfaceHolderCallback;
@@ -167,6 +165,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                             @NonNull final PlayerBinding playerBinding) {
         super(player);
         binding = playerBinding;
+        playerUiTheme = new PlayerUiTheme(context, binding.playbackSeekBar);
         setupFromView();
     }
 
@@ -203,25 +202,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void applyPlayerSeekBarColor() {
-        final Context seekBarContext = binding.playbackSeekBar.getContext();
-        final ColorStateList activeColor = ColorStateList.valueOf(
-                ThemeHelper.resolveColorFromAttr(
-                        seekBarContext, R.attr.colorPrimaryFixedDim));
-        final ColorStateList bufferedColor = ColorStateList.valueOf(
-                ThemeHelper.resolveColorFromAttr(
-                        seekBarContext, com.google.android.material.R.attr.colorPrimaryContainer));
-        final ColorStateList inactiveColor = ColorStateList.valueOf(
-                ThemeHelper.resolveColorFromAttr(
-                        seekBarContext, com.google.android.material.R.attr.colorSurfaceVariant));
-
-        binding.playbackSeekBar.setProgressTintList(activeColor);
-        binding.playbackSeekBar.setProgressTintMode(PorterDuff.Mode.SRC_IN);
-        binding.playbackSeekBar.setSecondaryProgressTintList(bufferedColor);
-        binding.playbackSeekBar.setSecondaryProgressTintMode(PorterDuff.Mode.SRC_IN);
-        binding.playbackSeekBar.setProgressBackgroundTintList(inactiveColor);
-        binding.playbackSeekBar.setProgressBackgroundTintMode(PorterDuff.Mode.SRC_IN);
-        binding.playbackSeekBar.setThumbTintList(activeColor);
-        binding.playbackSeekBar.setThumbTintMode(PorterDuff.Mode.SRC_IN);
+        playerUiTheme.refresh();
     }
 
     abstract BasePlayerGestureListener buildGestureListener();
@@ -412,6 +393,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void setupAfterIntent() {
         super.setupAfterIntent();
+        applyPlayerSeekBarColor();
         setupElementsVisibility();
         setupElementsSize(context.getResources());
         binding.getRoot().setVisibility(View.VISIBLE);
@@ -446,6 +428,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     @Override
     public void destroy() {
+        playerUiTheme.close();
         super.destroy();
         clearScaledEndScreenThumbnail();
         deinitPlayerSeekOverlay();
@@ -793,6 +776,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public void showControlsThenHide() {
+        applyPlayerSeekBarColor();
         if (DEBUG) {
             Log.d(TAG, "showControlsThenHide() called");
         }
@@ -810,6 +794,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public void showControls(final long duration) {
+        applyPlayerSeekBarColor();
         if (DEBUG) {
             Log.d(TAG, "showControls() called");
         }

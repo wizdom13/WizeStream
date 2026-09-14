@@ -16,4 +16,11 @@
         <item name="colorOnSurfaceVariant">#3F4945</item>
         <item name="colorOutline">#6F7975</item>
     </style>
+    <!-- Keep the legacy fixed role different from the active color to catch #193 regressions. -->
+    <style name="ThemeOverlay_wizestream_TestPlayerPalette" parent="">
+        <item name="colorPrimary">#6750A4</item>
+        <item name="colorPrimaryContainer">#EADDFF</item>
+        <item name="colorSurfaceVariant">#49454F</item>
+        <item name="colorPrimaryFixedDim">#AED4AF</item>
+    </style>
 </resources>

@@ -54,6 +54,7 @@ import org.schabi.newpipe.player.ui.BackgroundPlayerUi
 import org.schabi.newpipe.player.ui.MainPlayerUi
 import org.schabi.newpipe.player.ui.PlayerUi
 import org.schabi.newpipe.player.ui.PlayerUiList
+import org.schabi.newpipe.player.ui.PlayerUiTheme
 import org.schabi.newpipe.player.ui.PopupPlayerUi
 import org.schabi.newpipe.player.ui.VideoPlayerUi
 import org.schabi.newpipe.player.visualizer.VisualizerAudioProcessor
@@ -270,7 +271,7 @@ class Player(
         val binding: PlayerBinding? = when {
             existingVideoUi.isPresent -> existingVideoUi.get().binding
             activePlayerType == PlayerType.AUDIO -> null
-            else -> PlayerBinding.inflate(LayoutInflater.from(appContext))
+            else -> PlayerBinding.inflate(LayoutInflater.from(PlayerUiTheme.createContext(appContext)))
         }
 
         when (activePlayerType) {

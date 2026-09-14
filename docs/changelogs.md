@@ -13,6 +13,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Fixed the player seek bar retaining the default green color with wallpaper-based themes, including
+  Black mode and popup playback. Its colors now refresh when the selected theme changes.
 - Kept the rounded settings search field inset from the screen edge.
 - Fixed circular search-field theme colors that could still crash copying text on Android 9/ColorOS.
 - Restored inherited highlight colors in toolbar popups and search suggestions.
