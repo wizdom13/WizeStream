@@ -51,6 +51,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
+import androidx.core.view.OneShotPreDrawListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -272,6 +273,8 @@ public final class VideoDetailFragment
     private boolean detailLayoutRecreationPending;
     private boolean detailLayoutRecreationRequested;
     private int pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
+    @Nullable
+    private OneShotPreDrawListener resumeLayoutListener;
 
     private ContentObserver settingsContentObserver;
     @Nullable
@@ -392,6 +395,7 @@ public final class VideoDetailFragment
     @Override
     public void onPause() {
         super.onPause();
+        cancelResumeLayoutRestore();
         if (currentWorker != null) {
             currentWorker.dispose();
         }
@@ -421,6 +425,7 @@ public final class VideoDetailFragment
         if (detailLayoutRecreationRequested && binding != null) {
             binding.getRoot().post(this::reconcileDetailLayoutAfterConfigurationChange);
         }
+        scheduleResumeLayoutRestore();
 
         if (tabSettingsChanged) {
             tabSettingsChanged = false;
@@ -434,6 +439,72 @@ public final class VideoDetailFragment
         if (wasLoading.getAndSet(false) && !wasCleared()) {
             startLoading(false);
         }
+    }
+
+    @Override
+    public void onVideoPlaybackResumed() {
+        if (DEBUG) {
+            Log.d(TAG, "onVideoPlaybackResumed() called");
+        }
+        if (binding == null || !isResumed()) {
+            return;
+        }
+        // onResume sends a broadcast: the first pre-draw may run while video is still disabled.
+        // Correct the fullscreen flag synchronously when the player acknowledges that broadcast,
+        // then measure again before drawing the resumed window.
+        restorePlayerLayoutAfterResume();
+        scheduleResumeLayoutRestore();
+    }
+
+    private void scheduleResumeLayoutRestore() {
+        cancelResumeLayoutRestore();
+        if (binding != null) {
+            // A screen-off rotation can resume the retained fragment without another
+            // configuration callback. Wait for the current window to be measured before
+            // replacing fullscreen heights and insets left by the previous orientation.
+            resumeLayoutListener = OneShotPreDrawListener.add(binding.getRoot(), () -> {
+                resumeLayoutListener = null;
+                restorePlayerLayoutAfterResume();
+            });
+            binding.getRoot().requestLayout();
+        }
+    }
+
+    private void cancelResumeLayoutRestore() {
+        if (resumeLayoutListener != null) {
+            resumeLayoutListener.removeListener();
+            resumeLayoutListener = null;
+        }
+    }
+
+    void restorePlayerLayoutAfterResume() {
+        if (binding == null || !isAdded() || !isResumed()
+                || detailLayoutRecreationPending || detailLayoutRecreationRequested
+                || !isPlayerAndPlayerServiceAvailable() || !player.videoPlayerSelected()
+                || player.isAudioOnly() || bottomSheetBehavior == null
+                || bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED
+                || nativePipPrepared || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && activity.isInPictureInPictureMode())
+                || getRoot().map(View::getParent).isEmpty()) {
+            return;
+        }
+        final Optional<MainPlayerUi> playerUi = player.UIs().get(MainPlayerUi.class);
+        if (playerUi.isEmpty()) {
+            return;
+        }
+
+        // The resumed configuration is authoritative, including when an orientation request
+        // made before locking the phone never completed. Do not toggle fullscreen blindly.
+        if (DEBUG) {
+            Log.d(TAG, "Restoring resumed player layout: orientation="
+                    + getResources().getConfiguration().orientation
+                    + ", previousFullscreen=" + playerUi.get().isFullscreen());
+        }
+        syncFullscreenWithOrientation(playerUi, getResources().getConfiguration().orientation);
+        // setFullscreen() is intentionally idempotent, but Android may have restored the window
+        // with stale geometry/system bars even when the player's flag is already correct.
+        refreshFullscreenLayout(playerUi.get().isFullscreen());
+        ViewCompat.requestApplyInsets(binding.getRoot());
     }
 
     @Override
@@ -677,6 +748,7 @@ public final class VideoDetailFragment
 
     @Override
     public void onDestroyView() {
+        cancelResumeLayoutRestore();
         if (liveNotStartedDialog != null) {
             liveNotStartedDialog.dismiss();
             liveNotStartedDialog = null;
@@ -2747,8 +2819,15 @@ public final class VideoDetailFragment
         }
 
         if (fullscreen) {
-            hideSystemUiIfNeeded();
             binding.overlayPlayPauseButton.requestFocus();
+        }
+        refreshFullscreenLayout(fullscreen);
+        scrollToTop();
+    }
+
+    void refreshFullscreenLayout(final boolean fullscreen) {
+        if (fullscreen) {
+            hideSystemUiIfNeeded();
         } else {
             showSystemUi();
         }
@@ -2769,7 +2848,6 @@ public final class VideoDetailFragment
                 binding.relatedItemsLayout.setVisibility(View.GONE);
             }
         }
-        scrollToTop();
         updatePinnedPlayerLayout();
 
         tryAddVideoPlayerView();
@@ -2961,6 +3039,7 @@ public final class VideoDetailFragment
         });
         nativePipForcedFullscreen = false;
         nativePipPrepared = false;
+        scheduleResumeLayoutRestore();
     }
 
     private boolean playerIsNotStopped() {

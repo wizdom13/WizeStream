@@ -21,6 +21,9 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Restored the correct player height, system bars, and detail tabs when returning in portrait after
+  turning the screen off in landscape fullscreen. Fixed rotation into fullscreen becoming stuck
+  after this sequence.
 - Removed the unintended "I-albhamu - " prefix from YouTube Music album titles while preserving
   user-created playlist names.
 - Fixed NicoNico video and background-audio playback authentication, including fresh session cookies

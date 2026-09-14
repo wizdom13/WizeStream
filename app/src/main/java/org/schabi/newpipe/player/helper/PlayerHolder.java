@@ -337,6 +337,13 @@ public final class PlayerHolder {
                 }
 
                 @Override
+                public void onVideoPlaybackResumed() {
+                    if (listener != null) {
+                        listener.onVideoPlaybackResumed();
+                    }
+                }
+
+                @Override
                 public void onScreenRotationButtonClicked() {
                     if (listener != null) {
                         listener.onScreenRotationButtonClicked();
