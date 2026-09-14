@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player.video
 
+import android.os.Bundle
 import androidx.media3.common.Effect
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
@@ -97,7 +98,7 @@ class VideoAdjustmentControllerTest {
     fun processorFailureRetriesOnceWithoutEffectsAndPersistsDisabledState() {
         controller.attach(engine)
         controller.update(VideoAdjustmentState(enabled = true, remember = true, saturation = 150))
-        val error = PlaybackException("GPU unavailable", null, PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED)
+        val error = TestPlaybackException(PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED)
         assertTrue(controller.recover(error))
         assertFalse(controller.recover(error))
         assertFalse(controller.state.enabled)
@@ -113,7 +114,7 @@ class VideoAdjustmentControllerTest {
     fun networkErrorsRemainWithTheNormalRecoveryHandler() {
         controller.attach(engine)
         controller.update(VideoAdjustmentState(enabled = true))
-        assertFalse(controller.recover(PlaybackException("HTTP", null, PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS)))
+        assertFalse(controller.recover(TestPlaybackException(PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS)))
         assertTrue(controller.state.enabled)
         assertEquals(1, restarts)
     }
@@ -136,4 +137,8 @@ class VideoAdjustmentControllerTest {
         controller.update(controller.state.reset())
         assertEquals(VideoAdjustmentState(enabled = true, remember = true), controller.state)
     }
+
+    // Supply the timestamp explicitly: JVM tests have no Android system clock.
+    private class TestPlaybackException(code: Int) : PlaybackException("Fixture", null, code, mock(Bundle::class.java), 0L)
+
 }

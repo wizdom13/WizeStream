@@ -71,7 +71,7 @@ class VideoAdjustmentLifecycleTest {
                 val queue = SinglePlayQueue(localItem(video, "First"))
                 queue.append(listOf(localItem(video, "Second")))
                 queue.index = 1
-                queue.item!!.recoveryPosition = 1500
+                queue.setRecovery(queue.index, 1500)
                 scenario.onActivity { activity ->
                     val surface = SurfaceView(activity)
                     activity.setContentView(surface, FrameLayout.LayoutParams(320, 180))
