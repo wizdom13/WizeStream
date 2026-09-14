@@ -24,7 +24,8 @@ public final class PlayerUiTheme implements AutoCloseable {
     private final SeekBar seekBar;
     private final SharedPreferences preferences;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final SharedPreferences.OnSharedPreferenceChangeListener listener = this::onThemeChanged;
+    private final SharedPreferences.OnSharedPreferenceChangeListener listener =
+            this::onThemeChanged;
     private boolean closed;
 
     public PlayerUiTheme(@NonNull final Context context, @NonNull final SeekBar seekBar) {
@@ -50,9 +51,10 @@ public final class PlayerUiTheme implements AutoCloseable {
         Context themed = new ContextThemeWrapper(context.createConfigurationContext(configuration),
                 ThemeHelper.getThemeForService(context, -1));
         if (ThemeHelper.isFollowSystemThemeColor(context)) {
-            themed = DynamicColors.wrapContextIfAvailable(themed, light
+            final int overlay = light
                     ? com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Light
-                    : com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Dark);
+                    : com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_Dark;
+            themed = DynamicColors.wrapContextIfAvailable(themed, overlay);
             if (ThemeHelper.isBlackThemeSelected(context)) {
                 themed.getTheme().applyStyle(R.style.ThemeOverlay_wizestream_BlackSurfaces, true);
             }
