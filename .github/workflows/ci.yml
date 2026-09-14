@@ -64,7 +64,7 @@ jobs:
 
       - name: Install Android SDK platform and build tools
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37" "build-tools;36.1.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.1.0"
 
       - name: Verify source-inspection tests do not grow
         run: python3 scripts/check-source-inspection-tests.py "$(git rev-parse HEAD^)"
@@ -136,7 +136,7 @@ jobs:
 
       - name: Install Android SDK platform and build tools
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37" "build-tools;36.1.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.1.0"
 
       - name: Enable KVM
         run: |

@@ -99,7 +99,7 @@ jobs:
       - name: Install Android SDK platform and build tools
         if: steps.existing.outputs.skip != 'true'
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37" "build-tools;36.1.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;36.1.0"
 
       - name: Build debug APK and run JVM checks
         if: steps.existing.outputs.skip != 'true'
