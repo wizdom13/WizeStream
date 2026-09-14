@@ -40,32 +40,35 @@ class VideoAdjustmentEditorTest {
     @Test
     fun editorResetsLiveWithoutClosingAndWorksInLightDarkAndBlackThemes() {
         ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                for (theme in listOf(R.style.LightTheme, R.style.DarkTheme, R.style.BlackTheme)) {
-                    val controller = VideoAdjustmentController(
-                        VideoAdjustmentState(true, -15, 20, 160),
-                        {},
-                        {},
-                        {}
-                    )
-                    val dialog = VideoAdjustmentDialog.show(ContextThemeWrapper(activity, theme), controller)
-                    try {
-                        assertEquals(-15f, dialog.findViewById<Slider>(R.id.brightness_slider)!!.value)
-                        dialog.findViewById<SwitchMaterial>(R.id.adjustments_remember)!!.performClick()
+            for (theme in listOf(R.style.LightTheme, R.style.DarkTheme, R.style.BlackTheme)) {
+                var dialog: AlertDialog? = null
+                try {
+                    scenario.onActivity { activity ->
+                        val controller = VideoAdjustmentController(
+                            VideoAdjustmentState(true, -15, 20, 160),
+                            {},
+                            {},
+                            {}
+                        )
+                        val shown = VideoAdjustmentDialog.show(ContextThemeWrapper(activity, theme), controller)
+                        dialog = shown
+                        assertEquals(-15f, shown.findViewById<Slider>(R.id.brightness_slider)!!.value)
+                        shown.findViewById<SwitchMaterial>(R.id.adjustments_remember)!!.performClick()
                         assertTrue(controller.state.remember)
-                        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
-                        assertTrue(dialog.isShowing)
+                        shown.getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
+                        assertTrue(shown.isShowing)
                         assertEquals(VideoAdjustmentState(enabled = true, remember = true), controller.state)
-                        assertEquals(0f, dialog.findViewById<Slider>(R.id.contrast_slider)!!.value)
-                        assertEquals(100f, dialog.findViewById<Slider>(R.id.saturation_slider)!!.value)
-                        dialog.findViewById<SwitchMaterial>(R.id.adjustments_enabled)!!.performClick()
+                        assertEquals(0f, shown.findViewById<Slider>(R.id.contrast_slider)!!.value)
+                        assertEquals(100f, shown.findViewById<Slider>(R.id.saturation_slider)!!.value)
+                        shown.findViewById<SwitchMaterial>(R.id.adjustments_enabled)!!.performClick()
                         assertFalse(controller.state.enabled)
-                        assertFalse(dialog.findViewById<Slider>(R.id.brightness_slider)!!.isEnabled)
-                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-                        assertFalse(dialog.isShowing)
-                    } finally {
-                        dialog.dismiss()
+                        assertFalse(shown.findViewById<Slider>(R.id.brightness_slider)!!.isEnabled)
+                        shown.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
                     }
+                    InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                    scenario.onActivity { assertFalse(dialog!!.isShowing) }
+                } finally {
+                    scenario.onActivity { dialog?.dismiss() }
                 }
             }
         }

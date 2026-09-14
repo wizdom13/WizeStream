@@ -119,14 +119,6 @@ object VideoAdjustmentDialog {
             .setPositiveButton(R.string.close, null)
             .setNeutralButton(R.string.reset, null)
             .create()
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                pending = false
-                handler.removeCallbacks(apply)
-                controller.update(readControls().reset())
-                render.run()
-            }
-        }
         dialog.setOnDismissListener {
             pending = false
             handler.removeCallbacks(apply)
@@ -134,6 +126,12 @@ object VideoAdjustmentDialog {
             controller.update(readControls())
         }
         dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+            pending = false
+            handler.removeCallbacks(apply)
+            controller.update(readControls().reset())
+            render.run()
+        }
         return dialog
     }
 }

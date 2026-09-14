@@ -115,16 +115,22 @@ class VideoAdjustmentPlaybackTest {
     private fun assertGrayscale(surface: SurfaceView) {
         if (Build.VERSION.SDK_INT < 26) return // API 23 still verifies actual decoding/surface swaps.
         val bitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
-        val copied = CountDownLatch(1)
-        var result = -1
-        instrumentation.runOnMainSync {
-            PixelCopy.request(surface, bitmap, {
-                result = it
-                copied.countDown()
-            }, Handler(Looper.getMainLooper()))
-        }
         try {
-            assertTrue(copied.await(5, TimeUnit.SECONDS))
+            var result = PixelCopy.ERROR_SOURCE_NO_DATA
+            // Media3 can announce the first frame before SurfaceFlinger has received its buffer.
+            // Retry only that transient condition; retain the actual grayscale pixel assertions.
+            for (attempt in 0 until 20) {
+                val copied = CountDownLatch(1)
+                instrumentation.runOnMainSync {
+                    PixelCopy.request(surface, bitmap, {
+                        result = it
+                        copied.countDown()
+                    }, Handler(Looper.getMainLooper()))
+                }
+                assertTrue(copied.await(5, TimeUnit.SECONDS))
+                if (result != PixelCopy.ERROR_SOURCE_NO_DATA) break
+                Thread.sleep(50)
+            }
             assertEquals(PixelCopy.SUCCESS, result)
             val color = bitmap.getPixel(16, 16)
             assertTrue("Expected a visible gray frame", Color.red(color) in 15..240)
