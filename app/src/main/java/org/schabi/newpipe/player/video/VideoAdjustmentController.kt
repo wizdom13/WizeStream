@@ -74,14 +74,12 @@ class VideoAdjustmentController(
 
     /** One retry without effects; subsequent errors follow the regular playback error path. */
     fun recover(error: PlaybackException): Boolean {
+        val decoderFailure = error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ||
+            error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED
         val videoDecoderFailure = error is ExoPlaybackException &&
-            error.rendererType == C.TRACK_TYPE_VIDEO &&
-            (error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ||
-                error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED)
-        if (!pipelineActive ||
-            (error.errorCode != PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED &&
-                !videoDecoderFailure)
-        ) {
+            error.rendererType == C.TRACK_TYPE_VIDEO && decoderFailure
+        val processingFailure = error.errorCode == PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED
+        if (!pipelineActive || (!processingFailure && !videoDecoderFailure)) {
             return false
         }
         failed = true

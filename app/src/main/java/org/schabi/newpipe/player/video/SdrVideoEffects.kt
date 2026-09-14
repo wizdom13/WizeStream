@@ -34,8 +34,7 @@ internal object SdrVideoEffects {
     // Check the actual GL input, not an asynchronous format/UI callback: the next queue item
     // or an adaptive stream can change to HDR before the app receives that callback.
     internal class SdrMatrix(private val sdr: RgbMatrix) : RgbMatrix {
-        override fun getMatrix(presentationTimeUs: Long, useHdr: Boolean): FloatArray =
-            if (useHdr) identity else sdr.getMatrix(presentationTimeUs, false)
+        override fun getMatrix(presentationTimeUs: Long, useHdr: Boolean): FloatArray = if (useHdr) identity else sdr.getMatrix(presentationTimeUs, false)
     }
 
     internal class SdrEffect(private val sdr: GlEffect) : GlEffect {
@@ -45,7 +44,6 @@ internal object SdrVideoEffects {
             sdr
         }
 
-        override fun toGlShaderProgram(context: Context, useHdr: Boolean): GlShaderProgram =
-            forInput(useHdr).toGlShaderProgram(context, useHdr)
+        override fun toGlShaderProgram(context: Context, useHdr: Boolean): GlShaderProgram = forInput(useHdr).toGlShaderProgram(context, useHdr)
     }
 }

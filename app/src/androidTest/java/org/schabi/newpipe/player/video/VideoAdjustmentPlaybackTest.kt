@@ -46,7 +46,10 @@ class VideoAdjustmentPlaybackTest {
                     val rendered = AtomicReference(CountDownLatch(1))
                     val failure = AtomicReference<PlaybackException>()
                     val controller = VideoAdjustmentController(
-                        VideoAdjustmentState(enabled = true, saturation = 0), {}, {}, {}
+                        VideoAdjustmentState(enabled = true, saturation = 0),
+                        {},
+                        {},
+                        {}
                     )
                     try {
                         scenario.onActivity { activity ->

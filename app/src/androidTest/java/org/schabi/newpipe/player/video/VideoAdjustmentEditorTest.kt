@@ -43,7 +43,10 @@ class VideoAdjustmentEditorTest {
             scenario.onActivity { activity ->
                 for (theme in listOf(R.style.LightTheme, R.style.DarkTheme, R.style.BlackTheme)) {
                     val controller = VideoAdjustmentController(
-                        VideoAdjustmentState(true, -15, 20, 160), {}, {}, {}
+                        VideoAdjustmentState(true, -15, 20, 160),
+                        {},
+                        {},
+                        {}
                     )
                     val dialog = VideoAdjustmentDialog.show(ContextThemeWrapper(activity, theme), controller)
                     try {
