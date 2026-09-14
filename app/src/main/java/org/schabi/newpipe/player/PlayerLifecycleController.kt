@@ -19,6 +19,7 @@ import org.schabi.newpipe.player.helper.LoadController
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.playback.MediaSourceManager
 import org.schabi.newpipe.player.playqueue.PlayQueue
+import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.ui.PlayerUi
 
 /** Owns player-engine lifecycle, queue-manager lifetime, and recovery positions. */
@@ -81,7 +82,7 @@ internal class PlayerLifecycleController(
         val skipSilence = previous.skipSilenceEnabled
         val repeatMode = previous.repeatMode
         val shuffle = previous.shuffleModeEnabled
-        if (!previous.currentTimeline.isEmpty) {
+        if (!previous.currentTimeline.isEmpty && queue.item?.recoveryPosition == PlayQueueItem.RECOVERY_UNSET) {
             queue.setRecovery(queue.index, previous.currentPosition.coerceAtLeast(0))
         }
         destroyPlayer(preserveQueue = true)

@@ -5,10 +5,10 @@
 
 package org.schabi.newpipe.player.video
 
-import androidx.media3.common.C
 import androidx.media3.common.ColorInfo
 import androidx.media3.common.Effect
 import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlaybackException
@@ -77,7 +77,7 @@ class VideoAdjustmentController(
         val decoderFailure = error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ||
             error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED
         val videoDecoderFailure = error is ExoPlaybackException &&
-            error.rendererType == C.TRACK_TYPE_VIDEO && decoderFailure
+            MimeTypes.isVideo(error.rendererFormat?.sampleMimeType) && decoderFailure
         val processingFailure = error.errorCode == PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED
         if (!pipelineActive || (!processingFailure && !videoDecoderFailure)) {
             return false
