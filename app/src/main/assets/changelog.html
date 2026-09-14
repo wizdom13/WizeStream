@@ -19,7 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
-<li><a href="#unreleased">Unreleased</a></li>
+<li><a href="#release-1019000">WizeStream 1.19.0</a></li>
 <li><a href="#release-1018000">WizeStream 1.18.0</a></li>
 <li><a href="#release-1017000">WizeStream 1.17.0</a></li>
 <li><a href="#release-1016001">WizeStream 1.16.1</a></li>
@@ -71,8 +71,8 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
-<section id="unreleased">
-<h2>Unreleased</h2>
+<section id="release-1019000" data-version="1.19.0" data-version-code="1019000">
+<h2>WizeStream 1.19.0</h2>
 <div class="release-notes">
 <h3>New features</h3>
 <ul>
@@ -82,13 +82,12 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Added a prominent Search settings entry and search access inside settings categories.</li>
 <li>Improved settings search with localized names, descriptions, available choices, and category paths, including caption translation and SponsorBlock categories. Results open and highlight the option; going back restores the search, and the query survives rotation.</li>
+<li>Updated playback and image-loading components.</li>
 </ul>
 <h3>Fixes</h3>
 <ul>
 <li>Removed the unintended &quot;I-albhamu - &quot; prefix from YouTube Music album titles while preserving user-created playlist names.</li>
 <li>Fixed NicoNico video and background-audio playback authentication, including fresh session cookies for playlists, segments, and encryption keys. Restored the final quality option in HLS playlists.</li>
-</ul>
-<ul>
 <li>Fixed the player seek bar retaining the default green color with wallpaper-based themes, including Black mode and popup playback. Its colors now refresh when the selected theme changes.</li>
 <li>Kept the rounded settings search field inset from the screen edge.</li>
 <li>Fixed circular search-field theme colors that could still crash copying text on Android 9/ColorOS.</li>
