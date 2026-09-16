@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.os.Build;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
@@ -33,6 +34,15 @@ public class SurfaceHolderCallbackTest {
         callback.surfaceChanged(holder, 0, 1920, 1080);
 
         verify(player).setVideoSurface(surface);
+    }
+
+    @Test
+    public void surfaceChangedRebindIsLimitedToPreAndroid14() {
+        assertTrue(SurfaceHolderCallback.shouldRebindOnSurfaceChanged(
+                Build.VERSION_CODES.TIRAMISU));
+        assertFalse(SurfaceHolderCallback.shouldRebindOnSurfaceChanged(
+                Build.VERSION_CODES.UPSIDE_DOWN_CAKE));
+        assertFalse(SurfaceHolderCallback.shouldRebindOnSurfaceChanged(37));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player.playback;
 
 import android.content.Context;
+import android.os.Build;
 import android.view.SurfaceHolder;
 
 import androidx.media3.common.Player;
@@ -43,10 +44,18 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
                                final int format,
                                final int width,
                                final int height) {
-        // Some devices keep the same SurfaceView across fullscreen/orientation transitions and
-        // only resize its underlying surface. Rebind on every structural surface change so the
-        // decoder cannot remain attached to a stale fullscreen output.
-        bindVideoSurface(holder);
+        // Before Android 14 the SurfaceView can retain its holder while fullscreen/orientation
+        // changes leave the decoder attached to a stale output. Android 14+ uses
+        // SURFACE_LIFECYCLE_FOLLOWS_ATTACHMENT in ExpandableSurfaceView, so surfaceCreated already
+        // owns the live output and rebinding it for a size-only callback is redundant. Avoiding
+        // that extra setVideoSurface call also prevents Media3's synchronous detach timeout.
+        if (shouldRebindOnSurfaceChanged(Build.VERSION.SDK_INT)) {
+            bindVideoSurface(holder);
+        }
+    }
+
+    static boolean shouldRebindOnSurfaceChanged(final int sdkInt) {
+        return sdkInt < Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
     }
 
     private void bindVideoSurface(final SurfaceHolder holder) {
