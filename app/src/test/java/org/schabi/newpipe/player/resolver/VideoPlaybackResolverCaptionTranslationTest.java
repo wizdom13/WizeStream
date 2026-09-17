@@ -25,9 +25,9 @@ public class VideoPlaybackResolverCaptionTranslationTest {
         final int subtitleBlock = source.indexOf("// Create subtitle sources.");
         final int translationCall = source.indexOf(
                 "addTranslatedSubtitleFromExtractedStreams", subtitleBlock);
-        final int filteringCall = source.indexOf("getUrlAndNonTorrentStreams(", subtitleBlock);
+        final int sourceCreation = source.indexOf("SubtitlePlaybackSource.create(", subtitleBlock);
         assertTrue(subtitleBlock >= 0);
         assertTrue(translationCall > subtitleBlock);
-        assertTrue(filteringCall > translationCall);
+        assertTrue(sourceCreation > translationCall);
     }
 }
