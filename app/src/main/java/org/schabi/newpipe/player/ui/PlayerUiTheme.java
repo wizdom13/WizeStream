@@ -91,6 +91,8 @@ public final class PlayerUiTheme implements AutoCloseable {
     /**
      * Keep the theme accent for played video and separate the other two ranges by luminance.
      * Container and surface roles can be almost identical, especially in dynamic palettes.
+     * @param accent played-range theme accent
+     * @param surface preferred unplayed-range theme surface
      * @return buffered and unplayed colors, both opaque so video content cannot erase contrast
      */
     static int[] trackColors(final int accent, final int surface) {
