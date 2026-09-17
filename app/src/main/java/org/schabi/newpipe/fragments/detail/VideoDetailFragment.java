@@ -108,6 +108,7 @@ import org.schabi.newpipe.player.PlayerType;
 import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.event.PlayerServiceExtendedEventListener;
 import org.schabi.newpipe.player.helper.PlayerHelper;
+import org.schabi.newpipe.player.helper.PlayerRotationMode;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
@@ -375,7 +376,8 @@ public final class VideoDetailFragment
         settingsContentObserver = new ContentObserver(new Handler()) {
             @Override
             public void onChange(final boolean selfChange) {
-                if (activity != null && !globalScreenOrientationLocked(activity)) {
+                if (activity != null && !globalScreenOrientationLocked(activity)
+                        && PlayerRotationMode.get(activity) != PlayerRotationMode.FIXED) {
                     activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 }
             }
@@ -2870,7 +2872,9 @@ public final class VideoDetailFragment
 
         final int newOrientation = isLandscape
                 ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+                : PlayerRotationMode.get(activity) == PlayerRotationMode.FIXED
+                    ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 
         pendingFullscreenOrientation = isLandscape
                 ? Configuration.ORIENTATION_PORTRAIT

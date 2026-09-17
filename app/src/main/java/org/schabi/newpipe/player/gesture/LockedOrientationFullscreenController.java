@@ -19,11 +19,10 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 import androidx.lifecycle.LifecycleOwner;
-import androidx.preference.PreferenceManager;
 
-import org.schabi.newpipe.R;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.PlayerHolder;
+import org.schabi.newpipe.player.helper.PlayerRotationMode;
 import org.schabi.newpipe.util.DeviceUtils;
 
 /**
@@ -45,6 +44,7 @@ final class LockedOrientationFullscreenController {
     private int stableOrientationZone = ORIENTATION_ZONE_OTHER;
     private boolean autoEnteredFullscreen;
     private boolean listening;
+    private boolean fixedOrientationOwned;
 
     @Nullable
     private View bottomSheet;
@@ -129,9 +129,11 @@ final class LockedOrientationFullscreenController {
     void onPlayerSheetStateChanged(final int newState) {
         sheetState = newState;
         if (newState == STATE_EXPANDED) {
+            applyRotationMode();
             cancelPendingOrientation();
             stableOrientationZone = ORIENTATION_ZONE_OTHER;
         } else if (newState == STATE_COLLAPSED || newState == STATE_HIDDEN) {
+            releaseFixedOrientation();
             cancelPendingOrientation();
             stableOrientationZone = ORIENTATION_ZONE_OTHER;
             // The normal collapsed-player path restores orientation/fullscreen. Do not let a
@@ -142,6 +144,7 @@ final class LockedOrientationFullscreenController {
 
     private void detach() {
         stopListening();
+        releaseFixedOrientation();
         if (bottomSheet != null) {
             bottomSheet.removeOnAttachStateChangeListener(attachStateChangeListener);
         }
@@ -157,6 +160,7 @@ final class LockedOrientationFullscreenController {
     }
 
     private void startListening() {
+        applyRotationMode();
         if (listening || activity == null || orientationEventListener == null
                 || !isFeatureEnabled(activity)
                 || isLargeScreenDevice(activity)
@@ -254,9 +258,31 @@ final class LockedOrientationFullscreenController {
         return true;
     }
 
+    private void applyRotationMode() {
+        if (activity == null || isLargeScreenDevice(activity)
+                || isInPictureInPicture(activity)) {
+            return;
+        }
+        if (sheetState == STATE_EXPANDED
+                && PlayerRotationMode.get(activity) == PlayerRotationMode.FIXED) {
+            if (!fixedOrientationOwned) {
+                fixedOrientationOwned = true;
+                activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+            }
+        } else {
+            releaseFixedOrientation();
+        }
+    }
+
+    private void releaseFixedOrientation() {
+        if (fixedOrientationOwned && activity != null) {
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+        fixedOrientationOwned = false;
+    }
+
     private static boolean isFeatureEnabled(@NonNull final Activity activity) {
-        return PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(
-                activity.getString(R.string.rotate_to_fullscreen_key), true);
+        return PlayerRotationMode.get(activity) == PlayerRotationMode.SENSORS;
     }
 
     private static boolean isInPictureInPicture(@NonNull final Activity activity) {
