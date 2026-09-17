@@ -6,7 +6,7 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
-- Fall back to normal playback when video-adjustment effects cannot be installed, and keep crash reporting independent of automatic-download initialization.
+- Choose Fixed, Follow system rotation, or Follow device sensors for phone playback in Video and audio settings. Existing rotation preferences keep their behavior.
 
 - Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
 
