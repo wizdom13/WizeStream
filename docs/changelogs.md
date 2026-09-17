@@ -4,11 +4,19 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### New features
+
+- Choose Fixed, Follow system rotation, or Follow device sensors for player rotation, while preserving the previous rotation preference.
+- Sort the subscription feed by publication date or first discovery, preserving discovery times when videos are refreshed.
+
 ### Fixes
 
-- Choose Fixed, Follow system rotation, or Follow device sensors for phone playback in Video and audio settings. Existing rotation preferences keep their behavior.
-
 - Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
+- Fall back to normal playback when video-adjustment effects cannot be installed, and keep crash reporting independent of automatic-download initialization.
+- Improve contrast between played, buffered, and remaining seek-bar ranges across player modes and themes.
+- Restrict saved CAPTCHA and restricted-mode cookies to secure YouTube destinations, including redirected requests.
+- Play inline subtitle text produced by Bilibili and YouTube caption deduplication without downloading it again.
+- Register the media session during internal playback startup so Android can receive the configured custom notification actions.
 
 ## WizeStream 1.19.0 (`1019000`)
 
