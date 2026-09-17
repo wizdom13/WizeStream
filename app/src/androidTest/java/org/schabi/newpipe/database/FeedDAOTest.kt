@@ -70,6 +70,22 @@ class FeedDAOTest {
     }
 
     @Test
+    fun discoveryAndPublicationSortIndependentlyAndRefreshKeepsFirstDiscovery() {
+        clearAndFillTables()
+        feedDAO.deleteAll()
+        feedDAO.insertAll(listOf(FeedEntity(1, 1, firstDiscoveredAt = 200), FeedEntity(2, 1, firstDiscoveredAt = 100)))
+        fun ids(discovery: Boolean) = feedDAO.getStreams(
+            FeedGroupEntity.GROUP_ALL_ID, true, true, null, serviceId,
+            SubscriptionEntity.YOUTUBE_MODE_REGULAR, discovery
+        ).blockingGet()!!.map { it.stream.uid }
+        assertEquals(listOf(2L, 1L), ids(false))
+        assertEquals(listOf(1L, 2L), ids(true))
+        feedDAO.insert(FeedEntity(2, 1, firstDiscoveredAt = 300))
+        assertEquals(listOf(1L, 2L), ids(true))
+        assertEquals(100L, feedDAO.getMemberships(1).single { it.streamId == 2L }.firstDiscoveredAt)
+    }
+
+    @Test
     fun testUnlinkStreamsOlderThan_KeepOne() {
         setupUnlinkDelete("2023-08-15T00:00:00Z")
         val streams = feedDAO.getStreams(

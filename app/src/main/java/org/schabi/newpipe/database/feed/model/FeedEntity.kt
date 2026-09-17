@@ -42,7 +42,10 @@ data class FeedEntity(
     var subscriptionId: Long,
 
     @ColumnInfo(name = YOUTUBE_MODE_MASK, defaultValue = "1")
-    var youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR
+    var youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+
+    @ColumnInfo(name = "first_discovered_at", defaultValue = "0")
+    var firstDiscoveredAt: Long = System.currentTimeMillis()
 ) {
 
     companion object {

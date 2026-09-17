@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/menu_item_feed_sort"
+        android:title="@string/feed_sort_title"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_item_feed_toggle_played_items"
         android:orderInCategory="2"
         android:icon="@drawable/ic_visibility_on"

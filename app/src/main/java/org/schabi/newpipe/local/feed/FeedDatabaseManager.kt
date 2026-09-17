@@ -45,7 +45,8 @@ class FeedDatabaseManager(context: Context) {
         includePlayedStreams: Boolean,
         includePartiallyPlayedStreams: Boolean,
         includeFutureStreams: Boolean,
-        scope: FeedScope
+        scope: FeedScope,
+        sortByDiscovery: Boolean = false
     ): Maybe<List<StreamWithState>> {
         return feedTable.getStreams(
             groupId,
@@ -53,7 +54,8 @@ class FeedDatabaseManager(context: Context) {
             includePartiallyPlayedStreams,
             if (includeFutureStreams) null else OffsetDateTime.now(),
             scope.serviceId,
-            scope.youtubeModeMask
+            scope.youtubeModeMask,
+            sortByDiscovery
         )
     }
 
@@ -149,6 +151,11 @@ class FeedDatabaseManager(context: Context) {
             }
         }
 
+        // Preserve first-seen time even when a livestream membership is replaced during refresh
+        // or the same channel is loaded in another YouTube mode.
+        val firstSeen = feedTable.getMemberships(subscriptionId)
+            .groupBy { it.streamId }.mapValues { (_, memberships) -> memberships.minOf { it.firstDiscoveredAt } }
+        val discoveredAt = System.currentTimeMillis()
         val modeMasks = youtubeModeMasks(youtubeModeMask)
         modeMasks.forEach { feedTable.unlinkOldLivestreams(subscriptionId, it) }
 
@@ -163,7 +170,7 @@ class FeedDatabaseManager(context: Context) {
             val streamIds = streamTable.upsertAll(streamEntities)
             val feedEntities = streamIds.flatMap { streamId ->
                 modeMasks.map { modeMask ->
-                    FeedEntity(streamId, subscriptionId, modeMask)
+                    FeedEntity(streamId, subscriptionId, modeMask, firstSeen[streamId] ?: discoveredAt)
                 }
             }
 

@@ -75,6 +75,10 @@ jobs:
       - name: Build debug APK and run JVM tests
         run: ./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
 
+      - name: Export generated Room schema for review
+        if: always()
+        run: python3 -c 'import base64,pathlib; print("ROOM_SCHEMA_24=" + base64.b64encode(pathlib.Path("app/schemas/org.schabi.newpipe.database.AppDatabase/24.json").read_bytes()).decode())'
+
       - name: Upload lint report when checks fail
         uses: actions/upload-artifact@v7
         if: failure()

@@ -320,7 +320,20 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.menu_item_feed_help) {
+        if (item.itemId == R.id.menu_item_feed_sort) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.feed_sort_title)
+                .setSingleChoiceItems(
+                    arrayOf(getString(R.string.feed_sort_publication), getString(R.string.feed_sort_discovery)),
+                    if (viewModel.getSortByDiscovery()) 1 else 0
+                ) { dialog, which ->
+                    viewModel.setSortByDiscovery(which == 1)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+            return true
+        } else if (item.itemId == R.id.menu_item_feed_help) {
             val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
             val usingDedicatedMethod = sharedPreferences
