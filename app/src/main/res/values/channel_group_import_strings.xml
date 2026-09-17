@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="migration_subscriptions_groups_option">Subscriptions (%1$d channels, %2$d groups)</string>
+    <string name="migration_groups_complete">Channel groups imported: %1$d</string>
+</resources>

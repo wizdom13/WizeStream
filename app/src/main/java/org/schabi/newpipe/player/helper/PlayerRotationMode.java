@@ -18,7 +18,8 @@ public enum PlayerRotationMode {
     }
 
     public static PlayerRotationMode get(final Context context) {
-        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        final SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(context);
         return resolve(preferences.getString(context.getString(R.string.player_rotation_mode_key),
                         null),
                 preferences.getBoolean(context.getString(R.string.rotate_to_fullscreen_key), true));
@@ -34,7 +35,8 @@ public enum PlayerRotationMode {
     }
 
     public static void initializePreference(final Context context) {
-        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        final SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(context);
         final String key = context.getString(R.string.player_rotation_mode_key);
         if (!preferences.contains(key)) {
             preferences.edit().putString(key, get(context).value).apply();

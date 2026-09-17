@@ -4,9 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
-### New features
+### Fixes
 
 - Choose Fixed, Follow system rotation, or Follow device sensors for phone playback in Video and audio settings. Existing rotation preferences keep their behavior.
+
+- Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
 
 ## WizeStream 1.19.0 (`1019000`)
 
