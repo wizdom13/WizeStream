@@ -6,6 +6,8 @@
 package org.schabi.newpipe.database
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabaseLockedException
+import android.util.Log
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.Callable
@@ -23,6 +25,19 @@ data class DatabaseCleanupResult(
 }
 
 class DatabaseMaintenanceManager(context: Context) {
+    companion object {
+        private const val TAG = "DatabaseMaintenance"
+
+        internal fun runBestEffortMaintenance(maintenance: () -> Unit): Boolean {
+            return try {
+                maintenance()
+                true
+            } catch (_: SQLiteDatabaseLockedException) {
+                false
+            }
+        }
+    }
+
     private val applicationContext = context.applicationContext
     private val database = NewPipeDatabase.getInstance(applicationContext)
 
@@ -42,9 +57,17 @@ class DatabaseMaintenanceManager(context: Context) {
                     )
                 }
             )
-            database.openHelper.writableDatabase.apply {
-                query("PRAGMA wal_checkpoint(TRUNCATE)").close()
-                execSQL("PRAGMA optimize")
+            val maintenanceCompleted = runBestEffortMaintenance {
+                database.openHelper.writableDatabase.apply {
+                    query("PRAGMA wal_checkpoint(TRUNCATE)").close()
+                    execSQL("PRAGMA optimize")
+                }
+            }
+            if (!maintenanceCompleted) {
+                Log.w(
+                    TAG,
+                    "Skipped optional database checkpoint/optimization because the database is busy"
+                )
             }
             result
         }.subscribeOn(Schedulers.io())
