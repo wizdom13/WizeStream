@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.20.0 (`1020000`)
+
 ### New features
 
 - Choose Fixed, Follow system rotation, or Follow device sensors for player rotation, while preserving the previous rotation preference.

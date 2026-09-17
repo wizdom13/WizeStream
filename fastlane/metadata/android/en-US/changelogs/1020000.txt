@@ -1,0 +1,8 @@
+• Add Fixed, Follow system and Follow sensors player rotation modes.
+• Sort feeds by publication date or first discovery.
+• Import channel groups from NewPipe and PipePipe backups.
+• Improve recovery from video-filter failures and crash reporting.
+• Improve seek-bar contrast across themes.
+• Fix missing custom notification actions.
+• Restore inline subtitles.
+• Restrict saved YouTube cookies to secure YouTube requests, including redirects.
