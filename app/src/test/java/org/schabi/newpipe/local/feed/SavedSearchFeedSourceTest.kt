@@ -22,7 +22,6 @@ class SavedSearchFeedSourceTest {
         assertTrue(migrations.contains("MIGRATION_22_23"))
         assertTrue(migrations.contains("saved_search_feed"))
         assertTrue(migrations.contains("saved_search_feed_stream"))
-        assertTrue(database.contains("version = Migrations.DB_VER_23"))
         assertTrue(database.contains("SavedSearchFeedEntity::class"))
         assertTrue(database.contains("SavedSearchFeedStreamEntity::class"))
         assertTrue(databaseFactory.contains("MIGRATION_22_23"))

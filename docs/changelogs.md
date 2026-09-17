@@ -6,7 +6,7 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
-- Sort subscription feeds by publication date or when a video was first discovered. Refreshing a feed keeps existing discovery times; older cached items retain publication ordering until new items arrive.
+- Choose Fixed, Follow system rotation, or Follow device sensors for phone playback in Video and audio settings. Existing rotation preferences keep their behavior.
 
 - Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
 

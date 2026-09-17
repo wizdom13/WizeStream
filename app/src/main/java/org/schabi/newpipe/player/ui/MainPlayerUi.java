@@ -67,6 +67,7 @@ import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
 import org.schabi.newpipe.player.helper.PlayerHelper;
+import org.schabi.newpipe.player.helper.PlayerRotationMode;
 import org.schabi.newpipe.player.helper.SleepTimer;
 import org.schabi.newpipe.player.helper.SleepTimerDialog;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
@@ -1082,6 +1083,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private void setupScreenRotationButton() {
         binding.screenRotationButton.setVisibility(globalScreenOrientationLocked(context)
+                || PlayerRotationMode.get(context) == PlayerRotationMode.FIXED
                 || isVerticalVideo || DeviceUtils.isTablet(context)
                 ? View.VISIBLE : View.GONE);
         binding.screenRotationButton.setImageDrawable(AppCompatResources.getDrawable(context,
@@ -1100,6 +1102,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         isVerticalVideo = videoSize.width < videoSize.height;
 
         if (globalScreenOrientationLocked(context)
+                && PlayerRotationMode.get(context) != PlayerRotationMode.FIXED
                 && isFullscreen
                 && isLandscape() == isVerticalVideo
                 && !DeviceUtils.isTv(context)
