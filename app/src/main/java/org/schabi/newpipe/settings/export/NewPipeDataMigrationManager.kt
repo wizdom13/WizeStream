@@ -7,10 +7,9 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.feed.model.FeedGroupSubscriptionEntity
-import org.schabi.newpipe.local.subscription.FeedGroupIcon
-import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
@@ -18,6 +17,7 @@ import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.local.subscription.FeedGroupIcon
 
 class NewPipeDataMigrationManager(private val context: Context) {
     enum class SourceApp {

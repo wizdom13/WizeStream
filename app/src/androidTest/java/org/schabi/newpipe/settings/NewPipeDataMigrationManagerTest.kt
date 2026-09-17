@@ -15,13 +15,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
+import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.feed.model.FeedGroupSubscriptionEntity
-import org.schabi.newpipe.local.subscription.FeedGroupIcon
-import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.local.subscription.FeedGroupIcon
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
