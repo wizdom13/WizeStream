@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.SeekBar
+import androidx.core.graphics.ColorUtils
 import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,6 +25,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
@@ -265,8 +267,13 @@ class PlayerUiThemeTest {
     private fun assertColors(seekBar: SeekBar, palette: Context) {
         assertEquals(color(palette, R.attr.colorPrimary), seekBar.progressTintList!!.defaultColor)
         assertEquals(color(palette, R.attr.colorPrimary), seekBar.thumbTintList!!.defaultColor)
-        assertEquals(color(palette, MaterialR.attr.colorPrimaryContainer), seekBar.secondaryProgressTintList!!.defaultColor)
-        assertEquals(color(palette, MaterialR.attr.colorSurfaceVariant), seekBar.progressBackgroundTintList!!.defaultColor)
+        val played = seekBar.progressTintList!!.defaultColor
+        val buffered = seekBar.secondaryProgressTintList!!.defaultColor
+        val remaining = seekBar.progressBackgroundTintList!!.defaultColor
+        assertTrue("Played/buffered contrast", ColorUtils.calculateContrast(played, buffered) >= 2.0)
+        assertTrue("Buffered/remaining contrast", ColorUtils.calculateContrast(buffered, remaining) >= 2.0)
+        assertEquals(255, Color.alpha(buffered))
+        assertEquals(255, Color.alpha(remaining))
         assertEquals(PorterDuff.Mode.SRC_IN, seekBar.progressTintMode)
         assertEquals(PorterDuff.Mode.SRC_IN, seekBar.thumbTintMode)
     }

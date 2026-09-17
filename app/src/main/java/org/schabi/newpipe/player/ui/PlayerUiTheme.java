@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Handler;
 import android.os.Looper;
@@ -11,6 +12,7 @@ import android.view.ContextThemeWrapper;
 import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
+import androidx.core.graphics.ColorUtils;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.color.DynamicColors;
@@ -77,12 +79,49 @@ public final class PlayerUiTheme implements AutoCloseable {
         seekBar.setProgressTintMode(PorterDuff.Mode.SRC_IN);
         seekBar.setThumbTintList(active);
         seekBar.setThumbTintMode(PorterDuff.Mode.SRC_IN);
-        seekBar.setSecondaryProgressTintList(color(palette,
-                com.google.android.material.R.attr.colorPrimaryContainer));
+        final int[] tracks = trackColors(active.getDefaultColor(),
+                ThemeHelper.resolveColorFromAttr(palette,
+                        com.google.android.material.R.attr.colorSurfaceVariant));
+        seekBar.setSecondaryProgressTintList(ColorStateList.valueOf(tracks[0]));
         seekBar.setSecondaryProgressTintMode(PorterDuff.Mode.SRC_IN);
-        seekBar.setProgressBackgroundTintList(color(palette,
-                com.google.android.material.R.attr.colorSurfaceVariant));
+        seekBar.setProgressBackgroundTintList(ColorStateList.valueOf(tracks[1]));
         seekBar.setProgressBackgroundTintMode(PorterDuff.Mode.SRC_IN);
+    }
+
+    /**
+     * Keep the theme accent for played video and separate the other two ranges by luminance.
+     * Container and surface roles can be almost identical, especially in dynamic palettes.
+     * @param accent played-range theme accent
+     * @param surface preferred unplayed-range theme surface
+     * @return buffered and unplayed colors, both opaque so video content cannot erase contrast
+     */
+    static int[] trackColors(final int accent, final int surface) {
+        final int active = ColorUtils.setAlphaComponent(accent, 255);
+        int remaining = ColorUtils.setAlphaComponent(surface, 255);
+        final int endpoint = ColorUtils.calculateLuminance(active) > 0.179
+                ? Color.BLACK : Color.WHITE;
+        for (int step = 0; step <= 100; step++) {
+            remaining = ColorUtils.blendARGB(surface, endpoint, step / 100f);
+            remaining = ColorUtils.setAlphaComponent(remaining, 255);
+            if (ColorUtils.calculateContrast(active, remaining) >= 4.5) {
+                break;
+            }
+        }
+        // Equal contrast ratios on each side are achieved at the geometric midpoint of
+        // relative luminance + 0.05, not at the midpoint of the RGB components.
+        final double target = Math.sqrt((ColorUtils.calculateLuminance(active) + 0.05)
+                * (ColorUtils.calculateLuminance(remaining) + 0.05)) - 0.05;
+        int buffered = active;
+        double closest = Double.MAX_VALUE;
+        for (int step = 0; step <= 100; step++) {
+            final int candidate = ColorUtils.blendARGB(active, remaining, step / 100f);
+            final double distance = Math.abs(ColorUtils.calculateLuminance(candidate) - target);
+            if (distance < closest) {
+                closest = distance;
+                buffered = candidate;
+            }
+        }
+        return new int[]{buffered, remaining};
     }
 
     private static ColorStateList color(final Context palette, final int attribute) {
