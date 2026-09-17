@@ -8,13 +8,8 @@ import android.content.pm.ActivityInfo;
 
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class LockedOrientationFullscreenControllerTest {
-    private final Path projectDirectory = Files.exists(Path.of("src/main"))
-            ? Path.of("src/main")
-            : Path.of("app/src/main");
 
     @Test
     public void orientationZonesUseHysteresisGapsAroundPortraitAndLandscape() {
@@ -80,21 +75,4 @@ public class LockedOrientationFullscreenControllerTest {
                 ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
     }
 
-    @Test
-    public void rotateToFullscreenIsEnabledByDefaultAndWiredToPlayerSheet() throws Exception {
-        final String settings = Files.readString(projectDirectory.resolve(
-                "res/xml/video_audio_settings.xml"));
-        final String behavior = Files.readString(projectDirectory.resolve(
-                "java/org/schabi/newpipe/player/gesture/CustomBottomSheetBehavior.java"));
-
-        final int preference = settings.indexOf(
-                "android:key=\"@string/rotate_to_fullscreen_key\"");
-        final int defaultValue = settings.lastIndexOf(
-                "android:defaultValue=\"true\"", preference);
-        assertTrue(preference >= 0 && defaultValue >= 0 && preference - defaultValue < 100);
-        assertTrue(behavior.contains(
-                "lockedOrientationFullscreenController.attach(child, getState())"));
-        assertTrue(behavior.contains(
-                "lockedOrientationFullscreenController.onPlayerSheetStateChanged(newState)"));
-    }
 }
