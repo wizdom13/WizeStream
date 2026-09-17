@@ -8,6 +8,8 @@ Release history is listed newest first. The number beside each release is its An
 
 - Fall back to normal playback when video-adjustment effects cannot be installed, and keep crash reporting independent of automatic-download initialization.
 
+- Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
+
 ## WizeStream 1.19.0 (`1019000`)
 
 ### New features

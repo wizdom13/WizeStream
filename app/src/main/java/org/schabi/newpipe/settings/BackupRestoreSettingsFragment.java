@@ -414,8 +414,8 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
         final List<MigrationOption> optionTypes = new ArrayList<>();
         if (preview.getHasSubscriptions()) {
             optionLabels.add(getString(
-                    R.string.migration_subscriptions_option,
-                    preview.getSubscriptions()));
+                    R.string.migration_subscriptions_groups_option,
+                    preview.getSubscriptions(), preview.getChannelGroups()));
             optionTypes.add(MigrationOption.SUBSCRIPTIONS);
         }
         if (preview.getHasHistory()) {
@@ -536,7 +536,9 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
                                         migrationResult.getSubscriptions(),
                                         migrationResult.getCompatibleSettings(),
                                         migrationResult.getSponsorBlockSettings(),
-                                        migrationResult.getSkippedItems()))
+                                        migrationResult.getSkippedItems()) + "\n" + getString(
+                                        R.string.migration_groups_complete,
+                                        migrationResult.getChannelGroups()))
                                 .setPositiveButton(R.string.ok, null)
                                 .show();
                     });
