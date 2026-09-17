@@ -863,7 +863,10 @@ class DatabaseMigrationTest {
             database.execSQL("INSERT INTO feed (stream_id, subscription_id, youtube_mode_mask) VALUES (42, 7, 1)")
         }
         val migrated = testHelper.runMigrationsAndValidate(
-            AppDatabase.DATABASE_NAME, Migrations.DB_VER_24, true, Migrations.MIGRATION_23_24
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_24,
+            true,
+            Migrations.MIGRATION_23_24
         )
         migrated.query("SELECT stream_id, subscription_id, first_discovered_at FROM feed").use { cursor ->
             assertTrue(cursor.moveToFirst())

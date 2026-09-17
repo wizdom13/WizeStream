@@ -75,8 +75,13 @@ class FeedDAOTest {
         feedDAO.deleteAll()
         feedDAO.insertAll(listOf(FeedEntity(1, 1, firstDiscoveredAt = 200), FeedEntity(2, 1, firstDiscoveredAt = 100)))
         fun ids(discovery: Boolean) = feedDAO.getStreams(
-            FeedGroupEntity.GROUP_ALL_ID, true, true, null, serviceId,
-            SubscriptionEntity.YOUTUBE_MODE_REGULAR, discovery
+            FeedGroupEntity.GROUP_ALL_ID,
+            true,
+            true,
+            null,
+            serviceId,
+            SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+            discovery
         ).blockingGet()!!.map { it.stream.uid }
         assertEquals(listOf(2L, 1L), ids(false))
         assertEquals(listOf(1L, 2L), ids(true))

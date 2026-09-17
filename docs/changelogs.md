@@ -4,9 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
-### New features
+### Fixes
 
 - Sort subscription feeds by publication date or when a video was first discovered. Refreshing a feed keeps existing discovery times; older cached items retain publication ordering until new items arrive.
+
+- Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
 
 ## WizeStream 1.19.0 (`1019000`)
 
