@@ -36,6 +36,7 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
+        org.schabi.newpipe.player.helper.PlayerRotationMode.initializePreference(requireContext());
         addPreferencesFromResourceRegistry();
 
         updateSeekOptions();

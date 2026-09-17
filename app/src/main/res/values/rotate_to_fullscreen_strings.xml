@@ -3,4 +3,19 @@
     <string name="rotate_to_fullscreen_key" translatable="false">rotate_to_fullscreen</string>
     <string name="rotate_to_fullscreen_title">Rotate device to enter fullscreen</string>
     <string name="rotate_to_fullscreen_summary">When system rotation is locked, turn your phone sideways to enter fullscreen and return it upright to exit fullscreen.</string>
+    <string name="player_rotation_mode_key" translatable="false">player_rotation_mode</string>
+    <string name="player_rotation_mode_title">Player rotation</string>
+    <string name="player_rotation_fixed">Fixed (use the fullscreen button)</string>
+    <string name="player_rotation_system">Follow system rotation</string>
+    <string name="player_rotation_sensors">Follow device sensors</string>
+    <string-array name="player_rotation_mode_entries">
+        <item>@string/player_rotation_fixed</item>
+        <item>@string/player_rotation_system</item>
+        <item>@string/player_rotation_sensors</item>
+    </string-array>
+    <string-array name="player_rotation_mode_values" translatable="false">
+        <item>fixed</item>
+        <item>system</item>
+        <item>sensors</item>
+    </string-array>
 </resources>
