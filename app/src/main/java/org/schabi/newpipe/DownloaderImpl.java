@@ -83,6 +83,16 @@ public final class DownloaderImpl extends Downloader {
                             .header("User-Agent", USER_AGENT)
                             .build());
                 })
+                // Network interceptors run again for every redirect. Select stored cookies
+                // using the actual destination, without carrying them onto another host.
+                .addNetworkInterceptor(chain -> {
+                    final okhttp3.Request request = chain.request();
+                    final String cookies = getCookies(request.url().toString());
+                    if (request.header("Cookie") != null || cookies.isEmpty()) {
+                        return chain.proceed(request);
+                    }
+                    return chain.proceed(request.newBuilder().header("Cookie", cookies).build());
+                })
                 .readTimeout(30, TimeUnit.SECONDS)
 //                .cache(new Cache(new File(context.getExternalCacheDir(), "okhttp"),
 //                        16 * 1024 * 1024))
@@ -112,11 +122,19 @@ public final class DownloaderImpl extends Downloader {
     }
 
     public String getCookies(final String url) {
-        final String youtubeCookie = url.contains(YOUTUBE_DOMAIN)
-                ? getCookie(YOUTUBE_RESTRICTED_MODE_COOKIE_KEY) : null;
-
-        // Recaptcha cookie is always added TODO: not sure if this is necessary
-        return Stream.of(youtubeCookie, getCookie(ReCaptchaActivity.RECAPTCHA_COOKIES_KEY))
+        final HttpUrl destination;
+        try {
+            destination = HttpUrl.get(url);
+        } catch (final IllegalArgumentException error) {
+            return "";
+        }
+        final String host = destination.host();
+        if (!destination.isHttps()
+                || !(host.equals(YOUTUBE_DOMAIN) || host.endsWith("." + YOUTUBE_DOMAIN))) {
+            return "";
+        }
+        return Stream.of(getCookie(YOUTUBE_RESTRICTED_MODE_COOKIE_KEY),
+                getCookie(ReCaptchaActivity.RECAPTCHA_COOKIES_KEY))
                 .filter(Objects::nonNull)
                 .flatMap(cookies -> Arrays.stream(cookies.split("; *")))
                 .distinct()
@@ -224,11 +242,6 @@ public final class DownloaderImpl extends Downloader {
                 .method(httpMethod, requestBody)
                 .url(parseUrl(url))
                 .addHeader("User-Agent", USER_AGENT);
-
-        final String cookies = getCookies(url);
-        if (!cookies.isEmpty()) {
-            requestBuilder.addHeader("Cookie", cookies);
-        }
 
         headers.forEach((headerName, headerValueList) -> {
             requestBuilder.removeHeader(headerName);
