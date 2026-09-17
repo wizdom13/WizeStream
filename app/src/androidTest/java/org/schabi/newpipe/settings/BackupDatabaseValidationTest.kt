@@ -49,7 +49,7 @@ class BackupDatabaseValidationTest {
             null
         ).use { database ->
             database.execSQL("CREATE TABLE foreign_data (id INTEGER PRIMARY KEY)")
-            database.version = Migrations.DB_VER_23
+            database.version = Migrations.DB_VER_24
         }
 
         try {

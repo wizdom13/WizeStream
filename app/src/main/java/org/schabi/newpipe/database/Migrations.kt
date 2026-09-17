@@ -43,6 +43,7 @@ object Migrations {
     const val DB_VER_21 = 21
     const val DB_VER_22 = 22
     const val DB_VER_23 = 23
+    const val DB_VER_24 = 24
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -860,5 +861,11 @@ object Migrations {
                 "`index_saved_search_feed_stream_feed_id_position` " +
                 "ON `saved_search_feed_stream` (`feed_id`, `position`)"
         )
+    }
+
+    val MIGRATION_23_24 = Migration(DB_VER_23, DB_VER_24) { db ->
+        // Historical discovery times were never stored. Keep them older than newly found
+        // videos and retain publication-date ordering as the tie breaker.
+        db.execSQL("ALTER TABLE feed ADD COLUMN first_discovered_at INTEGER NOT NULL DEFAULT 0")
     }
 }

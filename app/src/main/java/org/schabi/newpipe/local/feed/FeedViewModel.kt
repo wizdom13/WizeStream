@@ -55,8 +55,13 @@ class FeedViewModel(
     private val mutableStateLiveData = MutableLiveData<FeedState>()
     val stateLiveData: LiveData<FeedState> = mutableStateLiveData
 
-    private var combineDisposable = FeedScope.changes(application)
-        .switchMap { feedScope ->
+    private val sortByDiscovery = BehaviorProcessor.createDefault(getSortByDiscovery())
+
+    private var combineDisposable = Flowable.combineLatest(
+        FeedScope.changes(application),
+        sortByDiscovery.distinctUntilChanged()
+    ) { scope, sort -> scope to sort }
+        .switchMap { (feedScope, discoveryOrder) ->
             Flowable.combineLatest(
                 FeedEventManager.events(feedScope),
                 showPlayedItemsFlowable,
@@ -99,7 +104,8 @@ class FeedViewModel(
                                 showPlayedItems,
                                 showPartiallyPlayedItems,
                                 showFutureItems,
-                                feedScope
+                                feedScope,
+                                discoveryOrder
                             )
                             .blockingGet(arrayListOf())
                     } else {
@@ -153,6 +159,16 @@ class FeedViewModel(
         val t3: Long,
         val t4: OffsetDateTime?
     )
+
+    fun getSortByDiscovery(): Boolean = PreferenceManager.getDefaultSharedPreferences(application)
+        .getBoolean(application.getString(R.string.feed_sort_by_discovery_key), false)
+
+    fun setSortByDiscovery(enabled: Boolean) {
+        PreferenceManager.getDefaultSharedPreferences(application).edit {
+            putBoolean(application.getString(R.string.feed_sort_by_discovery_key), enabled)
+        }
+        sortByDiscovery.onNext(enabled)
+    }
 
     fun setSaveShowPlayedItems(showPlayedItems: Boolean) {
         this.showPlayedItems.onNext(showPlayedItems)

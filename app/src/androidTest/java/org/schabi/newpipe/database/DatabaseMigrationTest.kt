@@ -855,6 +855,27 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom23to24PreservesFeedMembershipsWithUnknownDiscoveryTime() {
+        testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_23).use { database ->
+            database.execSQL("INSERT INTO subscriptions (uid, service_id, url, notification_mode) VALUES (7, 0, 'https://example.com/channel', 0)")
+            database.execSQL("INSERT INTO streams (uid, service_id, url, title, stream_type, duration, uploader) VALUES (42, 0, 'https://example.com/video', 'Video', 'VIDEO_STREAM', 60, 'Channel')")
+            database.execSQL("INSERT INTO feed (stream_id, subscription_id, youtube_mode_mask) VALUES (42, 7, 1)")
+        }
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_24,
+            true,
+            Migrations.MIGRATION_23_24
+        )
+        migrated.query("SELECT stream_id, subscription_id, first_discovered_at FROM feed").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(42L, cursor.getLong(0))
+            assertEquals(7L, cursor.getLong(1))
+            assertEquals(0L, cursor.getLong(2))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -871,7 +892,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_19_20,
                 Migrations.MIGRATION_20_21,
                 Migrations.MIGRATION_21_22,
-                Migrations.MIGRATION_22_23
+                Migrations.MIGRATION_22_23,
+                Migrations.MIGRATION_23_24
             )
             .build()
         testHelper.closeWhenFinished(database)

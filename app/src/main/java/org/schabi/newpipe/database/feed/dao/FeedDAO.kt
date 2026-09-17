@@ -96,7 +96,9 @@ abstract class FeedDAO {
             OR s.upload_date < :uploadDateBefore
         )
 
-        ORDER BY s.upload_date IS NULL DESC, s.upload_date DESC, s.uploader ASC
+        GROUP BY s.uid
+        ORDER BY CASE WHEN :sortByDiscovery THEN MIN(f.first_discovered_at) ELSE 0 END DESC,
+            s.upload_date IS NULL DESC, s.upload_date DESC, s.uploader ASC, s.uid DESC
         LIMIT 500
         """
     )
@@ -106,7 +108,8 @@ abstract class FeedDAO {
         includePartiallyPlayed: Boolean,
         uploadDateBefore: OffsetDateTime?,
         serviceId: Int,
-        youtubeModeMask: Int
+        youtubeModeMask: Int,
+        sortByDiscovery: Boolean = false
     ): Maybe<List<StreamWithState>>
 
     /**
@@ -155,6 +158,9 @@ abstract class FeedDAO {
         """
     )
     abstract fun unlinkOldLivestreams(subscriptionId: Long, youtubeModeMask: Int)
+
+    @Query("SELECT * FROM feed WHERE subscription_id = :subscriptionId")
+    abstract fun getMemberships(subscriptionId: Long): List<FeedEntity>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract fun insert(feedEntity: FeedEntity)
