@@ -123,6 +123,11 @@ public final class PlayerService extends MediaLibraryService {
                 .setId("WizeStreamPlayer")
                 .build();
 
+        // Internal playback uses our local binder and does not pass through Media3's
+        // controller-binding path. Register explicitly so Media3 creates its notification
+        // controller and exports authorized custom actions to Android's platform session.
+        addSession(mediaSession);
+
         // Note: you might be tempted to create the player instance and call startForeground here,
         // but be aware that the Android system might start the service just to perform media
         // queries. In those cases creating a player instance is a waste of resources, and calling
