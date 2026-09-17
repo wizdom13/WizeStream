@@ -40,7 +40,16 @@ class VideoAdjustmentController(
         pipelineActive = state.enabled
         hdr = false
         player.addAnalyticsListener(this)
-        if (pipelineActive) player.setVideoEffects(effects(state))
+        if (pipelineActive) {
+            try {
+                player.setVideoEffects(effects(state))
+            } catch (error: RuntimeException) {
+                // attach runs before prepare: no renderer has started, so this engine can
+                // continue normally without recursively restarting an unfinished init.
+                disableAfterFailure()
+                onFailure()
+            }
+        }
         notifyChanged()
     }
 
@@ -62,7 +71,14 @@ class VideoAdjustmentController(
                 // Rebuilding also removes the GL pipeline completely when switched off.
                 restartPlayback()
             } else if (pipelineActive && state.copy(remember = previous.remember) != previous) {
-                player.setVideoEffects(effects(state))
+                try {
+                    player.setVideoEffects(effects(state))
+                } catch (error: RuntimeException) {
+                    // Effect construction/installation can fail synchronously, before a
+                    // PlaybackException reaches the regular player error listener.
+                    recoverEffects()
+                    return
+                }
                 if (!player.playWhenReady) {
                     // Decode the paused frame again so the editor also previews while paused.
                     player.seekTo(player.currentPosition)
@@ -82,14 +98,22 @@ class VideoAdjustmentController(
         if (!pipelineActive || (!processingFailure && !videoDecoderFailure)) {
             return false
         }
+        recoverEffects()
+        return true
+    }
+
+    private fun disableAfterFailure() {
         failed = true
         pipelineActive = false
         state = state.copy(enabled = false)
         save(state)
+    }
+
+    private fun recoverEffects() {
+        disableAfterFailure()
         restartPlayback()
         notifyChanged()
         onFailure()
-        return true
     }
 
     override fun onVideoInputFormatChanged(

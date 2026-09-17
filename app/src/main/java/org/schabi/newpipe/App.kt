@@ -87,6 +87,10 @@ open class App :
 
         instance = this
 
+        // ACRA starts a separate process to deliver reports. WorkManager is only
+        // initialized in the main process; starting downloads here hides the original crash.
+        if (isACRASenderServiceProcess()) return
+
         if (ProcessPhoenix.isPhoenixProcess(this)) {
             Log.i(TAG, "This is a phoenix process! Aborting initialization of App[onCreate]")
             return
