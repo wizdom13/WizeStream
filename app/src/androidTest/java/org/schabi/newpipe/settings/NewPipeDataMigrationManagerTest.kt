@@ -16,9 +16,12 @@ import org.junit.runner.RunWith
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.feed.model.FeedGroupSubscriptionEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.local.subscription.FeedGroupIcon
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
@@ -131,6 +134,47 @@ class NewPipeDataMigrationManagerTest {
         val imported = subscriptions.single { it.url!!.endsWith("/imported") }
         assertEquals("Imported channel", imported.name)
         assertEquals("https://example.com/avatar.jpg", imported.avatarUrl)
+    }
+
+    @Test
+    fun groupsMergeMembershipsUsingRemappedIdsAndRemainIdempotent() {
+        val target = NewPipeDatabase.getInstance(context)
+        val existingChannel = target.subscriptionDAO().insert(
+            SubscriptionEntity(serviceId = 0, url = "https://www.youtube.com/channel/existing", name = "Existing")
+        )
+        val localChannel = target.subscriptionDAO().insert(
+            SubscriptionEntity(serviceId = 0, url = "https://www.youtube.com/channel/local", name = "Local")
+        )
+        val groups = target.feedGroupDAO()
+        val existingGroup = groups.insert(FeedGroupEntity(0, "Lessons", FeedGroupIcon.EDUCATION))
+        groups.insertSubscriptionsToGroup(listOf(FeedGroupSubscriptionEntity(existingGroup, localChannel)))
+        SQLiteDatabase.openDatabase(sourcePath.toString(), null, SQLiteDatabase.OPEN_READWRITE).use { source ->
+            source.execSQL("CREATE TABLE feed_group (uid INTEGER PRIMARY KEY, name TEXT, icon_id INTEGER, sort_order INTEGER)")
+            source.execSQL("CREATE TABLE feed_group_subscription_join (group_id INTEGER, subscription_id INTEGER)")
+            source.execSQL("INSERT INTO feed_group VALUES (90, 'Lessons', 2, 0), (91, 'Empty', 999, 1)")
+            source.execSQL("INSERT INTO feed_group_subscription_join VALUES (90, 1), (90, 2), (90, 999)")
+        }
+        val manager = NewPipeDataMigrationManager(context)
+        assertEquals(2, manager.inspect(sourcePath).channelGroups)
+        val selection = NewPipeDataMigrationManager.Selection(false, false, importSubscriptions = true)
+        assertEquals(1, manager.importData(sourcePath, selection).channelGroups)
+        assertEquals(0, manager.importData(sourcePath, selection).channelGroups)
+        val importedChannel = target.subscriptionDAO().getSubscriptionDirect(0, "https://www.youtube.com/channel/imported")!!.uid
+        assertEquals(setOf(existingChannel, localChannel, importedChannel), groups.getSubscriptionIdsForDirect(existingGroup).toSet())
+        val allGroups = groups.getAllDirect()
+        assertEquals(listOf("Lessons", "Empty"), allGroups.map { it.name })
+        assertEquals(FeedGroupIcon.ALL, allGroups.last().icon)
+        assertTrue(groups.getSubscriptionIdsForDirect(allGroups.last().uid).isEmpty())
+    }
+
+    @Test
+    fun deselectingSubscriptionsAlsoLeavesGroupsUntouched() {
+        SQLiteDatabase.openDatabase(sourcePath.toString(), null, SQLiteDatabase.OPEN_READWRITE).use { source ->
+            source.execSQL("CREATE TABLE feed_group (uid INTEGER PRIMARY KEY, name TEXT, icon_id INTEGER, sort_order INTEGER)")
+            source.execSQL("INSERT INTO feed_group VALUES (1, 'Group', 0, 0)")
+        }
+        NewPipeDataMigrationManager(context).importData(sourcePath, NewPipeDataMigrationManager.Selection(true, true))
+        assertTrue(NewPipeDatabase.getInstance(context).feedGroupDAO().getAllDirect().isEmpty())
     }
 
     @Test

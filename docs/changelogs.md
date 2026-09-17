@@ -8,6 +8,8 @@ Release history is listed newest first. The number beside each release is its An
 
 - Make played, buffered, and unplayed seek-bar ranges easier to distinguish in light, dark, black, and wallpaper-based themes while retaining the selected accent.
 
+- Import channel groups and their memberships with subscriptions from NewPipe and PipePipe database backups, preserving existing groups and channels.
+
 ## WizeStream 1.19.0 (`1019000`)
 
 ### New features
