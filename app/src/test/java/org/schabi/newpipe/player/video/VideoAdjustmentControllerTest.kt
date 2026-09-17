@@ -9,6 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyList
+import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.clearInvocations
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -107,6 +108,34 @@ class VideoAdjustmentControllerTest {
         assertFalse(saved.last().enabled)
         assertEquals(2, restarts)
         assertEquals(1, failures)
+        verify(engine, never()).setVideoEffects(anyList())
+    }
+
+    @Test
+    fun synchronousInstallationFailureFallsBackWithoutReenteringInitialization() {
+        val failingEngine = mock(ExoPlayer::class.java)
+        doThrow(IllegalStateException("GL unavailable")).`when`(failingEngine).setVideoEffects(anyList())
+        controller.update(VideoAdjustmentState(enabled = true, remember = true))
+        controller.attach(failingEngine)
+        assertFalse(controller.state.enabled)
+        assertFalse(controller.pipelineActive)
+        assertTrue(controller.failed)
+        assertFalse(saved.last().enabled)
+        assertEquals(0, restarts)
+        assertEquals(1, failures)
+    }
+
+    @Test
+    fun synchronousSliderFailureRestartsOnceWithoutEffects() {
+        controller.attach(engine)
+        controller.update(VideoAdjustmentState(enabled = true))
+        doThrow(IllegalStateException("GL unavailable")).`when`(engine).setVideoEffects(anyList())
+        controller.update(controller.state.copy(contrast = 50))
+        assertEquals(2, restarts)
+        assertEquals(1, failures)
+        assertFalse(controller.state.enabled)
+        assertFalse(controller.pipelineActive)
+        assertEquals(50, controller.state.contrast)
         verify(engine, never()).setVideoEffects(anyList())
     }
 

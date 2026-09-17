@@ -2,6 +2,12 @@
 
 Release history is listed newest first. The number beside each release is its Android version code.
 
+## Unreleased
+
+### Fixes
+
+- Fall back to normal playback when video-adjustment effects cannot be installed, and keep crash reporting independent of automatic-download initialization.
+
 ## WizeStream 1.19.0 (`1019000`)
 
 ### New features

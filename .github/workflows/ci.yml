@@ -116,7 +116,7 @@ jobs:
             # The API 28 quick-boot snapshot can lose package/activity services after resuming.
             extra-emulator-options: -no-snapshot-load
             # Exercise the legacy copy-toast path on the Android version reported in #522.
-            test-options: -Pandroid.testInstrumentationRunnerArguments.class=org.schabi.newpipe.util.LegacyTextSelectionThemeTest
+            test-options: -Pandroid.testInstrumentationRunnerArguments.class=org.schabi.newpipe.util.LegacyTextSelectionThemeTest,org.schabi.newpipe.player.video.VideoAdjustmentLifecycleTest,org.schabi.newpipe.player.video.VideoAdjustmentPlaybackTest
           - api-level: 35
             target: default
             arch: x86_64
