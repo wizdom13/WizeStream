@@ -11,16 +11,63 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.schabi.newpipe.error.ReCaptchaActivity;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+import okhttp3.Interceptor;
+import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 
 public class DownloaderImplTest {
+    @Test
+    public void storedCookiesAreRestrictedToSecureYoutubeHosts() {
+        final DownloaderImpl downloader = DownloaderImpl.init(null);
+        downloader.setCookie(ReCaptchaActivity.RECAPTCHA_COOKIES_KEY, "VISITOR_INFO1_LIVE=test");
+        downloader.setCookie(DownloaderImpl.YOUTUBE_RESTRICTED_MODE_COOKIE_KEY, "PREF=f2=8000000");
+        for (final String url : new String[]{"https://youtube.com/watch?v=test",
+                "https://www.youtube.com/", "https://music.youtube.com/"}) {
+            assertEquals("PREF=f2=8000000; VISITOR_INFO1_LIVE=test", downloader.getCookies(url));
+        }
+        for (final String url : new String[]{"https://youtube.com.example.org/",
+                "https://notyoutube.com/", "https://example.org/youtube.com",
+                "https://youtube.com@example.org/", "http://www.youtube.com/",
+                "https://www.bilibili.com/", "not a URL"}) {
+            assertEquals("", downloader.getCookies(url));
+        }
+    }
+
+    @Test
+    public void eachNetworkHopSelectsCookiesForItsOwnDestination() throws IOException {
+        final DownloaderImpl downloader = DownloaderImpl.init(null);
+        downloader.setCookie(ReCaptchaActivity.RECAPTCHA_COOKIES_KEY, "VISITOR_INFO1_LIVE=test");
+        assertEquals("VISITOR_INFO1_LIVE=test", interceptedCookie(downloader,
+                new Request.Builder().url("https://www.youtube.com/").build()));
+        assertNull(interceptedCookie(downloader,
+                new Request.Builder().url("https://example.org/").build()));
+        assertEquals("service=value", interceptedCookie(downloader,
+                new Request.Builder().url("https://www.bilibili.com/")
+                        .header("Cookie", "service=value").build()));
+    }
+
+    private String interceptedCookie(final DownloaderImpl downloader, final Request request)
+            throws IOException {
+        final Interceptor.Chain chain = mock(Interceptor.Chain.class);
+        when(chain.request()).thenReturn(request);
+        downloader.getClient().networkInterceptors().get(0).intercept(chain);
+        final ArgumentCaptor<Request> captured = ArgumentCaptor.forClass(Request.class);
+        verify(chain).proceed(captured.capture());
+        return captured.getValue().header("Cookie");
+    }
+
     @Test
     public void parsedUrlsAreReusedAndBounded() {
         final DownloaderImpl downloader = DownloaderImpl.init(null);
