@@ -66,7 +66,7 @@ class PlayerServiceNotificationTest {
                     }
                     session.setMediaButtonPreferences(session.mediaNotificationControllerInfo!!, buttons)
                     val platform = MediaController(context, session.platformToken)
-                    assertEquals(expected, platform.playbackState.customActions.map { it.action })
+                    assertEquals(expected, requireNotNull(platform.playbackState).customActions.map { it.action })
                 }
             }
         } finally {
