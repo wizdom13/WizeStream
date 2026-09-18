@@ -145,7 +145,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 && DeviceUtils.isTablet(player.getService())
                 && PlayerHelper.globalScreenOrientationLocked(player.getService())) {
             player.getFragmentListener().ifPresent(
-                    PlayerServiceEventListener::onScreenRotationButtonClicked);
+                    listener -> listener.onScreenRotationButtonClicked(true));
         }
     }
 
@@ -1109,7 +1109,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 && !DeviceUtils.isTablet(context)) {
             // set correct orientation
             player.getFragmentListener().ifPresent(
-                    PlayerServiceEventListener::onScreenRotationButtonClicked);
+                    listener -> listener.onScreenRotationButtonClicked(true));
         }
 
         setupScreenRotationButton();
@@ -1168,19 +1168,22 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      * Player gestures must use this instead of changing only the fullscreen UI state.
      */
     public void toggleFullscreenWithOrientation() {
+        final boolean targetFullscreen = !isFullscreen();
         if (shouldUseScreenRotationAction(isVerticalVideo, isLandscape(),
                 globalScreenOrientationLocked(context))) {
             player.getFragmentListener()
-                    .ifPresent(PlayerServiceEventListener::onScreenRotationButtonClicked);
+                    .ifPresent(listener ->
+                            listener.onScreenRotationButtonClicked(targetFullscreen));
         } else {
-            toggleFullscreen();
+            setFullscreen(targetFullscreen);
         }
     }
 
     static boolean shouldUseScreenRotationAction(final boolean verticalVideo,
                                                  final boolean landscape,
                                                  final boolean screenOrientationLocked) {
-        return !verticalVideo || landscape && screenOrientationLocked;
+        return FullscreenOrientationPolicy.shouldUseOrientationAction(
+                verticalVideo, landscape, screenOrientationLocked);
     }
 
 

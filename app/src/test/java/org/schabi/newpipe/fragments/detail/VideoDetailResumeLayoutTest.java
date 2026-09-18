@@ -44,6 +44,7 @@ import org.schabi.newpipe.player.PlayerService;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.event.PlayerServiceExtendedEventListener;
 import org.schabi.newpipe.player.helper.PlayerHolder;
+import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUiList;
@@ -181,6 +182,8 @@ public class VideoDetailResumeLayoutTest {
     public void resumedOrientationSupersedesAnUnfinishedPreLockRequest() throws Exception {
         setField(VideoDetailFragment.class, fragment, "pendingFullscreenOrientation",
                 Configuration.ORIENTATION_LANDSCAPE);
+        setField(VideoDetailFragment.class, fragment, "pendingFullscreenState",
+                FullscreenOrientationPolicy.ENTER_FULLSCREEN);
 
         fragment.restorePlayerLayoutAfterResume();
         fragment.restorePlayerLayoutAfterResume();
@@ -355,7 +358,7 @@ public class VideoDetailResumeLayoutTest {
         assertTrue(playerUi.isVerticalVideo());
         assertTrue(fullscreen.get());
         verify(playerUi, never()).setFullscreen(anyBoolean());
-        verify(fragment, never()).onScreenRotationButtonClicked();
+        verify(fragment, never()).onScreenRotationButtonClicked(anyBoolean());
     }
 
     @Test
