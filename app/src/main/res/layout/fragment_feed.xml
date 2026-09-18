@@ -13,7 +13,7 @@
         android:background="?attr/colorSurface"
         app:elevation="0dp">
 
-        <!-- Keep the update status and filters together as one collapsible feed header. -->
+        <!-- Keep the update status, refresh progress and filters in one collapsible header. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -82,11 +82,66 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_below="@+id/refresh_info_container"
-                    android:layout_marginLeft="8dp"
+                    android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
-                    android:layout_marginRight="8dp"
+                    android:layout_marginEnd="8dp"
                     android:background="?attr/colorSurfaceVariant" />
             </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/refresh_progress_container"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="4dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/loading_progress_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:accessibilityLiveRegion="polite"
+                        android:indeterminate="false"
+                        android:max="1"
+                        android:progress="0"
+                        app:indicatorColor="?attr/colorPrimary"
+                        app:trackColor="?attr/colorSurfaceVariant"
+                        app:trackCornerRadius="2dp"
+                        app:trackThickness="4dp" />
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/loading_indeterminate_progress_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:accessibilityLiveRegion="polite"
+                        android:indeterminate="true"
+                        android:visibility="gone"
+                        app:indicatorColor="?attr/colorPrimary"
+                        app:trackColor="?attr/colorSurfaceVariant"
+                        app:trackCornerRadius="2dp"
+                        app:trackThickness="4dp" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/cancel_refresh_button"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/cancel_refresh"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_close"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
 
             <include
                 android:id="@+id/stream_filter_chips"
@@ -115,91 +170,6 @@
                 android:visibility="gone"
                 tools:listitem="@layout/list_stream_item"
                 tools:visibility="visible" />
-
-            <FrameLayout
-                android:id="@+id/refresh_loading_overlay"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <View
-                    android:id="@+id/refresh_loading_scrim"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:alpha="0.78"
-                    android:background="?attr/colorSurface" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <FrameLayout
-                        android:layout_width="104dp"
-                        android:layout_height="104dp">
-
-                        <org.schabi.newpipe.local.feed.FeedProgressIndicator
-                            android:id="@+id/loading_progress_bar"
-                            android:layout_width="104dp"
-                            android:layout_height="104dp"
-                            android:accessibilityLiveRegion="polite"
-                            android:indeterminate="false"
-                            android:max="1"
-                            android:progress="0"
-                            app:indicatorColor="?attr/colorPrimary"
-                            app:indicatorDirectionCircular="clockwise"
-                            app:indicatorSize="88dp"
-                            app:trackColor="?attr/colorSurfaceVariant"
-                            app:trackCornerRadius="3dp"
-                            app:trackThickness="6dp" />
-
-                        <com.google.android.material.progressindicator.CircularProgressIndicator
-                            android:id="@+id/loading_indeterminate_progress_bar"
-                            android:layout_width="104dp"
-                            android:layout_height="104dp"
-                            android:indeterminate="true"
-                            android:visibility="gone"
-                            app:indicatorColor="?attr/colorPrimary"
-                            app:indicatorDirectionCircular="clockwise"
-                            app:indicatorSize="88dp"
-                            app:trackColor="?attr/colorSurfaceVariant"
-                            app:trackCornerRadius="3dp"
-                            app:trackThickness="6dp" />
-
-                    </FrameLayout>
-
-                    <org.schabi.newpipe.views.NewPipeTextView
-                        android:id="@+id/loading_progress_status_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:accessibilityLiveRegion="polite"
-                        android:gravity="center"
-                        android:maxWidth="240dp"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:visibility="gone"
-                        tools:text="@string/feed_processing_message" />
-                </LinearLayout>
-
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/cancel_refresh_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="56dp"
-                    android:contentDescription="@string/cancel_refresh"
-                    app:backgroundTint="?attr/colorSurface"
-                    app:elevation="6dp"
-                    app:fabCustomSize="48dp"
-                    app:srcCompat="@drawable/ic_close"
-                    app:tint="?attr/colorOnSurface" />
-            </FrameLayout>
         </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
@@ -214,7 +184,6 @@
         android:theme="@style/ServiceColoredButton"
         android:visibility="gone"
         tools:visibility="visible" />
-
 
     <!--ERROR PANEL-->
     <include
