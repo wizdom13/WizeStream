@@ -18,7 +18,7 @@ internal class PlayerCaptionController(
     private val player: Player,
     private val context: Context,
     private val prefs: SharedPreferences,
-    private val trackSelector: DefaultTrackSelector
+    private val trackSelectorProvider: () -> DefaultTrackSelector?
 ) {
     fun rendererIndex(): Int {
         if (player.exoPlayerIsNull()) return Player.RENDERER_UNAVAILABLE
@@ -40,7 +40,8 @@ internal class PlayerCaptionController(
 
     fun setPreference(language: String?) {
         val textRendererIndex = rendererIndex()
-        if (textRendererIndex != Player.RENDERER_UNAVAILABLE) {
+        val trackSelector = trackSelectorProvider()
+        if (textRendererIndex != Player.RENDERER_UNAVAILABLE && trackSelector != null) {
             val parameters = trackSelector.buildUponParameters()
             if (language == null) {
                 parameters.setRendererDisabled(textRendererIndex, true)

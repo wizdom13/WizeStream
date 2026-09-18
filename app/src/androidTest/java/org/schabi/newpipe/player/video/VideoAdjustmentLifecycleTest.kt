@@ -107,12 +107,14 @@ class VideoAdjustmentLifecycleTest {
                     scenario.onActivity {
                         val active = player!!
                         val before = active.exoPlayer
+                        val beforeTrackSelector = active.trackSelector
                         if (action == "failure") {
                             active.onPlayerError(PlaybackException("Injected GPU failure", null, PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED))
                         } else {
                             active.videoAdjustments.update(VideoAdjustmentState(enabled = action == "enable", saturation = 0))
                         }
                         assertNotSame(before, active.exoPlayer)
+                        assertNotSame(beforeTrackSelector, active.trackSelector)
                     }
                     assertTrue("Playback did not recover after $action", ready.get().await(20, TimeUnit.SECONDS))
                     scenario.onActivity {
