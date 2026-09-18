@@ -511,7 +511,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
             feedBinding.loadingProgressBar.contentDescription =
                 getString(R.string.feed_notification_loading) + " " +
-                    currentProgress + "/" + maxProgress
+                currentProgress + "/" + maxProgress
         }
     }
 
