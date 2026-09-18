@@ -15,6 +15,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorInfo;
@@ -27,6 +29,7 @@ import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.util.StreamTypeUtil;
+import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 
 import java.util.ArrayList;
@@ -77,7 +80,7 @@ public final class InfoItemDialog {
         final DialogInterface.OnClickListener action = (d, index) ->
             entries.get(index).action.onClick(fragment, info);
 
-        dialog = new AlertDialog.Builder(activity)
+        dialog = new MaterialAlertDialogBuilder(activity, ThemeHelper.getDialogTheme(activity))
                 .setCustomTitle(bannerView)
                 .setItems(items, action)
                 .create();
