@@ -2818,7 +2818,7 @@ public final class VideoDetailFragment
             binding.overlayPlayPauseButton.requestFocus();
         }
         final Configuration configuration = getResources().getConfiguration();
-        if (FullscreenOrientationPolicy.shouldRecreateDetailLayout(
+        if (!fullscreen && FullscreenOrientationPolicy.shouldRecreateDetailLayout(
                 binding.relatedItemsLayout != null,
                 configuration.orientation,
                 configuration.screenWidthDp)) {
