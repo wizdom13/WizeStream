@@ -60,7 +60,7 @@ public class FullscreenExitIntegrationTest {
                 source, "public void onFullscreenStateChanged(final boolean fullscreen)");
 
         assertTrue(changed.contains(
-                "FullscreenOrientationPolicy.shouldRecreateDetailLayout("));
+                "!fullscreen && FullscreenOrientationPolicy.shouldRecreateDetailLayout("));
         assertTrue(changed.contains("recreateDetailLayoutForConfigurationChange();"));
     }
 
