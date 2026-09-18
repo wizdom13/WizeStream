@@ -129,7 +129,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private lateinit var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
     private var updateListViewModeOnResume = false
-    private var isRefreshing = false
 
     private var lastNewItemsCount = 0
 
@@ -444,13 +443,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun showLoading() {
         val binding = _feedBinding ?: return
+        showRefreshProgress(binding)
         super.showLoading()
         binding.itemsList.animate(true, 0)
-        binding.refreshRootView.animate(false, 0)
-        binding.streamFilterChips.root.animate(false, 0)
-        showRefreshOverlay(binding)
-        binding.swipeRefreshLayout.isRefreshing = true
-        isRefreshing = true
+        binding.swipeRefreshLayout.isRefreshing = false
     }
 
     override fun hideLoading() {
@@ -459,9 +455,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         binding.itemsList.animate(true, 0)
         binding.refreshRootView.animate(true, 200)
         binding.streamFilterChips.root.animate(true, 200)
-        hideRefreshOverlay(binding)
+        hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
-        isRefreshing = false
     }
 
     override fun showEmptyState() {
@@ -470,9 +465,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(true, 200)
         binding.streamFilterChips.root.animate(true, 200)
-        hideRefreshOverlay(binding)
+        hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
-        isRefreshing = false
     }
 
     override fun handleResult(result: FeedState) {
@@ -491,9 +485,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(false, 0)
         binding.streamFilterChips.root.animate(true, 200)
-        hideRefreshOverlay(binding)
+        hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
-        isRefreshing = false
     }
 
     private fun handleProgressState(progressState: FeedState.ProgressState) {
@@ -503,11 +496,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             progressState.maxProgress < 0
         feedBinding.loadingProgressBar.isVisible = !isIndeterminate
         feedBinding.loadingIndeterminateProgressBar.isVisible = isIndeterminate
-        feedBinding.loadingProgressStatusText.isVisible = isIndeterminate
-        feedBinding.loadingProgressBar.setCounterText(null)
 
         if (isIndeterminate) {
-            feedBinding.loadingProgressStatusText.text =
+            feedBinding.loadingIndeterminateProgressBar.contentDescription =
                 if (progressState.progressMessage > 0) {
                     getString(progressState.progressMessage)
                 } else {
@@ -516,22 +507,26 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         } else {
             val maxProgress = progressState.maxProgress.coerceAtLeast(1)
             val currentProgress = progressState.currentProgress.coerceIn(0, maxProgress)
-            feedBinding.loadingProgressBar.setCounterText("$currentProgress/$maxProgress")
             feedBinding.loadingProgressBar.max = maxProgress
             feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
+            feedBinding.loadingProgressBar.contentDescription =
+                getString(R.string.feed_notification_loading) + " " +
+                    currentProgress + "/" + maxProgress
         }
     }
 
-    private fun showRefreshOverlay(binding: FragmentFeedBinding) {
-        if (!binding.refreshLoadingOverlay.isVisible) {
-            binding.refreshLoadingOverlay.animate(true, 200)
+    private fun showRefreshProgress(binding: FragmentFeedBinding) {
+        if (!binding.refreshProgressContainer.isVisible) {
+            binding.refreshProgressContainer.animate(true, 150)
         }
+        binding.refreshRootView.isEnabled = false
         binding.cancelRefreshButton.isEnabled = true
     }
 
-    private fun hideRefreshOverlay(binding: FragmentFeedBinding) {
+    private fun hideRefreshProgress(binding: FragmentFeedBinding) {
         binding.cancelRefreshButton.isEnabled = false
-        binding.refreshLoadingOverlay.animate(false, 200)
+        binding.refreshRootView.isEnabled = true
+        binding.refreshProgressContainer.animate(false, 150)
     }
 
     private fun showInfoItemDialog(item: StreamInfoItem) {
@@ -549,7 +544,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private val listenerStreamItem = object : OnItemClickListener, OnItemLongClickListener {
         override fun onItemClick(item: Item<*>, view: View) {
-            if (item is StreamItem && !isRefreshing) {
+            if (item is StreamItem) {
                 val stream = item.streamWithState.stream
                 if (streamSelection?.toggleIfActive(stream.toStreamInfoItem()) == true) {
                     return
@@ -582,7 +577,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
 
         override fun onItemLongClick(item: Item<*>, view: View): Boolean {
-            if (item is StreamItem && !isRefreshing) {
+            if (item is StreamItem) {
                 if (streamSelection?.toggleIfActive(
                         item.streamWithState.stream.toStreamInfoItem()
                     ) == true
