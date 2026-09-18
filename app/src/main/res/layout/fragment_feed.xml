@@ -140,7 +140,7 @@
                     android:contentDescription="@string/cancel_refresh"
                     android:padding="10dp"
                     android:src="@drawable/ic_close"
-                    android:tint="?attr/colorOnSurfaceVariant" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
             <include
