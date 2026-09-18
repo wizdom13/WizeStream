@@ -115,6 +115,7 @@ import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.util.Constants;
@@ -159,8 +160,7 @@ public final class VideoDetailFragment
 
     private static final float MAX_OVERLAY_ALPHA = 0.9f;
     private static final float MAX_PLAYER_HEIGHT = 0.7f;
-    private static final int EXPANDED_DETAIL_MIN_WIDTH_DP = 840;
-    private static final int LEGACY_PLAYER_COLLAPSE_MODE =
+     private static final int LEGACY_PLAYER_COLLAPSE_MODE =
             CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PARALLAX;
     private static final int PINNED_PLAYER_COLLAPSE_MODE =
             CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PIN;
@@ -274,6 +274,7 @@ public final class VideoDetailFragment
     private boolean detailLayoutRecreationPending;
     private boolean detailLayoutRecreationRequested;
     private int pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
+    private int pendingFullscreenState = FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE;
     @Nullable
     private OneShotPreDrawListener resumeLayoutListener;
 
@@ -502,6 +503,7 @@ public final class VideoDetailFragment
                     + getResources().getConfiguration().orientation
                     + ", previousFullscreen=" + playerUi.get().isFullscreen());
         }
+        clearPendingFullscreenTransition();
         syncFullscreenWithOrientation(playerUi, getResources().getConfiguration().orientation);
         // setFullscreen() is intentionally idempotent, but Android may have restored the window
         // with stale geometry/system bars even when the player's flag is already correct.
@@ -516,17 +518,19 @@ public final class VideoDetailFragment
             return;
         }
         final int orientation = newConfig.orientation;
-        final boolean keepPhonePlayerLayout = shouldKeepPhonePlayerLayoutForLandscape(
-                orientation,
-                player != null,
-                player != null && player.videoPlayerSelected(),
-                player != null && player.isAudioOnly(),
-                lastStableBottomSheetState,
-                DeviceUtils.isTablet(activity)
-                        || DeviceUtils.isTv(activity)
-                        || DeviceUtils.isDesktopMode(activity));
+        final boolean keepPhonePlayerLayout =
+                FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
+                        orientation,
+                        player != null,
+                        player != null && player.videoPlayerSelected(),
+                        player != null && player.isAudioOnly(),
+                        lastStableBottomSheetState == BottomSheetBehavior.STATE_EXPANDED,
+                        DeviceUtils.isTablet(activity)
+                                || DeviceUtils.isTv(activity)
+                                || DeviceUtils.isDesktopMode(activity));
         if (!keepPhonePlayerLayout
-                && shouldRecreateDetailLayout(binding.relatedItemsLayout != null,
+                && FullscreenOrientationPolicy.shouldRecreateDetailLayout(
+                        binding.relatedItemsLayout != null,
                         orientation, newConfig.screenWidthDp)) {
             detailLayoutRecreationRequested = true;
             recreateDetailLayoutForConfigurationChange();
@@ -540,9 +544,7 @@ public final class VideoDetailFragment
         // cannot apply a stale landscape/portrait state.
         binding.getRoot().post(() -> {
             if (binding != null && player != null && isAdded()) {
-                syncFullscreenWithOrientation(
-                        player.UIs().get(MainPlayerUi.class),
-                        getResources().getConfiguration().orientation);
+                syncFullscreenWithOrientation(player.UIs().get(MainPlayerUi.class));
             }
         });
     }
@@ -550,77 +552,68 @@ public final class VideoDetailFragment
     private void syncFullscreenWithOrientation(
             @NonNull final Optional<MainPlayerUi> playerUi) {
         final int currentOrientation = getResources().getConfiguration().orientation;
-        if (pendingFullscreenOrientation != Configuration.ORIENTATION_UNDEFINED
-                && pendingFullscreenOrientation != currentOrientation) {
+        final MainPlayerUi ui = playerUi.orElse(null);
+        if (ui == null || !isPhoneVideoFullscreenEligible()) {
             return;
         }
-        syncFullscreenWithOrientation(playerUi, currentOrientation);
+
+        final int state = FullscreenOrientationPolicy.resolveFullscreenState(
+                currentOrientation,
+                ui.isFullscreen(),
+                ui.isVerticalVideo(),
+                true,
+                pendingFullscreenOrientation,
+                pendingFullscreenState);
+        applyFullscreenState(ui, state);
+        if (pendingFullscreenState != FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE
+                && currentOrientation == pendingFullscreenOrientation
+                && ui.isFullscreen()
+                == (pendingFullscreenState == FullscreenOrientationPolicy.ENTER_FULLSCREEN)) {
+            clearPendingFullscreenTransition();
+        }
     }
 
+    /**
+     * Reconciles from an authoritative configuration, such as foreground resume after screen-off.
+     * Explicit pending rotation requests are deliberately ignored because the resumed
+     * configuration is the state Android actually restored.
+     */
     private void syncFullscreenWithOrientation(
             @NonNull final Optional<MainPlayerUi> playerUi,
             final int orientation) {
-        if (player == null || DeviceUtils.isTablet(activity)
-                || DeviceUtils.isTv(activity) || DeviceUtils.isDesktopMode(activity)
-                || player.isAudioOnly()) {
-            return;
-        }
-
         final MainPlayerUi ui = playerUi.orElse(null);
-        if (ui == null) {
+        if (ui == null || !isPhoneVideoFullscreenEligible()) {
             return;
         }
+        final int state = FullscreenOrientationPolicy.resolveFullscreenState(
+                orientation,
+                ui.isFullscreen(),
+                ui.isVerticalVideo(),
+                true,
+                Configuration.ORIENTATION_UNDEFINED,
+                FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE);
+        applyFullscreenState(ui, state);
+    }
 
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+    private boolean isPhoneVideoFullscreenEligible() {
+        return player != null
+                && !DeviceUtils.isTablet(activity)
+                && !DeviceUtils.isTv(activity)
+                && !DeviceUtils.isDesktopMode(activity)
+                && !player.isAudioOnly();
+    }
+
+    private static void applyFullscreenState(@NonNull final MainPlayerUi ui, final int state) {
+        if (state == FullscreenOrientationPolicy.ENTER_FULLSCREEN) {
             ui.setFullscreen(true);
-        } else if (orientation == Configuration.ORIENTATION_PORTRAIT
-                && ui.isFullscreen() && !ui.isVerticalVideo()) {
+        } else if (state == FullscreenOrientationPolicy.EXIT_FULLSCREEN) {
             ui.setFullscreen(false);
         }
-
-        if (isFullscreenStateApplied(orientation, ui.isFullscreen(), ui.isVerticalVideo())) {
-            pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
-        }
     }
 
-    static boolean isFullscreenStateApplied(final int orientation,
-                                            final boolean fullscreen,
-                                            final boolean verticalVideo) {
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            return fullscreen;
-        }
-        if (orientation == Configuration.ORIENTATION_PORTRAIT && !verticalVideo) {
-            return !fullscreen;
-        }
-        return true;
-    }
-
-    static boolean shouldKeepPhonePlayerLayoutForLandscape(
-            final int orientation,
-            final boolean playerAvailable,
-            final boolean videoPlayerSelected,
-            final boolean audioOnly,
-            final int bottomSheetState,
-            final boolean largeScreenDevice) {
-        return orientation == Configuration.ORIENTATION_LANDSCAPE
-                && playerAvailable
-                && videoPlayerSelected
-                && !audioOnly
-                && bottomSheetState == BottomSheetBehavior.STATE_EXPANDED
-                && !largeScreenDevice;
-    }
-
-    static boolean shouldUseWideLandscapeDetailLayout(final int orientation,
-                                                      final int screenWidthDp) {
-        return orientation == Configuration.ORIENTATION_LANDSCAPE
-                && screenWidthDp >= EXPANDED_DETAIL_MIN_WIDTH_DP;
-    }
-
-    static boolean shouldRecreateDetailLayout(final boolean wideLandscapeLayout,
-                                              final int orientation,
-                                              final int screenWidthDp) {
-        return wideLandscapeLayout
-                != shouldUseWideLandscapeDetailLayout(orientation, screenWidthDp);
+    private void clearPendingFullscreenTransition() {
+        pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
+        pendingFullscreenState = FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE;
     }
 
     private void recreateDetailLayoutForConfigurationChange() {
@@ -659,7 +652,8 @@ public final class VideoDetailFragment
             return;
         }
         final Configuration configuration = getResources().getConfiguration();
-        if (shouldRecreateDetailLayout(binding.relatedItemsLayout != null,
+        if (FullscreenOrientationPolicy.shouldRecreateDetailLayout(
+                binding.relatedItemsLayout != null,
                 configuration.orientation, configuration.screenWidthDp)) {
             detailLayoutRecreationRequested = true;
             recreateDetailLayoutForConfigurationChange();
@@ -1732,7 +1726,7 @@ public final class VideoDetailFragment
             // restored (i.e. bottomSheetState) to STATE_EXPANDED.
             updateBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
             // toggle landscape in order to open directly in fullscreen
-            onScreenRotationButtonClicked();
+            onScreenRotationButtonClicked(true);
         }
 
         if (PreferenceManager.getDefaultSharedPreferences(activity)
@@ -2823,6 +2817,15 @@ public final class VideoDetailFragment
         if (fullscreen) {
             binding.overlayPlayPauseButton.requestFocus();
         }
+        final Configuration configuration = getResources().getConfiguration();
+        if (FullscreenOrientationPolicy.shouldRecreateDetailLayout(
+                binding.relatedItemsLayout != null,
+                configuration.orientation,
+                configuration.screenWidthDp)) {
+            detailLayoutRecreationRequested = true;
+            recreateDetailLayoutForConfigurationChange();
+            return;
+        }
         refreshFullscreenLayout(fullscreen);
         scrollToTop();
     }
@@ -2856,35 +2859,52 @@ public final class VideoDetailFragment
     }
 
     @Override
-    public void onScreenRotationButtonClicked() {
-        // On Android TV screen rotation is not supported
-        // In tablet user experience will be better if screen will not be rotated
-        // from landscape to portrait every time.
-        // Just turn on fullscreen mode in landscape orientation
-        // or portrait & unlocked global orientation
-        final boolean isLandscape = DeviceUtils.isLandscape(requireContext());
+    public void onScreenRotationButtonClicked(final boolean fullscreen) {
+        final Optional<MainPlayerUi> playerUi = player == null
+                ? Optional.empty() : player.UIs().get(MainPlayerUi.class);
+        final MainPlayerUi ui = playerUi.orElse(null);
+        final int currentOrientation = getResources().getConfiguration().orientation;
+        final boolean landscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE;
+
+        // TV never rotates. Tablets keep their current orientation in the same cases as before,
+        // but apply the requested fullscreen state explicitly instead of toggling blindly.
         if (DeviceUtils.isTv(activity) || DeviceUtils.isTablet(activity)
-                && (!globalScreenOrientationLocked(activity) || isLandscape)) {
-            player.UIs().get(MainPlayerUi.class)
-                    .ifPresent(MainPlayerUi::toggleFullscreen);
+                && (!globalScreenOrientationLocked(activity) || landscape)) {
+            clearPendingFullscreenTransition();
+            if (ui != null) {
+                ui.setFullscreen(fullscreen);
+            }
             return;
         }
 
-        final int newOrientation = isLandscape
-                ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                : PlayerRotationMode.get(activity) == PlayerRotationMode.FIXED
-                    ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+        final boolean verticalVideo = ui != null && ui.isVerticalVideo();
+        final int targetOrientation =
+                FullscreenOrientationPolicy.targetConfigurationOrientation(
+                        fullscreen, verticalVideo);
+        pendingFullscreenOrientation = targetOrientation;
+        pendingFullscreenState = fullscreen
+                ? FullscreenOrientationPolicy.ENTER_FULLSCREEN
+                : FullscreenOrientationPolicy.EXIT_FULLSCREEN;
 
-        pendingFullscreenOrientation = isLandscape
-                ? Configuration.ORIENTATION_PORTRAIT
-                : Configuration.ORIENTATION_LANDSCAPE;
-        activity.setRequestedOrientation(newOrientation);
+        // If Android is already in the requested orientation it will not emit another
+        // configuration callback. Repair a stale fullscreen/layout state immediately.
+        if (FullscreenOrientationPolicy.isTargetOrientation(
+                currentOrientation, targetOrientation)) {
+            if (ui != null) {
+                applyFullscreenState(ui, pendingFullscreenState);
+                clearPendingFullscreenTransition();
+            }
+            return;
+        }
+
+        final int requestedOrientation =
+                targetOrientation == Configuration.ORIENTATION_LANDSCAPE
+                        ? FullscreenOrientationPolicy.requestedLandscapeOrientation(
+                                PlayerRotationMode.get(activity))
+                        : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        activity.setRequestedOrientation(requestedOrientation);
     }
 
-    /*
-     * Will scroll down to description view after long click on moreOptionsButton
-     * */
     @Override
     public void onMoreOptionsLongClicked() {
         final CoordinatorLayout.LayoutParams params =
