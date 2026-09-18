@@ -344,9 +344,9 @@ public final class PlayerHolder {
                 }
 
                 @Override
-                public void onScreenRotationButtonClicked() {
+                public void onScreenRotationButtonClicked(final boolean fullscreen) {
                     if (listener != null) {
-                        listener.onScreenRotationButtonClicked();
+                        listener.onScreenRotationButtonClicked(fullscreen);
                     }
                 }
 
