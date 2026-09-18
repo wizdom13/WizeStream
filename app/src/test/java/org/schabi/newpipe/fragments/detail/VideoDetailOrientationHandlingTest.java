@@ -73,7 +73,7 @@ public class VideoDetailOrientationHandlingTest {
         assertTrue(recreate > keepLayout);
         assertTrue(postedSync > recreate);
         assertTrue(configuration.contains(
-                "getResources().getConfiguration().orientation"));
+                "syncFullscreenWithOrientation(player.UIs().get(MainPlayerUi.class))"));
     }
 
     @Test
