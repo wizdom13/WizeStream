@@ -84,9 +84,13 @@ class BackupDatabaseValidationTest {
             assertFalse(storedFile.isDirect)
 
             val manager = ImportExportManager(BackupFileLocator(context))
-            staged = manager.stageDb(storedFile)
-            assertTrue(java.nio.file.Files.size(staged) > 0)
-            NewPipeDatabase.validateImportDatabase(context, staged.fileName.toString())
+            val stagedDatabase = manager.stageDb(storedFile)
+            staged = stagedDatabase
+            assertTrue(java.nio.file.Files.size(stagedDatabase) > 0)
+            NewPipeDatabase.validateImportDatabase(
+                context,
+                stagedDatabase.fileName.toString()
+            )
         } finally {
             staged?.let { ImportExportManager(BackupFileLocator(context)).discardStagedDb(it) }
             resolver.delete(uri, null, null)
