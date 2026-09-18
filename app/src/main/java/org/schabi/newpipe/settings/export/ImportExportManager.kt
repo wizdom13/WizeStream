@@ -8,6 +8,7 @@ import com.grack.nanojson.JsonWriter
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
+import java.io.EOFException
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
@@ -265,18 +266,22 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
 
     @Throws(IOException::class)
     private fun readSqliteUserVersion(database: java.nio.file.Path): Int? {
-        return DataInputStream(Files.newInputStream(database).buffered()).use { input ->
-            val header = ByteArray(SQLITE_HEADER_LENGTH)
-            input.readFully(header)
-            if (header.toString(Charsets.US_ASCII) != SQLITE_MAGIC) {
-                return null
+        return try {
+            DataInputStream(Files.newInputStream(database).buffered()).use { input ->
+                val header = ByteArray(SQLITE_HEADER_LENGTH)
+                input.readFully(header)
+                if (header.toString(Charsets.US_ASCII) != SQLITE_MAGIC) {
+                    return null
+                }
+                if (input.skipBytes(SQLITE_HEADER_TO_VERSION_LENGTH)
+                    != SQLITE_HEADER_TO_VERSION_LENGTH
+                ) {
+                    return null
+                }
+                input.readInt()
             }
-            if (input.skipBytes(SQLITE_HEADER_TO_VERSION_LENGTH)
-                != SQLITE_HEADER_TO_VERSION_LENGTH
-            ) {
-                return null
-            }
-            input.readInt()
+        } catch (error: EOFException) {
+            null
         }
     }
 
