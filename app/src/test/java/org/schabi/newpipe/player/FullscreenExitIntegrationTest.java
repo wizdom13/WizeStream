@@ -41,7 +41,7 @@ public class FullscreenExitIntegrationTest {
         final String source = read(
                 "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
         final String rotation = methodBody(
-                source, "public void onScreenRotationButtonClicked()");
+                source, "public void onScreenRotationButtonClicked(final boolean fullscreen)");
 
         assertTrue(rotation.contains("targetConfigurationOrientation("));
         assertTrue(rotation.contains("pendingFullscreenState"));
