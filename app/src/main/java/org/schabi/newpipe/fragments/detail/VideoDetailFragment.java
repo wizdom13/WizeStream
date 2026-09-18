@@ -577,6 +577,9 @@ public final class VideoDetailFragment
      * Reconciles from an authoritative configuration, such as foreground resume after screen-off.
      * Explicit pending rotation requests are deliberately ignored because the resumed
      * configuration is the state Android actually restored.
+     *
+     * @param playerUi the current main-player UI, if attached
+     * @param orientation the authoritative Android configuration orientation
      */
     private void syncFullscreenWithOrientation(
             @NonNull final Optional<MainPlayerUi> playerUi,
