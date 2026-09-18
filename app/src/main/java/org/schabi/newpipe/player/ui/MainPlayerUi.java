@@ -1168,7 +1168,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      * Player gestures must use this instead of changing only the fullscreen UI state.
      */
     public void toggleFullscreenWithOrientation() {
-        final boolean targetFullscreen = !isFullscreen;
+        final boolean targetFullscreen = !isFullscreen();
         if (shouldUseScreenRotationAction(isVerticalVideo, isLandscape(),
                 globalScreenOrientationLocked(context))) {
             player.getFragmentListener()
