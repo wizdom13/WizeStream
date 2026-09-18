@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player.ui;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -82,6 +83,14 @@ public class MainPlayerUiFullscreenTest {
                 true,
                 true,
                 true));
+    }
+
+    @Test
+    public void explicitExitTargetDoesNotDependOnCurrentOrientation() {
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, false));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, true));
     }
 
     @Test
