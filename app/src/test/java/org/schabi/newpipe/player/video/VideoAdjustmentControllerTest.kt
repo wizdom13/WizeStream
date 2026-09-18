@@ -63,6 +63,22 @@ class VideoAdjustmentControllerTest {
     }
 
     @Test
+    fun disabledEditsArePreparedWithoutRestartingThePlayer() {
+        controller.attach(engine)
+        controller.update(VideoAdjustmentState(enabled = false, brightness = 45, contrast = -20, saturation = 135))
+        assertEquals(0, restarts)
+        assertFalse(controller.pipelineActive)
+        verify(engine, never()).setVideoEffects(anyList())
+
+        controller.update(controller.state.copy(enabled = true))
+        assertEquals(1, restarts)
+        assertTrue(controller.pipelineActive)
+        assertEquals(45, controller.state.brightness)
+        assertEquals(-20, controller.state.contrast)
+        assertEquals(135, controller.state.saturation)
+    }
+
+    @Test
     fun pausedPreviewSeeksToTheSamePositionWithoutStartingPlayback() {
         controller.attach(engine)
         controller.update(VideoAdjustmentState(enabled = true))

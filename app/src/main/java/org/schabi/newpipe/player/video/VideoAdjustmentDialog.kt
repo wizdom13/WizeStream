@@ -64,7 +64,9 @@ object VideoAdjustmentDialog {
             binding.brightnessSlider.value = state.brightness.toFloat()
             binding.contrastSlider.value = state.contrast.toFloat()
             binding.saturationSlider.value = state.saturation.toFloat()
-            sliders.forEach { it.isEnabled = state.enabled }
+            // Keep values editable while effects are off. Updating disabled state only stores
+            // the prepared values; the controller builds the effects pipeline once enabled.
+            sliders.forEach { it.isEnabled = true }
             binding.adjustmentsStatus.setText(
                 when {
                     controller.failed -> R.string.video_adjustments_failed

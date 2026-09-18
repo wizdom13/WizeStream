@@ -9,6 +9,7 @@ import android.content.Context
 import android.util.Log
 import androidx.core.math.MathUtils
 import androidx.media3.common.C
+import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -28,7 +29,6 @@ internal class PlayerLifecycleController(
     private val context: Context,
     private val service: PlayerService,
     private val renderFactory: DefaultRenderersFactory,
-    private val trackSelector: DefaultTrackSelector,
     private val loadController: LoadController,
     private val audioController: PlayerAudioController,
     private val broadcastController: PlayerBroadcastController,
@@ -44,8 +44,9 @@ internal class PlayerLifecycleController(
     private var playQueueManager: MediaSourceManager? = null
 
     fun initPlayback(queue: PlayQueue, playOnReady: Boolean) {
+        val trackSelectionParameters = player.getTrackSelectorForLifecycle()?.parameters
         destroyPlayer()
-        initPlayer(playOnReady)
+        initPlayer(playOnReady, trackSelectionParameters)
         val skipSilence = player.prefs.getBoolean(
             context.getString(R.string.playback_skip_silence_key),
             player.playbackSkipSilence
@@ -82,11 +83,12 @@ internal class PlayerLifecycleController(
         val skipSilence = previous.skipSilenceEnabled
         val repeatMode = previous.repeatMode
         val shuffle = previous.shuffleModeEnabled
+        val trackSelectionParameters = player.getTrackSelectorForLifecycle()?.parameters
         if (!previous.currentTimeline.isEmpty && queue.item?.recoveryPosition == PlayQueueItem.RECOVERY_UNSET) {
             queue.setRecovery(queue.index, previous.currentPosition.coerceAtLeast(0))
         }
         destroyPlayer(preserveQueue = true)
-        initPlayer(playOnReady)
+        initPlayer(playOnReady, trackSelectionParameters)
         player.exoPlayer.apply {
             playbackParameters = parameters
             skipSilenceEnabled = skipSilence
@@ -142,15 +144,24 @@ internal class PlayerLifecycleController(
         player.UIs().call(PlayerUi::smoothStopForImmediateReusing)
     }
 
-    private fun initPlayer(playOnReady: Boolean) {
+    private fun initPlayer(
+        playOnReady: Boolean,
+        trackSelectionParameters: TrackSelectionParameters? = null
+    ) {
         if (Player.DEBUG) {
             Log.d(Player.TAG, "initPlayer() called with: playOnReady = [$playOnReady]")
+        }
+        val trackSelector = DefaultTrackSelector(context, PlayerHelper.getQualitySelector()).apply {
+            if (trackSelectionParameters != null) {
+                setParameters(trackSelectionParameters)
+            }
         }
         val exoPlayer = ExoPlayer.Builder(context, renderFactory)
             .setTrackSelector(trackSelector)
             .setLoadControl(loadController)
             .setUsePlatformDiagnostics(false)
             .build()
+        player.setTrackSelectorForLifecycle(trackSelector)
         player.setExoPlayerForLifecycle(exoPlayer)
         player.videoAdjustments.attach(exoPlayer)
         exoPlayer.addListener(player)
@@ -170,6 +181,7 @@ internal class PlayerLifecycleController(
         errorController.resetRecovery()
         historyController.stopLearningSession()
         val exoPlayer = player.getExoPlayer()
+        val trackSelector = player.getTrackSelectorForLifecycle()
         // Stop receiving playback errors before UIs detach their video surfaces. Media3 may report
         // a surface-detach timeout while the player is deliberately shutting down; surfacing that
         // expected teardown failure would show an erroneous playback error to the user.
@@ -177,12 +189,15 @@ internal class PlayerLifecycleController(
         exoPlayer?.removeListener(player)
         player.UIs().call(PlayerUi::destroyPlayer)
         audioController.releaseAudioSession()
-        if (exoPlayer != null) {
-            try {
+        try {
+            if (exoPlayer != null) {
                 exoPlayer.stop()
                 exoPlayer.release()
-            } finally {
-                player.clearExoPlayerForLifecycle()
+            }
+        } finally {
+            player.clearExoPlayerForLifecycle()
+            if (trackSelector != null) {
+                player.clearTrackSelectorForLifecycle(trackSelector)
             }
         }
         if (player.isProgressLoopRunning) player.stopProgressLoop()

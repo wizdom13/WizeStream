@@ -19,7 +19,7 @@ import org.schabi.newpipe.util.StreamTypeUtil
 internal class PlayerPresentationController(
     private val player: Player,
     private val videoResolver: VideoPlaybackResolver,
-    private val trackSelector: DefaultTrackSelector,
+    private val trackSelectorProvider: () -> DefaultTrackSelector?,
     private val visualizerAudioProcessor: VisualizerAudioProcessor
 ) {
     var isAudioOnly: Boolean = false
@@ -61,6 +61,7 @@ internal class PlayerPresentationController(
             player.reloadPlayQueueManager()
         }
 
+        val trackSelector = trackSelectorProvider() ?: return
         trackSelector.setParameters(
             trackSelector.buildUponParameters()
                 .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
@@ -100,6 +101,7 @@ internal class PlayerPresentationController(
     }
 
     private fun videoRendererIndex(): Int {
+        val trackSelector = trackSelectorProvider() ?: return Player.RENDERER_UNAVAILABLE
         val mappedTrackInfo = trackSelector.currentMappedTrackInfo
             ?: return Player.RENDERER_UNAVAILABLE
         if (player.exoPlayerIsNull()) return Player.RENDERER_UNAVAILABLE

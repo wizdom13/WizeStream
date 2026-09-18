@@ -166,8 +166,7 @@ class Player(
     )
     private val broadcastController = PlayerBroadcastController(this)
 
-    private val playerTrackSelector =
-        DefaultTrackSelector(appContext, PlayerHelper.getQualitySelector())
+    private var activeTrackSelector: DefaultTrackSelector? = null
     private val dataSource = PlayerDataSource(
         appContext,
         DefaultBandwidthMeter.Builder(appContext).build()
@@ -193,7 +192,7 @@ class Player(
     private val videoResolver = VideoPlaybackResolver(appContext, dataSource, qualityResolver())
     private val audioResolver = AudioPlaybackResolver(appContext, dataSource)
     private val captionController =
-        PlayerCaptionController(this, appContext, preferences, playerTrackSelector)
+        PlayerCaptionController(this, appContext, preferences) { activeTrackSelector }
     private val streamController = PlayerStreamController(
         this,
         appContext,
@@ -205,7 +204,7 @@ class Player(
     private val presentationController = PlayerPresentationController(
         this,
         videoResolver,
-        playerTrackSelector,
+        { activeTrackSelector },
         playerVisualizerAudioProcessor
     )
     private val intentController = PlayerIntentController(
@@ -238,7 +237,6 @@ class Player(
         appContext,
         playerService,
         renderFactory,
-        playerTrackSelector,
         loadController,
         audioController,
         broadcastController,
@@ -322,6 +320,18 @@ class Player(
 
     fun clearExoPlayerForLifecycle() {
         media3Player = null
+    }
+
+    fun setTrackSelectorForLifecycle(trackSelector: DefaultTrackSelector) {
+        activeTrackSelector = trackSelector
+    }
+
+    fun getTrackSelectorForLifecycle(): DefaultTrackSelector? = activeTrackSelector
+
+    fun clearTrackSelectorForLifecycle(trackSelector: DefaultTrackSelector) {
+        if (activeTrackSelector === trackSelector) {
+            activeTrackSelector = null
+        }
     }
 
     fun setAudioReactorForLifecycle(reactor: AudioReactor) {
@@ -414,12 +424,13 @@ class Player(
     private fun restartForVideoAdjustments() = lifecycleController.restartForVideoAdjustments()
 
     fun updateAudioTunneling() {
+        val trackSelector = activeTrackSelector ?: return
         val tunnelingEnabled = !preferences.getBoolean(
             appContext.getString(R.string.disable_media_tunneling_key),
             false
         ) && !audioController.equalizerState.isEnabled &&
             !playbackPresentationMode.allowsVisualizer() && !videoAdjustments.pipelineActive
-        playerTrackSelector.parameters = playerTrackSelector.buildUponParameters()
+        trackSelector.parameters = trackSelector.buildUponParameters()
             .setTunnelingEnabled(tunnelingEnabled)
             .build()
     }
@@ -686,7 +697,9 @@ class Player(
         get() = playerVisualizerAudioProcessor
 
     val trackSelector: DefaultTrackSelector
-        get() = playerTrackSelector
+        get() = checkNotNull(activeTrackSelector) {
+            "Track selector is unavailable without an active playback engine"
+        }
 
     val currentMetadata: MediaItemTag?
         get() = metadataController.currentMetadata

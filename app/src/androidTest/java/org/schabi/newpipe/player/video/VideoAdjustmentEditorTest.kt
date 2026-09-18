@@ -62,7 +62,9 @@ class VideoAdjustmentEditorTest {
                         assertEquals(100f, shown.findViewById<Slider>(R.id.saturation_slider)!!.value)
                         shown.findViewById<SwitchMaterial>(R.id.adjustments_enabled)!!.performClick()
                         assertFalse(controller.state.enabled)
-                        assertFalse(shown.findViewById<Slider>(R.id.brightness_slider)!!.isEnabled)
+                        assertTrue(shown.findViewById<Slider>(R.id.brightness_slider)!!.isEnabled)
+                        assertTrue(shown.findViewById<Slider>(R.id.contrast_slider)!!.isEnabled)
+                        assertTrue(shown.findViewById<Slider>(R.id.saturation_slider)!!.isEnabled)
                         shown.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
                     }
                     InstrumentationRegistry.getInstrumentation().waitForIdleSync()
