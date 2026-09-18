@@ -160,7 +160,7 @@ public final class VideoDetailFragment
 
     private static final float MAX_OVERLAY_ALPHA = 0.9f;
     private static final float MAX_PLAYER_HEIGHT = 0.7f;
-     private static final int LEGACY_PLAYER_COLLAPSE_MODE =
+    private static final int LEGACY_PLAYER_COLLAPSE_MODE =
             CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PARALLAX;
     private static final int PINNED_PLAYER_COLLAPSE_MODE =
             CollapsingToolbarLayout.LayoutParams.COLLAPSE_MODE_PIN;
