@@ -127,7 +127,8 @@ public class VideoDetailBackPressTest {
         assertTrue(fragment.onBackPressed());
 
         assertFalse(fullscreen.get());
-        verify(playerUi).toggleFullscreen();
+        verify(playerUi).setFullscreen(false);
+        verify(playerUi, never()).toggleFullscreen();
         verify(activity, never()).setRequestedOrientation(anyInt());
         verify(player, never()).pause();
         verify(player, never()).getPlayQueue();
