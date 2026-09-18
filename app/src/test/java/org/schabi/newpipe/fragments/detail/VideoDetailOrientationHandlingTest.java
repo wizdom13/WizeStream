@@ -5,9 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.res.Configuration;
 
-import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
-
 import org.junit.Test;
+import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
