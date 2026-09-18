@@ -60,7 +60,8 @@ public class FeedRefreshControlsTest {
         assertTrue(source.contains("showRefreshProgress(binding)"));
         assertTrue(source.contains("hideRefreshProgress(binding)"));
         assertFalse(source.contains("refreshLoadingOverlay.animate("));
-        assertFalse(source.contains("isRefreshing"));
+        assertFalse(source.contains("private var isRefreshing"));
+        assertFalse(source.contains("&& !isRefreshing"));
     }
 
     @Test
