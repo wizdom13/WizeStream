@@ -2822,6 +2822,7 @@ public final class VideoDetailFragment
                 binding.relatedItemsLayout != null,
                 configuration.orientation,
                 configuration.screenWidthDp)) {
+            showSystemUi();
             detailLayoutRecreationRequested = true;
             recreateDetailLayoutForConfigurationChange();
             return;
