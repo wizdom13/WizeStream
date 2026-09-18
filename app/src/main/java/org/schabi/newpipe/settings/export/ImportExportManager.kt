@@ -8,6 +8,7 @@ import com.grack.nanojson.JsonWriter
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
+import java.io.EOFException
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
@@ -136,7 +137,11 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
      * @return true if the database was successfully extracted, false otherwise
      */
     fun extractDb(file: StoredFileHelper): Boolean {
-        val importedDb = stageDb(file) ?: return false
+        val importedDb = try {
+            stageDb(file)
+        } catch (error: IOException) {
+            return false
+        }
         return try {
             val rollback = replaceDb(importedDb)
             finishDbReplacement(rollback)
@@ -149,24 +154,33 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
     }
 
     /** Extracts a database into a temporary sibling without touching the live database. */
-    fun stageDb(file: StoredFileHelper): Path? {
+    @Throws(IOException::class)
+    fun stageDb(file: StoredFileHelper): Path {
         val name = BackupFileLocator.FILE_NAME_DB
         val importedDb = fileLocator.db.resolveSibling("${fileLocator.db.fileName}.import")
         importedDb.deleteIfExists()
 
-        return try {
+        try {
             if (!ZipHelper.extractFileFromZip(file, name, importedDb)) {
-                return null
+                throw FileNotFoundException("Backup database entry '$name' is missing")
             }
             val databaseVersion = readSqliteUserVersion(importedDb)
-            if (databaseVersion !in Migrations.DB_VER_1..Migrations.DB_VER_23) {
-                importedDb.deleteIfExists()
-                return null
+                ?: throw IOException("The backup database is not a valid SQLite database")
+            if (databaseVersion !in Migrations.DB_VER_1..Migrations.DB_VER_CURRENT) {
+                throw IOException(
+                    "Unsupported backup database version $databaseVersion; " +
+                        "supported versions are ${Migrations.DB_VER_1}-" +
+                        "${Migrations.DB_VER_CURRENT}"
+                )
             }
-            importedDb
+            return importedDb
         } catch (error: IOException) {
-            importedDb.deleteIfExists()
-            null
+            try {
+                importedDb.deleteIfExists()
+            } catch (cleanupError: IOException) {
+                error.addSuppressed(cleanupError)
+            }
+            throw error
         }
     }
 
@@ -250,6 +264,7 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
         fileLocator.dbShm.deleteIfExists()
     }
 
+    @Throws(IOException::class)
     private fun readSqliteUserVersion(database: java.nio.file.Path): Int? {
         return try {
             DataInputStream(Files.newInputStream(database).buffered()).use { input ->
@@ -265,7 +280,7 @@ class ImportExportManager(private val fileLocator: BackupFileLocator) {
                 }
                 input.readInt()
             }
-        } catch (error: IOException) {
+        } catch (error: EOFException) {
             null
         }
     }

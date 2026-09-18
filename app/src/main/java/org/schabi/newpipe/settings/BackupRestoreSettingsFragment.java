@@ -718,9 +718,6 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
 
                 if (contents.getHasDatabase()) {
                     stagedDatabase = manager.stageDb(file);
-                    if (stagedDatabase == null) {
-                        throw new IOException("The backup database could not be staged");
-                    }
                     NewPipeDatabase.validateImportDatabase(
                             context, stagedDatabase.getFileName().toString());
                     try {

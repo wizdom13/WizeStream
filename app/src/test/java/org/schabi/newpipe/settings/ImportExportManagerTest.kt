@@ -38,6 +38,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.withSettings
 import org.mockito.junit.MockitoJUnitRunner
+import org.schabi.newpipe.database.Migrations
 import org.schabi.newpipe.settings.export.BackupFileLocator
 import org.schabi.newpipe.settings.export.ImportExportManager
 import org.schabi.newpipe.settings.export.ImportExportManager.BackupSource
@@ -191,6 +192,52 @@ class ImportExportManagerTest {
     }
 
     @Test
+    fun `Current database version can be staged for full restore`() {
+        val db = createTempDirectory("current_backup_") / BackupFileLocator.FILE_NAME_DB
+        `when`(fileLocator.db).thenReturn(db)
+        val zip = databaseBackup(Migrations.DB_VER_CURRENT)
+        `when`(storedFileHelper.stream).thenReturn(FileStream(zip.toFile()))
+
+        val manager = ImportExportManager(fileLocator)
+        val staged = manager.stageDb(storedFileHelper)
+        try {
+            assertTrue(staged.exists())
+            assertTrue(staged.fileSize() >= 64)
+        } finally {
+            manager.discardStagedDb(staged)
+        }
+    }
+
+    @Test
+    fun `Unsupported database version reports the actual staging failure`() {
+        val db = createTempDirectory("future_backup_") / BackupFileLocator.FILE_NAME_DB
+        `when`(fileLocator.db).thenReturn(db)
+        val futureVersion = Migrations.DB_VER_CURRENT + 1
+        val zip = databaseBackup(futureVersion)
+        `when`(storedFileHelper.stream).thenReturn(FileStream(zip.toFile()))
+
+        val error = assertThrows(IOException::class.java) {
+            ImportExportManager(fileLocator).stageDb(storedFileHelper)
+        }
+
+        assertTrue(error.message!!.contains("Unsupported backup database version $futureVersion"))
+        assertFalse(db.resolveSibling("${db.fileName}.import").exists())
+    }
+
+    @Test
+    fun `SAF stream failure is propagated instead of converted to null`() {
+        val db = createTempDirectory("failed_backup_") / BackupFileLocator.FILE_NAME_DB
+        `when`(fileLocator.db).thenReturn(db)
+        `when`(storedFileHelper.stream).thenThrow(IOException("content provider read failed"))
+
+        val error = assertThrows(IOException::class.java) {
+            ImportExportManager(fileLocator).stageDb(storedFileHelper)
+        }
+
+        assertEquals("content provider read failed", error.message)
+    }
+
+    @Test
     fun `The database must be extracted from the zip file`() {
         val db = createTempFile("newpipe_", "")
         val dbJournal = createTempFile("newpipe_", "")
@@ -328,6 +375,20 @@ class ImportExportManagerTest {
             mapOf("show_comments" to false, "sponsor_block_enable" to true),
             manager.readMigrationPrefs(storedFileHelper, true)
         )
+    }
+
+    private fun databaseBackup(version: Int) = createTempFile(
+        "database_backup_",
+        ".zip"
+    ).also { zip ->
+        val database = ByteArray(100)
+        "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII).copyInto(database)
+        ByteBuffer.wrap(database, 60, Int.SIZE_BYTES).putInt(version)
+        ZipOutputStream(zip.outputStream()).use { output ->
+            output.putNextEntry(ZipEntry(BackupFileLocator.FILE_NAME_DB))
+            output.write(database)
+            output.closeEntry()
+        }
     }
 
     @Test
