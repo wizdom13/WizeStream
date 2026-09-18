@@ -6,8 +6,8 @@ import static org.schabi.newpipe.util.external_communication.ShareUtils.shareTex
 import android.content.Context;
 import android.view.ContextThemeWrapper;
 import android.view.View;
-import android.widget.PopupMenu;
 
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.FragmentManager;
 
 import org.schabi.newpipe.database.stream.model.StreamEntity;
@@ -32,7 +32,7 @@ public final class QueueItemMenuUtil {
                                      final FragmentManager fragmentManager,
                                      final Context context) {
         final ContextThemeWrapper themeWrapper =
-                new ContextThemeWrapper(context, R.style.DarkPopupMenu);
+                new ContextThemeWrapper(context, R.style.WizeStreamPopupMenu);
 
         final PopupMenu popupMenu = new PopupMenu(themeWrapper, view);
         popupMenu.inflate(R.menu.menu_play_queue_item);

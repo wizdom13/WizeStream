@@ -138,6 +138,29 @@
 
     <style name="DarkPopupMenu" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
+    <style name="WizeStreamPopupMenu" parent="ThemeOverlay.Material3.ActionBar">
+        <item name="android:colorBackground">?attr/colorSurfaceContainerHigh</item>
+        <item name="android:popupBackground">@drawable/popup_menu_background</item>
+        <item name="android:popupElevation">6dp</item>
+        <item name="android:popupMenuStyle">@style/Widget.WizeStream.PopupMenu</item>
+        <item name="popupMenuStyle">@style/Widget.WizeStream.PopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.WizeStream.ListPopupWindow</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="android:colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="tint">?attr/colorOnSurfaceVariant</item>
+        <item name="iconTint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="Widget.WizeStream.PopupMenu" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/popup_menu_background</item>
+    </style>
+
+    <style name="Widget.WizeStream.ListPopupWindow" parent="Widget.AppCompat.ListPopupWindow">
+        <item name="android:popupBackground">@drawable/popup_menu_background</item>
+    </style>
+
     <style name="PlayerOverlayPopupMenu" parent="DarkPopupMenu">
         <item name="android:colorBackground">@color/player_overlay_popup_background_color</item>
         <item name="android:popupBackground">@drawable/player_overlay_popup_background</item>
@@ -197,16 +220,7 @@
         <item name="iconTint">?attr/colorOnSurface</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
     </style>
-    <style name="ToolbarPopupTheme" parent="ThemeOverlay.Material3.ActionBar">
-        <item name="android:colorBackground">?attr/colorSurface</item>
-        <item name="android:popupBackground">?attr/colorSurface</item>
-        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
-        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
-        <item name="android:colorControlNormal">?attr/colorOnSurfaceVariant</item>
-        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
-        <item name="tint">?attr/colorOnSurfaceVariant</item>
-        <item name="iconTint">?attr/colorOnSurfaceVariant</item>
-    </style>
+    <style name="ToolbarPopupTheme" parent="WizeStreamPopupMenu" />
     <style name="ContrastToolbarTheme" parent="ToolbarTheme">
         <item name="android:textColorPrimary">?attr/colorOnSurface</item>
         <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
