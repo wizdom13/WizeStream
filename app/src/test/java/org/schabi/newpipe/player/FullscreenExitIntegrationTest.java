@@ -31,8 +31,8 @@ public class FullscreenExitIntegrationTest {
                 source, "public void toggleFullscreenWithOrientation()");
 
         assertTrue(toggle.contains(
-                "PlayerServiceEventListener::onScreenRotationButtonClicked"));
-        assertTrue(toggle.contains("toggleFullscreen();"));
+                "listener.onScreenRotationButtonClicked(targetFullscreen)"));
+        assertTrue(toggle.contains("setFullscreen(targetFullscreen);"));
     }
 
     @Test
@@ -43,15 +43,26 @@ public class FullscreenExitIntegrationTest {
         final String rotation = methodBody(
                 source, "public void onScreenRotationButtonClicked()");
 
-        assertTrue(rotation.contains("DeviceUtils.isLandscape(requireContext())"));
-        assertTrue(rotation.contains("SCREEN_ORIENTATION_SENSOR_LANDSCAPE"));
+        assertTrue(rotation.contains("targetConfigurationOrientation("));
+        assertTrue(rotation.contains("pendingFullscreenState"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_PORTRAIT"));
         assertTrue(rotation.contains(
-                "activity.setRequestedOrientation(newOrientation)"));
-        assertFalse(rotation.contains("isTargetFullscreenOrientation"));
-        assertFalse(rotation.contains("ui.setFullscreen(fullscreen)"));
+                "activity.setRequestedOrientation(requestedOrientation)"));
+        assertFalse(rotation.contains("DeviceUtils.isLandscape(requireContext())"));
     }
 
+
+    @Test
+    public void splitLayoutStateChangeRepairsTheInflatedDetailLayout() throws Exception {
+        final String source = read(
+                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
+        final String changed = methodBody(
+                source, "public void onFullscreenStateChanged(final boolean fullscreen)");
+
+        assertTrue(changed.contains(
+                "FullscreenOrientationPolicy.shouldRecreateDetailLayout("));
+        assertTrue(changed.contains("recreateDetailLayoutForConfigurationChange();"));
+    }
 
     @Test
     public void landscapeAutoFullscreenDoesNotDependOnTransientPlaybackState()
