@@ -5,7 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.res.Configuration;
 
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 
 import org.junit.Test;
 
@@ -18,46 +18,46 @@ public class VideoDetailOrientationHandlingTest {
 
     @Test
     public void fullscreenTransitionCompletesOnlyAfterTargetStateIsApplied() {
-        assertFalse(VideoDetailFragment.isFullscreenStateApplied(
+        assertFalse(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_LANDSCAPE, false, false));
-        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+        assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_LANDSCAPE, true, false));
-        assertFalse(VideoDetailFragment.isFullscreenStateApplied(
+        assertFalse(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_PORTRAIT, true, false));
-        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+        assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_PORTRAIT, false, false));
     }
 
     @Test
     public void portraitVerticalVideoDoesNotWaitForAnOrientationDrivenExit() {
-        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+        assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_PORTRAIT, true, true));
-        assertTrue(VideoDetailFragment.isFullscreenStateApplied(
+        assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_UNDEFINED, false, false));
     }
 
     @Test
     public void expandedPhoneVideoKeepsCurrentLayoutForLandscapeFullscreen() {
-        assertTrue(VideoDetailFragment.shouldKeepPhonePlayerLayoutForLandscape(
+        assertTrue(FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
                 Configuration.ORIENTATION_LANDSCAPE,
                 true, true, false,
-                BottomSheetBehavior.STATE_EXPANDED, false));
-        assertFalse(VideoDetailFragment.shouldKeepPhonePlayerLayoutForLandscape(
+                true, false));
+        assertFalse(FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
                 Configuration.ORIENTATION_PORTRAIT,
                 true, true, false,
-                BottomSheetBehavior.STATE_EXPANDED, false));
-        assertFalse(VideoDetailFragment.shouldKeepPhonePlayerLayoutForLandscape(
+                true, false));
+        assertFalse(FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
                 Configuration.ORIENTATION_LANDSCAPE,
                 true, true, true,
-                BottomSheetBehavior.STATE_EXPANDED, false));
-        assertFalse(VideoDetailFragment.shouldKeepPhonePlayerLayoutForLandscape(
+                true, false));
+        assertFalse(FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
                 Configuration.ORIENTATION_LANDSCAPE,
                 true, true, false,
-                BottomSheetBehavior.STATE_COLLAPSED, false));
-        assertFalse(VideoDetailFragment.shouldKeepPhonePlayerLayoutForLandscape(
+                false, false));
+        assertFalse(FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
                 Configuration.ORIENTATION_LANDSCAPE,
                 true, true, false,
-                BottomSheetBehavior.STATE_EXPANDED, true));
+                true, true));
     }
 
     @Test
@@ -66,8 +66,9 @@ public class VideoDetailOrientationHandlingTest {
         final String configuration = methodBody(
                 readFragment(), "public void onConfigurationChanged(");
         final int keepLayout = configuration.indexOf(
-                "shouldKeepPhonePlayerLayoutForLandscape(");
-        final int recreate = configuration.indexOf("shouldRecreateDetailLayout(");
+                "FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(");
+        final int recreate = configuration.indexOf(
+                "FullscreenOrientationPolicy.shouldRecreateDetailLayout(");
         final int postedSync = configuration.indexOf("binding.getRoot().post(");
         assertTrue(keepLayout >= 0);
         assertTrue(recreate > keepLayout);
