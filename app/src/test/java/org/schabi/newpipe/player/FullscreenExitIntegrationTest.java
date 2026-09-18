@@ -49,16 +49,9 @@ public class FullscreenExitIntegrationTest {
         assertTrue(rotation.contains(
                 "activity.setRequestedOrientation(requestedOrientation)"));
         assertFalse(rotation.contains("DeviceUtils.isLandscape(requireContext())"));
-    }
 
-
-    @Test
-    public void splitLayoutStateChangeRepairsTheInflatedDetailLayout() throws Exception {
-        final String source = read(
-                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
         final String changed = methodBody(
                 source, "public void onFullscreenStateChanged(final boolean fullscreen)");
-
         assertTrue(changed.contains(
                 "!fullscreen && FullscreenOrientationPolicy.shouldRecreateDetailLayout("));
         assertTrue(changed.contains("recreateDetailLayoutForConfigurationChange();"));
