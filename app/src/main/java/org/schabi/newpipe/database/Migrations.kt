@@ -44,6 +44,7 @@ object Migrations {
     const val DB_VER_22 = 22
     const val DB_VER_23 = 23
     const val DB_VER_24 = 24
+    const val DB_VER_CURRENT = DB_VER_24
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
