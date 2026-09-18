@@ -10,6 +10,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -22,8 +24,6 @@ import org.schabi.newpipe.database.Migrations
 import org.schabi.newpipe.settings.export.BackupFileLocator
 import org.schabi.newpipe.settings.export.ImportExportManager
 import org.schabi.newpipe.streams.io.StoredFileHelper
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class BackupDatabaseValidationTest {
