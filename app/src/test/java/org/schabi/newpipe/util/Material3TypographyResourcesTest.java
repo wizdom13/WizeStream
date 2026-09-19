@@ -33,6 +33,8 @@ public class Material3TypographyResourcesTest {
     public void customPlayerTextAppearancesInheritMaterial3Roles() throws Exception {
         final String styles = Files.readString(
                 resourcesDirectory.resolve("values/styles_misc.xml"));
+        final String popupBackground = Files.readString(
+                resourcesDirectory.resolve("drawable/popup_menu_background.xml"));
 
         assertTrue(styles.contains(
                 "<style name=\"PlayQueueItemTitle\" "
@@ -42,6 +44,17 @@ public class Material3TypographyResourcesTest {
                         + "parent=\"TextAppearance.Material3.BodySmall\">"));
         assertTrue(styles.contains(
                 "parent=\"TextAppearance.Material3.BodyLarge\""));
+        assertTrue(styles.contains(
+                "<style name=\"TextAppearance.WizeStream.PopupMenu.Primary\""
+                        + "\n        parent=\"TextAppearance.Material3.BodyLarge\">"));
+        assertTrue(styles.contains(
+                "<style name=\"TextAppearance.WizeStream.PopupMenu.Secondary\""
+                        + "\n        parent=\"TextAppearance.Material3.BodyMedium\">"));
+        assertTrue(styles.contains(
+                "<item name=\"android:colorBackground\">"
+                        + "?attr/colorSurfaceContainer</item>"));
+        assertTrue(popupBackground.contains(
+                "<solid android:color=\"?attr/colorSurfaceContainer\" />"));
         assertFalse(styles.contains(
                 "parent=\"TextAppearance.AppCompat.Widget.PopupMenu"));
     }
