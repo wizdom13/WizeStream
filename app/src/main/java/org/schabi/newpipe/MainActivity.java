@@ -101,6 +101,7 @@ import org.schabi.newpipe.settings.tabs.Tab;
 import org.schabi.newpipe.settings.tabs.TabletNavigationPositionResolver;
 import org.schabi.newpipe.settings.tabs.TabsManager;
 import org.schabi.newpipe.settings.migration.MigrationManager;
+import org.schabi.newpipe.sync.DeviceSyncListenerService;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
@@ -291,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
         activityStarted = true;
         sharedPrefEditor.putBoolean(KEY_IS_IN_BACKGROUND, false).apply();
         Log.d(TAG, "App moved to foreground");
+        DeviceSyncListenerService.Companion.startIfEnabled(this);
         nativePipController.onMainActivityStarted();
         openMiniPlayerUponPlayerStarted();
     }
