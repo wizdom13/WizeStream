@@ -463,12 +463,19 @@ public final class PlayerHelper {
 
     @ResizeMode
     public static int retrieveResizeModeFromPrefs(final Player player) {
-        final String preferenceKey = player.getContext().getString(R.string.last_resize_mode);
-        final int storedResizeMode = player.getPrefs().getInt(preferenceKey,
+        return retrieveResizeModeFromPrefs(
+                player.getPrefs(),
+                player.getContext().getString(R.string.last_resize_mode));
+    }
+
+    @ResizeMode
+    static int retrieveResizeModeFromPrefs(@NonNull final SharedPreferences preferences,
+                                           @NonNull final String preferenceKey) {
+        final int storedResizeMode = preferences.getInt(preferenceKey,
                 AspectRatioFrameLayout.RESIZE_MODE_FIT);
         final int resizeMode = sanitizeResizeMode(storedResizeMode);
         if (resizeMode != storedResizeMode) {
-            player.getPrefs().edit().putInt(preferenceKey, resizeMode).apply();
+            preferences.edit().putInt(preferenceKey, resizeMode).apply();
         }
         return resizeMode;
     }
