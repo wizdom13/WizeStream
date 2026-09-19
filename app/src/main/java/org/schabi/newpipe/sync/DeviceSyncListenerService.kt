@@ -38,7 +38,18 @@ class DeviceSyncListenerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!shouldRun(this)) {
+        val explicitlyEnabled = intent?.takeIf {
+            it.hasExtra(EXTRA_BACKGROUND_SYNC_ENABLED)
+        }?.getBooleanExtra(EXTRA_BACKGROUND_SYNC_ENABLED, false)
+        val canRun = if (explicitlyEnabled != null) {
+            DeviceSyncListenerPolicy.shouldRun(
+                backgroundSyncEnabled = explicitlyEnabled,
+                hasTrustedPeers = DeviceSyncManager.hasTrustedPeers(this)
+            )
+        } else {
+            shouldRun(this)
+        }
+        if (!canRun) {
             stopListenerAndSelf()
             return START_NOT_STICKY
         }
@@ -143,6 +154,8 @@ class DeviceSyncListenerService : Service() {
         private const val TAG = "DeviceSyncListener"
         private const val NOTIFICATION_CHANNEL_ID = "device_sync_listener"
         private const val NOTIFICATION_ID = 0x57535
+        private const val EXTRA_BACKGROUND_SYNC_ENABLED =
+            "org.schabi.newpipe.sync.BACKGROUND_SYNC_ENABLED"
 
         fun startIfEnabled(context: Context) {
             val appContext = context.applicationContext
@@ -174,6 +187,7 @@ class DeviceSyncListenerService : Service() {
                     ContextCompat.startForegroundService(
                         context.applicationContext,
                         Intent(context.applicationContext, DeviceSyncListenerService::class.java)
+                        .putExtra(EXTRA_BACKGROUND_SYNC_ENABLED, true)
                     )
                 } catch (error: RuntimeException) {
                     Log.w(TAG, "Could not start foreground device sync listener", error)
