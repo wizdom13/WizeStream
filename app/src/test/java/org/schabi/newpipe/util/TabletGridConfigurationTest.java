@@ -43,19 +43,13 @@ public class TabletGridConfigurationTest {
         assertTrue(appearanceFragment.contains(
                 "setPreferenceVisible(R.string.grid_columns_key, "
                         + "showLargeScreenPreferences);"));
-    }
 
-    @Test
-    public void compactLargeScreenChromeReclaimsToolbarAndRailSpace() throws Exception {
-        final String appearanceSettings = read(
-                "app/src/main/res/xml/appearance_settings.xml");
         final String activity = read(
                 "app/src/main/java/org/schabi/newpipe/MainActivity.java");
         final String mainFragment = read(
                 "app/src/main/java/org/schabi/newpipe/fragments/MainFragment.java");
         final String dimensions = read(
                 "app/src/main/res/values/dimens.xml");
-
         assertTrue(appearanceSettings.contains(
                 "android:key=\"@string/compact_large_screen_navigation_key\""));
         assertTrue(dimensions.contains(
