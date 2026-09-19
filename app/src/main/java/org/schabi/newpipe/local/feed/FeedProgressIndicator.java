@@ -61,7 +61,9 @@ public final class FeedProgressIndicator extends ProgressBar {
         configurePaint(indicatorPaint, MaterialColors.getColor(
                 this, com.google.android.material.R.attr.colorPrimary));
 
+        super.setIndeterminate(false);
         super.setMax(1);
+        super.setProgress(0);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
     }
 
