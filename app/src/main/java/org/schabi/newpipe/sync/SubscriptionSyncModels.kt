@@ -133,7 +133,8 @@ data class DeviceSyncAttempt(
     val learningNotesError: String? = null,
     val learningNotesSkipped: Boolean = false,
     val structuredPreferenceResults: Map<StructuredPreferenceCategory, StructuredPreferenceSyncResult?> = emptyMap(),
-    val structuredPreferenceErrors: Map<StructuredPreferenceCategory, String?> = emptyMap()
+    val structuredPreferenceErrors: Map<StructuredPreferenceCategory, String?> = emptyMap(),
+    val retryDiagnostics: Map<DeviceSyncLogCategory, String> = emptyMap()
 )
 
 data class DeviceSyncSummary(

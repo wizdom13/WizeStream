@@ -561,7 +561,7 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
 
     private fun DeviceSyncLogCategoryResult.toDisplay(): SyncCategoryDisplay {
         val title = deviceSyncLogCategoryName(category)
-        return when (status) {
+        val display = when (status) {
             DeviceSyncLogStatus.SUCCEEDED -> SyncCategoryDisplay(
                 title,
                 SyncDisplayStatus.SUCCEEDED,
@@ -587,6 +587,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                 getString(R.string.device_sync_report_disabled)
             )
         }
+        val retry = retryDiagnostic?.takeIf(String::isNotBlank) ?: return display
+        return display.copy(detail = display.detail + " · " + retry)
     }
 
     private fun deviceSyncLogCategoryName(category: DeviceSyncLogCategory): String {
