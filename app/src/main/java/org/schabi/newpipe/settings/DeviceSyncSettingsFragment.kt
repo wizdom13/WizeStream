@@ -37,10 +37,10 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
 import org.schabi.newpipe.sync.DeviceSyncAttempt
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
+import org.schabi.newpipe.sync.DeviceSyncListenerService
 import org.schabi.newpipe.sync.DeviceSyncLogCategory
 import org.schabi.newpipe.sync.DeviceSyncLogCategoryResult
 import org.schabi.newpipe.sync.DeviceSyncLogEntry
-import org.schabi.newpipe.sync.DeviceSyncListenerService
 import org.schabi.newpipe.sync.DeviceSyncLogStatus
 import org.schabi.newpipe.sync.DeviceSyncManager
 import org.schabi.newpipe.sync.DeviceSyncSummary
