@@ -17,7 +17,7 @@ import org.schabi.newpipe.R;
 public final class GridLayoutManagerHelper {
     private static final int AUTOMATIC_SPAN_COUNT = 0;
     private static final int MINIMUM_CONFIGURED_SPAN_COUNT = 2;
-    private static final int MAXIMUM_CONFIGURED_SPAN_COUNT = 4;
+    private static final int MAXIMUM_CONFIGURED_SPAN_COUNT = 7;
 
     private GridLayoutManagerHelper() {
     }
