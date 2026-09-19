@@ -139,17 +139,14 @@ public final class PlayerHelper {
     @NonNull
     public static String resizeTypeOf(@NonNull final Context context,
                                       @ResizeMode final int resizeMode) {
-        switch (resizeMode) {
-            case AspectRatioFrameLayout.RESIZE_MODE_FIT:
-                return context.getString(R.string.resize_fit);
+        switch (sanitizeResizeMode(resizeMode)) {
             case AspectRatioFrameLayout.RESIZE_MODE_FILL:
                 return context.getString(R.string.resize_fill);
             case AspectRatioFrameLayout.RESIZE_MODE_ZOOM:
                 return context.getString(R.string.resize_zoom);
-            case AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT:
-            case AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH:
+            case AspectRatioFrameLayout.RESIZE_MODE_FIT:
             default:
-                throw new IllegalArgumentException("Unrecognized resize mode: " + resizeMode);
+                return context.getString(R.string.resize_fit);
         }
     }
 
@@ -466,8 +463,29 @@ public final class PlayerHelper {
 
     @ResizeMode
     public static int retrieveResizeModeFromPrefs(final Player player) {
-        return player.getPrefs().getInt(player.getContext().getString(R.string.last_resize_mode),
+        final String preferenceKey = player.getContext().getString(R.string.last_resize_mode);
+        final int storedResizeMode = player.getPrefs().getInt(preferenceKey,
                 AspectRatioFrameLayout.RESIZE_MODE_FIT);
+        final int resizeMode = sanitizeResizeMode(storedResizeMode);
+        if (resizeMode != storedResizeMode) {
+            player.getPrefs().edit().putInt(preferenceKey, resizeMode).apply();
+        }
+        return resizeMode;
+    }
+
+    @SuppressLint("SwitchIntDef")
+    @ResizeMode
+    static int sanitizeResizeMode(final int resizeMode) {
+        switch (resizeMode) {
+            case AspectRatioFrameLayout.RESIZE_MODE_FIT:
+            case AspectRatioFrameLayout.RESIZE_MODE_FILL:
+            case AspectRatioFrameLayout.RESIZE_MODE_ZOOM:
+                return resizeMode;
+            case AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT:
+            case AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH:
+            default:
+                return AspectRatioFrameLayout.RESIZE_MODE_FIT;
+        }
     }
 
     @SuppressLint("SwitchIntDef") // only fit, fill and zoom are supported by WizeStream
