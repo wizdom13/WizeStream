@@ -494,11 +494,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         val isIndeterminate = progressState.currentProgress < 0 ||
             progressState.maxProgress < 0
-        feedBinding.loadingProgressBar.isVisible = !isIndeterminate
-        feedBinding.loadingIndeterminateProgressBar.isVisible = isIndeterminate
+        feedBinding.loadingProgressBar.setIndeterminate(isIndeterminate)
 
         if (isIndeterminate) {
-            feedBinding.loadingIndeterminateProgressBar.contentDescription =
+            feedBinding.loadingProgressBar.contentDescription =
                 if (progressState.progressMessage > 0) {
                     getString(progressState.progressMessage)
                 } else {
