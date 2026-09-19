@@ -33,6 +33,28 @@ class DeviceSyncBackgroundPolicyTest {
     }
 
     @Test
+    fun `persistent listener requires background sync and a trusted peer`() {
+        assertTrue(
+            DeviceSyncListenerPolicy.shouldRun(
+                backgroundSyncEnabled = true,
+                hasTrustedPeers = true
+            )
+        )
+        assertFalse(
+            DeviceSyncListenerPolicy.shouldRun(
+                backgroundSyncEnabled = false,
+                hasTrustedPeers = true
+            )
+        )
+        assertFalse(
+            DeviceSyncListenerPolicy.shouldRun(
+                backgroundSyncEnabled = true,
+                hasTrustedPeers = false
+            )
+        )
+    }
+
+    @Test
     fun `only local network transports are eligible`() {
         assertTrue(DeviceSyncBackgroundPolicy.hasLocalTransport(wifi = true, ethernet = false))
         assertTrue(DeviceSyncBackgroundPolicy.hasLocalTransport(wifi = false, ethernet = true))

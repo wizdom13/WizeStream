@@ -14,7 +14,20 @@ internal class DeviceSyncTransportAttempt<T>(
     val retryDiagnostic: String?
         get() = when {
             !retried -> null
+
+            result.isFailure &&
+                DeviceSyncTransportRecovery.shouldRetryTransportFailure(
+                    result.exceptionOrNull()
+                ) -> {
+                if (rediscovered) {
+                    "Peer rediscovered but listener unavailable after retry"
+                } else {
+                    "Peer listener unavailable after discovery and retry"
+                }
+            }
+
             rediscovered -> "Connection lost; rediscovered peer and retried once"
+
             else -> "Connection lost; retried once using saved peer addresses"
         }
 }

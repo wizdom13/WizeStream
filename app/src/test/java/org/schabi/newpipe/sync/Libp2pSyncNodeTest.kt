@@ -462,6 +462,34 @@ class Libp2pSyncNodeTest {
     }
 
     @Test
+    fun `transport recovery reports unavailable listener after retry`() {
+        val peer = TrustedPeer(
+            peerId = DeviceIdentity(generateKeyPair(KeyType.ED25519).first).peerId.toBase58(),
+            publicKey = "test",
+            deviceName = "Sleeping tablet",
+            addresses = emptyList(),
+            pairedAtEpochMillis = 0L
+        )
+        val recovery = DeviceSyncTransportRecovery.run(
+            peer = peer,
+            refreshPeer = { null }
+        ) {
+            throw SubscriptionSyncException(
+                "Could not reach Sleeping tablet",
+                java.nio.channels.ClosedChannelException()
+            )
+        }
+
+        assertTrue(recovery.retried)
+        assertFalse(recovery.rediscovered)
+        assertTrue(recovery.result.isFailure)
+        assertEquals(
+            "Peer listener unavailable after discovery and retry",
+            recovery.retryDiagnostic
+        )
+    }
+
+    @Test
     fun `transport recovery rediscovers a restarted peer between sync categories`() {
         val tabletState = InMemorySyncStateRepository()
         val phoneState = InMemorySyncStateRepository()

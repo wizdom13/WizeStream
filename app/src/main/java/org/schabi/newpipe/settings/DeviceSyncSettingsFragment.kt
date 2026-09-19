@@ -37,6 +37,7 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.DialogDevicePairingBinding
 import org.schabi.newpipe.sync.DeviceSyncAttempt
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
+import org.schabi.newpipe.sync.DeviceSyncListenerService
 import org.schabi.newpipe.sync.DeviceSyncLogCategory
 import org.schabi.newpipe.sync.DeviceSyncLogCategoryResult
 import org.schabi.newpipe.sync.DeviceSyncLogEntry
@@ -86,10 +87,17 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
             true
         }
         backgroundSyncPreference.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as Boolean
+            val hasTrustedPeers = syncManager.trustedPeers.isNotEmpty()
             DeviceSyncBackgroundScheduler.setEnabled(
                 requireContext(),
-                enabled = newValue as Boolean,
-                hasTrustedPeers = syncManager.trustedPeers.isNotEmpty()
+                enabled = enabled,
+                hasTrustedPeers = hasTrustedPeers
+            )
+            DeviceSyncListenerService.update(
+                requireContext(),
+                backgroundSyncEnabled = enabled,
+                hasTrustedPeers = hasTrustedPeers
             )
             true
         }
@@ -111,7 +119,17 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     override fun onResume() {
         super.onResume()
         updateState()
+        DeviceSyncListenerService.startIfEnabled(requireContext())
         startListening()
+    }
+
+    override fun onPause() {
+        if (!backgroundSyncPreference.isChecked) {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                syncManager.stopListening()
+            }
+        }
+        super.onPause()
     }
 
     private fun updateState() {
