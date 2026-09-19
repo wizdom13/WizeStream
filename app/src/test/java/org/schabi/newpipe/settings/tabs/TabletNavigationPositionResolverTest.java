@@ -29,7 +29,7 @@ public class TabletNavigationPositionResolverTest {
     }
 
     @Test
-    public void phonesAlwaysUseBottomNavigation() {
+    public void smallScreensAlwaysUseBottomNavigation() {
         assertFalse(TabletNavigationPositionResolver.useNavigationRail(false,
                 Configuration.ORIENTATION_LANDSCAPE,
                 TabletNavigationPositionResolver.LEFT));

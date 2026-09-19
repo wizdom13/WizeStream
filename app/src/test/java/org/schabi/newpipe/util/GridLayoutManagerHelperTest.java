@@ -16,13 +16,16 @@ public class GridLayoutManagerHelperTest {
         assertEquals(2, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 2));
         assertEquals(3, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 3));
         assertEquals(4, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 4));
+        assertEquals(5, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 5));
+        assertEquals(6, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 6));
+        assertEquals(7, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 7));
     }
 
     @Test
     public void invalidConfiguredColumnsFallBackToAutomaticSizing() {
         assertEquals(5, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 0));
         assertEquals(5, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 1));
-        assertEquals(5, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 5));
+        assertEquals(5, GridLayoutManagerHelper.calculateSpanCount(1024, 188, 8));
     }
 
     @Test
@@ -31,10 +34,13 @@ public class GridLayoutManagerHelperTest {
         assertEquals(0, GridLayoutManagerHelper.parsePreferredSpanCount("auto"));
         assertEquals(0, GridLayoutManagerHelper.parsePreferredSpanCount("invalid"));
         assertEquals(0, GridLayoutManagerHelper.parsePreferredSpanCount("1"));
-        assertEquals(0, GridLayoutManagerHelper.parsePreferredSpanCount("5"));
+        assertEquals(0, GridLayoutManagerHelper.parsePreferredSpanCount("8"));
         assertEquals(2, GridLayoutManagerHelper.parsePreferredSpanCount("2"));
         assertEquals(3, GridLayoutManagerHelper.parsePreferredSpanCount("3"));
         assertEquals(4, GridLayoutManagerHelper.parsePreferredSpanCount("4"));
+        assertEquals(5, GridLayoutManagerHelper.parsePreferredSpanCount("5"));
+        assertEquals(6, GridLayoutManagerHelper.parsePreferredSpanCount("6"));
+        assertEquals(7, GridLayoutManagerHelper.parsePreferredSpanCount("7"));
     }
 
     @Test

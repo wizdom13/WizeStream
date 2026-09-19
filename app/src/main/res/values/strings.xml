@@ -559,8 +559,8 @@
     <string name="fast_mode">Fast mode</string>
     <string name="main_tabs_position_summary">Move main tab selector to the bottom</string>
     <string name="main_tabs_position_title">Main tabs position</string>
-    <string name="tablet_navigation_portrait_position_title">Tablet navigation in portrait</string>
-    <string name="tablet_navigation_landscape_position_title">Tablet navigation in landscape</string>
+    <string name="tablet_navigation_portrait_position_title">Large-screen navigation in portrait</string>
+    <string name="tablet_navigation_landscape_position_title">Large-screen navigation in landscape</string>
     <string name="tablet_navigation_position_automatic">Automatic</string>
     <string name="tablet_navigation_position_bottom">Bottom</string>
     <string name="tablet_navigation_position_left">Left</string>
@@ -568,6 +568,8 @@
     <string name="bottom_navigation_labels_always">Always visible</string>
     <string name="bottom_navigation_labels_active">Active only</string>
     <string name="bottom_navigation_labels_hidden">Hidden</string>
+    <string name="compact_large_screen_navigation_title">Compact large-screen navigation</string>
+    <string name="compact_large_screen_navigation_summary">Use a narrower side navigation rail and shorter top bar on tablets and TVs</string>
     <!-- error strings -->
     <string name="general_error">Error</string>
     <string name="download_to_sdcard_error_title">External storage unavailable</string>
@@ -990,6 +992,9 @@
     <string name="grid_columns_two">2 columns</string>
     <string name="grid_columns_three">3 columns</string>
     <string name="grid_columns_four">4 columns</string>
+    <string name="grid_columns_five">5 columns</string>
+    <string name="grid_columns_six">6 columns</string>
+    <string name="grid_columns_seven">7 columns</string>
     <string name="show_full_grid_titles_title">Show full video titles</string>
     <string name="show_full_grid_titles_summary">Display complete titles in grids and while watching videos</string>
     <string name="comment_text_size_title">Comment text size</string>
