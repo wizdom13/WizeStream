@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1020001">WizeStream 1.20.1</a></li>
 <li><a href="#release-1020000">WizeStream 1.20.0</a></li>
 <li><a href="#release-1019000">WizeStream 1.19.0</a></li>
 <li><a href="#release-1018000">WizeStream 1.18.0</a></li>
@@ -72,6 +73,24 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1020001" data-version="1.20.1" data-version-code="1020001">
+<h2>WizeStream 1.20.1</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Keep feed refresh non-blocking with a compact progress strip while the feed and filter controls remain usable.</li>
+<li>Modernize stream-action, toolbar, and queue popup surfaces with rounded Material styling and the active theme palette.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Prevent video-adjustment restarts from reusing a Media3 track selector across replacement players, fixing Android 9 crashes while preserving adjustment values.</li>
+<li>Repair fullscreen enter and exit when orientation and split/two-pane layout state become temporarily inconsistent.</li>
+<li>Restore full-backup import on the current database schema, including Android TV devices.</li>
+<li>Recover device sync from transient peer disconnects by refreshing LAN addresses and retrying the failed category once.</li>
+<li>Restore YouTube and YouTube Music playlist or album artwork in Bookmarked Playlists when the newer playlist metadata layout is returned.</li>
+</ul>
+</div>
+</section>
 <section id="release-1020000" data-version="1.20.0" data-version-code="1020000">
 <h2>WizeStream 1.20.0</h2>
 <div class="release-notes">
