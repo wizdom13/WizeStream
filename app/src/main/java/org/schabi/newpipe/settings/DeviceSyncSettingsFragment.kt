@@ -119,7 +119,17 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     override fun onResume() {
         super.onResume()
         updateState()
+        DeviceSyncListenerService.startIfEnabled(requireContext())
         startListening()
+    }
+
+    override fun onPause() {
+        if (!backgroundSyncPreference.isChecked) {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                syncManager.stopListening()
+            }
+        }
+        super.onPause()
     }
 
     private fun updateState() {
