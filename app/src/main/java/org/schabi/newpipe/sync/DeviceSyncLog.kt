@@ -134,7 +134,7 @@ class DeviceSyncLogRepository(context: Context) {
                     result?.sentChanges,
                     result?.receivedChanges,
                     error,
-                    retryDiagnostics[DeviceSyncLogCategory.SUBSCRIPTIONS]
+                    retryDiagnostic = retryDiagnostics[DeviceSyncLogCategory.SUBSCRIPTIONS]
                 )
             )
             add(
@@ -143,7 +143,7 @@ class DeviceSyncLogRepository(context: Context) {
                     playlistResult?.sentChanges,
                     playlistResult?.receivedChanges,
                     playlistError,
-                    retryDiagnostics[DeviceSyncLogCategory.PLAYLISTS]
+                    retryDiagnostic = retryDiagnostics[DeviceSyncLogCategory.PLAYLISTS]
                 )
             )
             add(
