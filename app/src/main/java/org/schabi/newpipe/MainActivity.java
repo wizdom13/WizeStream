@@ -172,6 +172,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean searchNavigationActive;
     private int lastMainTabPosition;
     private int pendingMainTabPosition = -1;
+    private int defaultToolbarHeight;
+    private int defaultFragmentTopMargin;
+    private int defaultNavigationRailWidth;
     /*//////////////////////////////////////////////////////////////////////////
     // Activity's LifeCycle
     //////////////////////////////////////////////////////////////////////////*/
@@ -210,6 +213,11 @@ public class MainActivity extends AppCompatActivity {
         drawerHeaderBinding = DrawerHeaderBinding.bind(drawerLayoutBinding.navigation
                 .getHeaderView(0));
         toolbarLayoutBinding = mainBinding.toolbarLayout;
+        defaultToolbarHeight = toolbarLayoutBinding.toolbar.getLayoutParams().height;
+        defaultFragmentTopMargin = ((ViewGroup.MarginLayoutParams)
+                mainBinding.fragmentHolder.getLayoutParams()).topMargin;
+        defaultNavigationRailWidth = mainBinding.mainNavigationRail.getLayoutParams().width;
+        applyLargeScreenChrome();
         setContentView(mainBinding.getRoot());
         EdgeToEdgeHelper.applyMainActivitySystemBarInsets(
                 mainBinding.getRoot(),
@@ -669,6 +677,7 @@ public class MainActivity extends AppCompatActivity {
         // Change the date format to match the selected language on resume
         Localization.initPrettyTime(Localization.resolvePrettyTime());
         super.onResume();
+        applyLargeScreenChrome();
 
         // Close drawer on return, and don't show animation,
         // so it looks like the drawer isn't open when the user returns to MainActivity
@@ -1010,9 +1019,9 @@ public class MainActivity extends AppCompatActivity {
         final String defaultPosition = getString(R.string.tablet_navigation_position_default_value);
         final String configuredPosition = sharedPreferences.getString(
                 getString(positionKey), defaultPosition);
-        final boolean tablet = DeviceUtils.isTablet(this);
+        final boolean largeScreen = isLargeScreenNavigationDevice();
         final boolean useNavigationRail = TabletNavigationPositionResolver.useNavigationRail(
-                tablet, orientation, configuredPosition);
+                largeScreen, orientation, configuredPosition);
         final NavigationBarView navigation = useNavigationRail
                 ? mainBinding.mainNavigationRail : mainBinding.mainBottomNavigation;
         final NavigationBarView otherNavigation = useNavigationRail
@@ -1027,7 +1036,7 @@ public class MainActivity extends AppCompatActivity {
         final HomeNavigationMode navigationMode = HomeNavigationModeResolver
                 .resolveNavigationMode(tabs.size(), mainTabsAtBottom);
         final boolean showNavigation = shouldShowSearchNavigation(
-                tablet,
+                largeScreen,
                 tabs.size(),
                 itemLimit,
                 navigationMode == HomeNavigationMode.BOTTOM_NAVIGATION);
@@ -1121,6 +1130,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void applySearchNavigationLabelVisibility(@NonNull final NavigationBarView navigation) {
+        if (navigation == mainBinding.mainNavigationRail
+                && isCompactLargeScreenNavigationEnabled()) {
+            navigation.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_UNLABELED);
+            return;
+        }
+
         final String defaultValue = getString(R.string.bottom_navigation_labels_default_value);
         final String configuredValue = sharedPreferences.getString(
                 getString(R.string.bottom_navigation_labels_key), defaultValue);
@@ -1159,8 +1174,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void applySearchNavigationContentInsets(final boolean navigationRail) {
-        final int startInset = navigationRail
-                ? getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width) : 0;
+        final int startInset = navigationRail ? getMainNavigationRailWidth() : 0;
         final int bottomInset = navigationRail
                 ? 0 : getResources().getDimensionPixelSize(R.dimen.main_bottom_navigation_height);
         setSearchNavigationStartMargin(mainBinding.fragmentHolder, startInset);
@@ -1208,15 +1222,74 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    static boolean shouldShowSearchNavigation(final boolean tablet,
+    static boolean shouldShowSearchNavigation(final boolean largeScreen,
                                               final int tabCount,
                                               final int itemLimit,
                                               final boolean phoneUsesBottomNavigation) {
-        return tablet ? tabCount <= itemLimit : phoneUsesBottomNavigation;
+        return largeScreen ? tabCount <= itemLimit : phoneUsesBottomNavigation;
     }
 
     static int normalizeSearchNavigationTabPosition(final int position, final int tabCount) {
         return position >= 0 && position < tabCount ? position : 0;
+    }
+
+    private boolean isLargeScreenNavigationDevice() {
+        return DeviceUtils.isTablet(this) || DeviceUtils.isTv(this);
+    }
+
+    public boolean isCompactLargeScreenNavigationEnabled() {
+        return isLargeScreenNavigationDevice()
+                && sharedPreferences.getBoolean(
+                        getString(R.string.compact_large_screen_navigation_key), false);
+    }
+
+    public int getMainNavigationRailWidth() {
+        final int configuredWidth = mainBinding.mainNavigationRail.getLayoutParams().width;
+        return configuredWidth > 0 ? configuredWidth : defaultNavigationRailWidth;
+    }
+
+    private void applyLargeScreenChrome() {
+        final boolean compact = isCompactLargeScreenNavigationEnabled();
+        final int toolbarHeight = compact
+                ? getResources().getDimensionPixelSize(R.dimen.main_compact_toolbar_height)
+                : defaultToolbarHeight;
+        final int navigationRailWidth = compact
+                ? getResources().getDimensionPixelSize(
+                        R.dimen.main_compact_navigation_rail_width)
+                : defaultNavigationRailWidth;
+
+        setViewHeight(toolbarLayoutBinding.toolbar, toolbarHeight);
+        toolbarLayoutBinding.toolbar.setMinimumHeight(toolbarHeight);
+        setViewHeight(toolbarLayoutBinding.toolbarSearchContainer.getRoot(), toolbarHeight);
+        setViewHeight(toolbarLayoutBinding.toolbarContextualSearchContainer.getRoot(),
+                toolbarHeight);
+
+        final ViewGroup.MarginLayoutParams fragmentParams =
+                (ViewGroup.MarginLayoutParams) mainBinding.fragmentHolder.getLayoutParams();
+        final int fragmentTopMargin = compact ? toolbarHeight : defaultFragmentTopMargin;
+        if (fragmentParams.topMargin != fragmentTopMargin) {
+            fragmentParams.topMargin = fragmentTopMargin;
+            mainBinding.fragmentHolder.setLayoutParams(fragmentParams);
+        }
+
+        final ViewGroup.LayoutParams navigationParams =
+                mainBinding.mainNavigationRail.getLayoutParams();
+        if (navigationParams.width != navigationRailWidth) {
+            navigationParams.width = navigationRailWidth;
+            mainBinding.mainNavigationRail.setLayoutParams(navigationParams);
+        }
+
+        if (searchNavigationActive) {
+            showMainNavigationForSearch();
+        }
+    }
+
+    private static void setViewHeight(@NonNull final View view, final int height) {
+        final ViewGroup.LayoutParams params = view.getLayoutParams();
+        if (params.height != height) {
+            params.height = height;
+            view.setLayoutParams(params);
+        }
     }
 
     private void handleIntent(final Intent intent) {
