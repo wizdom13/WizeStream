@@ -423,6 +423,7 @@ class DeviceSyncManager private constructor(context: Context) {
         playlistSyncEngine.clearPeerKnowledge()
         historySyncEngine.clearPeerKnowledge()
         structuredPreferenceSyncEngine.clearPeerKnowledge()
+        node.stop()
         DeviceSyncBackgroundScheduler.cancel(applicationContext)
         DeviceSyncListenerService.stop(applicationContext)
     }
