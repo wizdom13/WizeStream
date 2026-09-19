@@ -69,32 +69,33 @@ public class FeedRefreshControlsTest {
         final Document document = parseLayout();
         final Element progress = findByAndroidId(
                 document, "@+id/loading_progress_bar");
-        final Element indeterminateProgress = findByAndroidId(
-                document, "@+id/loading_indeterminate_progress_bar");
+        final Element progressContainer = findByAndroidId(
+                document, "@+id/refresh_progress_container");
         final Element cancel = findByAndroidId(
                 document, "@+id/cancel_refresh_button");
 
         assertNotNull(progress);
-        assertNotNull(indeterminateProgress);
+        assertNotNull(progressContainer);
         assertEquals(
-                "com.google.android.material.progressindicator.LinearProgressIndicator",
+                "org.schabi.newpipe.local.feed.FeedProgressIndicator",
                 progress.getTagName());
-        assertEquals("match_parent",
+        assertEquals("0dp",
                 progress.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
-        assertEquals("wrap_content",
+        assertEquals("24dp",
                 progress.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("1",
+                progress.getAttributeNS(ANDROID_NAMESPACE, "layout_weight"));
         assertEquals("polite",
                 progress.getAttributeNS(ANDROID_NAMESPACE, "accessibilityLiveRegion"));
-        assertEquals("4dp", progress.getAttributeNS(APP_NAMESPACE, "trackThickness"));
-        assertEquals("2dp", progress.getAttributeNS(APP_NAMESPACE, "trackCornerRadius"));
-        assertEquals(
-                "com.google.android.material.progressindicator.LinearProgressIndicator",
-                indeterminateProgress.getTagName());
+        assertNull(findByAndroidId(
+                document, "@+id/loading_indeterminate_progress_bar"));
+        assertEquals("48dp",
+                progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
 
         assertNotNull(cancel);
         assertEquals("ImageButton", cancel.getTagName());
-        assertEquals("40dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
-        assertEquals("40dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("48dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("48dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
         assertEquals("?attr/selectableItemBackgroundBorderless",
                 cancel.getAttributeNS(ANDROID_NAMESPACE, "background"));
         assertEquals("@string/cancel_refresh",
@@ -104,15 +105,24 @@ public class FeedRefreshControlsTest {
     }
 
     @Test
-    public void determinateCounterUsesTheCircularIndicatorsExactCanvasCenter()
+    public void feedProgressIndicatorUsesMaterialWaveForBothProgressModes()
             throws Exception {
         final String source = readSource(
                 "org/schabi/newpipe/local/feed/FeedProgressIndicator.java");
+        final String fragment = readSource(
+                "org/schabi/newpipe/local/feed/FeedFragment.kt");
 
-        assertTrue(source.contains("super.onDraw(canvas)"));
-        assertTrue(source.contains("counterBounds.exactCenterX()"));
-        assertTrue(source.contains("counterBounds.exactCenterY()"));
-        assertTrue(source.contains("canvas.drawText(counterText"));
+        assertTrue(source.contains("Math.sin("));
+        assertTrue(source.contains("colorSurfaceVariant"));
+        assertTrue(source.contains("colorPrimary"));
+        assertTrue(source.contains("ValueAnimator.INFINITE"));
+        assertTrue(source.contains("clipDeterminateSegment"));
+        assertTrue(source.contains("clipIndeterminateSegment"));
+        assertTrue(source.contains("AccessibilityNodeInfo.RangeInfo.obtain"));
+        assertFalse(source.contains("CircularProgressIndicator"));
+        assertTrue(fragment.contains(
+                "loadingProgressBar.setIndeterminate(isIndeterminate)"));
+        assertFalse(fragment.contains("loadingIndeterminateProgressBar"));
     }
 
     @Test
