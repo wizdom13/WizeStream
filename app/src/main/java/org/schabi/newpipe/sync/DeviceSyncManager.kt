@@ -193,6 +193,16 @@ class DeviceSyncManager private constructor(context: Context) {
                             subscription.exceptionOrNull()
                         )
                     )
+            val downstreamTransportError = if (
+                !canContinue &&
+                DeviceSyncTransportRecovery.shouldRetryTransportFailure(
+                    subscription.exceptionOrNull()
+                )
+            ) {
+                PEER_LISTENER_UNAVAILABLE
+            } else {
+                null
+            }
 
             val playlist = if (canContinue) {
                 val attempt = runSyncStage(
@@ -312,22 +322,46 @@ class DeviceSyncManager private constructor(context: Context) {
                 result = subscription.getOrNull(),
                 error = subscription.exceptionOrNull().diagnosticMessage(),
                 playlistResult = playlist?.getOrNull(),
-                playlistError = playlist?.exceptionOrNull().diagnosticMessage(),
+                playlistError = playlist?.exceptionOrNull().diagnosticMessage()
+                    ?: downstreamTransportError,
                 watchHistoryResult = watchHistory?.getOrNull(),
-                watchHistoryError = watchHistory?.exceptionOrNull().diagnosticMessage(),
+                watchHistoryError = if (watchHistoryEnabled) {
+                    watchHistory?.exceptionOrNull().diagnosticMessage()
+                        ?: downstreamTransportError
+                } else {
+                    null
+                },
                 watchHistorySkipped = !watchHistoryEnabled,
                 searchHistoryResult = searchHistory?.getOrNull(),
-                searchHistoryError = searchHistory?.exceptionOrNull().diagnosticMessage(),
+                searchHistoryError = if (searchHistoryEnabled) {
+                    searchHistory?.exceptionOrNull().diagnosticMessage()
+                        ?: downstreamTransportError
+                } else {
+                    null
+                },
                 searchHistorySkipped = !searchHistoryEnabled,
                 learningNotesResult = learningNotes?.getOrNull(),
-                learningNotesError = learningNotes?.exceptionOrNull().diagnosticMessage(),
+                learningNotesError = if (learningNotesEnabled) {
+                    learningNotes?.exceptionOrNull().diagnosticMessage()
+                        ?: downstreamTransportError
+                } else {
+                    null
+                },
                 learningNotesSkipped = !learningNotesEnabled,
                 structuredPreferenceResults = structuredPreferences.mapValues {
                     it.value.getOrNull()
                 },
-                structuredPreferenceErrors = structuredPreferences.mapValues {
-                    it.value.exceptionOrNull().diagnosticMessage()
-                }.filterValues { it != null },
+                structuredPreferenceErrors = if (canContinue) {
+                    structuredPreferences.mapValues {
+                        it.value.exceptionOrNull().diagnosticMessage()
+                    }.filterValues { it != null }
+                } else if (downstreamTransportError != null) {
+                    StructuredPreferenceCategory.entries.associateWith {
+                        downstreamTransportError
+                    }
+                } else {
+                    emptyMap()
+                },
                 retryDiagnostics = retryDiagnostics
             )
         }
@@ -438,6 +472,8 @@ class DeviceSyncManager private constructor(context: Context) {
         private const val MAX_LOG_CAUSE_DEPTH = 4
         private const val MAX_LOG_ERROR_LENGTH = 2_048
         private const val LOG_CAUSE_SEPARATOR = " → "
+        private const val PEER_LISTENER_UNAVAILABLE =
+            "Skipped because the trusted device listener is unavailable after discovery and retry"
 
         @Volatile
         private var instance: DeviceSyncManager? = null
