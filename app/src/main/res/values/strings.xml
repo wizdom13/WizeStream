@@ -361,6 +361,10 @@
     <string name="device_sync_log_clear">Clear log</string>
     <string name="device_sync_background_title">Automatic background synchronization</string>
     <string name="device_sync_background_summary">About once per hour, when this device has sufficient battery and is connected to the same Wi-Fi or Ethernet network as a trusted device</string>
+    <string name="device_sync_listener_channel_name">Device synchronization</string>
+    <string name="device_sync_listener_channel_description">Keeps paired devices reachable for local background synchronization</string>
+    <string name="device_sync_listener_notification_title">Device sync is ready</string>
+    <string name="device_sync_listener_notification_text">Listening for trusted WizeStream devices on the local network</string>
     <string name="device_sync_sync_in_progress">Synchronizing data…</string>
     <string name="device_sync_sync_complete_title">Synchronization complete</string>
     <string name="device_sync_report_overview">Overview</string>
