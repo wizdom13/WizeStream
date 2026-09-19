@@ -66,12 +66,15 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
             return false;
         });
 
-        final boolean showTabletPreferences = DeviceUtils.isTablet(requireContext());
-        setPreferenceVisible(R.string.grid_columns_key, showTabletPreferences);
+        final boolean showLargeScreenPreferences = DeviceUtils.isTablet(requireContext())
+                || DeviceUtils.isTv(requireContext());
+        setPreferenceVisible(R.string.grid_columns_key, showLargeScreenPreferences);
+        setPreferenceVisible(R.string.compact_large_screen_navigation_key,
+                showLargeScreenPreferences);
         setPreferenceVisible(R.string.tablet_navigation_portrait_position_key,
-                showTabletPreferences);
+                showLargeScreenPreferences);
         setPreferenceVisible(R.string.tablet_navigation_landscape_position_key,
-                showTabletPreferences);
+                showLargeScreenPreferences);
     }
 
     private void setPreferenceVisible(final int key, final boolean visible) {
