@@ -110,6 +110,7 @@ public class FeedRefreshControlsTest {
                 "org/schabi/newpipe/local/feed/FeedFragment.kt");
 
         assertTrue(source.contains("class FeedProgressIndicator extends ProgressBar"));
+        assertTrue(source.contains("super.setIndeterminate(false)"));
         assertTrue(source.contains("Math.sin("));
         assertTrue(source.contains("colorSurfaceVariant"));
         assertTrue(source.contains("colorPrimary"));
