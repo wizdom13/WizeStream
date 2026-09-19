@@ -187,7 +187,7 @@ class DeviceSyncListenerService : Service() {
                     ContextCompat.startForegroundService(
                         context.applicationContext,
                         Intent(context.applicationContext, DeviceSyncListenerService::class.java)
-                        .putExtra(EXTRA_BACKGROUND_SYNC_ENABLED, true)
+                            .putExtra(EXTRA_BACKGROUND_SYNC_ENABLED, true)
                     )
                 } catch (error: RuntimeException) {
                     Log.w(TAG, "Could not start foreground device sync listener", error)
