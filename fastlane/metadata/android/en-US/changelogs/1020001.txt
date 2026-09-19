@@ -1,0 +1,6 @@
+• Fix video-adjustment restart crashes on Android 9.
+• Repair fullscreen transitions after split-layout/orientation desync.
+• Restore full-backup import on current schemas and Android TV.
+• Make feed refresh non-blocking and modernize popup surfaces.
+• Recover device sync after transient peer disconnects.
+• Restore YouTube Music playlist and album artwork in bookmarks.
