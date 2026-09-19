@@ -1,27 +1,49 @@
 package org.schabi.newpipe.local.feed;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.Typeface;
+import android.graphics.Path;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.animation.LinearInterpolator;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.color.MaterialColors;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
-
-import org.schabi.newpipe.R;
 
 /**
- * A determinate feed progress indicator that draws its counter around the same center as its ring.
+ * Compact feed progress indicator that draws a Material-colored wave for both determinate and
+ * indeterminate refresh states.
  */
-public final class FeedProgressIndicator extends CircularProgressIndicator {
-    private final Paint counterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Rect counterBounds = new Rect();
-    private String counterText = "";
+public final class FeedProgressIndicator extends View {
+    private static final long INDETERMINATE_DURATION_MILLIS = 1_100L;
+    private static final long PROGRESS_ANIMATION_DURATION_MILLIS = 180L;
+    private static final float TWO_PI = (float) (Math.PI * 2.0);
+
+    private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint indicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Path wavePath = new Path();
+
+    private final float waveAmplitude;
+    private final float waveLength;
+    private final float strokeWidth;
+    private final float indeterminateSegmentWidth;
+
+    @Nullable
+    private ValueAnimator indeterminateAnimator;
+    @Nullable
+    private ValueAnimator progressAnimator;
+
+    private int max = 1;
+    private int progress;
+    private float displayedProgress;
+    private float phase;
+    private boolean indeterminate;
 
     public FeedProgressIndicator(@NonNull final Context context) {
         this(context, null);
@@ -30,31 +52,247 @@ public final class FeedProgressIndicator extends CircularProgressIndicator {
     public FeedProgressIndicator(@NonNull final Context context,
                                  @Nullable final AttributeSet attrs) {
         super(context, attrs);
-        counterPaint.setColor(MaterialColors.getColor(
-                this, com.google.android.material.R.attr.colorOnSurface));
-        counterPaint.setTextSize(getResources().getDimension(
-                R.dimen.feed_progress_counter_text_size));
-        counterPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+
+        final float density = getResources().getDisplayMetrics().density;
+        waveAmplitude = 3.0f * density;
+        waveLength = 16.0f * density;
+        strokeWidth = 4.0f * density;
+        indeterminateSegmentWidth = 72.0f * density;
+
+        configurePaint(trackPaint, MaterialColors.getColor(
+                this, com.google.android.material.R.attr.colorSurfaceVariant));
+        configurePaint(indicatorPaint, MaterialColors.getColor(
+                this, com.google.android.material.R.attr.colorPrimary));
+
+        setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
     }
 
-    public void setCounterText(@Nullable final CharSequence text) {
-        counterText = text == null ? "" : text.toString();
-        setContentDescription(counterText);
+    private void configurePaint(@NonNull final Paint paint, final int color) {
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(strokeWidth);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeJoin(Paint.Join.ROUND);
+        paint.setColor(color);
+    }
+
+    public void setMax(final int value) {
+        max = Math.max(1, value);
+        progress = Math.min(progress, max);
+        displayedProgress = Math.min(displayedProgress, max);
         invalidate();
     }
 
-    @Override
-    protected synchronized void onDraw(@NonNull final Canvas canvas) {
-        super.onDraw(canvas);
-        if (counterText.isEmpty()) {
+    public int getMax() {
+        return max;
+    }
+
+    public void setProgressCompat(final int value, final boolean animated) {
+        final int target = Math.max(0, Math.min(value, max));
+        progress = target;
+
+        if (!animated || indeterminate || !isAttachedToWindow()) {
+            cancelProgressAnimator();
+            displayedProgress = target;
+            invalidate();
             return;
         }
 
-        counterPaint.getTextBounds(counterText, 0, counterText.length(), counterBounds);
-        final float centerX = (getPaddingLeft() + getWidth() - getPaddingRight()) / 2.0f;
+        cancelProgressAnimator();
+        progressAnimator = ValueAnimator.ofFloat(displayedProgress, target);
+        progressAnimator.setDuration(PROGRESS_ANIMATION_DURATION_MILLIS);
+        progressAnimator.addUpdateListener(animation -> {
+            displayedProgress = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        progressAnimator.start();
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public void setIndeterminate(final boolean value) {
+        if (indeterminate == value) {
+            return;
+        }
+
+        indeterminate = value;
+        if (value) {
+            cancelProgressAnimator();
+            startIndeterminateAnimator();
+        } else {
+            cancelIndeterminateAnimator();
+            phase = 0.0f;
+            displayedProgress = progress;
+            invalidate();
+        }
+    }
+
+    public boolean isIndeterminate() {
+        return indeterminate;
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (indeterminate) {
+            startIndeterminateAnimator();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        cancelIndeterminateAnimator();
+        cancelProgressAnimator();
+        super.onDetachedFromWindow();
+    }
+
+    @Override
+    protected void onVisibilityChanged(@NonNull final View changedView, final int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        updateIndeterminateAnimatorState();
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(final int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        updateIndeterminateAnimatorState();
+    }
+
+    private void updateIndeterminateAnimatorState() {
+        if (indeterminate && isShown() && getWindowVisibility() == VISIBLE) {
+            startIndeterminateAnimator();
+        } else {
+            cancelIndeterminateAnimator();
+        }
+    }
+
+    private void startIndeterminateAnimator() {
+        if (!isAttachedToWindow()
+                || !isShown()
+                || getWindowVisibility() != VISIBLE
+                || indeterminateAnimator != null) {
+            return;
+        }
+
+        indeterminateAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        indeterminateAnimator.setDuration(INDETERMINATE_DURATION_MILLIS);
+        indeterminateAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        indeterminateAnimator.setRepeatMode(ValueAnimator.RESTART);
+        indeterminateAnimator.setInterpolator(new LinearInterpolator());
+        indeterminateAnimator.addUpdateListener(animation -> {
+            phase = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        indeterminateAnimator.start();
+    }
+
+    private void cancelIndeterminateAnimator() {
+        if (indeterminateAnimator != null) {
+            indeterminateAnimator.cancel();
+            indeterminateAnimator = null;
+        }
+    }
+
+    private void cancelProgressAnimator() {
+        if (progressAnimator != null) {
+            progressAnimator.cancel();
+            progressAnimator = null;
+        }
+    }
+
+    @Override
+    protected void onDraw(@NonNull final Canvas canvas) {
+        super.onDraw(canvas);
+
+        final float left = getPaddingLeft();
+        final float right = getWidth() - getPaddingRight();
+        if (right <= left) {
+            return;
+        }
+
+        buildWavePath(left, right);
+        canvas.drawPath(wavePath, trackPaint);
+
+        final int saveCount = canvas.save();
+        if (indeterminate) {
+            clipIndeterminateSegment(canvas, left, right);
+        } else {
+            clipDeterminateSegment(canvas, left, right);
+        }
+        canvas.drawPath(wavePath, indicatorPaint);
+        canvas.restoreToCount(saveCount);
+    }
+
+    private void buildWavePath(final float left, final float right) {
+        wavePath.reset();
+
         final float centerY = (getPaddingTop() + getHeight() - getPaddingBottom()) / 2.0f;
-        final float textX = centerX - counterBounds.exactCenterX();
-        final float baselineY = centerY - counterBounds.exactCenterY();
-        canvas.drawText(counterText, textX, baselineY, counterPaint);
+        final float phaseOffset = indeterminate ? phase * TWO_PI : 0.0f;
+        final float step = Math.max(1.0f, getResources().getDisplayMetrics().density);
+
+        wavePath.moveTo(left, centerY);
+        for (float x = left; x <= right; x += step) {
+            final float normalized = (x - left) / waveLength;
+            final float y = centerY + waveAmplitude
+                    * (float) Math.sin(normalized * TWO_PI + phaseOffset);
+            wavePath.lineTo(x, y);
+        }
+        wavePath.lineTo(right, centerY + waveAmplitude
+                * (float) Math.sin(((right - left) / waveLength) * TWO_PI + phaseOffset));
+    }
+
+    private void clipDeterminateSegment(@NonNull final Canvas canvas,
+                                        final float left,
+                                        final float right) {
+        final float fraction = max <= 0 ? 0.0f : displayedProgress / max;
+        final float clampedFraction = Math.max(0.0f, Math.min(1.0f, fraction));
+
+        if (getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
+            final float start = right - (right - left) * clampedFraction;
+            canvas.clipRect(start, 0.0f, right, getHeight());
+        } else {
+            final float end = left + (right - left) * clampedFraction;
+            canvas.clipRect(left, 0.0f, end, getHeight());
+        }
+    }
+
+    private void clipIndeterminateSegment(@NonNull final Canvas canvas,
+                                          final float left,
+                                          final float right) {
+        final float availableWidth = right - left;
+        final float travel = availableWidth + indeterminateSegmentWidth * 2.0f;
+        final float directionPhase = getLayoutDirection() == LAYOUT_DIRECTION_RTL
+                ? 1.0f - phase
+                : phase;
+        final float segmentStart = left - indeterminateSegmentWidth
+                + travel * directionPhase;
+        final float segmentEnd = segmentStart + indeterminateSegmentWidth;
+
+        canvas.clipRect(
+                Math.max(left, segmentStart),
+                0.0f,
+                Math.min(right, segmentEnd),
+                getHeight()
+        );
+    }
+
+    @Override
+    public CharSequence getAccessibilityClassName() {
+        return ProgressBar.class.getName();
+    }
+
+    @Override
+    public void onInitializeAccessibilityNodeInfo(@NonNull final AccessibilityNodeInfo info) {
+        super.onInitializeAccessibilityNodeInfo(info);
+        info.setClassName(ProgressBar.class.getName());
+        if (!indeterminate) {
+            info.setRangeInfo(AccessibilityNodeInfo.RangeInfo.obtain(
+                    AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_INT,
+                    0.0f,
+                    max,
+                    progress
+            ));
+        }
     }
 }
