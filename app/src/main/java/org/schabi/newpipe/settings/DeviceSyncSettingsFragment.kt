@@ -40,6 +40,7 @@ import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncLogCategory
 import org.schabi.newpipe.sync.DeviceSyncLogCategoryResult
 import org.schabi.newpipe.sync.DeviceSyncLogEntry
+import org.schabi.newpipe.sync.DeviceSyncListenerService
 import org.schabi.newpipe.sync.DeviceSyncLogStatus
 import org.schabi.newpipe.sync.DeviceSyncManager
 import org.schabi.newpipe.sync.DeviceSyncSummary
@@ -86,10 +87,17 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
             true
         }
         backgroundSyncPreference.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as Boolean
+            val hasTrustedPeers = syncManager.trustedPeers.isNotEmpty()
             DeviceSyncBackgroundScheduler.setEnabled(
                 requireContext(),
-                enabled = newValue as Boolean,
-                hasTrustedPeers = syncManager.trustedPeers.isNotEmpty()
+                enabled = enabled,
+                hasTrustedPeers = hasTrustedPeers
+            )
+            DeviceSyncListenerService.update(
+                requireContext(),
+                backgroundSyncEnabled = enabled,
+                hasTrustedPeers = hasTrustedPeers
             )
             true
         }
