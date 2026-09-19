@@ -42,6 +42,15 @@ public class Material3TypographyResourcesTest {
                         + "parent=\"TextAppearance.Material3.BodySmall\">"));
         assertTrue(styles.contains(
                 "parent=\"TextAppearance.Material3.BodyLarge\""));
+        assertTrue(styles.contains(
+                "<style name=\"TextAppearance.WizeStream.PopupMenu.Primary\""
+                        + "\n        parent=\"TextAppearance.Material3.BodyLarge\">"));
+        assertTrue(styles.contains(
+                "<style name=\"TextAppearance.WizeStream.PopupMenu.Secondary\""
+                        + "\n        parent=\"TextAppearance.Material3.BodyMedium\">"));
+        assertTrue(styles.contains(
+                "<item name=\"android:colorBackground\">"
+                        + "?attr/colorSurfaceContainer</item>"));
         assertFalse(styles.contains(
                 "parent=\"TextAppearance.AppCompat.Widget.PopupMenu"));
     }
