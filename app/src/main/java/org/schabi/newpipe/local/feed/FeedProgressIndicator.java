@@ -17,10 +17,10 @@ import androidx.annotation.Nullable;
 import com.google.android.material.color.MaterialColors;
 
 /**
- * Compact feed progress indicator that draws a Material-colored wave for both determinate and
- * indeterminate refresh states.
+ * Compact feed progress indicator that preserves the base ProgressBar contract while drawing a
+ * Material-colored wave for both determinate and indeterminate refresh states.
  */
-public final class FeedProgressIndicator extends View {
+public final class FeedProgressIndicator extends ProgressBar {
     private static final long INDETERMINATE_DURATION_MILLIS = 1_100L;
     private static final long PROGRESS_ANIMATION_DURATION_MILLIS = 180L;
     private static final float TWO_PI = (float) (Math.PI * 2.0);
@@ -39,11 +39,8 @@ public final class FeedProgressIndicator extends View {
     @Nullable
     private ValueAnimator progressAnimator;
 
-    private int max = 1;
-    private int progress;
     private float displayedProgress;
     private float phase;
-    private boolean indeterminate;
 
     public FeedProgressIndicator(@NonNull final Context context) {
         this(context, null);
@@ -64,6 +61,7 @@ public final class FeedProgressIndicator extends View {
         configurePaint(indicatorPaint, MaterialColors.getColor(
                 this, com.google.android.material.R.attr.colorPrimary));
 
+        super.setMax(1);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
     }
 
@@ -75,22 +73,25 @@ public final class FeedProgressIndicator extends View {
         paint.setColor(color);
     }
 
-    public void setMax(final int value) {
-        max = Math.max(1, value);
-        progress = Math.min(progress, max);
-        displayedProgress = Math.min(displayedProgress, max);
+    @Override
+    public synchronized void setMax(final int value) {
+        super.setMax(Math.max(1, value));
+        displayedProgress = Math.min(displayedProgress, getMax());
         invalidate();
     }
 
-    public int getMax() {
-        return max;
+    @Override
+    public synchronized void setProgress(final int value) {
+        super.setProgress(value);
+        displayedProgress = getProgress();
+        invalidate();
     }
 
     public void setProgressCompat(final int value, final boolean animated) {
-        final int target = Math.max(0, Math.min(value, max));
-        progress = target;
+        final int target = Math.max(0, Math.min(value, getMax()));
+        super.setProgress(target);
 
-        if (!animated || indeterminate || !isAttachedToWindow()) {
+        if (!animated || isIndeterminate() || !isAttachedToWindow()) {
             cancelProgressAnimator();
             displayedProgress = target;
             invalidate();
@@ -107,35 +108,28 @@ public final class FeedProgressIndicator extends View {
         progressAnimator.start();
     }
 
-    public int getProgress() {
-        return progress;
-    }
-
-    public void setIndeterminate(final boolean value) {
-        if (indeterminate == value) {
+    @Override
+    public synchronized void setIndeterminate(final boolean value) {
+        if (isIndeterminate() == value) {
             return;
         }
 
-        indeterminate = value;
+        super.setIndeterminate(value);
         if (value) {
             cancelProgressAnimator();
             startIndeterminateAnimator();
         } else {
             cancelIndeterminateAnimator();
             phase = 0.0f;
-            displayedProgress = progress;
+            displayedProgress = getProgress();
             invalidate();
         }
-    }
-
-    public boolean isIndeterminate() {
-        return indeterminate;
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (indeterminate) {
+        if (isIndeterminate()) {
             startIndeterminateAnimator();
         }
     }
@@ -160,7 +154,7 @@ public final class FeedProgressIndicator extends View {
     }
 
     private void updateIndeterminateAnimatorState() {
-        if (indeterminate && isShown() && getWindowVisibility() == VISIBLE) {
+        if (isIndeterminate() && isShown() && getWindowVisibility() == VISIBLE) {
             startIndeterminateAnimator();
         } else {
             cancelIndeterminateAnimator();
@@ -202,9 +196,7 @@ public final class FeedProgressIndicator extends View {
     }
 
     @Override
-    protected void onDraw(@NonNull final Canvas canvas) {
-        super.onDraw(canvas);
-
+    protected synchronized void onDraw(@NonNull final Canvas canvas) {
         final float left = getPaddingLeft();
         final float right = getWidth() - getPaddingRight();
         if (right <= left) {
@@ -215,7 +207,7 @@ public final class FeedProgressIndicator extends View {
         canvas.drawPath(wavePath, trackPaint);
 
         final int saveCount = canvas.save();
-        if (indeterminate) {
+        if (isIndeterminate()) {
             clipIndeterminateSegment(canvas, left, right);
         } else {
             clipDeterminateSegment(canvas, left, right);
@@ -228,7 +220,7 @@ public final class FeedProgressIndicator extends View {
         wavePath.reset();
 
         final float centerY = (getPaddingTop() + getHeight() - getPaddingBottom()) / 2.0f;
-        final float phaseOffset = indeterminate ? phase * TWO_PI : 0.0f;
+        final float phaseOffset = isIndeterminate() ? phase * TWO_PI : 0.0f;
         final float step = Math.max(1.0f, getResources().getDisplayMetrics().density);
 
         wavePath.moveTo(left, centerY);
@@ -245,7 +237,7 @@ public final class FeedProgressIndicator extends View {
     private void clipDeterminateSegment(@NonNull final Canvas canvas,
                                         final float left,
                                         final float right) {
-        final float fraction = max <= 0 ? 0.0f : displayedProgress / max;
+        final float fraction = getMax() <= 0 ? 0.0f : displayedProgress / getMax();
         final float clampedFraction = Math.max(0.0f, Math.min(1.0f, fraction));
 
         if (getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
@@ -286,12 +278,12 @@ public final class FeedProgressIndicator extends View {
     public void onInitializeAccessibilityNodeInfo(@NonNull final AccessibilityNodeInfo info) {
         super.onInitializeAccessibilityNodeInfo(info);
         info.setClassName(ProgressBar.class.getName());
-        if (!indeterminate) {
+        if (!isIndeterminate()) {
             info.setRangeInfo(AccessibilityNodeInfo.RangeInfo.obtain(
                     AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_INT,
                     0.0f,
-                    max,
-                    progress
+                    getMax(),
+                    getProgress()
             ));
         }
     }
