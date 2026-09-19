@@ -38,7 +38,8 @@ data class DeviceSyncLogCategoryResult(
     val status: DeviceSyncLogStatus,
     val sentChanges: Int = 0,
     val receivedChanges: Int = 0,
-    val error: String? = null
+    val error: String? = null,
+    val retryDiagnostic: String? = null
 )
 
 @Serializable
@@ -132,7 +133,8 @@ class DeviceSyncLogRepository(context: Context) {
                     DeviceSyncLogCategory.SUBSCRIPTIONS,
                     result?.sentChanges,
                     result?.receivedChanges,
-                    error
+                    error,
+                    retryDiagnostics[DeviceSyncLogCategory.SUBSCRIPTIONS]
                 )
             )
             add(
@@ -140,7 +142,8 @@ class DeviceSyncLogRepository(context: Context) {
                     DeviceSyncLogCategory.PLAYLISTS,
                     playlistResult?.sentChanges,
                     playlistResult?.receivedChanges,
-                    playlistError
+                    playlistError,
+                    retryDiagnostics[DeviceSyncLogCategory.PLAYLISTS]
                 )
             )
             add(
@@ -149,7 +152,8 @@ class DeviceSyncLogRepository(context: Context) {
                     watchHistoryResult?.sentChanges,
                     watchHistoryResult?.receivedChanges,
                     watchHistoryError,
-                    watchHistorySkipped
+                    watchHistorySkipped,
+                    retryDiagnostics[DeviceSyncLogCategory.WATCH_HISTORY]
                 )
             )
             add(
@@ -158,7 +162,8 @@ class DeviceSyncLogRepository(context: Context) {
                     searchHistoryResult?.sentChanges,
                     searchHistoryResult?.receivedChanges,
                     searchHistoryError,
-                    searchHistorySkipped
+                    searchHistorySkipped,
+                    retryDiagnostics[DeviceSyncLogCategory.SEARCH_HISTORY]
                 )
             )
             add(
@@ -167,7 +172,8 @@ class DeviceSyncLogRepository(context: Context) {
                     learningNotesResult?.sentChanges,
                     learningNotesResult?.receivedChanges,
                     learningNotesError,
-                    learningNotesSkipped
+                    learningNotesSkipped,
+                    retryDiagnostics[DeviceSyncLogCategory.LEARNING_NOTES]
                 )
             )
             StructuredPreferenceCategory.entries.forEach { category ->
@@ -177,7 +183,8 @@ class DeviceSyncLogRepository(context: Context) {
                         category.toLogCategory(),
                         syncResult?.sentChanges,
                         syncResult?.receivedChanges,
-                        structuredPreferenceErrors[category]
+                        structuredPreferenceErrors[category],
+                        retryDiagnostic = retryDiagnostics[category.toLogCategory()]
                     )
                 )
             }
@@ -189,25 +196,29 @@ class DeviceSyncLogRepository(context: Context) {
         sentChanges: Int?,
         receivedChanges: Int?,
         error: String?,
-        disabled: Boolean = false
+        disabled: Boolean = false,
+        retryDiagnostic: String? = null
     ): DeviceSyncLogCategoryResult {
         return when {
             disabled -> DeviceSyncLogCategoryResult(
                 category = category,
-                status = DeviceSyncLogStatus.DISABLED
+                status = DeviceSyncLogStatus.DISABLED,
+                retryDiagnostic = retryDiagnostic
             )
 
             sentChanges != null && receivedChanges != null -> DeviceSyncLogCategoryResult(
                 category = category,
                 status = DeviceSyncLogStatus.SUCCEEDED,
                 sentChanges = sentChanges,
-                receivedChanges = receivedChanges
+                receivedChanges = receivedChanges,
+                retryDiagnostic = retryDiagnostic
             )
 
             else -> DeviceSyncLogCategoryResult(
                 category = category,
                 status = DeviceSyncLogStatus.FAILED,
-                error = error
+                error = error,
+                retryDiagnostic = retryDiagnostic
             )
         }
     }
