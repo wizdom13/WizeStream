@@ -186,8 +186,13 @@ public class YoutubePlaylistExtractor extends PlaylistExtractor {
                     .getArray("thumbnails");
         }
         if (thumbnails.isEmpty()) {
-            // Some responses expose both layouts but only populate the new header artwork.
+            // Some responses expose both layouts but only populate the newer playlist header.
             thumbnails = playlistHeaderThumbnails(response);
+        }
+        if (thumbnails.isEmpty()) {
+            // YouTube's newest playlist page header stores the artwork in a pageHeaderViewModel
+            // hero image instead of playlistHeaderRenderer or sidebar metadata.
+            thumbnails = pageHeaderThumbnails(response);
         }
         if (thumbnails.isEmpty()) {
             thumbnails = response.getObject("microformat")
@@ -211,6 +216,17 @@ public class YoutubePlaylistExtractor extends PlaylistExtractor {
                 .getObject("heroPlaylistThumbnailRenderer")
                 .getObject("thumbnail")
                 .getArray("thumbnails");
+    }
+
+    private static JsonArray pageHeaderThumbnails(final JsonObject response) {
+        return response.getObject(HEADER)
+                .getObject("pageHeaderRenderer")
+                .getObject("content")
+                .getObject("pageHeaderViewModel")
+                .getObject("heroImage")
+                .getObject("contentPreviewImageViewModel")
+                .getObject("image")
+                .getArray("sources");
     }
 
     @Override
