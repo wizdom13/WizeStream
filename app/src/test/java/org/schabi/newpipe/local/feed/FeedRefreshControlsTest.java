@@ -19,9 +19,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public class FeedRefreshControlsTest {
     private static final String ANDROID_NAMESPACE =
             "http://schemas.android.com/apk/res/android";
-    private static final String APP_NAMESPACE =
-            "http://schemas.android.com/apk/res-auto";
-
     private final Path sourceDirectory = Files.exists(Path.of("src/main/java"))
             ? Path.of("src/main/java") : Path.of("app/src/main/java");
     private final Path resourcesDirectory = Files.exists(Path.of("src/main/res"))
