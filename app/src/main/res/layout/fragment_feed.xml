@@ -91,54 +91,28 @@
             <LinearLayout
                 android:id="@+id/refresh_progress_container"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="12dp"
-                android:paddingEnd="4dp"
                 android:visibility="gone"
                 tools:visibility="visible">
 
-                <FrameLayout
+                <org.schabi.newpipe.local.feed.FeedProgressIndicator
+                    android:id="@+id/loading_progress_bar"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/loading_progress_bar"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:accessibilityLiveRegion="polite"
-                        android:indeterminate="false"
-                        android:max="1"
-                        android:progress="0"
-                        app:indicatorColor="?attr/colorPrimary"
-                        app:trackColor="?attr/colorSurfaceVariant"
-                        app:trackCornerRadius="2dp"
-                        app:trackThickness="4dp" />
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/loading_indeterminate_progress_bar"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:accessibilityLiveRegion="polite"
-                        android:indeterminate="true"
-                        android:visibility="gone"
-                        app:indicatorColor="?attr/colorPrimary"
-                        app:trackColor="?attr/colorSurfaceVariant"
-                        app:trackCornerRadius="2dp"
-                        app:trackThickness="4dp" />
-                </FrameLayout>
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:accessibilityLiveRegion="polite" />
 
                 <ImageButton
                     android:id="@+id/cancel_refresh_button"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/cancel_refresh"
-                    android:padding="10dp"
+                    android:padding="14dp"
                     android:src="@drawable/ic_close"
                     app:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
