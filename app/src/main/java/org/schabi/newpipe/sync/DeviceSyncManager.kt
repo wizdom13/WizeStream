@@ -361,11 +361,16 @@ class DeviceSyncManager private constructor(context: Context) {
     private fun StructuredPreferenceCategory.toLogCategory(): DeviceSyncLogCategory {
         return when (this) {
             StructuredPreferenceCategory.FEED_GROUPS -> DeviceSyncLogCategory.FEED_GROUPS
+
             StructuredPreferenceCategory.HOME_TABS -> DeviceSyncLogCategory.HOME_TABS
+
             StructuredPreferenceCategory.CHANNEL_PROFILES ->
                 DeviceSyncLogCategory.CHANNEL_PROFILES
+
             StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
+
             StructuredPreferenceCategory.SETTINGS -> DeviceSyncLogCategory.SETTINGS
+
             StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
                 DeviceSyncLogCategory.COMPLETED_DOWNLOADS
         }
