@@ -67,6 +67,7 @@ class DeviceSyncManager private constructor(context: Context) {
                     applicationContext,
                     hasTrustedPeers = true
                 )
+                DeviceSyncListenerService.startIfEnabled(applicationContext)
             }
         )
     }
@@ -95,6 +96,11 @@ class DeviceSyncManager private constructor(context: Context) {
     @Synchronized
     fun startListening() {
         startNode()
+    }
+
+    @Synchronized
+    fun stopListening() {
+        node.stop()
     }
 
     @Synchronized
@@ -384,6 +390,7 @@ class DeviceSyncManager private constructor(context: Context) {
         historySyncEngine.clearPeerKnowledge()
         structuredPreferenceSyncEngine.clearPeerKnowledge()
         DeviceSyncBackgroundScheduler.cancel(applicationContext)
+        DeviceSyncListenerService.stop(applicationContext)
     }
 
     @Synchronized
