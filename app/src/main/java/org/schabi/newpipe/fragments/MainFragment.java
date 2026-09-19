@@ -112,7 +112,7 @@ public class MainFragment extends BaseFragment
     private String mainTabsPositionKey;
     private String bottomNavigationLabelsKey;
     private String bottomNavigationLabelsValue;
-    private boolean tabletNavigation;
+    private boolean largeScreenNavigation;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Fragment's LifeCycle
@@ -219,6 +219,7 @@ public class MainFragment extends BaseFragment
         if (navigationChanged) {
             updateBottomNavigationItems();
         }
+        updateBottomNavigationLabelVisibility();
         updateMainNavigationMode();
         scheduleBottomNavigationRemeasure();
     }
@@ -436,9 +437,10 @@ public class MainFragment extends BaseFragment
         final String defaultPosition = getString(
                 R.string.tablet_navigation_position_default_value);
         final String position = prefs.getString(getString(positionKey), defaultPosition);
-        tabletNavigation = DeviceUtils.isTablet(requireContext());
+        largeScreenNavigation = DeviceUtils.isTablet(requireContext())
+                || DeviceUtils.isTv(requireContext());
         final boolean useNavigationRail = TabletNavigationPositionResolver.useNavigationRail(
-                tabletNavigation, orientation, position);
+                largeScreenNavigation, orientation, position);
         final NavigationBarView selectedNavigation = useNavigationRail
                 ? navigationRailView : bottomNavigationView;
         if (bottomNavigation == selectedNavigation) {
@@ -833,6 +835,13 @@ public class MainFragment extends BaseFragment
             return;
         }
 
+        if (isNavigationRail() && activity instanceof MainActivity
+                && ((MainActivity) activity).isCompactLargeScreenNavigationEnabled()) {
+            bottomNavigation.setLabelVisibilityMode(
+                    NavigationBarView.LABEL_VISIBILITY_UNLABELED);
+            return;
+        }
+
         final int labelVisibilityMode;
         if (getString(R.string.bottom_navigation_labels_always_value)
                 .equals(bottomNavigationLabelsValue)) {
@@ -857,7 +866,7 @@ public class MainFragment extends BaseFragment
         final boolean navigationRail = isNavigationRail();
         final HomeNavigationMode navigationMode = HomeNavigationModeResolver
                 .resolveNavigationMode(tabsList.size(), bottom);
-        final boolean showBottomNavigation = tabletNavigation
+        final boolean showBottomNavigation = largeScreenNavigation
                 ? tabsList.size() <= getNavigationItemLimit()
                 : navigationMode == HomeNavigationMode.BOTTOM_NAVIGATION;
         final boolean showTabLayout = !showBottomNavigation
@@ -979,17 +988,20 @@ public class MainFragment extends BaseFragment
     }
 
     private int getNavigationRailWidth(@NonNull final View navigation) {
-        return navigation.getWidth() > 0
-                ? navigation.getWidth()
-                : getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width);
+        if (activity instanceof MainActivity) {
+            return ((MainActivity) activity).getMainNavigationRailWidth();
+        }
+        if (navigation.getLayoutParams().width > 0) {
+            return navigation.getLayoutParams().width;
+        }
+        return getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width);
     }
 
     private void setNavigationRailContentInset(final boolean visible) {
         if (!isNavigationRail()) {
             return;
         }
-        final int inset = visible
-                ? getResources().getDimensionPixelSize(R.dimen.main_navigation_rail_width) : 0;
+        final int inset = visible ? getNavigationRailWidth(bottomNavigation) : 0;
         setStartMargin(requireActivity().findViewById(R.id.fragment_holder), inset);
         setStartMargin(requireActivity().findViewById(R.id.toolbar_layout), inset);
     }
