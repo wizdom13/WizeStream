@@ -16,6 +16,8 @@ class YoutubePlaylistThumbnailTest {
             "https://i.ytimg.com/vi/sidebar/maxresdefault.jpg";
     private static final String HEADER_ARTWORK =
             "https://i.ytimg.com/vi/header/maxresdefault.jpg";
+    private static final String PAGE_HEADER_ARTWORK =
+            "https://i.ytimg.com/vi/page-header/maxresdefault.jpg";
     private static final String MICROFORMAT_ARTWORK =
             "https://i.ytimg.com/vi/microformat/maxresdefault.jpg";
 
@@ -115,6 +117,49 @@ class YoutubePlaylistThumbnailTest {
                         new JsonObject(),
                         response,
                         false
+                )
+        );
+    }
+
+    @Test
+    void extractsArtworkFromPageHeaderHeroImage() throws Exception {
+        final JsonObject response = JsonParser.object().from("""
+                {
+                  "header": {
+                    "pageHeaderRenderer": {
+                      "content": {
+                        "pageHeaderViewModel": {
+                          "heroImage": {
+                            "contentPreviewImageViewModel": {
+                              "image": {
+                                "sources": [
+                                  {
+                                    "url": "https://i.ytimg.com/vi/page-header/default.jpg",
+                                    "width": 168,
+                                    "height": 94
+                                  },
+                                  {
+                                    "url": "https://i.ytimg.com/vi/page-header/maxresdefault.jpg",
+                                    "width": 336,
+                                    "height": 188
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """);
+
+        assertEquals(
+                PAGE_HEADER_ARTWORK,
+                YoutubePlaylistExtractor.extractThumbnailUrl(
+                        new JsonObject(),
+                        response,
+                        true
                 )
         );
     }
