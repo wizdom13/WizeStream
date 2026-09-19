@@ -4,6 +4,21 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.20.1 (`1020001`)
+
+### Improvements
+
+- Keep feed refresh non-blocking with a compact progress strip while the feed and filter controls remain usable.
+- Modernize stream-action, toolbar, and queue popup surfaces with rounded Material styling and the active theme palette.
+
+### Fixes
+
+- Prevent video-adjustment restarts from reusing a Media3 track selector across replacement players, fixing Android 9 crashes while preserving adjustment values.
+- Repair fullscreen enter and exit when orientation and split/two-pane layout state become temporarily inconsistent.
+- Restore full-backup import on the current database schema, including Android TV devices.
+- Recover device sync from transient peer disconnects by refreshing LAN addresses and retrying the failed category once.
+- Restore YouTube and YouTube Music playlist or album artwork in Bookmarked Playlists when the newer playlist metadata layout is returned.
+
 ## WizeStream 1.20.0 (`1020000`)
 
 ### New features
