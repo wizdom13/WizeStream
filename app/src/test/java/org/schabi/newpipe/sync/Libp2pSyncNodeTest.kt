@@ -464,7 +464,7 @@ class Libp2pSyncNodeTest {
     @Test
     fun `transport recovery reports unavailable listener after retry`() {
         val peer = TrustedPeer(
-            peerId = generateKeyPair(KeyType.ED25519).second.peerId.toBase58(),
+            peerId = DeviceIdentity(generateKeyPair(KeyType.ED25519).first).peerId.toBase58(),
             publicKey = "test",
             deviceName = "Sleeping tablet",
             addresses = emptyList(),
