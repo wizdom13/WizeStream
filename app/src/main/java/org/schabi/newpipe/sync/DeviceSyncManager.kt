@@ -105,29 +105,28 @@ class DeviceSyncManager private constructor(context: Context) {
             throw SubscriptionSyncException("Pair a trusted device before synchronizing")
         }
         val attempts = peers.map { peer ->
-            var activePeer = peer
-            var result = runCatching {
-                node.syncSubscriptions(peer)
-            }
-            if (result.exceptionOrNull().isReachabilityFailure()) {
-                node.refreshPeerAddresses(peer)?.let { refreshedPeer ->
-                    activePeer = refreshedPeer
-                    result = runCatching {
-                        node.syncSubscriptions(refreshedPeer)
-                    }
-                }
+            val retryDiagnostics = linkedMapOf<DeviceSyncLogCategory, String>()
+            val (activePeer, result) = runSyncStage(
+                peer,
+                DeviceSyncLogCategory.SUBSCRIPTIONS,
+                retryDiagnostics
+            ) { candidate ->
+                node.syncSubscriptions(candidate)
             }
             result.fold(
                 onSuccess = {
                     DeviceSyncAttempt(
                         peer = activePeer,
-                        result = it
+                        result = it,
+                        retryDiagnostics = retryDiagnostics
                     )
                 },
                 onFailure = { error ->
                     DeviceSyncAttempt(
                         peer = activePeer,
-                        error = error.message ?: "Subscription synchronization failed"
+                        error = error.diagnosticMessage()
+                            ?: "Subscription synchronization failed",
+                        retryDiagnostics = retryDiagnostics
                     )
                 }
             )
@@ -169,81 +168,123 @@ class DeviceSyncManager private constructor(context: Context) {
         }
         val attempts = peers.map { peer ->
             var activePeer = peer
-            var subscription = runCatching {
-                node.syncSubscriptions(peer, recordStatus = !background)
+            val retryDiagnostics = linkedMapOf<DeviceSyncLogCategory, String>()
+
+            val subscriptionAttempt = runSyncStage(
+                activePeer,
+                DeviceSyncLogCategory.SUBSCRIPTIONS,
+                retryDiagnostics
+            ) { candidate ->
+                node.syncSubscriptions(candidate, recordStatus = !background)
             }
-            if (subscription.exceptionOrNull().isReachabilityFailure()) {
-                node.refreshPeerAddresses(peer)?.let { refreshedPeer ->
-                    activePeer = refreshedPeer
-                    subscription = runCatching {
-                        node.syncSubscriptions(refreshedPeer, recordStatus = !background)
-                    }
-                }
-            }
+            activePeer = subscriptionAttempt.first
+            val subscription = subscriptionAttempt.second
+
             val canContinue = subscription.isSuccess ||
-                (!background && !subscription.exceptionOrNull().isReachabilityFailure())
+                (
+                    !background &&
+                        !DeviceSyncTransportRecovery.shouldRetryTransportFailure(
+                            subscription.exceptionOrNull()
+                        )
+                    )
+
             val playlist = if (canContinue) {
-                runCatching {
-                    node.syncPlaylists(activePeer, recordStatus = !background)
+                val attempt = runSyncStage(
+                    activePeer,
+                    DeviceSyncLogCategory.PLAYLISTS,
+                    retryDiagnostics
+                ) { candidate ->
+                    node.syncPlaylists(candidate, recordStatus = !background)
                 }
+                activePeer = attempt.first
+                attempt.second
             } else {
                 null
             }
+
             val watchHistoryEnabled = historySyncEngine.isEnabled(
                 HistorySyncCategory.WATCH
             )
             val watchHistory = if (canContinue && watchHistoryEnabled) {
-                runCatching {
+                val attempt = runSyncStage(
+                    activePeer,
+                    DeviceSyncLogCategory.WATCH_HISTORY,
+                    retryDiagnostics
+                ) { candidate ->
                     node.syncHistory(
-                        activePeer,
+                        candidate,
                         HistorySyncCategory.WATCH,
                         recordStatus = !background
                     )
                 }
+                activePeer = attempt.first
+                attempt.second
             } else {
                 null
             }
+
             val searchHistoryEnabled = historySyncEngine.isEnabled(
                 HistorySyncCategory.SEARCH
             )
             val searchHistory = if (canContinue && searchHistoryEnabled) {
-                runCatching {
+                val attempt = runSyncStage(
+                    activePeer,
+                    DeviceSyncLogCategory.SEARCH_HISTORY,
+                    retryDiagnostics
+                ) { candidate ->
                     node.syncHistory(
-                        activePeer,
+                        candidate,
                         HistorySyncCategory.SEARCH,
                         recordStatus = !background
                     )
                 }
+                activePeer = attempt.first
+                attempt.second
             } else {
                 null
             }
+
             val learningNotesEnabled = historySyncEngine.isEnabled(
                 HistorySyncCategory.LEARNING_NOTES
             )
             val learningNotes = if (canContinue && learningNotesEnabled) {
-                runCatching {
+                val attempt = runSyncStage(
+                    activePeer,
+                    DeviceSyncLogCategory.LEARNING_NOTES,
+                    retryDiagnostics
+                ) { candidate ->
                     node.syncHistory(
-                        activePeer,
+                        candidate,
                         HistorySyncCategory.LEARNING_NOTES,
                         recordStatus = !background
                     )
                 }
+                activePeer = attempt.first
+                attempt.second
             } else {
                 null
             }
-            val structuredPreferences = if (canContinue) {
-                StructuredPreferenceCategory.entries.associateWith { category ->
-                    runCatching {
+
+            val structuredPreferences =
+                linkedMapOf<StructuredPreferenceCategory, Result<StructuredPreferenceSyncResult>>()
+            if (canContinue) {
+                StructuredPreferenceCategory.entries.forEach { category ->
+                    val attempt = runSyncStage(
+                        activePeer,
+                        category.toLogCategory(),
+                        retryDiagnostics
+                    ) { candidate ->
                         node.syncStructuredPreferences(
-                            activePeer,
+                            candidate,
                             category,
                             recordStatus = !background
                         )
                     }
+                    activePeer = attempt.first
+                    structuredPreferences[category] = attempt.second
                 }
-            } else {
-                emptyMap()
             }
+
             val errors = listOfNotNull(
                 subscription.exceptionOrNull()?.message,
                 playlist?.exceptionOrNull()?.message,
@@ -280,7 +321,8 @@ class DeviceSyncManager private constructor(context: Context) {
                 },
                 structuredPreferenceErrors = structuredPreferences.mapValues {
                     it.value.exceptionOrNull().diagnosticMessage()
-                }.filterValues { it != null }
+                }.filterValues { it != null },
+                retryDiagnostics = retryDiagnostics
             )
         }
         return DeviceSyncSummary(attempts)
@@ -299,11 +341,34 @@ class DeviceSyncManager private constructor(context: Context) {
             .take(MAX_LOG_ERROR_LENGTH)
     }
 
-    private fun Throwable?.isReachabilityFailure(): Boolean {
-        return this != null && generateSequence(this) { it.cause }
-            .take(MAX_LOG_CAUSE_DEPTH)
-            .mapNotNull(Throwable::message)
-            .any { it.startsWith(REACHABILITY_ERROR_PREFIX) }
+    private fun <T> runSyncStage(
+        peer: TrustedPeer,
+        category: DeviceSyncLogCategory,
+        retryDiagnostics: MutableMap<DeviceSyncLogCategory, String>,
+        operation: (TrustedPeer) -> T
+    ): Pair<TrustedPeer, Result<T>> {
+        val attempt = DeviceSyncTransportRecovery.run(
+            peer = peer,
+            refreshPeer = node::refreshPeerAddresses,
+            operation = operation
+        )
+        attempt.retryDiagnostic?.let { diagnostic ->
+            retryDiagnostics[category] = diagnostic
+        }
+        return attempt.peer to attempt.result
+    }
+
+    private fun StructuredPreferenceCategory.toLogCategory(): DeviceSyncLogCategory {
+        return when (this) {
+            StructuredPreferenceCategory.FEED_GROUPS -> DeviceSyncLogCategory.FEED_GROUPS
+            StructuredPreferenceCategory.HOME_TABS -> DeviceSyncLogCategory.HOME_TABS
+            StructuredPreferenceCategory.CHANNEL_PROFILES ->
+                DeviceSyncLogCategory.CHANNEL_PROFILES
+            StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
+            StructuredPreferenceCategory.SETTINGS -> DeviceSyncLogCategory.SETTINGS
+            StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
+                DeviceSyncLogCategory.COMPLETED_DOWNLOADS
+        }
     }
 
     @Synchronized
@@ -361,7 +426,6 @@ class DeviceSyncManager private constructor(context: Context) {
         private const val MAX_LOG_CAUSE_DEPTH = 4
         private const val MAX_LOG_ERROR_LENGTH = 2_048
         private const val LOG_CAUSE_SEPARATOR = " → "
-        private const val REACHABILITY_ERROR_PREFIX = "Could not reach "
 
         @Volatile
         private var instance: DeviceSyncManager? = null
