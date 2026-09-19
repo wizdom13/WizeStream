@@ -30,8 +30,12 @@ devices. The result lists the data categories exchanged with each device and
 any category or device that needs attention.
 
 **Automatic background synchronization** is enabled after pairing unless it
-is turned off. WizeStream attempts a background sync approximately once per
-hour when:
+is turned off. While it is enabled and at least one trusted device is paired,
+WizeStream keeps a small foreground listener active so another trusted device
+can reach it even when the app UI is closed. Android shows a low-priority
+**Device synchronization** notification while this listener is active.
+
+WizeStream attempts a background sync approximately once per hour when:
 
 - The device has sufficient battery.
 - The device is connected through Wi-Fi or Ethernet.
