@@ -1570,19 +1570,29 @@
     <string name="grid_columns_two_key">2</string>
     <string name="grid_columns_three_key">3</string>
     <string name="grid_columns_four_key">4</string>
+    <string name="grid_columns_five_key">5</string>
+    <string name="grid_columns_six_key">6</string>
+    <string name="grid_columns_seven_key">7</string>
     <string-array name="grid_columns_values">
         <item>@string/grid_columns_auto_key</item>
         <item>@string/grid_columns_two_key</item>
         <item>@string/grid_columns_three_key</item>
         <item>@string/grid_columns_four_key</item>
+        <item>@string/grid_columns_five_key</item>
+        <item>@string/grid_columns_six_key</item>
+        <item>@string/grid_columns_seven_key</item>
     </string-array>
     <string-array name="grid_columns_description">
         <item>@string/auto</item>
         <item>@string/grid_columns_two</item>
         <item>@string/grid_columns_three</item>
         <item>@string/grid_columns_four</item>
+        <item>@string/grid_columns_five</item>
+        <item>@string/grid_columns_six</item>
+        <item>@string/grid_columns_seven</item>
     </string-array>
     <string name="show_full_grid_titles_key">show_full_grid_titles</string>
+    <string name="compact_large_screen_navigation_key">compact_large_screen_navigation</string>
     <string name="comment_text_size_key">comment_text_size</string>
     <string name="comment_text_size_small_key">12</string>
     <string name="comment_text_size_medium_key">14</string>
