@@ -64,9 +64,7 @@ public final class FullscreenOrientationPolicy {
         if (contentOrientation == VideoContentOrientation.LANDSCAPE) {
             return true;
         }
-        return contentOrientation == VideoContentOrientation.PORTRAIT
-                && landscape
-                && screenOrientationLocked;
+        return contentOrientation == VideoContentOrientation.PORTRAIT && landscape;
     }
 
     public static int targetConfigurationOrientation(
