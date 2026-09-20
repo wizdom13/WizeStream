@@ -355,8 +355,8 @@ public class HistoryRecordManager {
                 ? Single.fromCallable(() -> streamTable.upsert(new StreamEntity(queueItem)))
                 : queueItem.getStream().map(info -> streamTable.upsert(new StreamEntity(info)));
         return streamId
-                .flatMapPublisher(streamId ->
-                        streamStateTable.getStateForProfile(profileId, streamId))
+                .flatMapPublisher(streamUid ->
+                        streamStateTable.getStateForProfile(profileId, streamUid))
                 .firstElement()
                 .flatMap(list -> list.isEmpty() ? Maybe.empty() : Maybe.just(list.get(0)))
                 .filter(state -> state.isValid(queueItem.getDuration()))
