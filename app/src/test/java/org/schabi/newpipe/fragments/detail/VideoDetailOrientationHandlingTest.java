@@ -2,6 +2,9 @@ package org.schabi.newpipe.fragments.detail;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
 
 import android.content.res.Configuration;
 
@@ -18,21 +21,23 @@ public class VideoDetailOrientationHandlingTest {
     @Test
     public void fullscreenTransitionCompletesOnlyAfterTargetStateIsApplied() {
         assertFalse(FullscreenOrientationPolicy.isFullscreenStateApplied(
-                Configuration.ORIENTATION_LANDSCAPE, false, false));
+                Configuration.ORIENTATION_LANDSCAPE, false, LANDSCAPE));
         assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
-                Configuration.ORIENTATION_LANDSCAPE, true, false));
+                Configuration.ORIENTATION_LANDSCAPE, true, LANDSCAPE));
         assertFalse(FullscreenOrientationPolicy.isFullscreenStateApplied(
-                Configuration.ORIENTATION_PORTRAIT, true, false));
+                Configuration.ORIENTATION_PORTRAIT, true, LANDSCAPE));
         assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
-                Configuration.ORIENTATION_PORTRAIT, false, false));
+                Configuration.ORIENTATION_PORTRAIT, false, LANDSCAPE));
     }
 
     @Test
-    public void portraitVerticalVideoDoesNotWaitForAnOrientationDrivenExit() {
+    public void portraitAndUnknownVideoDoNotWaitForOrientationDrivenState() {
         assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
-                Configuration.ORIENTATION_PORTRAIT, true, true));
+                Configuration.ORIENTATION_PORTRAIT, true, PORTRAIT));
         assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
-                Configuration.ORIENTATION_UNDEFINED, false, false));
+                Configuration.ORIENTATION_LANDSCAPE, false, PORTRAIT));
+        assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
+                Configuration.ORIENTATION_UNDEFINED, false, UNKNOWN));
     }
 
     @Test

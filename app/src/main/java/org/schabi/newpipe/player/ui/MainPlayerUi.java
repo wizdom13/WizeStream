@@ -104,7 +104,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private boolean isFullscreen = false;
     private boolean touchLocked;
-    private boolean isVerticalVideo = false;
+    private FullscreenOrientationPolicy.VideoContentOrientation videoContentOrientation =
+            FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
+    @Nullable
+    private String videoOrientationStreamKey;
     private boolean fragmentIsVisible = false;
 
     private ContentObserver settingsContentObserver;
@@ -742,6 +745,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        updateVideoContentIdentity(info.getServiceId(), info.getUrl());
         binding.openInBrowser.setVisibility(View.VISIBLE);
         showHideKodiButton();
         updateLearningNoteButtonVisibility(info);
@@ -760,6 +764,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
+        updateVideoContentIdentity(tag.getServiceId(), tag.getStreamUrl());
         binding.openInBrowser.setVisibility(View.GONE);
         binding.playWithKodi.setVisibility(View.GONE);
         binding.learningNoteButton.setVisibility(View.GONE);
@@ -1011,7 +1016,12 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     }
 
     public boolean isVerticalVideo() {
-        return isVerticalVideo;
+        return videoContentOrientation
+                == FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT;
+    }
+
+    public FullscreenOrientationPolicy.VideoContentOrientation getVideoContentOrientation() {
+        return videoContentOrientation;
     }
 
     //endregion
@@ -1084,11 +1094,31 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private void setupScreenRotationButton() {
         binding.screenRotationButton.setVisibility(globalScreenOrientationLocked(context)
                 || PlayerRotationMode.get(context) == PlayerRotationMode.FIXED
-                || isVerticalVideo || DeviceUtils.isTablet(context)
+                || !FullscreenOrientationPolicy.supportsAutomaticFullscreen(
+                        videoContentOrientation)
+                || DeviceUtils.isTablet(context)
                 ? View.VISIBLE : View.GONE);
         binding.screenRotationButton.setImageDrawable(AppCompatResources.getDrawable(context,
                 isFullscreen ? R.drawable.ic_fullscreen_exit
                         : R.drawable.ic_fullscreen));
+    }
+
+    private void updateVideoContentIdentity(final int serviceId,
+                                            @Nullable final String streamUrl) {
+        final String streamKey = serviceId + ":" + String.valueOf(streamUrl);
+        if (Objects.equals(videoOrientationStreamKey, streamKey)) {
+            return;
+        }
+        videoOrientationStreamKey = streamKey;
+        videoContentOrientation = FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
+        setupScreenRotationButton();
+    }
+
+    private void updateVideoContentIdentityFromCurrentItem() {
+        final PlayQueueItem currentItem = player.getCurrentItem();
+        if (currentItem != null) {
+            updateVideoContentIdentity(currentItem.getServiceId(), currentItem.getUrl());
+        }
     }
 
     @Override
@@ -1099,12 +1129,26 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             // until valid metadata returns, especially for portrait fullscreen videos.
             return;
         }
-        isVerticalVideo = videoSize.width < videoSize.height;
 
+        updateVideoContentIdentityFromCurrentItem();
+        videoContentOrientation =
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(
+                        videoSize.width,
+                        videoSize.height,
+                        videoSize.pixelWidthHeightRatio);
+
+        final boolean portraitVideo = videoContentOrientation
+                == FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT;
+        final boolean orientationSpecificContent =
+                videoContentOrientation
+                        == FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT
+                        || videoContentOrientation
+                        == FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
         if (globalScreenOrientationLocked(context)
                 && PlayerRotationMode.get(context) != PlayerRotationMode.FIXED
                 && isFullscreen
-                && isLandscape() == isVerticalVideo
+                && orientationSpecificContent
+                && isLandscape() == portraitVideo
                 && !DeviceUtils.isTv(context)
                 && !DeviceUtils.isTablet(context)) {
             // set correct orientation
@@ -1113,6 +1157,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
 
         setupScreenRotationButton();
+        if (player.isPlaying()) {
+            checkLandscape();
+        }
     }
 
     public void toggleFullscreen() {
@@ -1169,8 +1216,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      */
     public void toggleFullscreenWithOrientation() {
         final boolean targetFullscreen = !isFullscreen();
-        if (shouldUseScreenRotationAction(isVerticalVideo, isLandscape(),
-                globalScreenOrientationLocked(context))) {
+        if (shouldUseScreenRotationAction(getVideoContentOrientation(), isLandscape())) {
             player.getFragmentListener()
                     .ifPresent(listener ->
                             listener.onScreenRotationButtonClicked(targetFullscreen));
@@ -1179,22 +1225,24 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
     }
 
-    static boolean shouldUseScreenRotationAction(final boolean verticalVideo,
-                                                 final boolean landscape,
-                                                 final boolean screenOrientationLocked) {
+    static boolean shouldUseScreenRotationAction(
+            final FullscreenOrientationPolicy.VideoContentOrientation contentOrientation,
+            final boolean landscape) {
         return FullscreenOrientationPolicy.shouldUseOrientationAction(
-                verticalVideo, landscape, screenOrientationLocked);
+                contentOrientation, landscape);
     }
 
 
     public void checkLandscape() {
+        updateVideoContentIdentityFromCurrentItem();
         final Context playerContext = getParentContext().orElse(player.getService());
         final int orientation = playerContext.getResources().getConfiguration().orientation;
         if (shouldEnterFullscreenForConfiguration(
                 orientation,
                 isFullscreen,
                 player.isAudioOnly(),
-                DeviceUtils.isTablet(playerContext))) {
+                DeviceUtils.isTablet(playerContext),
+                videoContentOrientation)) {
             setFullscreen(true);
         }
     }
@@ -1203,11 +1251,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             final int orientation,
             final boolean fullscreen,
             final boolean audioOnly,
-            final boolean tablet) {
+            final boolean tablet,
+            final FullscreenOrientationPolicy.VideoContentOrientation contentOrientation) {
         return orientation == Configuration.ORIENTATION_LANDSCAPE
                 && !fullscreen
                 && !audioOnly
-                && !tablet;
+                && !tablet
+                && FullscreenOrientationPolicy.supportsAutomaticFullscreen(contentOrientation);
     }
 
     //endregion

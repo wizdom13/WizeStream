@@ -3,6 +3,10 @@ package org.schabi.newpipe.player.ui;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.SQUARE;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
 
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -14,55 +18,68 @@ public class FullscreenOrientationPolicyTest {
     @Test
     public void stalePortraitFullscreenExitIsAppliedImmediately() {
         assertEquals(Configuration.ORIENTATION_PORTRAIT,
-                FullscreenOrientationPolicy.targetConfigurationOrientation(false, false));
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, LANDSCAPE));
         assertTrue(FullscreenOrientationPolicy.isTargetOrientation(
                 Configuration.ORIENTATION_PORTRAIT,
                 Configuration.ORIENTATION_PORTRAIT));
     }
 
     @Test
-    public void pendingExitOverridesVerticalVideoPortraitPreservation() {
+    public void pendingExitOverridesPortraitVideoPreservation() {
         assertEquals(FullscreenOrientationPolicy.EXIT_FULLSCREEN,
                 FullscreenOrientationPolicy.resolveFullscreenState(
                         Configuration.ORIENTATION_PORTRAIT,
                         true,
-                        true,
+                        PORTRAIT,
                         true,
                         Configuration.ORIENTATION_PORTRAIT,
                         FullscreenOrientationPolicy.EXIT_FULLSCREEN));
     }
 
     @Test
-    public void pendingVerticalFullscreenEntryCanCompleteInPortrait() {
+    public void pendingPortraitFullscreenEntryCanCompleteInPortrait() {
         assertEquals(FullscreenOrientationPolicy.ENTER_FULLSCREEN,
                 FullscreenOrientationPolicy.resolveFullscreenState(
                         Configuration.ORIENTATION_PORTRAIT,
                         false,
-                        true,
+                        PORTRAIT,
                         true,
                         Configuration.ORIENTATION_PORTRAIT,
                         FullscreenOrientationPolicy.ENTER_FULLSCREEN));
     }
 
     @Test
-    public void automaticPortraitStillPreservesVerticalFullscreen() {
-        assertEquals(FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE,
-                FullscreenOrientationPolicy.resolveFullscreenState(
-                        Configuration.ORIENTATION_PORTRAIT,
-                        true,
-                        true,
-                        true,
-                        Configuration.ORIENTATION_UNDEFINED,
-                        FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE));
+    public void automaticPortraitSquareAndUnknownContentPreserveFullscreenState() {
+        final FullscreenOrientationPolicy.VideoContentOrientation[] preservedOrientations = {
+                PORTRAIT, SQUARE, UNKNOWN
+        };
+        for (final var contentOrientation : preservedOrientations) {
+            assertEquals(FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE,
+                    FullscreenOrientationPolicy.resolveFullscreenState(
+                            Configuration.ORIENTATION_LANDSCAPE,
+                            false,
+                            contentOrientation,
+                            true,
+                            Configuration.ORIENTATION_UNDEFINED,
+                            FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE));
+            assertEquals(FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE,
+                    FullscreenOrientationPolicy.resolveFullscreenState(
+                            Configuration.ORIENTATION_PORTRAIT,
+                            true,
+                            contentOrientation,
+                            true,
+                            Configuration.ORIENTATION_UNDEFINED,
+                            FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE));
+        }
     }
 
     @Test
-    public void automaticHorizontalPhoneTracksConfiguration() {
+    public void automaticLandscapePhoneTracksConfiguration() {
         assertEquals(FullscreenOrientationPolicy.ENTER_FULLSCREEN,
                 FullscreenOrientationPolicy.resolveFullscreenState(
                         Configuration.ORIENTATION_LANDSCAPE,
                         false,
-                        false,
+                        LANDSCAPE,
                         true,
                         Configuration.ORIENTATION_UNDEFINED,
                         FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE));
@@ -70,7 +87,7 @@ public class FullscreenOrientationPolicyTest {
                 FullscreenOrientationPolicy.resolveFullscreenState(
                         Configuration.ORIENTATION_PORTRAIT,
                         true,
-                        false,
+                        LANDSCAPE,
                         true,
                         Configuration.ORIENTATION_UNDEFINED,
                         FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE));
@@ -82,10 +99,36 @@ public class FullscreenOrientationPolicyTest {
                 FullscreenOrientationPolicy.resolveFullscreenState(
                         Configuration.ORIENTATION_PORTRAIT,
                         true,
-                        false,
+                        LANDSCAPE,
                         true,
                         Configuration.ORIENTATION_LANDSCAPE,
                         FullscreenOrientationPolicy.ENTER_FULLSCREEN));
+    }
+
+    @Test
+    public void videoContentOrientationUsesDisplayedAspectRatio() {
+        assertEquals(PORTRAIT,
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(1080, 1920, 1.0f));
+        assertEquals(LANDSCAPE,
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(1920, 1080, 1.0f));
+        assertEquals(SQUARE,
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(1080, 1080, 1.0f));
+        assertEquals(SQUARE,
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(1080, 1000, 1.0f));
+        assertEquals(UNKNOWN,
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(0, 1920, 1.0f));
+
+        // Anamorphic/sample-aspect metadata must be considered instead of raw pixel dimensions.
+        assertEquals(LANDSCAPE,
+                FullscreenOrientationPolicy.classifyVideoContentOrientation(720, 1080, 2.0f));
+    }
+
+    @Test
+    public void onlyConfirmedLandscapeContentUsesAutomaticFullscreen() {
+        assertTrue(FullscreenOrientationPolicy.supportsAutomaticFullscreen(LANDSCAPE));
+        assertFalse(FullscreenOrientationPolicy.supportsAutomaticFullscreen(PORTRAIT));
+        assertFalse(FullscreenOrientationPolicy.supportsAutomaticFullscreen(SQUARE));
+        assertFalse(FullscreenOrientationPolicy.supportsAutomaticFullscreen(UNKNOWN));
     }
 
     @Test

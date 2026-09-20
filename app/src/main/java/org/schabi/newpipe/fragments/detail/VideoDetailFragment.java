@@ -560,7 +560,7 @@ public final class VideoDetailFragment
         final int state = FullscreenOrientationPolicy.resolveFullscreenState(
                 currentOrientation,
                 ui.isFullscreen(),
-                ui.isVerticalVideo(),
+                ui.getVideoContentOrientation(),
                 true,
                 pendingFullscreenOrientation,
                 pendingFullscreenState);
@@ -591,7 +591,7 @@ public final class VideoDetailFragment
         final int state = FullscreenOrientationPolicy.resolveFullscreenState(
                 orientation,
                 ui.isFullscreen(),
-                ui.isVerticalVideo(),
+                ui.getVideoContentOrientation(),
                 true,
                 Configuration.ORIENTATION_UNDEFINED,
                 FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE);
@@ -2881,10 +2881,13 @@ public final class VideoDetailFragment
             return;
         }
 
-        final boolean verticalVideo = ui != null && ui.isVerticalVideo();
+        final FullscreenOrientationPolicy.VideoContentOrientation contentOrientation =
+                ui == null
+                        ? FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN
+                        : ui.getVideoContentOrientation();
         final int targetOrientation =
                 FullscreenOrientationPolicy.targetConfigurationOrientation(
-                        fullscreen, verticalVideo);
+                        fullscreen, contentOrientation);
         pendingFullscreenOrientation = targetOrientation;
         pendingFullscreenState = fullscreen
                 ? FullscreenOrientationPolicy.ENTER_FULLSCREEN
