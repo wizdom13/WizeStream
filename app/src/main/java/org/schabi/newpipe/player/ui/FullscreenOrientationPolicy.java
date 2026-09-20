@@ -19,18 +19,60 @@ public final class FullscreenOrientationPolicy {
     public static final int ENTER_FULLSCREEN = 1;
     public static final int EXPANDED_DETAIL_MIN_WIDTH_DP = 840;
 
+    private static final float PORTRAIT_MAX_ASPECT_RATIO = 0.9f;
+    private static final float LANDSCAPE_MIN_ASPECT_RATIO = 1.1f;
+
+    public enum VideoContentOrientation {
+        UNKNOWN,
+        PORTRAIT,
+        LANDSCAPE,
+        SQUARE
+    }
+
     private FullscreenOrientationPolicy() {
     }
 
-    public static boolean shouldUseOrientationAction(final boolean verticalVideo,
-                                                     final boolean landscape,
-                                                     final boolean screenOrientationLocked) {
-        return !verticalVideo || landscape && screenOrientationLocked;
+    public static VideoContentOrientation classifyVideoContentOrientation(
+            final int width,
+            final int height,
+            final float pixelWidthHeightRatio) {
+        if (width <= 0 || height <= 0) {
+            return VideoContentOrientation.UNKNOWN;
+        }
+
+        final float pixelRatio = pixelWidthHeightRatio > 0.0f
+                ? pixelWidthHeightRatio : 1.0f;
+        final float aspectRatio = width * pixelRatio / height;
+        if (aspectRatio < PORTRAIT_MAX_ASPECT_RATIO) {
+            return VideoContentOrientation.PORTRAIT;
+        }
+        if (aspectRatio > LANDSCAPE_MIN_ASPECT_RATIO) {
+            return VideoContentOrientation.LANDSCAPE;
+        }
+        return VideoContentOrientation.SQUARE;
     }
 
-    public static int targetConfigurationOrientation(final boolean fullscreen,
-                                                     final boolean verticalVideo) {
-        return fullscreen && !verticalVideo
+    public static boolean supportsAutomaticFullscreen(
+            final VideoContentOrientation contentOrientation) {
+        return contentOrientation == VideoContentOrientation.LANDSCAPE;
+    }
+
+    public static boolean shouldUseOrientationAction(
+            final VideoContentOrientation contentOrientation,
+            final boolean landscape,
+            final boolean screenOrientationLocked) {
+        if (contentOrientation == VideoContentOrientation.LANDSCAPE) {
+            return true;
+        }
+        return contentOrientation == VideoContentOrientation.PORTRAIT
+                && landscape
+                && screenOrientationLocked;
+    }
+
+    public static int targetConfigurationOrientation(
+            final boolean fullscreen,
+            final VideoContentOrientation contentOrientation) {
+        return fullscreen && contentOrientation == VideoContentOrientation.LANDSCAPE
                 ? Configuration.ORIENTATION_LANDSCAPE
                 : Configuration.ORIENTATION_PORTRAIT;
     }
@@ -46,36 +88,40 @@ public final class FullscreenOrientationPolicy {
                 : ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
     }
 
-    public static int resolveFullscreenState(final int orientation,
-                                             final boolean fullscreen,
-                                             final boolean verticalVideo,
-                                             final boolean phoneVideoEligible,
-                                             final int pendingOrientation,
-                                             final int pendingFullscreenState) {
+    public static int resolveFullscreenState(
+            final int orientation,
+            final boolean fullscreen,
+            final VideoContentOrientation contentOrientation,
+            final boolean phoneVideoEligible,
+            final int pendingOrientation,
+            final int pendingFullscreenState) {
         if (pendingFullscreenState != KEEP_FULLSCREEN_STATE) {
             return orientation == pendingOrientation
                     ? pendingFullscreenState : KEEP_FULLSCREEN_STATE;
         }
-        if (!phoneVideoEligible) {
+        if (!phoneVideoEligible || !supportsAutomaticFullscreen(contentOrientation)) {
             return KEEP_FULLSCREEN_STATE;
         }
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             return ENTER_FULLSCREEN;
         }
-        if (orientation == Configuration.ORIENTATION_PORTRAIT
-                && fullscreen && !verticalVideo) {
+        if (orientation == Configuration.ORIENTATION_PORTRAIT && fullscreen) {
             return EXIT_FULLSCREEN;
         }
         return KEEP_FULLSCREEN_STATE;
     }
 
-    public static boolean isFullscreenStateApplied(final int orientation,
-                                                   final boolean fullscreen,
-                                                   final boolean verticalVideo) {
+    public static boolean isFullscreenStateApplied(
+            final int orientation,
+            final boolean fullscreen,
+            final VideoContentOrientation contentOrientation) {
+        if (!supportsAutomaticFullscreen(contentOrientation)) {
+            return true;
+        }
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             return fullscreen;
         }
-        if (orientation == Configuration.ORIENTATION_PORTRAIT && !verticalVideo) {
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             return !fullscreen;
         }
         return true;
