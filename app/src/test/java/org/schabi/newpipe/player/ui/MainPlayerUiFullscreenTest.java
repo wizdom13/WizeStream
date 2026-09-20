@@ -15,31 +15,31 @@ import org.junit.Test;
 public class MainPlayerUiFullscreenTest {
     @Test
     public void landscapeVideoUsesOrientationAwareAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, false, false));
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, true, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, true));
     }
 
     @Test
     public void portraitVideoInPortraitTogglesFullscreenDirectly() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, false, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, false));
     }
 
     @Test
     public void portraitVideoInLockedLandscapeUsesOrientationAwareAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, true));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true));
     }
 
     @Test
     public void portraitVideoInUnlockedLandscapeUsesPortraitOrientationAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true));
     }
 
     @Test
     public void unknownAndSquareContentNeverForceOrientationForFullscreenButton() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false, true));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true, true));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false, true));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true));
     }
 
     @Test
