@@ -93,20 +93,25 @@
             android:contentDescription="@string/detail_heart_img_view_description"
             android:src="@drawable/ic_heart" />
 
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
         <Button
             android:id="@+id/translate_button"
             style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:gravity="center"
+            android:layout_marginStart="4dp"
             android:maxLines="1"
             android:minWidth="0dp"
             android:minHeight="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
             android:text="@string/comment_translate"
             android:textColor="?attr/colorPrimary"
+            android:textSize="14sp"
             android:visibility="gone"
             tools:visibility="visible" />
 
@@ -115,11 +120,15 @@
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="2dp"
+            android:maxLines="1"
             android:minWidth="0dp"
             android:minHeight="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="4dp"
             android:textColor="?attr/colorPrimary"
-            tools:text="543 replies" />
+            android:textSize="14sp"
+            tools:text="18 replies" />
 
     </LinearLayout>
 
