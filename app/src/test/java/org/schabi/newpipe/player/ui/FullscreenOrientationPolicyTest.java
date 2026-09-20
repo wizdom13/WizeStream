@@ -129,6 +129,17 @@ public class FullscreenOrientationPolicyTest {
         assertFalse(FullscreenOrientationPolicy.supportsAutomaticFullscreen(PORTRAIT));
         assertFalse(FullscreenOrientationPolicy.supportsAutomaticFullscreen(SQUARE));
         assertFalse(FullscreenOrientationPolicy.supportsAutomaticFullscreen(UNKNOWN));
+
+        assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, UNKNOWN, PORTRAIT));
+        assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, UNKNOWN, LANDSCAPE));
+        assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                false, UNKNOWN, PORTRAIT));
+        assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, PORTRAIT, PORTRAIT));
+        assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, UNKNOWN, SQUARE));
     }
 
     @Test
