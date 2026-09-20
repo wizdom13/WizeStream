@@ -2,7 +2,6 @@ package org.schabi.newpipe.settings;
 
 import android.os.Bundle;
 import android.text.InputFilter;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -166,7 +165,9 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
                 android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener(view -> {
                     final ProfileRecord created = ProfileManager.createProfile(
                             requireContext(),
-                            input.getText().toString()
+                            input.getText().toString(),
+                            "",
+                            ProfileIcon.PERSON.getKey()
                     );
                     if (created == null) {
                         input.setError(getString(R.string.profile_name_invalid));
@@ -229,7 +230,7 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
 
         namePreference.setText(ProfileManager.getDisplayName(requireContext(), active));
         descriptionPreference.setText(active.getDescription());
-        descriptionPreference.setSummary(active.getDescription().isBlank()
+        descriptionPreference.setSummary(active.getDescription().trim().isEmpty()
                 ? getString(R.string.profile_description_summary)
                 : active.getDescription());
 
