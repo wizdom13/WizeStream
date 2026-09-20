@@ -519,6 +519,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         if (!binding.refreshProgressContainer.isVisible) {
             binding.refreshProgressContainer.animate(true, 150)
         }
+        if (!binding.cancelRefreshButton.isVisible) {
+            binding.cancelRefreshButton.animate(true, 150)
+        }
         binding.refreshRootView.isEnabled = false
         binding.cancelRefreshButton.isEnabled = true
     }
@@ -527,6 +530,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         binding.cancelRefreshButton.isEnabled = false
         binding.refreshRootView.isEnabled = true
         binding.refreshProgressContainer.animate(false, 150)
+        binding.cancelRefreshButton.animate(false, 150)
     }
 
     private fun showInfoItemDialog(item: StreamInfoItem) {

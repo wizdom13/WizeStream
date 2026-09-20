@@ -65,14 +65,36 @@ public class FeedRefreshControlsTest {
     }
 
     @Test
-    public void progressAndCancelControlsUseCompactHeaderSurfaces() throws Exception {
+    public void progressFiltersAndCancelShareOneCompactHeaderRow() throws Exception {
         final Document document = parseLayout();
+        final Element controlsRow = findByAndroidId(
+                document, "@+id/feed_controls_row");
+        final Element progressContainer = findByAndroidId(
+                document, "@+id/refresh_progress_container");
         final Element progress = findByAndroidId(
                 document, "@+id/loading_progress_bar");
         final Element indeterminateProgress = findByAndroidId(
                 document, "@+id/loading_indeterminate_progress_bar");
+        final Element filters = findByAndroidId(
+                document, "@+id/stream_filter_chips");
         final Element cancel = findByAndroidId(
                 document, "@+id/cancel_refresh_button");
+
+        assertNotNull(controlsRow);
+        assertEquals("LinearLayout", controlsRow.getTagName());
+        assertEquals("48dp",
+                controlsRow.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("horizontal",
+                controlsRow.getAttributeNS(ANDROID_NAMESPACE, "orientation"));
+
+        assertNotNull(progressContainer);
+        assertEquals("FrameLayout", progressContainer.getTagName());
+        assertEquals("96dp",
+                progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("24dp",
+                progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("gone",
+                progressContainer.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
 
         assertNotNull(progress);
         assertNotNull(indeterminateProgress);
@@ -91,16 +113,34 @@ public class FeedRefreshControlsTest {
                 "com.google.android.material.progressindicator.LinearProgressIndicator",
                 indeterminateProgress.getTagName());
 
+        assertNotNull(filters);
+        assertEquals("include", filters.getTagName());
+        assertEquals("0dp",
+                filters.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("1",
+                filters.getAttributeNS(ANDROID_NAMESPACE, "layout_weight"));
+
         assertNotNull(cancel);
         assertEquals("ImageButton", cancel.getTagName());
-        assertEquals("40dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
-        assertEquals("40dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("48dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("48dp", cancel.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
+        assertEquals("gone",
+                cancel.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
         assertEquals("?attr/selectableItemBackgroundBorderless",
                 cancel.getAttributeNS(ANDROID_NAMESPACE, "background"));
         assertEquals("@string/cancel_refresh",
                 cancel.getAttributeNS(ANDROID_NAMESPACE, "contentDescription"));
         assertEquals("@drawable/ic_close",
                 cancel.getAttributeNS(ANDROID_NAMESPACE, "src"));
+
+        assertTrue(progressContainer.getParentNode() == controlsRow);
+        assertTrue(filters.getParentNode() == controlsRow);
+        assertTrue(cancel.getParentNode() == controlsRow);
+
+        final String source = readSource(
+                "org/schabi/newpipe/local/feed/FeedFragment.kt");
+        assertTrue(source.contains("cancelRefreshButton.animate(true, 150)"));
+        assertTrue(source.contains("cancelRefreshButton.animate(false, 150)"));
     }
 
     @Test
