@@ -74,6 +74,16 @@ public final class FullscreenOrientationPolicy {
         return fullscreen && contentOrientation == VideoContentOrientation.PORTRAIT;
     }
 
+    public static boolean shouldAlignFullscreenToKnownContent(
+            final boolean fullscreen,
+            final VideoContentOrientation previousContentOrientation,
+            final VideoContentOrientation contentOrientation) {
+        return fullscreen
+                && previousContentOrientation != contentOrientation
+                && (contentOrientation == VideoContentOrientation.PORTRAIT
+                || contentOrientation == VideoContentOrientation.LANDSCAPE);
+    }
+
     public static int targetConfigurationOrientation(
             final boolean fullscreen,
             final VideoContentOrientation contentOrientation) {
