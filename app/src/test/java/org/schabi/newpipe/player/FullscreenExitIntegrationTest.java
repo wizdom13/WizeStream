@@ -58,12 +58,15 @@ public class FullscreenExitIntegrationTest {
     }
 
     @Test
-    public void landscapeAutoFullscreenDoesNotDependOnTransientPlaybackState()
+    public void landscapeAutoFullscreenRequiresConfirmedContentNotTransientPlaybackState()
             throws Exception {
         final String playerUi = read("org/schabi/newpipe/player/ui/MainPlayerUi.java");
         final String checkLandscape = methodBody(
                 playerUi, "public void checkLandscape()");
+        assertTrue(checkLandscape.contains("videoContentOrientation"));
         assertTrue(checkLandscape.contains("setFullscreen(true);"));
+        assertTrue(playerUi.contains(
+                "FullscreenOrientationPolicy.supportsAutomaticFullscreen(contentOrientation)"));
         assertFalse(checkLandscape.contains("STATE_COMPLETED"));
         assertFalse(checkLandscape.contains("STATE_PAUSED"));
     }
