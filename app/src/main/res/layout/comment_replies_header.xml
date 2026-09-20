@@ -124,6 +124,22 @@
         app:layout_constraintTop_toBottomOf="@+id/uploadDate"
         tools:text="@tools:sample/lorem/random[10]" />
 
+    <Button
+        android:id="@+id/translate_button"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:text="@string/comment_translate"
+        android:textColor="?attr/colorPrimary"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/commentContent"
+        tools:visibility="visible" />
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
@@ -133,6 +149,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/commentContent" />
+        app:layout_constraintTop_toBottomOf="@+id/translate_button" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
