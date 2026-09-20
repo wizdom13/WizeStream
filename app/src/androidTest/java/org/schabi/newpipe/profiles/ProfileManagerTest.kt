@@ -48,7 +48,10 @@ class ProfileManagerTest {
 
             assertFalse(ProfileManager.deleteProfile(context, ProfileManager.DEFAULT_PROFILE_ID))
             assertTrue(ProfileManager.deleteProfile(context, profile.id))
-            assertEquals(ProfileManager.DEFAULT_PROFILE_ID, ProfileManager.getActiveProfileId(context))
+            assertEquals(
+                ProfileManager.DEFAULT_PROFILE_ID,
+                ProfileManager.getActiveProfileId(context)
+            )
         } finally {
             ProfileManager.deleteProfile(context, profile.id)
             ProfileManager.setActiveProfile(context, ProfileManager.DEFAULT_PROFILE_ID)
