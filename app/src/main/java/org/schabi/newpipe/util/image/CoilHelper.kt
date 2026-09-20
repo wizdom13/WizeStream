@@ -44,7 +44,7 @@ object CoilHelper {
 
     fun loadAvatar(
         target: ImageView,
-        images: List<Image>
+        images: List<Image?>?
     ) {
         val candidates = avatarCandidateUrls(images)
         val requestToken = Any()
@@ -269,17 +269,22 @@ object CoilHelper {
     }
 }
 
-internal fun avatarCandidateUrls(images: List<Image>): List<String> = imageCandidateUrls(images)
+internal fun avatarCandidateUrls(images: List<Image?>?): List<String> = imageCandidateUrls(images)
 
-private fun imageCandidateUrls(images: List<Image>): List<String> {
-    if (!ImageStrategy.shouldLoadImages()) {
+private fun imageCandidateUrls(images: List<Image?>?): List<String> {
+    if (!ImageStrategy.shouldLoadImages() || images.isNullOrEmpty()) {
         return emptyList()
     }
 
-    val preferred = ImageStrategy.choosePreferredImage(images)
+    val validImages = images.filterNotNull()
+    if (validImages.isEmpty()) {
+        return emptyList()
+    }
+
+    val preferred = ImageStrategy.choosePreferredImage(validImages)
     return buildList {
         preferred?.trim()?.takeIf(String::isNotEmpty)?.let(::add)
-        images.forEach { image ->
+        validImages.forEach { image ->
             image.url.trim().takeIf(String::isNotEmpty)?.let(::add)
         }
     }.distinct()
