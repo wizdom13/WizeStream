@@ -22,7 +22,8 @@ data class LearningContentKey(
 )
 
 class LearningContentManager private constructor(context: Context) {
-    private val database = NewPipeDatabase.getInstance(context.applicationContext)
+    private val appContext = context.applicationContext
+    private val database = NewPipeDatabase.getInstance(appContext)
     private val dao = database.learningContentDAO()
     private val disposables = CompositeDisposable()
 
