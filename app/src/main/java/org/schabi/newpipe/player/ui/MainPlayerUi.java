@@ -1114,6 +1114,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         setupScreenRotationButton();
     }
 
+    private void updateVideoContentIdentityFromCurrentItem() {
+        final PlayQueueItem currentItem = player.getCurrentItem();
+        if (currentItem != null) {
+            updateVideoContentIdentity(currentItem.getServiceId(), currentItem.getUrl());
+        }
+    }
+
     @Override
     public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
         super.onVideoSizeChanged(videoSize);
@@ -1123,6 +1130,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             return;
         }
 
+        updateVideoContentIdentityFromCurrentItem();
         videoContentOrientation =
                 FullscreenOrientationPolicy.classifyVideoContentOrientation(
                         videoSize.width,
@@ -1228,6 +1236,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
 
     public void checkLandscape() {
+        updateVideoContentIdentityFromCurrentItem();
         final Context playerContext = getParentContext().orElse(player.getService());
         final int orientation = playerContext.getResources().getConfiguration().orientation;
         if (shouldEnterFullscreenForConfiguration(
