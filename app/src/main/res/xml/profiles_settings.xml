@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/profiles_title">
+
+    <ListPreference
+        android:key="profile_active"
+        android:title="@string/profile_active_title"
+        android:summary="@string/profile_active_summary"
+        app:iconSpaceReserved="false" />
+
+    <PreferenceCategory
+        android:title="@string/profile_current_category"
+        app:iconSpaceReserved="false">
+
+        <EditTextPreference
+            android:key="profile_name"
+            android:title="@string/profile_name_title"
+            android:summary="@string/profile_name_summary"
+            app:iconSpaceReserved="false" />
+
+        <EditTextPreference
+            android:key="profile_description"
+            android:title="@string/profile_description_title"
+            android:summary="@string/profile_description_summary"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:key="profile_icon"
+            android:title="@string/profile_icon_title"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <Preference
+        android:key="profile_create"
+        android:icon="@drawable/ic_person"
+        android:title="@string/profile_create_title"
+        android:summary="@string/profile_create_summary"
+        app:iconSpaceReserved="false" />
+
+    <Preference
+        android:key="profile_delete"
+        android:icon="@drawable/ic_delete"
+        android:title="@string/profile_delete_title"
+        android:summary="@string/profile_delete_summary"
+        app:iconSpaceReserved="false" />
+
+</PreferenceScreen>
