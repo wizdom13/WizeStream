@@ -1131,6 +1131,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
 
         updateVideoContentIdentityFromCurrentItem();
+        final FullscreenOrientationPolicy.VideoContentOrientation previousContentOrientation =
+                videoContentOrientation;
         videoContentOrientation =
                 FullscreenOrientationPolicy.classifyVideoContentOrientation(
                         videoSize.width,
@@ -1144,7 +1146,15 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                         == FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT
                         || videoContentOrientation
                         == FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
-        if (globalScreenOrientationLocked(context)
+        if (FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                isFullscreen, previousContentOrientation, videoContentOrientation)
+                && !DeviceUtils.isTv(context)
+                && !DeviceUtils.isTablet(context)) {
+            // Fullscreen can be entered before Media3 reports a valid size. Once the
+            // content orientation becomes known, align and lock the requested orientation.
+            player.getFragmentListener().ifPresent(
+                    listener -> listener.onScreenRotationButtonClicked(true));
+        } else if (globalScreenOrientationLocked(context)
                 && PlayerRotationMode.get(context) != PlayerRotationMode.FIXED
                 && isFullscreen
                 && orientationSpecificContent
@@ -1216,7 +1226,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      */
     public void toggleFullscreenWithOrientation() {
         final boolean targetFullscreen = !isFullscreen();
-        if (shouldUseScreenRotationAction(getVideoContentOrientation(), isLandscape())) {
+        if (shouldUseScreenRotationAction(
+                getVideoContentOrientation(), isLandscape(), targetFullscreen)) {
             player.getFragmentListener()
                     .ifPresent(listener ->
                             listener.onScreenRotationButtonClicked(targetFullscreen));
@@ -1227,9 +1238,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     static boolean shouldUseScreenRotationAction(
             final FullscreenOrientationPolicy.VideoContentOrientation contentOrientation,
-            final boolean landscape) {
+            final boolean landscape,
+            final boolean targetFullscreen) {
         return FullscreenOrientationPolicy.shouldUseOrientationAction(
-                contentOrientation, landscape);
+                contentOrientation, landscape, targetFullscreen);
     }
 
 

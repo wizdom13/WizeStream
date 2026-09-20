@@ -15,31 +15,35 @@ import org.junit.Test;
 public class MainPlayerUiFullscreenTest {
     @Test
     public void landscapeVideoUsesOrientationAwareAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, false));
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, true));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, false, true));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, true, false));
     }
 
     @Test
-    public void portraitVideoInPortraitTogglesFullscreenDirectly() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, false));
+    public void portraitVideoEnteringFullscreenInPortraitUsesOrientationAction() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, false, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, false, false));
     }
 
     @Test
-    public void portraitVideoInLockedLandscapeUsesOrientationAwareAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true));
+    public void portraitVideoInLandscapeUsesOrientationAwareAction() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, true));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, false));
     }
 
     @Test
-    public void portraitVideoInUnlockedLandscapeUsesPortraitOrientationAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true));
+    public void portraitFullscreenLockOnlyAppliesWhileEnteringOrRemainingFullscreen() {
+        assertTrue(FullscreenOrientationPolicy.shouldLockPortraitFullscreen(true, PORTRAIT));
+        assertFalse(FullscreenOrientationPolicy.shouldLockPortraitFullscreen(false, PORTRAIT));
+        assertFalse(FullscreenOrientationPolicy.shouldLockPortraitFullscreen(true, LANDSCAPE));
     }
 
     @Test
     public void unknownAndSquareContentNeverForceOrientationForFullscreenButton() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true, false));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true, false));
     }
 
     @Test
