@@ -19,7 +19,7 @@ public class VideoDetailOrientationHandlingTest {
             ? Path.of("src/main") : Path.of("app/src/main");
 
     @Test
-    public void fullscreenTransitionCompletesOnlyAfterTargetStateIsApplied() {
+    public void fullscreenTransitionCompletesOnlyAfterTargetStateIsApplied() throws Exception {
         assertFalse(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_LANDSCAPE, false, LANDSCAPE));
         assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
@@ -28,6 +28,12 @@ public class VideoDetailOrientationHandlingTest {
                 Configuration.ORIENTATION_PORTRAIT, true, LANDSCAPE));
         assertTrue(FullscreenOrientationPolicy.isFullscreenStateApplied(
                 Configuration.ORIENTATION_PORTRAIT, false, LANDSCAPE));
+
+        final String rotationAction = methodBody(
+                readFragment(), "public void onScreenRotationButtonClicked(");
+        assertTrue(rotationAction.contains("shouldLockPortraitFullscreen("));
+        assertTrue(rotationAction.contains(
+                "setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)"));
     }
 
     @Test
