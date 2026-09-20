@@ -42,6 +42,7 @@ public final class SettingsResourceRegistry {
         add(NotificationsSettingsFragment.class, R.xml.notifications_settings);
         add(PlayerNotificationSettingsFragment.class, R.xml.player_notification_settings);
         add(ProxySettingsFragment.class, R.xml.proxy_settings);
+        add(ProfilesSettingsFragment.class, R.xml.profiles_settings);
         add(UpdateSettingsFragment.class, R.xml.update_settings);
         add(SponsorBlockSettingsFragment.class, R.xml.sponsor_block_settings);
         add(SponsorBlockCategoriesSettingsFragment.class, R.xml.sponsor_block_categories_settings);

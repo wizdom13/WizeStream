@@ -90,6 +90,8 @@ import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.pip.NativePipController;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
+import org.schabi.newpipe.profiles.ProfileManager;
+import org.schabi.newpipe.profiles.ProfileRecord;
 import org.schabi.newpipe.settings.UpdateSettingsFragment;
 import org.schabi.newpipe.settings.tabs.DrawerServiceSectionsPolicy;
 import org.schabi.newpipe.settings.tabs.HomeDestinationKey;
@@ -156,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_SETTINGS = 0;
     private static final int ITEM_ID_CHANGELOG = 1;
     private static final int ITEM_ID_ABOUT = 2;
+    private static final int ITEM_ID_PROFILES = 3;
     private static final int ITEM_ID_KIOSK_BASE = 100;
     private static final int ITEM_ID_YOUTUBE_MUSIC = 10_000;
 
@@ -168,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
+    private String activeProfileId;
     private NativePipController nativePipController;
     private ChangelogPromptController changelogPromptController;
     private boolean searchNavigationActive;
@@ -208,6 +212,7 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdgeHelper.enable(this);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPrefEditor = sharedPreferences.edit();
+        activeProfileId = ProfileManager.getActiveProfileId(this);
 
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         drawerLayoutBinding = mainBinding.drawerLayout;
@@ -400,6 +405,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void addDrawerUtilityItems() {
         final Menu menu = drawerLayoutBinding.navigation.getMenu();
+        final ProfileRecord activeProfile = ProfileManager.getActiveProfile(this);
+        menu.add(
+                R.id.menu_options_about_group,
+                ITEM_ID_PROFILES,
+                ORDER,
+                getString(
+                        R.string.drawer_profiles_format,
+                        ProfileManager.getDisplayName(this, activeProfile))
+        ).setIcon(activeProfile.getIconRes());
         menu.add(R.id.menu_options_about_group, ITEM_ID_SETTINGS, ORDER, R.string.settings)
                 .setIcon(R.drawable.ic_settings);
         menu.add(R.id.menu_options_about_group, ITEM_ID_CHANGELOG, ORDER, R.string.changelog_title)
@@ -538,6 +552,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void optionsAboutSelected(final MenuItem item) {
         switch (item.getItemId()) {
+            case ITEM_ID_PROFILES:
+                nativePipController.prepareForInternalActivityNavigation();
+                NavigationHelper.openProfilesSettings(this);
+                break;
             case ITEM_ID_SETTINGS:
                 nativePipController.prepareForInternalActivityNavigation();
                 NavigationHelper.openSettings(this);
@@ -680,6 +698,16 @@ public class MainActivity extends AppCompatActivity {
         Localization.initPrettyTime(Localization.resolvePrettyTime());
         super.onResume();
         applyLargeScreenChrome();
+
+        final String currentProfileId = ProfileManager.getActiveProfileId(this);
+        if (!Objects.equals(activeProfileId, currentProfileId)) {
+            activeProfileId = currentProfileId;
+            if (DEBUG) {
+                Log.d(TAG, "Active profile changed, recreating activity...");
+            }
+            ActivityCompat.recreate(this);
+            return;
+        }
 
         // Close drawer on return, and don't show animation,
         // so it looks like the drawer isn't open when the user returns to MainActivity

@@ -61,6 +61,8 @@ public class SettingsActivity extends AppCompatActivity implements
         PreferenceSearchResultListener {
     public static final String EXTRA_OPEN_UPDATE_SETTINGS =
             "org.schabi.newpipe.settings.OPEN_UPDATE_SETTINGS";
+    public static final String EXTRA_OPEN_PROFILES_SETTINGS =
+            "org.schabi.newpipe.settings.OPEN_PROFILES_SETTINGS";
     private static final String SEARCH_TEXT = "settings_search_text";
 
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -99,8 +101,14 @@ public class SettingsActivity extends AppCompatActivity implements
                 }, false);
 
         if (savedInstanceState == null) {
-            final Fragment initial = getIntent().getBooleanExtra(EXTRA_OPEN_UPDATE_SETTINGS, false)
-                    ? new UpdateSettingsFragment() : new MainSettingsFragment();
+            final Fragment initial;
+            if (getIntent().getBooleanExtra(EXTRA_OPEN_UPDATE_SETTINGS, false)) {
+                initial = new UpdateSettingsFragment();
+            } else if (getIntent().getBooleanExtra(EXTRA_OPEN_PROFILES_SETTINGS, false)) {
+                initial = new ProfilesSettingsFragment();
+            } else {
+                initial = new MainSettingsFragment();
+            }
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.settings_fragment_holder, initial).commit();
         }

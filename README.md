@@ -104,6 +104,7 @@ Project highlights:
 
 - Material 3-inspired design with Material You colors, manual color presets, and customizable navigation
 - Account-free playback, subscriptions, feeds, playlists, downloads, and history across supported services
+- Local profiles for separate Personal, Work, Study, or other contexts without platform accounts
 - Dedicated YouTube Music and YouTube Shorts destinations, advanced search filters, and channel sorting
 - Main, background, and popup playback with advanced gestures, a sleep timer, multi-audio selection,
   and per-channel playback profiles
@@ -557,6 +558,7 @@ Completed or in-progress areas include:
 - About-screen attribution
 - Player gestures and pinned-video behavior
 - Secure device pairing and peer-to-peer synchronization
+- Local profile management and active-profile switching
 - Automatic background synchronization and download-metadata recovery
 - Search filters, channel sorting, podcast tabs, and channel playback profiles
 - Multi-audio selection and clearer audio-track labels
