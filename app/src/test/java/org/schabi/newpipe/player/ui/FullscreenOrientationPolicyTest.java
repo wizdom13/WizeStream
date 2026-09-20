@@ -50,9 +50,10 @@ public class FullscreenOrientationPolicyTest {
 
     @Test
     public void automaticPortraitSquareAndUnknownContentPreserveFullscreenState() {
-        for (final var contentOrientation : new FullscreenOrientationPolicy.VideoContentOrientation[] {
+        final FullscreenOrientationPolicy.VideoContentOrientation[] preservedOrientations = {
                 PORTRAIT, SQUARE, UNKNOWN
-        }) {
+        };
+        for (final var contentOrientation : preservedOrientations) {
             assertEquals(FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE,
                     FullscreenOrientationPolicy.resolveFullscreenState(
                             Configuration.ORIENTATION_LANDSCAPE,
