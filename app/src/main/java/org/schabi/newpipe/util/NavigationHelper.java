@@ -783,6 +783,12 @@ public final class NavigationHelper {
         context.startActivity(intent);
     }
 
+    public static void openProfilesSettings(final Context context) {
+        final Intent intent = new Intent(context, SettingsActivity.class)
+                .putExtra(SettingsActivity.EXTRA_OPEN_PROFILES_SETTINGS, true);
+        context.startActivity(intent);
+    }
+
     public static void openDownloads(final Activity activity) {
         if (PermissionHelper.checkStoragePermissions(
                 activity, PermissionHelper.DOWNLOADS_REQUEST_CODE)) {
