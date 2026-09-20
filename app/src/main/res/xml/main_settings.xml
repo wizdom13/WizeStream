@@ -33,6 +33,13 @@
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
+        android:fragment="org.schabi.newpipe.settings.ProfilesSettingsFragment"
+        android:icon="@drawable/ic_person"
+        android:title="@string/profiles_title"
+        android:summary="@string/profiles_summary"
+        app:iconSpaceReserved="false" />
+
+    <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.HistorySettingsFragment"
         android:icon="@drawable/ic_history"
         android:title="@string/settings_category_history_title"
