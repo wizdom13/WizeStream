@@ -11,8 +11,8 @@
     <string name="wizestream_contribution_encouragement">Report issues, review code, or contribute to WizeStream on GitHub.</string>
     <string name="comment_translate">Translate</string>
     <string name="comment_translating">Translating…</string>
-    <string name="comment_show_original">Show original</string>
-    <string name="comment_show_translation">Show translation</string>
+    <string name="comment_show_original">Original</string>
+    <string name="comment_show_translation">Translation</string>
     <string name="comment_translation_same_language">This comment is already in the app language.</string>
     <string name="comment_translation_language_undetected">Couldn’t determine the comment language.</string>
     <string name="comment_translation_unavailable">On-device translation isn’t available for this language on this device.</string>
