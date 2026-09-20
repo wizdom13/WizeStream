@@ -13,8 +13,8 @@ import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.Index
 import org.schabi.newpipe.database.stream.model.StreamEntity.Companion.STREAM_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.JOIN_STREAM_ID
-import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.PROFILE_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.PLAYBACK_FINISHED_END_MILLISECONDS
+import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.PROFILE_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.STREAM_STATE_TABLE
 
 @Entity(
