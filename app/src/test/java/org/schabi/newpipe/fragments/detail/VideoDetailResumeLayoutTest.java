@@ -129,6 +129,8 @@ public class VideoDetailResumeLayoutTest {
         playerHolder.setListener(fragment);
         when(player.videoPlayerSelected()).thenReturn(true);
         when(playerUi.isFullscreen()).thenAnswer(invocation -> fullscreen.get());
+        when(playerUi.getVideoContentOrientation()).thenReturn(
+                FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE);
         doAnswer(invocation -> {
             fullscreen.set(invocation.getArgument(0));
             return null;
@@ -207,7 +209,8 @@ public class VideoDetailResumeLayoutTest {
 
     @Test
     public void portraitFullscreenForVerticalVideoIsPreserved() {
-        when(playerUi.isVerticalVideo()).thenReturn(true);
+        when(playerUi.getVideoContentOrientation()).thenReturn(
+                FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT);
 
         fragment.restorePlayerLayoutAfterResume();
 
@@ -348,7 +351,9 @@ public class VideoDetailResumeLayoutTest {
 
     @Test
     public void unknownVideoSizeOnScreenOffPreservesVerticalFullscreen() throws Exception {
-        setField(MainPlayerUi.class, playerUi, "isVerticalVideo", true);
+        setField(MainPlayerUi.class, playerUi, "videoContentOrientation",
+                FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT);
+        doCallRealMethod().when(playerUi).getVideoContentOrientation();
         doCallRealMethod().when(playerUi).isVerticalVideo();
         doCallRealMethod().when(playerUi).onVideoSizeChanged(any(VideoSize.class));
 
@@ -356,6 +361,8 @@ public class VideoDetailResumeLayoutTest {
         fragment.restorePlayerLayoutAfterResume();
 
         assertTrue(playerUi.isVerticalVideo());
+        assertTrue(playerUi.getVideoContentOrientation()
+                == FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT);
         assertTrue(fullscreen.get());
         verify(playerUi, never()).setFullscreen(anyBoolean());
         verify(fragment, never()).onScreenRotationButtonClicked(anyBoolean());
