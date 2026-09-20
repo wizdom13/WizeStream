@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
+import org.schabi.newpipe.profiles.ProfileManager
 
 class SubscriptionExportWorker(
     appContext: Context,
@@ -35,9 +36,11 @@ class SubscriptionExportWorker(
     override suspend fun doWork(): Result {
         return try {
             val uri = inputData.getString(EXPORT_PATH)!!.toUri()
+            val profileId = inputData.getString(PROFILE_ID)
+                ?: ProfileManager.getActiveProfileId(applicationContext)
             val table = NewPipeDatabase.getInstance(applicationContext).subscriptionDAO()
             val subscriptions =
-                table.getAll()
+                table.getAllForProfile(profileId)
                     .awaitFirst()
                     .map { SubscriptionItem(it.serviceId, it.url ?: "", it.name ?: "") }
 
@@ -99,12 +102,16 @@ class SubscriptionExportWorker(
         private const val NOTIFICATION_CHANNEL_ID = "newpipe"
         private const val WORK_NAME = "exportSubscriptions"
         private const val EXPORT_PATH = "exportPath"
+        private const val PROFILE_ID = "profileId"
 
         fun schedule(
             context: Context,
             uri: Uri
         ) {
-            val data = workDataOf(EXPORT_PATH to uri.toString())
+            val data = workDataOf(
+                EXPORT_PATH to uri.toString(),
+                PROFILE_ID to ProfileManager.getActiveProfileId(context)
+            )
             val workRequest =
                 OneTimeWorkRequestBuilder<SubscriptionExportWorker>()
                     .setInputData(data)

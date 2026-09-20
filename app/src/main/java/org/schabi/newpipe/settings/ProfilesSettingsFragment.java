@@ -13,12 +13,16 @@ import androidx.preference.Preference;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.ProfileDeletionManager;
 import org.schabi.newpipe.profiles.ProfileIcon;
 import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.profiles.ProfilePolicy;
 import org.schabi.newpipe.profiles.ProfileRecord;
 
 import java.util.List;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public final class ProfilesSettingsFragment extends BasePreferenceFragment {
     private static final String KEY_ACTIVE = "profile_active";
@@ -33,6 +37,7 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
     private EditTextPreference descriptionPreference;
     private ListPreference iconPreference;
     private Preference deletePreference;
+    private final CompositeDisposable disposables = new CompositeDisposable();
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
@@ -200,17 +205,42 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
                 .setTitle(getString(R.string.profile_delete_confirmation_title, displayName))
                 .setMessage(R.string.profile_delete_confirmation_message)
                 .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.delete, (dialog, which) -> {
-                    if (ProfileManager.deleteProfile(requireContext(), current.getId())) {
-                        refreshPreferences();
-                        Toast.makeText(
-                                requireContext(),
-                                R.string.profile_deleted,
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                })
+                .setPositiveButton(R.string.delete, (dialog, which) ->
+                        disposables.add(
+                                ProfileDeletionManager.deleteProfile(
+                                                requireContext(),
+                                                current.getId())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(
+                                                () -> {
+                                                    if (!isAdded()) {
+                                                        return;
+                                                    }
+                                                    refreshPreferences();
+                                                    Toast.makeText(
+                                                            requireContext(),
+                                                            R.string.profile_deleted,
+                                                            Toast.LENGTH_SHORT
+                                                    ).show();
+                                                },
+                                                error -> {
+                                                    if (isAdded()) {
+                                                        Toast.makeText(
+                                                                requireContext(),
+                                                                error.getMessage(),
+                                                                Toast.LENGTH_LONG
+                                                        ).show();
+                                                    }
+                                                }
+                                        )
+                        ))
                 .show();
+    }
+
+    @Override
+    public void onDestroy() {
+        disposables.dispose();
+        super.onDestroy();
     }
 
     private void refreshPreferences() {

@@ -21,8 +21,28 @@ abstract class FeedDAO {
     @Query("DELETE FROM feed")
     abstract fun deleteAll(): Int
 
+    @Query(
+        """
+        DELETE FROM feed
+        WHERE subscription_id IN (
+            SELECT uid FROM subscriptions WHERE profile_id = :profileId
+        )
+        """
+    )
+    abstract fun deleteAllForProfile(profileId: String): Int
+
     @Query("DELETE FROM feed_last_updated")
     abstract fun deleteAllLastUpdated(): Int
+
+    @Query(
+        """
+        DELETE FROM feed_last_updated
+        WHERE subscription_id IN (
+            SELECT uid FROM subscriptions WHERE profile_id = :profileId
+        )
+        """
+    )
+    abstract fun deleteAllLastUpdatedForProfile(profileId: String): Int
 
     /**
      * @param groupId          the group id to get feed streams of; use
@@ -63,6 +83,7 @@ abstract class FeedDAO {
             :groupId = ${FeedGroupEntity.GROUP_ALL_ID}
             OR fgs.group_id = :groupId
         )
+        AND sub.profile_id = :profileId
         AND sub.service_id = :serviceId
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
@@ -103,6 +124,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun getStreams(
+        profileId: String,
         groupId: Long,
         includePlayed: Boolean,
         includePartiallyPlayed: Boolean,
@@ -139,6 +161,35 @@ abstract class FeedDAO {
         """
     )
     abstract fun unlinkStreamsOlderThan(offsetDateTime: OffsetDateTime)
+
+    @Query(
+        """
+        DELETE FROM feed
+        WHERE feed.subscription_id IN (
+            SELECT uid FROM subscriptions WHERE profile_id = :profileId
+        )
+        AND feed.stream_id IN (SELECT uid FROM (
+            SELECT s.uid,
+            (
+                SELECT MAX(upload_date)
+                FROM streams s1
+                INNER JOIN feed f1 ON s1.uid = f1.stream_id
+                WHERE f1.subscription_id = f.subscription_id
+            ) max_upload_date
+            FROM streams s
+            INNER JOIN feed f ON s.uid = f.stream_id
+            WHERE f.subscription_id IN (
+                SELECT uid FROM subscriptions WHERE profile_id = :profileId
+            )
+            AND s.upload_date < :offsetDateTime
+            AND s.upload_date <> max_upload_date
+        ))
+        """
+    )
+    abstract fun unlinkStreamsOlderThanForProfile(
+        profileId: String,
+        offsetDateTime: OffsetDateTime
+    )
 
     @Query(
         """
@@ -193,7 +244,8 @@ abstract class FeedDAO {
         INNER JOIN subscriptions s
         ON s.uid = lu.subscription_id
 
-        WHERE s.service_id = :serviceId
+        WHERE s.profile_id = :profileId
+        AND s.service_id = :serviceId
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -205,6 +257,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun oldestSubscriptionUpdate(
+        profileId: String,
         groupId: Long,
         serviceId: Int,
         youtubeModeMask: Int
@@ -215,7 +268,8 @@ abstract class FeedDAO {
         SELECT MIN(lu.last_updated)
         FROM feed_last_updated lu
         INNER JOIN subscriptions s ON s.uid = lu.subscription_id
-        WHERE s.service_id = :serviceId
+        WHERE s.profile_id = :profileId
+        AND s.service_id = :serviceId
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -227,6 +281,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun oldestSubscriptionUpdateFromAll(
+        profileId: String,
         serviceId: Int,
         youtubeModeMask: Int
     ): Flowable<List<OffsetDateTime?>>
@@ -241,7 +296,8 @@ abstract class FeedDAO {
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
-        WHERE s.service_id = :serviceId
+        WHERE s.profile_id = :profileId
+        AND s.service_id = :serviceId
         AND lu.last_updated IS NULL
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
@@ -250,6 +306,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun notLoadedCount(
+        profileId: String,
         serviceId: Int,
         youtubeModeMask: Int
     ): Flowable<Long>
@@ -269,6 +326,7 @@ abstract class FeedDAO {
         )
 
         WHERE lu.last_updated IS NULL
+        AND s.profile_id = :profileId
         AND s.service_id = :serviceId
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
@@ -277,6 +335,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun notLoadedCountForGroup(
+        profileId: String,
         groupId: Long,
         serviceId: Int,
         youtubeModeMask: Int
@@ -289,10 +348,14 @@ abstract class FeedDAO {
         LEFT JOIN feed_last_updated lu
         ON s.uid = lu.subscription_id 
 
-        WHERE lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold
+        WHERE s.profile_id = :profileId
+        AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
         """
     )
-    abstract fun getAllOutdated(outdatedThreshold: OffsetDateTime): Flowable<List<SubscriptionEntity>>
+    abstract fun getAllOutdated(
+        profileId: String,
+        outdatedThreshold: OffsetDateTime
+    ): Flowable<List<SubscriptionEntity>>
 
     @Query(
         """
@@ -305,7 +368,8 @@ abstract class FeedDAO {
             OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
 
-        WHERE (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
+        WHERE s.profile_id = :profileId
+        AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
         AND s.service_id = :serviceId
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
@@ -314,6 +378,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun getAllOutdatedForScope(
+        profileId: String,
         serviceId: Int,
         youtubeModeMask: Int,
         outdatedThreshold: OffsetDateTime
@@ -329,10 +394,15 @@ abstract class FeedDAO {
         LEFT JOIN feed_last_updated lu
         ON s.uid = lu.subscription_id
 
-        WHERE lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold
+        WHERE s.profile_id = :profileId
+        AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
         """
     )
-    abstract fun getAllOutdatedForGroup(groupId: Long, outdatedThreshold: OffsetDateTime): Flowable<List<SubscriptionEntity>>
+    abstract fun getAllOutdatedForGroup(
+        profileId: String,
+        groupId: Long,
+        outdatedThreshold: OffsetDateTime
+    ): Flowable<List<SubscriptionEntity>>
 
     @Query(
         """
@@ -348,7 +418,8 @@ abstract class FeedDAO {
             OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
 
-        WHERE (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
+        WHERE s.profile_id = :profileId
+        AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
         AND s.service_id = :serviceId
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
@@ -357,6 +428,7 @@ abstract class FeedDAO {
         """
     )
     abstract fun getAllOutdatedForGroupAndScope(
+        profileId: String,
         groupId: Long,
         serviceId: Int,
         youtubeModeMask: Int,
@@ -370,12 +442,13 @@ abstract class FeedDAO {
         LEFT JOIN feed_last_updated lu
         ON s.uid = lu.subscription_id
 
-        WHERE 
-            (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
+        WHERE s.profile_id = :profileId
+            AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
             AND s.notification_mode IN (:notificationModes)
         """
     )
     abstract fun getOutdatedWithNotificationModes(
+        profileId: String,
         outdatedThreshold: OffsetDateTime,
         notificationModes: List<Int>
     ): Flowable<List<SubscriptionEntity>>

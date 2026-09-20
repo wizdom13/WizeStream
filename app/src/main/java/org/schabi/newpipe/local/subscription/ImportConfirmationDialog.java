@@ -9,6 +9,7 @@ import androidx.core.os.BundleCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.work.Constraints;
+import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
@@ -21,6 +22,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.local.subscription.workers.SubscriptionImportInput;
 import org.schabi.newpipe.local.subscription.workers.SubscriptionImportWorker;
+import org.schabi.newpipe.profiles.ProfileManager;
 
 public class ImportConfirmationDialog extends DialogFragment {
     private static final String INPUT = "input";
@@ -48,8 +50,14 @@ public class ImportConfirmationDialog extends DialogFragment {
                     final var input = BundleCompat.getParcelable(requireArguments(), INPUT,
                             SubscriptionImportInput.class);
 
+                    final var inputData = new Data.Builder()
+                            .putAll(input.toData())
+                            .putString(SubscriptionImportWorker.PROFILE_ID_KEY,
+                                    ProfileManager.getActiveProfileId(context))
+                            .build();
+
                     final var req = new OneTimeWorkRequest.Builder(SubscriptionImportWorker.class)
-                            .setInputData(input.toData())
+                            .setInputData(inputData)
                             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                             .setConstraints(constraints)
                             .build();

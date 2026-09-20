@@ -21,7 +21,11 @@ import org.schabi.newpipe.util.image.ImageStrategy
     tableName = SubscriptionEntity.Companion.SUBSCRIPTION_TABLE,
     indices = [
         Index(
-            value = [SubscriptionEntity.Companion.SUBSCRIPTION_SERVICE_ID, SubscriptionEntity.Companion.SUBSCRIPTION_URL],
+            value = [
+                SubscriptionEntity.Companion.SUBSCRIPTION_PROFILE_ID,
+                SubscriptionEntity.Companion.SUBSCRIPTION_SERVICE_ID,
+                SubscriptionEntity.Companion.SUBSCRIPTION_URL
+            ],
             unique = true
         )
     ]
@@ -56,7 +60,13 @@ data class SubscriptionEntity(
     var notificationKeywords: String = "",
 
     @ColumnInfo(name = SUBSCRIPTION_YOUTUBE_MODE_MASK, defaultValue = "1")
-    var youtubeModeMask: Int = YOUTUBE_MODE_REGULAR
+    var youtubeModeMask: Int = YOUTUBE_MODE_REGULAR,
+
+    @ColumnInfo(
+        name = SUBSCRIPTION_PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    var profileId: String = DEFAULT_PROFILE_ID
 ) {
     @Ignore
     fun toChannelInfoItem(): ChannelInfoItem {
@@ -82,6 +92,8 @@ data class SubscriptionEntity(
         const val SUBSCRIPTION_NOTIFICATION_MODE: String = "notification_mode"
         const val SUBSCRIPTION_NOTIFICATION_KEYWORDS: String = "notification_keywords"
         const val SUBSCRIPTION_YOUTUBE_MODE_MASK: String = "youtube_mode_mask"
+        const val SUBSCRIPTION_PROFILE_ID: String = "profile_id"
+        const val DEFAULT_PROFILE_ID: String = "00000000-0000-0000-0000-000000000000"
 
         const val YOUTUBE_SERVICE_ID: Int = 0
         const val YOUTUBE_MODE_REGULAR: Int = 1

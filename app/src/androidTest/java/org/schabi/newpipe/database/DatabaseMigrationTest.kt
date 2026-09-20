@@ -876,6 +876,58 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom24to25ScopesSubscriptionsAndGroupsToDefaultProfile() {
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_24
+        ).use { database ->
+            database.execSQL(
+                "INSERT INTO subscriptions " +
+                    "(uid, service_id, url, notification_mode) " +
+                    "VALUES (7, 0, 'https://example.com/profile-channel', 0)"
+            )
+            database.execSQL(
+                "INSERT INTO feed_group (uid, name, icon_id, sort_order) " +
+                    "VALUES (3, 'Existing group', 0, 0)"
+            )
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_25,
+            true,
+            Migrations.MIGRATION_24_25
+        )
+
+        migrated.query(
+            "SELECT profile_id FROM subscriptions WHERE uid = 7"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(defaultProfileId, cursor.getString(0))
+        }
+        migrated.query(
+            "SELECT profile_id FROM feed_group WHERE uid = 3"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(defaultProfileId, cursor.getString(0))
+        }
+
+        migrated.execSQL(
+            "INSERT INTO subscriptions " +
+                "(service_id, url, notification_mode, profile_id) " +
+                "VALUES (0, 'https://example.com/profile-channel', 0, 'other-profile')"
+        )
+        migrated.query(
+            "SELECT COUNT(*) FROM subscriptions " +
+                "WHERE url = 'https://example.com/profile-channel'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2, cursor.getInt(0))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -893,7 +945,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_20_21,
                 Migrations.MIGRATION_21_22,
                 Migrations.MIGRATION_22_23,
-                Migrations.MIGRATION_23_24
+                Migrations.MIGRATION_23_24,
+                Migrations.MIGRATION_24_25
             )
             .build()
         testHelper.closeWhenFinished(database)

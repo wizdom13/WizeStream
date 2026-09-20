@@ -418,8 +418,10 @@ class FeedLoadManager(private val context: Context) {
                             feedResultsHolder.addError(error!!)
 
                             if (error is FeedLoadService.RequestException) {
-                                val subscription = subscriptionManager.subscriptionTable()
-                                    .getSubscription(error.subscriptionId)
+                                val subscription =
+                                    subscriptionManager.getSubscriptionById(
+                                        error.subscriptionId
+                                    ) ?: continue
                                 val updateModeMask = feedScope?.youtubeModeMask
                                     ?: subscription.youtubeModeMask
                                 feedDatabaseManager.markAsOutdated(

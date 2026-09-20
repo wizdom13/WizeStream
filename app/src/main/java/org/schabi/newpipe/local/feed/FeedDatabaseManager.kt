@@ -21,8 +21,12 @@ import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
+import org.schabi.newpipe.profiles.ProfileManager
 
-class FeedDatabaseManager(context: Context) {
+class FeedDatabaseManager @JvmOverloads constructor(
+    context: Context,
+    private val activeProfileId: String = ProfileManager.getActiveProfileId(context)
+) {
     private val database = NewPipeDatabase.getInstance(context)
     private val feedTable = database.feedDAO()
     private val feedGroupTable = database.feedGroupDAO()
@@ -36,7 +40,7 @@ class FeedDatabaseManager(context: Context) {
             .atStartOfDay().atOffset(ZoneOffset.UTC)
     }
 
-    fun groups() = feedGroupTable.getAll()
+    fun groups() = feedGroupTable.getAllForProfile(activeProfileId)
 
     fun database() = database
 
@@ -49,6 +53,7 @@ class FeedDatabaseManager(context: Context) {
         sortByDiscovery: Boolean = false
     ): Maybe<List<StreamWithState>> {
         return feedTable.getStreams(
+            activeProfileId,
             groupId,
             includePlayedStreams,
             includePartiallyPlayedStreams,
@@ -59,21 +64,32 @@ class FeedDatabaseManager(context: Context) {
         )
     }
 
-    fun outdatedSubscriptions(outdatedThreshold: OffsetDateTime) = feedTable.getAllOutdated(outdatedThreshold)
+    fun outdatedSubscriptions(
+        outdatedThreshold: OffsetDateTime
+    ): Flowable<List<SubscriptionEntity>> {
+        return feedTable.getAllOutdated(activeProfileId, outdatedThreshold)
+    }
 
     fun outdatedSubscriptionsForScope(
         scope: FeedScope,
         outdatedThreshold: OffsetDateTime
-    ) = feedTable.getAllOutdatedForScope(
-        scope.serviceId,
-        scope.youtubeModeMask,
-        outdatedThreshold
-    )
+    ): Flowable<List<SubscriptionEntity>> {
+        return feedTable.getAllOutdatedForScope(
+            activeProfileId,
+            scope.serviceId,
+            scope.youtubeModeMask,
+            outdatedThreshold
+        )
+    }
 
     fun outdatedSubscriptionsWithNotificationModes(
         outdatedThreshold: OffsetDateTime,
         notificationModes: List<Int>
-    ) = feedTable.getOutdatedWithNotificationModes(outdatedThreshold, notificationModes)
+    ) = feedTable.getOutdatedWithNotificationModes(
+        activeProfileId,
+        outdatedThreshold,
+        notificationModes
+    )
 
     fun notLoadedCount(
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
@@ -81,10 +97,15 @@ class FeedDatabaseManager(context: Context) {
     ): Flowable<Long> {
         return when (groupId) {
             FeedGroupEntity.GROUP_ALL_ID ->
-                feedTable.notLoadedCount(scope.serviceId, scope.youtubeModeMask)
+                feedTable.notLoadedCount(
+                    activeProfileId,
+                    scope.serviceId,
+                    scope.youtubeModeMask
+                )
 
             else ->
                 feedTable.notLoadedCountForGroup(
+                    activeProfileId,
                     groupId,
                     scope.serviceId,
                     scope.youtubeModeMask
@@ -95,13 +116,18 @@ class FeedDatabaseManager(context: Context) {
     fun outdatedSubscriptionsForGroup(
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
         outdatedThreshold: OffsetDateTime
-    ) = feedTable.getAllOutdatedForGroup(groupId, outdatedThreshold)
+    ) = feedTable.getAllOutdatedForGroup(
+        activeProfileId,
+        groupId,
+        outdatedThreshold
+    )
 
     fun outdatedSubscriptionsForGroupAndScope(
         groupId: Long,
         scope: FeedScope,
         outdatedThreshold: OffsetDateTime
     ) = feedTable.getAllOutdatedForGroupAndScope(
+        activeProfileId,
         groupId,
         scope.serviceId,
         scope.youtubeModeMask,
@@ -186,12 +212,13 @@ class FeedDatabaseManager(context: Context) {
     }
 
     fun removeOrphansOrOlderStreams(oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE) {
-        feedTable.unlinkStreamsOlderThan(oldestAllowedDate)
+        feedTable.unlinkStreamsOlderThanForProfile(activeProfileId, oldestAllowedDate)
         streamTable.deleteOrphans()
     }
 
     fun clear() {
-        feedTable.deleteAll()
+        feedTable.deleteAllForProfile(activeProfileId)
+        feedTable.deleteAllLastUpdatedForProfile(activeProfileId)
         val deletedOrphans = streamTable.deleteOrphans()
         if (DEBUG) {
             Log.d(
@@ -206,38 +233,58 @@ class FeedDatabaseManager(context: Context) {
     // /////////////////////////////////////////////////////////////////////////
 
     fun subscriptionIdsForGroup(groupId: Long): Flowable<List<Long>> {
-        return feedGroupTable.getSubscriptionIdsFor(groupId)
+        return feedGroupTable.getSubscriptionIdsForProfile(activeProfileId, groupId)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun updateSubscriptionsForGroup(groupId: Long, subscriptionIds: List<Long>): Completable {
         return Completable
-            .fromCallable { feedGroupTable.updateSubscriptionsForGroup(groupId, subscriptionIds) }
+            .fromCallable {
+                feedGroupTable.updateSubscriptionsForGroupForProfile(
+                    activeProfileId,
+                    groupId,
+                    subscriptionIds
+                )
+            }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun createGroup(name: String, icon: FeedGroupIcon): Maybe<Long> {
-        return Maybe.fromCallable { feedGroupTable.insert(FeedGroupEntity(0, name, icon)) }
+        return Maybe.fromCallable {
+            feedGroupTable.insert(
+                FeedGroupEntity(
+                    uid = 0,
+                    name = name,
+                    icon = icon,
+                    profileId = activeProfileId
+                )
+            )
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun getGroup(groupId: Long): Maybe<FeedGroupEntity> {
-        return feedGroupTable.getGroup(groupId)
+        return feedGroupTable.getGroupForProfile(activeProfileId, groupId)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun updateGroup(feedGroupEntity: FeedGroupEntity): Completable {
-        return Completable.fromCallable { feedGroupTable.update(feedGroupEntity) }
+        feedGroupEntity.profileId = activeProfileId
+        return Completable.fromCallable {
+            feedGroupTable.updateForProfile(activeProfileId, feedGroupEntity)
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
 
     fun deleteGroup(groupId: Long): Completable {
-        return Completable.fromCallable { feedGroupTable.delete(groupId) }
+        return Completable.fromCallable {
+            feedGroupTable.deleteForProfile(activeProfileId, groupId)
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
@@ -246,7 +293,9 @@ class FeedDatabaseManager(context: Context) {
         var index = 0L
         val orderMap = groupIdList.associateBy({ it }, { index++ })
 
-        return Completable.fromCallable { feedGroupTable.updateOrder(orderMap) }
+        return Completable.fromCallable {
+            feedGroupTable.updateOrderForProfile(activeProfileId, orderMap)
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
@@ -258,12 +307,14 @@ class FeedDatabaseManager(context: Context) {
         return when (groupId) {
             FeedGroupEntity.GROUP_ALL_ID ->
                 feedTable.oldestSubscriptionUpdateFromAll(
+                    activeProfileId,
                     scope.serviceId,
                     scope.youtubeModeMask
                 )
 
             else ->
                 feedTable.oldestSubscriptionUpdate(
+                    activeProfileId,
                     groupId,
                     scope.serviceId,
                     scope.youtubeModeMask
