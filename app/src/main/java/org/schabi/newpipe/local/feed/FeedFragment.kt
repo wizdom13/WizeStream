@@ -454,7 +454,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.hideLoading()
         binding.itemsList.animate(true, 0)
         binding.refreshRootView.animate(true, 200)
-        binding.streamFilterChips.root.animate(true, 200)
         hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
@@ -464,7 +463,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.showEmptyState()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(true, 200)
-        binding.streamFilterChips.root.animate(true, 200)
         hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
@@ -484,7 +482,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.handleError()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(false, 0)
-        binding.streamFilterChips.root.animate(true, 200)
         hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
