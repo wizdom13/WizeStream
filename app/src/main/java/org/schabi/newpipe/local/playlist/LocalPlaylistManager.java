@@ -12,6 +12,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistEntity;
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity;
 import org.schabi.newpipe.database.stream.dao.StreamDAO;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
+import org.schabi.newpipe.profiles.ProfileManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +29,18 @@ public class LocalPlaylistManager {
     private final StreamDAO streamTable;
     private final PlaylistDAO playlistTable;
     private final PlaylistStreamDAO playlistStreamTable;
+    private final String profileId;
 
     public LocalPlaylistManager(final AppDatabase db) {
+        this(db, ProfileManager.DEFAULT_PROFILE_ID);
+    }
+
+    public LocalPlaylistManager(final AppDatabase db, final String profileId) {
         database = db;
         streamTable = db.streamDAO();
         playlistTable = db.playlistDAO();
         playlistStreamTable = db.playlistStreamDAO();
+        this.profileId = profileId;
     }
 
     public Maybe<List<Long>> createPlaylist(final String name, final List<StreamEntity> streams) {
@@ -109,7 +116,8 @@ public class LocalPlaylistManager {
 
     public Flowable<List<PlaylistStreamEntry>> getDistinctPlaylistStreams(final long playlistId) {
         return playlistStreamTable
-                .getStreamsWithoutDuplicates(playlistId).subscribeOn(Schedulers.io());
+                .getStreamsWithoutDuplicatesForProfile(profileId, playlistId)
+                .subscribeOn(Schedulers.io());
     }
 
     /**
@@ -129,7 +137,7 @@ public class LocalPlaylistManager {
     }
 
     public Flowable<List<PlaylistStreamEntry>> getPlaylistStreams(final long playlistId) {
-        return playlistStreamTable.getOrderedStreamsOf(playlistId)
+        return playlistStreamTable.getOrderedStreamsOfForProfile(profileId, playlistId)
                 .concatMapSingle(streams -> LocalPlaylistUploaderAvatarBackfill
                         .backfill(database, streams)
                         .toSingleDefault(streams)

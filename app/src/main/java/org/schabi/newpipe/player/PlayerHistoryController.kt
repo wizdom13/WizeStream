@@ -18,7 +18,6 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem
 
 /** Owns playback history persistence and active learning-session accounting. */
 internal class PlayerHistoryController(private val player: Player) {
-    private val records = HistoryRecordManager(player.context)
     private val learningSessions = LearningSessionTracker(player.context)
     private val updates = CompositeDisposable()
 
@@ -29,7 +28,7 @@ internal class PlayerHistoryController(private val player: Player) {
         onComplete: Action
     ) {
         updates.add(
-            records.loadStreamState(item)
+            records().loadStreamState(item)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(onSuccess, onError, onComplete)
         )
@@ -41,13 +40,13 @@ internal class PlayerHistoryController(private val player: Player) {
             registerViewed(item)
         } else {
             player.currentStreamInfo.ifPresent { info ->
-                updates.add(records.onViewed(info).onErrorComplete().subscribe())
+                updates.add(records().onViewed(info).onErrorComplete().subscribe())
             }
         }
     }
 
     fun registerViewed(item: PlayQueueItem) {
-        updates.add(records.onViewed(item).onErrorComplete().subscribe())
+        updates.add(records().onViewed(item).onErrorComplete().subscribe())
     }
 
     fun saveProgress(progressMillis: Long) {
@@ -57,7 +56,7 @@ internal class PlayerHistoryController(private val player: Player) {
         val item = player.currentItem
         if (item?.isLocalMedia == true) {
             updates.add(
-                records.saveStreamState(item, progressMillis)
+                records().saveStreamState(item, progressMillis)
                     .observeOn(AndroidSchedulers.mainThread())
                     .onErrorComplete()
                     .subscribe()
@@ -74,7 +73,7 @@ internal class PlayerHistoryController(private val player: Player) {
                 )
             }
             updates.add(
-                records.saveStreamState(info, progressMillis)
+                records().saveStreamState(info, progressMillis)
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnError { error ->
                         if (Player.DEBUG) {
@@ -100,8 +99,11 @@ internal class PlayerHistoryController(private val player: Player) {
     }
 
     fun clear() {
+        learningSessions.close()
         updates.clear()
     }
+
+    private fun records(): HistoryRecordManager = HistoryRecordManager(player.context)
 
     private fun isWatchHistoryEnabled(): Boolean = player.prefs.getBoolean(
         player.context.getString(R.string.enable_watch_history_key),

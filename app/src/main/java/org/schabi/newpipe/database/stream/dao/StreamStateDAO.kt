@@ -21,21 +21,62 @@ interface StreamStateDAO : BasicDAO<StreamStateEntity> {
     @Query("SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE)
     override fun getAll(): Flowable<List<StreamStateEntity>>
 
+    @Query(
+        "SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.PROFILE_ID + " = :profileId"
+    )
+    fun getAllForProfile(profileId: String): Flowable<List<StreamStateEntity>>
+
     @Query("SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE)
     fun getAllDirect(): List<StreamStateEntity>
 
+    @Query(
+        "SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.PROFILE_ID + " = :profileId"
+    )
+    fun getAllDirectForProfile(profileId: String): List<StreamStateEntity>
+
     @Query("DELETE FROM " + StreamStateEntity.STREAM_STATE_TABLE)
     override fun deleteAll(): Int
+
+    @Query(
+        "DELETE FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.PROFILE_ID + " = :profileId"
+    )
+    fun deleteAllForProfile(profileId: String): Int
 
     override fun listByService(serviceId: Int): Flowable<List<StreamStateEntity>> {
         throw UnsupportedOperationException()
     }
 
-    @Query("SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE + " WHERE " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId")
+    @Query(
+        "SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId"
+    )
     fun getState(streamId: Long): Flowable<MutableList<StreamStateEntity>>
 
-    @Query("DELETE FROM " + StreamStateEntity.STREAM_STATE_TABLE + " WHERE " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId")
+    @Query(
+        "SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.PROFILE_ID + " = :profileId" +
+            " AND " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId"
+    )
+    fun getStateForProfile(
+        profileId: String,
+        streamId: Long
+    ): Flowable<MutableList<StreamStateEntity>>
+
+    @Query(
+        "DELETE FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId"
+    )
     fun deleteState(streamId: Long): Int
+
+    @Query(
+        "DELETE FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.PROFILE_ID + " = :profileId" +
+            " AND " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId"
+    )
+    fun deleteStateForProfile(profileId: String, streamId: Long): Int
 
     @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
     fun silentInsertInternal(streamState: StreamStateEntity)

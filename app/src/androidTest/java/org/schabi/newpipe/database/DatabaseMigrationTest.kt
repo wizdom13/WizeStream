@@ -928,6 +928,75 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom25to26ScopesWatchHistoryAndProgressToDefaultProfile() {
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_25
+        ).use { database ->
+            database.execSQL(
+                "INSERT INTO streams " +
+                    "(uid, service_id, url, title, stream_type, duration, uploader) " +
+                    "VALUES (42, 0, 'https://example.com/history-video', " +
+                    "'History video', 'VIDEO_STREAM', 60, 'Channel')"
+            )
+            database.execSQL(
+                "INSERT INTO stream_history (stream_id, access_date, repeat_count) " +
+                    "VALUES (42, 1234, 2)"
+            )
+            database.execSQL(
+                "INSERT INTO stream_state (stream_id, progress_time) VALUES (42, 30000)"
+            )
+            database.execSQL(
+                "INSERT INTO learning_sessions " +
+                    "(session_id, stream_id, started_at, ended_at, watched_duration_ms, " +
+                    "local_date, background_playback, is_designated) " +
+                    "VALUES ('session-1', 42, 1000, 2000, 1000, '2026-09-20', 0, 1)"
+            )
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_26,
+            true,
+            Migrations.MIGRATION_25_26
+        )
+
+        migrated.query(
+            "SELECT profile_id, repeat_count FROM stream_history WHERE stream_id = 42"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(defaultProfileId, cursor.getString(0))
+            assertEquals(2L, cursor.getLong(1))
+        }
+        migrated.query(
+            "SELECT profile_id, progress_time FROM stream_state WHERE stream_id = 42"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(defaultProfileId, cursor.getString(0))
+            assertEquals(30_000L, cursor.getLong(1))
+        }
+
+        migrated.query(
+            "SELECT profile_id FROM learning_sessions WHERE session_id = 'session-1'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(defaultProfileId, cursor.getString(0))
+        }
+
+        migrated.execSQL(
+            "INSERT INTO stream_state (stream_id, progress_time, profile_id) " +
+                "VALUES (42, 10000, 'other-profile')"
+        )
+        migrated.query(
+            "SELECT COUNT(*) FROM stream_state WHERE stream_id = 42"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2, cursor.getInt(0))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -946,7 +1015,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_21_22,
                 Migrations.MIGRATION_22_23,
                 Migrations.MIGRATION_23_24,
-                Migrations.MIGRATION_24_25
+                Migrations.MIGRATION_24_25,
+                Migrations.MIGRATION_25_26
             )
             .build()
         testHelper.closeWhenFinished(database)

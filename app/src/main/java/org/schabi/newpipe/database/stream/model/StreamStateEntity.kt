@@ -9,15 +9,18 @@ package org.schabi.newpipe.database.stream.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.ForeignKey.Companion.CASCADE
 import org.schabi.newpipe.database.stream.model.StreamEntity.Companion.STREAM_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.JOIN_STREAM_ID
+import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.PROFILE_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.PLAYBACK_FINISHED_END_MILLISECONDS
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.STREAM_STATE_TABLE
 
 @Entity(
     tableName = STREAM_STATE_TABLE,
-    primaryKeys = [JOIN_STREAM_ID],
+    primaryKeys = [PROFILE_ID, JOIN_STREAM_ID],
+    indices = [Index(value = [JOIN_STREAM_ID])],
     foreignKeys = [
         ForeignKey(
             entity = StreamEntity::class,
@@ -28,12 +31,18 @@ import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.STRE
         )
     ]
 )
-data class StreamStateEntity(
+data class StreamStateEntity @JvmOverloads constructor(
     @ColumnInfo(name = JOIN_STREAM_ID)
     val streamUid: Long,
 
     @ColumnInfo(name = STREAM_PROGRESS_MILLIS)
-    val progressMillis: Long
+    val progressMillis: Long,
+
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = DEFAULT_PROFILE_ID
 ) {
     /**
      * The state will be considered valid, and thus be saved, if the progress is more than
@@ -68,6 +77,8 @@ data class StreamStateEntity(
         // for some other joins already
         const val JOIN_STREAM_ID_ALIAS = "stream_id_alias"
         const val STREAM_PROGRESS_MILLIS = "progress_time"
+        const val PROFILE_ID = "profile_id"
+        const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
 
         /**
          * Playback state will not be saved, if playback time is less than this threshold

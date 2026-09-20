@@ -24,6 +24,7 @@ import org.schabi.newpipe.player.playqueue.ChannelTabPlayQueue
 import org.schabi.newpipe.player.playqueue.PlayQueue
 import org.schabi.newpipe.player.playqueue.PlaylistPlayQueue
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.util.ChannelTabHelper
 import org.schabi.newpipe.util.ExtractorHelper
 import org.schabi.newpipe.util.NavigationHelper
@@ -144,7 +145,10 @@ class MediaBrowserPlaybackPreparer(
 
     //region Building play queues from playlists and history
     private fun extractLocalPlayQueue(playlistId: Long, index: Int): Single<PlayQueue> {
-        return LocalPlaylistManager(database).getPlaylistStreams(playlistId).firstOrError()
+        return LocalPlaylistManager(
+            database,
+            ProfileManager.getActiveProfileId(context)
+        ).getPlaylistStreams(playlistId).firstOrError()
             .map { items -> SinglePlayQueue(items.map { it.toStreamInfoItem() }, index) }
     }
 
@@ -234,7 +238,8 @@ class MediaBrowserPlaybackPreparer(
         }
 
         val streamId = path[0].toLong()
-        return database.streamHistoryDAO().history
+        return database.streamHistoryDAO()
+            .getHistoryForProfile(ProfileManager.getActiveProfileId(context))
             .firstOrError()
             .map { items ->
                 val infoItems = items

@@ -20,6 +20,7 @@ import org.schabi.newpipe.database.playlist.PlaylistDuplicatesEntry;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.local.LocalItemListAdapter;
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
+import org.schabi.newpipe.profiles.ProfileManager;
 
 import java.util.List;
 
@@ -62,7 +63,8 @@ public final class PlaylistAppendDialog extends PlaylistDialog {
         super.onViewCreated(view, savedInstanceState);
 
         final LocalPlaylistManager playlistManager =
-                new LocalPlaylistManager(NewPipeDatabase.getInstance(requireContext()));
+                new LocalPlaylistManager(NewPipeDatabase.getInstance(requireContext()),
+                        ProfileManager.getActiveProfileId(requireContext()));
 
         playlistAdapter = new LocalItemListAdapter(getActivity());
         playlistAdapter.setSelectedListener(selectedItem -> {

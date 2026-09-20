@@ -27,6 +27,7 @@ import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.image.CoilHelper;
 
 import java.util.List;
@@ -88,7 +89,8 @@ public class SelectPlaylistFragment extends DialogFragment {
         emptyView.setVisibility(View.GONE);
 
         final AppDatabase database = NewPipeDatabase.getInstance(requireContext());
-        final LocalPlaylistManager localPlaylistManager = new LocalPlaylistManager(database);
+        final LocalPlaylistManager localPlaylistManager = new LocalPlaylistManager(database,
+                ProfileManager.getActiveProfileId(requireContext()));
         final RemotePlaylistManager remotePlaylistManager = new RemotePlaylistManager(database);
 
         disposable = getMergedOrderedPlaylists(localPlaylistManager, remotePlaylistManager)

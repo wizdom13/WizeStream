@@ -6,8 +6,10 @@
 package org.schabi.newpipe.learning
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.SystemClock
 import android.util.Log
+import androidx.preference.PreferenceManager
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.time.Instant
@@ -17,13 +19,25 @@ import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
+import org.schabi.newpipe.profiles.ProfileManager
 
 /** Records real wall-clock playback intervals while Learning Mode is active. */
 class LearningSessionTracker(context: Context) {
     private val appContext = context.applicationContext
     private val database = NewPipeDatabase.getInstance(appContext)
     private val learningContent = LearningContentManager.getInstance(appContext)
+    private val preferences = PreferenceManager.getDefaultSharedPreferences(appContext)
+    private val profilePreferenceListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == ProfileManager.ACTIVE_PROFILE_ID_PREFERENCE_KEY) {
+                stop()
+            }
+        }
     private var active: ActiveSession? = null
+
+    init {
+        preferences.registerOnSharedPreferenceChangeListener(profilePreferenceListener)
+    }
 
     @Synchronized
     fun update(item: PlayQueueItem?, playing: Boolean, backgroundPlayback: Boolean) {
@@ -31,6 +45,7 @@ class LearningSessionTracker(context: Context) {
         val nowElapsedMillis = SystemClock.elapsedRealtime()
         accrue(nowEpochMillis, nowElapsedMillis)
 
+        val profileId = ProfileManager.getActiveProfileId(appContext)
         val eligible = item != null && playing && LearningMode.isEnabled(appContext) &&
             learningContent.isStreamLearning(item.serviceId, item.url) &&
             (!backgroundPlayback || LearningMode.shouldCountBackgroundPlayback(appContext))
@@ -41,7 +56,10 @@ class LearningSessionTracker(context: Context) {
             return
         }
 
-        if (current == null || !current.matches(item, backgroundPlayback, localDate)) {
+        if (
+            current == null ||
+            !current.matches(item, backgroundPlayback, localDate, profileId)
+        ) {
             finish(nowEpochMillis)
             active = ActiveSession(
                 sessionId = UUID.randomUUID().toString(),
@@ -51,13 +69,17 @@ class LearningSessionTracker(context: Context) {
                 watchedDurationMillis = 0,
                 localDate = localDate,
                 backgroundPlayback = backgroundPlayback,
+                profileId = profileId,
                 lastSampleElapsedMillis = nowElapsedMillis,
                 lastPersistedDurationMillis = 0
             )
             return
         }
 
-        if (current.watchedDurationMillis - current.lastPersistedDurationMillis >= FLUSH_INTERVAL_MS) {
+        if (
+            current.watchedDurationMillis - current.lastPersistedDurationMillis >=
+            FLUSH_INTERVAL_MS
+        ) {
             persist(current)
             current.lastPersistedDurationMillis = current.watchedDurationMillis
         }
@@ -68,6 +90,11 @@ class LearningSessionTracker(context: Context) {
         val nowEpochMillis = System.currentTimeMillis()
         accrue(nowEpochMillis, SystemClock.elapsedRealtime())
         finish(nowEpochMillis)
+    }
+
+    fun close() {
+        stop()
+        preferences.unregisterOnSharedPreferenceChangeListener(profilePreferenceListener)
     }
 
     private fun accrue(nowEpochMillis: Long, nowElapsedMillis: Long) {
@@ -114,11 +141,22 @@ class LearningSessionTracker(context: Context) {
         var watchedDurationMillis: Long,
         val localDate: String,
         val backgroundPlayback: Boolean,
+        val profileId: String,
         var lastSampleElapsedMillis: Long,
         var lastPersistedDurationMillis: Long
     ) {
-        fun matches(item: PlayQueueItem, background: Boolean, date: String): Boolean = stream.serviceId == item.serviceId && stream.url == item.url &&
-            backgroundPlayback == background && localDate == date
+        fun matches(
+            item: PlayQueueItem,
+            background: Boolean,
+            date: String,
+            currentProfileId: String
+        ): Boolean {
+            return stream.serviceId == item.serviceId &&
+                stream.url == item.url &&
+                backgroundPlayback == background &&
+                localDate == date &&
+                profileId == currentProfileId
+        }
 
         fun toEntity() = LearningSessionEntity(
             sessionId = sessionId,
@@ -128,7 +166,8 @@ class LearningSessionTracker(context: Context) {
             watchedDurationMillis = watchedDurationMillis,
             localDate = localDate,
             backgroundPlayback = backgroundPlayback,
-            designatedLearningContent = true
+            designatedLearningContent = true,
+            profileId = profileId
         )
     }
 

@@ -44,6 +44,7 @@ import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.debounce.DebounceSavable;
@@ -96,7 +97,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             return;
         }
         final AppDatabase database = NewPipeDatabase.getInstance(activity);
-        localPlaylistManager = new LocalPlaylistManager(database);
+        localPlaylistManager = new LocalPlaylistManager(database,
+                ProfileManager.getActiveProfileId(requireContext()));
         remotePlaylistManager = new RemotePlaylistManager(database);
         disposables = new CompositeDisposable();
 

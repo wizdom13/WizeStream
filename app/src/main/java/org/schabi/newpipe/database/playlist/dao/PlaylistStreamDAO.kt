@@ -73,6 +73,31 @@ interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
     fun getOrderedStreamsOf(playlistId: Long): Flowable<MutableList<PlaylistStreamEntry>>
 
     @RewriteQueriesToDropUnusedColumns
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM streams
+        INNER JOIN (
+            SELECT stream_id, join_index
+            FROM playlist_stream_join
+            WHERE playlist_id = :playlistId
+        )
+        ON uid = stream_id
+        LEFT JOIN (
+            SELECT stream_id AS stream_id_alias, progress_time
+            FROM stream_state
+            WHERE profile_id = :profileId
+        )
+        ON uid = stream_id_alias
+        ORDER BY join_index ASC
+        """
+    )
+    fun getOrderedStreamsOfForProfile(
+        profileId: String,
+        playlistId: Long
+    ): Flowable<MutableList<PlaylistStreamEntry>>
+
+    @RewriteQueriesToDropUnusedColumns
     @Query(
         """
         SELECT streams.* FROM streams
@@ -122,6 +147,32 @@ interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
         """
     )
     fun getStreamsWithoutDuplicates(playlistId: Long): Flowable<MutableList<PlaylistStreamEntry>>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Transaction
+    @Query(
+        """
+        SELECT *, MIN(join_index) FROM streams
+        INNER JOIN (
+            SELECT stream_id, join_index
+            FROM playlist_stream_join
+            WHERE playlist_id = :playlistId
+        )
+        ON uid = stream_id
+        LEFT JOIN (
+            SELECT stream_id AS stream_id_alias, progress_time
+            FROM stream_state
+            WHERE profile_id = :profileId
+        )
+        ON uid = stream_id_alias
+        GROUP BY uid
+        ORDER BY MIN(join_index) ASC
+        """
+    )
+    fun getStreamsWithoutDuplicatesForProfile(
+        profileId: String,
+        playlistId: Long
+    ): Flowable<MutableList<PlaylistStreamEntry>>
 
     // If a playlist has no streams, there won’t be any rows in the **playlist_stream_join** table
     // that have a foreign key to that playlist. Thus, the **playlist_id** will not have a

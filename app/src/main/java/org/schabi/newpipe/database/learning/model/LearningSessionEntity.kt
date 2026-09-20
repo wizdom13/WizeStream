@@ -25,7 +25,8 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
     ],
     indices = [
         Index(value = [LearningSessionEntity.STREAM_ID, LearningSessionEntity.STARTED_AT]),
-        Index(value = [LearningSessionEntity.LOCAL_DATE])
+        Index(value = [LearningSessionEntity.LOCAL_DATE]),
+        Index(value = [LearningSessionEntity.PROFILE_ID, LearningSessionEntity.LOCAL_DATE])
     ]
 )
 data class LearningSessionEntity(
@@ -52,7 +53,13 @@ data class LearningSessionEntity(
     val backgroundPlayback: Boolean,
 
     @ColumnInfo(name = IS_DESIGNATED, defaultValue = "0")
-    val designatedLearningContent: Boolean = false
+    val designatedLearningContent: Boolean = false,
+
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = DEFAULT_PROFILE_ID
 ) {
     companion object {
         const val TABLE_NAME = "learning_sessions"
@@ -64,5 +71,7 @@ data class LearningSessionEntity(
         const val LOCAL_DATE = "local_date"
         const val BACKGROUND_PLAYBACK = "background_playback"
         const val IS_DESIGNATED = "is_designated"
+        const val PROFILE_ID = "profile_id"
+        const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
     }
 }

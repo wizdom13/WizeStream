@@ -27,6 +27,7 @@ import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.fragments.BaseStateFragment
 import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.image.CoilHelper
@@ -40,7 +41,8 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = LearningDashboardRepository(
-            NewPipeDatabase.getInstance(requireContext()).learningDashboardDAO()
+            NewPipeDatabase.getInstance(requireContext()).learningDashboardDAO(),
+            ProfileManager.getActiveProfileId(requireContext())
         )
     }
 

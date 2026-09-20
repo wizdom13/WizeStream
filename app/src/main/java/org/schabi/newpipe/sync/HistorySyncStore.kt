@@ -23,6 +23,7 @@ import org.schabi.newpipe.database.sync.HistorySyncChangeEntity
 import org.schabi.newpipe.database.sync.HistorySyncOriginStateEntity
 import org.schabi.newpipe.database.sync.HistorySyncPeerStateEntity
 import org.schabi.newpipe.database.sync.HistorySyncRecordEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal interface HistorySyncStore {
     val localPeerId: String
@@ -479,7 +480,9 @@ internal class RoomHistorySyncStore internal constructor(
     }
 
     private fun initializeWatchHistory() {
-        streamHistoryDao.getAllDirect().forEach { history ->
+        streamHistoryDao
+            .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+            .forEach { history ->
             val stream = streamDao.getStreamDirect(history.streamUid) ?: return@forEach
             if (stream.isDeviceLocalHistoryStream()) {
                 return@forEach
@@ -498,7 +501,9 @@ internal class RoomHistorySyncStore internal constructor(
                 )
             )
         }
-        streamStateDao.getAllDirect().forEach { state ->
+        streamStateDao
+            .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+            .forEach { state ->
             val stream = streamDao.getStreamDirect(state.streamUid) ?: return@forEach
             if (stream.isDeviceLocalHistoryStream()) {
                 return@forEach
@@ -624,7 +629,10 @@ internal class RoomHistorySyncStore internal constructor(
             .filter { watchCutoff == null || it.versionStamp > watchCutoff }
             .mapNotNull { decodeRecord(it)?.watchEvent }
         if (streamId != null) {
-            streamHistoryDao.deleteStreamHistory(streamId)
+            streamHistoryDao.deleteStreamHistoryForProfile(
+                ProfileManager.DEFAULT_PROFILE_ID,
+                streamId
+            )
             if (events.isNotEmpty()) {
                 streamHistoryDao.insert(
                     StreamHistoryEntity(
@@ -634,7 +642,8 @@ internal class RoomHistorySyncStore internal constructor(
                         ),
                         repeatCount = events.fold(0L) { total, event ->
                             saturatedAdd(total, event.repeatCount)
-                        }
+                        },
+                        profileId = ProfileManager.DEFAULT_PROFILE_ID
                     )
                 )
             }
@@ -654,12 +663,19 @@ internal class RoomHistorySyncStore internal constructor(
                 )
         if (streamId != null) {
             if (progressIsCleared) {
-                streamStateDao.deleteState(streamId)
+                streamStateDao.deleteStateForProfile(
+                    ProfileManager.DEFAULT_PROFILE_ID,
+                    streamId
+                )
             } else {
                 val progress = decodeRecord(requireNotNull(progressRecord))?.playbackProgress
                     ?: throw HistorySyncException("Stored playback progress is invalid")
                 streamStateDao.upsert(
-                    StreamStateEntity(streamId, progress.progressMillis)
+                    StreamStateEntity(
+                        streamId,
+                        progress.progressMillis,
+                        ProfileManager.DEFAULT_PROFILE_ID
+                    )
                 )
             }
         }
