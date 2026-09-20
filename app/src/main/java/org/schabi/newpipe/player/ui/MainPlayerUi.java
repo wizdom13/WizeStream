@@ -1216,7 +1216,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      */
     public void toggleFullscreenWithOrientation() {
         final boolean targetFullscreen = !isFullscreen();
-        if (shouldUseScreenRotationAction(videoContentOrientation, isLandscape())) {
+        if (shouldUseScreenRotationAction(getVideoContentOrientation(), isLandscape())) {
             player.getFragmentListener()
                     .ifPresent(listener ->
                             listener.onScreenRotationButtonClicked(targetFullscreen));
