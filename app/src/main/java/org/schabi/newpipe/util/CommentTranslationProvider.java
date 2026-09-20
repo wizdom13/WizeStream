@@ -56,7 +56,7 @@ public final class CommentTranslationProvider {
             callback.onFailure(Failure.ON_DEVICE_UNAVAILABLE);
             return;
         }
-        if (text.isBlank()) {
+        if (text.trim().isEmpty()) {
             callback.onFailure(Failure.LANGUAGE_UNDETECTED);
             return;
         }
@@ -192,7 +192,7 @@ public final class CommentTranslationProvider {
                                 || value.getStatusCode()
                                 != TranslationResponseValue.STATUS_SUCCESS
                                 || value.getText() == null
-                                || value.getText().toString().isBlank()) {
+                                || value.getText().toString().trim().isEmpty()) {
                             deliverFailure(callback, Failure.TRANSLATION_FAILED);
                             return;
                         }
