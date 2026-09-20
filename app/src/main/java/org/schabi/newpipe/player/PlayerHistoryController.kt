@@ -103,6 +103,7 @@ internal class PlayerHistoryController(private val player: Player) {
         updates.clear()
     }
 
+    // The player service can outlive the activity that switched profiles.
     private fun records(): HistoryRecordManager = HistoryRecordManager(player.context)
 
     private fun isWatchHistoryEnabled(): Boolean = player.prefs.getBoolean(
