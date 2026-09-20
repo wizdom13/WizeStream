@@ -164,13 +164,33 @@ public final class CommentRepliesFragment
         showingTranslatedHeaderComment = false;
 
         final String originalText = item.getCommentText();
-        final boolean available = CommentTranslationProvider.isAvailableOnPlatform()
-                && originalText != null && !originalText.trim().isEmpty();
-        binding.translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
-        binding.translateButton.setEnabled(available);
+        binding.translateButton.setVisibility(View.GONE);
+        binding.translateButton.setEnabled(false);
         binding.translateButton.setText(R.string.comment_translate);
-        binding.translateButton.setOnClickListener(
-                available ? view -> onHeaderTranslateClicked(binding, item) : null);
+        binding.translateButton.setOnClickListener(null);
+
+        if (!CommentTranslationProvider.isAvailableOnPlatform()
+                || originalText == null
+                || originalText.trim().isEmpty()) {
+            return;
+        }
+
+        final int generation = headerTranslationGeneration;
+        CommentTranslationProvider.checkAvailability(
+                requireContext(),
+                originalText,
+                available -> {
+                    if (!isCurrentHeaderTranslation(binding, generation)) {
+                        return;
+                    }
+                    binding.translateButton.setVisibility(
+                            available ? View.VISIBLE : View.GONE);
+                    binding.translateButton.setEnabled(available);
+                    binding.translateButton.setOnClickListener(
+                            available
+                                    ? view -> onHeaderTranslateClicked(binding, item)
+                                    : null);
+                });
     }
 
     private void onHeaderTranslateClicked(@NonNull final CommentRepliesHeaderBinding binding,

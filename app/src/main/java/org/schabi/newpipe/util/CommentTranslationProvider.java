@@ -42,11 +42,29 @@ public final class CommentTranslationProvider {
         void onFailure(@NonNull Failure failure);
     }
 
+    public interface AvailabilityCallback {
+        void onResult(boolean available);
+    }
+
     private CommentTranslationProvider() {
     }
 
     public static boolean isAvailableOnPlatform() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+    }
+
+    public static void checkAvailability(
+            @NonNull final Context context,
+            @NonNull final String text,
+            @NonNull final AvailabilityCallback callback) {
+        if (!isAvailableOnPlatform() || text.trim().isEmpty()) {
+            callback.onResult(false);
+            return;
+        }
+
+        final Context applicationContext = context.getApplicationContext();
+        WORKER.execute(() -> Api31Impl.checkAvailability(
+                applicationContext, text, callback));
     }
 
     public static void translate(@NonNull final Context context,
@@ -75,9 +93,46 @@ public final class CommentTranslationProvider {
         MAIN_HANDLER.post(() -> callback.onFailure(failure));
     }
 
+    private static void deliverAvailability(
+            @NonNull final AvailabilityCallback callback,
+            final boolean available) {
+        MAIN_HANDLER.post(() -> callback.onResult(available));
+    }
+
     @RequiresApi(Build.VERSION_CODES.S)
     private static final class Api31Impl {
         private Api31Impl() {
+        }
+
+        static void checkAvailability(
+                @NonNull final Context context,
+                @NonNull final String text,
+                @NonNull final AvailabilityCallback callback) {
+            try {
+                final ULocale sourceLocale = detectSourceLocale(context, text);
+                if (sourceLocale == null) {
+                    deliverAvailability(callback, false);
+                    return;
+                }
+
+                final ULocale targetLocale = ULocale.forLocale(
+                        context.getResources().getConfiguration().getLocales().get(0));
+                if (CommentTranslationPolicy.isSameLanguage(
+                        sourceLocale.toLanguageTag(), targetLocale.toLanguageTag())) {
+                    deliverAvailability(callback, false);
+                    return;
+                }
+
+                final TranslationManager manager =
+                        context.getSystemService(TranslationManager.class);
+                deliverAvailability(
+                        callback,
+                        manager != null
+                                && findOnDeviceCapability(
+                                        manager, sourceLocale, targetLocale) != null);
+            } catch (final RuntimeException e) {
+                deliverAvailability(callback, false);
+            }
         }
 
         static void translate(@NonNull final Context context,

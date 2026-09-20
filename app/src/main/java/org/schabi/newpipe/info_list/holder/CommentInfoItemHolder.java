@@ -44,7 +44,6 @@ public class CommentInfoItemHolder extends InfoItemHolder {
     private final RelativeLayout itemRoot;
     private final ImageView itemThumbnailView;
     private final TextView itemContentView;
-    private final ImageView itemThumbsUpView;
     private final TextView itemLikesCountView;
     private final TextView itemTitleView;
     private final ImageView itemHeartView;
@@ -68,7 +67,6 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         itemRoot = itemView.findViewById(R.id.itemRoot);
         itemThumbnailView = itemView.findViewById(R.id.itemThumbnailView);
         itemContentView = itemView.findViewById(R.id.itemCommentContentView);
-        itemThumbsUpView = itemView.findViewById(R.id.detail_thumbs_up_img_view);
         itemLikesCountView = itemView.findViewById(R.id.detail_thumbs_up_count_view);
         itemTitleView = itemView.findViewById(R.id.itemTitleView);
         itemHeartView = itemView.findViewById(R.id.detail_heart_image_view);
@@ -134,9 +132,6 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         repliesButton.setVisibility(hasReplies ? View.VISIBLE : View.GONE);
         repliesButton.setText(hasReplies
                 ? Localization.replyCount(itemBuilder.getContext(), item.getReplyCount()) : "");
-        ((RelativeLayout.LayoutParams) itemThumbsUpView.getLayoutParams()).topMargin =
-                hasReplies ? 0 : DeviceUtils.dpToPx(6, itemBuilder.getContext());
-
         setupTranslation(item);
 
         // setup comment content and click listeners to expand/ellipsize it
@@ -205,12 +200,30 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         translatedCommentText = null;
         showingTranslatedComment = false;
 
-        final boolean available = CommentTranslationProvider.isAvailableOnPlatform()
-                && originalCommentText != null && !originalCommentText.trim().isEmpty();
-        translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
-        translateButton.setEnabled(available);
+        translateButton.setVisibility(View.GONE);
+        translateButton.setEnabled(false);
         translateButton.setText(R.string.comment_translate);
-        translateButton.setOnClickListener(available ? view -> onTranslateClicked(item) : null);
+        translateButton.setOnClickListener(null);
+
+        if (!CommentTranslationProvider.isAvailableOnPlatform()
+                || originalCommentText == null
+                || originalCommentText.trim().isEmpty()) {
+            return;
+        }
+
+        final int generation = translationGeneration;
+        CommentTranslationProvider.checkAvailability(
+                itemBuilder.getContext(),
+                originalCommentText,
+                available -> {
+                    if (!isCurrentTranslationRequest(item, generation)) {
+                        return;
+                    }
+                    translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
+                    translateButton.setEnabled(available);
+                    translateButton.setOnClickListener(
+                            available ? view -> onTranslateClicked(item) : null);
+                });
     }
 
     private void onTranslateClicked(@NonNull final CommentsInfoItem item) {
