@@ -29,8 +29,8 @@ object ProfilePolicy {
             return false
         }
         return profiles.any {
-            it.id != excludingId
-                && normalizeName(it.name).equals(normalized, ignoreCase = true)
+            it.id != excludingId &&
+                normalizeName(it.name).equals(normalized, ignoreCase = true)
         }
     }
 }
