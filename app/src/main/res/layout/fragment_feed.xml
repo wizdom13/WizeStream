@@ -89,20 +89,20 @@
             </RelativeLayout>
 
             <LinearLayout
-                android:id="@+id/refresh_progress_container"
+                android:id="@+id/feed_controls_row"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="4dp"
-                android:visibility="gone"
-                tools:visibility="visible">
+                android:orientation="horizontal">
 
                 <FrameLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
+                    android:id="@+id/refresh_progress_container"
+                    android:layout_width="96dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="4dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/loading_progress_bar"
@@ -132,22 +132,25 @@
                         app:trackThickness="4dp" />
                 </FrameLayout>
 
+                <include
+                    android:id="@+id/stream_filter_chips"
+                    layout="@layout/list_stream_filter_chips"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
                 <ImageButton
                     android:id="@+id/cancel_refresh_button"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/cancel_refresh"
-                    android:padding="10dp"
+                    android:padding="14dp"
                     android:src="@drawable/ic_close"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    android:visibility="gone"
+                    app:tint="?attr/colorOnSurfaceVariant"
+                    tools:visibility="visible" />
             </LinearLayout>
-
-            <include
-                android:id="@+id/stream_filter_chips"
-                layout="@layout/list_stream_filter_chips"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
