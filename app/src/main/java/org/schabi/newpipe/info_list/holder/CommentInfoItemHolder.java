@@ -200,12 +200,30 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         translatedCommentText = null;
         showingTranslatedComment = false;
 
-        final boolean available = CommentTranslationProvider.isAvailableOnPlatform()
-                && originalCommentText != null && !originalCommentText.trim().isEmpty();
-        translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
-        translateButton.setEnabled(available);
+        translateButton.setVisibility(View.GONE);
+        translateButton.setEnabled(false);
         translateButton.setText(R.string.comment_translate);
-        translateButton.setOnClickListener(available ? view -> onTranslateClicked(item) : null);
+        translateButton.setOnClickListener(null);
+
+        if (!CommentTranslationProvider.isAvailableOnPlatform()
+                || originalCommentText == null
+                || originalCommentText.trim().isEmpty()) {
+            return;
+        }
+
+        final int generation = translationGeneration;
+        CommentTranslationProvider.checkAvailability(
+                itemBuilder.getContext(),
+                originalCommentText,
+                available -> {
+                    if (!isCurrentTranslationRequest(item, generation)) {
+                        return;
+                    }
+                    translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
+                    translateButton.setEnabled(available);
+                    translateButton.setOnClickListener(
+                            available ? view -> onTranslateClicked(item) : null);
+                });
     }
 
     private void onTranslateClicked(@NonNull final CommentsInfoItem item) {
