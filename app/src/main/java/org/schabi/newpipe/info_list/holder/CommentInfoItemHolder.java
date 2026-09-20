@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
@@ -25,6 +26,7 @@ import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.CommentTextSizeHelper;
+import org.schabi.newpipe.util.CommentTranslationProvider;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -47,10 +49,17 @@ public class CommentInfoItemHolder extends InfoItemHolder {
     private final TextView itemTitleView;
     private final ImageView itemHeartView;
     private final ImageView itemPinnedView;
+    private final Button translateButton;
     private final Button repliesButton;
 
     @NonNull
     private final TextEllipsizer textEllipsizer;
+
+    private CommentsInfoItem boundComment;
+    private String originalCommentText;
+    private String translatedCommentText;
+    private boolean showingTranslatedComment;
+    private int translationGeneration;
 
     public CommentInfoItemHolder(final InfoItemBuilder infoItemBuilder,
                                  final ViewGroup parent) {
@@ -64,6 +73,7 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         itemTitleView = itemView.findViewById(R.id.itemTitleView);
         itemHeartView = itemView.findViewById(R.id.detail_heart_image_view);
         itemPinnedView = itemView.findViewById(R.id.detail_pinned_view);
+        translateButton = itemView.findViewById(R.id.translate_button);
         repliesButton = itemView.findViewById(R.id.replies_button);
 
         commentHorizontalPadding = (int) infoItemBuilder.getContext()
@@ -127,13 +137,12 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         ((RelativeLayout.LayoutParams) itemThumbsUpView.getLayoutParams()).topMargin =
                 hasReplies ? 0 : DeviceUtils.dpToPx(6, itemBuilder.getContext());
 
+        setupTranslation(item);
 
         // setup comment content and click listeners to expand/ellipsize it
         textEllipsizer.setStreamingService(getServiceById(item.getServiceId()));
         textEllipsizer.setStreamUrl(item.getUrl());
-        textEllipsizer.setContent(
-                new Description(item.getCommentText(), Description.PLAIN_TEXT));
-        textEllipsizer.ellipsize();
+        showCommentText(item.getCommentText());
 
         //noinspection ClickableViewAccessibility
         itemContentView.setOnTouchListener((v, event) -> {
@@ -179,7 +188,102 @@ public class CommentInfoItemHolder extends InfoItemHolder {
 
     @Override
     public void recycle() {
+        translationGeneration++;
+        boundComment = null;
+        originalCommentText = null;
+        translatedCommentText = null;
+        showingTranslatedComment = false;
+        translateButton.setOnClickListener(null);
+        translateButton.setVisibility(View.GONE);
         CoilHelper.INSTANCE.clearAvatar(itemThumbnailView);
+    }
+
+    private void setupTranslation(@NonNull final CommentsInfoItem item) {
+        translationGeneration++;
+        boundComment = item;
+        originalCommentText = item.getCommentText();
+        translatedCommentText = null;
+        showingTranslatedComment = false;
+
+        final boolean available = CommentTranslationProvider.isAvailableOnPlatform()
+                && originalCommentText != null && !originalCommentText.trim().isEmpty();
+        translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
+        translateButton.setEnabled(available);
+        translateButton.setText(R.string.comment_translate);
+        translateButton.setOnClickListener(available ? view -> onTranslateClicked(item) : null);
+    }
+
+    private void onTranslateClicked(@NonNull final CommentsInfoItem item) {
+        if (translatedCommentText != null) {
+            showingTranslatedComment = !showingTranslatedComment;
+            showCommentText(showingTranslatedComment
+                    ? translatedCommentText : originalCommentText);
+            translateButton.setText(showingTranslatedComment
+                    ? R.string.comment_show_original : R.string.comment_show_translation);
+            return;
+        }
+
+        translateButton.setEnabled(false);
+        translateButton.setText(R.string.comment_translating);
+        final int generation = translationGeneration;
+        CommentTranslationProvider.translate(
+                itemBuilder.getContext(),
+                originalCommentText,
+                new CommentTranslationProvider.Callback() {
+                    @Override
+                    public void onSuccess(@NonNull final String translatedText) {
+                        if (!isCurrentTranslationRequest(item, generation)) {
+                            return;
+                        }
+                        translatedCommentText = translatedText;
+                        showingTranslatedComment = true;
+                        showCommentText(translatedText);
+                        translateButton.setEnabled(true);
+                        translateButton.setText(R.string.comment_show_original);
+                    }
+
+                    @Override
+                    public void onFailure(
+                            @NonNull final CommentTranslationProvider.Failure failure) {
+                        if (!isCurrentTranslationRequest(item, generation)) {
+                            return;
+                        }
+                        translateButton.setEnabled(true);
+                        translateButton.setText(R.string.comment_translate);
+                        showTranslationFailure(failure);
+                    }
+                });
+    }
+
+    private boolean isCurrentTranslationRequest(@NonNull final CommentsInfoItem item,
+                                                final int generation) {
+        return boundComment == item && translationGeneration == generation;
+    }
+
+    private void showCommentText(final String text) {
+        textEllipsizer.setContent(new Description(text, Description.PLAIN_TEXT));
+        textEllipsizer.ellipsize();
+    }
+
+    private void showTranslationFailure(
+            @NonNull final CommentTranslationProvider.Failure failure) {
+        final int message;
+        switch (failure) {
+            case ALREADY_TARGET_LANGUAGE:
+                message = R.string.comment_translation_same_language;
+                break;
+            case LANGUAGE_UNDETECTED:
+                message = R.string.comment_translation_language_undetected;
+                break;
+            case ON_DEVICE_UNAVAILABLE:
+                message = R.string.comment_translation_unavailable;
+                break;
+            case TRANSLATION_FAILED:
+            default:
+                message = R.string.comment_translation_failed;
+                break;
+        }
+        Toast.makeText(itemBuilder.getContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private void openCommentAuthor(@NonNull final CommentsInfoItem item) {

@@ -197,6 +197,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   keywords using locally stored rules under **Settings > Content > Blocked content**
 - Browse video details, related content, comments, playlists, and channel tabs where supported
 - Choose **Top** or **Newest** YouTube comments using the service's ordering, including pagination
+- Translate comments on demand with Android's on-device translation service when the required
+  language pair is already available locally, with no cloud translation fallback
 - Sort channel videos by latest, popular, or oldest, and use podcast tabs on supported channels
 - Browse read-only YouTube channel posts with text, images, polls, links, videos, playlists, and
   pagination

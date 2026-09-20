@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
 import org.schabi.newpipe.util.CommentTextSizeHelper;
+import org.schabi.newpipe.util.CommentTranslationProvider;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
@@ -49,6 +51,9 @@ public final class CommentRepliesFragment
     CommentsInfoItem commentsInfoItem; // the comment to show replies of
     private final CompositeDisposable disposables = new CompositeDisposable();
     private CommentRepliesHeaderBinding headerBinding;
+    private String translatedHeaderComment;
+    private boolean showingTranslatedHeaderComment;
+    private int headerTranslationGeneration;
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -83,6 +88,9 @@ public final class CommentRepliesFragment
 
     @Override
     public void onDestroyView() {
+        headerTranslationGeneration++;
+        translatedHeaderComment = null;
+        showingTranslatedHeaderComment = false;
         disposables.clear();
         headerBinding = null;
         super.onDestroyView();
@@ -141,15 +149,123 @@ public final class CommentRepliesFragment
 
             // setup comment content
             CommentTextSizeHelper.applyCommentTextSize(binding.commentContent);
-            TextLinkifier.fromDescription(binding.commentContent,
-                    new Description(item.getCommentText(), Description.PLAIN_TEXT),
-                    HtmlCompat.FROM_HTML_MODE_LEGACY, getServiceById(item.getServiceId()),
-                    item.getUrl(), disposables, null);
-            binding.commentContent.setMovementMethod(LongPressLinkMovementMethod.getInstance());
+            showHeaderCommentText(binding, item, item.getCommentText());
+            setupHeaderTranslation(binding, item);
             return binding.getRoot();
         };
     }
 
+
+
+    private void setupHeaderTranslation(@NonNull final CommentRepliesHeaderBinding binding,
+                                        @NonNull final CommentsInfoItem item) {
+        headerTranslationGeneration++;
+        translatedHeaderComment = null;
+        showingTranslatedHeaderComment = false;
+
+        final String originalText = item.getCommentText();
+        final boolean available = CommentTranslationProvider.isAvailableOnPlatform()
+                && originalText != null && !originalText.trim().isEmpty();
+        binding.translateButton.setVisibility(available ? View.VISIBLE : View.GONE);
+        binding.translateButton.setEnabled(available);
+        binding.translateButton.setText(R.string.comment_translate);
+        binding.translateButton.setOnClickListener(
+                available ? view -> onHeaderTranslateClicked(binding, item) : null);
+    }
+
+    private void onHeaderTranslateClicked(@NonNull final CommentRepliesHeaderBinding binding,
+                                          @NonNull final CommentsInfoItem item) {
+        if (translatedHeaderComment != null) {
+            showingTranslatedHeaderComment = !showingTranslatedHeaderComment;
+            showHeaderCommentText(
+                    binding,
+                    item,
+                    showingTranslatedHeaderComment
+                            ? translatedHeaderComment : item.getCommentText());
+            binding.translateButton.setText(showingTranslatedHeaderComment
+                    ? R.string.comment_show_original : R.string.comment_show_translation);
+            return;
+        }
+
+        binding.translateButton.setEnabled(false);
+        binding.translateButton.setText(R.string.comment_translating);
+        final int generation = headerTranslationGeneration;
+        CommentTranslationProvider.translate(
+                requireContext(),
+                item.getCommentText(),
+                new CommentTranslationProvider.Callback() {
+                    @Override
+                    public void onSuccess(@NonNull final String translatedText) {
+                        if (!isCurrentHeaderTranslation(binding, generation)) {
+                            return;
+                        }
+                        translatedHeaderComment = translatedText;
+                        showingTranslatedHeaderComment = true;
+                        showHeaderCommentText(binding, item, translatedText);
+                        binding.translateButton.setEnabled(true);
+                        binding.translateButton.setText(R.string.comment_show_original);
+                    }
+
+                    @Override
+                    public void onFailure(
+                            @NonNull final CommentTranslationProvider.Failure failure) {
+                        if (!isCurrentHeaderTranslation(binding, generation)) {
+                            return;
+                        }
+                        binding.translateButton.setEnabled(true);
+                        binding.translateButton.setText(R.string.comment_translate);
+                        showTranslationFailure(failure);
+                    }
+                });
+    }
+
+    private boolean isCurrentHeaderTranslation(
+            @NonNull final CommentRepliesHeaderBinding binding,
+            final int generation) {
+        return headerBinding == binding && headerTranslationGeneration == generation;
+    }
+
+    private void showHeaderCommentText(@NonNull final CommentRepliesHeaderBinding binding,
+                                       @NonNull final CommentsInfoItem item,
+                                       final String text) {
+        // Cancel a previous linkification before switching between translated and original text.
+        // This prevents a late asynchronous result from restoring stale text.
+        disposables.clear();
+        TextLinkifier.fromDescription(
+                binding.commentContent,
+                new Description(text, Description.PLAIN_TEXT),
+                HtmlCompat.FROM_HTML_MODE_LEGACY,
+                getServiceById(item.getServiceId()),
+                item.getUrl(),
+                disposables,
+                null);
+        binding.commentContent.setMovementMethod(LongPressLinkMovementMethod.getInstance());
+    }
+
+    private void showTranslationFailure(
+            @NonNull final CommentTranslationProvider.Failure failure) {
+        if (getContext() == null) {
+            return;
+        }
+
+        final int message;
+        switch (failure) {
+            case ALREADY_TARGET_LANGUAGE:
+                message = R.string.comment_translation_same_language;
+                break;
+            case LANGUAGE_UNDETECTED:
+                message = R.string.comment_translation_language_undetected;
+                break;
+            case ON_DEVICE_UNAVAILABLE:
+                message = R.string.comment_translation_unavailable;
+                break;
+            case TRANSLATION_FAILED:
+            default:
+                message = R.string.comment_translation_failed;
+                break;
+        }
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
     // State saving
