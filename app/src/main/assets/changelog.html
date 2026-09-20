@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1020002">WizeStream 1.20.2</a></li>
 <li><a href="#release-1020001">WizeStream 1.20.1</a></li>
 <li><a href="#release-1020000">WizeStream 1.20.0</a></li>
 <li><a href="#release-1019000">WizeStream 1.19.0</a></li>
@@ -73,6 +74,27 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1020002" data-version="1.20.2" data-version-code="1020002">
+<h2>WizeStream 1.20.2</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Expand large-screen and TV grid density with 5–7 column choices and optional compact navigation.</li>
+<li>Refine Material popup contrast and typography across shared popup surfaces.</li>
+<li>Combine feed filters and refresh controls into one compact row, showing the full-width loader and cancel action only while refreshing.</li>
+<li>Support PeerTube channel video tabs.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Restore YouTube and YouTube Music playlist or album artwork when page-header hero-image metadata is returned.</li>
+<li>Recover unsupported legacy player resize preferences instead of crashing playback startup on affected TVs and Android devices.</li>
+<li>Keep paired devices reachable for background synchronization with a persistent trusted-device listener.</li>
+<li>Handle missing or null avatar metadata without crashing image loading.</li>
+<li>Make rotation-driven fullscreen content-aware so portrait and near-square videos are not forced into landscape fullscreen.</li>
+<li>Keep manually entered portrait-video fullscreen locked to portrait until fullscreen exits.</li>
+</ul>
+</div>
+</section>
 <section id="release-1020001" data-version="1.20.1" data-version-code="1020001">
 <h2>WizeStream 1.20.1</h2>
 <div class="release-notes">
