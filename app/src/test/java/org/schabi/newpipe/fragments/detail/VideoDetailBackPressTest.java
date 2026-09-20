@@ -73,6 +73,9 @@ public class VideoDetailBackPressTest {
         when(player.UIs()).thenReturn(new PlayerUiList(playerUi));
         when(player.getFragmentListener()).thenReturn(Optional.of(fragment));
         when(playerUi.isFullscreen()).thenAnswer(invocation -> fullscreen.get());
+        when(playerUi.getVideoContentOrientation()).thenReturn(
+                org.schabi.newpipe.player.ui.FullscreenOrientationPolicy
+                        .VideoContentOrientation.LANDSCAPE);
         when(playerUi.isLandscape()).thenReturn(true);
         doAnswer(invocation -> {
             fullscreen.set(invocation.getArgument(0));
