@@ -37,6 +37,23 @@ class CoilHelperAvatarTest {
     }
 
     @Test
+    fun avatarCandidatesIgnoreNullListsAndEntries() {
+        assertEquals(emptyList<String>(), avatarCandidateUrls(null))
+        assertEquals(emptyList<String>(), avatarCandidateUrls(listOf(null)))
+
+        val image = Image(
+            "https://example.com/avatar.jpg",
+            250,
+            250,
+            ResolutionLevel.MEDIUM
+        )
+        assertEquals(
+            listOf("https://example.com/avatar.jpg"),
+            avatarCandidateUrls(listOf(null, image, null))
+        )
+    }
+
+    @Test
     fun avatarCandidatesAreEmptyWhenImagesAreDisabled() {
         ImageStrategy.setPreferredImageQuality(PreferredImageQuality.NONE)
 
