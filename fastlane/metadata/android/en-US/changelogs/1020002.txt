@@ -1,0 +1,6 @@
+• Fix portrait-video fullscreen rotation and keep manual vertical fullscreen in portrait.
+• Prevent invalid saved resize modes from crashing playback startup.
+• Restore YouTube Music playlist and album artwork in bookmarks.
+• Keep paired devices reachable for background sync.
+• Add PeerTube video tabs and safer avatar handling.
+• Improve large-screen grids, popup styling, and feed refresh controls.
