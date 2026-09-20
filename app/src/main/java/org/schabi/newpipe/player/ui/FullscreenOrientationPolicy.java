@@ -59,8 +59,7 @@ public final class FullscreenOrientationPolicy {
 
     public static boolean shouldUseOrientationAction(
             final VideoContentOrientation contentOrientation,
-            final boolean landscape,
-            final boolean screenOrientationLocked) {
+            final boolean landscape) {
         if (contentOrientation == VideoContentOrientation.LANDSCAPE) {
             return true;
         }
