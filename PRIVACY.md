@@ -1,6 +1,6 @@
 # WizeStream Privacy Policy
 
-Last updated: August 20, 2026
+Last updated: September 20, 2026
 
 WizeStream is an independently maintained, open-source Android streaming application. It does not require a WizeStream account and does not include advertising, analytics, or tracking SDKs.
 
@@ -15,6 +15,18 @@ public YouTube identifier to the community-operated DeArrow endpoints at `sponso
 `dearrow-thumb.ajay.app` to request accepted replacement titles and thumbnail frames. DeArrow
 requests do not include a WizeStream account identifier or advertising identifier. The service and
 your network provider receive ordinary connection information such as your IP address.
+
+## On-device comment translation
+
+On Android 12 and newer, WizeStream can translate a comment when you explicitly select
+**Translate**. WizeStream uses Android's on-device translation framework only when the requested
+language pair is already present and ready on the device. WizeStream does not request a translation
+model download and does not provide a cloud translation fallback.
+
+Language detection is handled by Android's text-classification service. Depending on the device,
+that service can be provided by Android or the device manufacturer and can run in a separate local
+process. WizeStream does not send comment text to its own server or to a remote translation API,
+and translated comment text is not persisted by WizeStream.
 
 ## Device synchronization
 
