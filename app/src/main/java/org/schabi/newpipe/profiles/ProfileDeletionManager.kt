@@ -6,7 +6,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
 
 object ProfileDeletionManager {
-    // Delete only data that has become profile-scoped so later phases can extend cleanup safely.
+    // Delete only data already scoped to profiles; later phases extend this cleanup.
     @JvmStatic
     fun deleteProfile(context: Context, profileId: String): Completable {
         if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
