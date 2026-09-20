@@ -106,6 +106,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private boolean touchLocked;
     private FullscreenOrientationPolicy.VideoContentOrientation videoContentOrientation =
             FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
+    @Nullable
+    private String videoOrientationStreamKey;
     private boolean fragmentIsVisible = false;
 
     private ContentObserver settingsContentObserver;
@@ -743,7 +745,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
-        resetVideoContentOrientation();
+        updateVideoContentIdentity(info.getServiceId(), info.getUrl());
         binding.openInBrowser.setVisibility(View.VISIBLE);
         showHideKodiButton();
         updateLearningNoteButtonVisibility(info);
@@ -762,7 +764,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
-        resetVideoContentOrientation();
+        updateVideoContentIdentity(tag.getServiceId(), tag.getStreamUrl());
         binding.openInBrowser.setVisibility(View.GONE);
         binding.playWithKodi.setVisibility(View.GONE);
         binding.learningNoteButton.setVisibility(View.GONE);
@@ -1101,7 +1103,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                         : R.drawable.ic_fullscreen));
     }
 
-    private void resetVideoContentOrientation() {
+    private void updateVideoContentIdentity(final int serviceId,
+                                            @Nullable final String streamUrl) {
+        final String streamKey = serviceId + ":" + String.valueOf(streamUrl);
+        if (Objects.equals(videoOrientationStreamKey, streamKey)) {
+            return;
+        }
+        videoOrientationStreamKey = streamKey;
         videoContentOrientation = FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
         setupScreenRotationButton();
     }
