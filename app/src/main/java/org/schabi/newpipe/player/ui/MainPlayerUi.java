@@ -1146,9 +1146,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                         == FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT
                         || videoContentOrientation
                         == FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
-        if (isFullscreen
-                && orientationSpecificContent
-                && previousContentOrientation != videoContentOrientation
+        if (FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                isFullscreen, previousContentOrientation, videoContentOrientation)
                 && !DeviceUtils.isTv(context)
                 && !DeviceUtils.isTablet(context)) {
             // Fullscreen can be entered before Media3 reports a valid size. Once the
