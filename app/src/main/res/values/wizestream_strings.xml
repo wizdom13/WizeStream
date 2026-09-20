@@ -41,7 +41,7 @@
     <string name="profile_delete_title">Delete profile</string>
     <string name="profile_delete_summary">Delete this profile and return to Default</string>
     <string name="profile_delete_confirmation_title">Delete %1$s?</string>
-    <string name="profile_delete_confirmation_message">Profile-specific content will be deleted as profile isolation is enabled in later phases. This action cannot be undone.</string>
+    <string name="profile_delete_confirmation_message">Delete this local profile? This action cannot be undone.</string>
     <string name="profile_delete_default_unavailable">The Default profile cannot be deleted</string>
     <string name="profile_name_invalid">Enter a unique profile name</string>
     <string name="profile_created">Profile created</string>
