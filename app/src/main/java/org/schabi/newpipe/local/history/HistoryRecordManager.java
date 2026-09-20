@@ -365,7 +365,8 @@ public class HistoryRecordManager {
 
     public Maybe<StreamStateEntity> loadStreamState(final StreamInfo info) {
         return Single.fromCallable(() -> streamTable.upsert(new StreamEntity(info)))
-                .flatMapPublisher(streamId -> streamStateTable.getStateForProfile(profileId, streamId))
+                .flatMapPublisher(streamId ->
+                        streamStateTable.getStateForProfile(profileId, streamId))
                 .firstElement()
                 .flatMap(list -> list.isEmpty() ? Maybe.empty() : Maybe.just(list.get(0)))
                 .filter(state -> state.isValid(info.getDuration()))
@@ -399,7 +400,8 @@ public class HistoryRecordManager {
                                        final long progressMillis) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(item));
-            final StreamStateEntity state = new StreamStateEntity(streamId, progressMillis, profileId);
+            final StreamStateEntity state =
+                    new StreamStateEntity(streamId, progressMillis, profileId);
             if (state.isValid(item.getDuration())) {
                 streamStateTable.upsert(state);
             }
