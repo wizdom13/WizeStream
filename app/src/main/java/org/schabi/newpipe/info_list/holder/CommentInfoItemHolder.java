@@ -243,7 +243,8 @@ public class CommentInfoItemHolder extends InfoItemHolder {
                     }
 
                     @Override
-                    public void onFailure(@NonNull final CommentTranslationProvider.Failure failure) {
+                    public void onFailure(
+                            @NonNull final CommentTranslationProvider.Failure failure) {
                         if (!isCurrentTranslationRequest(item, generation)) {
                             return;
                         }
