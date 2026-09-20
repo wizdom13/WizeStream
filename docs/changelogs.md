@@ -4,6 +4,24 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.20.2 (`1020002`)
+
+### Improvements
+
+- Expand large-screen and TV grid density with 5–7 column choices and optional compact navigation.
+- Refine Material popup contrast and typography across shared popup surfaces.
+- Combine feed filters and refresh controls into one compact row, showing the full-width loader and cancel action only while refreshing.
+- Support PeerTube channel video tabs.
+
+### Fixes
+
+- Restore YouTube and YouTube Music playlist or album artwork when page-header hero-image metadata is returned.
+- Recover unsupported legacy player resize preferences instead of crashing playback startup on affected TVs and Android devices.
+- Keep paired devices reachable for background synchronization with a persistent trusted-device listener.
+- Handle missing or null avatar metadata without crashing image loading.
+- Make rotation-driven fullscreen content-aware so portrait and near-square videos are not forced into landscape fullscreen.
+- Keep manually entered portrait-video fullscreen locked to portrait until fullscreen exits.
+
 ## WizeStream 1.20.1 (`1020001`)
 
 ### Improvements
