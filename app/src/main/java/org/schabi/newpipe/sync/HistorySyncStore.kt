@@ -483,46 +483,46 @@ internal class RoomHistorySyncStore internal constructor(
         streamHistoryDao
             .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
             .forEach { history ->
-            val stream = streamDao.getStreamDirect(history.streamUid) ?: return@forEach
-            if (stream.isDeviceLocalHistoryStream()) {
-                return@forEach
-            }
-            saveLocalChange(
-                category = HistorySyncCategory.WATCH,
-                recordId = HistoryRecordId.watchEvent(),
-                recordType = HistoryRecordType.WATCH_EVENT,
-                type = HistoryChangeType.UPSERT,
-                record = SyncedHistoryRecord(
-                    watchEvent = SyncedWatchEvent(
-                        stream = SyncedHistoryStream.from(stream),
-                        watchedAtEpochMillis = history.accessDate.toInstant().toEpochMilli(),
-                        repeatCount = history.repeatCount
+                val stream = streamDao.getStreamDirect(history.streamUid) ?: return@forEach
+                if (stream.isDeviceLocalHistoryStream()) {
+                    return@forEach
+                }
+                saveLocalChange(
+                    category = HistorySyncCategory.WATCH,
+                    recordId = HistoryRecordId.watchEvent(),
+                    recordType = HistoryRecordType.WATCH_EVENT,
+                    type = HistoryChangeType.UPSERT,
+                    record = SyncedHistoryRecord(
+                        watchEvent = SyncedWatchEvent(
+                            stream = SyncedHistoryStream.from(stream),
+                            watchedAtEpochMillis = history.accessDate.toInstant().toEpochMilli(),
+                            repeatCount = history.repeatCount
+                        )
                     )
                 )
-            )
-        }
+            }
         streamStateDao
             .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
             .forEach { state ->
-            val stream = streamDao.getStreamDirect(state.streamUid) ?: return@forEach
-            if (stream.isDeviceLocalHistoryStream()) {
-                return@forEach
-            }
-            val syncedStream = SyncedHistoryStream.from(stream)
-            saveLocalChange(
-                category = HistorySyncCategory.WATCH,
-                recordId = HistoryRecordId.progress(syncedStream.identity),
-                recordType = HistoryRecordType.PLAYBACK_PROGRESS,
-                type = HistoryChangeType.UPSERT,
-                record = SyncedHistoryRecord(
-                    playbackProgress = SyncedPlaybackProgress(
-                        stream = syncedStream,
-                        progressMillis = state.progressMillis,
-                        updatedAtEpochMillis = System.currentTimeMillis()
+                val stream = streamDao.getStreamDirect(state.streamUid) ?: return@forEach
+                if (stream.isDeviceLocalHistoryStream()) {
+                    return@forEach
+                }
+                val syncedStream = SyncedHistoryStream.from(stream)
+                saveLocalChange(
+                    category = HistorySyncCategory.WATCH,
+                    recordId = HistoryRecordId.progress(syncedStream.identity),
+                    recordType = HistoryRecordType.PLAYBACK_PROGRESS,
+                    type = HistoryChangeType.UPSERT,
+                    record = SyncedHistoryRecord(
+                        playbackProgress = SyncedPlaybackProgress(
+                            stream = syncedStream,
+                            progressMillis = state.progressMillis,
+                            updatedAtEpochMillis = System.currentTimeMillis()
+                        )
                     )
                 )
-            )
-        }
+            }
     }
 
     private fun initializeSearchHistory() {
