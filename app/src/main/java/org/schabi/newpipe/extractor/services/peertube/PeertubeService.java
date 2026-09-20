@@ -125,6 +125,7 @@ public class PeertubeService extends StreamingService {
         switch (tab) {
             case ChannelTabs.CHANNELS:
                 return new PeertubeAccountTabExtractor(this, linkHandler);
+            case ChannelTabs.VIDEOS:
             case ChannelTabs.PLAYLISTS:
                 return new PeertubeChannelTabExtractor(this, linkHandler);
         }
