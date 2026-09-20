@@ -3,6 +3,10 @@ package org.schabi.newpipe.player.ui;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.PORTRAIT;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.SQUARE;
+import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
 
 import android.content.res.Configuration;
 
@@ -10,24 +14,32 @@ import org.junit.Test;
 
 public class MainPlayerUiFullscreenTest {
     @Test
-    public void horizontalVideoUsesOrientationAwareAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(false, false, false));
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(false, true, false));
+    public void landscapeVideoUsesOrientationAwareAction() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, false, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, true, false));
     }
 
     @Test
-    public void verticalVideoInPortraitTogglesFullscreenDirectly() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(true, false, true));
+    public void portraitVideoInPortraitTogglesFullscreenDirectly() {
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, false, true));
     }
 
     @Test
-    public void verticalVideoInLockedLandscapeUsesOrientationAwareAction() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(true, true, true));
+    public void portraitVideoInLockedLandscapeUsesOrientationAwareAction() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, true));
     }
 
     @Test
-    public void verticalVideoInUnlockedLandscapeTogglesFullscreenDirectly() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(true, true, false));
+    public void portraitVideoInUnlockedLandscapeTogglesFullscreenDirectly() {
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, false));
+    }
+
+    @Test
+    public void unknownAndSquareContentNeverForceOrientationForFullscreenButton() {
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false, true));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true, true));
     }
 
     @Test
@@ -36,7 +48,8 @@ public class MainPlayerUiFullscreenTest {
                 Configuration.ORIENTATION_PORTRAIT,
                 false,
                 false,
-                false));
+                false,
+                LANDSCAPE));
     }
 
     @Test
@@ -45,7 +58,8 @@ public class MainPlayerUiFullscreenTest {
                 Configuration.ORIENTATION_UNDEFINED,
                 false,
                 false,
-                false));
+                false,
+                LANDSCAPE));
     }
 
     @Test
@@ -54,7 +68,30 @@ public class MainPlayerUiFullscreenTest {
                 Configuration.ORIENTATION_LANDSCAPE,
                 false,
                 false,
-                false));
+                false,
+                LANDSCAPE));
+    }
+
+    @Test
+    public void portraitSquareAndUnknownVideosDoNotAutoEnterFullscreen() {
+        assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
+                Configuration.ORIENTATION_LANDSCAPE,
+                false,
+                false,
+                false,
+                PORTRAIT));
+        assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
+                Configuration.ORIENTATION_LANDSCAPE,
+                false,
+                false,
+                false,
+                SQUARE));
+        assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
+                Configuration.ORIENTATION_LANDSCAPE,
+                false,
+                false,
+                false,
+                UNKNOWN));
     }
 
     @Test
@@ -63,17 +100,20 @@ public class MainPlayerUiFullscreenTest {
                 Configuration.ORIENTATION_LANDSCAPE,
                 true,
                 false,
-                false));
+                false,
+                LANDSCAPE));
         assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
                 Configuration.ORIENTATION_LANDSCAPE,
                 false,
                 true,
-                false));
+                false,
+                LANDSCAPE));
         assertFalse(MainPlayerUi.shouldEnterFullscreenForConfiguration(
                 Configuration.ORIENTATION_LANDSCAPE,
                 false,
                 false,
-                true));
+                true,
+                LANDSCAPE));
     }
 
     @Test
@@ -82,20 +122,27 @@ public class MainPlayerUiFullscreenTest {
                 Configuration.ORIENTATION_LANDSCAPE,
                 true,
                 true,
-                true));
+                true,
+                LANDSCAPE));
     }
 
     @Test
-    public void explicitExitTargetDoesNotDependOnCurrentOrientation() {
+    public void explicitExitTargetDoesNotDependOnContentOrientation() {
         assertEquals(Configuration.ORIENTATION_PORTRAIT,
-                FullscreenOrientationPolicy.targetConfigurationOrientation(false, false));
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, LANDSCAPE));
         assertEquals(Configuration.ORIENTATION_PORTRAIT,
-                FullscreenOrientationPolicy.targetConfigurationOrientation(false, true));
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, PORTRAIT));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, SQUARE));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, UNKNOWN));
     }
 
     @Test
-    public void orientationActionDoesNotDependOnFullscreenStateForHorizontalVideo() {
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(false, false, true));
-        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(false, true, true));
+    public void explicitLandscapeFullscreenStillTargetsLandscape() {
+        assertEquals(Configuration.ORIENTATION_LANDSCAPE,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, LANDSCAPE));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, PORTRAIT));
     }
 }
