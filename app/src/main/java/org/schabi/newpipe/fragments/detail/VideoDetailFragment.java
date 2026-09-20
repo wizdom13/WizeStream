@@ -2894,9 +2894,14 @@ public final class VideoDetailFragment
                 : FullscreenOrientationPolicy.EXIT_FULLSCREEN;
 
         // If Android is already in the requested orientation it will not emit another
-        // configuration callback. Repair a stale fullscreen/layout state immediately.
+        // configuration callback. Portrait fullscreen must still explicitly lock the activity
+        // so a physical device rotation does not rotate vertical content after manual entry.
         if (FullscreenOrientationPolicy.isTargetOrientation(
                 currentOrientation, targetOrientation)) {
+            if (FullscreenOrientationPolicy.shouldLockPortraitFullscreen(
+                    fullscreen, contentOrientation)) {
+                activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            }
             if (ui != null) {
                 applyFullscreenState(ui, pendingFullscreenState);
                 clearPendingFullscreenTransition();
