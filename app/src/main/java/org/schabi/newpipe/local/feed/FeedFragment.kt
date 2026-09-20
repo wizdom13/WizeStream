@@ -454,7 +454,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.hideLoading()
         binding.itemsList.animate(true, 0)
         binding.refreshRootView.animate(true, 200)
-        binding.streamFilterChips.root.animate(true, 200)
         hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
@@ -464,7 +463,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.showEmptyState()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(true, 200)
-        binding.streamFilterChips.root.animate(true, 200)
         hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
@@ -484,7 +482,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.handleError()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(false, 0)
-        binding.streamFilterChips.root.animate(true, 200)
         hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
@@ -516,12 +513,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun showRefreshProgress(binding: FragmentFeedBinding) {
-        if (!binding.refreshProgressContainer.isVisible) {
-            binding.refreshProgressContainer.animate(true, 150)
-        }
-        if (!binding.cancelRefreshButton.isVisible) {
-            binding.cancelRefreshButton.animate(true, 150)
-        }
+        binding.streamFilterChips.root.isVisible = false
+        binding.refreshProgressContainer.isVisible = true
+        binding.cancelRefreshButton.isVisible = true
         binding.refreshRootView.isEnabled = false
         binding.cancelRefreshButton.isEnabled = true
     }
@@ -529,8 +523,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private fun hideRefreshProgress(binding: FragmentFeedBinding) {
         binding.cancelRefreshButton.isEnabled = false
         binding.refreshRootView.isEnabled = true
-        binding.refreshProgressContainer.animate(false, 150)
-        binding.cancelRefreshButton.animate(false, 150)
+        binding.refreshProgressContainer.isVisible = false
+        binding.cancelRefreshButton.isVisible = false
+        binding.streamFilterChips.root.isVisible = true
     }
 
     private fun showInfoItemDialog(item: StreamInfoItem) {

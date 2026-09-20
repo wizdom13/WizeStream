@@ -28,18 +28,31 @@ public class FeedRefreshControlsTest {
             ? Path.of("src/main/res") : Path.of("app/src/main/res");
 
     @Test
-    public void filtersRemainAvailableWhileFeedRefreshes() throws Exception {
+    public void filtersYieldTheHeaderRowToRefreshControls() throws Exception {
         final String source = readSource(
                 "org/schabi/newpipe/local/feed/FeedFragment.kt");
         final String showLoading = methodBody(
                 source, "override fun showLoading()", "override fun hideLoading()");
+        final String showRefresh = methodBody(
+                source,
+                "private fun showRefreshProgress",
+                "private fun hideRefreshProgress");
+        final String hideRefresh = methodBody(
+                source,
+                "private fun hideRefreshProgress",
+                "private fun showInfoItemDialog");
 
-        assertFalse(showLoading.contains("streamFilterChips.root.animate(false, 0)"));
         assertFalse(showLoading.contains("refreshRootView.animate(false, 0)"));
         assertTrue(showLoading.contains("itemsList.animate(true, 0)"));
         assertTrue(showLoading.contains("showRefreshProgress(binding)"));
-        assertTrue(methodBody(source, "override fun hideLoading()", "override fun showEmptyState()")
-                .contains("streamFilterChips.root.animate(true, 200)"));
+
+        assertTrue(showRefresh.contains("streamFilterChips.root.isVisible = false"));
+        assertTrue(showRefresh.contains("refreshProgressContainer.isVisible = true"));
+        assertTrue(showRefresh.contains("cancelRefreshButton.isVisible = true"));
+
+        assertTrue(hideRefresh.contains("refreshProgressContainer.isVisible = false"));
+        assertTrue(hideRefresh.contains("cancelRefreshButton.isVisible = false"));
+        assertTrue(hideRefresh.contains("streamFilterChips.root.isVisible = true"));
     }
 
     @Test
@@ -89,8 +102,10 @@ public class FeedRefreshControlsTest {
 
         assertNotNull(progressContainer);
         assertEquals("FrameLayout", progressContainer.getTagName());
-        assertEquals("96dp",
+        assertEquals("0dp",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
+        assertEquals("1",
+                progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_weight"));
         assertEquals("24dp",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
         assertEquals("gone",
@@ -139,8 +154,8 @@ public class FeedRefreshControlsTest {
 
         final String source = readSource(
                 "org/schabi/newpipe/local/feed/FeedFragment.kt");
-        assertTrue(source.contains("cancelRefreshButton.animate(true, 150)"));
-        assertTrue(source.contains("cancelRefreshButton.animate(false, 150)"));
+        assertTrue(source.contains("streamFilterChips.root.isVisible = false"));
+        assertTrue(source.contains("streamFilterChips.root.isVisible = true"));
     }
 
     @Test
