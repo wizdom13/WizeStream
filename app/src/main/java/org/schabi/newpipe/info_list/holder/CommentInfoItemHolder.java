@@ -44,7 +44,6 @@ public class CommentInfoItemHolder extends InfoItemHolder {
     private final RelativeLayout itemRoot;
     private final ImageView itemThumbnailView;
     private final TextView itemContentView;
-    private final ImageView itemThumbsUpView;
     private final TextView itemLikesCountView;
     private final TextView itemTitleView;
     private final ImageView itemHeartView;
@@ -68,7 +67,6 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         itemRoot = itemView.findViewById(R.id.itemRoot);
         itemThumbnailView = itemView.findViewById(R.id.itemThumbnailView);
         itemContentView = itemView.findViewById(R.id.itemCommentContentView);
-        itemThumbsUpView = itemView.findViewById(R.id.detail_thumbs_up_img_view);
         itemLikesCountView = itemView.findViewById(R.id.detail_thumbs_up_count_view);
         itemTitleView = itemView.findViewById(R.id.itemTitleView);
         itemHeartView = itemView.findViewById(R.id.detail_heart_image_view);
