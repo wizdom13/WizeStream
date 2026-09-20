@@ -9,8 +9,8 @@ package org.schabi.newpipe.database.stream.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.ForeignKey.Companion.CASCADE
+import androidx.room.Index
 import org.schabi.newpipe.database.stream.model.StreamEntity.Companion.STREAM_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.JOIN_STREAM_ID
 import org.schabi.newpipe.database.stream.model.StreamStateEntity.Companion.PROFILE_ID
