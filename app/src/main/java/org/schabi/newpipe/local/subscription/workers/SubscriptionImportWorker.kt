@@ -23,6 +23,7 @@ import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.local.subscription.SubscriptionManager
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.streams.io.SharpInputStream
 import org.schabi.newpipe.streams.io.StoredFileHelper
 
@@ -67,7 +68,9 @@ class SubscriptionImportWorker(
             )
         )
 
-        val subscriptionManager = SubscriptionManager(applicationContext)
+        val profileId = inputData.getString(PROFILE_ID_KEY)
+            ?: ProfileManager.getActiveProfileId(applicationContext)
+        val subscriptionManager = SubscriptionManager(applicationContext, profileId)
         var insertedCount = 0
         var processedCount = totalCount - entities.size
         try {
@@ -188,6 +191,7 @@ class SubscriptionImportWorker(
         const val WORK_NAME = "SubscriptionImportWorker"
         const val IMPORTED_COUNT_KEY = "imported_count"
         const val SKIPPED_COUNT_KEY = "skipped_count"
+        const val PROFILE_ID_KEY = "profile_id"
 
         internal fun getInputStreamContentType(fileHelper: StoredFileHelper): String {
             val contentType = fileHelper.getType()

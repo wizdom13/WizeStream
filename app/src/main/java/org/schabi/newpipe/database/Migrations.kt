@@ -44,7 +44,8 @@ object Migrations {
     const val DB_VER_22 = 22
     const val DB_VER_23 = 23
     const val DB_VER_24 = 24
-    const val DB_VER_CURRENT = DB_VER_24
+    const val DB_VER_25 = 25
+    const val DB_VER_CURRENT = DB_VER_25
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -868,5 +869,30 @@ object Migrations {
         // Historical discovery times were never stored. Keep them older than newly found
         // videos and retain publication-date ordering as the tie breaker.
         db.execSQL("ALTER TABLE feed ADD COLUMN first_discovered_at INTEGER NOT NULL DEFAULT 0")
+    }
+
+    val MIGRATION_24_25 = Migration(DB_VER_24, DB_VER_25) { db ->
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+
+        db.execSQL(
+            "ALTER TABLE subscriptions ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL("DROP INDEX IF EXISTS index_subscriptions_service_id_url")
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "index_subscriptions_profile_id_service_id_url " +
+                "ON subscriptions (profile_id, service_id, url)"
+        )
+
+        db.execSQL(
+            "ALTER TABLE feed_group ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL("DROP INDEX IF EXISTS index_feed_group_sort_order")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_feed_group_profile_id_sort_order " +
+                "ON feed_group (profile_id, sort_order)"
+        )
     }
 }

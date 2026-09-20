@@ -75,6 +75,7 @@ class FeedDAOTest {
         feedDAO.deleteAll()
         feedDAO.insertAll(listOf(FeedEntity(1, 1, firstDiscoveredAt = 200), FeedEntity(2, 1, firstDiscoveredAt = 100)))
         fun ids(discovery: Boolean) = feedDAO.getStreams(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
             FeedGroupEntity.GROUP_ALL_ID,
             true,
             true,
@@ -94,6 +95,7 @@ class FeedDAOTest {
     fun testUnlinkStreamsOlderThan_KeepOne() {
         setupUnlinkDelete("2023-08-15T00:00:00Z")
         val streams = feedDAO.getStreams(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
@@ -110,6 +112,7 @@ class FeedDAOTest {
     fun testUnlinkStreamsOlderThan_KeepMultiple() {
         setupUnlinkDelete("2023-08-01T00:00:00Z")
         val streams = feedDAO.getStreams(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
@@ -141,6 +144,7 @@ class FeedDAOTest {
         )
 
         val streams = feedDAO.getStreams(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
@@ -181,6 +185,7 @@ class FeedDAOTest {
         assertEquals(
             regularUpdate,
             feedDAO.oldestSubscriptionUpdateFromAll(
+                SubscriptionEntity.DEFAULT_PROFILE_ID,
                 serviceId,
                 SubscriptionEntity.YOUTUBE_MODE_REGULAR
             ).blockingFirst().first()
@@ -188,6 +193,7 @@ class FeedDAOTest {
         assertEquals(
             musicUpdate,
             feedDAO.oldestSubscriptionUpdateFromAll(
+                SubscriptionEntity.DEFAULT_PROFILE_ID,
                 serviceId,
                 SubscriptionEntity.YOUTUBE_MODE_MUSIC
             ).blockingFirst().first()
@@ -229,6 +235,7 @@ class FeedDAOTest {
         feedDAO.insertAll(listOf(FeedEntity(1, 1), FeedEntity(8, 2)))
 
         val youtubeStreams = feedDAO.getStreams(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,
@@ -237,6 +244,7 @@ class FeedDAOTest {
             youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR
         ).blockingGet()
         val soundCloudStreams = feedDAO.getStreams(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
             FeedGroupEntity.GROUP_ALL_ID,
             includePlayed = true,
             includePartiallyPlayed = true,

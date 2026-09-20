@@ -14,6 +14,7 @@ import org.schabi.newpipe.database.sync.SubscriptionSyncChangeEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncOriginStateEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.SubscriptionSyncRecordEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal interface SubscriptionSyncStore {
     val localPeerId: String
@@ -44,7 +45,8 @@ internal class RoomSubscriptionSyncStore private constructor(
 
     override fun reconcileLocalSubscriptions() {
         database.runInTransaction {
-            val subscriptions = subscriptionDao.getAllDirect()
+            val subscriptions = subscriptionDao
+                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
                 .filter(::isSynchronizable)
             val liveRecords = subscriptions.associateBy { subscription ->
                 SubscriptionRecordId.from(
@@ -186,11 +188,16 @@ internal class RoomSubscriptionSyncStore private constructor(
 
                     when (change.type) {
                         SubscriptionChangeType.UPSERT -> {
-                            val existing = subscriptionDao.getSubscriptionDirect(
+                            val existing = subscriptionDao.getSubscriptionDirectForProfile(
+                                ProfileManager.DEFAULT_PROFILE_ID,
                                 change.serviceId,
                                 change.url
                             )
-                            val incoming = requireNotNull(change.subscription).toEntity(existing)
+                            val incoming = requireNotNull(change.subscription)
+                                .toEntity(existing)
+                                .apply {
+                                    profileId = ProfileManager.DEFAULT_PROFILE_ID
+                                }
                             subscriptionDao.upsertAll(listOf(incoming))
                             if (existing == null) {
                                 added += 1
@@ -198,7 +205,13 @@ internal class RoomSubscriptionSyncStore private constructor(
                         }
 
                         SubscriptionChangeType.DELETE -> {
-                            if (subscriptionDao.deleteSubscription(change.serviceId, change.url) > 0) {
+                            if (
+                                subscriptionDao.deleteSubscriptionForProfile(
+                                    ProfileManager.DEFAULT_PROFILE_ID,
+                                    change.serviceId,
+                                    change.url
+                                ) > 0
+                            ) {
                                 removed += 1
                             }
                         }
@@ -220,6 +233,9 @@ internal class RoomSubscriptionSyncStore private constructor(
     }
 
     private fun recordLocalUpsertInTransaction(subscription: SubscriptionEntity) {
+        if (subscription.profileId != ProfileManager.DEFAULT_PROFILE_ID) {
+            return
+        }
         val syncedSubscription = SyncedSubscription.from(subscription)
         validateLocalIdentity(syncedSubscription.serviceId, syncedSubscription.url)
         val recordId = SubscriptionRecordId.from(
