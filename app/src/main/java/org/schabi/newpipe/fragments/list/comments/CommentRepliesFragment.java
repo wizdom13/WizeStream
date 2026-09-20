@@ -149,7 +149,7 @@ public final class CommentRepliesFragment
 
             // setup comment content
             CommentTextSizeHelper.applyCommentTextSize(binding.commentContent);
-            showHeaderCommentText(binding, item, item.getCommentText(), true);
+            showHeaderCommentText(binding, item, item.getCommentText());
             setupHeaderTranslation(binding, item);
             return binding.getRoot();
         };
@@ -181,8 +181,7 @@ public final class CommentRepliesFragment
                     binding,
                     item,
                     showingTranslatedHeaderComment
-                            ? translatedHeaderComment : item.getCommentText(),
-                    !showingTranslatedHeaderComment);
+                            ? translatedHeaderComment : item.getCommentText());
             binding.translateButton.setText(showingTranslatedHeaderComment
                     ? R.string.comment_show_original : R.string.comment_show_translation);
             return;
@@ -202,7 +201,7 @@ public final class CommentRepliesFragment
                         }
                         translatedHeaderComment = translatedText;
                         showingTranslatedHeaderComment = true;
-                        showHeaderCommentText(binding, item, translatedText, false);
+                        showHeaderCommentText(binding, item, translatedText);
                         binding.translateButton.setEnabled(true);
                         binding.translateButton.setText(R.string.comment_show_original);
                     }
@@ -228,20 +227,18 @@ public final class CommentRepliesFragment
 
     private void showHeaderCommentText(@NonNull final CommentRepliesHeaderBinding binding,
                                        @NonNull final CommentsInfoItem item,
-                                       final String text,
-                                       final boolean original) {
-        if (original) {
-            TextLinkifier.fromDescription(
-                    binding.commentContent,
-                    new Description(text, Description.PLAIN_TEXT),
-                    HtmlCompat.FROM_HTML_MODE_LEGACY,
-                    getServiceById(item.getServiceId()),
-                    item.getUrl(),
-                    disposables,
-                    null);
-        } else {
-            binding.commentContent.setText(text);
-        }
+                                       final String text) {
+        // Cancel a previous linkification before switching between translated and original text.
+        // This prevents a late asynchronous result from restoring stale text.
+        disposables.clear();
+        TextLinkifier.fromDescription(
+                binding.commentContent,
+                new Description(text, Description.PLAIN_TEXT),
+                HtmlCompat.FROM_HTML_MODE_LEGACY,
+                getServiceById(item.getServiceId()),
+                item.getUrl(),
+                disposables,
+                null);
         binding.commentContent.setMovementMethod(LongPressLinkMovementMethod.getInstance());
     }
 
