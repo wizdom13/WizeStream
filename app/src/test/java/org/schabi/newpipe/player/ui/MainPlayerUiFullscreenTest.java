@@ -30,8 +30,8 @@ public class MainPlayerUiFullscreenTest {
     }
 
     @Test
-    public void portraitVideoInUnlockedLandscapeTogglesFullscreenDirectly() {
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, false));
+    public void portraitVideoInUnlockedLandscapeUsesPortraitOrientationAction() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, false));
     }
 
     @Test
