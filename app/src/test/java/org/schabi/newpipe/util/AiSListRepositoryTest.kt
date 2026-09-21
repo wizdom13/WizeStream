@@ -34,7 +34,7 @@ class AiSListRepositoryTest {
     fun `matches youtube handle URLs and channel IDs without using display names`() {
         val entries = setOf(
             "@blockedhandle",
-            "ucabcdefghijklmnopqrstuv"
+            "UCABCDEFGHIJKLMNOPQRSTUV"
         )
 
         assertTrue(
