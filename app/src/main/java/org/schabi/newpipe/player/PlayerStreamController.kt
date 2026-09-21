@@ -9,7 +9,6 @@ import android.content.Context
 import androidx.media3.exoplayer.source.MediaSource
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager
-import org.schabi.newpipe.player.helper.LoadController
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
@@ -23,8 +22,7 @@ internal class PlayerStreamController(
     private val context: Context,
     private val audioResolver: AudioPlaybackResolver,
     private val videoResolver: VideoPlaybackResolver,
-    private val dataSource: PlayerDataSource,
-    private val loadController: LoadController
+    private val dataSource: PlayerDataSource
 ) {
     fun sourceOf(info: StreamInfo): MediaSource? {
         if (info is org.schabi.newpipe.download.DownloadedStreamInfo) {
@@ -72,7 +70,7 @@ internal class PlayerStreamController(
         .createMediaSource(org.schabi.newpipe.player.mediaitem.StreamInfoTag.of(info).asMediaItem().buildUpon().setUri(info.copyUri).build())
 
     fun disablePreloadingOfCurrentTrack() {
-        loadController.disablePreloadingOfCurrentTrack()
+        player.getLoadControllerForLifecycle()?.disablePreloadingOfCurrentTrack()
     }
 
     fun setPlaybackQuality(quality: String?) {
