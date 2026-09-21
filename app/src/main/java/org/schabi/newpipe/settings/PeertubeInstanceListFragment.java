@@ -36,10 +36,14 @@ import org.schabi.newpipe.databinding.ItemInstanceBinding;
 import org.schabi.newpipe.extractor.services.peertube.PeertubeInstance;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.PeertubeHelper;
+import org.schabi.newpipe.util.PeertubeInstanceUrl;
 import org.schabi.newpipe.util.ThemeHelper;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import javax.net.ssl.SSLException;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -214,8 +218,11 @@ public class PeertubeInstanceListFragment extends Fragment {
                     binding.loadingProgressBar.setVisibility(View.GONE);
                     add(instance);
                 }, e -> {
+                    if (binding == null) {
+                        return;
+                    }
                     binding.loadingProgressBar.setVisibility(View.GONE);
-                    Toast.makeText(getActivity(), R.string.peertube_instance_add_fail,
+                    Toast.makeText(getActivity(), validationErrorMessage(e),
                             Toast.LENGTH_SHORT).show();
                 });
         disposables.add(disposable);
@@ -223,19 +230,19 @@ public class PeertubeInstanceListFragment extends Fragment {
 
     @Nullable
     private String cleanUrl(final String url) {
-        String cleanUrl = url.trim();
-        // if protocol not present, add https
-        if (!cleanUrl.startsWith("http")) {
-            cleanUrl = "https://" + cleanUrl;
-        }
-        // remove trailing slash
-        cleanUrl = cleanUrl.replaceAll("/$", "");
-        // only allow https
-        if (!cleanUrl.startsWith("https://")) {
+        if (PeertubeInstanceUrl.hasInsecureHttpScheme(url)) {
             Toast.makeText(getActivity(), R.string.peertube_instance_add_https_only,
                     Toast.LENGTH_SHORT).show();
             return null;
         }
+
+        final String cleanUrl = PeertubeInstanceUrl.normalize(url);
+        if (cleanUrl == null) {
+            Toast.makeText(getActivity(), R.string.peertube_instance_add_invalid_url,
+                    Toast.LENGTH_SHORT).show();
+            return null;
+        }
+
         // only allow if not already exists
         for (final PeertubeInstance instance : instanceListAdapter.getCurrentList()) {
             if (instance.getUrl().equals(cleanUrl)) {
@@ -245,6 +252,20 @@ public class PeertubeInstanceListFragment extends Fragment {
             }
         }
         return cleanUrl;
+    }
+
+    private int validationErrorMessage(@NonNull final Throwable error) {
+        Throwable cause = error;
+        while (cause != null) {
+            if (cause instanceof SSLException) {
+                return R.string.peertube_instance_add_tls_fail;
+            }
+            if (cause instanceof IOException) {
+                return R.string.peertube_instance_add_network_fail;
+            }
+            cause = cause.getCause();
+        }
+        return R.string.peertube_instance_add_fail;
     }
 
     private void add(final PeertubeInstance instance) {
