@@ -164,20 +164,20 @@ class Libp2pSyncNodeTest {
             phoneState.loadOrCreateIdentity().peerId.toBase58()
         )
         val tablet = Libp2pSyncNode(
-            tabletState,
-            PairingSecurity(),
-            "Test tablet",
-            ::loopbackAddresses,
-            SubscriptionSyncEngine(tabletSubscriptions),
-            TEST_LISTEN_ADDRESS
+            stateRepository = tabletState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test tablet",
+            advertisedAddressProvider = ::loopbackAddresses,
+            subscriptionSyncEngine = SubscriptionSyncEngine(tabletSubscriptions),
+            listenAddress = TEST_LISTEN_ADDRESS
         )
         val phone = Libp2pSyncNode(
-            phoneState,
-            PairingSecurity(),
-            "Test phone",
-            ::loopbackAddresses,
-            SubscriptionSyncEngine(phoneSubscriptions),
-            TEST_LISTEN_ADDRESS
+            stateRepository = phoneState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test phone",
+            advertisedAddressProvider = ::loopbackAddresses,
+            subscriptionSyncEngine = SubscriptionSyncEngine(phoneSubscriptions),
+            listenAddress = TEST_LISTEN_ADDRESS
         )
         tabletSubscriptions.add(0, TABLET_SUBSCRIPTION_URL)
         phoneSubscriptions.add(0, PHONE_SUBSCRIPTION_URL)
