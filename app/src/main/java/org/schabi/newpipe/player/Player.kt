@@ -167,11 +167,11 @@ class Player(
     private val broadcastController = PlayerBroadcastController(this)
 
     private var activeTrackSelector: DefaultTrackSelector? = null
+    private var activeLoadController: LoadController? = null
     private val dataSource = PlayerDataSource(
         appContext,
         DefaultBandwidthMeter.Builder(appContext).build()
     )
-    private val loadController = LoadController()
     private val playerVisualizerAudioProcessor = VisualizerAudioProcessor()
     private val renderFactory: DefaultRenderersFactory = CustomRenderersFactory(
         appContext,
@@ -198,8 +198,7 @@ class Player(
         appContext,
         audioResolver,
         videoResolver,
-        dataSource,
-        loadController
+        dataSource
     )
     private val presentationController = PlayerPresentationController(
         this,
@@ -237,7 +236,6 @@ class Player(
         appContext,
         playerService,
         renderFactory,
-        loadController,
         audioController,
         broadcastController,
         errorController,
@@ -331,6 +329,18 @@ class Player(
     fun clearTrackSelectorForLifecycle(trackSelector: DefaultTrackSelector) {
         if (activeTrackSelector === trackSelector) {
             activeTrackSelector = null
+        }
+    }
+
+    fun setLoadControllerForLifecycle(loadController: LoadController) {
+        activeLoadController = loadController
+    }
+
+    fun getLoadControllerForLifecycle(): LoadController? = activeLoadController
+
+    fun clearLoadControllerForLifecycle(loadController: LoadController) {
+        if (activeLoadController === loadController) {
+            activeLoadController = null
         }
     }
 
@@ -699,6 +709,11 @@ class Player(
     val trackSelector: DefaultTrackSelector
         get() = checkNotNull(activeTrackSelector) {
             "Track selector is unavailable without an active playback engine"
+        }
+
+    val loadController: LoadController
+        get() = checkNotNull(activeLoadController) {
+            "Load controller is unavailable without an active playback engine"
         }
 
     val currentMetadata: MediaItemTag?
