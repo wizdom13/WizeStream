@@ -90,13 +90,15 @@ class RoomStructuredPreferenceSyncStoreTest {
             context,
             phoneDatabase,
             newPeerId(),
-            phonePreferences
+            phonePreferences,
+            canMaterializeProfile = { true }
         )
         val tabletStore = RoomStructuredPreferenceSyncStore(
             context,
             tabletDatabase,
             newPeerId(),
-            tabletPreferences
+            tabletPreferences,
+            canMaterializeProfile = { true }
         )
         val phone = StructuredPreferenceSyncEngine(phoneStore)
         val tablet = StructuredPreferenceSyncEngine(tabletStore)
