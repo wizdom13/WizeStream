@@ -100,13 +100,65 @@ public final class ContentBlockingHelper {
 
     public static boolean isPreferenceKey(@NonNull final Context context,
                                           @Nullable final String key) {
-        return context.getString(R.string.content_blocking_enabled_key).equals(key)
-                || context.getString(R.string.blocked_videos_key).equals(key)
-                || context.getString(R.string.blocked_channels_key).equals(key)
-                || context.getString(R.string.blocked_keywords_key).equals(key)
-                || context.getString(R.string.content_blocking_targets_key).equals(key)
-                || context.getString(R.string.aislist_enabled_key).equals(key)
-                || context.getString(R.string.aislist_warn_behavior_key).equals(key);
+        return getRuleChange(context, key) != null;
+    }
+
+    public static boolean shouldReloadForPreference(@NonNull final Context context,
+                                                    @Nullable final String key,
+                                                    @NonNull final Target target) {
+        final RuleChange ruleChange = getRuleChange(context, key);
+        return ruleChange != null && shouldReloadForRuleChange(target, ruleChange);
+    }
+
+    static boolean shouldReloadForRuleChange(@NonNull final Target target,
+                                             @NonNull final RuleChange ruleChange) {
+        if (target != Target.COMMENTS) {
+            return true;
+        }
+
+        // Comments can only be affected by the master switch, target selection, or keyword rules.
+        // Video/channel/AiSList rules apply to stream/channel-style items and should not trigger a
+        // network comments refresh when they change.
+        return ruleChange == RuleChange.ENABLED
+                || ruleChange == RuleChange.TARGETS
+                || ruleChange == RuleChange.KEYWORDS;
+    }
+
+    @Nullable
+    private static RuleChange getRuleChange(@NonNull final Context context,
+                                            @Nullable final String key) {
+        if (context.getString(R.string.content_blocking_enabled_key).equals(key)) {
+            return RuleChange.ENABLED;
+        }
+        if (context.getString(R.string.content_blocking_targets_key).equals(key)) {
+            return RuleChange.TARGETS;
+        }
+        if (context.getString(R.string.blocked_videos_key).equals(key)) {
+            return RuleChange.VIDEOS;
+        }
+        if (context.getString(R.string.blocked_channels_key).equals(key)) {
+            return RuleChange.CHANNELS;
+        }
+        if (context.getString(R.string.blocked_keywords_key).equals(key)) {
+            return RuleChange.KEYWORDS;
+        }
+        if (context.getString(R.string.aislist_enabled_key).equals(key)) {
+            return RuleChange.AISLIST_ENABLED;
+        }
+        if (context.getString(R.string.aislist_warn_behavior_key).equals(key)) {
+            return RuleChange.AISLIST_WARN_BEHAVIOR;
+        }
+        return null;
+    }
+
+    enum RuleChange {
+        ENABLED,
+        TARGETS,
+        VIDEOS,
+        CHANNELS,
+        KEYWORDS,
+        AISLIST_ENABLED,
+        AISLIST_WARN_BEHAVIOR
     }
 
     static boolean isTargetEnabled(@Nullable final Set<String> enabledTargets,
