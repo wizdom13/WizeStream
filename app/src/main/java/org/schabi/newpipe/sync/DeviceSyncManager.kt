@@ -443,6 +443,9 @@ class DeviceSyncManager private constructor(context: Context) {
 
             StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
 
+            StructuredPreferenceCategory.CONTENT_BLOCKING ->
+                DeviceSyncLogCategory.CONTENT_BLOCKING
+
             StructuredPreferenceCategory.SETTINGS -> DeviceSyncLogCategory.SETTINGS
 
             StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
