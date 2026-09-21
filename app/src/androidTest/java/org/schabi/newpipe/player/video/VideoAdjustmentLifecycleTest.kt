@@ -102,12 +102,16 @@ class VideoAdjustmentLifecycleTest {
                 }
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { originalOrder = queue.streams.toList() }
-                for (action in listOf("enable", "disable", "enable", "failure")) {
+                val actions = listOf("enable", "disable", "enable", "disable", "enable", "failure")
+                for ((index, action) in actions.withIndex()) {
+                    val expectedPosition = 500L + index * 350L
                     ready.set(CountDownLatch(1))
                     scenario.onActivity {
                         val active = player!!
+                        active.exoPlayer.seekTo(expectedPosition)
                         val before = active.exoPlayer
                         val beforeTrackSelector = active.trackSelector
+                        val beforeLoadController = active.loadController
                         if (action == "failure") {
                             active.onPlayerError(PlaybackException("Injected GPU failure", null, PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED))
                         } else {
@@ -115,6 +119,7 @@ class VideoAdjustmentLifecycleTest {
                         }
                         assertNotSame(before, active.exoPlayer)
                         assertNotSame(beforeTrackSelector, active.trackSelector)
+                        assertNotSame(beforeLoadController, active.loadController)
                     }
                     assertTrue("Playback did not recover after $action", ready.get().await(20, TimeUnit.SECONDS))
                     scenario.onActivity {
@@ -122,7 +127,7 @@ class VideoAdjustmentLifecycleTest {
                         assertSame(queue, active.playQueue)
                         assertEquals(originalOrder, queue.streams)
                         assertEquals("Second", queue.item!!.title)
-                        assertEquals(1500L, active.exoPlayer.currentPosition)
+                        assertEquals(expectedPosition, active.exoPlayer.currentPosition)
                         assertFalse(active.exoPlayer.playWhenReady)
                         assertEquals(1.25f, active.exoPlayer.playbackParameters.speed)
                         assertEquals(1.1f, active.exoPlayer.playbackParameters.pitch)
