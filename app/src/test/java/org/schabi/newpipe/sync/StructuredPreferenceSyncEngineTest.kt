@@ -461,8 +461,7 @@ class StructuredPreferenceSyncEngineTest {
         )
     }
 
-    private fun TestStructuredPreferenceSyncStore.contentBlockKeys():
-        Set<Pair<ContentBlockEntryKind, String>> {
+    private fun TestStructuredPreferenceSyncStore.contentBlockKeys(): Set<Pair<ContentBlockEntryKind, String>> {
         return liveRecords(
             StructuredPreferenceCategory.CONTENT_BLOCKING,
             StructuredPreferenceRecordType.CONTENT_BLOCK_ENTRY
