@@ -15,6 +15,7 @@ import java.io.File
 import java.io.InputStream
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.sync.HistorySyncRecorder
 import org.schabi.newpipe.sync.RoomPlaylistSyncStore
 import org.schabi.newpipe.sync.RoomSubscriptionSyncStore
@@ -43,14 +44,27 @@ class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(c
                 }
             }
             val data = TakeoutParser.parse(file, name)
+            val profileId = inputData.getString(PROFILE_ID)
+                ?: ProfileManager.DEFAULT_PROFILE_ID
+            require(ProfileManager.getProfile(context, profileId) != null) {
+                "The selected profile no longer exists"
+            }
             val history = HistorySyncRecorder.get(context)
+            val isDefaultProfile = profileId == ProfileManager.DEFAULT_PROFILE_ID
             val result = TakeoutImporter(
                 NewPipeDatabase.getInstance(context),
                 recordSearch = { query, time -> history.recordSearch(0, query, time) },
-                recordSubscription = RoomSubscriptionSyncStore.get(context)::recordLocalUpsert,
-                recordWatch = history::recordWatchEvent
+                recordSubscription = if (isDefaultProfile) {
+                    RoomSubscriptionSyncStore.get(context)::recordLocalUpsert
+                } else {
+                    { _ -> }
+                },
+                profileId = profileId,
+                recordWatch = if (isDefaultProfile) history::recordWatchEvent else { _, _, _ -> }
             ).import(data)
-            RoomPlaylistSyncStore.get(context).reconcileLocalPlaylists()
+            if (isDefaultProfile) {
+                RoomPlaylistSyncStore.get(context).reconcileLocalPlaylists()
+            }
             status(
                 context.getString(
                     R.string.takeout_import_result,
@@ -79,13 +93,21 @@ class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(c
     companion object {
         const val STATUS = "takeout_import_status"
         private const val WORK = "takeout-import"
+        private const val PROFILE_ID = "profile-id"
 
         @JvmStatic
         fun enqueue(context: Context, uri: Uri) {
             WorkManager.getInstance(context).enqueueUniqueWork(
                 WORK,
                 ExistingWorkPolicy.KEEP,
-                OneTimeWorkRequestBuilder<TakeoutImportWorker>().setInputData(workDataOf("uri" to uri.toString())).build()
+                OneTimeWorkRequestBuilder<TakeoutImportWorker>()
+                    .setInputData(
+                        workDataOf(
+                            "uri" to uri.toString(),
+                            PROFILE_ID to ProfileManager.getActiveProfileId(context)
+                        )
+                    )
+                    .build()
             )
         }
     }

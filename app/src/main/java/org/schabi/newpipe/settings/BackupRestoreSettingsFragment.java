@@ -28,6 +28,7 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.subscription.SubscriptionsImportExportHelper;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.settings.export.BackupFileLocator;
 import org.schabi.newpipe.settings.export.ImportExportManager;
 import org.schabi.newpipe.settings.export.NewPipeCompatibleExportManager;
@@ -516,12 +517,13 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
             final Uri importDataUri,
             final Map<String, ?> sourcePreferences,
             final NewPipeDataMigrationManager.Selection selection) {
+        final String targetProfileId = ProfileManager.getActiveProfileId(requireContext());
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
                 final NewPipeDataMigrationManager.Result migrationResult =
                         migrationManager.importData(
-                                stagedDatabase, selection, sourcePreferences);
+                                stagedDatabase, selection, sourcePreferences, targetProfileId);
                 if (getActivity() != null) {
                     requireActivity().runOnUiThread(() -> {
                         saveLastImportExportDataUri(importDataUri);
@@ -574,12 +576,13 @@ public class BackupRestoreSettingsFragment extends BasePreferenceFragment {
 
     private void exportNewPipeCompatibleData(final StoredFileHelper file,
                                              final Uri exportDataUri) {
+        final String profileId = ProfileManager.getActiveProfileId(requireContext());
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
                 NewPipeDatabase.checkpoint();
                 final NewPipeCompatibleExportManager.ExportResult exportResult =
-                        compatibleExportManager.export(file);
+                        compatibleExportManager.export(file, profileId);
                 if (getActivity() != null) {
                     requireActivity().runOnUiThread(() -> {
                         saveLastImportExportDataUri(exportDataUri);

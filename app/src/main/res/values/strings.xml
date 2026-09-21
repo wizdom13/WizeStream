@@ -509,11 +509,11 @@
     <string name="import_data_title">Import full backup</string>
     <string name="import_compatible_data_key" translatable="false">import_compatible_data</string>
     <string name="import_compatible_data_title">Import from NewPipe or compatible app</string>
-    <string name="import_compatible_data_summary">Merge subscriptions, watch history, playback positions, local playlists, compatible settings, and PipePipe SponsorBlock settings from a NewPipe-style ZIP backup without replacing existing WizeStream data.</string>
+    <string name="import_compatible_data_summary">Merge subscriptions, watch history, playback positions, and local playlists from a NewPipe-style ZIP backup into the active profile without replacing existing WizeStream data. Compatible settings and PipePipe SponsorBlock settings remain app-wide.</string>
     <string name="export_data_title">Export full backup</string>
     <string name="export_compatible_data_key" translatable="false">export_compatible_data</string>
     <string name="export_compatible_data_title">Export for NewPipe</string>
-    <string name="export_compatible_data_summary">Create a NewPipe-compatible ZIP containing subscriptions and channel groups, local and bookmarked playlists, watch and search history, and playback positions. WizeStream settings and app-specific data are excluded.</string>
+    <string name="export_compatible_data_summary">Create a NewPipe-compatible ZIP from the active profile containing subscriptions and channel groups, local and bookmarked playlists, watch history, playback positions, and the app-wide search history. WizeStream settings and app-specific data are excluded.</string>
     <string name="export_compatible_data_complete_title">NewPipe backup exported</string>
     <string name="export_compatible_data_complete_message">Exported %1$d subscriptions, %8$d channel groups with %9$d memberships, %5$d local playlists with %7$d videos, %6$d bookmarked playlists, %2$d watched items, %10$d searches, and %3$d playback positions. Skipped %4$d records that NewPipe cannot use. Import this ZIP using NewPipe’s backup restore screen.</string>
     <string name="clear_cookie_title">Clear reCAPTCHA cookies</string>
@@ -522,7 +522,7 @@
     <string name="export_data_summary">Create a ZIP backup with subscriptions, playlists, app settings, SponsorBlock settings, and local data.</string>
     <string name="clear_cookie_summary">Clear cookies that WizeStream stores when you solve a reCAPTCHA</string>
     <string name="full_backup_includes_title">What full backup includes</string>
-    <string name="full_backup_includes_summary">Full backup includes subscriptions, playlists, app settings, SponsorBlock settings, and local data.</string>
+    <string name="full_backup_includes_summary">Full backup preserves all local profiles and their subscriptions, playlists, history, app settings, SponsorBlock settings, and other local data.</string>
     <string name="import_full_backup_title">Import full backup?</string>
     <string name="import_full_backup_button">Import</string>
     <string name="import_full_backup_detected_contents">Detected contents: %s</string>

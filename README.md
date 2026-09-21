@@ -283,9 +283,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   URL metadata in generated MP3, M4A, MP4, and Opus files
 - Choose Storage Access Framework or compatible legacy storage locations, separate audio and video
   folders, mobile-network behavior, retry limits, filename handling, and a serial download queue
-- Import or export subscriptions separately, create complete WizeStream backups, and merge compatible
-  watch history, playback positions, local playlists, settings, and SponsorBlock data from NewPipe-style
-  backups without replacing existing data
+- Import or export subscriptions separately, create complete WizeStream backups that preserve all
+  local profiles, and merge compatible watch history, playback positions, local playlists, settings,
+  and SponsorBlock data from NewPipe-style backups without replacing existing data
+- NewPipe/PipePipe migrations, Google Takeout imports, and NewPipe-compatible exports target the
+  profile that is active when the operation starts; search history and app-wide settings remain global
 - Schedule daily or weekly backups in **Settings > Backup and restore** after choosing a folder;
   retain the latest seven automatic backups and see the last backup status. Android determines the
   exact run time based on battery and storage conditions
