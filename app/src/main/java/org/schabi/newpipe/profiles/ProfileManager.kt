@@ -198,8 +198,10 @@ object ProfileManager {
     }
 
     @JvmStatic
-    fun isProfileSyncTombstoned(context: Context, profileId: String): Boolean =
-        synchronized(lock) {
+    fun isProfileSyncTombstoned(
+        context: Context,
+        profileId: String
+    ): Boolean = synchronized(lock) {
             if (profileId == DEFAULT_PROFILE_ID) {
                 return false
             }
