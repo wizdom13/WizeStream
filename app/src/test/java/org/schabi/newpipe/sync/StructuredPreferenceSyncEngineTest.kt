@@ -110,6 +110,71 @@ class StructuredPreferenceSyncEngineTest {
     }
 
     @Test
+    fun `blocked content entries merge independently and deletion tombstones converge`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+        val channel = SyncedContentBlockEntry(
+            ContentBlockEntryKind.CHANNEL,
+            "https://example.com/channel/blocked",
+            "Blocked channel"
+        )
+        val video = SyncedContentBlockEntry(
+            ContentBlockEntryKind.VIDEO,
+            "https://example.com/watch?v=blocked",
+            "Blocked video"
+        )
+        val keyword = SyncedContentBlockEntry(
+            ContentBlockEntryKind.KEYWORD,
+            "spoiler",
+            "Spoiler"
+        )
+        phoneStore.upsertContentBlockEntry(channel)
+        tabletStore.upsertContentBlockEntry(video)
+        tabletStore.upsertContentBlockEntry(keyword)
+
+        synchronize(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            setOf(
+                ContentBlockEntryKind.CHANNEL to channel.key,
+                ContentBlockEntryKind.VIDEO to video.key,
+                ContentBlockEntryKind.KEYWORD to keyword.key
+            ),
+            phoneStore.contentBlockKeys()
+        )
+        assertEquals(phoneStore.contentBlockKeys(), tabletStore.contentBlockKeys())
+
+        phoneStore.delete(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            StructuredPreferenceRecordId.contentBlockEntry(channel.kind, channel.key)
+        )
+        synchronize(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            setOf(
+                ContentBlockEntryKind.VIDEO to video.key,
+                ContentBlockEntryKind.KEYWORD to keyword.key
+            ),
+            phoneStore.contentBlockKeys()
+        )
+        assertEquals(phoneStore.contentBlockKeys(), tabletStore.contentBlockKeys())
+    }
+
+    @Test
     fun `home tab ordering uses the latest deterministic version`() {
         val phoneStore = newStore()
         val tabletStore = newStore()
@@ -383,6 +448,27 @@ class StructuredPreferenceSyncEngineTest {
             recordType = StructuredPreferenceRecordType.FILTER_SET,
             record = SyncedStructuredPreferenceRecord(filterSet = filter)
         )
+    }
+
+    private fun TestStructuredPreferenceSyncStore.upsertContentBlockEntry(
+        entry: SyncedContentBlockEntry
+    ) {
+        upsert(
+            category = StructuredPreferenceCategory.CONTENT_BLOCKING,
+            recordId = StructuredPreferenceRecordId.contentBlockEntry(entry.kind, entry.key),
+            recordType = StructuredPreferenceRecordType.CONTENT_BLOCK_ENTRY,
+            record = SyncedStructuredPreferenceRecord(contentBlockEntry = entry)
+        )
+    }
+
+    private fun TestStructuredPreferenceSyncStore.contentBlockKeys():
+        Set<Pair<ContentBlockEntryKind, String>> {
+        return liveRecords(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            StructuredPreferenceRecordType.CONTENT_BLOCK_ENTRY
+        ).mapNotNull { record ->
+            record.contentBlockEntry?.let { it.kind to it.key }
+        }.toSet()
     }
 
     private fun TestStructuredPreferenceSyncStore.upsertSetting(
