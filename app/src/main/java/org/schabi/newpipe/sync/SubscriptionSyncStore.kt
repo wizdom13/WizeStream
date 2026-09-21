@@ -40,7 +40,7 @@ internal interface SubscriptionSyncStore {
     fun clearPeerKnowledge()
 }
 
-internal class RoomSubscriptionSyncStore private constructor(
+internal class RoomSubscriptionSyncStore internal constructor(
     private val database: AppDatabase,
     override val localPeerId: String,
     private val canMaterializeProfile: (String) -> Boolean = { true }
