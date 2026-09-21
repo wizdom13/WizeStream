@@ -16,6 +16,7 @@ import java.util.Locale
 import okhttp3.Request
 import org.schabi.newpipe.DownloaderImpl
 import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.ServiceList
 
 object AiSListRepository {
     const val BLOCKLIST_SOURCE_URL =
@@ -146,16 +147,31 @@ object AiSListRepository {
     @JvmStatic
     fun isBlockListed(
         context: Context,
+        serviceId: Int,
         channelUrl: String?,
         channelName: String?
-    ): Boolean = isListed(blockEntries(context), channelUrl, channelName)
+    ): Boolean = isListed(serviceId, blockEntries(context), channelUrl, channelName)
 
     @JvmStatic
     fun isWarnListed(
         context: Context,
+        serviceId: Int,
         channelUrl: String?,
         channelName: String?
-    ): Boolean = isListed(warnEntries(context), channelUrl, channelName)
+    ): Boolean = isListed(serviceId, warnEntries(context), channelUrl, channelName)
+
+    @JvmStatic
+    fun isListed(
+        serviceId: Int,
+        entries: Set<String>,
+        channelUrl: String?,
+        channelName: String?
+    ): Boolean {
+        if (serviceId != ServiceList.YouTube.serviceId) {
+            return false
+        }
+        return isListed(entries, channelUrl, channelName)
+    }
 
     @JvmStatic
     fun isListed(
