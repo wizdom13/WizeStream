@@ -50,21 +50,21 @@ class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(c
                 "The selected profile no longer exists"
             }
             val history = HistorySyncRecorder.get(context)
-            val isDefaultProfile = profileId == ProfileManager.DEFAULT_PROFILE_ID
             val result = TakeoutImporter(
                 NewPipeDatabase.getInstance(context),
                 recordSearch = { query, time -> history.recordSearch(0, query, time) },
-                recordSubscription = if (isDefaultProfile) {
-                    RoomSubscriptionSyncStore.get(context)::recordLocalUpsert
-                } else {
-                    { _ -> }
-                },
+                recordSubscription = RoomSubscriptionSyncStore.get(context)::recordLocalUpsert,
                 profileId = profileId,
-                recordWatch = if (isDefaultProfile) history::recordWatchEvent else { _, _, _ -> }
+                recordWatch = { streamId, watchedAt, repeatCount ->
+                    history.recordWatchEventForProfile(
+                        profileId,
+                        streamId,
+                        watchedAt,
+                        repeatCount
+                    )
+                }
             ).import(data)
-            if (isDefaultProfile) {
-                RoomPlaylistSyncStore.get(context).reconcileLocalPlaylists()
-            }
+            RoomPlaylistSyncStore.get(context).reconcileLocalPlaylists()
             status(
                 context.getString(
                     R.string.takeout_import_result,
