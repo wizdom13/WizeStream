@@ -15,6 +15,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.R;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -56,10 +57,16 @@ public final class AiSListContentHelper {
                         .getString(key, fallback));
     }
 
+    public static boolean isActive(@NonNull final Context context) {
+        return AiSListRepository.isEnabled(context)
+                && PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
+                        context.getString(R.string.content_blocking_enabled_key), true);
+    }
+
     public static boolean shouldLabel(@NonNull final Context context,
                                       @Nullable final String channelUrl,
                                       @Nullable final String channelName) {
-        if (!AiSListRepository.isEnabled(context)
+        if (!isActive(context)
                 || !AiSListRepository.isWarnListed(context, channelUrl, channelName)) {
             return false;
         }
@@ -70,20 +77,20 @@ public final class AiSListContentHelper {
     public static boolean shouldWarnBeforePlayback(@NonNull final Context context,
                                                    @Nullable final String channelUrl,
                                                    @Nullable final String channelName) {
-        return AiSListRepository.isEnabled(context)
+        return isActive(context)
                 && getWarnBehavior(context) == WarnBehavior.WARN
                 && AiSListRepository.isWarnListed(context, channelUrl, channelName);
     }
 
     public static boolean shouldHideWarnlisted(@NonNull final Context context) {
-        return AiSListRepository.isEnabled(context)
+        return isActive(context)
                 && getWarnBehavior(context) == WarnBehavior.HIDE;
     }
 
     @NonNull
     public static Set<String> hiddenChannelEntries(@NonNull final Context context) {
-        if (!AiSListRepository.isEnabled(context)) {
-            return Set.of();
+        if (!isActive(context)) {
+            return Collections.emptySet();
         }
         final Set<String> hidden = new HashSet<>(AiSListRepository.blockEntries(context));
         if (shouldHideWarnlisted(context)) {
