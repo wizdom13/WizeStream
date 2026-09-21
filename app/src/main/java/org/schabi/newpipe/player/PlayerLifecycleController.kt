@@ -20,7 +20,6 @@ import org.schabi.newpipe.player.helper.LoadController
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.playback.MediaSourceManager
 import org.schabi.newpipe.player.playqueue.PlayQueue
-import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.ui.PlayerUi
 
 /** Owns player-engine lifecycle, queue-manager lifetime, and recovery positions. */
@@ -29,7 +28,6 @@ internal class PlayerLifecycleController(
     private val context: Context,
     private val service: PlayerService,
     private val renderFactory: DefaultRenderersFactory,
-    private val loadController: LoadController,
     private val audioController: PlayerAudioController,
     private val broadcastController: PlayerBroadcastController,
     private val errorController: PlayerErrorController,
@@ -84,7 +82,7 @@ internal class PlayerLifecycleController(
         val repeatMode = previous.repeatMode
         val shuffle = previous.shuffleModeEnabled
         val trackSelectionParameters = player.getTrackSelectorForLifecycle()?.parameters
-        if (!previous.currentTimeline.isEmpty && queue.item?.recoveryPosition == PlayQueueItem.RECOVERY_UNSET) {
+        if (!previous.currentTimeline.isEmpty) {
             queue.setRecovery(queue.index, previous.currentPosition.coerceAtLeast(0))
         }
         destroyPlayer(preserveQueue = true)
@@ -156,12 +154,14 @@ internal class PlayerLifecycleController(
                 setParameters(trackSelectionParameters)
             }
         }
+        val loadController = LoadController()
         val exoPlayer = ExoPlayer.Builder(context, renderFactory)
             .setTrackSelector(trackSelector)
             .setLoadControl(loadController)
             .setUsePlatformDiagnostics(false)
             .build()
         player.setTrackSelectorForLifecycle(trackSelector)
+        player.setLoadControllerForLifecycle(loadController)
         player.setExoPlayerForLifecycle(exoPlayer)
         player.videoAdjustments.attach(exoPlayer)
         exoPlayer.addListener(player)
@@ -182,6 +182,7 @@ internal class PlayerLifecycleController(
         historyController.stopLearningSession()
         val exoPlayer = player.getExoPlayer()
         val trackSelector = player.getTrackSelectorForLifecycle()
+        val loadController = player.getLoadControllerForLifecycle()
         // Stop receiving playback errors before UIs detach their video surfaces. Media3 may report
         // a surface-detach timeout while the player is deliberately shutting down; surfacing that
         // expected teardown failure would show an erroneous playback error to the user.
@@ -198,6 +199,9 @@ internal class PlayerLifecycleController(
             player.clearExoPlayerForLifecycle()
             if (trackSelector != null) {
                 player.clearTrackSelectorForLifecycle(trackSelector)
+            }
+            if (loadController != null) {
+                player.clearLoadControllerForLifecycle(loadController)
             }
         }
         if (player.isProgressLoopRunning) player.stopProgressLoop()
