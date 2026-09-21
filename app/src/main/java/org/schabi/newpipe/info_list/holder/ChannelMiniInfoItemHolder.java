@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.utils.Utils;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.util.AiSListContentHelper;
 import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.image.CoilHelper;
@@ -50,12 +51,22 @@ public class ChannelMiniInfoItemHolder extends InfoItemHolder {
         itemTitleView.setText(item.getName());
         itemTitleView.setSelected(true);
 
-        final String detailLine = getDetailLine(item);
+        String detailLine = getDetailLine(item);
+        if (AiSListContentHelper.shouldLabel(
+                itemBuilder.getContext(),
+                item.getUrl(),
+                item.getName())) {
+            final String possibleAi = itemBuilder.getContext()
+                    .getString(R.string.aislist_possible_ai_badge);
+            detailLine = detailLine == null
+                    ? possibleAi
+                    : Localization.concatenateStrings(possibleAi, detailLine);
+        }
         if (detailLine == null) {
             itemAdditionalDetailView.setVisibility(View.GONE);
         } else {
             itemAdditionalDetailView.setVisibility(View.VISIBLE);
-            itemAdditionalDetailView.setText(getDetailLine(item));
+            itemAdditionalDetailView.setText(detailLine);
         }
 
         CoilHelper.INSTANCE.loadAvatar(itemThumbnailView,
