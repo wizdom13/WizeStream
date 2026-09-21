@@ -131,7 +131,6 @@ internal class ContentBlockingSyncAdapter(
                 blockedKeywords
             )
             .commit()
-
     }
 
     private fun currentState(): SyncedContentBlockingState {
