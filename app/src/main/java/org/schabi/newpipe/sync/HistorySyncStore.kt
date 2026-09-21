@@ -68,18 +68,22 @@ internal interface HistorySyncStore {
 
     fun recordWatchStreamDelete(profileId: String, streamId: Long)
 
-    fun recordWatchStreamDelete(streamId: Long) =
-        recordWatchStreamDelete(ProfileManager.DEFAULT_PROFILE_ID, streamId)
+    fun recordWatchStreamDelete(streamId: Long) = recordWatchStreamDelete(
+        ProfileManager.DEFAULT_PROFILE_ID,
+        streamId
+    )
 
     fun recordWatchAllDelete(profileId: String)
 
-    fun recordWatchAllDelete() =
-        recordWatchAllDelete(ProfileManager.DEFAULT_PROFILE_ID)
+    fun recordWatchAllDelete() = recordWatchAllDelete(
+        ProfileManager.DEFAULT_PROFILE_ID
+    )
 
     fun recordProgressAllDelete(profileId: String)
 
-    fun recordProgressAllDelete() =
-        recordProgressAllDelete(ProfileManager.DEFAULT_PROFILE_ID)
+    fun recordProgressAllDelete() = recordProgressAllDelete(
+        ProfileManager.DEFAULT_PROFILE_ID
+    )
 
     fun recordSearch(
         serviceId: Int,
@@ -1068,22 +1072,26 @@ class HistorySyncRecorder private constructor(context: Context) {
         streamId
     )
 
-    fun recordWatchStreamDeleteForProfile(profileId: String, streamId: Long) =
-        store.recordWatchStreamDelete(profileId, streamId)
+    fun recordWatchStreamDeleteForProfile(
+        profileId: String,
+        streamId: Long
+    ) = store.recordWatchStreamDelete(profileId, streamId)
 
     fun recordWatchAllDelete() = recordWatchAllDeleteForProfile(
         ProfileManager.getActiveProfileId(appContext)
     )
 
-    fun recordWatchAllDeleteForProfile(profileId: String) =
-        store.recordWatchAllDelete(profileId)
+    fun recordWatchAllDeleteForProfile(profileId: String) = store.recordWatchAllDelete(
+        profileId
+    )
 
     fun recordProgressAllDelete() = recordProgressAllDeleteForProfile(
         ProfileManager.getActiveProfileId(appContext)
     )
 
-    fun recordProgressAllDeleteForProfile(profileId: String) =
-        store.recordProgressAllDelete(profileId)
+    fun recordProgressAllDeleteForProfile(profileId: String) = store.recordProgressAllDelete(
+        profileId
+    )
 
     fun recordSearch(
         serviceId: Int,
