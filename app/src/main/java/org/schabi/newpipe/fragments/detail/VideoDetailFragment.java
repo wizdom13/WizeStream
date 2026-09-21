@@ -1724,6 +1724,7 @@ public final class VideoDetailFragment
                 && !Objects.equals(aiWarningBypassedUrl, currentInfo.getUrl())
                 && AiSListContentHelper.shouldWarnBeforePlayback(
                         requireContext(),
+                        currentInfo.getServiceId(),
                         currentInfo.getUploaderUrl(),
                         currentInfo.getUploaderName())) {
             final String bypassUrl = currentInfo.getUrl();
