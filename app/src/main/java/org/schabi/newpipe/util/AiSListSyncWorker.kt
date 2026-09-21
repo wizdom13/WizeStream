@@ -33,6 +33,8 @@ class AiSListSyncWorker(
             val status = AiSListRepository.sync(applicationContext)
             Result.success(
                 workDataOf(
+                    OUTPUT_BLOCK_COUNT to status.blockCount,
+                    OUTPUT_WARN_COUNT to status.warnCount,
                     OUTPUT_COUNT to status.count,
                     OUTPUT_UPDATED_AT to status.updatedAtMillis
                 )
@@ -45,6 +47,8 @@ class AiSListSyncWorker(
     }
 
     companion object {
+        const val OUTPUT_BLOCK_COUNT = "blockCount"
+        const val OUTPUT_WARN_COUNT = "warnCount"
         const val OUTPUT_COUNT = "count"
         const val OUTPUT_UPDATED_AT = "updatedAt"
 
