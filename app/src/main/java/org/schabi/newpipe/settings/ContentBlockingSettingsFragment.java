@@ -36,6 +36,7 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
     private SwitchPreferenceCompat aiSListEnabledPreference;
     private Preference aiSListUpdatePreference;
     private Preference aiSListStatusPreference;
+    private Preference aiSListWarnBehaviorPreference;
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
@@ -47,6 +48,7 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
         aiSListEnabledPreference = requirePreference(R.string.aislist_enabled_key);
         aiSListUpdatePreference = requirePreference(R.string.aislist_update_key);
         aiSListStatusPreference = requirePreference(R.string.aislist_status_key);
+        aiSListWarnBehaviorPreference = requirePreference(R.string.aislist_warn_behavior_key);
 
         blockedKeywordsPreference.setOnBindEditTextListener(editText -> {
             editText.setInputType(InputType.TYPE_CLASS_TEXT
@@ -74,6 +76,7 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
         aiSListEnabledPreference.setOnPreferenceChangeListener((preference, value) -> {
             final boolean enabled = Boolean.TRUE.equals(value);
             aiSListUpdatePreference.setEnabled(enabled);
+            aiSListWarnBehaviorPreference.setEnabled(enabled);
             final UUID workId = AiSListSyncWorker.setEnabled(requireContext(), enabled);
             if (workId != null) {
                 observeAiSListUpdate(workId);
@@ -156,12 +159,17 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
                     aiSListUpdatePreference.setEnabled(aiSListEnabledPreference.isChecked());
                     aiSListUpdatePreference.setSummary(R.string.aislist_update_summary);
                     if (workInfo.getState() == WorkInfo.State.SUCCEEDED) {
-                        final int count = workInfo.getOutputData()
-                                .getInt(AiSListSyncWorker.OUTPUT_COUNT, 0);
-                        if (count > 0) {
+                        final int blockCount = workInfo.getOutputData()
+                                .getInt(AiSListSyncWorker.OUTPUT_BLOCK_COUNT, 0);
+                        final int warnCount = workInfo.getOutputData()
+                                .getInt(AiSListSyncWorker.OUTPUT_WARN_COUNT, 0);
+                        if (blockCount > 0 || warnCount > 0) {
                             Toast.makeText(
                                     requireContext(),
-                                    getString(R.string.aislist_updated, count),
+                                    getString(
+                                            R.string.aislist_updated,
+                                            blockCount,
+                                            warnCount),
                                     Toast.LENGTH_SHORT)
                                     .show();
                         }
@@ -182,6 +190,7 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
         }
         final boolean enabled = aiSListEnabledPreference.isChecked();
         aiSListUpdatePreference.setEnabled(enabled);
+        aiSListWarnBehaviorPreference.setEnabled(enabled);
         final AiSListRepository.SyncStatus status =
                 AiSListRepository.status(requireContext());
         if (status.getCount() <= 0 || status.getUpdatedAtMillis() <= 0) {
@@ -193,7 +202,11 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
                 DateFormat.SHORT)
                 .format(new Date(status.getUpdatedAtMillis()));
         aiSListStatusPreference.setSummary(
-                getString(R.string.aislist_status_format, status.getCount(), updatedAt));
+                getString(
+                        R.string.aislist_status_format,
+                        status.getBlockCount(),
+                        status.getWarnCount(),
+                        updatedAt));
     }
 
     private void saveEntries(final boolean videos, @NonNull final List<Entry> entries) {
