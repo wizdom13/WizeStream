@@ -21,8 +21,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_URL
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.util.NO_SERVICE_ID
-import org.schabi.newpipe.util.image.ExtractorImageCompat
-import org.schabi.newpipe.util.image.ImageStrategy
+import org.schabi.newpipe.util.image.RemotePlaylistArtworkResolver
 
 @Entity(
     tableName = REMOTE_PLAYLIST_TABLE,
@@ -76,13 +75,17 @@ data class PlaylistRemoteEntity @JvmOverloads constructor(
     var profileId: String = DEFAULT_PROFILE_ID
 ) : PlaylistLocalItem {
 
-    constructor(playlistInfo: PlaylistInfo) : this(
+    @JvmOverloads
+    constructor(
+        playlistInfo: PlaylistInfo,
+        existingThumbnailUrl: String? = null
+    ) : this(
         serviceId = playlistInfo.serviceId,
         orderingName = playlistInfo.name,
         url = playlistInfo.url,
-        thumbnailUrl = ImageStrategy.imageListToDbUrl(
-            ExtractorImageCompat.thumbnailImages(playlistInfo)
-                .ifEmpty { ExtractorImageCompat.uploaderAvatarImages(playlistInfo) }
+        thumbnailUrl = RemotePlaylistArtworkResolver.resolve(
+            playlistInfo,
+            existingThumbnailUrl
         ),
         uploader = playlistInfo.uploaderName,
         streamCount = playlistInfo.streamCount
@@ -100,9 +103,13 @@ data class PlaylistRemoteEntity @JvmOverloads constructor(
         return this.serviceId == info.serviceId && this.streamCount == info.streamCount &&
             TextUtils.equals(this.orderingName, info.name) &&
             TextUtils.equals(this.url, info.url) &&
-            // we want to update the local playlist data even when either the remote thumbnail
-            // URL changes, or the preferred image quality setting is changed by the user
-            TextUtils.equals(thumbnailUrl, ImageStrategy.imageListToDbUrl(ExtractorImageCompat.thumbnailImages(info))) &&
+            // Resolve with the current stored cover as a preservation fallback. A newly available
+            // playlist/stream image still triggers an update, while a temporary extraction gap
+            // does not erase or downgrade an already valid bookmark thumbnail.
+            TextUtils.equals(
+                thumbnailUrl,
+                RemotePlaylistArtworkResolver.resolve(info, thumbnailUrl)
+            ) &&
             TextUtils.equals(this.uploader, info.uploaderName)
     }
 
