@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1021000">WizeStream 1.21.0</a></li>
 <li><a href="#release-1020002">WizeStream 1.20.2</a></li>
 <li><a href="#release-1020001">WizeStream 1.20.1</a></li>
 <li><a href="#release-1020000">WizeStream 1.20.0</a></li>
@@ -74,6 +75,29 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1021000" data-version="1.21.0" data-version-code="1021000">
+<h2>WizeStream 1.21.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added local profiles so subscriptions, feed groups, watch history and progress, playlists, saved search feeds, imports, backups, and device synchronization can stay separated between profiles.</li>
+<li>Added on-device comment translation that keeps translation local to the device and hides the Translate action when a comment is already in the selected language.</li>
+<li>Added optional AiSList-based labeling, warning, or hiding for likely AI-generated YouTube content with local matching and no WizeStream account requirement.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Made backup, restore, NewPipe/PipePipe/Takeout migration, and peer-to-peer device synchronization profile-aware while preserving compatibility with the Default profile.</li>
+<li>Made content-blocking refreshes target-aware so blocking a channel or video refreshes Related immediately without unnecessarily reloading Comments.</li>
+<li>Made bookmarked playlist and YouTube Music album artwork more resilient by falling back from playlist artwork to track artwork and then uploader artwork while preserving valid stored covers.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Prevented Android service restarts with a null PlayerService intent from crashing playback startup.</li>
+<li>Fixed repeated Video Adjustments rebuilds on Android 9 by giving each ExoPlayer its own LoadControl and preserving the latest playback position.</li>
+<li>Corrected comment-translation action alignment and long-text layout handling.</li>
+</ul>
+</div>
+</section>
 <section id="release-1020002" data-version="1.20.2" data-version-code="1020002">
 <h2>WizeStream 1.20.2</h2>
 <div class="release-notes">
