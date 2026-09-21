@@ -21,6 +21,42 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <PreferenceCategory
+        android:title="@string/aislist_category_title"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/aislist_enabled_key"
+            android:summary="@string/aislist_enabled_summary"
+            android:title="@string/aislist_enabled_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/aislist_update_key"
+            android:summary="@string/aislist_update_summary"
+            android:title="@string/aislist_update_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/aislist_status_key"
+            android:summary="@string/aislist_not_downloaded"
+            android:title="@string/aislist_status_title"
+            app:iconSpaceReserved="false"
+            app:selectable="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="@string/aislist_about_key"
+            android:summary="@string/aislist_about_summary"
+            android:title="@string/aislist_about_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+    </PreferenceCategory>
+
     <EditTextPreference
         android:dialogTitle="@string/blocked_keywords_title"
         android:key="@string/blocked_keywords_key"
