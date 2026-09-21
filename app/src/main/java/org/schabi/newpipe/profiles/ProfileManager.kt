@@ -202,13 +202,13 @@ object ProfileManager {
         context: Context,
         profileId: String
     ): Boolean = synchronized(lock) {
-            if (profileId == DEFAULT_PROFILE_ID) {
-                return false
-            }
-            val prefs = preferences(context)
-            ensureInitialized(context, prefs)
-            syncTombstones(prefs).contains(profileId)
+        if (profileId == DEFAULT_PROFILE_ID) {
+            return false
         }
+        val prefs = preferences(context)
+        ensureInitialized(context, prefs)
+        syncTombstones(prefs).contains(profileId)
+    }
 
     @JvmStatic
     fun upsertSyncedProfile(
