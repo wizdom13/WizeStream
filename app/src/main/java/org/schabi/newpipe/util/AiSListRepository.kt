@@ -174,7 +174,7 @@ object AiSListRepository {
             .map(String::trim)
             .filter { it.isNotEmpty() && !it.startsWith("!") }
             .filter { it.startsWith("@") || it.startsWith("UC", ignoreCase = true) }
-            .map { it.lowercase(Locale.ROOT) }
+            .map(::normalizeListEntry)
             .toCollection(linkedSetOf())
     }
 
@@ -190,7 +190,7 @@ object AiSListRepository {
             if (candidate.startsWith("@") ||
                 candidate.startsWith("UC", ignoreCase = true)
             ) {
-                candidates += candidate.lowercase(Locale.ROOT)
+                candidates += normalizeListEntry(candidate)
             }
         }
 
@@ -213,6 +213,14 @@ object AiSListRepository {
             }
         }
         return candidates
+    }
+
+    private fun normalizeListEntry(value: String): String {
+        return if (value.startsWith("@")) {
+            value.lowercase(Locale.ROOT)
+        } else {
+            value
+        }
     }
 
     @Throws(IOException::class)
