@@ -63,7 +63,8 @@ class AiSListSyncWorker(
         fun initialize(context: Context) {
             if (AiSListRepository.isEnabled(context)) {
                 schedulePeriodic(context)
-                if (AiSListRepository.status(context).count == 0) {
+                val status = AiSListRepository.status(context)
+                if (status.blockCount == 0 || status.warnCount == 0) {
                     enqueueImmediateSync(context)
                 }
             }
