@@ -997,6 +997,73 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom26to27ScopesPlaylistsAndSavedFeedsToDefaultProfile() {
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_26
+        ).use { database ->
+            database.execSQL(
+                "INSERT INTO playlists " +
+                    "(uid, name, is_thumbnail_permanent, thumbnail_stream_id, display_index) " +
+                    "VALUES (5, 'Existing local', 0, -1, 0)"
+            )
+            database.execSQL(
+                "INSERT INTO remote_playlists " +
+                    "(uid, service_id, name, url, display_index) " +
+                    "VALUES (6, 0, 'Existing remote', 'https://example.com/playlist', 0)"
+            )
+            database.execSQL(
+                "INSERT INTO saved_search_feed " +
+                    "(uid, name, service_id, query, content_filter, sort_filter, sort_order) " +
+                    "VALUES (7, 'Existing search', 0, 'query', '', '', 0)"
+            )
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_27,
+            true,
+            Migrations.MIGRATION_26_27
+        )
+
+        listOf("playlists" to 5L, "remote_playlists" to 6L, "saved_search_feed" to 7L)
+            .forEach { (table, id) ->
+                migrated.query(
+                    "SELECT profile_id FROM $table WHERE uid = $id"
+                ).use { cursor ->
+                    assertTrue(cursor.moveToFirst())
+                    assertEquals(defaultProfileId, cursor.getString(0))
+                }
+            }
+
+        migrated.execSQL(
+            "INSERT INTO remote_playlists " +
+                "(service_id, name, url, display_index, profile_id) " +
+                "VALUES (0, 'Other remote', 'https://example.com/playlist', 0, 'other-profile')"
+        )
+        migrated.query(
+            "SELECT COUNT(*) FROM remote_playlists " +
+                "WHERE url = 'https://example.com/playlist'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2, cursor.getInt(0))
+        }
+
+        migrated.execSQL(
+            "INSERT INTO saved_search_feed " +
+                "(name, service_id, query, content_filter, sort_filter, sort_order, profile_id) " +
+                "VALUES ('Other search', 0, 'query', '', '', 0, 'other-profile')"
+        )
+        migrated.query(
+            "SELECT COUNT(*) FROM saved_search_feed WHERE query = 'query'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2, cursor.getInt(0))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -1016,7 +1083,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_22_23,
                 Migrations.MIGRATION_23_24,
                 Migrations.MIGRATION_24_25,
-                Migrations.MIGRATION_25_26
+                Migrations.MIGRATION_25_26,
+                Migrations.MIGRATION_26_27
             )
             .build()
         testHelper.closeWhenFinished(database)

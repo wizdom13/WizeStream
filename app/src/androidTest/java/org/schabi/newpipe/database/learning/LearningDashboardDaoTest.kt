@@ -61,6 +61,26 @@ class LearningDashboardDaoTest {
                 title = "Course"
             )
         )
+        val foreignPlaylistId = database.playlistDAO().insert(
+            PlaylistEntity(
+                name = "Other profile course",
+                isThumbnailPermanent = false,
+                thumbnailStreamId = partialId,
+                displayIndex = 0,
+                profileId = "other-profile"
+            )
+        )
+        database.playlistStreamDAO().insert(
+            PlaylistStreamEntity(foreignPlaylistId, partialId, 0)
+        )
+        database.learningContentDAO().upsertSource(
+            LearningContentSourceEntity(
+                sourceId = "local-playlist:$foreignPlaylistId",
+                sourceType = LearningContentSourceEntity.TYPE_LOCAL_PLAYLIST,
+                localPlaylistId = foreignPlaylistId,
+                title = "Other profile course"
+            )
+        )
         database.streamStateDAO().insert(StreamStateEntity(partialId, 300_000))
         database.streamStateDAO().insert(StreamStateEntity(completedId, 600_000))
         database.streamStateDAO().insert(

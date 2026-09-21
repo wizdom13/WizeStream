@@ -99,7 +99,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         final AppDatabase database = NewPipeDatabase.getInstance(activity);
         localPlaylistManager = new LocalPlaylistManager(database,
                 ProfileManager.getActiveProfileId(requireContext()));
-        remotePlaylistManager = new RemotePlaylistManager(database);
+        remotePlaylistManager = new RemotePlaylistManager(database,
+                ProfileManager.getActiveProfileId(requireContext()));
         disposables = new CompositeDisposable();
 
         isLoadingComplete = new AtomicBoolean();
@@ -107,9 +108,18 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
         deletedItems = new ArrayList<>();
         try {
-            categories = PlaylistCategories.fromJson(PreferenceManager
-                    .getDefaultSharedPreferences(requireContext())
-                    .getString(PlaylistCategories.PREFERENCE_KEY, ""));
+            final var preferences =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext());
+            final String profileId = ProfileManager.getActiveProfileId(requireContext());
+            final String categoryKey = PlaylistCategories.preferenceKey(profileId);
+            String categoryJson = preferences.getString(categoryKey, null);
+            if (categoryJson == null && ProfileManager.DEFAULT_PROFILE_ID.equals(profileId)) {
+                categoryJson = preferences.getString(PlaylistCategories.PREFERENCE_KEY, "");
+                if (categoryJson != null && !categoryJson.isEmpty()) {
+                    preferences.edit().putString(categoryKey, categoryJson).apply();
+                }
+            }
+            categories = PlaylistCategories.fromJson(categoryJson == null ? "" : categoryJson);
         } catch (final com.grack.nanojson.JsonParserException error) {
             Log.e("BookmarkFragment", "Could not read playlist categories", error);
         }
@@ -695,8 +705,10 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     }
 
     private void saveCategories() {
+        final String profileId = ProfileManager.getActiveProfileId(requireContext());
         PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
-                .putString(PlaylistCategories.PREFERENCE_KEY, categories.toJson()).apply();
+                .putString(PlaylistCategories.preferenceKey(profileId), categories.toJson())
+                .apply();
         updateCategoryLabel();
         showFilteredPlaylists();
     }

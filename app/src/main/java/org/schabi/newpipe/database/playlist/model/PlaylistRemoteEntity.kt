@@ -14,6 +14,8 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.schabi.newpipe.database.LocalItem.LocalItemType
 import org.schabi.newpipe.database.playlist.PlaylistLocalItem
+import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_DISPLAY_INDEX
+import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_PROFILE_ID
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_SERVICE_ID
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_TABLE
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_URL
@@ -26,12 +28,22 @@ import org.schabi.newpipe.util.image.ImageStrategy
     tableName = REMOTE_PLAYLIST_TABLE,
     indices = [
         Index(
-            value = [REMOTE_PLAYLIST_SERVICE_ID, REMOTE_PLAYLIST_URL],
+            value = [
+                REMOTE_PLAYLIST_PROFILE_ID,
+                REMOTE_PLAYLIST_SERVICE_ID,
+                REMOTE_PLAYLIST_URL
+            ],
             unique = true
+        ),
+        Index(
+            value = [
+                REMOTE_PLAYLIST_PROFILE_ID,
+                REMOTE_PLAYLIST_DISPLAY_INDEX
+            ]
         )
     ]
 )
-data class PlaylistRemoteEntity(
+data class PlaylistRemoteEntity @JvmOverloads constructor(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = REMOTE_PLAYLIST_ID)
     override var uid: Long = 0,
@@ -55,7 +67,13 @@ data class PlaylistRemoteEntity(
     override var displayIndex: Long = -1, // Make sure the new item is on the top
 
     @ColumnInfo(name = REMOTE_PLAYLIST_STREAM_COUNT)
-    val streamCount: Long?
+    val streamCount: Long?,
+
+    @ColumnInfo(
+        name = REMOTE_PLAYLIST_PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    var profileId: String = DEFAULT_PROFILE_ID
 ) : PlaylistLocalItem {
 
     constructor(playlistInfo: PlaylistInfo) : this(
@@ -98,5 +116,7 @@ data class PlaylistRemoteEntity(
         const val REMOTE_PLAYLIST_UPLOADER_NAME = "uploader"
         const val REMOTE_PLAYLIST_DISPLAY_INDEX = "display_index"
         const val REMOTE_PLAYLIST_STREAM_COUNT = "stream_count"
+        const val REMOTE_PLAYLIST_PROFILE_ID = "profile_id"
+        const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
     }
 }

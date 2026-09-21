@@ -19,11 +19,32 @@ interface PlaylistDAO : BasicDAO<PlaylistEntity> {
     @Query("SELECT * FROM playlists")
     override fun getAll(): Flowable<List<PlaylistEntity>>
 
+    @Query(
+        """
+        SELECT * FROM playlists
+        WHERE profile_id = :profileId
+        ORDER BY display_index
+        """
+    )
+    fun getAllForProfile(profileId: String): Flowable<List<PlaylistEntity>>
+
     @Query("SELECT * FROM playlists")
     fun getAllDirect(): List<PlaylistEntity>
 
+    @Query(
+        """
+        SELECT * FROM playlists
+        WHERE profile_id = :profileId
+        ORDER BY display_index
+        """
+    )
+    fun getAllDirectForProfile(profileId: String): List<PlaylistEntity>
+
     @Query("DELETE FROM playlists")
     override fun deleteAll(): Int
+
+    @Query("DELETE FROM playlists WHERE profile_id = :profileId")
+    fun deleteAllForProfile(profileId: String): Int
 
     override fun listByService(serviceId: Int): Flowable<List<PlaylistEntity>> {
         throw UnsupportedOperationException()
@@ -32,23 +53,63 @@ interface PlaylistDAO : BasicDAO<PlaylistEntity> {
     @Query("SELECT * FROM playlists WHERE uid = :playlistId")
     fun getPlaylist(playlistId: Long): Flowable<MutableList<PlaylistEntity>>
 
+    @Query(
+        """
+        SELECT * FROM playlists
+        WHERE profile_id = :profileId AND uid = :playlistId
+        """
+    )
+    fun getPlaylistForProfile(
+        profileId: String,
+        playlistId: Long
+    ): Flowable<MutableList<PlaylistEntity>>
+
     @Query("SELECT * FROM playlists WHERE uid = :playlistId")
     fun getPlaylistDirect(playlistId: Long): PlaylistEntity?
+
+    @Query(
+        """
+        SELECT * FROM playlists
+        WHERE profile_id = :profileId AND uid = :playlistId
+        """
+    )
+    fun getPlaylistDirectForProfile(
+        profileId: String,
+        playlistId: Long
+    ): PlaylistEntity?
 
     @Query("DELETE FROM playlists WHERE uid = :playlistId")
     fun deletePlaylist(playlistId: Long): Int
 
+    @Query(
+        """
+        DELETE FROM playlists
+        WHERE profile_id = :profileId AND uid = :playlistId
+        """
+    )
+    fun deletePlaylistForProfile(profileId: String, playlistId: Long): Int
+
     @get:Query("SELECT COUNT(*) FROM playlists")
     val count: Flowable<Long>
+
+    @Query("SELECT COUNT(*) FROM playlists WHERE profile_id = :profileId")
+    fun getCountForProfile(profileId: String): Flowable<Long>
+
+    @Transaction
+    fun updateForProfile(profileId: String, playlist: PlaylistEntity): Int {
+        if (getPlaylistDirectForProfile(profileId, playlist.uid) == null) {
+            return 0
+        }
+        playlist.profileId = profileId
+        return update(playlist)
+    }
 
     @Transaction
     fun upsertPlaylist(playlist: PlaylistEntity): Long {
         if (playlist.uid == -1L) {
-            // This situation is probably impossible.
             return insert(playlist)
-        } else {
-            update(playlist)
-            return playlist.uid
         }
+        update(playlist)
+        return playlist.uid
     }
 }

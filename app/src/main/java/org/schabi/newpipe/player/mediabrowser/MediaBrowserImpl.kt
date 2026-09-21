@@ -436,7 +436,7 @@ class MediaBrowserImpl(
     ): Flowable<MutableList<PlaylistLocalItem>> {
         return MergedPlaylistManager.getMergedOrderedPlaylists(
             LocalPlaylistManager(database, profileId),
-            RemotePlaylistManager(database)
+            RemotePlaylistManager(database, profileId)
         )
     }
 
@@ -460,7 +460,10 @@ class MediaBrowserImpl(
     }
 
     private fun populateRemotePlaylist(playlistId: Long): Single<List<MediaItem>> {
-        return RemotePlaylistManager(database).getPlaylist(playlistId).firstOrError()
+        return RemotePlaylistManager(
+            database,
+            ProfileManager.getActiveProfileId(context)
+        ).getPlaylist(playlistId).firstOrError()
             .flatMap { ExtractorHelper.getPlaylistInfo(it.serviceId, it.url, false) }
             .map {
                 // ignore it.errors, i.e. ignore errors about specific items, since there would

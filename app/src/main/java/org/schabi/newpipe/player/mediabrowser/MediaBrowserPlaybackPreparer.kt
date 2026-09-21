@@ -153,7 +153,10 @@ class MediaBrowserPlaybackPreparer(
     }
 
     private fun extractRemotePlayQueue(playlistId: Long, index: Int): Single<PlayQueue> {
-        return RemotePlaylistManager(database).getPlaylist(playlistId).firstOrError()
+        return RemotePlaylistManager(
+            database,
+            ProfileManager.getActiveProfileId(context)
+        ).getPlaylist(playlistId).firstOrError()
             .flatMap { ExtractorHelper.getPlaylistInfo(it.serviceId, it.url, false) }
             // ignore info.errors, i.e. ignore errors about specific items, since there would
             // be no way to show the error properly in Android Auto anyway
