@@ -99,6 +99,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         itemUploaderView.setText(item.getUploaderName());
         final boolean possibleAi = AiSListContentHelper.shouldLabel(
                 itemBuilder.getContext(),
+                item.getServiceId(),
                 item.getUploaderUrl(),
                 item.getUploaderName());
         if (item.requiresMembership() && possibleAi) {
