@@ -10,11 +10,12 @@ WizeStream connects directly to the media services you choose to use. Those serv
 
 When update checks are enabled or manually requested, WizeStream contacts the GitHub Releases API for `wizdom13/WizeStream`. The app does not add a WizeStream account identifier or advertising identifier to those requests.
 
-AiSList content blocking is optional and disabled by default. When enabled or manually refreshed,
-WizeStream downloads the public high-confidence blocklist directly from the `Override92/AiSList`
-project on GitHub and caches it in app-private storage. The update request does not include the video
-or channel being viewed, a WizeStream account identifier, or an advertising identifier. Matching
-against the downloaded channel handles and IDs happens entirely on-device.
+AiSList content filtering is optional and disabled by default. When enabled or manually refreshed,
+WizeStream downloads the public high-confidence blocklist and medium-confidence warnlist directly
+from the `Override92/AiSList` project on GitHub and caches them in app-private storage. The update
+request does not include the video or channel being viewed, a WizeStream account identifier, or an
+advertising identifier. Matching against the downloaded channel handles and IDs happens entirely
+on-device.
 
 DeArrow is optional and disabled by default. When enabled for YouTube, WizeStream sends the video's
 public YouTube identifier to the community-operated DeArrow endpoints at `sponsor.ajay.app` and
