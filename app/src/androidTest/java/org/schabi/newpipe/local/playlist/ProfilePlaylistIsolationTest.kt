@@ -2,6 +2,7 @@ package org.schabi.newpipe.local.playlist
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -53,6 +54,7 @@ class ProfilePlaylistIsolationTest {
 
         managerA.appendToPlaylist(playlistB.uid, listOf(stream("foreign")))
             .test()
+            .awaitDone(5, TimeUnit.SECONDS)
             .assertComplete()
             .assertNoValues()
         assertEquals(
