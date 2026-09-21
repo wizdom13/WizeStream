@@ -6,6 +6,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.local.bookmark.PlaylistCategories
+import org.schabi.newpipe.sync.HistorySyncRecorder
 
 object ProfileDeletionManager {
     // Delete only data that has become profile-scoped so later phases can extend cleanup safely.
@@ -19,6 +20,11 @@ object ProfileDeletionManager {
 
         val appContext = context.applicationContext
         return Completable.fromAction {
+            runCatching {
+                val historySyncRecorder = HistorySyncRecorder.get(appContext)
+                historySyncRecorder.recordWatchAllDeleteForProfile(profileId)
+                historySyncRecorder.recordProgressAllDeleteForProfile(profileId)
+            }
             val database = NewPipeDatabase.getInstance(appContext)
             database.runInTransaction {
                 database.savedSearchFeedDAO().deleteAllForProfile(profileId)
