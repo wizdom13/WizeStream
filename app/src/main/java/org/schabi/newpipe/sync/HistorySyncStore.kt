@@ -119,7 +119,8 @@ internal interface HistorySyncStore {
 
 internal class RoomHistorySyncStore internal constructor(
     private val database: AppDatabase,
-    override val localPeerId: String
+    override val localPeerId: String,
+    private val canMaterializeProfile: (String) -> Boolean = { true }
 ) : HistorySyncStore {
     private val syncDao = database.historySyncDAO()
     private val searchHistoryDao = database.searchHistoryDAO()
@@ -679,6 +680,15 @@ internal class RoomHistorySyncStore internal constructor(
         profileId: String,
         identity: HistoryStreamIdentity
     ) {
+        if (!canMaterializeProfile(profileId)) {
+            val existing = streamDao.getStreamDirect(identity.serviceId, identity.url)
+            existing?.uid?.let { streamId ->
+                streamHistoryDao.deleteStreamHistoryForProfile(profileId, streamId)
+                streamStateDao.deleteStateForProfile(profileId, streamId)
+            }
+            return
+        }
+
         val records = syncDao.getRecords(HistorySyncCategory.WATCH.name)
             .filter { it.profileId == profileId }
         val streamRecords = records.filter { record ->
@@ -1004,7 +1014,10 @@ internal class RoomHistorySyncStore internal constructor(
             val stateRepository = AndroidSyncStateRepository(applicationContext)
             return RoomHistorySyncStore(
                 database = NewPipeDatabase.getInstance(applicationContext),
-                localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58()
+                localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58(),
+                canMaterializeProfile = { profileId ->
+                    ProfileManager.getProfile(applicationContext, profileId) != null
+                }
             )
         }
     }
