@@ -375,6 +375,7 @@
     <string name="device_sync_report_disabled">Disabled on this device</string>
     <string name="device_sync_sync_peer_succeeded">%1$s — sent %2$d, received %3$d</string>
     <string name="device_sync_sync_peer_failed">%1$s — failed: %2$s</string>
+    <string name="device_sync_category_profiles">Profiles</string>
     <string name="device_sync_category_subscriptions">Subscriptions</string>
     <string name="device_sync_category_playlists">Playlists</string>
     <string name="device_sync_category_watch_history">Watch history and playback progress</string>
