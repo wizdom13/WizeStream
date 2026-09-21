@@ -138,7 +138,19 @@ public final class PlayerService extends MediaLibraryService {
     }
 
     @Override
-    public int onStartCommand(final Intent intent, final int flags, final int startId) {
+    public int onStartCommand(@Nullable final Intent intent, final int flags, final int startId) {
+        if (intent == null) {
+            Log.w(TAG, "onStartCommand() called with a null intent");
+
+            // Android may recreate a previously started service with a null intent. There is
+            // nothing to handle in that case. If no player is active, clear only this started
+            // service instance; bound media-browser clients may keep the service alive.
+            if (player == null) {
+                stopSelf(startId);
+            }
+            return START_NOT_STICKY;
+        }
+
         if (DEBUG) {
             Log.d(TAG, "onStartCommand() called with: intent = [" + intent
                     + "], extras = [" + BundleKt.toDebugString(intent.getExtras())
