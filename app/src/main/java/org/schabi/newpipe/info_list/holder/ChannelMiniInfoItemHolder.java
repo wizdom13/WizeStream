@@ -54,6 +54,7 @@ public class ChannelMiniInfoItemHolder extends InfoItemHolder {
         String detailLine = getDetailLine(item);
         if (AiSListContentHelper.shouldLabel(
                 itemBuilder.getContext(),
+                item.getServiceId(),
                 item.getUrl(),
                 item.getName())) {
             final String possibleAi = itemBuilder.getContext()
