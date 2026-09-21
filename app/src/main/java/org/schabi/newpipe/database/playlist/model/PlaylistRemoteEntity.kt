@@ -14,6 +14,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.schabi.newpipe.database.LocalItem.LocalItemType
 import org.schabi.newpipe.database.playlist.PlaylistLocalItem
+import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_DISPLAY_INDEX
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_PROFILE_ID
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_SERVICE_ID
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity.Companion.REMOTE_PLAYLIST_TABLE
