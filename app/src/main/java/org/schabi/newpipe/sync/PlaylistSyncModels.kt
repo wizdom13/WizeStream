@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal const val PLAYLIST_SYNC_PROTOCOL_ID = "/wizestream/playlists/1.0.0"
 internal const val PLAYLIST_SYNC_VERSION = 1
@@ -146,6 +147,7 @@ internal data class PlaylistChange(
     val originRevision: Long,
     val lamportVersion: Long,
     val recordId: String,
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
     val recordType: PlaylistRecordType,
     val parentRecordId: String? = null,
     val type: PlaylistChangeType,
@@ -261,6 +263,7 @@ internal object PlaylistSyncValidation {
         val revisions = hashSetOf<Pair<String, Long>>()
         changes.forEach { change ->
             validatePeerId(change.originPeerId)
+            validateProfileId(change.profileId)
             if (
                 change.originRevision !in 1..MAX_SYNC_REVISION ||
                 change.lamportVersion !in 1..MAX_SYNC_REVISION
@@ -422,6 +425,7 @@ internal object PlaylistSyncValidation {
             playlist.displayIndex < MIN_PLAYLIST_DISPLAY_INDEX ||
             (playlist.streamCount ?: 0) < MIN_PLAYLIST_STREAM_COUNT ||
             change.recordId != PlaylistRecordId.remote(
+                change.profileId,
                 playlist.serviceId,
                 playlist.url
             )
@@ -443,6 +447,16 @@ internal object PlaylistSyncValidation {
             runCatching { StreamType.valueOf(stream.streamType) }.isFailure
         ) {
             throw PlaylistSyncException("Playlist stream metadata is invalid")
+        }
+    }
+
+    private fun validateProfileId(profileId: String) {
+        try {
+            if (UUID.fromString(profileId).toString() != profileId) {
+                throw IllegalArgumentException("Noncanonical UUID")
+            }
+        } catch (error: IllegalArgumentException) {
+            throw PlaylistSyncException("A playlist profile UUID is invalid", error)
         }
     }
 
@@ -478,7 +492,16 @@ internal object PlaylistRecordId {
     }
 
     fun remote(serviceId: Int, url: String): String {
-        return digest("remote\u0000$serviceId\u0000${url.trim()}")
+        return remote(ProfileManager.DEFAULT_PROFILE_ID, serviceId, url)
+    }
+
+    fun remote(profileId: String, serviceId: Int, url: String): String {
+        val identity = if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
+            "remote\u0000$serviceId\u0000${url.trim()}"
+        } else {
+            "remote\u0000$profileId\u0000$serviceId\u0000${url.trim()}"
+        }
+        return digest(identity)
     }
 
     private fun digest(value: String): String {

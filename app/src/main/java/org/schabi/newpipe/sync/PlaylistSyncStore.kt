@@ -19,7 +19,6 @@ import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncOriginStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncRecordEntity
-import org.schabi.newpipe.profiles.ProfileManager
 
 internal interface PlaylistSyncStore {
     val localPeerId: String
@@ -49,8 +48,7 @@ internal class RoomPlaylistSyncStore internal constructor(
 
     override fun reconcileLocalPlaylists() {
         database.runInTransaction {
-            val localPlaylists =
-                playlistDao.getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+            val localPlaylists = playlistDao.getAllDirect()
             val localPlaylistIds = localPlaylists.mapTo(hashSetOf(), PlaylistEntity::uid)
             localPlaylists.forEach(::reconcileLocalPlaylist)
 
@@ -61,7 +59,7 @@ internal class RoomPlaylistSyncStore internal constructor(
                 }
 
             val remotePlaylists =
-                remotePlaylistDao.getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                remotePlaylistDao.getAllDirect()
                     .filter { playlist ->
                         playlist.serviceId >= 0 &&
                             !playlist.url.isNullOrBlank() &&
@@ -69,6 +67,7 @@ internal class RoomPlaylistSyncStore internal constructor(
                     }
             val liveRemoteIds = remotePlaylists.mapTo(hashSetOf()) { playlist ->
                 PlaylistRecordId.remote(
+                    playlist.profileId,
                     playlist.serviceId,
                     requireNotNull(playlist.url)
                 )
@@ -76,7 +75,12 @@ internal class RoomPlaylistSyncStore internal constructor(
             remotePlaylists.forEach { playlist ->
                 val synced = SyncedRemotePlaylist.from(playlist)
                 saveLocalUpsert(
-                    recordId = PlaylistRecordId.remote(synced.serviceId, synced.url),
+                    profileId = playlist.profileId,
+                    recordId = PlaylistRecordId.remote(
+                        playlist.profileId,
+                        synced.serviceId,
+                        synced.url
+                    ),
                     recordType = PlaylistRecordType.REMOTE_PLAYLIST,
                     parentRecordId = null,
                     record = SyncedPlaylistRecord(remotePlaylist = synced)
@@ -217,7 +221,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             ).also(syncDao::upsertLocalMapping)
         val playlistRecordId = mapping.playlistRecordId
         val streams = playlistStreamDao.getOrderedStreamsDirectForProfile(
-            ProfileManager.DEFAULT_PROFILE_ID,
+            playlist.profileId,
             playlist.uid
         )
         if (streams.any(StreamEntity::isLocalMedia)) {
@@ -243,6 +247,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             displayIndex = playlist.displayIndex
         )
         saveLocalUpsert(
+            profileId = playlist.profileId,
             recordId = playlistRecordId,
             recordType = PlaylistRecordType.LOCAL_PLAYLIST,
             parentRecordId = null,
@@ -255,11 +260,16 @@ internal class RoomPlaylistSyncStore internal constructor(
             )
         }
         val liveItemRecords = syncDao.getChildRecords(playlistRecordId)
+            .filter { it.profileId == playlist.profileId }
             .filterNot(PlaylistSyncRecordEntity::isDeleted)
             .filter {
                 it.recordType == PlaylistRecordType.LOCAL_PLAYLIST_ITEM.name
             }
-        val orderedExisting = orderItemRecords(playlistRecordId, liveItemRecords)
+        val orderedExisting = orderItemRecords(
+            playlist.profileId,
+            playlistRecordId,
+            liveItemRecords
+        )
         val reusableItems = linkedMapOf<StreamIdentity, ArrayDeque<PlaylistSyncRecordEntity>>()
         orderedExisting.forEach { record ->
             val item = decodeRecord(record)?.localItem ?: return@forEach
@@ -274,6 +284,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             usedRecordIds += itemRecordId
             desiredOrder += itemRecordId
             saveLocalUpsert(
+                profileId = playlist.profileId,
                 recordId = itemRecordId,
                 recordType = PlaylistRecordType.LOCAL_PLAYLIST_ITEM,
                 parentRecordId = playlistRecordId,
@@ -291,6 +302,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             }
 
         saveLocalUpsert(
+            profileId = playlist.profileId,
             recordId = PlaylistRecordId.order(playlistRecordId),
             recordType = PlaylistRecordType.LOCAL_PLAYLIST_ORDER,
             parentRecordId = playlistRecordId,
@@ -317,6 +329,7 @@ internal class RoomPlaylistSyncStore internal constructor(
     }
 
     private fun saveLocalUpsert(
+        profileId: String,
         recordId: String,
         recordType: PlaylistRecordType,
         parentRecordId: String?,
@@ -325,6 +338,7 @@ internal class RoomPlaylistSyncStore internal constructor(
         val current = syncDao.getRecord(recordId)
         if (
             current != null &&
+            current.profileId == profileId &&
             !current.isDeleted &&
             current.recordType == recordType.name &&
             current.parentRecordId == parentRecordId &&
@@ -333,6 +347,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             return
         }
         saveLocalChange(
+            profileId = profileId,
             recordId = recordId,
             recordType = recordType,
             parentRecordId = parentRecordId,
@@ -350,6 +365,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             return
         }
         saveLocalChange(
+            profileId = currentRecord.profileId,
             recordId = currentRecord.recordId,
             recordType = currentRecord.parsedRecordType,
             parentRecordId = currentRecord.parentRecordId,
@@ -360,6 +376,7 @@ internal class RoomPlaylistSyncStore internal constructor(
     }
 
     private fun saveLocalChange(
+        profileId: String,
         recordId: String,
         recordType: PlaylistRecordType,
         parentRecordId: String?,
@@ -382,6 +399,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             originRevision = originRevision,
             lamportVersion = lamportVersion,
             recordId = recordId,
+            profileId = profileId,
             recordType = recordType,
             parentRecordId = parentRecordId,
             type = type,
@@ -399,11 +417,12 @@ internal class RoomPlaylistSyncStore internal constructor(
 
     private fun materializeLocalPlaylist(playlistRecordId: String) {
         val playlistRecord = syncDao.getRecord(playlistRecordId) ?: return
+        val profileId = playlistRecord.profileId
         val mapping = syncDao.getLocalMapping(playlistRecordId)
         if (playlistRecord.isDeleted) {
             mapping?.let {
                 playlistDao.deletePlaylistForProfile(
-                    ProfileManager.DEFAULT_PROFILE_ID,
+                    profileId,
                     it.playlistUid
                 )
             }
@@ -414,7 +433,7 @@ internal class RoomPlaylistSyncStore internal constructor(
         var playlistUid = mapping?.playlistUid
         var playlist = playlistUid?.let {
             playlistDao.getPlaylistDirectForProfile(
-                ProfileManager.DEFAULT_PROFILE_ID,
+                profileId,
                 it
             )
         }
@@ -425,7 +444,7 @@ internal class RoomPlaylistSyncStore internal constructor(
                     isThumbnailPermanent = false,
                     thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID,
                     displayIndex = metadata.displayIndex,
-                    profileId = ProfileManager.DEFAULT_PROFILE_ID
+                    profileId = profileId
                 )
             )
             syncDao.upsertLocalMapping(
@@ -433,16 +452,21 @@ internal class RoomPlaylistSyncStore internal constructor(
             )
             playlist = requireNotNull(
                 playlistDao.getPlaylistDirectForProfile(
-                    ProfileManager.DEFAULT_PROFILE_ID,
+                    profileId,
                     playlistUid
                 )
             )
         }
 
         val liveItemRecords = syncDao.getChildRecords(playlistRecordId)
+            .filter { it.profileId == profileId }
             .filterNot(PlaylistSyncRecordEntity::isDeleted)
             .filter { it.recordType == PlaylistRecordType.LOCAL_PLAYLIST_ITEM.name }
-        val orderedItemRecords = orderItemRecords(playlistRecordId, liveItemRecords)
+        val orderedItemRecords = orderItemRecords(
+            profileId,
+            playlistRecordId,
+            liveItemRecords
+        )
         val syncedItems = orderedItemRecords.map { record ->
             decodeRecord(record)?.localItem
                 ?: throw PlaylistSyncException("Stored playlist item data is invalid")
@@ -461,16 +485,16 @@ internal class RoomPlaylistSyncStore internal constructor(
         playlist.thumbnailStreamId = thumbnailId
             ?: streamIds.firstOrNull()
             ?: PlaylistEntity.DEFAULT_THUMBNAIL_ID
-        playlistDao.updateForProfile(ProfileManager.DEFAULT_PROFILE_ID, playlist)
+        playlistDao.updateForProfile(profileId, playlist)
 
         val materializedPlaylistUid = requireNotNull(playlistUid)
         playlistStreamDao.deleteBatchForProfile(
-            ProfileManager.DEFAULT_PROFILE_ID,
+            profileId,
             materializedPlaylistUid
         )
         if (streamIds.isNotEmpty()) {
             playlistStreamDao.insertAllForProfile(
-                ProfileManager.DEFAULT_PROFILE_ID,
+                profileId,
                 materializedPlaylistUid,
                 streamIds.mapIndexed { index, streamId ->
                     org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity(
@@ -487,34 +511,37 @@ internal class RoomPlaylistSyncStore internal constructor(
         val record = syncDao.getRecord(recordId) ?: return
         val remote = decodeRecord(record)?.remotePlaylist
             ?: throw PlaylistSyncException("Stored remote playlist metadata is invalid")
+        val profileId = record.profileId
         val existingId = remotePlaylistDao.getPlaylistIdForProfile(
-            ProfileManager.DEFAULT_PROFILE_ID,
+            profileId,
             remote.serviceId.toLong(),
             remote.url
         )
         if (record.isDeleted) {
             existingId?.let {
                 remotePlaylistDao.deletePlaylistForProfile(
-                    ProfileManager.DEFAULT_PROFILE_ID,
+                    profileId,
                     it
                 )
             }
         } else {
             remotePlaylistDao.upsertForProfile(
-                ProfileManager.DEFAULT_PROFILE_ID,
+                profileId,
                 remote.toEntity().apply {
-                    profileId = ProfileManager.DEFAULT_PROFILE_ID
+                    this.profileId = profileId
                 }
             )
         }
     }
 
     private fun orderItemRecords(
+        profileId: String,
         playlistRecordId: String,
         liveItemRecords: List<PlaylistSyncRecordEntity>
     ): List<PlaylistSyncRecordEntity> {
         val byId = liveItemRecords.associateBy(PlaylistSyncRecordEntity::recordId)
         val order = syncDao.getRecord(PlaylistRecordId.order(playlistRecordId))
+            ?.takeIf { it.profileId == profileId }
             ?.takeUnless(PlaylistSyncRecordEntity::isDeleted)
             ?.let(::decodeRecord)
             ?.localOrder
@@ -561,6 +588,7 @@ internal class RoomPlaylistSyncStore internal constructor(
             originRevision = entity.originRevision,
             lamportVersion = entity.lamportVersion,
             recordId = entity.recordId,
+            profileId = entity.profileId,
             recordType = parseRecordType(entity.recordType),
             parentRecordId = entity.parentRecordId,
             type = try {
@@ -580,6 +608,7 @@ internal class RoomPlaylistSyncStore internal constructor(
         originRevision = originRevision,
         lamportVersion = lamportVersion,
         recordId = recordId,
+        profileId = profileId,
         recordType = recordType.name,
         parentRecordId = parentRecordId,
         changeType = type.name,
@@ -590,6 +619,7 @@ internal class RoomPlaylistSyncStore internal constructor(
         currentRecord: PlaylistSyncRecordEntity?
     ) = PlaylistSyncRecordEntity(
         recordId = recordId,
+        profileId = profileId,
         recordType = recordType.name,
         parentRecordId = parentRecordId,
         lamportVersion = lamportVersion,

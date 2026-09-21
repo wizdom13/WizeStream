@@ -8,6 +8,7 @@ package org.schabi.newpipe.sync
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal class TestHistorySyncStore(
     override val localPeerId: String
@@ -24,8 +25,9 @@ internal class TestHistorySyncStore(
     private val localRevisions = linkedMapOf<HistorySyncCategory, Long>()
     private var lamportVersion = 0L
 
-    private val watchEvents = mutableListOf<SyncedWatchEvent>()
-    private val progress = linkedMapOf<HistoryStreamIdentity, SyncedPlaybackProgress>()
+    private val watchEvents = mutableListOf<Pair<String, SyncedWatchEvent>>()
+    private val progress =
+        linkedMapOf<Pair<String, HistoryStreamIdentity>, SyncedPlaybackProgress>()
     private val searchEvents = mutableListOf<SyncedSearchEvent>()
 
     val searchQueries: List<String>
@@ -47,18 +49,30 @@ internal class TestHistorySyncStore(
     }
 
     fun progressMillis(url: String): Long? {
-        return progress[HistoryStreamIdentity(SERVICE_ID, url)]?.progressMillis
+        return progressMillis(ProfileManager.DEFAULT_PROFILE_ID, url)
+    }
+
+    fun progressMillis(profileId: String, url: String): Long? {
+        return progress[profileId to HistoryStreamIdentity(SERVICE_ID, url)]?.progressMillis
     }
 
     fun repeatCount(url: String): Long {
+        return repeatCount(ProfileManager.DEFAULT_PROFILE_ID, url)
+    }
+
+    fun repeatCount(profileId: String, url: String): Long {
         return watchEvents
-            .filter { it.stream.identity == HistoryStreamIdentity(SERVICE_ID, url) }
-            .sumOf(SyncedWatchEvent::repeatCount)
+            .filter { (eventProfileId, event) ->
+                eventProfileId == profileId &&
+                    event.stream.identity == HistoryStreamIdentity(SERVICE_ID, url)
+            }
+            .sumOf { (_, event) -> event.repeatCount }
     }
 
     override fun reconcileLocal(category: HistorySyncCategory) = Unit
 
     override fun recordWatchEvent(
+        profileId: String,
         streamId: Long,
         watchedAtEpochMillis: Long,
         repeatCount: Long
@@ -66,6 +80,7 @@ internal class TestHistorySyncStore(
         val stream = requireStream(streamId)
         recordLocalChange(
             category = HistorySyncCategory.WATCH,
+            profileId = profileId,
             recordId = HistoryRecordId.watchEvent(),
             recordType = HistoryRecordType.WATCH_EVENT,
             type = HistoryChangeType.UPSERT,
@@ -80,6 +95,7 @@ internal class TestHistorySyncStore(
     }
 
     override fun recordProgress(
+        profileId: String,
         streamId: Long,
         progressMillis: Long,
         updatedAtEpochMillis: Long
@@ -87,7 +103,8 @@ internal class TestHistorySyncStore(
         val stream = requireStream(streamId)
         recordLocalChange(
             category = HistorySyncCategory.WATCH,
-            recordId = HistoryRecordId.progress(stream.identity),
+            profileId = profileId,
+            recordId = HistoryRecordId.progress(profileId, stream.identity),
             recordType = HistoryRecordType.PLAYBACK_PROGRESS,
             type = HistoryChangeType.UPSERT,
             record = SyncedHistoryRecord(
@@ -100,11 +117,12 @@ internal class TestHistorySyncStore(
         )
     }
 
-    override fun recordWatchStreamDelete(streamId: Long) {
+    override fun recordWatchStreamDelete(profileId: String, streamId: Long) {
         val stream = requireStream(streamId)
         recordLocalChange(
             category = HistorySyncCategory.WATCH,
-            recordId = HistoryRecordId.watchStreamTombstone(stream.identity),
+            profileId = profileId,
+            recordId = HistoryRecordId.watchStreamTombstone(profileId, stream.identity),
             recordType = HistoryRecordType.WATCH_STREAM_TOMBSTONE,
             type = HistoryChangeType.UPSERT,
             record = SyncedHistoryRecord(
@@ -113,7 +131,8 @@ internal class TestHistorySyncStore(
         )
         recordLocalChange(
             category = HistorySyncCategory.WATCH,
-            recordId = HistoryRecordId.progress(stream.identity),
+            profileId = profileId,
+            recordId = HistoryRecordId.progress(profileId, stream.identity),
             recordType = HistoryRecordType.PLAYBACK_PROGRESS,
             type = HistoryChangeType.DELETE,
             record = SyncedHistoryRecord(
@@ -126,20 +145,22 @@ internal class TestHistorySyncStore(
         )
     }
 
-    override fun recordWatchAllDelete() {
+    override fun recordWatchAllDelete(profileId: String) {
         recordLocalChange(
             category = HistorySyncCategory.WATCH,
-            recordId = HistoryRecordId.watchAllTombstone(),
+            profileId = profileId,
+            recordId = HistoryRecordId.watchAllTombstone(profileId),
             recordType = HistoryRecordType.WATCH_ALL_TOMBSTONE,
             type = HistoryChangeType.UPSERT,
             record = null
         )
     }
 
-    override fun recordProgressAllDelete() {
+    override fun recordProgressAllDelete(profileId: String) {
         recordLocalChange(
             category = HistorySyncCategory.WATCH,
-            recordId = HistoryRecordId.playbackAllTombstone(),
+            profileId = profileId,
+            recordId = HistoryRecordId.playbackAllTombstone(profileId),
             recordType = HistoryRecordType.PLAYBACK_ALL_TOMBSTONE,
             type = HistoryChangeType.UPSERT,
             record = null
@@ -271,6 +292,7 @@ internal class TestHistorySyncStore(
 
     private fun recordLocalChange(
         category: HistorySyncCategory,
+        profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
         recordId: String,
         recordType: HistoryRecordType,
         type: HistoryChangeType,
@@ -290,6 +312,7 @@ internal class TestHistorySyncStore(
             originRevision = localRevision,
             lamportVersion = lamportVersion,
             recordId = recordId,
+            profileId = profileId,
             recordType = recordType,
             type = type,
             record = record
@@ -309,39 +332,45 @@ internal class TestHistorySyncStore(
 
     private fun materializeWatch() {
         val watchRecords = records[HistorySyncCategory.WATCH].orEmpty().values
-        val globalWatchCutoff = watchRecords.firstOrNull {
-            it.recordId == HistoryRecordId.watchAllTombstone()
-        }?.versionStamp
-        val streamCutoffs = watchRecords
-            .filter { it.recordType == HistoryRecordType.WATCH_STREAM_TOMBSTONE }
-            .associate { change ->
-                requireNotNull(change.record?.watchStreamTombstone)
-                    .stream.identity to change.versionStamp
-            }
         watchEvents.clear()
-        watchEvents += watchRecords
-            .filter { it.recordType == HistoryRecordType.WATCH_EVENT }
-            .filter { it.type != HistoryChangeType.DELETE }
-            .filter { globalWatchCutoff == null || it.versionStamp > globalWatchCutoff }
-            .filter { change ->
-                val event = requireNotNull(change.record?.watchEvent)
-                val cutoff = streamCutoffs[event.stream.identity]
-                cutoff == null || change.versionStamp > cutoff
-            }
-            .map { requireNotNull(it.record?.watchEvent) }
-
-        val progressCutoff = watchRecords.firstOrNull {
-            it.recordId == HistoryRecordId.playbackAllTombstone()
-        }?.versionStamp
         progress.clear()
-        watchRecords
-            .filter { it.recordType == HistoryRecordType.PLAYBACK_PROGRESS }
-            .filter { it.type != HistoryChangeType.DELETE }
-            .filter { progressCutoff == null || it.versionStamp > progressCutoff }
-            .forEach { change ->
-                val item = requireNotNull(change.record?.playbackProgress)
-                progress[item.stream.identity] = item
-            }
+
+        watchRecords.map(HistoryChange::profileId).distinct().forEach { profileId ->
+            val profileRecords = watchRecords.filter { it.profileId == profileId }
+            val globalWatchCutoff = profileRecords.firstOrNull {
+                it.recordId == HistoryRecordId.watchAllTombstone(profileId)
+            }?.versionStamp
+            val streamCutoffs = profileRecords
+                .filter { it.recordType == HistoryRecordType.WATCH_STREAM_TOMBSTONE }
+                .associate { change ->
+                    requireNotNull(change.record?.watchStreamTombstone)
+                        .stream.identity to change.versionStamp
+                }
+            watchEvents += profileRecords
+                .filter { it.recordType == HistoryRecordType.WATCH_EVENT }
+                .filter { it.type != HistoryChangeType.DELETE }
+                .filter {
+                    globalWatchCutoff == null || it.versionStamp > globalWatchCutoff
+                }
+                .filter { change ->
+                    val event = requireNotNull(change.record?.watchEvent)
+                    val cutoff = streamCutoffs[event.stream.identity]
+                    cutoff == null || change.versionStamp > cutoff
+                }
+                .map { profileId to requireNotNull(it.record?.watchEvent) }
+
+            val progressCutoff = profileRecords.firstOrNull {
+                it.recordId == HistoryRecordId.playbackAllTombstone(profileId)
+            }?.versionStamp
+            profileRecords
+                .filter { it.recordType == HistoryRecordType.PLAYBACK_PROGRESS }
+                .filter { it.type != HistoryChangeType.DELETE }
+                .filter { progressCutoff == null || it.versionStamp > progressCutoff }
+                .forEach { change ->
+                    val item = requireNotNull(change.record?.playbackProgress)
+                    progress[profileId to item.stream.identity] = item
+                }
+        }
     }
 
     private fun materializeSearch() {

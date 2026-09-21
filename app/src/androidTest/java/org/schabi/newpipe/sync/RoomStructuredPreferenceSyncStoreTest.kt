@@ -23,6 +23,7 @@ import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.settings.tabs.Tab
 import org.schabi.newpipe.settings.tabs.TabsJsonHelper
 
@@ -57,6 +58,97 @@ class RoomStructuredPreferenceSyncStoreTest {
         tabletDatabase.close()
         phonePreferences.edit().clear().commit()
         tabletPreferences.edit().clear().commit()
+    }
+
+    @Test
+    fun feedGroupsWithSameIdentityStayIsolatedAcrossProfiles() {
+        val workProfile = "11111111-1111-1111-1111-111111111111"
+        seedProfileFeedGroup(
+            phoneDatabase,
+            ProfileManager.DEFAULT_PROFILE_ID,
+            "https://example.com/channel/shared",
+            "News"
+        )
+        seedProfileFeedGroup(
+            phoneDatabase,
+            workProfile,
+            "https://example.com/channel/shared",
+            "News"
+        )
+        seedProfileSubscription(
+            tabletDatabase,
+            ProfileManager.DEFAULT_PROFILE_ID,
+            "https://example.com/channel/shared"
+        )
+        seedProfileSubscription(
+            tabletDatabase,
+            workProfile,
+            "https://example.com/channel/shared"
+        )
+
+        val phoneStore = RoomStructuredPreferenceSyncStore(
+            context,
+            phoneDatabase,
+            newPeerId(),
+            phonePreferences
+        )
+        val tabletStore = RoomStructuredPreferenceSyncStore(
+            context,
+            tabletDatabase,
+            newPeerId(),
+            tabletPreferences
+        )
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+
+        synchronize(
+            StructuredPreferenceCategory.FEED_GROUPS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            setOf(ProfileManager.DEFAULT_PROFILE_ID, workProfile),
+            tabletDatabase.feedGroupDAO().getAllDirect().mapTo(mutableSetOf()) {
+                it.profileId
+            }
+        )
+        assertProfileGroupMembership(
+            tabletDatabase,
+            ProfileManager.DEFAULT_PROFILE_ID,
+            "https://example.com/channel/shared"
+        )
+        assertProfileGroupMembership(
+            tabletDatabase,
+            workProfile,
+            "https://example.com/channel/shared"
+        )
+
+        phoneDatabase.feedGroupDAO().deleteAllForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+        synchronize(
+            StructuredPreferenceCategory.FEED_GROUPS,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertTrue(
+            tabletDatabase.feedGroupDAO()
+                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                .isEmpty()
+        )
+        assertEquals(
+            1,
+            tabletDatabase.feedGroupDAO().getAllDirectForProfile(workProfile).size
+        )
+        assertProfileGroupMembership(
+            tabletDatabase,
+            workProfile,
+            "https://example.com/channel/shared"
+        )
     }
 
     @Test
@@ -316,6 +408,69 @@ class RoomStructuredPreferenceSyncStoreTest {
             type = StructuredPreferenceChangeType.UPSERT,
             record = record
         )
+    }
+
+    private fun seedProfileSubscription(
+        database: AppDatabase,
+        profileId: String,
+        url: String
+    ) {
+        database.subscriptionDAO().upsertAll(
+            listOf(
+                SubscriptionEntity(
+                    serviceId = SERVICE_ID,
+                    url = url,
+                    name = profileId,
+                    profileId = profileId
+                )
+            )
+        )
+    }
+
+    private fun seedProfileFeedGroup(
+        database: AppDatabase,
+        profileId: String,
+        memberUrl: String,
+        name: String
+    ) {
+        seedProfileSubscription(database, profileId, memberUrl)
+        val groupId = database.feedGroupDAO().insert(
+            FeedGroupEntity(
+                uid = 0,
+                name = name,
+                icon = FeedGroupIcon.NEWS,
+                profileId = profileId
+            )
+        )
+        val memberId = requireNotNull(
+            database.subscriptionDAO().getSubscriptionDirectForProfile(
+                profileId,
+                SERVICE_ID,
+                memberUrl
+            )
+        ).uid
+        database.feedGroupDAO().updateSubscriptionsForGroupForProfile(
+            profileId,
+            groupId,
+            listOf(memberId)
+        )
+    }
+
+    private fun assertProfileGroupMembership(
+        database: AppDatabase,
+        profileId: String,
+        expectedUrl: String
+    ) {
+        val group = database.feedGroupDAO().getAllDirectForProfile(profileId).single()
+        val subscriptions = database.subscriptionDAO()
+            .getAllDirectForProfile(profileId)
+            .associateBy { it.uid }
+        val urls = database.feedGroupDAO()
+            .getSubscriptionIdsForDirectForProfile(profileId, group.uid)
+            .mapNotNull(subscriptions::get)
+            .mapNotNull(SubscriptionEntity::url)
+            .toSet()
+        assertEquals(setOf(expectedUrl), urls)
     }
 
     private fun seedFeedGroups(database: AppDatabase, memberUrl: String) {

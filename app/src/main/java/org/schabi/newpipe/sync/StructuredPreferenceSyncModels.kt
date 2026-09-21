@@ -10,6 +10,7 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.util.UUID
 import kotlinx.serialization.Serializable
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal const val STRUCTURED_PREFERENCE_SYNC_PROTOCOL_ID =
     "/wizestream/structured-preferences/1.0.0"
@@ -58,19 +59,22 @@ internal enum class StructuredPreferenceChangeType {
 @Serializable
 internal data class SyncedFeedGroup(
     val name: String,
-    val iconId: Int
+    val iconId: Int,
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID
 )
 
 @Serializable
 internal data class SyncedFeedGroupMembership(
     val groupRecordId: String,
     val serviceId: Int,
-    val subscriptionUrl: String
+    val subscriptionUrl: String,
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID
 )
 
 @Serializable
 internal data class SyncedFeedGroupOrder(
-    val groupRecordIds: List<String>
+    val groupRecordIds: List<String>,
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID
 )
 
 @Serializable
@@ -440,7 +444,8 @@ internal object StructuredPreferenceSyncValidation {
                     group.name.isBlank() ||
                     group.name != group.name.trim() ||
                     group.name.length > MAX_STRUCTURED_NAME_LENGTH ||
-                    group.iconId !in 0..MAX_FEED_GROUP_ICON_ID
+                    group.iconId !in 0..MAX_FEED_GROUP_ICON_ID ||
+                    !isCanonicalProfileId(group.profileId)
                 ) {
                     invalidRecord("Feed group data is invalid")
                 }
@@ -459,6 +464,7 @@ internal object StructuredPreferenceSyncValidation {
                     membership.subscriptionUrl.isBlank() ||
                     membership.subscriptionUrl != membership.subscriptionUrl.trim() ||
                     membership.subscriptionUrl.length > MAX_STRUCTURED_URL_LENGTH ||
+                    !isCanonicalProfileId(membership.profileId) ||
                     change.recordId != StructuredPreferenceRecordId.feedGroupMembership(
                         parent,
                         membership.serviceId,
@@ -473,11 +479,16 @@ internal object StructuredPreferenceSyncValidation {
                 requireCategory(change, StructuredPreferenceCategory.FEED_GROUPS)
                 requireUpsert(change)
                 requireNoParent(change)
-                if (change.recordId != StructuredPreferenceRecordId.feedGroupOrder()) {
-                    invalidRecord("The feed group order identity is invalid")
-                }
                 val order = record.feedGroupOrder
                     ?: invalidRecord("Feed group order data is missing")
+                if (
+                    !isCanonicalProfileId(order.profileId) ||
+                    change.recordId != StructuredPreferenceRecordId.feedGroupOrder(
+                        order.profileId
+                    )
+                ) {
+                    invalidRecord("The feed group order identity is invalid")
+                }
                 validateOrder(order.groupRecordIds, MAX_FEED_GROUPS, ::validateUuid)
             }
 
@@ -799,6 +810,11 @@ internal object StructuredPreferenceSyncValidation {
         }
     }
 
+    private fun isCanonicalProfileId(profileId: String): Boolean {
+        return runCatching { UUID.fromString(profileId).toString() == profileId }
+            .getOrDefault(false)
+    }
+
     private fun validatePeerId(peerId: String) {
         try {
             PeerId.fromBase58(peerId)
@@ -853,9 +869,28 @@ internal object StructuredPreferenceRecordId {
         iconId: Int,
         duplicateOrdinal: Int
     ): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(
+        return initialFeedGroup(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            name,
+            iconId,
+            duplicateOrdinal
+        )
+    }
+
+    fun initialFeedGroup(
+        profileId: String,
+        name: String,
+        iconId: Int,
+        duplicateOrdinal: Int
+    ): String {
+        val identity = if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
             "feed-group\u0000${name.trim()}\u0000$iconId\u0000$duplicateOrdinal"
-                .toByteArray(Charsets.UTF_8)
+        } else {
+            "feed-group\u0000$profileId\u0000${name.trim()}\u0000$iconId\u0000" +
+                duplicateOrdinal
+        }
+        val digest = MessageDigest.getInstance("SHA-256").digest(
+            identity.toByteArray(Charsets.UTF_8)
         )
         digest[6] = ((digest[6].toInt() and 0x0f) or 0x50).toByte()
         digest[8] = ((digest[8].toInt() and 0x3f) or 0x80).toByte()
@@ -876,7 +911,15 @@ internal object StructuredPreferenceRecordId {
         )
     }
 
-    fun feedGroupOrder(): String = digest("feed-group-order")
+    fun feedGroupOrder(): String = feedGroupOrder(ProfileManager.DEFAULT_PROFILE_ID)
+
+    fun feedGroupOrder(profileId: String): String {
+        return if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
+            digest("feed-group-order")
+        } else {
+            digest("feed-group-order\u0000$profileId")
+        }
+    }
 
     fun homeTab(tab: SyncedHomeTab): String {
         return digest(

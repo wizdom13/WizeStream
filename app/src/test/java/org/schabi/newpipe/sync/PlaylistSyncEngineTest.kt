@@ -13,6 +13,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 class PlaylistSyncEngineTest {
     @Test
@@ -57,6 +58,43 @@ class PlaylistSyncEngineTest {
         val repeatRounds = synchronize(phone, phoneStore, tablet, tabletStore)
         assertEquals(1, repeatRounds)
         assertTrue(phone.createRequest(tabletStore.localPeerId).changes.isEmpty())
+    }
+
+    @Test
+    fun `same remote playlist in two profiles stays isolated`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = PlaylistSyncEngine(phoneStore)
+        val tablet = PlaylistSyncEngine(tabletStore)
+        val workProfile = "11111111-1111-1111-1111-111111111111"
+
+        phoneStore.bookmarkRemotePlaylistForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            0,
+            REMOTE_URL,
+            "Personal"
+        )
+        phoneStore.bookmarkRemotePlaylistForProfile(
+            workProfile,
+            0,
+            REMOTE_URL,
+            "Work"
+        )
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(
+            setOf(ProfileManager.DEFAULT_PROFILE_ID, workProfile),
+            tabletStore.remoteProfileIdsForUrl(REMOTE_URL)
+        )
+
+        phoneStore.deleteRemotePlaylistForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            0,
+            REMOTE_URL
+        )
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(setOf(workProfile), tabletStore.remoteProfileIdsForUrl(REMOTE_URL))
     }
 
     @Test

@@ -22,6 +22,7 @@ class Libp2pSyncNode(
     private val advertisedAddressProvider: (Host) -> List<String> = { currentHost ->
         currentHost.listenAddresses().map(Multiaddr::toString)
     },
+    private val profileSyncEngine: ProfileSyncEngine? = null,
     private val subscriptionSyncEngine: SubscriptionSyncEngine? = null,
     private val listenAddress: String = LISTEN_ADDRESS,
     private val playlistSyncEngine: PlaylistSyncEngine? = null,
@@ -33,6 +34,9 @@ class Libp2pSyncNode(
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
     private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
+    private val profileProtocol = ProfileSyncProtocolBinding(
+        ::handleProfileSyncRequest
+    )
     private val subscriptionProtocol = SubscriptionSyncProtocolBinding(
         ::handleSubscriptionSyncRequest
     )
@@ -62,6 +66,7 @@ class Libp2pSyncNode(
         }
         protocols {
             +pairingProtocol
+            +profileProtocol
             +subscriptionProtocol
             +playlistProtocol
             +historyProtocol
@@ -213,6 +218,87 @@ class Libp2pSyncNode(
             throw PairingException("Secure pairing failed", error)
         } finally {
             controller.close()
+        }
+    }
+
+    @Throws(ProfileSyncException::class)
+    fun syncProfiles(
+        peer: TrustedPeer,
+        recordStatus: Boolean = true
+    ): ProfileSyncResult {
+        val currentHost = requireStartedHost()
+        val engine = profileSyncEngine
+            ?: throw ProfileSyncException("Profile synchronization is unavailable")
+        ensureTrusted(peer.peerId)
+        val remotePeerId = parsePeerId(peer.peerId)
+        val remoteAddresses = parseAddresses(remotePeerId, peer.addresses)
+
+        try {
+            val request = engine.createRequest()
+            val streamPromise = profileProtocol.dial(
+                currentHost,
+                remotePeerId,
+                *remoteAddresses
+            )
+            val controller = try {
+                streamPromise.controller.get(
+                    SYNC_TIMEOUT_SECONDS,
+                    TimeUnit.SECONDS
+                )
+            } catch (error: Exception) {
+                throw ProfileSyncException(
+                    "Could not reach ${peer.deviceName}",
+                    error
+                )
+            }
+
+            val response = try {
+                controller.sendRequest(request)
+                controller.response.get(SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (error: Exception) {
+                throw ProfileSyncException(
+                    "Profile synchronization with ${peer.deviceName} failed",
+                    error
+                )
+            } finally {
+                controller.close()
+            }
+
+            val applied = engine.handleResponse(response)
+            recordSyncStatus(
+                recordStatus,
+                peer.peerId,
+                System.currentTimeMillis(),
+                null
+            )
+            rememberPeerAddresses(peer)
+            return ProfileSyncResult(
+                peer = peer,
+                sentChanges = request.profiles.size,
+                receivedChanges = response.profiles.size,
+                addedProfiles = applied.addedProfiles,
+                updatedProfiles = applied.updatedProfiles
+            )
+        } catch (error: ProfileSyncException) {
+            recordSyncStatus(
+                recordStatus,
+                peer.peerId,
+                null,
+                error.message ?: "Profile synchronization failed"
+            )
+            throw error
+        } catch (error: Exception) {
+            val wrapped = ProfileSyncException(
+                "Profile synchronization with ${peer.deviceName} failed",
+                error
+            )
+            recordSyncStatus(
+                recordStatus,
+                peer.peerId,
+                null,
+                wrapped.message
+            )
+            throw wrapped
         }
     }
 
@@ -683,6 +769,33 @@ class Libp2pSyncNode(
                 )
             )
         }
+    }
+
+    private fun handleProfileSyncRequest(
+        remotePeerId: PeerId,
+        request: ProfileSyncRequest,
+        controller: ProfileSyncProtocolController
+    ) {
+        val peerIdValue = remotePeerId.toBase58()
+        val response = try {
+            ensureTrusted(peerIdValue)
+            val engine = profileSyncEngine
+                ?: throw ProfileSyncException("Profile synchronization is unavailable")
+            engine.handleRequest(request)
+        } catch (error: Exception) {
+            ProfileSyncResponse(
+                accepted = false,
+                error = (
+                    error.message ?: "The profile synchronization request was rejected"
+                    ).take(MAX_SYNC_ERROR_LENGTH)
+            )
+        }
+        controller.sendResponse(response)
+        stateRepository.updateTrustedPeerSyncStatus(
+            peerIdValue,
+            if (response.accepted) System.currentTimeMillis() else null,
+            response.error
+        )
     }
 
     private fun handleSubscriptionSyncRequest(

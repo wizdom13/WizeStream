@@ -6,6 +6,7 @@
 package org.schabi.newpipe.sync
 
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal class TestSubscriptionSyncStore(
     override val localPeerId: String
@@ -31,12 +32,22 @@ internal class TestSubscriptionSyncStore(
         }
     }
 
+    fun profileIdsForUrl(url: String): Set<String> {
+        return records.values
+            .filter {
+                it.url == url &&
+                    it.type == SubscriptionChangeType.UPSERT
+            }
+            .mapTo(mutableSetOf(), SubscriptionChange::profileId)
+    }
+
     override fun reconcileLocalSubscriptions() = Unit
 
     override fun recordLocalUpsert(subscription: SubscriptionEntity) {
         val synced = SyncedSubscription.from(subscription)
-        subscriptions[recordId(synced.serviceId, synced.url)] = synced
+        subscriptions[recordId(subscription.profileId, synced.serviceId, synced.url)] = synced
         recordLocalChange(
+            subscription.profileId,
             synced.serviceId,
             synced.url,
             SubscriptionChangeType.UPSERT,
@@ -44,9 +55,10 @@ internal class TestSubscriptionSyncStore(
         )
     }
 
-    override fun recordLocalDelete(serviceId: Int, url: String) {
-        subscriptions.remove(recordId(serviceId, url))
+    override fun recordLocalDelete(profileId: String, serviceId: Int, url: String) {
+        subscriptions.remove(recordId(profileId, serviceId, url))
         recordLocalChange(
+            profileId,
             serviceId,
             url,
             SubscriptionChangeType.DELETE,
@@ -55,17 +67,31 @@ internal class TestSubscriptionSyncStore(
     }
 
     fun add(serviceId: Int, url: String, name: String = url) {
+        addForProfile(ProfileManager.DEFAULT_PROFILE_ID, serviceId, url, name)
+    }
+
+    fun addForProfile(
+        profileId: String,
+        serviceId: Int,
+        url: String,
+        name: String = url
+    ) {
         recordLocalUpsert(
             SubscriptionEntity(
                 serviceId = serviceId,
                 url = url,
-                name = name
+                name = name,
+                profileId = profileId
             )
         )
     }
 
     fun delete(serviceId: Int, url: String) {
-        recordLocalDelete(serviceId, url)
+        recordLocalDelete(ProfileManager.DEFAULT_PROFILE_ID, serviceId, url)
+    }
+
+    fun deleteForProfile(profileId: String, serviceId: Int, url: String) {
+        recordLocalDelete(profileId, serviceId, url)
     }
 
     override fun getKnownRevisions(): Map<String, Long> {
@@ -140,12 +166,13 @@ internal class TestSubscriptionSyncStore(
     }
 
     private fun recordLocalChange(
+        profileId: String,
         serviceId: Int,
         url: String,
         type: SubscriptionChangeType,
         subscription: SyncedSubscription?
     ) {
-        val recordId = recordId(serviceId, url)
+        val recordId = recordId(profileId, serviceId, url)
         val existing = records[recordId]
         if (
             existing != null &&
@@ -165,6 +192,7 @@ internal class TestSubscriptionSyncStore(
             originRevision = localRevision,
             lamportVersion = lamportVersion,
             recordId = recordId,
+            profileId = profileId,
             serviceId = serviceId,
             url = url,
             type = type,
@@ -183,7 +211,7 @@ internal class TestSubscriptionSyncStore(
         knownRevisions[originPeerId] = revision
     }
 
-    private fun recordId(serviceId: Int, url: String): String {
-        return SubscriptionRecordId.from(serviceId, url)
+    private fun recordId(profileId: String, serviceId: Int, url: String): String {
+        return SubscriptionRecordId.from(profileId, serviceId, url)
     }
 }

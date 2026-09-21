@@ -23,7 +23,11 @@ internal interface SubscriptionSyncStore {
 
     fun recordLocalUpsert(subscription: SubscriptionEntity)
 
-    fun recordLocalDelete(serviceId: Int, url: String)
+    fun recordLocalDelete(profileId: String, serviceId: Int, url: String)
+
+    fun recordLocalDelete(serviceId: Int, url: String) {
+        recordLocalDelete(ProfileManager.DEFAULT_PROFILE_ID, serviceId, url)
+    }
 
     fun getKnownRevisions(): Map<String, Long>
 
@@ -46,10 +50,11 @@ internal class RoomSubscriptionSyncStore private constructor(
     override fun reconcileLocalSubscriptions() {
         database.runInTransaction {
             val subscriptions = subscriptionDao
-                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                .getAllDirect()
                 .filter(::isSynchronizable)
             val liveRecords = subscriptions.associateBy { subscription ->
                 SubscriptionRecordId.from(
+                    subscription.profileId,
                     subscription.serviceId,
                     requireNotNull(subscription.url)
                 )
@@ -60,6 +65,7 @@ internal class RoomSubscriptionSyncStore private constructor(
 
             subscriptions.forEach { subscription ->
                 val recordId = SubscriptionRecordId.from(
+                    subscription.profileId,
                     subscription.serviceId,
                     requireNotNull(subscription.url)
                 )
@@ -79,7 +85,11 @@ internal class RoomSubscriptionSyncStore private constructor(
                 .filterNot(SubscriptionSyncRecordEntity::isDeleted)
                 .filterNot { record -> liveRecords.containsKey(record.recordId) }
                 .forEach { record ->
-                    recordLocalDeleteInTransaction(record.serviceId, record.url)
+                    recordLocalDeleteInTransaction(
+                        record.profileId,
+                        record.serviceId,
+                        record.url
+                    )
                 }
         }
     }
@@ -90,9 +100,9 @@ internal class RoomSubscriptionSyncStore private constructor(
         }
     }
 
-    override fun recordLocalDelete(serviceId: Int, url: String) {
+    override fun recordLocalDelete(profileId: String, serviceId: Int, url: String) {
         database.runInTransaction {
-            recordLocalDeleteInTransaction(serviceId, url)
+            recordLocalDeleteInTransaction(profileId, serviceId, url)
         }
     }
 
@@ -189,14 +199,14 @@ internal class RoomSubscriptionSyncStore private constructor(
                     when (change.type) {
                         SubscriptionChangeType.UPSERT -> {
                             val existing = subscriptionDao.getSubscriptionDirectForProfile(
-                                ProfileManager.DEFAULT_PROFILE_ID,
+                                change.profileId,
                                 change.serviceId,
                                 change.url
                             )
                             val incoming = requireNotNull(change.subscription)
                                 .toEntity(existing)
                                 .apply {
-                                    profileId = ProfileManager.DEFAULT_PROFILE_ID
+                                    profileId = change.profileId
                                 }
                             subscriptionDao.upsertAll(listOf(incoming))
                             if (existing == null) {
@@ -207,7 +217,7 @@ internal class RoomSubscriptionSyncStore private constructor(
                         SubscriptionChangeType.DELETE -> {
                             if (
                                 subscriptionDao.deleteSubscriptionForProfile(
-                                    ProfileManager.DEFAULT_PROFILE_ID,
+                                    change.profileId,
                                     change.serviceId,
                                     change.url
                                 ) > 0
@@ -233,12 +243,10 @@ internal class RoomSubscriptionSyncStore private constructor(
     }
 
     private fun recordLocalUpsertInTransaction(subscription: SubscriptionEntity) {
-        if (subscription.profileId != ProfileManager.DEFAULT_PROFILE_ID) {
-            return
-        }
         val syncedSubscription = SyncedSubscription.from(subscription)
         validateLocalIdentity(syncedSubscription.serviceId, syncedSubscription.url)
         val recordId = SubscriptionRecordId.from(
+            subscription.profileId,
             syncedSubscription.serviceId,
             syncedSubscription.url
         )
@@ -253,6 +261,7 @@ internal class RoomSubscriptionSyncStore private constructor(
             return
         }
         saveLocalChange(
+            profileId = subscription.profileId,
             recordId = recordId,
             serviceId = syncedSubscription.serviceId,
             url = syncedSubscription.url,
@@ -262,15 +271,20 @@ internal class RoomSubscriptionSyncStore private constructor(
         )
     }
 
-    private fun recordLocalDeleteInTransaction(serviceId: Int, url: String) {
+    private fun recordLocalDeleteInTransaction(
+        profileId: String,
+        serviceId: Int,
+        url: String
+    ) {
         val canonicalUrl = url.trim()
         validateLocalIdentity(serviceId, canonicalUrl)
-        val recordId = SubscriptionRecordId.from(serviceId, canonicalUrl)
+        val recordId = SubscriptionRecordId.from(profileId, serviceId, canonicalUrl)
         val currentRecord = syncDao.getRecord(recordId)
         if (currentRecord?.isDeleted == true) {
             return
         }
         saveLocalChange(
+            profileId = profileId,
             recordId = recordId,
             serviceId = serviceId,
             url = canonicalUrl,
@@ -281,6 +295,7 @@ internal class RoomSubscriptionSyncStore private constructor(
     }
 
     private fun saveLocalChange(
+        profileId: String,
         recordId: String,
         serviceId: Int,
         url: String,
@@ -303,6 +318,7 @@ internal class RoomSubscriptionSyncStore private constructor(
             originRevision = originRevision,
             lamportVersion = lamportVersion,
             recordId = recordId,
+            profileId = profileId,
             serviceId = serviceId,
             url = url,
             type = type,
@@ -362,6 +378,7 @@ internal class RoomSubscriptionSyncStore private constructor(
         originRevision = originRevision,
         lamportVersion = lamportVersion,
         recordId = recordId,
+        profileId = profileId,
         serviceId = serviceId,
         url = url,
         type = try {
@@ -395,6 +412,7 @@ internal class RoomSubscriptionSyncStore private constructor(
         originRevision = originRevision,
         lamportVersion = lamportVersion,
         recordId = recordId,
+        profileId = profileId,
         changeType = type.name,
         serviceId = serviceId,
         url = url,
@@ -409,6 +427,7 @@ internal class RoomSubscriptionSyncStore private constructor(
 
     private fun SubscriptionChange.toRecordEntity() = SubscriptionSyncRecordEntity(
         recordId = recordId,
+        profileId = profileId,
         serviceId = serviceId,
         url = url,
         lamportVersion = lamportVersion,

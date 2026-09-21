@@ -8,6 +8,7 @@ package org.schabi.newpipe.database.sync
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
+import org.schabi.newpipe.profiles.ProfileManager
 
 @Entity(
     tableName = HistorySyncChangeEntity.TABLE_NAME,
@@ -49,6 +50,12 @@ data class HistorySyncChangeEntity(
     @ColumnInfo(name = RECORD_ID)
     val recordId: String,
 
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
+
     @ColumnInfo(name = RECORD_TYPE)
     val recordType: String,
 
@@ -65,6 +72,7 @@ data class HistorySyncChangeEntity(
         const val ORIGIN_REVISION = "origin_revision"
         const val LAMPORT_VERSION = "lamport_version"
         const val RECORD_ID = "record_id"
+        const val PROFILE_ID = "profile_id"
         const val RECORD_TYPE = "record_type"
         const val CHANGE_TYPE = "change_type"
         const val RECORD_JSON = "record_json"
@@ -93,6 +101,12 @@ data class HistorySyncRecordEntity(
     @ColumnInfo(name = RECORD_ID)
     val recordId: String,
 
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
+
     @ColumnInfo(name = RECORD_TYPE)
     val recordType: String,
 
@@ -115,6 +129,7 @@ data class HistorySyncRecordEntity(
         const val TABLE_NAME = "history_sync_records"
         const val CATEGORY = "category"
         const val RECORD_ID = "record_id"
+        const val PROFILE_ID = "profile_id"
         const val RECORD_TYPE = "record_type"
         const val LAMPORT_VERSION = "lamport_version"
         const val ORIGIN_PEER_ID = "origin_peer_id"

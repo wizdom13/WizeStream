@@ -5,6 +5,8 @@
 
 package org.schabi.newpipe.sync
 
+import org.schabi.newpipe.profiles.ProfileManager
+
 internal class TestPlaylistSyncStore(
     override val localPeerId: String
 ) : PlaylistSyncStore {
@@ -76,8 +78,21 @@ internal class TestPlaylistSyncStore(
     }
 
     fun createLocalPlaylist(name: String, urls: List<String>): String {
+        return createLocalPlaylistForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            name,
+            urls
+        )
+    }
+
+    fun createLocalPlaylistForProfile(
+        profileId: String,
+        name: String,
+        urls: List<String>
+    ): String {
         val playlistId = PlaylistRecordId.local()
         upsert(
+            profileId,
             playlistId,
             PlaylistRecordType.LOCAL_PLAYLIST,
             record = SyncedPlaylistRecord(
@@ -91,6 +106,7 @@ internal class TestPlaylistSyncStore(
         val itemIds = urls.map { url ->
             PlaylistRecordId.item().also { itemId ->
                 upsert(
+                    profileId,
                     itemId,
                     PlaylistRecordType.LOCAL_PLAYLIST_ITEM,
                     parentRecordId = playlistId,
@@ -103,7 +119,7 @@ internal class TestPlaylistSyncStore(
                 )
             }
         }
-        updateOrder(playlistId, itemIds)
+        updateOrder(profileId, playlistId, itemIds)
         return playlistId
     }
 
@@ -111,6 +127,7 @@ internal class TestPlaylistSyncStore(
         val current = records.getValue(playlistId).record?.localPlaylist
             ?: error("Playlist does not exist")
         upsert(
+            records.getValue(playlistId).profileId,
             playlistId,
             PlaylistRecordType.LOCAL_PLAYLIST,
             record = SyncedPlaylistRecord(
@@ -120,9 +137,11 @@ internal class TestPlaylistSyncStore(
     }
 
     fun addLocalItem(playlistId: String, url: String): String {
+        val profileId = records.getValue(playlistId).profileId
         val currentOrder = orderedItemIds(playlistId)
         val itemId = PlaylistRecordId.item()
         upsert(
+            profileId,
             itemId,
             PlaylistRecordType.LOCAL_PLAYLIST_ITEM,
             parentRecordId = playlistId,
@@ -133,12 +152,12 @@ internal class TestPlaylistSyncStore(
                 )
             )
         )
-        updateOrder(playlistId, currentOrder + itemId)
+        updateOrder(profileId, playlistId, currentOrder + itemId)
         return itemId
     }
 
     fun reorderLocalPlaylist(playlistId: String, itemIds: List<String>) {
-        updateOrder(playlistId, itemIds)
+        updateOrder(records.getValue(playlistId).profileId, playlistId, itemIds)
     }
 
     fun deleteLocalPlaylist(playlistId: String) {
@@ -150,6 +169,20 @@ internal class TestPlaylistSyncStore(
     }
 
     fun bookmarkRemotePlaylist(serviceId: Int, url: String, name: String) {
+        bookmarkRemotePlaylistForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            serviceId,
+            url,
+            name
+        )
+    }
+
+    fun bookmarkRemotePlaylistForProfile(
+        profileId: String,
+        serviceId: Int,
+        url: String,
+        name: String
+    ) {
         val playlist = SyncedRemotePlaylist(
             serviceId = serviceId,
             url = url,
@@ -160,14 +193,23 @@ internal class TestPlaylistSyncStore(
             streamCount = 1
         )
         upsert(
-            PlaylistRecordId.remote(serviceId, url),
+            profileId,
+            PlaylistRecordId.remote(profileId, serviceId, url),
             PlaylistRecordType.REMOTE_PLAYLIST,
             record = SyncedPlaylistRecord(remotePlaylist = playlist)
         )
     }
 
     fun deleteRemotePlaylist(serviceId: Int, url: String) {
-        delete(records.getValue(PlaylistRecordId.remote(serviceId, url)))
+        deleteRemotePlaylistForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            serviceId,
+            url
+        )
+    }
+
+    fun deleteRemotePlaylistForProfile(profileId: String, serviceId: Int, url: String) {
+        delete(records.getValue(PlaylistRecordId.remote(profileId, serviceId, url)))
     }
 
     fun playlistName(playlistId: String): String? {
@@ -203,8 +245,22 @@ internal class TestPlaylistSyncStore(
                 ?.url
         }.toSet()
 
-    private fun updateOrder(playlistId: String, itemIds: List<String>) {
+    fun remoteProfileIdsForUrl(url: String): Set<String> {
+        return records.values
+            .filter {
+                it.type == PlaylistChangeType.UPSERT &&
+                    it.record?.remotePlaylist?.url == url
+            }
+            .mapTo(mutableSetOf(), PlaylistChange::profileId)
+    }
+
+    private fun updateOrder(
+        profileId: String,
+        playlistId: String,
+        itemIds: List<String>
+    ) {
         upsert(
+            profileId,
             PlaylistRecordId.order(playlistId),
             PlaylistRecordType.LOCAL_PLAYLIST_ORDER,
             parentRecordId = playlistId,
@@ -240,12 +296,14 @@ internal class TestPlaylistSyncStore(
     }
 
     private fun upsert(
+        profileId: String,
         recordId: String,
         recordType: PlaylistRecordType,
         parentRecordId: String? = null,
         record: SyncedPlaylistRecord
     ) {
         recordLocalChange(
+            profileId,
             recordId,
             recordType,
             parentRecordId,
@@ -256,6 +314,7 @@ internal class TestPlaylistSyncStore(
 
     private fun delete(current: PlaylistChange) {
         recordLocalChange(
+            current.profileId,
             current.recordId,
             current.recordType,
             current.parentRecordId,
@@ -265,6 +324,7 @@ internal class TestPlaylistSyncStore(
     }
 
     private fun recordLocalChange(
+        profileId: String,
         recordId: String,
         recordType: PlaylistRecordType,
         parentRecordId: String?,
@@ -282,6 +342,7 @@ internal class TestPlaylistSyncStore(
             originRevision = localRevision,
             lamportVersion = lamportVersion,
             recordId = recordId,
+            profileId = profileId,
             recordType = recordType,
             parentRecordId = parentRecordId,
             type = type,

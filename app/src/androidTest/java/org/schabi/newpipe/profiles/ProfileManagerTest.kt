@@ -15,6 +15,45 @@ class ProfileManagerTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
+    fun synchronizedProfileKeepsStableIdentityAndLocalDeletionTombstonesIt() {
+        val profileId = "33333333-3333-3333-3333-333333333333"
+        try {
+            assertEquals(
+                ProfileSyncMergeResult.ADDED,
+                ProfileManager.upsertSyncedProfile(
+                    context,
+                    profileId,
+                    "Study",
+                    "Synced profile",
+                    ProfileIcon.STUDY.key,
+                    10L,
+                    20L
+                )
+            )
+            assertEquals("Study", ProfileManager.getProfile(context, profileId)?.name)
+            assertEquals(20L, ProfileManager.getProfileSyncUpdatedAt(context, profileId))
+
+            assertTrue(ProfileManager.deleteProfile(context, profileId))
+            assertTrue(ProfileManager.isProfileSyncTombstoned(context, profileId))
+            assertEquals(
+                ProfileSyncMergeResult.TOMBSTONED,
+                ProfileManager.upsertSyncedProfile(
+                    context,
+                    profileId,
+                    "Study",
+                    "Remote copy",
+                    ProfileIcon.STUDY.key,
+                    10L,
+                    30L
+                )
+            )
+            assertEquals(null, ProfileManager.getProfile(context, profileId))
+        } finally {
+            ProfileManager.setActiveProfile(context, ProfileManager.DEFAULT_PROFILE_ID)
+        }
+    }
+
+    @Test
     fun defaultProfileExistsAndCustomProfileLifecycleIsIsolated() {
         val initialProfiles = ProfileManager.getProfiles(context)
         assertTrue(initialProfiles.any { it.id == ProfileManager.DEFAULT_PROFILE_ID })

@@ -319,9 +319,6 @@ class SubscriptionManager @JvmOverloads constructor(
     }
 
     private fun recordSubscriptionUpsert(subscription: SubscriptionEntity) {
-        if (profileId != ProfileManager.DEFAULT_PROFILE_ID) {
-            return
-        }
         try {
             subscriptionSyncStore.recordLocalUpsert(subscription)
         } catch (error: Exception) {
@@ -330,11 +327,8 @@ class SubscriptionManager @JvmOverloads constructor(
     }
 
     private fun recordSubscriptionDelete(serviceId: Int, url: String) {
-        if (profileId != ProfileManager.DEFAULT_PROFILE_ID) {
-            return
-        }
         try {
-            subscriptionSyncStore.recordLocalDelete(serviceId, url)
+            subscriptionSyncStore.recordLocalDelete(profileId, serviceId, url)
         } catch (error: Exception) {
             Log.e(TAG, "Could not journal a subscription deletion", error)
         }
