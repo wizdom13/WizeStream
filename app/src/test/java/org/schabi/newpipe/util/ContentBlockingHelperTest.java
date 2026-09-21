@@ -35,6 +35,27 @@ class ContentBlockingHelperTest {
     }
 
     @Test
+    void aiListBlocksMatchingYoutubeUploaderWithoutAddingUserRule() {
+        final ContentBlockingHelper.Rules rules = ContentBlockingHelper.Rules.create(
+                true,
+                Set.of(),
+                Set.of(),
+                "",
+                Set.of("@blocked-ai-channel"));
+
+        assertTrue(rules.isBlocked(stream(
+                "video-1",
+                "Allowed title",
+                "Display name",
+                "https://www.youtube.com/@Blocked-AI-Channel/videos")));
+        assertFalse(rules.isBlocked(stream(
+                "video-2",
+                "Allowed title",
+                "Display name",
+                "https://www.youtube.com/@allowed/videos")));
+    }
+
+    @Test
     void keywordMatchingIsCaseInsensitiveAndSupportsCommaOrLineBreaks() {
         final ContentBlockingHelper.Rules rules = ContentBlockingHelper.Rules.create(
                 true, Set.of(), Set.of(), "Spoiler, clickbait\nRumor");

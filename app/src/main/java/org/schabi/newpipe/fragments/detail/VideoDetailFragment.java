@@ -118,6 +118,7 @@ import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
+import org.schabi.newpipe.util.AiSListContentHelper;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
@@ -240,6 +241,8 @@ public final class VideoDetailFragment
     int bottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
     int lastStableBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
+    @Nullable
+    private String aiWarningBypassedUrl;
     private boolean nativePipPrepared;
     private boolean nativePipForcedFullscreen;
     private int nativePipPreviousBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
@@ -1663,6 +1666,10 @@ public final class VideoDetailFragment
     }
 
     private void openBackgroundPlayer(final boolean append) {
+        if (showAiPlaybackWarningIfNeeded(() -> openBackgroundPlayer(append))) {
+            return;
+        }
+
         final boolean useExternalAudioPlayer = PreferenceManager
                 .getDefaultSharedPreferences(activity)
                 .getBoolean(activity.getString(R.string.use_external_audio_player_key), false);
@@ -1682,6 +1689,10 @@ public final class VideoDetailFragment
     }
 
     private void openPopupPlayer(final boolean append) {
+        if (showAiPlaybackWarningIfNeeded(() -> openPopupPlayer(append))) {
+            return;
+        }
+
         if (!PermissionHelper.isPopupEnabledElseAsk(activity)) {
             return;
         }
@@ -1709,6 +1720,29 @@ public final class VideoDetailFragment
         }
     }
 
+    private boolean showAiPlaybackWarningIfNeeded(@NonNull final Runnable onContinue) {
+        if (currentInfo == null
+                || Objects.equals(aiWarningBypassedUrl, currentInfo.getUrl())
+                || !AiSListContentHelper.shouldWarnBeforePlayback(
+                        requireContext(),
+                        currentInfo.getServiceId(),
+                        currentInfo.getUploaderUrl(),
+                        currentInfo.getUploaderName())) {
+            return false;
+        }
+
+        final String bypassUrl = currentInfo.getUrl();
+        AiSListContentHelper.showPlaybackWarning(
+                requireContext(),
+                currentInfo.getUploaderUrl(),
+                currentInfo.getUploaderName(),
+                () -> {
+                    aiWarningBypassedUrl = bypassUrl;
+                    onContinue.run();
+                });
+        return true;
+    }
+
     /**
      * Opens the video player, in fullscreen if needed. In order to open fullscreen, the activity
      * is toggled to landscape orientation (which will then cause fullscreen mode).
@@ -1717,6 +1751,11 @@ public final class VideoDetailFragment
      *                                       in landscape and screen orientation is locked
      */
     public void openVideoPlayer(final boolean directlyFullscreenIfApplicable) {
+        if (showAiPlaybackWarningIfNeeded(
+                () -> openVideoPlayer(directlyFullscreenIfApplicable))) {
+            return;
+        }
+
         if (directlyFullscreenIfApplicable
                 && !DeviceUtils.isLandscape(requireContext())
                 && PlayerHelper.globalScreenOrientationLocked(requireContext())) {

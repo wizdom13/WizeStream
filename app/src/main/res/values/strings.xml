@@ -421,6 +421,15 @@
     <string name="manage_blocked_channels_key" translatable="false">manage_blocked_channels</string>
     <string name="manage_blocked_videos_key" translatable="false">manage_blocked_videos</string>
     <string name="clear_blocked_content_key" translatable="false">clear_blocked_content</string>
+    <string name="aislist_enabled_key" translatable="false">aislist_enabled</string>
+    <string name="aislist_update_key" translatable="false">aislist_update</string>
+    <string name="aislist_status_key" translatable="false">aislist_status</string>
+    <string name="aislist_about_key" translatable="false">aislist_about</string>
+    <string name="aislist_warn_behavior_key" translatable="false">aislist_warn_behavior</string>
+    <string name="aislist_warn_behavior_ignore_value" translatable="false">ignore</string>
+    <string name="aislist_warn_behavior_label_value" translatable="false">label</string>
+    <string name="aislist_warn_behavior_warn_value" translatable="false">warn</string>
+    <string name="aislist_warn_behavior_hide_value" translatable="false">hide</string>
     <string name="content_blocking_title">Blocked content</string>
     <string name="content_blocking_summary">Hide videos, channels, and posts using your blocking rules</string>
     <string name="content_blocking_enabled_title">Enable content blocking</string>
@@ -434,6 +443,38 @@
     <string name="content_blocking_target_subscriptions">Subscriptions and channel groups</string>
     <string name="content_blocking_target_remote_playlists">Remote playlists</string>
     <string name="content_blocking_target_comments">Comments</string>
+    <string name="aislist_category_title">AiSList</string>
+    <string name="aislist_enabled_title">Enable AiSList filtering</string>
+    <string name="aislist_enabled_summary">Download the AiSList blocklist and warnlist directly from upstream and apply matching entirely on-device</string>
+    <string name="aislist_warn_behavior_title">Warnlist behavior</string>
+    <string name="aislist_warn_behavior_summary">Choose how medium-confidence AiSList channels are handled</string>
+    <string-array name="aislist_warn_behavior_entries">
+        <item>Ignore</item>
+        <item>Label only</item>
+        <item>Warn before playback</item>
+        <item>Hide</item>
+    </string-array>
+    <string-array name="aislist_warn_behavior_values">
+        <item>@string/aislist_warn_behavior_ignore_value</item>
+        <item>@string/aislist_warn_behavior_label_value</item>
+        <item>@string/aislist_warn_behavior_warn_value</item>
+        <item>@string/aislist_warn_behavior_hide_value</item>
+    </string-array>
+    <string name="aislist_update_title">Update AiSList now</string>
+    <string name="aislist_update_summary">Refresh the locally cached blocklist</string>
+    <string name="aislist_status_title">AiSList status</string>
+    <string name="aislist_not_downloaded">Not downloaded yet</string>
+    <string name="aislist_status_format">%1$d blocked • %2$d warning • Updated %3$s</string>
+    <string name="aislist_updating">Updating…</string>
+    <string name="aislist_updated">AiSList updated: %1$d blocked, %2$d warning</string>
+    <string name="aislist_update_failed">Could not update AiSList</string>
+    <string name="aislist_about_title">About AiSList</string>
+    <string name="aislist_about_summary">Community-maintained by Override92 and contributors • CC BY-NC 4.0</string>
+    <string name="aislist_possible_ai_badge">Possible AI</string>
+    <string name="aislist_possible_ai_title">Possible AI-generated content</string>
+    <string name="aislist_warnlist_channel_fallback">This channel</string>
+    <string name="aislist_warnlist_playback_message">%1$s appears on the AiSList community warnlist as possibly using AI-generated content.</string>
+    <string name="aislist_play_anyway">Play anyway</string>
     <string name="blocked_keywords_title">Blocked keywords</string>
     <string name="manage_blocked_channels_title">Blocked channels</string>
     <string name="manage_blocked_videos_title">Blocked videos</string>

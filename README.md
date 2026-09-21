@@ -196,6 +196,9 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Filter channel, feed, and playlist lists by unwatched, partially watched, live, or Shorts content
 - Block individual videos or channels from their context menus, and hide content by title or uploader
   keywords using locally stored rules under **Settings > Content > Blocked content**
+- Optionally sync AiSList directly from its upstream project: high-confidence channels are hidden,
+  while medium-confidence warnlist channels can be ignored, labeled, warned before playback, or
+  hidden; matching stays on-device without sending the viewed video or channel to a detection service
 - Browse video details, related content, comments, playlists, and channel tabs where supported
 - Choose **Top** or **Newest** YouTube comments using the service's ordering, including pagination
 - Translate comments on demand with Android's on-device translation service when the required
