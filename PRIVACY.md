@@ -1,6 +1,6 @@
 # WizeStream Privacy Policy
 
-Last updated: September 20, 2026
+Last updated: September 21, 2026
 
 WizeStream is an independently maintained, open-source Android streaming application. It does not require a WizeStream account and does not include advertising, analytics, or tracking SDKs.
 
@@ -9,6 +9,12 @@ WizeStream is an independently maintained, open-source Android streaming applica
 WizeStream connects directly to the media services you choose to use. Those services and your network provider can receive ordinary connection information such as your IP address, request details, and cookies required for the selected service. Their own privacy policies apply to that activity.
 
 When update checks are enabled or manually requested, WizeStream contacts the GitHub Releases API for `wizdom13/WizeStream`. The app does not add a WizeStream account identifier or advertising identifier to those requests.
+
+AiSList content blocking is optional and disabled by default. When enabled or manually refreshed,
+WizeStream downloads the public high-confidence blocklist directly from the `Override92/AiSList`
+project on GitHub and caches it in app-private storage. The update request does not include the video
+or channel being viewed, a WizeStream account identifier, or an advertising identifier. Matching
+against the downloaded channel handles and IDs happens entirely on-device.
 
 DeArrow is optional and disabled by default. When enabled for YouTube, WizeStream sends the video's
 public YouTube identifier to the community-operated DeArrow endpoints at `sponsor.ajay.app` and
