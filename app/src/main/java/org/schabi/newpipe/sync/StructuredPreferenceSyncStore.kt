@@ -165,7 +165,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
                         .peerId
                         .toBase58(),
                     onAiSListEnabledChanged = { enabled ->
-                        AiSListSyncWorker.setEnabled(context, enabled)
+                        AiSListSyncWorker.setEnabled(context.applicationContext, enabled)
                     }
                 ).also { instance = it }
             }
