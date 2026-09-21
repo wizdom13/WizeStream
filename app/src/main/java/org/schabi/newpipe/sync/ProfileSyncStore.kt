@@ -50,9 +50,12 @@ internal class AndroidProfileSyncStore(context: Context) : ProfileSyncStore {
                 )
             ) {
                 ProfileSyncMergeResult.ADDED -> added += 1
+
                 ProfileSyncMergeResult.UPDATED -> updated += 1
+
                 ProfileSyncMergeResult.UNCHANGED,
                 ProfileSyncMergeResult.TOMBSTONED -> Unit
+
                 ProfileSyncMergeResult.INVALID ->
                     throw ProfileSyncException("A synchronized profile could not be applied")
             }
