@@ -564,8 +564,9 @@ internal object HistoryRecordId {
         return profiledDigest(profileId, "watch-delete-all")
     }
 
-    fun playbackAllTombstone(): String =
-        playbackAllTombstone(ProfileManager.DEFAULT_PROFILE_ID)
+    fun playbackAllTombstone(): String = playbackAllTombstone(
+        ProfileManager.DEFAULT_PROFILE_ID
+    )
 
     fun playbackAllTombstone(profileId: String): String {
         return profiledDigest(profileId, "playback-delete-all")
