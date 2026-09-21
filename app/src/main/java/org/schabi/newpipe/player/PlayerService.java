@@ -145,7 +145,8 @@ public final class PlayerService extends MediaLibraryService {
             // Android may recreate a previously started service with a null intent. There is
             // nothing to handle in that case. If no player is active, clear only this started
             // service instance; bound media-browser clients may keep the service alive.
-            if (player == null) {
+            if (PlayerServiceStartPolicy
+                    .shouldStopStartedServiceOnNullIntent(player != null)) {
                 stopSelf(startId);
             }
             return START_NOT_STICKY;
