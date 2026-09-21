@@ -45,7 +45,8 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private val context: Context,
     private val database: AppDatabase,
     override val localPeerId: String,
-    preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context),
+    private val preferences: SharedPreferences =
+        PreferenceManager.getDefaultSharedPreferences(context),
     finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context),
     canMaterializeProfile: (String) -> Boolean = { profileId ->
         ProfileManager.getProfile(context, profileId) != null
