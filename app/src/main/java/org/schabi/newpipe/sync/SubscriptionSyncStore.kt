@@ -42,7 +42,8 @@ internal interface SubscriptionSyncStore {
 
 internal class RoomSubscriptionSyncStore private constructor(
     private val database: AppDatabase,
-    override val localPeerId: String
+    override val localPeerId: String,
+    private val canMaterializeProfile: (String) -> Boolean = { true }
 ) : SubscriptionSyncStore {
     private val syncDao = database.subscriptionSyncDAO()
     private val subscriptionDao = database.subscriptionDAO()
@@ -193,6 +194,11 @@ internal class RoomSubscriptionSyncStore private constructor(
                         currentRecord != null &&
                         change.versionStamp <= currentRecord.versionStamp
                     ) {
+                        return@forEach
+                    }
+
+                    if (!canMaterializeProfile(change.profileId)) {
+                        syncDao.upsertRecord(change.toRecordEntity())
                         return@forEach
                     }
 
@@ -460,7 +466,10 @@ internal class RoomSubscriptionSyncStore private constructor(
                     val stateRepository = AndroidSyncStateRepository(applicationContext)
                     RoomSubscriptionSyncStore(
                         database = NewPipeDatabase.getInstance(applicationContext),
-                        localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58()
+                        localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58(),
+                        canMaterializeProfile = { profileId ->
+                            ProfileManager.getProfile(applicationContext, profileId) != null
+                        }
                     )
                 }.also { instance = it }
             }
