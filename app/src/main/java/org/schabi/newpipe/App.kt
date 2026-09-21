@@ -39,6 +39,7 @@ import org.schabi.newpipe.network.AppProxySelector
 import org.schabi.newpipe.settings.NewPipeSettings
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncManager
+import org.schabi.newpipe.util.AiSListSyncWorker
 import org.schabi.newpipe.util.BridgeStateSaverInitializer
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ServiceHelper
@@ -118,6 +119,7 @@ open class App :
         StateSaver.init(this)
         initNotificationChannels()
         org.schabi.newpipe.download.AutomaticDownloads.initialize(this)
+        AiSListSyncWorker.initialize(this)
 
         ServiceHelper.initServices(this)
 
