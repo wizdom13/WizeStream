@@ -16,26 +16,37 @@ import java.util.Locale
 import okhttp3.Request
 import org.schabi.newpipe.DownloaderImpl
 import org.schabi.newpipe.R
-import org.schabi.newpipe.extractor.ServiceList
 
 object AiSListRepository {
-    const val SOURCE_URL =
+    const val BLOCKLIST_SOURCE_URL =
         "https://raw.githubusercontent.com/Override92/AiSList/main/AiSList/aislist_blocklist.txt"
+    const val WARNLIST_SOURCE_URL =
+        "https://raw.githubusercontent.com/Override92/AiSList/main/AiSList/aislist_warnlist.txt"
+    const val SOURCE_URL = BLOCKLIST_SOURCE_URL
     const val PROJECT_URL = "https://github.com/Override92/AiSList"
     const val LICENSE_NAME = "CC BY-NC 4.0"
 
-    private const val CACHE_FILE_NAME = "aislist_blocklist.txt"
+    private const val BLOCKLIST_CACHE_FILE_NAME = "aislist_blocklist.txt"
+    private const val WARNLIST_CACHE_FILE_NAME = "aislist_warnlist.txt"
     private const val LAST_UPDATED_PREFERENCE = "aislist_last_updated"
     private const val MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024
-    private const val MINIMUM_VALID_ENTRIES = 1_000
+    private const val MINIMUM_VALID_BLOCK_ENTRIES = 1_000
+    private const val MINIMUM_VALID_WARN_ENTRIES = 100
 
     @Volatile
-    private var cachedEntries: Set<String>? = null
+    private var cachedBlockEntries: Set<String>? = null
+
+    @Volatile
+    private var cachedWarnEntries: Set<String>? = null
 
     data class SyncStatus(
-        val count: Int,
+        val blockCount: Int,
+        val warnCount: Int,
         val updatedAtMillis: Long
-    )
+    ) {
+        val count: Int
+            get() = blockCount + warnCount
+    }
 
     @JvmStatic
     fun isEnabled(context: Context): Boolean {
@@ -51,64 +62,108 @@ object AiSListRepository {
     }
 
     @JvmStatic
-    fun entries(context: Context): Set<String> {
-        cachedEntries?.let { return it }
+    fun entries(context: Context): Set<String> = blockEntries(context)
+
+    @JvmStatic
+    fun blockEntries(context: Context): Set<String> {
+        cachedBlockEntries?.let { return it }
         return synchronized(this) {
-            cachedEntries ?: loadCachedEntries(context.applicationContext).also {
-                cachedEntries = it
+            cachedBlockEntries ?: loadCachedEntries(
+                context.applicationContext,
+                BLOCKLIST_CACHE_FILE_NAME
+            ).also {
+                cachedBlockEntries = it
+            }
+        }
+    }
+
+    @JvmStatic
+    fun warnEntries(context: Context): Set<String> {
+        cachedWarnEntries?.let { return it }
+        return synchronized(this) {
+            cachedWarnEntries ?: loadCachedEntries(
+                context.applicationContext,
+                WARNLIST_CACHE_FILE_NAME
+            ).also {
+                cachedWarnEntries = it
             }
         }
     }
 
     @JvmStatic
     fun status(context: Context): SyncStatus {
-        if (!cacheFile(context.applicationContext).baseFile.exists()) {
-            return SyncStatus(0, 0L)
+        val appContext = context.applicationContext
+        val hasBlocklist = cacheFile(appContext, BLOCKLIST_CACHE_FILE_NAME).baseFile.exists()
+        val hasWarnlist = cacheFile(appContext, WARNLIST_CACHE_FILE_NAME).baseFile.exists()
+        if (!hasBlocklist && !hasWarnlist) {
+            return SyncStatus(0, 0, 0L)
         }
         val updatedAt = PreferenceManager.getDefaultSharedPreferences(context)
             .getLong(LAST_UPDATED_PREFERENCE, 0L)
-        return SyncStatus(entries(context).size, updatedAt)
+        return SyncStatus(
+            blockCount = if (hasBlocklist) blockEntries(context).size else 0,
+            warnCount = if (hasWarnlist) warnEntries(context).size else 0,
+            updatedAtMillis = updatedAt
+        )
     }
 
     @JvmStatic
     @Throws(IOException::class)
     fun sync(context: Context): SyncStatus {
-        val request = Request.Builder()
-            .url(SOURCE_URL)
-            .header("Accept", "text/plain")
-            .build()
-        val bytes = DownloaderImpl.getInstance().client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("AiSList returned HTTP " + response.code)
-            }
-            val body = response.body ?: throw IOException("AiSList returned an empty response")
-            readLimited(body.byteStream())
-        }
-        val text = String(bytes, StandardCharsets.UTF_8)
-        val parsed = parse(text)
-        if (parsed.size < MINIMUM_VALID_ENTRIES) {
+        val blockBytes = fetch(BLOCKLIST_SOURCE_URL)
+        val warnBytes = fetch(WARNLIST_SOURCE_URL)
+        val blockEntries = parse(String(blockBytes, StandardCharsets.UTF_8))
+        val warnEntries = parse(String(warnBytes, StandardCharsets.UTF_8))
+
+        if (blockEntries.size < MINIMUM_VALID_BLOCK_ENTRIES) {
             throw IOException(
-                "AiSList response contained only " + parsed.size + " valid channel entries"
+                "AiSList blocklist contained only " +
+                    blockEntries.size +
+                    " valid channel entries"
+            )
+        }
+        if (warnEntries.size < MINIMUM_VALID_WARN_ENTRIES) {
+            throw IOException(
+                "AiSList warnlist contained only " +
+                    warnEntries.size +
+                    " valid channel entries"
             )
         }
 
-        writeCache(context.applicationContext, bytes)
-        cachedEntries = parsed
+        val appContext = context.applicationContext
+        writeCache(appContext, BLOCKLIST_CACHE_FILE_NAME, blockBytes)
+        writeCache(appContext, WARNLIST_CACHE_FILE_NAME, warnBytes)
+        cachedBlockEntries = blockEntries
+        cachedWarnEntries = warnEntries
+
         val updatedAt = System.currentTimeMillis()
         PreferenceManager.getDefaultSharedPreferences(context).edit {
             putLong(LAST_UPDATED_PREFERENCE, updatedAt)
         }
-        return SyncStatus(parsed.size, updatedAt)
+        return SyncStatus(blockEntries.size, warnEntries.size, updatedAt)
     }
 
     @JvmStatic
+    fun isBlockListed(
+        context: Context,
+        channelUrl: String?,
+        channelName: String?
+    ): Boolean = isListed(blockEntries(context), channelUrl, channelName)
+
+    @JvmStatic
+    fun isWarnListed(
+        context: Context,
+        channelUrl: String?,
+        channelName: String?
+    ): Boolean = isListed(warnEntries(context), channelUrl, channelName)
+
+    @JvmStatic
     fun isListed(
-        serviceId: Int,
         entries: Set<String>,
         channelUrl: String?,
         channelName: String?
     ): Boolean {
-        if (serviceId != ServiceList.YouTube.serviceId || entries.isEmpty()) {
+        if (entries.isEmpty()) {
             return false
         }
         return channelCandidates(channelUrl, channelName).any(entries::contains)
@@ -116,7 +171,10 @@ object AiSListRepository {
 
     internal fun parse(text: String): Set<String> {
         return text.lineSequence()
-            .mapNotNull(::normalizeEntry)
+            .map(String::trim)
+            .filter { it.isNotEmpty() && !it.startsWith("!") }
+            .filter { it.startsWith("@") || it.startsWith("UC", ignoreCase = true) }
+            .map { it.lowercase(Locale.ROOT) }
             .toCollection(linkedSetOf())
     }
 
@@ -124,7 +182,16 @@ object AiSListRepository {
         val candidates = linkedSetOf<String>()
 
         fun addCandidate(raw: String?) {
-            normalizeEntry(raw)?.let(candidates::add)
+            val candidate = raw
+                ?.trim()
+                ?.trimEnd('/')
+                ?.takeIf { it.isNotEmpty() }
+                ?: return
+            if (candidate.startsWith("@") ||
+                candidate.startsWith("UC", ignoreCase = true)
+            ) {
+                candidates += candidate.lowercase(Locale.ROOT)
+            }
         }
 
         addCandidate(channelName)
@@ -148,22 +215,23 @@ object AiSListRepository {
         return candidates
     }
 
-    private fun normalizeEntry(raw: String?): String? {
-        val candidate = raw
-            ?.trim()
-            ?.trimEnd('/')
-            ?.takeIf { it.isNotEmpty() && !it.startsWith("!") }
-            ?: return null
-        return when {
-            candidate.startsWith("@") -> candidate.lowercase(Locale.ROOT)
-            candidate.startsWith("UC", ignoreCase = true) && candidate.length > 2 ->
-                "UC" + candidate.substring(2)
-            else -> null
+    @Throws(IOException::class)
+    private fun fetch(url: String): ByteArray {
+        val request = Request.Builder()
+            .url(url)
+            .header("Accept", "text/plain")
+            .build()
+        return DownloaderImpl.getInstance().client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("AiSList returned HTTP " + response.code + " for " + url)
+            }
+            val body = response.body ?: throw IOException("AiSList returned an empty response")
+            readLimited(body.byteStream())
         }
     }
 
-    private fun loadCachedEntries(context: Context): Set<String> {
-        val atomicFile = cacheFile(context)
+    private fun loadCachedEntries(context: Context, fileName: String): Set<String> {
+        val atomicFile = cacheFile(context, fileName)
         if (!atomicFile.baseFile.exists()) {
             return emptySet()
         }
@@ -177,8 +245,8 @@ object AiSListRepository {
     }
 
     @Throws(IOException::class)
-    private fun writeCache(context: Context, bytes: ByteArray) {
-        val atomicFile = cacheFile(context)
+    private fun writeCache(context: Context, fileName: String, bytes: ByteArray) {
+        val atomicFile = cacheFile(context, fileName)
         val stream = atomicFile.startWrite()
         try {
             stream.write(bytes)
@@ -189,8 +257,8 @@ object AiSListRepository {
         }
     }
 
-    private fun cacheFile(context: Context): AtomicFile {
-        return AtomicFile(context.filesDir.resolve(CACHE_FILE_NAME))
+    private fun cacheFile(context: Context, fileName: String): AtomicFile {
+        return AtomicFile(context.filesDir.resolve(fileName))
     }
 
     @Throws(IOException::class)
