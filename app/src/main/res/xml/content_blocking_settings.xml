@@ -33,6 +33,16 @@
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
 
+        <ListPreference
+            android:defaultValue="@string/aislist_warn_behavior_label_value"
+            android:entries="@array/aislist_warn_behavior_entries"
+            android:entryValues="@array/aislist_warn_behavior_values"
+            android:key="@string/aislist_warn_behavior_key"
+            android:summary="@string/aislist_warn_behavior_summary"
+            android:title="@string/aislist_warn_behavior_title"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+
         <Preference
             android:key="@string/aislist_update_key"
             android:summary="@string/aislist_update_summary"
