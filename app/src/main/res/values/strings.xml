@@ -444,7 +444,7 @@
     <string name="content_blocking_target_remote_playlists">Remote playlists</string>
     <string name="content_blocking_target_comments">Comments</string>
     <string name="aislist_category_title">AiSList</string>
-    <string name="aislist_enabled_title">Hide channels on AiSList</string>
+    <string name="aislist_enabled_title">Enable AiSList filtering</string>
     <string name="aislist_enabled_summary">Download the AiSList blocklist and warnlist directly from upstream and apply matching entirely on-device</string>
     <string name="aislist_warn_behavior_title">Warnlist behavior</string>
     <string name="aislist_warn_behavior_summary">Choose how medium-confidence AiSList channels are handled</string>
