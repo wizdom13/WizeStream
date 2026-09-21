@@ -189,6 +189,7 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
         if (headerBinding != null && getString(R.string.auto_queue_key).equals(key)) {
             headerBinding.autoplaySwitch.setChecked(sharedPreferences.getBoolean(key, false));
         }
+        super.onSharedPreferenceChanged(sharedPreferences, key);
     }
 
     @Override

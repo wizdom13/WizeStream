@@ -103,6 +103,51 @@ class ContentBlockingHelperTest {
     }
 
     @Test
+    void relatedItemsRefreshForChannelVideoAndAiListRuleChanges() {
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.RELATED_ITEMS,
+                ContentBlockingHelper.RuleChange.CHANNELS));
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.RELATED_ITEMS,
+                ContentBlockingHelper.RuleChange.VIDEOS));
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.RELATED_ITEMS,
+                ContentBlockingHelper.RuleChange.AISLIST_ENABLED));
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.RELATED_ITEMS,
+                ContentBlockingHelper.RuleChange.AISLIST_WARN_BEHAVIOR));
+    }
+
+    @Test
+    void commentsIgnoreRuleChangesThatCannotAffectCommentItems() {
+        assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.CHANNELS));
+        assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.VIDEOS));
+        assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.AISLIST_ENABLED));
+        assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.AISLIST_WARN_BEHAVIOR));
+    }
+
+    @Test
+    void commentsRefreshForRulesThatCanAffectCommentVisibility() {
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.ENABLED));
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.TARGETS));
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.KEYWORDS));
+    }
+
+    @Test
     void missingTargetPreferencePreservesFilteringEverywhere() {
         for (final ContentBlockingHelper.Target target : ContentBlockingHelper.Target.values()) {
             assertTrue(ContentBlockingHelper.isTargetEnabled(null, target));

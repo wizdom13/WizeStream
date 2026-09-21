@@ -552,7 +552,8 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
             if (isResumed()) {
                 applyPendingCommentTextSizeUpdate();
             }
-        } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
+        } else if (ContentBlockingHelper.shouldReloadForPreference(
+                requireContext(), key, getContentBlockingTarget())) {
             reloadContent();
         }
     }
