@@ -36,6 +36,7 @@ import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.ktx.hasAssignableCause
 import org.schabi.newpipe.network.AppProxySelector
+import org.schabi.newpipe.network.LegacyTlsCompat
 import org.schabi.newpipe.settings.NewPipeSettings
 import org.schabi.newpipe.sync.DeviceSyncBackgroundScheduler
 import org.schabi.newpipe.sync.DeviceSyncManager
@@ -181,11 +182,11 @@ open class App :
 
     protected open fun getDownloader(): Downloader {
         val proxySelector = AppProxySelector.install(this)
-        val downloader = DownloaderImpl.init(
-            OkHttpClient.Builder()
-                .proxySelector(proxySelector)
-                .proxyAuthenticator(proxySelector.okHttpAuthenticator)
-        )
+        val httpClientBuilder = OkHttpClient.Builder()
+            .proxySelector(proxySelector)
+            .proxyAuthenticator(proxySelector.okHttpAuthenticator)
+        LegacyTlsCompat.configure(this, httpClientBuilder)
+        val downloader = DownloaderImpl.init(httpClientBuilder)
         setCookiesToDownloader(downloader)
         return downloader
     }
