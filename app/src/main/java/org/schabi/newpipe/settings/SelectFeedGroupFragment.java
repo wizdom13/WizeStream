@@ -25,12 +25,14 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.AppDatabase;
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity;
 import org.schabi.newpipe.error.ErrorUtil;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.List;
 import java.util.Vector;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -81,12 +83,21 @@ public class SelectFeedGroupFragment extends DialogFragment {
 
 
         final AppDatabase database = NewPipeDatabase.getInstance(requireContext());
-        database.feedGroupDAO().getAll().toObservable()
+        feedGroupsForProfile(
+                database,
+                ProfileManager.getActiveProfileId(requireContext()))
+                .toObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(getFeedGroupObserver());
 
         return v;
+    }
+
+    static Flowable<List<FeedGroupEntity>> feedGroupsForProfile(
+            final AppDatabase database,
+            final String profileId) {
+        return database.feedGroupDAO().getAllForProfile(profileId);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
