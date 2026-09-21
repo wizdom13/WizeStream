@@ -261,13 +261,23 @@ class NewPipeDataMigrationManager(private val context: Context) {
                                 "INSERT OR IGNORE INTO $HISTORY_TABLE " +
                                     "(stream_id, access_date, repeat_count, profile_id) " +
                                     "VALUES (?, ?, ?, ?)",
-                                arrayOf(targetId, accessDate, repeatCount, targetProfileId)
+                                arrayOf<Any>(
+                                    targetId,
+                                    accessDate,
+                                    repeatCount,
+                                    targetProfileId
+                                )
                             )
                             writable.execSQL(
                                 "UPDATE $HISTORY_TABLE SET repeat_count = " +
                                     "MAX(repeat_count, ?) WHERE profile_id = ? " +
                                     "AND stream_id = ? AND access_date = ?",
-                                arrayOf(repeatCount, targetProfileId, targetId, accessDate)
+                                arrayOf<Any>(
+                                    repeatCount,
+                                    targetProfileId,
+                                    targetId,
+                                    accessDate
+                                )
                             )
                             historyItems++
                         }
