@@ -343,31 +343,37 @@ public final class ContentBlockingHelper {
             if (item instanceof StreamInfoItem) {
                 final StreamInfoItem stream = (StreamInfoItem) item;
                 return blockedVideoUrls.contains(normalize(stream.getUrl()))
-                        || isBlockedChannel(stream.getUploaderUrl(), stream.getUploaderName())
+                        || isBlockedChannel(
+                                stream.getServiceId(),
+                                stream.getUploaderUrl(),
+                                stream.getUploaderName())
                         || containsKeyword(stream.getName());
             }
             if (item instanceof ChannelInfoItem) {
-                return isBlockedChannel(item.getUrl(), item.getName())
+                return isBlockedChannel(item.getServiceId(), item.getUrl(), item.getName())
                         || containsKeyword(item.getName());
             }
             if (item instanceof PlaylistInfoItem) {
                 final PlaylistInfoItem playlist = (PlaylistInfoItem) item;
-                return isBlockedChannel(null, playlist.getUploaderName())
+                return isBlockedChannel(
+                        playlist.getServiceId(), null, playlist.getUploaderName())
                         || containsKeyword(playlist.getName());
             }
             if (item instanceof PostInfoItem) {
                 final PostInfoItem post = (PostInfoItem) item;
-                return isBlockedChannel(post.getUploaderUrl(), post.getUploaderName())
+                return isBlockedChannel(
+                        post.getServiceId(), post.getUploaderUrl(), post.getUploaderName())
                         || containsKeyword(post.getName(), post.getContent());
             }
             return containsKeyword(item.getName());
         }
 
-        private boolean isBlockedChannel(@Nullable final String url,
+        private boolean isBlockedChannel(final int serviceId,
+                                         @Nullable final String url,
                                          @Nullable final String name) {
             return blockedChannelKeys.contains(normalize(url))
                     || blockedChannelNames.contains(normalize(name))
-                    || AiSListRepository.isListed(aiBlockedChannels, url, name);
+                    || AiSListRepository.isListed(serviceId, aiBlockedChannels, url, name);
         }
 
         private boolean containsKeyword(@Nullable final String... values) {
