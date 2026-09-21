@@ -96,7 +96,7 @@ public final class AiSListContentHelper {
                                            @Nullable final String channelUrl,
                                            @Nullable final String channelName,
                                            @NonNull final Runnable playAnyway) {
-        final String displayName = channelName == null || channelName.isBlank()
+        final String displayName = channelName == null || channelName.trim().isEmpty()
                 ? context.getString(R.string.aislist_warnlist_channel_fallback)
                 : channelName;
         new MaterialAlertDialogBuilder(context)
