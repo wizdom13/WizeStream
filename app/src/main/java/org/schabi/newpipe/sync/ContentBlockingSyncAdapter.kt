@@ -24,8 +24,7 @@ import org.schabi.newpipe.util.ContentBlockingHelper
 internal class ContentBlockingSyncAdapter(
     private val context: Context,
     private val preferences: SharedPreferences,
-    private val recordRepository: StructuredPreferenceRecordRepository,
-    private val onAiSListEnabledChanged: (Boolean) -> Unit = {}
+    private val recordRepository: StructuredPreferenceRecordRepository
 ) : StructuredPreferenceCategoryAdapter {
     override val category = StructuredPreferenceCategory.CONTENT_BLOCKING
 
@@ -102,10 +101,6 @@ internal class ContentBlockingSyncAdapter(
             .sortedBy { it.key }
             .joinToString("\n") { it.label }
 
-        val previousAiSListEnabled = preferences.getBoolean(
-            context.getString(R.string.aislist_enabled_key),
-            false
-        )
         preferences.edit()
             .putBoolean(
                 context.getString(R.string.content_blocking_enabled_key),
@@ -137,9 +132,6 @@ internal class ContentBlockingSyncAdapter(
             )
             .commit()
 
-        if (previousAiSListEnabled != state.aiSListEnabled) {
-            onAiSListEnabledChanged(state.aiSListEnabled)
-        }
     }
 
     private fun currentState(): SyncedContentBlockingState {
