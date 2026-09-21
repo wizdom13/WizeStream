@@ -5,7 +5,7 @@
 
 package org.schabi.newpipe.sync
 
-internal class ProfileSyncEngine(
+class ProfileSyncEngine internal constructor(
     private val store: ProfileSyncStore
 ) {
     fun createRequest(): ProfileSyncRequest {
