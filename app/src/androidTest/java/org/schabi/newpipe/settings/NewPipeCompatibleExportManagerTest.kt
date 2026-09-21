@@ -111,7 +111,8 @@ class NewPipeCompatibleExportManagerTest {
                     "'Uploader', NULL, NULL, NULL, NULL, NULL, 0, 'REMOTE')"
             )
             source.execSQL(
-                "INSERT INTO playlists VALUES " +
+                "INSERT INTO playlists " +
+                    "(uid, name, is_thumbnail_permanent, thumbnail_stream_id, display_index) VALUES " +
                     "(1, 'Mixed', 1, 20, 4), (2, 'Empty', 1, 999, 2), " +
                     "(3, 'Device only', 1, 20, 1), (4, 'Custom thumbnail', 1, 40, 3)"
             )
@@ -120,11 +121,18 @@ class NewPipeCompatibleExportManagerTest {
                     "(1, 30, 4), (1, 20, 7), (1, 10, 9), (1, 10, 11), (3, 20, 0)"
             )
             source.execSQL(
-                "INSERT INTO remote_playlists VALUES " +
-                    "(6, 0, 'Remote playlist', 'https://example.com/playlist', 'https://example.com/image', 'Owner', 17, 2), " +
-                    "(7, 5, 'Unsupported playlist', 'https://example.com/unsupported', NULL, NULL, 18, 1)"
+                "INSERT INTO remote_playlists " +
+                    "(uid, service_id, name, url, thumbnail_url, uploader, display_index, stream_count) " +
+                    "VALUES " +
+                    "(6, 0, 'Remote playlist', 'https://example.com/playlist', " +
+                    "'https://example.com/image', 'Owner', 17, 2), " +
+                    "(7, 5, 'Unsupported playlist', 'https://example.com/unsupported', " +
+                    "NULL, NULL, 18, 1)"
             )
-            source.execSQL("INSERT INTO feed_group VALUES (11, 'News', 8, 3), (12, 'Empty group', 999, 2)")
+            source.execSQL(
+                "INSERT INTO feed_group (uid, name, icon_id, sort_order) " +
+                    "VALUES (11, 'News', 8, 3), (12, 'Empty group', 999, 2)"
+            )
             source.execSQL("INSERT INTO feed_group_subscription_join VALUES (11, 1), (11, 2)")
             source.execSQL("INSERT INTO search_history VALUES (1000, 0, 'space', 1), (2000, 0, 'space', 2), (3000, 4, 'music', 3), (4000, 5, 'unsupported', 4)")
         }
@@ -163,6 +171,90 @@ class NewPipeCompatibleExportManagerTest {
     }
 
     @Test
+    fun exportsOnlyTheSelectedProfilesPortableData() {
+        val profileId = "33333333-3333-3333-3333-333333333333"
+        SQLiteDatabase.openDatabase(
+            sourcePath.toString(),
+            null,
+            SQLiteDatabase.OPEN_READWRITE
+        ).use { source ->
+            source.execSQL(
+                "INSERT INTO subscriptions " +
+                    "(uid, service_id, url, name, avatar_url, subscriber_count, description, " +
+                    "notification_mode, youtube_mode_mask, notification_keywords, profile_id) " +
+                    "VALUES (3, 0, 'https://example.com/profile-channel', 'Profile channel', " +
+                    "NULL, 5, NULL, 1, 1, '', ?)",
+                arrayOf(profileId)
+            )
+            source.execSQL(
+                "INSERT INTO stream_history " +
+                    "(stream_id, access_date, repeat_count, profile_id) VALUES (10, 3000, 2, ?)",
+                arrayOf(profileId)
+            )
+            source.execSQL(
+                "INSERT INTO stream_state " +
+                    "(stream_id, progress_time, profile_id) VALUES (10, 45000, ?)",
+                arrayOf(profileId)
+            )
+            source.execSQL(
+                "INSERT INTO playlists " +
+                    "(uid, name, is_thumbnail_permanent, thumbnail_stream_id, display_index, " +
+                    "profile_id) VALUES (50, 'Profile playlist', 0, 10, 0, ?)",
+                arrayOf(profileId)
+            )
+            source.execSQL("INSERT INTO playlist_stream_join VALUES (50, 10, 0)")
+            source.execSQL(
+                "INSERT INTO remote_playlists " +
+                    "(uid, service_id, name, url, thumbnail_url, uploader, display_index, " +
+                    "stream_count, profile_id) VALUES " +
+                    "(8, 0, 'Profile remote', 'https://example.com/profile-playlist', " +
+                    "NULL, 'Owner', 0, 1, ?)",
+                arrayOf(profileId)
+            )
+            source.execSQL(
+                "INSERT INTO feed_group (uid, name, icon_id, sort_order, profile_id) " +
+                    "VALUES (13, 'Profile group', 0, 0, ?)",
+                arrayOf(profileId)
+            )
+            source.execSQL("INSERT INTO feed_group_subscription_join VALUES (13, 3)")
+        }
+
+        val result = NewPipeCompatibleExportManager(
+            sourcePath,
+            context.cacheDir.toPath()
+        ).createDatabase(destinationPath, profileId)
+
+        assertEquals(1, result.subscriptions)
+        assertEquals(1, result.historyItems)
+        assertEquals(1, result.progressItems)
+        assertEquals(1, result.localPlaylists)
+        assertEquals(1, result.remotePlaylists)
+        assertEquals(1, result.playlistItems)
+        assertEquals(1, result.channelGroups)
+        assertEquals(1, result.groupMemberships)
+        assertEquals(0, result.skippedItems)
+
+        SQLiteDatabase.openDatabase(
+            destinationPath.toString(),
+            null,
+            SQLiteDatabase.OPEN_READONLY
+        ).use { database ->
+            assertEquals(
+                "https://example.com/profile-channel",
+                database.singleString("SELECT url FROM subscriptions")
+            )
+            assertEquals(
+                "Profile playlist",
+                database.singleString("SELECT name FROM playlists")
+            )
+            assertEquals(
+                "Profile group",
+                database.singleString("SELECT name FROM feed_group")
+            )
+        }
+    }
+
+    @Test
     fun archiveContainsOnlyThePortableNewPipeDatabase() {
         archivePath.toFile().createNewFile()
         val file = StoredFileHelper(
@@ -186,10 +278,13 @@ class NewPipeCompatibleExportManagerTest {
                     "uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, url TEXT, " +
                     "name TEXT, avatar_url TEXT, subscriber_count INTEGER, description TEXT, " +
                     "notification_mode INTEGER NOT NULL, youtube_mode_mask INTEGER NOT NULL, " +
-                    "notification_keywords TEXT NOT NULL)"
+                    "notification_keywords TEXT NOT NULL, profile_id TEXT NOT NULL DEFAULT " +
+                    "'00000000-0000-0000-0000-000000000000')"
             )
             database.execSQL(
-                "INSERT INTO subscriptions VALUES " +
+                "INSERT INTO subscriptions " +
+                    "(uid, service_id, url, name, avatar_url, subscriber_count, description, " +
+                    "notification_mode, youtube_mode_mask, notification_keywords) VALUES " +
                     "(1, 0, 'https://example.com/channel', 'Channel', NULL, " +
                     "100, NULL, 2, 1, ''), " +
                     "(2, 5, 'https://example.com/wizestream-only', 'WizeStream only', NULL, " +
@@ -215,20 +310,44 @@ class NewPipeCompatibleExportManagerTest {
             database.execSQL(
                 "CREATE TABLE stream_history (" +
                     "stream_id INTEGER NOT NULL, access_date INTEGER NOT NULL, " +
-                    "repeat_count INTEGER NOT NULL)"
+                    "repeat_count INTEGER NOT NULL, profile_id TEXT NOT NULL DEFAULT " +
+                    "'00000000-0000-0000-0000-000000000000')"
             )
             database.execSQL(
-                "INSERT INTO stream_history VALUES (10, 1000, 1), (20, 2000, 1)"
+                "INSERT INTO stream_history (stream_id, access_date, repeat_count) " +
+                    "VALUES (10, 1000, 1), (20, 2000, 1)"
             )
             database.execSQL(
                 "CREATE TABLE stream_state (" +
-                    "stream_id INTEGER PRIMARY KEY, progress_time INTEGER NOT NULL)"
+                    "stream_id INTEGER NOT NULL, progress_time INTEGER NOT NULL, " +
+                    "profile_id TEXT NOT NULL DEFAULT " +
+                    "'00000000-0000-0000-0000-000000000000', " +
+                    "PRIMARY KEY(profile_id, stream_id))"
             )
-            database.execSQL("INSERT INTO stream_state VALUES (10, 30000), (20, 15000)")
-            database.execSQL("CREATE TABLE playlists (uid INTEGER PRIMARY KEY, name TEXT, is_thumbnail_permanent INTEGER NOT NULL, thumbnail_stream_id INTEGER NOT NULL, display_index INTEGER NOT NULL)")
+            database.execSQL(
+                "INSERT INTO stream_state (stream_id, progress_time) " +
+                    "VALUES (10, 30000), (20, 15000)"
+            )
+            database.execSQL(
+                "CREATE TABLE playlists (uid INTEGER PRIMARY KEY, name TEXT, " +
+                    "is_thumbnail_permanent INTEGER NOT NULL, thumbnail_stream_id INTEGER NOT NULL, " +
+                    "display_index INTEGER NOT NULL, profile_id TEXT NOT NULL DEFAULT " +
+                    "'00000000-0000-0000-0000-000000000000')"
+            )
             database.execSQL("CREATE TABLE playlist_stream_join (playlist_id INTEGER NOT NULL, stream_id INTEGER NOT NULL, join_index INTEGER NOT NULL)")
-            database.execSQL("CREATE TABLE remote_playlists (uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, name TEXT, url TEXT, thumbnail_url TEXT, uploader TEXT, display_index INTEGER NOT NULL, stream_count INTEGER)")
-            database.execSQL("CREATE TABLE feed_group (uid INTEGER PRIMARY KEY, name TEXT NOT NULL, icon_id INTEGER NOT NULL, sort_order INTEGER NOT NULL)")
+            database.execSQL(
+                "CREATE TABLE remote_playlists (uid INTEGER PRIMARY KEY, service_id INTEGER NOT NULL, " +
+                    "name TEXT, url TEXT, thumbnail_url TEXT, uploader TEXT, " +
+                    "display_index INTEGER NOT NULL, stream_count INTEGER, " +
+                    "profile_id TEXT NOT NULL DEFAULT " +
+                    "'00000000-0000-0000-0000-000000000000')"
+            )
+            database.execSQL(
+                "CREATE TABLE feed_group (uid INTEGER PRIMARY KEY, name TEXT NOT NULL, " +
+                    "icon_id INTEGER NOT NULL, sort_order INTEGER NOT NULL, " +
+                    "profile_id TEXT NOT NULL DEFAULT " +
+                    "'00000000-0000-0000-0000-000000000000')"
+            )
             database.execSQL("CREATE TABLE feed_group_subscription_join (group_id INTEGER NOT NULL, subscription_id INTEGER NOT NULL)")
             database.execSQL("CREATE TABLE search_history (creation_date INTEGER, service_id INTEGER NOT NULL, search TEXT, id INTEGER PRIMARY KEY)")
         }

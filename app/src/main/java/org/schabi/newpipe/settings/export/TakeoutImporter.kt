@@ -11,6 +11,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal data class TakeoutImportResult(
     val playlists: Int,
@@ -26,6 +27,7 @@ internal class TakeoutImporter(
     private val database: AppDatabase,
     private val recordSearch: (String, Long) -> Unit = { _, _ -> },
     private val recordSubscription: (SubscriptionEntity) -> Unit = {},
+    private val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
     private val recordWatch: (Long, Long, Long) -> Unit
 ) {
     fun import(data: TakeoutData): TakeoutImportResult {
@@ -40,15 +42,23 @@ internal class TakeoutImporter(
             fun stream(video: TakeoutVideo): Long = database.streamDAO().getStreamDirect(0, video.url)?.uid ?: database.streamDAO().insert(
                 StreamEntity(serviceId = 0, url = video.url, title = video.title, streamType = StreamType.VIDEO_STREAM, duration = -1, uploader = "")
             )
-            val existing = database.playlistDAO().getAllDirect().toMutableList()
+            val existing = database.playlistDAO()
+                .getAllDirectForProfile(profileId)
+                .toMutableList()
             val used = mutableSetOf<Long>()
-            val bookmarksByUrl = database.playlistRemoteDAO().getAllDirect().filter { it.serviceId == 0 }.map { it.url }.toMutableSet()
+            val bookmarksByUrl = database.playlistRemoteDAO()
+                .getAllDirectForProfile(profileId)
+                .filter { it.serviceId == 0 }
+                .map { it.url }
+                .toMutableSet()
             for (playlist in data.playlists) {
                 check(!Thread.currentThread().isInterrupted) { "Import cancelled" }
                 val base = playlist.name.take(200)
                 val pattern = Regex("${Regex.escape(base)} \\(Takeout(?: [2-9][0-9]*| 1[0-9]+)?\\)")
                 val candidates = existing.filter { it.uid !in used && it.name?.matches(pattern) == true }
-                val ordered = candidates.associateWith { database.playlistStreamDAO().getOrderedStreamsDirect(it.uid) }
+                val ordered = candidates.associateWith {
+                    database.playlistStreamDAO().getOrderedStreamsDirectForProfile(profileId, it.uid)
+                }
                 val urls = playlist.videos.map { it.url }
                 var target = candidates.firstOrNull { ordered[it]?.map { video -> video.url } == urls } ?: candidates.firstOrNull()
                 val old = ordered[target].orEmpty()
@@ -56,7 +66,13 @@ internal class TakeoutImporter(
                     var name = "$base (Takeout)"
                     var suffix = 2
                     while (existing.any { it.name == name }) name = "$base (Takeout ${suffix++})"
-                    target = PlaylistEntity(name = name, isThumbnailPermanent = false, thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID, displayIndex = -1)
+                    target = PlaylistEntity(
+                        name = name,
+                        isThumbnailPermanent = false,
+                        thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID,
+                        displayIndex = -1,
+                        profileId = profileId
+                    )
                     target.uid = database.playlistDAO().insert(target)
                     existing.add(target)
                     playlists++
@@ -77,24 +93,43 @@ internal class TakeoutImporter(
                     database.playlistStreamDAO().insert(PlaylistStreamEntity(target.uid, streamId, index++))
                     if (target.thumbnailStreamId == PlaylistEntity.DEFAULT_THUMBNAIL_ID) {
                         target.thumbnailStreamId = streamId
-                        database.playlistDAO().update(target)
+                        database.playlistDAO().updateForProfile(profileId, target)
                     }
                     videos++
                 }
                 if (playlist.url != null && bookmarksByUrl.add(playlist.url)) {
                     database.playlistRemoteDAO().insert(
-                        PlaylistRemoteEntity(serviceId = 0, orderingName = playlist.name, url = playlist.url, thumbnailUrl = null, uploader = null, streamCount = playlist.videos.size.toLong())
+                        PlaylistRemoteEntity(
+                            serviceId = 0,
+                            orderingName = playlist.name,
+                            url = playlist.url,
+                            thumbnailUrl = null,
+                            uploader = null,
+                            streamCount = playlist.videos.size.toLong(),
+                            profileId = profileId
+                        )
                     )
                     bookmarks++
                 }
             }
             for (subscription in data.subscriptions) {
                 check(!Thread.currentThread().isInterrupted) { "Import cancelled" }
-                if (database.subscriptionDAO().getSubscriptionDirect(0, subscription.url) != null) {
+                if (
+                    database.subscriptionDAO().getSubscriptionDirectForProfile(
+                        profileId,
+                        0,
+                        subscription.url
+                    ) != null
+                ) {
                     skipped++
                     continue
                 }
-                val entity = SubscriptionEntity(serviceId = 0, url = subscription.url, name = subscription.name)
+                val entity = SubscriptionEntity(
+                    serviceId = 0,
+                    url = subscription.url,
+                    name = subscription.name,
+                    profileId = profileId
+                )
                 entity.uid = database.subscriptionDAO().insert(entity)
                 recordSubscription(entity)
                 subscriptions++
@@ -103,12 +138,20 @@ internal class TakeoutImporter(
                 check(!Thread.currentThread().isInterrupted) { "Import cancelled" }
                 val streamId = stream(watch.video)
                 val date = Instant.ofEpochMilli(watch.timestamp).atOffset(ZoneOffset.UTC)
-                if (database.streamHistoryDAO().hasTakeoutEvent(streamId, date)) {
+                if (
+                    database.streamHistoryDAO().hasTakeoutEventForProfile(
+                        profileId,
+                        streamId,
+                        date
+                    )
+                ) {
                     skipped++
                 } else {
                     // Initialize and journal before materializing, as normal playback does.
                     recordWatch(streamId, watch.timestamp, 1)
-                    database.streamHistoryDAO().insert(StreamHistoryEntity(streamId, date, 1))
+                    database.streamHistoryDAO().insert(
+                        StreamHistoryEntity(streamId, date, 1, profileId)
+                    )
                     watches++
                 }
             }

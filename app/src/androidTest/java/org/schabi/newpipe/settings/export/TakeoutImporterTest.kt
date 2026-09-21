@@ -9,6 +9,7 @@ import org.junit.Test
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 class TakeoutImporterTest {
     @Test
@@ -92,6 +93,67 @@ class TakeoutImporterTest {
             importer.import(TakeoutData(listOf(TakeoutPlaylist("Empty", listOf(first, second))), emptyList(), 0))
             assertEquals(9, db.playlistStreamDAO().getMaximumIndexDirect(empty.uid))
             assertEquals(listOf(first.url, second.url), db.playlistStreamDAO().getOrderedStreamsDirect(empty.uid).map { it.url })
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun importsProfileOwnedDataOnlyIntoSelectedProfile() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            val profileId = "11111111-1111-1111-1111-111111111111"
+            val video = TakeoutVideo(
+                "https://www.youtube.com/watch?v=abcdefghijk",
+                "Profile lesson"
+            )
+            val channel = "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv"
+            val data = TakeoutData(
+                listOf(
+                    TakeoutPlaylist(
+                        "Study",
+                        listOf(video),
+                        "https://www.youtube.com/playlist?list=PLabcdefghijk"
+                    )
+                ),
+                listOf(TakeoutWatch(video, 1700000000123)),
+                0,
+                listOf(TakeoutSubscription(channel, "Study channel"))
+            )
+
+            val importer = TakeoutImporter(
+                db,
+                profileId = profileId,
+                recordWatch = { _, _, _ -> }
+            )
+            assertEquals(TakeoutImportResult(1, 1, 1, 0, 1, 1, 0), importer.import(data))
+
+            assertTrue(
+                db.playlistDAO()
+                    .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                    .isEmpty()
+            )
+            assertTrue(
+                db.playlistRemoteDAO()
+                    .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                    .isEmpty()
+            )
+            assertTrue(
+                db.subscriptionDAO()
+                    .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                    .isEmpty()
+            )
+            assertTrue(
+                db.streamHistoryDAO()
+                    .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                    .isEmpty()
+            )
+
+            assertEquals(1, db.playlistDAO().getAllDirectForProfile(profileId).size)
+            assertEquals(1, db.playlistRemoteDAO().getAllDirectForProfile(profileId).size)
+            assertEquals(1, db.subscriptionDAO().getAllDirectForProfile(profileId).size)
+            assertEquals(1, db.streamHistoryDAO().getAllDirectForProfile(profileId).size)
         } finally {
             db.close()
         }

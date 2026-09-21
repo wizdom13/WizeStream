@@ -22,6 +22,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.settings.export.NewPipeDataMigrationManager
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockBehavior
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
@@ -98,6 +99,54 @@ class NewPipeDataMigrationManagerTest {
         assertTrue(playlists.any { it.name == "Lessons (Imported)" })
         val imported = playlists.single { it.name == "Lessons (Imported)" }
         assertEquals(1, target.playlistStreamDAO().getOrderedStreamsDirect(imported.uid).size)
+    }
+
+    @Test
+    fun importsPortableDataOnlyIntoSelectedProfile() {
+        val profileId = "22222222-2222-2222-2222-222222222222"
+        val manager = NewPipeDataMigrationManager(context)
+
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(
+                importHistory = true,
+                importPlaylists = true,
+                importSubscriptions = true
+            ),
+            targetProfileId = profileId
+        )
+
+        val target = NewPipeDatabase.getInstance(context)
+        assertEquals(1, result.historyItems)
+        assertEquals(1, result.progressItems)
+        assertEquals(1, result.playlists)
+        assertEquals(2, result.subscriptions)
+
+        assertTrue(
+            target.streamHistoryDAO()
+                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                .isEmpty()
+        )
+        assertTrue(
+            target.streamStateDAO()
+                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                .isEmpty()
+        )
+        assertTrue(
+            target.playlistDAO()
+                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                .isEmpty()
+        )
+        assertTrue(
+            target.subscriptionDAO()
+                .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+                .isEmpty()
+        )
+
+        assertEquals(1, target.streamHistoryDAO().getAllDirectForProfile(profileId).size)
+        assertEquals(1, target.streamStateDAO().getAllDirectForProfile(profileId).size)
+        assertEquals(1, target.playlistDAO().getAllDirectForProfile(profileId).size)
+        assertEquals(2, target.subscriptionDAO().getAllDirectForProfile(profileId).size)
     }
 
     @Test

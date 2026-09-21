@@ -8,6 +8,7 @@ import java.nio.file.Path
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.deleteIfExists
 import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.streams.io.SharpOutputStream
 import org.schabi.newpipe.streams.io.StoredFileHelper
 import org.schabi.newpipe.util.ZipHelper
@@ -41,8 +42,12 @@ class NewPipeCompatibleExportManager internal constructor(
      * WizeStream settings and private tables are deliberately excluded so restoring this archive
      * cannot expose NewPipe to WizeStream's newer Room schema.
      */
+    @JvmOverloads
     @Throws(Exception::class)
-    fun export(file: StoredFileHelper): ExportResult {
+    fun export(
+        file: StoredFileHelper,
+        profileId: String = ProfileManager.DEFAULT_PROFILE_ID
+    ): ExportResult {
         Files.createDirectories(temporaryDirectory)
         val portableDatabase = Files.createTempFile(
             temporaryDirectory,
@@ -50,7 +55,7 @@ class NewPipeCompatibleExportManager internal constructor(
             ".db"
         )
         return try {
-            val result = createDatabase(portableDatabase)
+            val result = createDatabase(portableDatabase, profileId)
             try {
                 ZipOutputStream(
                     SharpOutputStream(file.openAndTruncateStream()).buffered()
@@ -71,7 +76,10 @@ class NewPipeCompatibleExportManager internal constructor(
         }
     }
 
-    internal fun createDatabase(destinationPath: Path): ExportResult {
+    internal fun createDatabase(
+        destinationPath: Path,
+        profileId: String = ProfileManager.DEFAULT_PROFILE_ID
+    ): ExportResult {
         check(Files.isRegularFile(sourceDatabase)) {
             "The WizeStream database is not available"
         }
@@ -93,7 +101,7 @@ class NewPipeCompatibleExportManager internal constructor(
             destination.beginTransaction()
             try {
                 NEWPIPE_SCHEMA.forEach(destination::execSQL)
-                copyPortableData(destination)
+                copyPortableData(destination, profileId)
                 destination.version = NEWPIPE_DATABASE_VERSION
                 destination.execSQL(
                     "CREATE TABLE IF NOT EXISTS room_master_table " +
@@ -118,12 +126,15 @@ class NewPipeCompatibleExportManager internal constructor(
                 historyItems = historyItems,
                 progressItems = progressItems,
                 skippedItems =
-                    destination.rowCount("wizestream_source.subscriptions") - subscriptions +
-                        destination.rowCount("wizestream_source.stream_history") - historyItems +
-                        destination.rowCount("wizestream_source.stream_state") - progressItems +
-                        destination.skippedRows("remote_playlists") +
-                        destination.skippedRows("playlist_stream_join") +
-                        destination.skippedRows("feed_group_subscription_join") +
+                    destination.profileRowCount("subscriptions", profileId) - subscriptions +
+                        destination.profileRowCount("stream_history", profileId) - historyItems +
+                        destination.profileRowCount("stream_state", profileId) - progressItems +
+                        destination.profileRowCount("remote_playlists", profileId) -
+                        destination.rowCount("remote_playlists") +
+                        destination.playlistJoinRowCount(profileId) -
+                        destination.rowCount("playlist_stream_join") +
+                        destination.groupJoinRowCount(profileId) -
+                        destination.rowCount("feed_group_subscription_join") +
                         destination.skippedRows("search_history"),
                 localPlaylists = destination.rowCount("playlists"),
                 remotePlaylists = destination.rowCount("remote_playlists"),
@@ -140,15 +151,16 @@ class NewPipeCompatibleExportManager internal constructor(
         }
     }
 
-    private fun copyPortableData(database: SQLiteDatabase) {
+    private fun copyPortableData(database: SQLiteDatabase, profileId: String) {
         database.execSQL(
             "INSERT INTO subscriptions " +
                 "(uid, service_id, url, name, avatar_url, subscriber_count, description, " +
                 "notification_mode) " +
                 "SELECT uid, service_id, url, name, avatar_url, subscriber_count, description, " +
                 "CASE WHEN notification_mode = 0 THEN 0 ELSE 1 END " +
-                "FROM wizestream_source.subscriptions WHERE service_id BETWEEN " +
-                "$NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID"
+                "FROM wizestream_source.subscriptions WHERE profile_id = ? AND " +
+                "service_id BETWEEN $NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID",
+            arrayOf(profileId)
         )
         database.execSQL(
             "INSERT INTO streams " +
@@ -162,32 +174,37 @@ class NewPipeCompatibleExportManager internal constructor(
                 "WHERE s.source_type = 'REMOTE' AND s.service_id BETWEEN " +
                 "$NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID AND " +
                 "(EXISTS (SELECT 1 FROM wizestream_source.stream_history h " +
-                "WHERE h.stream_id = s.uid) OR " +
+                "WHERE h.profile_id = ? AND h.stream_id = s.uid) OR " +
                 "EXISTS (SELECT 1 FROM wizestream_source.stream_state st " +
-                "WHERE st.stream_id = s.uid) OR " +
+                "WHERE st.profile_id = ? AND st.stream_id = s.uid) OR " +
                 "EXISTS (SELECT 1 FROM wizestream_source.playlist_stream_join j " +
                 "INNER JOIN wizestream_source.playlists p ON p.uid = j.playlist_id " +
-                "WHERE j.stream_id = s.uid) OR " +
+                "WHERE p.profile_id = ? AND j.stream_id = s.uid) OR " +
                 "EXISTS (SELECT 1 FROM wizestream_source.playlists p " +
-                "WHERE p.thumbnail_stream_id = s.uid))"
+                "WHERE p.profile_id = ? AND p.thumbnail_stream_id = s.uid))",
+            arrayOf(profileId, profileId, profileId, profileId)
         )
         database.execSQL(
             "INSERT INTO stream_history (stream_id, access_date, repeat_count) " +
                 "SELECT h.stream_id, h.access_date, h.repeat_count " +
                 "FROM wizestream_source.stream_history h " +
-                "INNER JOIN streams s ON s.uid = h.stream_id"
+                "INNER JOIN streams s ON s.uid = h.stream_id " +
+                "WHERE h.profile_id = ?",
+            arrayOf(profileId)
         )
         database.execSQL(
             "INSERT INTO stream_state (stream_id, progress_time) " +
                 "SELECT st.stream_id, st.progress_time " +
                 "FROM wizestream_source.stream_state st " +
-                "INNER JOIN streams s ON s.uid = st.stream_id"
+                "INNER JOIN streams s ON s.uid = st.stream_id " +
+                "WHERE st.profile_id = ?",
+            arrayOf(profileId)
         )
-        copyPlaylists(database)
-        copyGroupsAndSearches(database)
+        copyPlaylists(database, profileId)
+        copyGroupsAndSearches(database, profileId)
     }
 
-    private fun copyPlaylists(database: SQLiteDatabase) {
+    private fun copyPlaylists(database: SQLiteDatabase, profileId: String) {
         database.execSQL(
             "INSERT INTO playlists " +
                 "(uid, name, is_thumbnail_permanent, thumbnail_stream_id, display_index) " +
@@ -198,7 +215,8 @@ class NewPipeCompatibleExportManager internal constructor(
                 "(SELECT j.stream_id FROM wizestream_source.playlist_stream_join j " +
                 "INNER JOIN streams s ON s.uid = j.stream_id WHERE j.playlist_id = p.uid " +
                 "ORDER BY j.join_index LIMIT 1), -1), p.display_index " +
-                "FROM wizestream_source.playlists p"
+                "FROM wizestream_source.playlists p WHERE p.profile_id = ?",
+            arrayOf(profileId)
         )
         database.execSQL(
             "INSERT INTO playlist_stream_join (playlist_id, stream_id, join_index) " +
@@ -212,15 +230,19 @@ class NewPipeCompatibleExportManager internal constructor(
                 "(uid, service_id, name, url, thumbnail_url, uploader, display_index, stream_count) " +
                 "SELECT uid, service_id, name, url, thumbnail_url, uploader, " +
                 "display_index, stream_count FROM wizestream_source.remote_playlists " +
-                "WHERE service_id BETWEEN $NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID"
+                "WHERE profile_id = ? AND service_id BETWEEN " +
+                "$NEWPIPE_FIRST_SERVICE_ID AND $NEWPIPE_LAST_SERVICE_ID",
+            arrayOf(profileId)
         )
     }
 
-    private fun copyGroupsAndSearches(database: SQLiteDatabase) {
+    private fun copyGroupsAndSearches(database: SQLiteDatabase, profileId: String) {
         database.execSQL(
             "INSERT INTO feed_group (uid, name, icon_id, sort_order) " +
                 "SELECT uid, name, CASE WHEN icon_id BETWEEN 0 AND $NEWPIPE_LAST_GROUP_ICON " +
-                "THEN icon_id ELSE 0 END, sort_order FROM wizestream_source.feed_group"
+                "THEN icon_id ELSE 0 END, sort_order FROM wizestream_source.feed_group " +
+                "WHERE profile_id = ?",
+            arrayOf(profileId)
         )
         database.execSQL(
             "INSERT INTO feed_group_subscription_join (group_id, subscription_id) " +
@@ -261,7 +283,36 @@ class NewPipeCompatibleExportManager internal constructor(
         }
     }
 
-    private fun SQLiteDatabase.skippedRows(table: String): Int = rowCount("wizestream_source.$table") - rowCount(table)
+    private fun SQLiteDatabase.skippedRows(table: String): Int =
+        rowCount("wizestream_source.$table") - rowCount(table)
+
+    private fun SQLiteDatabase.profileRowCount(table: String, profileId: String): Int = rawQuery(
+        "SELECT COUNT(*) FROM wizestream_source.$table WHERE profile_id = ?",
+        arrayOf(profileId)
+    ).use { cursor ->
+        check(cursor.moveToFirst())
+        cursor.getInt(0)
+    }
+
+    private fun SQLiteDatabase.playlistJoinRowCount(profileId: String): Int = rawQuery(
+        "SELECT COUNT(*) FROM wizestream_source.playlist_stream_join j " +
+            "INNER JOIN wizestream_source.playlists p ON p.uid = j.playlist_id " +
+            "WHERE p.profile_id = ?",
+        arrayOf(profileId)
+    ).use { cursor ->
+        check(cursor.moveToFirst())
+        cursor.getInt(0)
+    }
+
+    private fun SQLiteDatabase.groupJoinRowCount(profileId: String): Int = rawQuery(
+        "SELECT COUNT(*) FROM wizestream_source.feed_group_subscription_join j " +
+            "INNER JOIN wizestream_source.feed_group g ON g.uid = j.group_id " +
+            "WHERE g.profile_id = ?",
+        arrayOf(profileId)
+    ).use { cursor ->
+        check(cursor.moveToFirst())
+        cursor.getInt(0)
+    }
 
     private fun SQLiteDatabase.rowCount(table: String): Int = rawQuery(
         "SELECT COUNT(*) FROM $table",
