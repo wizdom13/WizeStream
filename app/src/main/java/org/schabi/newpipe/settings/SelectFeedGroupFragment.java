@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Vector;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -93,7 +94,7 @@ public class SelectFeedGroupFragment extends DialogFragment {
         return v;
     }
 
-    static io.reactivex.rxjava3.core.Flowable<List<FeedGroupEntity>> feedGroupsForProfile(
+    static Flowable<List<FeedGroupEntity>> feedGroupsForProfile(
             final AppDatabase database,
             final String profileId) {
         return database.feedGroupDAO().getAllForProfile(profileId);
