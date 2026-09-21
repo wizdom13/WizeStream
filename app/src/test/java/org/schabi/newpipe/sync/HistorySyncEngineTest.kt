@@ -12,6 +12,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.schabi.newpipe.profiles.ProfileManager
 
 class HistorySyncEngineTest {
     @Test
@@ -47,6 +48,72 @@ class HistorySyncEngineTest {
 
         assertEquals(12_000L, phoneStore.progressMillis(STREAM_URL))
         assertEquals(12_000L, tabletStore.progressMillis(STREAM_URL))
+    }
+
+    @Test
+    fun `same video history and progress stay isolated across profiles`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        phoneStore.registerStream(STREAM_ID, STREAM_URL)
+        tabletStore.registerStream(STREAM_ID, STREAM_URL)
+        val phone = HistorySyncEngine(phoneStore)
+        val tablet = HistorySyncEngine(tabletStore)
+        val workProfile = "11111111-1111-1111-1111-111111111111"
+
+        phoneStore.recordWatchEvent(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            STREAM_ID,
+            1_000,
+            2
+        )
+        phoneStore.recordProgress(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            STREAM_ID,
+            90_000,
+            1_000
+        )
+        phoneStore.recordWatchEvent(workProfile, STREAM_ID, 2_000, 5)
+        phoneStore.recordProgress(workProfile, STREAM_ID, 12_000, 2_000)
+
+        synchronize(
+            HistorySyncCategory.WATCH,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            2L,
+            tabletStore.repeatCount(ProfileManager.DEFAULT_PROFILE_ID, STREAM_URL)
+        )
+        assertEquals(5L, tabletStore.repeatCount(workProfile, STREAM_URL))
+        assertEquals(
+            90_000L,
+            tabletStore.progressMillis(ProfileManager.DEFAULT_PROFILE_ID, STREAM_URL)
+        )
+        assertEquals(12_000L, tabletStore.progressMillis(workProfile, STREAM_URL))
+
+        phoneStore.recordWatchAllDelete(ProfileManager.DEFAULT_PROFILE_ID)
+        phoneStore.recordProgressAllDelete(ProfileManager.DEFAULT_PROFILE_ID)
+        synchronize(
+            HistorySyncCategory.WATCH,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            0L,
+            tabletStore.repeatCount(ProfileManager.DEFAULT_PROFILE_ID, STREAM_URL)
+        )
+        assertEquals(
+            null,
+            tabletStore.progressMillis(ProfileManager.DEFAULT_PROFILE_ID, STREAM_URL)
+        )
+        assertEquals(5L, tabletStore.repeatCount(workProfile, STREAM_URL))
+        assertEquals(12_000L, tabletStore.progressMillis(workProfile, STREAM_URL))
     }
 
     @Test

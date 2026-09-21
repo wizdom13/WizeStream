@@ -18,6 +18,9 @@ class DeviceSyncManager private constructor(context: Context) {
     private val stateRepository = AndroidSyncStateRepository(applicationContext)
     private val syncLogRepository = DeviceSyncLogRepository(applicationContext)
     private val peerDiscovery = AndroidPeerDiscovery(applicationContext)
+    private val profileSyncEngine = ProfileSyncEngine(
+        AndroidProfileSyncStore(applicationContext)
+    )
     private val subscriptionSyncEngine = SubscriptionSyncEngine(
         RoomSubscriptionSyncStore.get(applicationContext)
     )
@@ -53,6 +56,7 @@ class DeviceSyncManager private constructor(context: Context) {
             peerAddressResolver = { peer ->
                 peerDiscovery.addressesFor(peer)
             },
+            profileSyncEngine = profileSyncEngine,
             subscriptionSyncEngine = subscriptionSyncEngine,
             listenAddress = "/ip4/0.0.0.0/tcp/$listenPort",
             onListenPortSelected = { port ->
@@ -111,30 +115,38 @@ class DeviceSyncManager private constructor(context: Context) {
             throw SubscriptionSyncException("Pair a trusted device before synchronizing")
         }
         val attempts = peers.map { peer ->
+            var activePeer = peer
             val retryDiagnostics = linkedMapOf<DeviceSyncLogCategory, String>()
-            val (activePeer, result) = runSyncStage(
-                peer,
-                DeviceSyncLogCategory.SUBSCRIPTIONS,
+            val profileAttempt = runSyncStage(
+                activePeer,
+                DeviceSyncLogCategory.PROFILES,
                 retryDiagnostics
             ) { candidate ->
-                node.syncSubscriptions(candidate)
+                node.syncProfiles(candidate)
             }
-            result.fold(
-                onSuccess = {
-                    DeviceSyncAttempt(
-                        peer = activePeer,
-                        result = it,
-                        retryDiagnostics = retryDiagnostics
-                    )
-                },
-                onFailure = { error ->
-                    DeviceSyncAttempt(
-                        peer = activePeer,
-                        error = error.diagnosticMessage()
-                            ?: "Subscription synchronization failed",
-                        retryDiagnostics = retryDiagnostics
-                    )
+            activePeer = profileAttempt.first
+            val profile = profileAttempt.second
+            val subscription = if (profile.isSuccess) {
+                val attempt = runSyncStage(
+                    activePeer,
+                    DeviceSyncLogCategory.SUBSCRIPTIONS,
+                    retryDiagnostics
+                ) { candidate ->
+                    node.syncSubscriptions(candidate)
                 }
+                activePeer = attempt.first
+                attempt.second
+            } else {
+                null
+            }
+            DeviceSyncAttempt(
+                peer = activePeer,
+                profileResult = profile.getOrNull(),
+                profileError = profile.exceptionOrNull().diagnosticMessage(),
+                result = subscription?.getOrNull(),
+                error = subscription?.exceptionOrNull().diagnosticMessage()
+                    ?: if (profile.isFailure) PROFILE_SYNC_REQUIRED else null,
+                retryDiagnostics = retryDiagnostics
             )
         }
         return DeviceSyncSummary(attempts)
@@ -176,32 +188,50 @@ class DeviceSyncManager private constructor(context: Context) {
             var activePeer = peer
             val retryDiagnostics = linkedMapOf<DeviceSyncLogCategory, String>()
 
-            val subscriptionAttempt = runSyncStage(
+            val profileAttempt = runSyncStage(
                 activePeer,
-                DeviceSyncLogCategory.SUBSCRIPTIONS,
+                DeviceSyncLogCategory.PROFILES,
                 retryDiagnostics
             ) { candidate ->
-                node.syncSubscriptions(candidate, recordStatus = !background)
+                node.syncProfiles(candidate, recordStatus = !background)
             }
-            activePeer = subscriptionAttempt.first
-            val subscription = subscriptionAttempt.second
+            activePeer = profileAttempt.first
+            val profile = profileAttempt.second
 
-            val canContinue = subscription.isSuccess ||
-                (
-                    !background &&
-                        !DeviceSyncTransportRecovery.shouldRetryTransportFailure(
-                            subscription.exceptionOrNull()
-                        )
-                    )
-            val downstreamTransportError = if (
-                !canContinue &&
-                DeviceSyncTransportRecovery.shouldRetryTransportFailure(
-                    subscription.exceptionOrNull()
-                )
-            ) {
-                PEER_LISTENER_UNAVAILABLE
+            val subscription = if (profile.isSuccess) {
+                val attempt = runSyncStage(
+                    activePeer,
+                    DeviceSyncLogCategory.SUBSCRIPTIONS,
+                    retryDiagnostics
+                ) { candidate ->
+                    node.syncSubscriptions(candidate, recordStatus = !background)
+                }
+                activePeer = attempt.first
+                attempt.second
             } else {
                 null
+            }
+
+            val canContinue = profile.isSuccess &&
+                (
+                    subscription?.isSuccess == true ||
+                        (
+                            !background &&
+                                subscription != null &&
+                                !DeviceSyncTransportRecovery.shouldRetryTransportFailure(
+                                    subscription.exceptionOrNull()
+                                )
+                            )
+                    )
+            val downstreamTransportError = when {
+                profile.isFailure -> PROFILE_SYNC_REQUIRED
+
+                !canContinue &&
+                    DeviceSyncTransportRecovery.shouldRetryTransportFailure(
+                        subscription?.exceptionOrNull()
+                    ) -> PEER_LISTENER_UNAVAILABLE
+
+                else -> null
             }
 
             val playlist = if (canContinue) {
@@ -302,7 +332,8 @@ class DeviceSyncManager private constructor(context: Context) {
             }
 
             val errors = listOfNotNull(
-                subscription.exceptionOrNull()?.message,
+                profile.exceptionOrNull()?.message,
+                subscription?.exceptionOrNull()?.message,
                 playlist?.exceptionOrNull()?.message,
                 watchHistory?.exceptionOrNull()?.message,
                 searchHistory?.exceptionOrNull()?.message,
@@ -319,8 +350,11 @@ class DeviceSyncManager private constructor(context: Context) {
             }
             DeviceSyncAttempt(
                 peer = activePeer,
-                result = subscription.getOrNull(),
-                error = subscription.exceptionOrNull().diagnosticMessage(),
+                profileResult = profile.getOrNull(),
+                profileError = profile.exceptionOrNull().diagnosticMessage(),
+                result = subscription?.getOrNull(),
+                error = subscription?.exceptionOrNull().diagnosticMessage()
+                    ?: if (profile.isFailure) PROFILE_SYNC_REQUIRED else null,
                 playlistResult = playlist?.getOrNull(),
                 playlistError = playlist?.exceptionOrNull().diagnosticMessage()
                     ?: downstreamTransportError,
@@ -475,6 +509,8 @@ class DeviceSyncManager private constructor(context: Context) {
         private const val LOG_CAUSE_SEPARATOR = " → "
         private const val PEER_LISTENER_UNAVAILABLE =
             "Skipped because the trusted device listener is unavailable after discovery and retry"
+        private const val PROFILE_SYNC_REQUIRED =
+            "Skipped because profile synchronization did not complete"
 
         @Volatile
         private var instance: DeviceSyncManager? = null

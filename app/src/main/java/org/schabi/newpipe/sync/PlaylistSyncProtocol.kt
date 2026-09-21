@@ -205,7 +205,7 @@ internal class PlaylistSyncProtocolController(
 
 private object PlaylistSyncCodec {
     private val json = Json {
-        encodeDefaults = true
+        encodeDefaults = false
         explicitNulls = false
         ignoreUnknownKeys = false
     }

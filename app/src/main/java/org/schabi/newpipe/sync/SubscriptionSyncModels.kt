@@ -7,10 +7,12 @@ package org.schabi.newpipe.sync
 
 import io.libp2p.core.PeerId
 import java.security.MessageDigest
+import java.util.UUID
 import kotlinx.serialization.Serializable
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.local.feed.notifications.NotificationKeywordFilter
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal const val SUBSCRIPTION_SYNC_PROTOCOL_ID = "/wizestream/subscriptions/1.0.0"
 internal const val SUBSCRIPTION_SYNC_VERSION = 1
@@ -78,6 +80,7 @@ internal data class SubscriptionChange(
     val originRevision: Long,
     val lamportVersion: Long,
     val recordId: String,
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
     val serviceId: Int,
     val url: String,
     val type: SubscriptionChangeType,
@@ -119,6 +122,8 @@ data class SubscriptionSyncResult(
 
 data class DeviceSyncAttempt(
     val peer: TrustedPeer,
+    val profileResult: ProfileSyncResult? = null,
+    val profileError: String? = null,
     val result: SubscriptionSyncResult? = null,
     val error: String? = null,
     val playlistResult: PlaylistSyncResult? = null,
@@ -142,7 +147,8 @@ data class DeviceSyncSummary(
 ) {
     val succeeded: Int
         get() = attempts.count {
-            it.result != null &&
+            it.profileResult != null &&
+                it.result != null &&
                 it.playlistResult != null &&
                 (it.watchHistorySkipped || it.watchHistoryResult != null) &&
                 (it.searchHistorySkipped || it.searchHistoryResult != null) &&
@@ -160,7 +166,8 @@ data class DeviceSyncSummary(
 
     val sentChanges: Int
         get() = attempts.sumOf {
-            (it.result?.sentChanges ?: 0) +
+            (it.profileResult?.sentChanges ?: 0) +
+                (it.result?.sentChanges ?: 0) +
                 (it.playlistResult?.sentChanges ?: 0) +
                 (it.watchHistoryResult?.sentChanges ?: 0) +
                 (it.searchHistoryResult?.sentChanges ?: 0) +
@@ -172,7 +179,8 @@ data class DeviceSyncSummary(
 
     val receivedChanges: Int
         get() = attempts.sumOf {
-            (it.result?.receivedChanges ?: 0) +
+            (it.profileResult?.receivedChanges ?: 0) +
+                (it.result?.receivedChanges ?: 0) +
                 (it.playlistResult?.receivedChanges ?: 0) +
                 (it.watchHistoryResult?.receivedChanges ?: 0) +
                 (it.searchHistoryResult?.receivedChanges ?: 0) +
@@ -268,6 +276,11 @@ internal object SubscriptionSyncValidation {
             if (!revisions.add(change.originPeerId to change.originRevision)) {
                 throw SubscriptionSyncException("A subscription change was sent more than once")
             }
+            if (!isCanonicalProfileId(change.profileId)) {
+                throw SubscriptionSyncException(
+                    "A subscription change has an invalid profile identity"
+                )
+            }
             if (
                 change.url.isBlank() ||
                 change.url != change.url.trim() ||
@@ -278,6 +291,7 @@ internal object SubscriptionSyncValidation {
             }
             if (
                 change.recordId != SubscriptionRecordId.from(
+                    change.profileId,
                     change.serviceId,
                     change.url
                 )
@@ -342,6 +356,11 @@ internal object SubscriptionSyncValidation {
         }
     }
 
+    private fun isCanonicalProfileId(profileId: String): Boolean {
+        return runCatching { UUID.fromString(profileId).toString() == profileId }
+            .getOrDefault(false)
+    }
+
     private fun validatePeerId(peerId: String) {
         try {
             PeerId.fromBase58(peerId)
@@ -355,9 +374,18 @@ internal object SubscriptionSyncValidation {
 
 internal object SubscriptionRecordId {
     fun from(serviceId: Int, url: String): String {
+        return from(ProfileManager.DEFAULT_PROFILE_ID, serviceId, url)
+    }
+
+    fun from(profileId: String, serviceId: Int, url: String): String {
         val canonicalUrl = url.trim()
+        val identity = if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
+            "$serviceId\u0000$canonicalUrl"
+        } else {
+            "$profileId\u0000$serviceId\u0000$canonicalUrl"
+        }
         val digest = MessageDigest.getInstance("SHA-256")
-            .digest("$serviceId\u0000$canonicalUrl".toByteArray(Charsets.UTF_8))
+            .digest(identity.toByteArray(Charsets.UTF_8))
         return buildString(digest.size * 2) {
             digest.forEach { byte ->
                 val value = byte.toInt() and 0xff

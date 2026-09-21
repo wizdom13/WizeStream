@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 class SubscriptionSyncEngineTest {
     @Test
@@ -35,6 +36,43 @@ class SubscriptionSyncEngineTest {
         val request = phone.createRequest(tabletStore.localPeerId)
         assertTrue(request.changes.isEmpty())
         assertFalse(request.hasMore)
+    }
+
+    @Test
+    fun `same channel in two profiles stays isolated across synchronization`() {
+        val phoneStore = newStore()
+        val tabletStore = newStore()
+        val phone = SubscriptionSyncEngine(phoneStore)
+        val tablet = SubscriptionSyncEngine(tabletStore)
+        val workProfile = "11111111-1111-1111-1111-111111111111"
+        phoneStore.addForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            SERVICE_ID,
+            PHONE_URL,
+            "Personal channel"
+        )
+        phoneStore.addForProfile(
+            workProfile,
+            SERVICE_ID,
+            PHONE_URL,
+            "Work channel"
+        )
+
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(
+            setOf(ProfileManager.DEFAULT_PROFILE_ID, workProfile),
+            tabletStore.profileIdsForUrl(PHONE_URL)
+        )
+
+        phoneStore.deleteForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            SERVICE_ID,
+            PHONE_URL
+        )
+        synchronize(phone, phoneStore, tablet, tabletStore)
+
+        assertEquals(setOf(workProfile), tabletStore.profileIdsForUrl(PHONE_URL))
     }
 
     @Test

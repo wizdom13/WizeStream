@@ -10,6 +10,7 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.profiles.ProfileManager
 import us.shandian.giga.get.sqlite.FinishedMissionStore
 
 internal interface StructuredPreferenceSyncStore {
@@ -44,7 +45,10 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private val database: AppDatabase,
     override val localPeerId: String,
     preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context),
-    finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context)
+    finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context),
+    canMaterializeProfile: (String) -> Boolean = { profileId ->
+        ProfileManager.getProfile(context, profileId) != null
+    }
 ) : StructuredPreferenceSyncStore {
     private val recordRepository = StructuredPreferenceRecordRepository(database, localPeerId)
     private val completedDownloadAdapter = CompletedDownloadSyncAdapter(
@@ -53,7 +57,11 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         recordRepository
     )
     private val adapters = listOf(
-        FeedGroupSyncAdapter(database, recordRepository),
+        FeedGroupSyncAdapter(
+            database,
+            recordRepository,
+            canMaterializeProfile
+        ),
         HomeTabSyncAdapter(context, preferences, database, recordRepository),
         ChannelProfileSyncAdapter(preferences, recordRepository),
         FilterSyncAdapter(context, preferences, recordRepository),

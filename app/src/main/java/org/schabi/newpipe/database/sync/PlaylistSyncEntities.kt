@@ -8,6 +8,7 @@ package org.schabi.newpipe.database.sync
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
+import org.schabi.newpipe.profiles.ProfileManager
 
 @Entity(
     tableName = PlaylistSyncChangeEntity.TABLE_NAME,
@@ -40,6 +41,12 @@ data class PlaylistSyncChangeEntity(
     @ColumnInfo(name = RECORD_ID)
     val recordId: String,
 
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
+
     @ColumnInfo(name = RECORD_TYPE)
     val recordType: String,
 
@@ -58,6 +65,7 @@ data class PlaylistSyncChangeEntity(
         const val ORIGIN_REVISION = "origin_revision"
         const val LAMPORT_VERSION = "lamport_version"
         const val RECORD_ID = "record_id"
+        const val PROFILE_ID = "profile_id"
         const val RECORD_TYPE = "record_type"
         const val PARENT_RECORD_ID = "parent_record_id"
         const val CHANGE_TYPE = "change_type"
@@ -76,6 +84,12 @@ data class PlaylistSyncChangeEntity(
 data class PlaylistSyncRecordEntity(
     @ColumnInfo(name = RECORD_ID)
     val recordId: String,
+
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
 
     @ColumnInfo(name = RECORD_TYPE)
     val recordType: String,
@@ -101,6 +115,7 @@ data class PlaylistSyncRecordEntity(
     companion object {
         const val TABLE_NAME = "playlist_sync_records"
         const val RECORD_ID = "record_id"
+        const val PROFILE_ID = "profile_id"
         const val RECORD_TYPE = "record_type"
         const val PARENT_RECORD_ID = "parent_record_id"
         const val LAMPORT_VERSION = "lamport_version"

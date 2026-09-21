@@ -376,6 +376,14 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
         return buildList {
             add(
                 syncCategory(
+                    getString(R.string.device_sync_category_profiles),
+                    attempt.profileResult?.sentChanges,
+                    attempt.profileResult?.receivedChanges,
+                    attempt.profileError
+                )
+            )
+            add(
+                syncCategory(
                     getString(R.string.device_sync_category_subscriptions),
                     attempt.result?.sentChanges,
                     attempt.result?.receivedChanges,
@@ -612,6 +620,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     private fun deviceSyncLogCategoryName(category: DeviceSyncLogCategory): String {
         return getString(
             when (category) {
+                DeviceSyncLogCategory.PROFILES -> R.string.device_sync_category_profiles
+
                 DeviceSyncLogCategory.SUBSCRIPTIONS ->
                     R.string.device_sync_category_subscriptions
 

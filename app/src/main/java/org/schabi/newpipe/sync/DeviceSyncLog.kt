@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 
 @Serializable
 enum class DeviceSyncLogCategory {
+    PROFILES,
     SUBSCRIPTIONS,
     PLAYLISTS,
     WATCH_HISTORY,
@@ -128,6 +129,15 @@ class DeviceSyncLogRepository(context: Context) {
         peerId = peer.peerId,
         addresses = peer.addresses,
         categories = buildList {
+            add(
+                categoryResult(
+                    DeviceSyncLogCategory.PROFILES,
+                    profileResult?.sentChanges,
+                    profileResult?.receivedChanges,
+                    profileError,
+                    retryDiagnostic = retryDiagnostics[DeviceSyncLogCategory.PROFILES]
+                )
+            )
             add(
                 categoryResult(
                     DeviceSyncLogCategory.SUBSCRIPTIONS,

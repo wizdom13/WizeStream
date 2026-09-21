@@ -11,6 +11,7 @@ import java.util.UUID
 import kotlinx.serialization.Serializable
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal const val HISTORY_SYNC_PROTOCOL_ID = "/wizestream/history/1.0.0"
 internal const val HISTORY_SYNC_VERSION = 1
@@ -148,6 +149,7 @@ internal data class HistoryChange(
     val originRevision: Long,
     val lamportVersion: Long,
     val recordId: String,
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
     val recordType: HistoryRecordType,
     val type: HistoryChangeType,
     val record: SyncedHistoryRecord? = null
@@ -281,6 +283,15 @@ internal object HistorySyncValidation {
         val revisions = hashSetOf<Pair<String, Long>>()
         changes.forEach { change ->
             validatePeerId(change.originPeerId)
+            validateProfileId(change.profileId)
+            if (
+                change.category != HistorySyncCategory.WATCH &&
+                change.profileId != ProfileManager.DEFAULT_PROFILE_ID
+            ) {
+                throw HistorySyncException(
+                    "Only watch history can be scoped to a non-Default profile"
+                )
+            }
             if (
                 change.category != category ||
                 change.originRevision !in 1..MAX_SYNC_REVISION ||
@@ -328,7 +339,10 @@ internal object HistorySyncValidation {
                 require(populatedRecords == 1)
                 validateStream(progress.stream)
                 if (
-                    change.recordId != HistoryRecordId.progress(progress.stream.identity) ||
+                    change.recordId != HistoryRecordId.progress(
+                        change.profileId,
+                        progress.stream.identity
+                    ) ||
                     progress.progressMillis < 0
                 ) {
                     throw HistorySyncException("A playback update has invalid progress")
@@ -345,7 +359,10 @@ internal object HistorySyncValidation {
                 validateStream(tombstone.stream)
                 if (
                     change.recordId !=
-                    HistoryRecordId.watchStreamTombstone(tombstone.stream.identity)
+                    HistoryRecordId.watchStreamTombstone(
+                        change.profileId,
+                        tombstone.stream.identity
+                    )
                 ) {
                     throw HistorySyncException("A watch deletion has an invalid identity")
                 }
@@ -353,12 +370,18 @@ internal object HistorySyncValidation {
 
             HistoryRecordType.WATCH_ALL_TOMBSTONE -> {
                 requireCategory(change, HistorySyncCategory.WATCH)
-                requireGlobalTombstone(change, HistoryRecordId.watchAllTombstone())
+                requireGlobalTombstone(
+                    change,
+                    HistoryRecordId.watchAllTombstone(change.profileId)
+                )
             }
 
             HistoryRecordType.PLAYBACK_ALL_TOMBSTONE -> {
                 requireCategory(change, HistorySyncCategory.WATCH)
-                requireGlobalTombstone(change, HistoryRecordId.playbackAllTombstone())
+                requireGlobalTombstone(
+                    change,
+                    HistoryRecordId.playbackAllTombstone(change.profileId)
+                )
             }
 
             HistoryRecordType.SEARCH_EVENT -> {
@@ -475,6 +498,16 @@ internal object HistorySyncValidation {
         }
     }
 
+    private fun validateProfileId(profileId: String) {
+        try {
+            if (UUID.fromString(profileId).toString() != profileId) {
+                throw IllegalArgumentException("Noncanonical UUID")
+            }
+        } catch (error: IllegalArgumentException) {
+            throw HistorySyncException("A history profile UUID is invalid", error)
+        }
+    }
+
     private fun validatePeerId(peerId: String) {
         try {
             PeerId.fromBase58(peerId)
@@ -501,16 +534,43 @@ internal object HistoryRecordId {
     fun watchEvent(): String = UUID.randomUUID().toString()
 
     fun progress(stream: HistoryStreamIdentity): String {
-        return digest("progress\u0000${stream.serviceId}\u0000${stream.url.trim()}")
+        return progress(ProfileManager.DEFAULT_PROFILE_ID, stream)
+    }
+
+    fun progress(profileId: String, stream: HistoryStreamIdentity): String {
+        return profiledDigest(
+            profileId,
+            "progress\u0000${stream.serviceId}\u0000${stream.url.trim()}"
+        )
     }
 
     fun watchStreamTombstone(stream: HistoryStreamIdentity): String {
-        return digest("watch-delete\u0000${stream.serviceId}\u0000${stream.url.trim()}")
+        return watchStreamTombstone(ProfileManager.DEFAULT_PROFILE_ID, stream)
     }
 
-    fun watchAllTombstone(): String = digest("watch-delete-all")
+    fun watchStreamTombstone(
+        profileId: String,
+        stream: HistoryStreamIdentity
+    ): String {
+        return profiledDigest(
+            profileId,
+            "watch-delete\u0000${stream.serviceId}\u0000${stream.url.trim()}"
+        )
+    }
 
-    fun playbackAllTombstone(): String = digest("playback-delete-all")
+    fun watchAllTombstone(): String = watchAllTombstone(ProfileManager.DEFAULT_PROFILE_ID)
+
+    fun watchAllTombstone(profileId: String): String {
+        return profiledDigest(profileId, "watch-delete-all")
+    }
+
+    fun playbackAllTombstone(): String = playbackAllTombstone(
+        ProfileManager.DEFAULT_PROFILE_ID
+    )
+
+    fun playbackAllTombstone(profileId: String): String {
+        return profiledDigest(profileId, "playback-delete-all")
+    }
 
     fun searchEvent(): String = UUID.randomUUID().toString()
 
@@ -519,6 +579,14 @@ internal object HistoryRecordId {
     }
 
     fun searchAllTombstone(): String = digest("search-delete-all")
+
+    private fun profiledDigest(profileId: String, legacyIdentity: String): String {
+        return if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
+            digest(legacyIdentity)
+        } else {
+            digest("$profileId\u0000$legacyIdentity")
+        }
+    }
 
     private fun digest(value: String): String {
         val digest = MessageDigest.getInstance("SHA-256")

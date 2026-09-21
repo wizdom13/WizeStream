@@ -1064,6 +1064,85 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom27to28ScopesSyncJournalsToDefaultProfile() {
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_27
+        ).use { database ->
+            database.execSQL(
+                "INSERT INTO subscription_sync_records " +
+                    "(record_id, service_id, url, lamport_version, origin_peer_id, " +
+                    "origin_revision, is_deleted) VALUES " +
+                    "('subscription-record', 0, 'https://example.com/channel', 1, " +
+                    "'peer-a', 1, 0)"
+            )
+            database.execSQL(
+                "INSERT INTO playlist_sync_records " +
+                    "(record_id, record_type, lamport_version, origin_peer_id, " +
+                    "origin_revision, is_deleted) VALUES " +
+                    "('playlist-record', 'REMOTE_PLAYLIST', 1, 'peer-a', 1, 0)"
+            )
+            database.execSQL(
+                "INSERT INTO history_sync_records " +
+                    "(category, record_id, record_type, lamport_version, origin_peer_id, " +
+                    "origin_revision, is_deleted) VALUES " +
+                    "('WATCH', 'history-record', 'WATCH_EVENT', 1, 'peer-a', 1, 0)"
+            )
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_28,
+            true,
+            Migrations.MIGRATION_27_28
+        )
+
+        listOf(
+            "subscription_sync_records" to "subscription-record",
+            "playlist_sync_records" to "playlist-record",
+            "history_sync_records" to "history-record"
+        ).forEach { (table, recordId) ->
+            migrated.query(
+                "SELECT profile_id FROM $table WHERE record_id = '$recordId'"
+            ).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(defaultProfileId, cursor.getString(0))
+            }
+        }
+
+        listOf(
+            "subscription_sync_changes",
+            "playlist_sync_changes",
+            "history_sync_changes"
+        ).forEach { table ->
+            migrated.query("PRAGMA table_info($table)").use { cursor ->
+                val nameIndex = cursor.getColumnIndex("name")
+                var hasProfileId = false
+                while (cursor.moveToNext()) {
+                    hasProfileId = hasProfileId || cursor.getString(nameIndex) == "profile_id"
+                }
+                assertTrue(hasProfileId)
+            }
+        }
+
+        migrated.execSQL(
+            "INSERT INTO subscription_sync_records " +
+                "(record_id, profile_id, service_id, url, lamport_version, origin_peer_id, " +
+                "origin_revision, is_deleted) VALUES " +
+                "('subscription-record-work', '11111111-1111-1111-1111-111111111111', " +
+                "0, 'https://example.com/channel', 2, 'peer-b', 1, 0)"
+        )
+        migrated.query(
+            "SELECT COUNT(*) FROM subscription_sync_records " +
+                "WHERE url = 'https://example.com/channel'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2, cursor.getInt(0))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -1084,7 +1163,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_23_24,
                 Migrations.MIGRATION_24_25,
                 Migrations.MIGRATION_25_26,
-                Migrations.MIGRATION_26_27
+                Migrations.MIGRATION_26_27,
+                Migrations.MIGRATION_27_28
             )
             .build()
         testHelper.closeWhenFinished(database)

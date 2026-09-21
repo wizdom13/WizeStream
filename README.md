@@ -346,9 +346,10 @@ data migration, and synchronization details.
 
 - Encrypted peer-to-peer pairing between trusted WizeStream devices using a one-time QR code
 - Manual synchronization and automatic background synchronization over Wi-Fi or Ethernet
-- Synchronization of subscriptions, feed groups, local and remote playlists, watch history, playback
-  progress, home tabs, content filters, channel playback profiles, allowlisted settings, optional
-  search history, and completed-download metadata
+- Synchronization of local profile identities plus profile-scoped subscriptions, feed groups,
+  local and remote playlists, watch history, and playback progress; home tabs, content filters,
+  channel playback profiles, allowlisted settings, optional search history, and completed-download
+  metadata remain app-wide
 - A **Download on this device** action when synchronized download metadata has no matching local file
 
 See [Device synchronization](#device-synchronization) for behavior, limitations, and setup.

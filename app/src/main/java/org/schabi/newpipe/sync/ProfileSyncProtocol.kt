@@ -20,40 +20,40 @@ import java.util.concurrent.CompletableFuture
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-internal typealias HistorySyncRequestHandler =
-    (PeerId, HistorySyncRequest, HistorySyncProtocolController) -> Unit
+internal typealias ProfileSyncRequestHandler =
+    (PeerId, ProfileSyncRequest, ProfileSyncProtocolController) -> Unit
 
-internal class HistorySyncProtocolBinding(
-    requestHandler: HistorySyncRequestHandler
-) : StrictProtocolBinding<HistorySyncProtocolController>(
-    HISTORY_SYNC_PROTOCOL_ID,
-    HistorySyncProtocol(requestHandler)
+internal class ProfileSyncProtocolBinding(
+    requestHandler: ProfileSyncRequestHandler
+) : StrictProtocolBinding<ProfileSyncProtocolController>(
+    PROFILE_SYNC_PROTOCOL_ID,
+    ProfileSyncProtocol(requestHandler)
 )
 
-internal class HistorySyncProtocol(
-    private val requestHandler: HistorySyncRequestHandler
-) : ProtocolHandler<HistorySyncProtocolController>(
+internal class ProfileSyncProtocol(
+    private val requestHandler: ProfileSyncRequestHandler
+) : ProtocolHandler<ProfileSyncProtocolController>(
     MAX_PROTOCOL_BYTES,
     MAX_PROTOCOL_BYTES
 ) {
     override fun onStartInitiator(
         stream: Stream
-    ): CompletableFuture<HistorySyncProtocolController> {
+    ): CompletableFuture<ProfileSyncProtocolController> {
         return start(stream, true)
     }
 
     override fun onStartResponder(
         stream: Stream
-    ): CompletableFuture<HistorySyncProtocolController> {
+    ): CompletableFuture<ProfileSyncProtocolController> {
         return start(stream, false)
     }
 
     private fun start(
         stream: Stream,
         initiator: Boolean
-    ): CompletableFuture<HistorySyncProtocolController> {
+    ): CompletableFuture<ProfileSyncProtocolController> {
         val ready = CompletableFuture<Void>()
-        val controller = HistorySyncProtocolController(
+        val controller = ProfileSyncProtocolController(
             stream,
             initiator,
             requestHandler,
@@ -64,17 +64,17 @@ internal class HistorySyncProtocol(
     }
 
     companion object {
-        private const val MAX_PROTOCOL_BYTES = 2L * 1024 * 1024
+        private const val MAX_PROTOCOL_BYTES = 512 * 1024L
     }
 }
 
-internal class HistorySyncProtocolController(
+internal class ProfileSyncProtocolController(
     private val stream: Stream,
     private val initiator: Boolean,
-    private val requestHandler: HistorySyncRequestHandler,
+    private val requestHandler: ProfileSyncRequestHandler,
     private val ready: CompletableFuture<Void>
 ) : ProtocolMessageHandler<ByteBuf> {
-    val response = CompletableFuture<HistorySyncResponse>()
+    val response = CompletableFuture<ProfileSyncResponse>()
     private var pendingBytes = ByteArray(0)
     private var handledFrame = false
 
@@ -94,8 +94,8 @@ internal class HistorySyncProtocolController(
                     FRAME_LENGTH_BYTES
                 ).int
                 if (frameLength !in 1..MAX_FRAME_BYTES) {
-                    throw HistorySyncException(
-                        "The history synchronization message has an invalid length"
+                    throw ProfileSyncException(
+                        "The profile synchronization message has an invalid length"
                     )
                 }
                 val totalFrameLength = FRAME_LENGTH_BYTES + frameLength
@@ -103,8 +103,8 @@ internal class HistorySyncProtocolController(
                     return
                 }
                 if (handledFrame) {
-                    throw HistorySyncException(
-                        "The history synchronization stream sent an unexpected extra message"
+                    throw ProfileSyncException(
+                        "The profile synchronization stream sent an unexpected extra message"
                     )
                 }
                 val frame = pendingBytes.copyOfRange(
@@ -123,14 +123,14 @@ internal class HistorySyncProtocolController(
         }
     }
 
-    fun sendRequest(request: HistorySyncRequest) {
-        check(initiator) { "Only the stream initiator can send a history request" }
-        send(HistorySyncCodec.encodeRequest(request))
+    fun sendRequest(request: ProfileSyncRequest) {
+        check(initiator) { "Only the stream initiator can send a profile sync request" }
+        send(ProfileSyncCodec.encodeRequest(request))
     }
 
-    fun sendResponse(response: HistorySyncResponse) {
-        check(!initiator) { "Only the stream responder can send a history response" }
-        send(HistorySyncCodec.encodeResponse(response))
+    fun sendResponse(response: ProfileSyncResponse) {
+        check(!initiator) { "Only the stream responder can send a profile sync response" }
+        send(ProfileSyncCodec.encodeResponse(response))
     }
 
     fun close() {
@@ -140,7 +140,7 @@ internal class HistorySyncProtocolController(
     override fun onClosed(stream: Stream) {
         if (initiator && !response.isDone) {
             response.completeExceptionally(
-                HistorySyncException("The history synchronization connection closed")
+                ProfileSyncException("The profile synchronization connection closed")
             )
         }
     }
@@ -148,9 +148,7 @@ internal class HistorySyncProtocolController(
     override fun onException(cause: Throwable?) {
         if (initiator && !response.isDone) {
             response.completeExceptionally(
-                cause ?: HistorySyncException(
-                    "The history synchronization connection failed"
-                )
+                cause ?: ProfileSyncException("The profile synchronization connection failed")
             )
         }
     }
@@ -158,11 +156,11 @@ internal class HistorySyncProtocolController(
     private fun handleFrame(remotePeerId: PeerId, frame: ByteArray) {
         val value = frame.toString(Charsets.UTF_8)
         if (initiator) {
-            response.complete(HistorySyncCodec.decodeResponse(value))
+            response.complete(ProfileSyncCodec.decodeResponse(value))
         } else {
             requestHandler(
                 remotePeerId,
-                HistorySyncCodec.decodeRequest(value),
+                ProfileSyncCodec.decodeRequest(value),
                 this
             )
         }
@@ -175,10 +173,9 @@ internal class HistorySyncProtocolController(
         }
         runCatching {
             sendResponse(
-                HistorySyncResponse(
+                ProfileSyncResponse(
                     accepted = false,
-                    category = HistorySyncCategory.WATCH,
-                    error = "Malformed history synchronization request"
+                    error = "Malformed profile synchronization request"
                 )
             )
         }
@@ -187,7 +184,7 @@ internal class HistorySyncProtocolController(
     private fun send(value: String) {
         val bytes = value.toByteArray(Charsets.UTF_8)
         if (bytes.size > MAX_FRAME_BYTES) {
-            throw HistorySyncException("The history synchronization message is too large")
+            throw ProfileSyncException("The profile synchronization message is too large")
         }
         val frame = ByteBuffer.allocate(FRAME_LENGTH_BYTES + bytes.size)
             .putInt(bytes.size)
@@ -198,42 +195,42 @@ internal class HistorySyncProtocolController(
 
     companion object {
         private const val FRAME_LENGTH_BYTES = Int.SIZE_BYTES
-        private const val MAX_FRAME_BYTES = 1024 * 1024
+        private const val MAX_FRAME_BYTES = 256 * 1024
     }
 }
 
-private object HistorySyncCodec {
+private object ProfileSyncCodec {
     private val json = Json {
         encodeDefaults = false
         explicitNulls = false
         ignoreUnknownKeys = false
     }
 
-    fun encodeRequest(request: HistorySyncRequest): String {
+    fun encodeRequest(request: ProfileSyncRequest): String {
         return json.encodeToString(request)
     }
 
-    fun decodeRequest(value: String): HistorySyncRequest {
+    fun decodeRequest(value: String): ProfileSyncRequest {
         return try {
             json.decodeFromString(value)
         } catch (error: Exception) {
-            throw HistorySyncException(
-                "The history synchronization request is malformed",
+            throw ProfileSyncException(
+                "The profile synchronization request is malformed",
                 error
             )
         }
     }
 
-    fun encodeResponse(response: HistorySyncResponse): String {
+    fun encodeResponse(response: ProfileSyncResponse): String {
         return json.encodeToString(response)
     }
 
-    fun decodeResponse(value: String): HistorySyncResponse {
+    fun decodeResponse(value: String): ProfileSyncResponse {
         return try {
             json.decodeFromString(value)
         } catch (error: Exception) {
-            throw HistorySyncException(
-                "The history synchronization response is malformed",
+            throw ProfileSyncException(
+                "The profile synchronization response is malformed",
                 error
             )
         }

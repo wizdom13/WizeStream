@@ -47,7 +47,8 @@ object Migrations {
     const val DB_VER_25 = 25
     const val DB_VER_26 = 26
     const val DB_VER_27 = 27
-    const val DB_VER_CURRENT = DB_VER_27
+    const val DB_VER_28 = 28
+    const val DB_VER_CURRENT = DB_VER_28
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -1001,6 +1002,45 @@ object Migrations {
                 "index_saved_search_feed_profile_id_service_id_query_content_filter_sort_filter " +
                 "ON saved_search_feed " +
                 "(profile_id, service_id, query, content_filter, sort_filter)"
+        )
+    }
+
+    val MIGRATION_27_28 = Migration(DB_VER_27, DB_VER_28) { db ->
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+
+        db.execSQL(
+            "ALTER TABLE subscription_sync_changes ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL(
+            "ALTER TABLE subscription_sync_records ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL(
+            "DROP INDEX IF EXISTS index_subscription_sync_records_service_id_url"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "index_subscription_sync_records_profile_id_service_id_url " +
+                "ON subscription_sync_records (profile_id, service_id, url)"
+        )
+
+        db.execSQL(
+            "ALTER TABLE playlist_sync_changes ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL(
+            "ALTER TABLE playlist_sync_records ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+
+        db.execSQL(
+            "ALTER TABLE history_sync_changes ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL(
+            "ALTER TABLE history_sync_records ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
         )
     }
 }

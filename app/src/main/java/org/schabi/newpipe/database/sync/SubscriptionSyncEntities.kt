@@ -8,6 +8,7 @@ package org.schabi.newpipe.database.sync
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
+import org.schabi.newpipe.profiles.ProfileManager
 
 @Entity(
     tableName = SubscriptionSyncChangeEntity.TABLE_NAME,
@@ -38,6 +39,12 @@ data class SubscriptionSyncChangeEntity(
 
     @ColumnInfo(name = RECORD_ID)
     val recordId: String,
+
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
 
     @ColumnInfo(name = CHANGE_TYPE)
     val changeType: String,
@@ -75,6 +82,7 @@ data class SubscriptionSyncChangeEntity(
         const val ORIGIN_REVISION = "origin_revision"
         const val LAMPORT_VERSION = "lamport_version"
         const val RECORD_ID = "record_id"
+        const val PROFILE_ID = "profile_id"
         const val CHANGE_TYPE = "change_type"
         const val SERVICE_ID = "service_id"
         const val URL = "url"
@@ -94,6 +102,7 @@ data class SubscriptionSyncChangeEntity(
     indices = [
         Index(
             value = [
+                SubscriptionSyncRecordEntity.PROFILE_ID,
                 SubscriptionSyncRecordEntity.SERVICE_ID,
                 SubscriptionSyncRecordEntity.URL
             ],
@@ -104,6 +113,12 @@ data class SubscriptionSyncChangeEntity(
 data class SubscriptionSyncRecordEntity(
     @ColumnInfo(name = RECORD_ID)
     val recordId: String,
+
+    @ColumnInfo(
+        name = PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    val profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
 
     @ColumnInfo(name = SERVICE_ID)
     val serviceId: Int,
@@ -135,6 +150,7 @@ data class SubscriptionSyncRecordEntity(
     companion object {
         const val TABLE_NAME = "subscription_sync_records"
         const val RECORD_ID = "record_id"
+        const val PROFILE_ID = "profile_id"
         const val SERVICE_ID = "service_id"
         const val URL = "url"
         const val LAMPORT_VERSION = "lamport_version"

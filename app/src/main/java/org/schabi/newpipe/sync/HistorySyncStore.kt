@@ -31,22 +31,59 @@ internal interface HistorySyncStore {
     fun reconcileLocal(category: HistorySyncCategory)
 
     fun recordWatchEvent(
+        profileId: String,
         streamId: Long,
         watchedAtEpochMillis: Long,
         repeatCount: Long
+    )
+
+    fun recordWatchEvent(
+        streamId: Long,
+        watchedAtEpochMillis: Long,
+        repeatCount: Long
+    ) = recordWatchEvent(
+        ProfileManager.DEFAULT_PROFILE_ID,
+        streamId,
+        watchedAtEpochMillis,
+        repeatCount
+    )
+
+    fun recordProgress(
+        profileId: String,
+        streamId: Long,
+        progressMillis: Long,
+        updatedAtEpochMillis: Long
     )
 
     fun recordProgress(
         streamId: Long,
         progressMillis: Long,
         updatedAtEpochMillis: Long
+    ) = recordProgress(
+        ProfileManager.DEFAULT_PROFILE_ID,
+        streamId,
+        progressMillis,
+        updatedAtEpochMillis
     )
 
-    fun recordWatchStreamDelete(streamId: Long)
+    fun recordWatchStreamDelete(profileId: String, streamId: Long)
 
-    fun recordWatchAllDelete()
+    fun recordWatchStreamDelete(streamId: Long) = recordWatchStreamDelete(
+        ProfileManager.DEFAULT_PROFILE_ID,
+        streamId
+    )
 
-    fun recordProgressAllDelete()
+    fun recordWatchAllDelete(profileId: String)
+
+    fun recordWatchAllDelete() = recordWatchAllDelete(
+        ProfileManager.DEFAULT_PROFILE_ID
+    )
+
+    fun recordProgressAllDelete(profileId: String)
+
+    fun recordProgressAllDelete() = recordProgressAllDelete(
+        ProfileManager.DEFAULT_PROFILE_ID
+    )
 
     fun recordSearch(
         serviceId: Int,
@@ -86,7 +123,8 @@ internal interface HistorySyncStore {
 
 internal class RoomHistorySyncStore internal constructor(
     private val database: AppDatabase,
-    override val localPeerId: String
+    override val localPeerId: String,
+    private val canMaterializeProfile: (String) -> Boolean = { true }
 ) : HistorySyncStore {
     private val syncDao = database.historySyncDAO()
     private val searchHistoryDao = database.searchHistoryDAO()
@@ -102,6 +140,7 @@ internal class RoomHistorySyncStore internal constructor(
     }
 
     override fun recordWatchEvent(
+        profileId: String,
         streamId: Long,
         watchedAtEpochMillis: Long,
         repeatCount: Long
@@ -114,6 +153,7 @@ internal class RoomHistorySyncStore internal constructor(
             ensureInitialized(HistorySyncCategory.WATCH)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
+                profileId = profileId,
                 recordId = HistoryRecordId.watchEvent(),
                 recordType = HistoryRecordType.WATCH_EVENT,
                 type = HistoryChangeType.UPSERT,
@@ -129,6 +169,7 @@ internal class RoomHistorySyncStore internal constructor(
     }
 
     override fun recordProgress(
+        profileId: String,
         streamId: Long,
         progressMillis: Long,
         updatedAtEpochMillis: Long
@@ -140,7 +181,7 @@ internal class RoomHistorySyncStore internal constructor(
             }
             ensureInitialized(HistorySyncCategory.WATCH)
             val stream = SyncedHistoryStream.from(entity)
-            val recordId = HistoryRecordId.progress(stream.identity)
+            val recordId = HistoryRecordId.progress(profileId, stream.identity)
             val current = syncDao.getRecord(HistorySyncCategory.WATCH.name, recordId)
             val currentProgress = current?.takeUnless(HistorySyncRecordEntity::isDeleted)
                 ?.let(::decodeRecord)
@@ -150,6 +191,7 @@ internal class RoomHistorySyncStore internal constructor(
             }
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
+                profileId = profileId,
                 recordId = recordId,
                 recordType = HistoryRecordType.PLAYBACK_PROGRESS,
                 type = HistoryChangeType.UPSERT,
@@ -164,7 +206,7 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    override fun recordWatchStreamDelete(streamId: Long) {
+    override fun recordWatchStreamDelete(profileId: String, streamId: Long) {
         database.runInTransaction {
             val entity = requireStream(streamId)
             if (entity.isDeviceLocalHistoryStream()) {
@@ -174,7 +216,8 @@ internal class RoomHistorySyncStore internal constructor(
             val stream = SyncedHistoryStream.from(entity)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
-                recordId = HistoryRecordId.watchStreamTombstone(stream.identity),
+                profileId = profileId,
+                recordId = HistoryRecordId.watchStreamTombstone(profileId, stream.identity),
                 recordType = HistoryRecordType.WATCH_STREAM_TOMBSTONE,
                 type = HistoryChangeType.UPSERT,
                 record = SyncedHistoryRecord(
@@ -183,7 +226,8 @@ internal class RoomHistorySyncStore internal constructor(
             )
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
-                recordId = HistoryRecordId.progress(stream.identity),
+                profileId = profileId,
+                recordId = HistoryRecordId.progress(profileId, stream.identity),
                 recordType = HistoryRecordType.PLAYBACK_PROGRESS,
                 type = HistoryChangeType.DELETE,
                 record = SyncedHistoryRecord(
@@ -197,12 +241,13 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    override fun recordWatchAllDelete() {
+    override fun recordWatchAllDelete(profileId: String) {
         database.runInTransaction {
             ensureInitialized(HistorySyncCategory.WATCH)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
-                recordId = HistoryRecordId.watchAllTombstone(),
+                profileId = profileId,
+                recordId = HistoryRecordId.watchAllTombstone(profileId),
                 recordType = HistoryRecordType.WATCH_ALL_TOMBSTONE,
                 type = HistoryChangeType.UPSERT,
                 record = null
@@ -210,12 +255,13 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    override fun recordProgressAllDelete() {
+    override fun recordProgressAllDelete(profileId: String) {
         database.runInTransaction {
             ensureInitialized(HistorySyncCategory.WATCH)
             saveLocalChange(
                 category = HistorySyncCategory.WATCH,
-                recordId = HistoryRecordId.playbackAllTombstone(),
+                profileId = profileId,
+                recordId = HistoryRecordId.playbackAllTombstone(profileId),
                 recordType = HistoryRecordType.PLAYBACK_ALL_TOMBSTONE,
                 type = HistoryChangeType.UPSERT,
                 record = null
@@ -390,8 +436,8 @@ internal class RoomHistorySyncStore internal constructor(
 
                 var accepted = 0
                 var affected = 0
-                val affectedStreams = linkedSetOf<HistoryStreamIdentity>()
-                var materializeAllWatchStreams = false
+                val affectedStreams = linkedSetOf<ProfiledHistoryStreamIdentity>()
+                val materializeAllWatchProfiles = linkedSetOf<String>()
                 var materializeSearch = false
                 val affectedLearningNotes = linkedSetOf<String>()
 
@@ -413,21 +459,28 @@ internal class RoomHistorySyncStore internal constructor(
                     affected += 1
                     when (change.recordType) {
                         HistoryRecordType.WATCH_EVENT ->
-                            affectedStreams += requireNotNull(change.record?.watchEvent)
-                                .stream.identity
+                            affectedStreams += ProfiledHistoryStreamIdentity(
+                                change.profileId,
+                                requireNotNull(change.record?.watchEvent).stream.identity
+                            )
 
                         HistoryRecordType.PLAYBACK_PROGRESS ->
-                            affectedStreams += requireNotNull(change.record?.playbackProgress)
-                                .stream.identity
+                            affectedStreams += ProfiledHistoryStreamIdentity(
+                                change.profileId,
+                                requireNotNull(change.record?.playbackProgress).stream.identity
+                            )
 
                         HistoryRecordType.WATCH_STREAM_TOMBSTONE ->
-                            affectedStreams += requireNotNull(
-                                change.record?.watchStreamTombstone
-                            ).stream.identity
+                            affectedStreams += ProfiledHistoryStreamIdentity(
+                                change.profileId,
+                                requireNotNull(
+                                    change.record?.watchStreamTombstone
+                                ).stream.identity
+                            )
 
                         HistoryRecordType.WATCH_ALL_TOMBSTONE,
                         HistoryRecordType.PLAYBACK_ALL_TOMBSTONE ->
-                            materializeAllWatchStreams = true
+                            materializeAllWatchProfiles += change.profileId
 
                         HistoryRecordType.SEARCH_EVENT,
                         HistoryRecordType.SEARCH_QUERY_TOMBSTONE,
@@ -439,10 +492,14 @@ internal class RoomHistorySyncStore internal constructor(
                     }
                 }
 
-                if (materializeAllWatchStreams) {
-                    affectedStreams += getAllWatchStreamIdentities()
+                materializeAllWatchProfiles.forEach { profileId ->
+                    affectedStreams += getAllWatchStreamIdentities(profileId).map { identity ->
+                        ProfiledHistoryStreamIdentity(profileId, identity)
+                    }
                 }
-                affectedStreams.forEach(::materializeWatchStream)
+                affectedStreams.forEach { affected ->
+                    materializeWatchStream(affected.profileId, affected.identity)
+                }
                 if (materializeSearch) {
                     materializeSearchHistory()
                 }
@@ -464,11 +521,14 @@ internal class RoomHistorySyncStore internal constructor(
     }
 
     private fun ensureInitialized(category: HistorySyncCategory) {
+        if (category == HistorySyncCategory.WATCH) {
+            initializeMissingWatchProfiles()
+        }
         if (syncDao.getOriginState(category.name, localPeerId) != null) {
             return
         }
         when (category) {
-            HistorySyncCategory.WATCH -> initializeWatchHistory()
+            HistorySyncCategory.WATCH -> Unit
             HistorySyncCategory.SEARCH -> initializeSearchHistory()
             HistorySyncCategory.LEARNING_NOTES -> initializeLearningNotes()
         }
@@ -479,9 +539,22 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    private fun initializeWatchHistory() {
+    private fun initializeMissingWatchProfiles() {
+        val initializedProfiles = syncDao
+            .getRecords(HistorySyncCategory.WATCH.name)
+            .mapTo(mutableSetOf(), HistorySyncRecordEntity::profileId)
+        val localProfiles = buildSet {
+            streamHistoryDao.getAllDirect().forEach { add(it.profileId) }
+            streamStateDao.getAllDirect().forEach { add(it.profileId) }
+        }
+        localProfiles
+            .filterNot(initializedProfiles::contains)
+            .forEach(::initializeWatchHistory)
+    }
+
+    private fun initializeWatchHistory(profileId: String) {
         streamHistoryDao
-            .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+            .getAllDirectForProfile(profileId)
             .forEach { history ->
                 val stream = streamDao.getStreamDirect(history.streamUid) ?: return@forEach
                 if (stream.isDeviceLocalHistoryStream()) {
@@ -489,6 +562,7 @@ internal class RoomHistorySyncStore internal constructor(
                 }
                 saveLocalChange(
                     category = HistorySyncCategory.WATCH,
+                    profileId = profileId,
                     recordId = HistoryRecordId.watchEvent(),
                     recordType = HistoryRecordType.WATCH_EVENT,
                     type = HistoryChangeType.UPSERT,
@@ -502,7 +576,7 @@ internal class RoomHistorySyncStore internal constructor(
                 )
             }
         streamStateDao
-            .getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+            .getAllDirectForProfile(profileId)
             .forEach { state ->
                 val stream = streamDao.getStreamDirect(state.streamUid) ?: return@forEach
                 if (stream.isDeviceLocalHistoryStream()) {
@@ -511,7 +585,8 @@ internal class RoomHistorySyncStore internal constructor(
                 val syncedStream = SyncedHistoryStream.from(stream)
                 saveLocalChange(
                     category = HistorySyncCategory.WATCH,
-                    recordId = HistoryRecordId.progress(syncedStream.identity),
+                    profileId = profileId,
+                    recordId = HistoryRecordId.progress(profileId, syncedStream.identity),
                     recordType = HistoryRecordType.PLAYBACK_PROGRESS,
                     type = HistoryChangeType.UPSERT,
                     record = SyncedHistoryRecord(
@@ -567,6 +642,7 @@ internal class RoomHistorySyncStore internal constructor(
 
     private fun saveLocalChange(
         category: HistorySyncCategory,
+        profileId: String = ProfileManager.DEFAULT_PROFILE_ID,
         recordId: String,
         recordType: HistoryRecordType,
         type: HistoryChangeType,
@@ -589,6 +665,7 @@ internal class RoomHistorySyncStore internal constructor(
             originRevision = originRevision,
             lamportVersion = lamportVersion,
             recordId = recordId,
+            profileId = profileId,
             recordType = recordType,
             type = type,
             record = record
@@ -603,8 +680,21 @@ internal class RoomHistorySyncStore internal constructor(
         syncDao.upsertRecord(change.toRecordEntity(currentRecord))
     }
 
-    private fun materializeWatchStream(identity: HistoryStreamIdentity) {
+    private fun materializeWatchStream(
+        profileId: String,
+        identity: HistoryStreamIdentity
+    ) {
+        if (!canMaterializeProfile(profileId)) {
+            val existing = streamDao.getStreamDirect(identity.serviceId, identity.url)
+            existing?.uid?.let { streamId ->
+                streamHistoryDao.deleteStreamHistoryForProfile(profileId, streamId)
+                streamStateDao.deleteStateForProfile(profileId, streamId)
+            }
+            return
+        }
+
         val records = syncDao.getRecords(HistorySyncCategory.WATCH.name)
+            .filter { it.profileId == profileId }
         val streamRecords = records.filter { record ->
             decodeRecord(record)?.streamIdentity == identity
         }
@@ -617,10 +707,10 @@ internal class RoomHistorySyncStore internal constructor(
 
         val watchCutoff = listOfNotNull(
             records.firstOrNull {
-                it.recordId == HistoryRecordId.watchAllTombstone()
+                it.recordId == HistoryRecordId.watchAllTombstone(profileId)
             }?.versionStamp,
             records.firstOrNull {
-                it.recordId == HistoryRecordId.watchStreamTombstone(identity)
+                it.recordId == HistoryRecordId.watchStreamTombstone(profileId, identity)
             }?.versionStamp
         ).maxOrNull()
         val events = streamRecords
@@ -630,7 +720,7 @@ internal class RoomHistorySyncStore internal constructor(
             .mapNotNull { decodeRecord(it)?.watchEvent }
         if (streamId != null) {
             streamHistoryDao.deleteStreamHistoryForProfile(
-                ProfileManager.DEFAULT_PROFILE_ID,
+                profileId,
                 streamId
             )
             if (events.isNotEmpty()) {
@@ -643,17 +733,17 @@ internal class RoomHistorySyncStore internal constructor(
                         repeatCount = events.fold(0L) { total, event ->
                             saturatedAdd(total, event.repeatCount)
                         },
-                        profileId = ProfileManager.DEFAULT_PROFILE_ID
+                        profileId = profileId
                     )
                 )
             }
         }
 
         val progressRecord = records.firstOrNull {
-            it.recordId == HistoryRecordId.progress(identity)
+            it.recordId == HistoryRecordId.progress(profileId, identity)
         }
         val progressClear = records.firstOrNull {
-            it.recordId == HistoryRecordId.playbackAllTombstone()
+            it.recordId == HistoryRecordId.playbackAllTombstone(profileId)
         }
         val progressIsCleared = progressRecord == null ||
             progressRecord.isDeleted ||
@@ -664,7 +754,7 @@ internal class RoomHistorySyncStore internal constructor(
         if (streamId != null) {
             if (progressIsCleared) {
                 streamStateDao.deleteStateForProfile(
-                    ProfileManager.DEFAULT_PROFILE_ID,
+                    profileId,
                     streamId
                 )
             } else {
@@ -674,7 +764,7 @@ internal class RoomHistorySyncStore internal constructor(
                     StreamStateEntity(
                         streamId,
                         progress.progressMillis,
-                        ProfileManager.DEFAULT_PROFILE_ID
+                        profileId
                     )
                 )
             }
@@ -759,8 +849,11 @@ internal class RoomHistorySyncStore internal constructor(
         )
     }
 
-    private fun getAllWatchStreamIdentities(): Set<HistoryStreamIdentity> {
+    private fun getAllWatchStreamIdentities(
+        profileId: String
+    ): Set<HistoryStreamIdentity> {
         return syncDao.getRecords(HistorySyncCategory.WATCH.name)
+            .filter { it.profileId == profileId }
             .mapNotNull { decodeRecord(it)?.streamIdentity }
             .toSet()
     }
@@ -807,6 +900,7 @@ internal class RoomHistorySyncStore internal constructor(
             originRevision = entity.originRevision,
             lamportVersion = entity.lamportVersion,
             recordId = entity.recordId,
+            profileId = entity.profileId,
             recordType = parseRecordType(entity.recordType),
             type = parseChangeType(entity.changeType),
             record = entity.recordJson?.let(HistoryRecordCodec::decode)
@@ -819,6 +913,7 @@ internal class RoomHistorySyncStore internal constructor(
         originRevision = originRevision,
         lamportVersion = lamportVersion,
         recordId = recordId,
+        profileId = profileId,
         recordType = recordType.name,
         changeType = type.name,
         recordJson = record?.let(HistoryRecordCodec::encode)
@@ -829,6 +924,7 @@ internal class RoomHistorySyncStore internal constructor(
     ) = HistorySyncRecordEntity(
         category = category.name,
         recordId = recordId,
+        profileId = profileId,
         recordType = recordType.name,
         lamportVersion = lamportVersion,
         originPeerId = originPeerId,
@@ -888,6 +984,11 @@ internal class RoomHistorySyncStore internal constructor(
     private val SyncedHistoryRecord.streamIdentity: HistoryStreamIdentity?
         get() = stream?.identity
 
+    private data class ProfiledHistoryStreamIdentity(
+        val profileId: String,
+        val identity: HistoryStreamIdentity
+    )
+
     private val SyncedHistoryRecord.stream: SyncedHistoryStream?
         get() = watchEvent?.stream
             ?: playbackProgress?.stream
@@ -917,32 +1018,80 @@ internal class RoomHistorySyncStore internal constructor(
             val stateRepository = AndroidSyncStateRepository(applicationContext)
             return RoomHistorySyncStore(
                 database = NewPipeDatabase.getInstance(applicationContext),
-                localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58()
+                localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58(),
+                canMaterializeProfile = { profileId ->
+                    ProfileManager.getProfile(applicationContext, profileId) != null
+                }
             )
         }
     }
 }
 
 class HistorySyncRecorder private constructor(context: Context) {
-    private val store = RoomHistorySyncStore.get(context.applicationContext)
+    private val appContext = context.applicationContext
+    private val store = RoomHistorySyncStore.get(appContext)
 
     fun recordWatchEvent(
         streamId: Long,
         watchedAtEpochMillis: Long,
         repeatCount: Long
-    ) = store.recordWatchEvent(streamId, watchedAtEpochMillis, repeatCount)
+    ) = recordWatchEventForProfile(
+        ProfileManager.getActiveProfileId(appContext),
+        streamId,
+        watchedAtEpochMillis,
+        repeatCount
+    )
+
+    fun recordWatchEventForProfile(
+        profileId: String,
+        streamId: Long,
+        watchedAtEpochMillis: Long,
+        repeatCount: Long
+    ) = store.recordWatchEvent(profileId, streamId, watchedAtEpochMillis, repeatCount)
 
     fun recordProgress(
         streamId: Long,
         progressMillis: Long,
         updatedAtEpochMillis: Long
-    ) = store.recordProgress(streamId, progressMillis, updatedAtEpochMillis)
+    ) = recordProgressForProfile(
+        ProfileManager.getActiveProfileId(appContext),
+        streamId,
+        progressMillis,
+        updatedAtEpochMillis
+    )
 
-    fun recordWatchStreamDelete(streamId: Long) = store.recordWatchStreamDelete(streamId)
+    fun recordProgressForProfile(
+        profileId: String,
+        streamId: Long,
+        progressMillis: Long,
+        updatedAtEpochMillis: Long
+    ) = store.recordProgress(profileId, streamId, progressMillis, updatedAtEpochMillis)
 
-    fun recordWatchAllDelete() = store.recordWatchAllDelete()
+    fun recordWatchStreamDelete(streamId: Long) = recordWatchStreamDeleteForProfile(
+        ProfileManager.getActiveProfileId(appContext),
+        streamId
+    )
 
-    fun recordProgressAllDelete() = store.recordProgressAllDelete()
+    fun recordWatchStreamDeleteForProfile(
+        profileId: String,
+        streamId: Long
+    ) = store.recordWatchStreamDelete(profileId, streamId)
+
+    fun recordWatchAllDelete() = recordWatchAllDeleteForProfile(
+        ProfileManager.getActiveProfileId(appContext)
+    )
+
+    fun recordWatchAllDeleteForProfile(profileId: String) = store.recordWatchAllDelete(
+        profileId
+    )
+
+    fun recordProgressAllDelete() = recordProgressAllDeleteForProfile(
+        ProfileManager.getActiveProfileId(appContext)
+    )
+
+    fun recordProgressAllDeleteForProfile(profileId: String) = store.recordProgressAllDelete(
+        profileId
+    )
 
     fun recordSearch(
         serviceId: Int,
