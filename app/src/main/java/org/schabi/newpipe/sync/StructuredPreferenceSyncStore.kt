@@ -10,6 +10,7 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.profiles.ProfileManager
 import us.shandian.giga.get.sqlite.FinishedMissionStore
 
 internal interface StructuredPreferenceSyncStore {
@@ -53,7 +54,12 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         recordRepository
     )
     private val adapters = listOf(
-        FeedGroupSyncAdapter(database, recordRepository),
+        FeedGroupSyncAdapter(
+            database,
+            recordRepository
+        ) { profileId ->
+            ProfileManager.getProfile(context, profileId) != null
+        },
         HomeTabSyncAdapter(context, preferences, database, recordRepository),
         ChannelProfileSyncAdapter(preferences, recordRepository),
         FilterSyncAdapter(context, preferences, recordRepository),
