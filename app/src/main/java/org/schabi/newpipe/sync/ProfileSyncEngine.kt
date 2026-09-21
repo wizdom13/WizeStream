@@ -8,13 +8,13 @@ package org.schabi.newpipe.sync
 class ProfileSyncEngine internal constructor(
     private val store: ProfileSyncStore
 ) {
-    fun createRequest(): ProfileSyncRequest {
+    internal fun createRequest(): ProfileSyncRequest {
         return ProfileSyncRequest(
             profiles = store.snapshot()
         ).also(ProfileSyncValidation::validateRequest)
     }
 
-    fun handleRequest(request: ProfileSyncRequest): ProfileSyncResponse {
+    internal fun handleRequest(request: ProfileSyncRequest): ProfileSyncResponse {
         return try {
             ProfileSyncValidation.validateRequest(request)
             store.apply(request.profiles)
@@ -32,7 +32,7 @@ class ProfileSyncEngine internal constructor(
         }
     }
 
-    fun handleResponse(response: ProfileSyncResponse): ProfileSyncApplyResult {
+    internal fun handleResponse(response: ProfileSyncResponse): ProfileSyncApplyResult {
         ProfileSyncValidation.validateResponse(response)
         if (!response.accepted) {
             throw ProfileSyncException(
