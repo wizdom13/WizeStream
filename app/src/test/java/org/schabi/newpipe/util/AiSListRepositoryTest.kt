@@ -25,7 +25,7 @@ class AiSListRepositoryTest {
         )
 
         assertEquals(
-            setOf("@examplechannel", "ucabcdef1234567890_xyz"),
+            setOf("@examplechannel", "UCAbCdEf1234567890_xyz"),
             entries
         )
     }
@@ -39,6 +39,7 @@ class AiSListRepositoryTest {
 
         assertTrue(
             AiSListRepository.isListed(
+                0,
                 entries,
                 "https://www.youtube.com/@BlockedHandle/videos",
                 "Different display name"
@@ -46,6 +47,7 @@ class AiSListRepositoryTest {
         )
         assertTrue(
             AiSListRepository.isListed(
+                0,
                 entries,
                 "https://www.youtube.com/channel/UCABCDEFGHIJKLMNOPQRSTUV",
                 "Different display name"
@@ -53,6 +55,7 @@ class AiSListRepositoryTest {
         )
         assertFalse(
             AiSListRepository.isListed(
+                0,
                 entries,
                 "https://www.youtube.com/@allowed",
                 "BlockedHandle"
@@ -61,9 +64,22 @@ class AiSListRepositoryTest {
     }
 
     @Test
+    fun `does not apply youtube list to another service`() {
+        assertFalse(
+            AiSListRepository.isListed(
+                1,
+                setOf("@blockedhandle"),
+                "https://example.com/@blockedhandle",
+                "@BlockedHandle"
+            )
+        )
+    }
+
+    @Test
     fun `handle display value can match when extractor exposes it directly`() {
         assertTrue(
             AiSListRepository.isListed(
+                0,
                 setOf("@blockedhandle"),
                 null,
                 "@BlockedHandle"
