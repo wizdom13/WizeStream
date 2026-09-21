@@ -17,6 +17,7 @@ import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.info_list.StreamUploaderNavigation;
 import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.util.AiSListContentHelper;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.MembersOnlyContentHelper;
@@ -96,7 +97,24 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
 
         itemVideoTitleView.setText(item.getName());
         itemUploaderView.setText(item.getUploaderName());
-        itemMembersOnlyView.setVisibility(item.requiresMembership() ? View.VISIBLE : View.GONE);
+        final boolean possibleAi = AiSListContentHelper.shouldLabel(
+                itemBuilder.getContext(),
+                item.getUploaderUrl(),
+                item.getUploaderName());
+        if (item.requiresMembership() && possibleAi) {
+            itemMembersOnlyView.setText(Localization.concatenateStrings(
+                    itemBuilder.getContext().getString(R.string.members_only),
+                    itemBuilder.getContext().getString(R.string.aislist_possible_ai_badge)));
+            itemMembersOnlyView.setVisibility(View.VISIBLE);
+        } else if (item.requiresMembership()) {
+            itemMembersOnlyView.setText(R.string.members_only);
+            itemMembersOnlyView.setVisibility(View.VISIBLE);
+        } else if (possibleAi) {
+            itemMembersOnlyView.setText(R.string.aislist_possible_ai_badge);
+            itemMembersOnlyView.setVisibility(View.VISIBLE);
+        } else {
+            itemMembersOnlyView.setVisibility(View.GONE);
+        }
 
         bindUploader(item);
 
