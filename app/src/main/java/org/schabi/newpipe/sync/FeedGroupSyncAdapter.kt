@@ -15,7 +15,8 @@ import org.schabi.newpipe.local.subscription.FeedGroupIcon
 
 internal class FeedGroupSyncAdapter(
     database: AppDatabase,
-    private val recordRepository: StructuredPreferenceRecordRepository
+    private val recordRepository: StructuredPreferenceRecordRepository,
+    private val canMaterializeProfile: (String) -> Boolean = { true }
 ) : StructuredPreferenceCategoryAdapter {
     override val category = StructuredPreferenceCategory.FEED_GROUPS
 
@@ -199,6 +200,12 @@ internal class FeedGroupSyncAdapter(
                         "Stored feed group metadata is invalid"
                     )
                 val mapping = recordRepository.getFeedGroupMapping(record.recordId)
+                if (!canMaterializeProfile(data.profileId)) {
+                    mapping?.let {
+                        feedGroupDao.deleteForProfile(data.profileId, it.groupUid)
+                    }
+                    return@forEach
+                }
                 var group = mapping?.let {
                     feedGroupDao.getGroupDirectForProfile(
                         data.profileId,
@@ -243,6 +250,9 @@ internal class FeedGroupSyncAdapter(
                     ?: throw StructuredPreferenceSyncException(
                         "Stored feed group metadata is invalid"
                     )
+                if (!canMaterializeProfile(groupData.profileId)) {
+                    return@forEach
+                }
                 val mapping = recordRepository.getFeedGroupMapping(groupRecord.recordId)
                     ?: return@forEach
                 val subscriptionIds = recordRepository.getChildRecords(
@@ -290,6 +300,10 @@ internal class FeedGroupSyncAdapter(
                 }
         }
         profileIds.forEach { profileId ->
+            if (!canMaterializeProfile(profileId)) {
+                feedGroupDao.deleteAllForProfile(profileId)
+                return@forEach
+            }
             val order = recordRepository.getRecord(
                 category,
                 StructuredPreferenceRecordId.feedGroupOrder(profileId)
