@@ -4,6 +4,26 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.21.0 (`1021000`)
+
+### New features
+
+- Added local profiles so subscriptions, feed groups, watch history and progress, playlists, saved search feeds, imports, backups, and device synchronization can stay separated between profiles.
+- Added on-device comment translation that keeps translation local to the device and hides the Translate action when a comment is already in the selected language.
+- Added optional AiSList-based labeling, warning, or hiding for likely AI-generated YouTube content with local matching and no WizeStream account requirement.
+
+### Improvements
+
+- Made backup, restore, NewPipe/PipePipe/Takeout migration, and peer-to-peer device synchronization profile-aware while preserving compatibility with the Default profile.
+- Made content-blocking refreshes target-aware so blocking a channel or video refreshes Related immediately without unnecessarily reloading Comments.
+- Made bookmarked playlist and YouTube Music album artwork more resilient by falling back from playlist artwork to track artwork and then uploader artwork while preserving valid stored covers.
+
+### Fixes
+
+- Prevented Android service restarts with a null PlayerService intent from crashing playback startup.
+- Fixed repeated Video Adjustments rebuilds on Android 9 by giving each ExoPlayer its own LoadControl and preserving the latest playback position.
+- Corrected comment-translation action alignment and long-text layout handling.
+
 ## WizeStream 1.20.2 (`1020002`)
 
 ### Improvements

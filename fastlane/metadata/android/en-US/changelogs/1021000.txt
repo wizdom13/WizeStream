@@ -1,0 +1,6 @@
+• Add private local profiles with profile-aware subscriptions, history, playlists, backup/import and device sync.
+• Add on-device comment translation.
+• Add optional AiSList detection for likely AI-generated YouTube content.
+• Fix Related/Comments refresh after content blocking.
+• Improve bookmarked playlist and album artwork recovery.
+• Fix PlayerService restarts and repeated Video Adjustments errors on Android 9.
