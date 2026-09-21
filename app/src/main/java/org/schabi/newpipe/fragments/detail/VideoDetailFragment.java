@@ -118,6 +118,7 @@ import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
+import org.schabi.newpipe.util.AiSListContentHelper;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
@@ -240,6 +241,8 @@ public final class VideoDetailFragment
     int bottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
     int lastStableBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
+    @Nullable
+    private String aiWarningBypassedUrl;
     private boolean nativePipPrepared;
     private boolean nativePipForcedFullscreen;
     private int nativePipPreviousBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
@@ -1717,6 +1720,24 @@ public final class VideoDetailFragment
      *                                       in landscape and screen orientation is locked
      */
     public void openVideoPlayer(final boolean directlyFullscreenIfApplicable) {
+        if (currentInfo != null
+                && !Objects.equals(aiWarningBypassedUrl, currentInfo.getUrl())
+                && AiSListContentHelper.shouldWarnBeforePlayback(
+                        requireContext(),
+                        currentInfo.getUploaderUrl(),
+                        currentInfo.getUploaderName())) {
+            final String bypassUrl = currentInfo.getUrl();
+            AiSListContentHelper.showPlaybackWarning(
+                    requireContext(),
+                    currentInfo.getUploaderUrl(),
+                    currentInfo.getUploaderName(),
+                    () -> {
+                        aiWarningBypassedUrl = bypassUrl;
+                        openVideoPlayer(directlyFullscreenIfApplicable);
+                    });
+            return;
+        }
+
         if (directlyFullscreenIfApplicable
                 && !DeviceUtils.isLandscape(requireContext())
                 && PlayerHelper.globalScreenOrientationLocked(requireContext())) {
