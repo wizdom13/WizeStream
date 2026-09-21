@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
