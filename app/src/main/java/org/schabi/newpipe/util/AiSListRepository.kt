@@ -16,6 +16,7 @@ import java.util.Locale
 import okhttp3.Request
 import org.schabi.newpipe.DownloaderImpl
 import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.ServiceList
 
 object AiSListRepository {
     const val SOURCE_URL =
@@ -102,11 +103,12 @@ object AiSListRepository {
 
     @JvmStatic
     fun isListed(
+        serviceId: Int,
         entries: Set<String>,
         channelUrl: String?,
         channelName: String?
     ): Boolean {
-        if (entries.isEmpty()) {
+        if (serviceId != ServiceList.YouTube.serviceId || entries.isEmpty()) {
             return false
         }
         return channelCandidates(channelUrl, channelName).any(entries::contains)
@@ -114,10 +116,7 @@ object AiSListRepository {
 
     internal fun parse(text: String): Set<String> {
         return text.lineSequence()
-            .map(String::trim)
-            .filter { it.isNotEmpty() && !it.startsWith("!") }
-            .filter { it.startsWith("@") || it.startsWith("UC", ignoreCase = true) }
-            .map { it.lowercase(Locale.ROOT) }
+            .mapNotNull(::normalizeEntry)
             .toCollection(linkedSetOf())
     }
 
@@ -125,16 +124,7 @@ object AiSListRepository {
         val candidates = linkedSetOf<String>()
 
         fun addCandidate(raw: String?) {
-            val candidate = raw
-                ?.trim()
-                ?.trimEnd('/')
-                ?.takeIf { it.isNotEmpty() }
-                ?: return
-            if (candidate.startsWith("@") ||
-                candidate.startsWith("UC", ignoreCase = true)
-            ) {
-                candidates += candidate.lowercase(Locale.ROOT)
-            }
+            normalizeEntry(raw)?.let(candidates::add)
         }
 
         addCandidate(channelName)
@@ -156,6 +146,20 @@ object AiSListRepository {
             }
         }
         return candidates
+    }
+
+    private fun normalizeEntry(raw: String?): String? {
+        val candidate = raw
+            ?.trim()
+            ?.trimEnd('/')
+            ?.takeIf { it.isNotEmpty() && !it.startsWith("!") }
+            ?: return null
+        return when {
+            candidate.startsWith("@") -> candidate.lowercase(Locale.ROOT)
+            candidate.startsWith("UC", ignoreCase = true) && candidate.length > 2 ->
+                "UC" + candidate.substring(2)
+            else -> null
+        }
     }
 
     private fun loadCachedEntries(context: Context): Set<String> {
