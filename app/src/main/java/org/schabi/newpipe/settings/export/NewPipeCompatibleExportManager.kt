@@ -283,8 +283,9 @@ class NewPipeCompatibleExportManager internal constructor(
         }
     }
 
-    private fun SQLiteDatabase.skippedRows(table: String): Int =
-        rowCount("wizestream_source.$table") - rowCount(table)
+    private fun SQLiteDatabase.skippedRows(table: String): Int = rowCount(
+        "wizestream_source.$table"
+    ) - rowCount(table)
 
     private fun SQLiteDatabase.profileRowCount(table: String, profileId: String): Int = rawQuery(
         "SELECT COUNT(*) FROM wizestream_source.$table WHERE profile_id = ?",
