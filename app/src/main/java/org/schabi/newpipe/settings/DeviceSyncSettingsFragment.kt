@@ -645,6 +645,9 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
 
                 DeviceSyncLogCategory.FILTERS -> R.string.device_sync_category_filters
 
+                DeviceSyncLogCategory.CONTENT_BLOCKING ->
+                    R.string.device_sync_category_blocked_content
+
                 DeviceSyncLogCategory.SETTINGS -> R.string.device_sync_category_settings
 
                 DeviceSyncLogCategory.COMPLETED_DOWNLOADS ->
@@ -707,6 +710,9 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
 
                 StructuredPreferenceCategory.FILTERS ->
                     R.string.device_sync_category_filters
+
+                StructuredPreferenceCategory.CONTENT_BLOCKING ->
+                    R.string.device_sync_category_blocked_content
 
                 StructuredPreferenceCategory.SETTINGS ->
                     R.string.device_sync_category_settings
