@@ -39,8 +39,8 @@ public final class ContentBlockingHelper {
                 R.string.content_blocking_enabled_key), true)
                 && isTargetEnabled(enabledTargets, target);
         final Set<String> aiBlockedChannels = enabled
-                && preferences.getBoolean(context.getString(R.string.aislist_enabled_key), false)
-                ? AiSListRepository.entries(context) : Collections.emptySet();
+                ? AiSListContentHelper.hiddenChannelEntries(context)
+                : Collections.emptySet();
         return Rules.create(
                 enabled,
                 copySet(preferences, context.getString(R.string.blocked_videos_key)),
@@ -105,7 +105,8 @@ public final class ContentBlockingHelper {
                 || context.getString(R.string.blocked_channels_key).equals(key)
                 || context.getString(R.string.blocked_keywords_key).equals(key)
                 || context.getString(R.string.content_blocking_targets_key).equals(key)
-                || context.getString(R.string.aislist_enabled_key).equals(key);
+                || context.getString(R.string.aislist_enabled_key).equals(key)
+                || context.getString(R.string.aislist_warn_behavior_key).equals(key);
     }
 
     static boolean isTargetEnabled(@Nullable final Set<String> enabledTargets,
