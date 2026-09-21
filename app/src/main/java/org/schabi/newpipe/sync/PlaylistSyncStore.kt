@@ -62,11 +62,11 @@ internal class RoomPlaylistSyncStore internal constructor(
 
             val remotePlaylists =
                 remotePlaylistDao.getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
-                .filter { playlist ->
-                    playlist.serviceId >= 0 &&
-                        !playlist.url.isNullOrBlank() &&
-                        requireNotNull(playlist.url).length <= MAX_PLAYLIST_URL_LENGTH
-                }
+                    .filter { playlist ->
+                        playlist.serviceId >= 0 &&
+                            !playlist.url.isNullOrBlank() &&
+                            requireNotNull(playlist.url).length <= MAX_PLAYLIST_URL_LENGTH
+                    }
             val liveRemoteIds = remotePlaylists.mapTo(hashSetOf()) { playlist ->
                 PlaylistRecordId.remote(
                     playlist.serviceId,
