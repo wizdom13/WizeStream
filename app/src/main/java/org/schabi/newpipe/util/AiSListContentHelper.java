@@ -64,10 +64,12 @@ public final class AiSListContentHelper {
     }
 
     public static boolean shouldLabel(@NonNull final Context context,
+                                      final int serviceId,
                                       @Nullable final String channelUrl,
                                       @Nullable final String channelName) {
         if (!isActive(context)
-                || !AiSListRepository.isWarnListed(context, channelUrl, channelName)) {
+                || !AiSListRepository.isWarnListed(
+                        context, serviceId, channelUrl, channelName)) {
             return false;
         }
         final WarnBehavior behavior = getWarnBehavior(context);
@@ -75,11 +77,13 @@ public final class AiSListContentHelper {
     }
 
     public static boolean shouldWarnBeforePlayback(@NonNull final Context context,
+                                                   final int serviceId,
                                                    @Nullable final String channelUrl,
                                                    @Nullable final String channelName) {
         return isActive(context)
                 && getWarnBehavior(context) == WarnBehavior.WARN
-                && AiSListRepository.isWarnListed(context, channelUrl, channelName);
+                && AiSListRepository.isWarnListed(
+                        context, serviceId, channelUrl, channelName);
     }
 
     public static boolean shouldHideWarnlisted(@NonNull final Context context) {
