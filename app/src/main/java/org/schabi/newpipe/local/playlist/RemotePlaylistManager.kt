@@ -70,9 +70,17 @@ class RemotePlaylistManager @JvmOverloads constructor(
         }.subscribeOn(Schedulers.io())
     }
 
-    fun onUpdate(playlistId: Long, playlistInfo: PlaylistInfo): Single<Int> {
+    @JvmOverloads
+    fun onUpdate(
+        playlistId: Long,
+        playlistInfo: PlaylistInfo,
+        existingThumbnailUrl: String? = null
+    ): Single<Int> {
         return Single.fromCallable {
-            val playlist = PlaylistRemoteEntity(playlistInfo).apply {
+            val playlist = PlaylistRemoteEntity(
+                playlistInfo,
+                existingThumbnailUrl
+            ).apply {
                 uid = playlistId
                 profileId = this@RemotePlaylistManager.profileId
             }

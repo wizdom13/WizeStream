@@ -780,7 +780,8 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         }
 
         final long playlistUid = playlistEntity.getUid();
-        bookmarkMetadataUpdater = remotePlaylistManager.onUpdate(playlistUid, currentInfo)
+        bookmarkMetadataUpdater = remotePlaylistManager.onUpdate(
+                playlistUid, currentInfo, playlistEntity.getThumbnailUrl())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(ignored -> { /* The database observer refreshes the entity. */ },
                         throwable -> showError(new ErrorInfo(throwable,
