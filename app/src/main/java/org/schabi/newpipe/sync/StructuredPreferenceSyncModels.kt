@@ -1036,7 +1036,8 @@ internal object StructuredPreferenceRecordId {
     }
 
     fun contentBlockEntry(kind: ContentBlockEntryKind, key: String): String {
-        return digest("content-block-entry\u0000${kind.name}\u0000${key.trim().lowercase(Locale.ROOT)}")
+        val canonicalKey = key.trim().lowercase(Locale.ROOT)
+        return digest("content-block-entry\u0000${kind.name}\u0000$canonicalKey")
     }
 
     fun portableSetting(settingId: PortableSettingId): String {
