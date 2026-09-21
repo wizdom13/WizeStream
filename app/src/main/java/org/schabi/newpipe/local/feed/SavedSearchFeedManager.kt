@@ -12,14 +12,18 @@ import org.schabi.newpipe.database.feed.model.SavedSearchFeedStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.profiles.ProfileManager
 
-class SavedSearchFeedManager(context: Context) {
+class SavedSearchFeedManager @JvmOverloads constructor(
+    context: Context,
+    private val profileId: String = ProfileManager.getActiveProfileId(context)
+) {
     private val database = NewPipeDatabase.getInstance(context.applicationContext)
     private val savedSearchFeedDao = database.savedSearchFeedDAO()
     private val streamDao = database.streamDAO()
 
     fun getAll(): Single<List<SavedSearchFeedEntity>> = Single
-        .fromCallable(savedSearchFeedDao::getAllDirect)
+        .fromCallable { savedSearchFeedDao.getAllDirectForProfile(profileId) }
         .subscribeOn(Schedulers.io())
 
     fun create(
@@ -35,21 +39,26 @@ class SavedSearchFeedManager(context: Context) {
                 serviceId = serviceId,
                 query = query.trim(),
                 contentFilter = SavedSearchFeedEntity.encodeContentFilters(contentFilters),
-                sortFilter = SavedSearchFeedEntity.encodeSortFilters(sortFilters)
+                sortFilter = SavedSearchFeedEntity.encodeSortFilters(sortFilters),
+                profileId = profileId
             )
         )
     }.subscribeOn(Schedulers.io())
 
     fun delete(feedId: Long): Completable = Completable.fromAction {
         database.runInTransaction {
-            savedSearchFeedDao.delete(feedId)
+            savedSearchFeedDao.deleteForProfile(profileId, feedId)
             streamDao.deleteOrphans()
         }
     }.subscribeOn(Schedulers.io())
 
     fun getCachedItems(feedId: Long): Single<List<StreamInfoItem>> = Single
         .fromCallable {
-            savedSearchFeedDao.getCachedStreamsDirect(feedId, MAXIMUM_CACHED_ITEMS)
+            savedSearchFeedDao.getCachedStreamsDirectForProfile(
+                profileId,
+                feedId,
+                MAXIMUM_CACHED_ITEMS
+            )
                 .map(StreamEntity::toStreamInfoItem)
         }.subscribeOn(Schedulers.io())
 
@@ -78,24 +87,36 @@ class SavedSearchFeedManager(context: Context) {
         }
 
         database.runInTransaction {
+            if (savedSearchFeedDao.getDirectForProfile(profileId, feedId) == null) {
+                return@runInTransaction
+            }
+
             if (replace) {
-                savedSearchFeedDao.clearCachedStreams(feedId)
+                savedSearchFeedDao.clearCachedStreamsForProfile(profileId, feedId)
             }
 
             val positionOffset = if (replace) {
                 0L
             } else {
-                savedSearchFeedDao.nextCachePosition(feedId)
+                savedSearchFeedDao.nextCachePositionForProfile(profileId, feedId)
             }
             val streamIds = streamDao.upsertAll(streamItems.map(::StreamEntity))
             val cacheEntities = streamIds.mapIndexed { index, streamId ->
                 SavedSearchFeedStreamEntity(feedId, streamId, positionOffset + index)
             }
             savedSearchFeedDao.insertCachedStreams(cacheEntities)
-            savedSearchFeedDao.pruneCache(feedId, MAXIMUM_CACHED_ITEMS)
+            savedSearchFeedDao.pruneCacheForProfile(
+                profileId,
+                feedId,
+                MAXIMUM_CACHED_ITEMS
+            )
 
             if (replace) {
-                savedSearchFeedDao.setLastRefresh(feedId, OffsetDateTime.now(ZoneOffset.UTC))
+                savedSearchFeedDao.setLastRefreshForProfile(
+                    profileId,
+                    feedId,
+                    OffsetDateTime.now(ZoneOffset.UTC)
+                )
             }
         }
     }.subscribeOn(Schedulers.io())

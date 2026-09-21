@@ -12,15 +12,21 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
+import org.schabi.newpipe.profiles.ProfileManager
 
-class RemotePlaylistManager(private val database: AppDatabase) {
+class RemotePlaylistManager @JvmOverloads constructor(
+    private val database: AppDatabase,
+    private val profileId: String = ProfileManager.DEFAULT_PROFILE_ID
+) {
     private val playlistRemoteTable = database.playlistRemoteDAO()
 
     val playlists: Flowable<MutableList<PlaylistRemoteEntity>>
-        get() = playlistRemoteTable.playlists.subscribeOn(Schedulers.io())
+        get() = playlistRemoteTable.getPlaylistsForProfile(profileId)
+            .subscribeOn(Schedulers.io())
 
     fun getPlaylist(playlistId: Long): Flowable<PlaylistRemoteEntity> {
-        return playlistRemoteTable.getPlaylist(playlistId).subscribeOn(Schedulers.io())
+        return playlistRemoteTable.getPlaylistForProfile(profileId, playlistId)
+            .subscribeOn(Schedulers.io())
     }
 
     fun getPlaylist(info: PlaylistInfo): Flowable<MutableList<PlaylistRemoteEntity>> {
@@ -28,12 +34,14 @@ class RemotePlaylistManager(private val database: AppDatabase) {
     }
 
     fun getPlaylist(serviceId: Int, url: String?): Flowable<MutableList<PlaylistRemoteEntity>> {
-        return playlistRemoteTable.getPlaylist(serviceId.toLong(), url)
+        return playlistRemoteTable.getPlaylistForProfile(profileId, serviceId.toLong(), url)
             .subscribeOn(Schedulers.io())
     }
 
     fun deletePlaylist(playlistId: Long): Single<Int> {
-        return Single.fromCallable { playlistRemoteTable.deletePlaylist(playlistId) }
+        return Single.fromCallable {
+            playlistRemoteTable.deletePlaylistForProfile(profileId, playlistId)
+        }
             .subscribeOn(Schedulers.io())
     }
 
@@ -43,23 +51,32 @@ class RemotePlaylistManager(private val database: AppDatabase) {
     ): Completable {
         return Completable.fromRunnable {
             database.runInTransaction {
-                deletedItems.forEach { playlistRemoteTable.deletePlaylist(it) }
-                updateItems.forEach { playlistRemoteTable.upsert(it) }
+                deletedItems.forEach {
+                    playlistRemoteTable.deletePlaylistForProfile(profileId, it)
+                }
+                updateItems.forEach {
+                    playlistRemoteTable.upsertForProfile(profileId, it)
+                }
             }
         }.subscribeOn(Schedulers.io())
     }
 
     fun onBookmark(playlistInfo: PlaylistInfo): Single<Long> {
         return Single.fromCallable {
-            val playlist = PlaylistRemoteEntity(playlistInfo)
-            playlistRemoteTable.upsert(playlist)
+            val playlist = PlaylistRemoteEntity(playlistInfo).apply {
+                this.profileId = this@RemotePlaylistManager.profileId
+            }
+            playlistRemoteTable.upsertForProfile(profileId, playlist)
         }.subscribeOn(Schedulers.io())
     }
 
     fun onUpdate(playlistId: Long, playlistInfo: PlaylistInfo): Single<Int> {
         return Single.fromCallable {
-            val playlist = PlaylistRemoteEntity(playlistInfo).apply { uid = playlistId }
-            playlistRemoteTable.update(playlist)
+            val playlist = PlaylistRemoteEntity(playlistInfo).apply {
+                uid = playlistId
+                profileId = this@RemotePlaylistManager.profileId
+            }
+            playlistRemoteTable.updateForProfile(profileId, playlist)
         }.subscribeOn(Schedulers.io())
     }
 }

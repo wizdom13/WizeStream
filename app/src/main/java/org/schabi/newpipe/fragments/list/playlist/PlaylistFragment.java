@@ -57,6 +57,7 @@ import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
@@ -154,8 +155,9 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         super.onCreate(savedInstanceState);
         disposables = new CompositeDisposable();
         isBookmarkButtonReady = new AtomicBoolean(false);
-        remotePlaylistManager = new RemotePlaylistManager(NewPipeDatabase
-                .getInstance(requireContext()));
+        remotePlaylistManager = new RemotePlaylistManager(
+                NewPipeDatabase.getInstance(requireContext()),
+                ProfileManager.getActiveProfileId(requireContext()));
         learningContentManager = LearningContentManager.getInstance(requireContext());
     }
 

@@ -19,6 +19,7 @@ import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncOriginStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncRecordEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal interface PlaylistSyncStore {
     val localPeerId: String
@@ -48,7 +49,8 @@ internal class RoomPlaylistSyncStore internal constructor(
 
     override fun reconcileLocalPlaylists() {
         database.runInTransaction {
-            val localPlaylists = playlistDao.getAllDirect()
+            val localPlaylists =
+                playlistDao.getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
             val localPlaylistIds = localPlaylists.mapTo(hashSetOf(), PlaylistEntity::uid)
             localPlaylists.forEach(::reconcileLocalPlaylist)
 
@@ -58,7 +60,8 @@ internal class RoomPlaylistSyncStore internal constructor(
                     deleteLocalPlaylistRecords(mapping.playlistRecordId)
                 }
 
-            val remotePlaylists = remotePlaylistDao.getAllDirect()
+            val remotePlaylists =
+                remotePlaylistDao.getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID)
                 .filter { playlist ->
                     playlist.serviceId >= 0 &&
                         !playlist.url.isNullOrBlank() &&
@@ -213,7 +216,10 @@ internal class RoomPlaylistSyncStore internal constructor(
                 playlistUid = playlist.uid
             ).also(syncDao::upsertLocalMapping)
         val playlistRecordId = mapping.playlistRecordId
-        val streams = playlistStreamDao.getOrderedStreamsDirect(playlist.uid)
+        val streams = playlistStreamDao.getOrderedStreamsDirectForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            playlist.uid
+        )
         if (streams.any(StreamEntity::isLocalMedia)) {
             // MediaStore content URIs are scoped to this Android device. A playlist containing
             // one cannot be safely materialized on a paired device, so keep the entire playlist
@@ -395,26 +401,42 @@ internal class RoomPlaylistSyncStore internal constructor(
         val playlistRecord = syncDao.getRecord(playlistRecordId) ?: return
         val mapping = syncDao.getLocalMapping(playlistRecordId)
         if (playlistRecord.isDeleted) {
-            mapping?.let { playlistDao.deletePlaylist(it.playlistUid) }
+            mapping?.let {
+                playlistDao.deletePlaylistForProfile(
+                    ProfileManager.DEFAULT_PROFILE_ID,
+                    it.playlistUid
+                )
+            }
             return
         }
         val metadata = decodeRecord(playlistRecord)?.localPlaylist
             ?: throw PlaylistSyncException("Stored local playlist metadata is invalid")
         var playlistUid = mapping?.playlistUid
-        var playlist = playlistUid?.let(playlistDao::getPlaylistDirect)
+        var playlist = playlistUid?.let {
+            playlistDao.getPlaylistDirectForProfile(
+                ProfileManager.DEFAULT_PROFILE_ID,
+                it
+            )
+        }
         if (playlist == null) {
             playlistUid = playlistDao.insert(
                 PlaylistEntity(
                     name = metadata.name,
                     isThumbnailPermanent = false,
                     thumbnailStreamId = PlaylistEntity.DEFAULT_THUMBNAIL_ID,
-                    displayIndex = metadata.displayIndex
+                    displayIndex = metadata.displayIndex,
+                    profileId = ProfileManager.DEFAULT_PROFILE_ID
                 )
             )
             syncDao.upsertLocalMapping(
                 PlaylistSyncLocalMapEntity(playlistRecordId, playlistUid)
             )
-            playlist = requireNotNull(playlistDao.getPlaylistDirect(playlistUid))
+            playlist = requireNotNull(
+                playlistDao.getPlaylistDirectForProfile(
+                    ProfileManager.DEFAULT_PROFILE_ID,
+                    playlistUid
+                )
+            )
         }
 
         val liveItemRecords = syncDao.getChildRecords(playlistRecordId)
@@ -439,12 +461,17 @@ internal class RoomPlaylistSyncStore internal constructor(
         playlist.thumbnailStreamId = thumbnailId
             ?: streamIds.firstOrNull()
             ?: PlaylistEntity.DEFAULT_THUMBNAIL_ID
-        playlistDao.update(playlist)
+        playlistDao.updateForProfile(ProfileManager.DEFAULT_PROFILE_ID, playlist)
 
         val materializedPlaylistUid = requireNotNull(playlistUid)
-        playlistStreamDao.deleteBatch(materializedPlaylistUid)
+        playlistStreamDao.deleteBatchForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            materializedPlaylistUid
+        )
         if (streamIds.isNotEmpty()) {
-            playlistStreamDao.insertAll(
+            playlistStreamDao.insertAllForProfile(
+                ProfileManager.DEFAULT_PROFILE_ID,
+                materializedPlaylistUid,
                 streamIds.mapIndexed { index, streamId ->
                     org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity(
                         playlistUid = materializedPlaylistUid,
@@ -460,14 +487,25 @@ internal class RoomPlaylistSyncStore internal constructor(
         val record = syncDao.getRecord(recordId) ?: return
         val remote = decodeRecord(record)?.remotePlaylist
             ?: throw PlaylistSyncException("Stored remote playlist metadata is invalid")
-        val existingId = remotePlaylistDao.getPlaylistIdInternal(
+        val existingId = remotePlaylistDao.getPlaylistIdForProfile(
+            ProfileManager.DEFAULT_PROFILE_ID,
             remote.serviceId.toLong(),
             remote.url
         )
         if (record.isDeleted) {
-            existingId?.let(remotePlaylistDao::deletePlaylist)
+            existingId?.let {
+                remotePlaylistDao.deletePlaylistForProfile(
+                    ProfileManager.DEFAULT_PROFILE_ID,
+                    it
+                )
+            }
         } else {
-            remotePlaylistDao.upsert(remote.toEntity())
+            remotePlaylistDao.upsertForProfile(
+                ProfileManager.DEFAULT_PROFILE_ID,
+                remote.toEntity().apply {
+                    profileId = ProfileManager.DEFAULT_PROFILE_ID
+                }
+            )
         }
     }
 

@@ -9,10 +9,21 @@ package org.schabi.newpipe.database.playlist.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.schabi.newpipe.database.playlist.PlaylistMetadataEntry
 
-@Entity(tableName = PlaylistEntity.Companion.PLAYLIST_TABLE)
+@Entity(
+    tableName = PlaylistEntity.Companion.PLAYLIST_TABLE,
+    indices = [
+        Index(
+            value = [
+                PlaylistEntity.Companion.PLAYLIST_PROFILE_ID,
+                PlaylistEntity.Companion.PLAYLIST_DISPLAY_INDEX
+            ]
+        )
+    ]
+)
 data class PlaylistEntity @JvmOverloads constructor(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = PLAYLIST_ID)
@@ -28,7 +39,13 @@ data class PlaylistEntity @JvmOverloads constructor(
     var thumbnailStreamId: Long,
 
     @ColumnInfo(name = PLAYLIST_DISPLAY_INDEX)
-    var displayIndex: Long
+    var displayIndex: Long,
+
+    @ColumnInfo(
+        name = PLAYLIST_PROFILE_ID,
+        defaultValue = "'00000000-0000-0000-0000-000000000000'"
+    )
+    var profileId: String = DEFAULT_PROFILE_ID
 ) {
 
     @Ignore
@@ -50,5 +67,7 @@ data class PlaylistEntity @JvmOverloads constructor(
         const val PLAYLIST_DISPLAY_INDEX = "display_index"
         const val PLAYLIST_THUMBNAIL_PERMANENT = "is_thumbnail_permanent"
         const val PLAYLIST_THUMBNAIL_STREAM_ID = "thumbnail_stream_id"
+        const val PLAYLIST_PROFILE_ID = "profile_id"
+        const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
     }
 }

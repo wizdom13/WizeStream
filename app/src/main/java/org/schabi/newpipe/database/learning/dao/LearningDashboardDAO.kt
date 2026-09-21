@@ -38,6 +38,7 @@ interface LearningDashboardDAO {
         LEFT JOIN streams ON playlist_stream_join.stream_id = streams.uid
         LEFT JOIN stream_state ON streams.uid = stream_state.stream_id
          AND stream_state.profile_id = :profileId
+        WHERE playlists.profile_id = :profileId
         GROUP BY playlists.uid
         UNION ALL
         SELECT NULL AS playlist_id,

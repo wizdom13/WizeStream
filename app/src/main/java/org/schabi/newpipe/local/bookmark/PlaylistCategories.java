@@ -16,6 +16,10 @@ import java.util.UUID;
 /** Local organization metadata stored with full-backup preferences. */
 public final class PlaylistCategories {
     public static final String PREFERENCE_KEY = "playlist_categories_v1";
+
+    public static String preferenceKey(final String profileId) {
+        return PREFERENCE_KEY + "_" + profileId;
+    }
     public static final String ALL = "*";
     public static final String UNCATEGORIZED = "";
     private final Map<String, String> names = new LinkedHashMap<>();

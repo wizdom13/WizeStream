@@ -46,7 +46,8 @@ object Migrations {
     const val DB_VER_24 = 24
     const val DB_VER_25 = 25
     const val DB_VER_26 = 26
-    const val DB_VER_CURRENT = DB_VER_26
+    const val DB_VER_27 = 27
+    const val DB_VER_CURRENT = DB_VER_27
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -952,6 +953,54 @@ object Migrations {
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_learning_sessions_profile_id_local_date " +
                 "ON learning_sessions (profile_id, local_date)"
+        )
+    }
+
+    val MIGRATION_26_27 = Migration(DB_VER_26, DB_VER_27) { db ->
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+
+        db.execSQL(
+            "ALTER TABLE playlists ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_playlists_profile_id_display_index " +
+                "ON playlists (profile_id, display_index)"
+        )
+
+        db.execSQL(
+            "ALTER TABLE remote_playlists ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL("DROP INDEX IF EXISTS index_remote_playlists_service_id_url")
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "index_remote_playlists_profile_id_service_id_url " +
+                "ON remote_playlists (profile_id, service_id, url)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_remote_playlists_profile_id_display_index " +
+                "ON remote_playlists (profile_id, display_index)"
+        )
+
+        db.execSQL(
+            "ALTER TABLE saved_search_feed ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL("DROP INDEX IF EXISTS index_saved_search_feed_sort_order")
+        db.execSQL(
+            "DROP INDEX IF EXISTS " +
+                "index_saved_search_feed_service_id_query_content_filter_sort_filter"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_saved_search_feed_profile_id_sort_order " +
+                "ON saved_search_feed (profile_id, sort_order)"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "index_saved_search_feed_profile_id_service_id_query_content_filter_sort_filter " +
+                "ON saved_search_feed " +
+                "(profile_id, service_id, query, content_filter, sort_filter)"
         )
     }
 }

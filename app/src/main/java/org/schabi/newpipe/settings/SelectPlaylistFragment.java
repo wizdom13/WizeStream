@@ -91,7 +91,8 @@ public class SelectPlaylistFragment extends DialogFragment {
         final AppDatabase database = NewPipeDatabase.getInstance(requireContext());
         final LocalPlaylistManager localPlaylistManager = new LocalPlaylistManager(database,
                 ProfileManager.getActiveProfileId(requireContext()));
-        final RemotePlaylistManager remotePlaylistManager = new RemotePlaylistManager(database);
+        final RemotePlaylistManager remotePlaylistManager = new RemotePlaylistManager(database,
+                ProfileManager.getActiveProfileId(requireContext()));
 
         disposable = getMergedOrderedPlaylists(localPlaylistManager, remotePlaylistManager)
                 .observeOn(AndroidSchedulers.mainThread())

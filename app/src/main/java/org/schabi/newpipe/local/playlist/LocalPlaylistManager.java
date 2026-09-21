@@ -56,6 +56,7 @@ public class LocalPlaylistManager {
                     final List<Long> streamIds = streamTable.upsertAll(streams);
                     final PlaylistEntity newPlaylist = new PlaylistEntity(name, false,
                             streamIds.get(0), -1);
+                    newPlaylist.setProfileId(profileId);
 
                     return insertJoinEntities(playlistTable.insert(newPlaylist),
                             streamIds, 0);
@@ -65,13 +66,17 @@ public class LocalPlaylistManager {
 
     public Maybe<List<Long>> appendToPlaylist(final long playlistId,
                                               final List<StreamEntity> streams) {
-        return playlistStreamTable.getMaximumIndexOf(playlistId)
-                .firstElement()
-                .map(maxJoinIndex -> database.runInTransaction(() -> {
+        return Maybe.fromCallable(() ->
+                        playlistStreamTable.playlistBelongsToProfile(profileId, playlistId))
+                .filter(Boolean::booleanValue)
+                .flatMap(ignored -> playlistStreamTable
+                        .getMaximumIndexOfForProfile(profileId, playlistId)
+                        .firstElement()
+                        .map(maxJoinIndex -> database.runInTransaction(() -> {
                             final List<Long> streamIds = streamTable.upsertAll(streams);
                             return insertJoinEntities(playlistId, streamIds, maxJoinIndex + 1);
-                        }
-                )).subscribeOn(Schedulers.io());
+                        })))
+                .subscribeOn(Schedulers.io());
     }
 
     private List<Long> insertJoinEntities(final long playlistId, final List<Long> streamIds,
@@ -83,7 +88,7 @@ public class LocalPlaylistManager {
             joinEntities.add(new PlaylistStreamEntity(playlistId, streamIds.get(index),
                     index + indexOffset));
         }
-        return playlistStreamTable.insertAll(joinEntities);
+        return playlistStreamTable.insertAllForProfile(profileId, playlistId, joinEntities);
     }
 
     public Completable updateJoin(final long playlistId, final List<Long> streamIds) {
@@ -93,8 +98,11 @@ public class LocalPlaylistManager {
         }
 
         return Completable.fromRunnable(() -> database.runInTransaction(() -> {
-            playlistStreamTable.deleteBatch(playlistId);
-            playlistStreamTable.insertAll(joinEntities);
+            if (!playlistStreamTable.playlistBelongsToProfile(profileId, playlistId)) {
+                return;
+            }
+            playlistStreamTable.deleteBatchForProfile(profileId, playlistId);
+            playlistStreamTable.insertAllForProfile(profileId, playlistId, joinEntities);
         })).subscribeOn(Schedulers.io());
     }
 
@@ -102,14 +110,16 @@ public class LocalPlaylistManager {
                                        final List<Long> deletedItems) {
         final List<PlaylistEntity> items = new ArrayList<>(updateItems.size());
         for (final PlaylistMetadataEntry item : updateItems) {
-            items.add(new PlaylistEntity(item));
+            final PlaylistEntity entity = new PlaylistEntity(item);
+            entity.setProfileId(profileId);
+            items.add(entity);
         }
         return Completable.fromRunnable(() -> database.runInTransaction(() -> {
             for (final Long uid : deletedItems) {
-                playlistTable.deletePlaylist(uid);
+                playlistTable.deletePlaylistForProfile(profileId, uid);
             }
             for (final PlaylistEntity item : items) {
-                playlistTable.upsertPlaylist(item);
+                playlistTable.updateForProfile(profileId, item);
             }
         })).subscribeOn(Schedulers.io());
     }
@@ -128,12 +138,13 @@ public class LocalPlaylistManager {
      * @return a list of {@link PlaylistDuplicatesEntry}
      */
     public Flowable<List<PlaylistDuplicatesEntry>> getPlaylistDuplicates(final String streamUrl) {
-        return playlistStreamTable.getPlaylistDuplicatesMetadata(streamUrl)
+        return playlistStreamTable.getPlaylistDuplicatesMetadataForProfile(profileId, streamUrl)
                 .subscribeOn(Schedulers.io());
     }
 
     public Flowable<List<PlaylistMetadataEntry>> getPlaylists() {
-        return playlistStreamTable.getPlaylistMetadata().subscribeOn(Schedulers.io());
+        return playlistStreamTable.getPlaylistMetadataForProfile(profileId)
+                .subscribeOn(Schedulers.io());
     }
 
     public Flowable<List<PlaylistStreamEntry>> getPlaylistStreams(final long playlistId) {
@@ -156,16 +167,22 @@ public class LocalPlaylistManager {
     }
 
     public long getPlaylistThumbnailStreamId(final long playlistId) {
-        return playlistTable.getPlaylist(playlistId).blockingFirst().get(0).getThumbnailStreamId();
+        final List<PlaylistEntity> playlists =
+                playlistTable.getPlaylistForProfile(profileId, playlistId).blockingFirst();
+        return playlists.isEmpty()
+                ? PlaylistEntity.DEFAULT_THUMBNAIL_ID
+                : playlists.get(0).getThumbnailStreamId();
     }
 
     public boolean getIsPlaylistThumbnailPermanent(final long playlistId) {
-        return playlistTable.getPlaylist(playlistId).blockingFirst().get(0)
-                .isThumbnailPermanent();
+        final List<PlaylistEntity> playlists =
+                playlistTable.getPlaylistForProfile(profileId, playlistId).blockingFirst();
+        return !playlists.isEmpty() && playlists.get(0).isThumbnailPermanent();
     }
 
     public long getAutomaticPlaylistThumbnailStreamId(final long playlistId) {
-        final long streamId = playlistStreamTable.getAutomaticThumbnailStreamId(playlistId)
+        final long streamId = playlistStreamTable
+                .getAutomaticThumbnailStreamIdForProfile(profileId, playlistId)
                 .blockingFirst();
         if (streamId < 0) {
             return PlaylistEntity.DEFAULT_THUMBNAIL_ID;
@@ -177,7 +194,7 @@ public class LocalPlaylistManager {
                                           @Nullable final String name,
                                           final long thumbnailStreamId,
                                           final boolean isPermanent) {
-        return playlistTable.getPlaylist(playlistId)
+        return playlistTable.getPlaylistForProfile(profileId, playlistId)
                 .firstElement()
                 .filter(playlistEntities -> !playlistEntities.isEmpty())
                 .map(playlistEntities -> {
@@ -189,12 +206,12 @@ public class LocalPlaylistManager {
                         playlist.setThumbnailStreamId(thumbnailStreamId);
                         playlist.setThumbnailPermanent(isPermanent);
                     }
-                    return playlistTable.update(playlist);
+                    return playlistTable.updateForProfile(profileId, playlist);
                 }).subscribeOn(Schedulers.io());
     }
 
     public Maybe<Boolean> hasPlaylists() {
-        return playlistTable.getCount()
+        return playlistTable.getCountForProfile(profileId)
                 .firstElement()
                 .map(count -> count > 0)
                 .subscribeOn(Schedulers.io());

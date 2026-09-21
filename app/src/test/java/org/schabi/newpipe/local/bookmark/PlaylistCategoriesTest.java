@@ -2,6 +2,7 @@ package org.schabi.newpipe.local.bookmark;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -43,6 +44,15 @@ public class PlaylistCategoriesTest {
         categories.delete(category);
         assertTrue(categories.ids().isEmpty());
         assertTrue(categories.matches("local:1", PlaylistCategories.UNCATEGORIZED));
+    }
+
+    @Test
+    public void preferenceKeysAreIsolatedPerProfile() {
+        final String first = PlaylistCategories.preferenceKey("profile-a");
+        final String second = PlaylistCategories.preferenceKey("profile-b");
+        assertNotEquals(first, second);
+        assertTrue(first.startsWith(PlaylistCategories.PREFERENCE_KEY));
+        assertTrue(second.startsWith(PlaylistCategories.PREFERENCE_KEY));
     }
 
     @Test

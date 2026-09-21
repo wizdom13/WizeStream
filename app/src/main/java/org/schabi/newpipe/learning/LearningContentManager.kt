@@ -85,7 +85,15 @@ class LearningContentManager private constructor(context: Context) {
         }
     }
 
-    fun setLocalPlaylistMarked(playlistId: Long, title: String, marked: Boolean): Completable = databaseAction {
+    fun setLocalPlaylistMarked(
+        playlistId: Long,
+        title: String,
+        marked: Boolean
+    ): Completable = databaseAction {
+        val profileId = ProfileManager.getActiveProfileId(appContext)
+        if (database.playlistDAO().getPlaylistDirectForProfile(profileId, playlistId) == null) {
+            return@databaseAction
+        }
         val sourceId = localPlaylistSourceId(playlistId)
         if (marked) {
             dao.upsertSource(
@@ -98,7 +106,7 @@ class LearningContentManager private constructor(context: Context) {
             )
             dao.updateSourceMetadata(sourceId, title, null)
             dao.markLocalPlaylistSessionsDesignated(
-                ProfileManager.getActiveProfileId(appContext),
+                profileId,
                 playlistId
             )
         } else {
