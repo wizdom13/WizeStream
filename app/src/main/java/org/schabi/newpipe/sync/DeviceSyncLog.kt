@@ -22,6 +22,7 @@ enum class DeviceSyncLogCategory {
     HOME_TABS,
     CHANNEL_PROFILES,
     FILTERS,
+    CONTENT_BLOCKING,
     SETTINGS,
     COMPLETED_DOWNLOADS
 }
@@ -243,6 +244,9 @@ class DeviceSyncLogRepository(context: Context) {
                 DeviceSyncLogCategory.CHANNEL_PROFILES
 
             StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
+
+            StructuredPreferenceCategory.CONTENT_BLOCKING ->
+                DeviceSyncLogCategory.CONTENT_BLOCKING
 
             StructuredPreferenceCategory.SETTINGS -> DeviceSyncLogCategory.SETTINGS
 

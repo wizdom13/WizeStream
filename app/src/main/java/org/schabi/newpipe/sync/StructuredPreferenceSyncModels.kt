@@ -8,6 +8,7 @@ package org.schabi.newpipe.sync
 import io.libp2p.core.PeerId
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import java.util.Locale
 import java.util.UUID
 import kotlinx.serialization.Serializable
 import org.schabi.newpipe.profiles.ProfileManager
@@ -22,6 +23,7 @@ internal const val MAX_STRUCTURED_NAME_LENGTH = 512
 internal const val MAX_STRUCTURED_URL_LENGTH = 4_096
 internal const val MAX_FILTER_VALUES = 64
 internal const val MAX_FILTER_VALUE_LENGTH = 128
+internal const val MAX_CONTENT_BLOCK_VALUE_LENGTH = 4_096
 internal const val MAX_PORTABLE_SETTING_VALUE_LENGTH = 1_024
 internal const val MAX_DOWNLOAD_DISPLAY_NAME_LENGTH = 512
 internal const val MAX_DOWNLOAD_MIME_TYPE_LENGTH = 255
@@ -33,6 +35,7 @@ enum class StructuredPreferenceCategory {
     HOME_TABS,
     CHANNEL_PROFILES,
     FILTERS,
+    CONTENT_BLOCKING,
     SETTINGS,
     COMPLETED_DOWNLOADS
 }
@@ -46,6 +49,8 @@ internal enum class StructuredPreferenceRecordType {
     HOME_TAB_ORDER,
     CHANNEL_PROFILE_FIELD,
     FILTER_SET,
+    CONTENT_BLOCKING_STATE,
+    CONTENT_BLOCK_ENTRY,
     PORTABLE_SETTING,
     COMPLETED_DOWNLOAD
 }
@@ -134,6 +139,45 @@ internal enum class StructuredFilterId {
 internal data class SyncedFilterSet(
     val filterId: StructuredFilterId,
     val values: List<String>
+)
+
+internal val CONTENT_BLOCKING_TARGETS = setOf(
+    "search",
+    "kiosks",
+    "related_items",
+    "channel_pages",
+    "subscriptions",
+    "remote_playlists",
+    "comments"
+)
+
+internal val AISLIST_WARN_BEHAVIORS = setOf(
+    "ignore",
+    "label",
+    "warn",
+    "hide"
+)
+
+@Serializable
+internal data class SyncedContentBlockingState(
+    val enabled: Boolean,
+    val targets: List<String>,
+    val aiSListEnabled: Boolean,
+    val aiSListWarnBehavior: String
+)
+
+@Serializable
+internal enum class ContentBlockEntryKind {
+    VIDEO,
+    CHANNEL,
+    KEYWORD
+}
+
+@Serializable
+internal data class SyncedContentBlockEntry(
+    val kind: ContentBlockEntryKind,
+    val key: String,
+    val label: String
 )
 
 internal enum class PortableSettingValueType {
@@ -247,6 +291,8 @@ internal data class SyncedStructuredPreferenceRecord(
     val homeTabOrder: SyncedHomeTabOrder? = null,
     val channelProfileField: SyncedChannelProfileField? = null,
     val filterSet: SyncedFilterSet? = null,
+    val contentBlockingState: SyncedContentBlockingState? = null,
+    val contentBlockEntry: SyncedContentBlockEntry? = null,
     val portableSetting: SyncedPortableSetting? = null,
     val completedDownload: SyncedCompletedDownload? = null
 )
@@ -426,6 +472,8 @@ internal object StructuredPreferenceSyncValidation {
             record.homeTabOrder,
             record.channelProfileField,
             record.filterSet,
+            record.contentBlockingState,
+            record.contentBlockEntry,
             record.portableSetting,
             record.completedDownload
         )
@@ -550,6 +598,44 @@ internal object StructuredPreferenceSyncValidation {
                     )
                 ) {
                     invalidRecord("Filter set data is invalid")
+                }
+            }
+
+            StructuredPreferenceRecordType.CONTENT_BLOCKING_STATE -> {
+                requireCategory(change, StructuredPreferenceCategory.CONTENT_BLOCKING)
+                requireUpsert(change)
+                requireNoParent(change)
+                val state = record.contentBlockingState
+                    ?: invalidRecord("Content blocking state is missing")
+                if (
+                    state.targets != state.targets.distinct().sorted() ||
+                    state.targets.any { it !in CONTENT_BLOCKING_TARGETS } ||
+                    state.aiSListWarnBehavior !in AISLIST_WARN_BEHAVIORS ||
+                    change.recordId != StructuredPreferenceRecordId.contentBlockingState()
+                ) {
+                    invalidRecord("Content blocking state is invalid")
+                }
+            }
+
+            StructuredPreferenceRecordType.CONTENT_BLOCK_ENTRY -> {
+                requireCategory(change, StructuredPreferenceCategory.CONTENT_BLOCKING)
+                requireNoParent(change)
+                val entry = record.contentBlockEntry
+                    ?: invalidRecord("Content blocking entry is missing")
+                val canonicalKey = entry.key.trim().lowercase(Locale.ROOT)
+                if (
+                    entry.key.isBlank() ||
+                    entry.key != canonicalKey ||
+                    entry.key.length > MAX_CONTENT_BLOCK_VALUE_LENGTH ||
+                    entry.label.isBlank() ||
+                    entry.label != entry.label.trim() ||
+                    entry.label.length > MAX_CONTENT_BLOCK_VALUE_LENGTH ||
+                    change.recordId != StructuredPreferenceRecordId.contentBlockEntry(
+                        entry.kind,
+                        entry.key
+                    )
+                ) {
+                    invalidRecord("Content blocking entry is invalid")
                 }
             }
 
@@ -943,6 +1029,15 @@ internal object StructuredPreferenceRecordId {
 
     fun filterSet(filterId: StructuredFilterId): String {
         return digest("filter-set\u0000${filterId.name}")
+    }
+
+    fun contentBlockingState(): String {
+        return digest("content-blocking-state")
+    }
+
+    fun contentBlockEntry(kind: ContentBlockEntryKind, key: String): String {
+        val canonicalKey = key.trim().lowercase(Locale.ROOT)
+        return digest("content-block-entry\u0000${kind.name}\u0000$canonicalKey")
     }
 
     fun portableSetting(settingId: PortableSettingId): String {

@@ -56,6 +56,7 @@ WizeStream synchronizes:
 - Watch history and playback progress within each profile
 - Home-tab configuration
 - Content-filter selections
+- Blocked videos, blocked channels, blocked keywords, blocking targets, and AiSList behavior
 - Per-channel playback profiles
 - Other explicitly allowlisted settings
 - Completed-download metadata
@@ -67,8 +68,12 @@ Profiles use stable local UUIDs during device synchronization, so Personal, Work
 and other containers remain distinct even when they contain the same channel, playlist, or video.
 The **Default** profile keeps its existing synchronization identity for compatibility.
 
-Search history, Learning Notes, home tabs, content filters, channel playback profiles, allowlisted
-settings, and completed-download metadata remain app-wide rather than profile-scoped.
+Search history, Learning Notes, home tabs, content filters, blocked-content rules, channel playback
+profiles, allowlisted settings, and completed-download metadata remain app-wide rather than
+profile-scoped.
+
+AiSList synchronization exchanges only the user's enable/behavior choices. Each device downloads
+and caches the upstream AiSList data independently.
 
 Deleting a non-Default profile is a local action. WizeStream tombstones that profile ID on the
 device so a paired peer cannot silently recreate it there. Profile-owned data already synchronized

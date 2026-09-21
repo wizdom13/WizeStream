@@ -229,6 +229,111 @@ class RoomStructuredPreferenceSyncStoreTest {
     }
 
     @Test
+    fun blockedContentEntriesMergeAndMaterializeThroughRoomStores() {
+        val blockedChannelsKey = context.getString(R.string.blocked_channels_key)
+        val blockedVideosKey = context.getString(R.string.blocked_videos_key)
+        val blockedKeywordsKey = context.getString(R.string.blocked_keywords_key)
+        val blockingEnabledKey = context.getString(R.string.content_blocking_enabled_key)
+        val blockingTargetsKey = context.getString(R.string.content_blocking_targets_key)
+        val aiSListEnabledKey = context.getString(R.string.aislist_enabled_key)
+        val aiSListWarnBehaviorKey = context.getString(R.string.aislist_warn_behavior_key)
+        val phoneChannel = "https://example.com/channel/blocked\tBlocked channel"
+        val tabletVideo = "https://example.com/watch?v=blocked\tBlocked video"
+
+        phonePreferences.edit()
+            .putStringSet(blockedChannelsKey, setOf(phoneChannel))
+            .commit()
+        tabletPreferences.edit()
+            .putStringSet(blockedVideosKey, setOf(tabletVideo))
+            .putString(blockedKeywordsKey, "Spoiler")
+            .commit()
+
+        val phoneStore = RoomStructuredPreferenceSyncStore(
+            context,
+            phoneDatabase,
+            newPeerId(),
+            phonePreferences
+        )
+        val tabletStore = RoomStructuredPreferenceSyncStore(
+            context,
+            tabletDatabase,
+            newPeerId(),
+            tabletPreferences
+        )
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+
+        synchronize(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(
+            setOf(phoneChannel),
+            phonePreferences.getStringSet(blockedChannelsKey, emptySet())
+        )
+        assertEquals(
+            setOf(phoneChannel),
+            tabletPreferences.getStringSet(blockedChannelsKey, emptySet())
+        )
+        assertEquals(
+            setOf(tabletVideo),
+            phonePreferences.getStringSet(blockedVideosKey, emptySet())
+        )
+        assertEquals(
+            setOf(tabletVideo),
+            tabletPreferences.getStringSet(blockedVideosKey, emptySet())
+        )
+        assertEquals("Spoiler", phonePreferences.getString(blockedKeywordsKey, null))
+        assertEquals("Spoiler", tabletPreferences.getString(blockedKeywordsKey, null))
+
+        phonePreferences.edit()
+            .putBoolean(blockingEnabledKey, false)
+            .putStringSet(blockingTargetsKey, setOf("search"))
+            .putBoolean(aiSListEnabledKey, true)
+            .putString(aiSListWarnBehaviorKey, "hide")
+            .commit()
+        synchronize(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertEquals(false, tabletPreferences.getBoolean(blockingEnabledKey, true))
+        assertEquals(
+            setOf("search"),
+            tabletPreferences.getStringSet(blockingTargetsKey, emptySet())
+        )
+        assertEquals(true, tabletPreferences.getBoolean(aiSListEnabledKey, false))
+        assertEquals(
+            "hide",
+            tabletPreferences.getString(aiSListWarnBehaviorKey, null)
+        )
+
+        phonePreferences.edit().putStringSet(blockedChannelsKey, emptySet()).commit()
+        synchronize(
+            StructuredPreferenceCategory.CONTENT_BLOCKING,
+            phone,
+            phoneStore,
+            tablet,
+            tabletStore
+        )
+
+        assertTrue(phonePreferences.getStringSet(blockedChannelsKey, emptySet()).isNullOrEmpty())
+        assertTrue(tabletPreferences.getStringSet(blockedChannelsKey, emptySet()).isNullOrEmpty())
+        assertEquals(
+            setOf(tabletVideo),
+            phonePreferences.getStringSet(blockedVideosKey, emptySet())
+        )
+        assertEquals("Spoiler", phonePreferences.getString(blockedKeywordsKey, null))
+    }
+
+    @Test
     fun portableSettingsUseClosedAllowlistAndKeepLocalOnlyValues() {
         val themeKey = context.getString(R.string.theme_key)
         val downloadPathKey = context.getString(R.string.download_path_video_key)
