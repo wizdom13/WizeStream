@@ -63,15 +63,16 @@ class AiSListSyncWorker(
         }
 
         @JvmStatic
-        fun setEnabled(context: Context, enabled: Boolean) {
+        fun setEnabled(context: Context, enabled: Boolean): UUID? {
             AiSListRepository.setEnabled(context, enabled)
             val workManager = WorkManager.getInstance(context)
-            if (enabled) {
+            return if (enabled) {
                 schedulePeriodic(context)
                 enqueueImmediateSync(context)
             } else {
                 workManager.cancelUniqueWork(PERIODIC_WORK_NAME)
                 workManager.cancelUniqueWork(IMMEDIATE_WORK_NAME)
+                null
             }
         }
 
