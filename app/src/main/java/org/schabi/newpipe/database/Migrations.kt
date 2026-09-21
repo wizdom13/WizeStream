@@ -45,7 +45,8 @@ object Migrations {
     const val DB_VER_23 = 23
     const val DB_VER_24 = 24
     const val DB_VER_25 = 25
-    const val DB_VER_CURRENT = DB_VER_25
+    const val DB_VER_26 = 26
+    const val DB_VER_CURRENT = DB_VER_26
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -893,6 +894,64 @@ object Migrations {
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_feed_group_profile_id_sort_order " +
                 "ON feed_group (profile_id, sort_order)"
+        )
+    }
+
+    val MIGRATION_25_26 = Migration(DB_VER_25, DB_VER_26) { db ->
+        val defaultProfileId = "00000000-0000-0000-0000-000000000000"
+
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS stream_history_new (" +
+                "stream_id INTEGER NOT NULL, access_date INTEGER NOT NULL, " +
+                "repeat_count INTEGER NOT NULL, profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId', " +
+                "PRIMARY KEY(profile_id, stream_id, access_date), " +
+                "FOREIGN KEY(stream_id) REFERENCES streams(uid) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "INSERT INTO stream_history_new " +
+                "(stream_id, access_date, repeat_count, profile_id) " +
+                "SELECT stream_id, access_date, repeat_count, '$defaultProfileId' " +
+                "FROM stream_history"
+        )
+        db.execSQL("DROP TABLE stream_history")
+        db.execSQL("ALTER TABLE stream_history_new RENAME TO stream_history")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_stream_history_stream_id " +
+                "ON stream_history (stream_id)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_stream_history_profile_id_stream_id " +
+                "ON stream_history (profile_id, stream_id)"
+        )
+
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS stream_state_new (" +
+                "stream_id INTEGER NOT NULL, progress_time INTEGER NOT NULL, " +
+                "profile_id TEXT NOT NULL DEFAULT '$defaultProfileId', " +
+                "PRIMARY KEY(profile_id, stream_id), " +
+                "FOREIGN KEY(stream_id) REFERENCES streams(uid) " +
+                "ON UPDATE CASCADE ON DELETE CASCADE)"
+        )
+        db.execSQL(
+            "INSERT INTO stream_state_new (stream_id, progress_time, profile_id) " +
+                "SELECT stream_id, progress_time, '$defaultProfileId' FROM stream_state"
+        )
+        db.execSQL("DROP TABLE stream_state")
+        db.execSQL("ALTER TABLE stream_state_new RENAME TO stream_state")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_stream_state_stream_id " +
+                "ON stream_state (stream_id)"
+        )
+
+        db.execSQL(
+            "ALTER TABLE learning_sessions ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '$defaultProfileId'"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_learning_sessions_profile_id_local_date " +
+                "ON learning_sessions (profile_id, local_date)"
         )
     }
 }

@@ -45,6 +45,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.local.feed.FeedViewModel;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.sync.HistorySyncRecorder;
 import org.schabi.newpipe.util.ExtractorHelper;
 
@@ -66,17 +67,23 @@ public class HistoryRecordManager {
     private final SearchHistoryDAO searchHistoryTable;
     private final StreamStateDAO streamStateTable;
     private final HistorySyncRecorder historySyncRecorder;
+    private final String profileId;
     private final SharedPreferences sharedPreferences;
     private final String searchHistoryKey;
     private final String streamHistoryKey;
 
     public HistoryRecordManager(final Context context) {
+        this(context, ProfileManager.getActiveProfileId(context));
+    }
+
+    public HistoryRecordManager(final Context context, @NonNull final String profileId) {
         database = NewPipeDatabase.getInstance(context);
         streamTable = database.streamDAO();
         streamHistoryTable = database.streamHistoryDAO();
         searchHistoryTable = database.searchHistoryDAO();
         streamStateTable = database.streamStateDAO();
         historySyncRecorder = HistorySyncRecorder.get(context);
+        this.profileId = profileId;
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         searchHistoryKey = context.getString(R.string.enable_search_history_key);
         streamHistoryKey = context.getString(R.string.enable_watch_history_key);
@@ -122,9 +129,10 @@ public class HistoryRecordManager {
             // Update the stream progress to the full duration of the video
             final StreamStateEntity entity = new StreamStateEntity(
                     streamId,
-                    duration * 1000
+                    duration * 1000,
+                    profileId
             );
-            historySyncRecorder.recordProgress(
+            recordProgress(
                     streamId,
                     entity.getProgressMillis(),
                     currentTime.toInstant().toEpochMilli()
@@ -132,15 +140,17 @@ public class HistoryRecordManager {
             streamStateTable.upsert(entity);
 
             // Add a history entry
-            final StreamHistoryEntity latestEntry = streamHistoryTable.getLatestEntry(streamId);
+            final StreamHistoryEntity latestEntry =
+                    streamHistoryTable.getLatestEntryForProfile(profileId, streamId);
             if (latestEntry == null) {
                 // never actually viewed: add history entry but with 0 views
-                historySyncRecorder.recordWatchEvent(
+                recordWatchEvent(
                         streamId,
                         currentTime.toInstant().toEpochMilli(),
                         0
                 );
-                return streamHistoryTable.insert(new StreamHistoryEntity(streamId, currentTime, 0));
+                return streamHistoryTable.insert(
+                        new StreamHistoryEntity(streamId, currentTime, 0, profileId));
             } else {
                 return 0L;
             }
@@ -160,10 +170,11 @@ public class HistoryRecordManager {
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(item));
-            streamStateTable.upsert(new StreamStateEntity(streamId, item.getDuration() * 1000));
-            if (streamHistoryTable.getLatestEntry(streamId) == null) {
+            streamStateTable.upsert(
+                    new StreamStateEntity(streamId, item.getDuration() * 1000, profileId));
+            if (streamHistoryTable.getLatestEntryForProfile(profileId, streamId) == null) {
                 return streamHistoryTable.insert(
-                        new StreamHistoryEntity(streamId, currentTime, 0));
+                        new StreamHistoryEntity(streamId, currentTime, 0, profileId));
             }
             return 0L;
         })).subscribeOn(Schedulers.io());
@@ -177,12 +188,13 @@ public class HistoryRecordManager {
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(info));
-            historySyncRecorder.recordWatchEvent(
+            recordWatchEvent(
                     streamId,
                     currentTime.toInstant().toEpochMilli(),
                     1
             );
-            final StreamHistoryEntity latestEntry = streamHistoryTable.getLatestEntry(streamId);
+            final StreamHistoryEntity latestEntry =
+                    streamHistoryTable.getLatestEntryForProfile(profileId, streamId);
 
             if (latestEntry != null) {
                 streamHistoryTable.delete(latestEntry);
@@ -191,7 +203,8 @@ public class HistoryRecordManager {
                 return streamHistoryTable.insert(latestEntry);
             } else {
                 // just viewed for the first time: set 1 view
-                return streamHistoryTable.insert(new StreamHistoryEntity(streamId, currentTime, 1));
+                return streamHistoryTable.insert(
+                        new StreamHistoryEntity(streamId, currentTime, 1, profileId));
             }
         })).subscribeOn(Schedulers.io());
     }
@@ -209,14 +222,16 @@ public class HistoryRecordManager {
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(item));
-            final StreamHistoryEntity latestEntry = streamHistoryTable.getLatestEntry(streamId);
+            final StreamHistoryEntity latestEntry =
+                    streamHistoryTable.getLatestEntryForProfile(profileId, streamId);
             if (latestEntry != null) {
                 streamHistoryTable.delete(latestEntry);
                 latestEntry.setAccessDate(currentTime);
                 latestEntry.setRepeatCount(latestEntry.getRepeatCount() + 1);
                 return streamHistoryTable.insert(latestEntry);
             }
-            return streamHistoryTable.insert(new StreamHistoryEntity(streamId, currentTime, 1));
+            return streamHistoryTable.insert(
+                    new StreamHistoryEntity(streamId, currentTime, 1, profileId));
         })).subscribeOn(Schedulers.io());
     }
 
@@ -229,42 +244,44 @@ public class HistoryRecordManager {
     public Completable markAsUnwatched(final StreamInfoItem info) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(info));
-            historySyncRecorder.recordWatchStreamDelete(streamId);
-            streamStateTable.deleteState(streamId);
-            streamHistoryTable.deleteStreamHistory(streamId);
+            recordWatchStreamDelete(streamId);
+            streamStateTable.deleteStateForProfile(profileId, streamId);
+            streamHistoryTable.deleteStreamHistoryForProfile(profileId, streamId);
         })).subscribeOn(Schedulers.io());
     }
 
     public Completable deleteStreamHistoryAndState(final long streamId) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
-            historySyncRecorder.recordWatchStreamDelete(streamId);
-            streamStateTable.deleteState(streamId);
-            streamHistoryTable.deleteStreamHistory(streamId);
+            recordWatchStreamDelete(streamId);
+            streamStateTable.deleteStateForProfile(profileId, streamId);
+            streamHistoryTable.deleteStreamHistoryForProfile(profileId, streamId);
         })).subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteWholeStreamHistory() {
         return Single.fromCallable(() -> database.runInTransaction(() -> {
-            historySyncRecorder.recordWatchAllDelete();
-            return streamHistoryTable.deleteAll();
+            recordWatchAllDelete();
+            return streamHistoryTable.deleteAllForProfile(profileId);
         }))
                 .subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteCompleteStreamStateHistory() {
         return Single.fromCallable(() -> database.runInTransaction(() -> {
-            historySyncRecorder.recordProgressAllDelete();
-            return streamStateTable.deleteAll();
+            recordProgressAllDelete();
+            return streamStateTable.deleteAllForProfile(profileId);
         }))
                 .subscribeOn(Schedulers.io());
     }
 
     public Flowable<List<StreamHistoryEntry>> getStreamHistorySortedById() {
-        return streamHistoryTable.getHistorySortedById().subscribeOn(Schedulers.io());
+        return streamHistoryTable.getHistorySortedByIdForProfile(profileId)
+                .subscribeOn(Schedulers.io());
     }
 
     public Flowable<List<StreamStatisticsEntry>> getStreamStatistics() {
-        return streamHistoryTable.getStatistics().subscribeOn(Schedulers.io());
+        return streamHistoryTable.getStatisticsForProfile(profileId)
+                .subscribeOn(Schedulers.io());
     }
 
     private boolean isStreamHistoryEnabled() {
@@ -338,7 +355,8 @@ public class HistoryRecordManager {
                 ? Single.fromCallable(() -> streamTable.upsert(new StreamEntity(queueItem)))
                 : queueItem.getStream().map(info -> streamTable.upsert(new StreamEntity(info)));
         return streamId
-                .flatMapPublisher(streamStateTable::getState)
+                .flatMapPublisher(streamUid ->
+                        streamStateTable.getStateForProfile(profileId, streamUid))
                 .firstElement()
                 .flatMap(list -> list.isEmpty() ? Maybe.empty() : Maybe.just(list.get(0)))
                 .filter(state -> state.isValid(queueItem.getDuration()))
@@ -347,7 +365,8 @@ public class HistoryRecordManager {
 
     public Maybe<StreamStateEntity> loadStreamState(final StreamInfo info) {
         return Single.fromCallable(() -> streamTable.upsert(new StreamEntity(info)))
-                .flatMapPublisher(streamStateTable::getState)
+                .flatMapPublisher(streamId ->
+                        streamStateTable.getStateForProfile(profileId, streamId))
                 .firstElement()
                 .flatMap(list -> list.isEmpty() ? Maybe.empty() : Maybe.just(list.get(0)))
                 .filter(state -> state.isValid(info.getDuration()))
@@ -357,9 +376,10 @@ public class HistoryRecordManager {
     public Completable saveStreamState(@NonNull final StreamInfo info, final long progressMillis) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(info));
-            final StreamStateEntity state = new StreamStateEntity(streamId, progressMillis);
+            final StreamStateEntity state =
+                    new StreamStateEntity(streamId, progressMillis, profileId);
             if (state.isValid(info.getDuration())) {
-                historySyncRecorder.recordProgress(
+                recordProgress(
                         streamId,
                         progressMillis,
                         System.currentTimeMillis()
@@ -380,7 +400,8 @@ public class HistoryRecordManager {
                                        final long progressMillis) {
         return Completable.fromAction(() -> database.runInTransaction(() -> {
             final long streamId = streamTable.upsert(new StreamEntity(item));
-            final StreamStateEntity state = new StreamStateEntity(streamId, progressMillis);
+            final StreamStateEntity state =
+                    new StreamStateEntity(streamId, progressMillis, profileId);
             if (state.isValid(item.getDuration())) {
                 streamStateTable.upsert(state);
             }
@@ -395,7 +416,7 @@ public class HistoryRecordManager {
                 return new StreamStateEntity[]{null};
             }
             final List<StreamStateEntity> states = streamStateTable
-                    .getState(entities.get(0).getUid()).blockingFirst();
+                    .getStateForProfile(profileId, entities.get(0).getUid()).blockingFirst();
             if (states.isEmpty()) {
                 return new StreamStateEntity[]{null};
             }
@@ -419,7 +440,8 @@ public class HistoryRecordManager {
                     result.add(null);
                     continue;
                 }
-                final List<StreamStateEntity> states = streamStateTable.getState(streamId)
+                final List<StreamStateEntity> states = streamStateTable
+                        .getStateForProfile(profileId, streamId)
                         .blockingFirst();
                 if (states.isEmpty()) {
                     result.add(null);
@@ -444,11 +466,49 @@ public class HistoryRecordManager {
                 }
 
                 final List<StreamStateEntity> states = streamStateTable
-                        .getState(entities.get(0).getUid()).blockingFirst();
+                        .getStateForProfile(profileId, entities.get(0).getUid()).blockingFirst();
                 result.add(states.isEmpty() ? null : states.get(0));
             }
             return result;
         }).subscribeOn(Schedulers.io());
+    }
+
+    private boolean shouldSyncWatchHistory() {
+        return ProfileManager.DEFAULT_PROFILE_ID.equals(profileId);
+    }
+
+    private void recordWatchEvent(final long streamId,
+                                  final long watchedAtEpochMillis,
+                                  final long repeatCount) {
+        if (shouldSyncWatchHistory()) {
+            historySyncRecorder.recordWatchEvent(streamId, watchedAtEpochMillis, repeatCount);
+        }
+    }
+
+    private void recordProgress(final long streamId,
+                                final long progressMillis,
+                                final long updatedAtEpochMillis) {
+        if (shouldSyncWatchHistory()) {
+            historySyncRecorder.recordProgress(streamId, progressMillis, updatedAtEpochMillis);
+        }
+    }
+
+    private void recordWatchStreamDelete(final long streamId) {
+        if (shouldSyncWatchHistory()) {
+            historySyncRecorder.recordWatchStreamDelete(streamId);
+        }
+    }
+
+    private void recordWatchAllDelete() {
+        if (shouldSyncWatchHistory()) {
+            historySyncRecorder.recordWatchAllDelete();
+        }
+    }
+
+    private void recordProgressAllDelete() {
+        if (shouldSyncWatchHistory()) {
+            historySyncRecorder.recordProgressAllDelete();
+        }
     }
 
     ///////////////////////////////////////////////////////

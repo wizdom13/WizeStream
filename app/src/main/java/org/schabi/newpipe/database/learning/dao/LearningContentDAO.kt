@@ -40,18 +40,26 @@ interface LearningContentDAO {
     @Query("SELECT source_id FROM learning_content_sources")
     fun getSourceIdsDirect(): List<String>
 
-    @Query("UPDATE learning_sessions SET is_designated = 1 WHERE stream_id IN (:streamIds)")
-    fun markSessionsDesignated(streamIds: List<Long>)
+    @Query(
+        """
+        UPDATE learning_sessions
+        SET is_designated = 1
+        WHERE profile_id = :profileId AND stream_id IN (:streamIds)
+        """
+    )
+    fun markSessionsDesignated(profileId: String, streamIds: List<Long>)
 
     @Query(
         """
-        UPDATE learning_sessions SET is_designated = 1
-        WHERE stream_id IN (
+        UPDATE learning_sessions
+        SET is_designated = 1
+        WHERE profile_id = :profileId
+        AND stream_id IN (
             SELECT stream_id FROM playlist_stream_join WHERE playlist_id = :playlistId
         )
         """
     )
-    fun markLocalPlaylistSessionsDesignated(playlistId: Long)
+    fun markLocalPlaylistSessionsDesignated(profileId: String, playlistId: Long)
 
     @Query(
         """

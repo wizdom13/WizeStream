@@ -62,10 +62,10 @@ abstract class FeedDAO {
         FROM streams s
 
         LEFT JOIN stream_state sst
-        ON s.uid = sst.stream_id
+        ON s.uid = sst.stream_id AND sst.profile_id = :profileId
         
         LEFT JOIN stream_history sh
-        ON s.uid = sh.stream_id
+        ON s.uid = sh.stream_id AND sh.profile_id = :profileId
         
         INNER JOIN feed f
         ON s.uid = f.stream_id

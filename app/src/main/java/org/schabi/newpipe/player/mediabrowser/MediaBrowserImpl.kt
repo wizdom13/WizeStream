@@ -2,6 +2,7 @@ package org.schabi.newpipe.player.mediabrowser
 
 import android.content.ContentResolver
 import android.content.Context
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -15,6 +16,7 @@ import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession.ControllerInfo
 import androidx.media3.session.SessionError
 import androidx.media3.session.legacy.MediaConstants
+import androidx.preference.PreferenceManager
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -42,6 +44,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.local.bookmark.MergedPlaylistManager
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.util.ExtractorHelper
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.image.ExtractorImageCompat
@@ -56,31 +59,57 @@ import org.schabi.newpipe.util.image.ImageStrategy
 class MediaBrowserImpl(
     private val context: Context,
     // parentId
-    notifyChildrenChanged: Consumer<String>
+    private val notifyChildrenChanged: Consumer<String>
 ) {
     private val packageValidator = PackageValidator(context)
     private val database = NewPipeDatabase.getInstance(context)
+    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private var disposables = CompositeDisposable()
+    private var profileDisposables = CompositeDisposable()
+    private val profilePreferenceListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == ProfileManager.ACTIVE_PROFILE_ID_PREFERENCE_KEY) {
+                bindProfileObservers()
+                notifyProfileCollectionsChanged()
+            }
+        }
 
     init {
-        // this will listen to changes in the bookmarks until this MediaBrowserImpl is dispose()d
-        disposables.add(
-            getMergedPlaylists().subscribe { notifyChildrenChanged.accept(ID_BOOKMARKS) }
+        sharedPreferences.registerOnSharedPreferenceChangeListener(profilePreferenceListener)
+        bindProfileObservers()
+    }
+
+    private fun bindProfileObservers() {
+        profileDisposables.clear()
+        val profileId = ProfileManager.getActiveProfileId(context)
+        profileDisposables.add(
+            getMergedPlaylists(profileId).subscribe {
+                notifyChildrenChanged.accept(ID_BOOKMARKS)
+            }
         )
-        disposables.add(
-            database.streamHistoryDAO().history.subscribe(
-                {
-                    notifyChildrenChanged.accept(ID_CONTINUE)
-                    notifyChildrenChanged.accept(ID_RECENT)
-                    notifyChildrenChanged.accept(ID_HISTORY)
-                },
+        profileDisposables.add(
+            database.streamHistoryDAO().getHistoryForProfile(profileId).subscribe(
+                { notifyHistoryCollectionsChanged() },
                 { throwable -> Log.e(TAG, "History observation failed", throwable) }
             )
         )
     }
 
+    private fun notifyHistoryCollectionsChanged() {
+        notifyChildrenChanged.accept(ID_CONTINUE)
+        notifyChildrenChanged.accept(ID_RECENT)
+        notifyChildrenChanged.accept(ID_HISTORY)
+    }
+
+    private fun notifyProfileCollectionsChanged() {
+        notifyChildrenChanged.accept(ID_BOOKMARKS)
+        notifyHistoryCollectionsChanged()
+    }
+
     //region Cleanup
     fun dispose() {
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(profilePreferenceListener)
+        profileDisposables.dispose()
         disposables.dispose()
     }
     //endregion
@@ -354,22 +383,30 @@ class MediaBrowserImpl(
     }
 
     private fun populateHistory(): Single<List<MediaItem>> {
-        val history = database.streamHistoryDAO().history.firstOrError()
+        val history = database.streamHistoryDAO()
+            .getHistoryForProfile(ProfileManager.getActiveProfileId(context))
+            .firstOrError()
         return history.map { items ->
             CarBrowsePolicy.browse(items).map { this.createHistoryMediaItem(it) }
         }
     }
 
     private fun populateContinueListening(): Single<List<MediaItem>> {
-        return database.streamHistoryDAO().history.firstOrError().map { items ->
-            CarBrowsePolicy.continueListening(items).map(this::createHistoryMediaItem)
-        }
+        return database.streamHistoryDAO()
+            .getHistoryForProfile(ProfileManager.getActiveProfileId(context))
+            .firstOrError()
+            .map { items ->
+                CarBrowsePolicy.continueListening(items).map(this::createHistoryMediaItem)
+            }
     }
 
     private fun populateResumption(): Single<List<MediaItem>> {
-        return database.streamHistoryDAO().history.firstOrError().map { items ->
-            CarBrowsePolicy.resumption(items).map(this::createHistoryMediaItem)
-        }
+        return database.streamHistoryDAO()
+            .getHistoryForProfile(ProfileManager.getActiveProfileId(context))
+            .firstOrError()
+            .map { items ->
+                CarBrowsePolicy.resumption(items).map(this::createHistoryMediaItem)
+            }
     }
 
     private fun createHistoryMediaItem(streamHistoryEntry: StreamHistoryEntry): MediaItem {
@@ -394,9 +431,11 @@ class MediaBrowserImpl(
         return libraryItem(mediaId, metadata, browsable = false)
     }
 
-    private fun getMergedPlaylists(): Flowable<MutableList<PlaylistLocalItem>> {
+    private fun getMergedPlaylists(
+        profileId: String = ProfileManager.getActiveProfileId(context)
+    ): Flowable<MutableList<PlaylistLocalItem>> {
         return MergedPlaylistManager.getMergedOrderedPlaylists(
-            LocalPlaylistManager(database),
+            LocalPlaylistManager(database, profileId),
             RemotePlaylistManager(database)
         )
     }
@@ -409,7 +448,10 @@ class MediaBrowserImpl(
     }
 
     private fun populateLocalPlaylist(playlistId: Long): Single<List<MediaItem>> {
-        val playlist = LocalPlaylistManager(database).getPlaylistStreams(playlistId).firstOrError()
+        val playlist = LocalPlaylistManager(
+            database,
+            ProfileManager.getActiveProfileId(context)
+        ).getPlaylistStreams(playlistId).firstOrError()
         return playlist.map { items ->
             CarBrowsePolicy.browse(items).mapIndexed { index, item ->
                 createLocalPlaylistStreamMediaItem(playlistId, item, index)

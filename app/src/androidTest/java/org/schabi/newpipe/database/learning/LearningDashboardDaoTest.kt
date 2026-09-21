@@ -26,6 +26,7 @@ import org.schabi.newpipe.extractor.stream.StreamType
 
 @RunWith(AndroidJUnit4::class)
 class LearningDashboardDaoTest {
+    private val profileId = "00000000-0000-0000-0000-000000000000"
     private val database = Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext(),
         AppDatabase::class.java
@@ -62,6 +63,9 @@ class LearningDashboardDaoTest {
         )
         database.streamStateDAO().insert(StreamStateEntity(partialId, 300_000))
         database.streamStateDAO().insert(StreamStateEntity(completedId, 600_000))
+        database.streamStateDAO().insert(
+            StreamStateEntity(partialId, 600_000, "other-profile")
+        )
         database.streamHistoryDAO().insert(
             StreamHistoryEntity(partialId, OffsetDateTime.now(), 1)
         )
@@ -92,23 +96,36 @@ class LearningDashboardDaoTest {
                 true
             )
         )
+        database.learningSessionDAO().upsert(
+            LearningSessionEntity(
+                "session-other-profile",
+                partialId,
+                3,
+                303_003,
+                300_000,
+                "2026-08-05",
+                false,
+                true,
+                "other-profile"
+            )
+        )
 
         val dao = database.learningDashboardDAO()
-        val summary = dao.observePlaylistSummaries().blockingFirst().single()
+        val summary = dao.observePlaylistSummaries(profileId).blockingFirst().single()
         assertEquals(2, summary.eligibleCount)
         assertEquals(1, summary.completedCount)
         assertEquals(50, summary.percentage)
 
-        val continueLearning = dao.observeContinueLearning(5).blockingFirst()
+        val continueLearning = dao.observeContinueLearning(profileId, 5).blockingFirst()
         assertEquals(listOf(partialId), continueLearning.map { it.stream.uid })
         assertEquals(50, continueLearning.single().progressPercentage)
 
-        val annotated = dao.observeRecentlyAnnotated(5).blockingFirst().single()
+        val annotated = dao.observeRecentlyAnnotated(profileId, 5).blockingFirst().single()
         assertEquals(partialId, annotated.stream.uid)
         assertEquals(1, annotated.noteCount)
         assertEquals(2, annotated.latestNoteUpdate)
 
-        val activity = dao.observeDailyStudyActivity().blockingFirst().single()
+        val activity = dao.observeDailyStudyActivity(profileId).blockingFirst().single()
         assertEquals("2026-08-05", activity.localDate)
         assertEquals(180_000, activity.watchedDurationMillis)
     }

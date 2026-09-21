@@ -69,6 +69,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExpandableSearchViewHelper;
 import org.schabi.newpipe.util.Localization;
@@ -148,7 +149,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        playlistManager = new LocalPlaylistManager(NewPipeDatabase.getInstance(requireContext()));
+        playlistManager = new LocalPlaylistManager(
+                NewPipeDatabase.getInstance(requireContext()),
+                ProfileManager.getActiveProfileId(requireContext()));
         learningContentManager = LearningContentManager.getInstance(requireContext());
 
         disposables = new CompositeDisposable();

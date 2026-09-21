@@ -15,6 +15,7 @@ import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.StateSaver;
 
 import java.util.List;
@@ -143,7 +144,8 @@ public abstract class PlaylistDialog extends DialogFragment implements StateSave
             final List<StreamEntity> streamEntities,
             final Consumer<PlaylistDialog> onExec) {
 
-        return new LocalPlaylistManager(NewPipeDatabase.getInstance(context))
+        return new LocalPlaylistManager(NewPipeDatabase.getInstance(context),
+                ProfileManager.getActiveProfileId(context))
                 .hasPlaylists()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(hasPlaylists ->

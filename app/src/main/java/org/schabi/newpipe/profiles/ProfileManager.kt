@@ -10,7 +10,7 @@ object ProfileManager {
     const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
 
     private const val PROFILE_IDS_KEY = "wizestream_profile_ids"
-    private const val ACTIVE_PROFILE_ID_KEY = "wizestream_active_profile_id"
+    const val ACTIVE_PROFILE_ID_PREFERENCE_KEY = "wizestream_active_profile_id"
     private const val PROFILE_PREFIX = "wizestream_profile_"
     private const val NAME_SUFFIX = "_name"
     private const val DESCRIPTION_SUFFIX = "_description"
@@ -43,12 +43,12 @@ object ProfileManager {
     fun getActiveProfileId(context: Context): String = synchronized(lock) {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
-        val active = prefs.getString(ACTIVE_PROFILE_ID_KEY, DEFAULT_PROFILE_ID)
+        val active = prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
             ?: DEFAULT_PROFILE_ID
         if (profileIds(prefs).contains(active)) {
             active
         } else {
-            prefs.edit().putString(ACTIVE_PROFILE_ID_KEY, DEFAULT_PROFILE_ID).apply()
+            prefs.edit().putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID).apply()
             DEFAULT_PROFILE_ID
         }
     }
@@ -57,7 +57,7 @@ object ProfileManager {
     fun getActiveProfile(context: Context): ProfileRecord = synchronized(lock) {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
-        val activeId = prefs.getString(ACTIVE_PROFILE_ID_KEY, DEFAULT_PROFILE_ID)
+        val activeId = prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
             ?: DEFAULT_PROFILE_ID
         readProfile(prefs, activeId)
             ?: readProfile(prefs, DEFAULT_PROFILE_ID)
@@ -80,7 +80,7 @@ object ProfileManager {
         if (!profileIds(prefs).contains(profileId)) {
             return false
         }
-        prefs.edit().putString(ACTIVE_PROFILE_ID_KEY, profileId).apply()
+        prefs.edit().putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, profileId).apply()
         true
     }
 
@@ -117,7 +117,7 @@ object ProfileManager {
             .putString(profileKey(profile.id, DESCRIPTION_SUFFIX), profile.description)
             .putString(profileKey(profile.id, ICON_SUFFIX), profile.iconKey)
             .putLong(profileKey(profile.id, CREATED_AT_SUFFIX), profile.createdAt)
-            .putString(ACTIVE_PROFILE_ID_KEY, profile.id)
+            .putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, profile.id)
             .apply()
         profile
     }
@@ -174,8 +174,8 @@ object ProfileManager {
             .remove(profileKey(profileId, DESCRIPTION_SUFFIX))
             .remove(profileKey(profileId, ICON_SUFFIX))
             .remove(profileKey(profileId, CREATED_AT_SUFFIX))
-        if (prefs.getString(ACTIVE_PROFILE_ID_KEY, DEFAULT_PROFILE_ID) == profileId) {
-            editor.putString(ACTIVE_PROFILE_ID_KEY, DEFAULT_PROFILE_ID)
+        if (prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID) == profileId) {
+            editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
         }
         editor.apply()
         true
@@ -205,9 +205,9 @@ object ProfileManager {
             changed = true
         }
 
-        val active = prefs.getString(ACTIVE_PROFILE_ID_KEY, null)
+        val active = prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, null)
         if (active == null || !ids.contains(active)) {
-            editor.putString(ACTIVE_PROFILE_ID_KEY, DEFAULT_PROFILE_ID)
+            editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
             changed = true
         }
 
