@@ -20,7 +20,6 @@ import org.schabi.newpipe.player.helper.LoadController
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.playback.MediaSourceManager
 import org.schabi.newpipe.player.playqueue.PlayQueue
-import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.ui.PlayerUi
 
 /** Owns player-engine lifecycle, queue-manager lifetime, and recovery positions. */
