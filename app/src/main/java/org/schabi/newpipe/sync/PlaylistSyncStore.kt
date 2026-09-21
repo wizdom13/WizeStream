@@ -19,6 +19,7 @@ import org.schabi.newpipe.database.sync.PlaylistSyncLocalMapEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncOriginStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncPeerStateEntity
 import org.schabi.newpipe.database.sync.PlaylistSyncRecordEntity
+import org.schabi.newpipe.profiles.ProfileManager
 
 internal interface PlaylistSyncStore {
     val localPeerId: String
@@ -38,7 +39,8 @@ internal interface PlaylistSyncStore {
 
 internal class RoomPlaylistSyncStore internal constructor(
     private val database: AppDatabase,
-    override val localPeerId: String
+    override val localPeerId: String,
+    private val canMaterializeProfile: (String) -> Boolean = { true }
 ) : PlaylistSyncStore {
     private val syncDao = database.playlistSyncDAO()
     private val playlistDao = database.playlistDAO()
@@ -419,6 +421,12 @@ internal class RoomPlaylistSyncStore internal constructor(
         val playlistRecord = syncDao.getRecord(playlistRecordId) ?: return
         val profileId = playlistRecord.profileId
         val mapping = syncDao.getLocalMapping(playlistRecordId)
+        if (!canMaterializeProfile(profileId)) {
+            mapping?.let {
+                playlistDao.deletePlaylistForProfile(profileId, it.playlistUid)
+            }
+            return
+        }
         if (playlistRecord.isDeleted) {
             mapping?.let {
                 playlistDao.deletePlaylistForProfile(
@@ -517,6 +525,12 @@ internal class RoomPlaylistSyncStore internal constructor(
             remote.serviceId.toLong(),
             remote.url
         )
+        if (!canMaterializeProfile(profileId)) {
+            existingId?.let {
+                remotePlaylistDao.deletePlaylistForProfile(profileId, it)
+            }
+            return
+        }
         if (record.isDeleted) {
             existingId?.let {
                 remotePlaylistDao.deletePlaylistForProfile(
@@ -679,7 +693,10 @@ internal class RoomPlaylistSyncStore internal constructor(
                     val stateRepository = AndroidSyncStateRepository(applicationContext)
                     RoomPlaylistSyncStore(
                         database = NewPipeDatabase.getInstance(applicationContext),
-                        localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58()
+                        localPeerId = stateRepository.loadOrCreateIdentity().peerId.toBase58(),
+                        canMaterializeProfile = { profileId ->
+                            ProfileManager.getProfile(applicationContext, profileId) != null
+                        }
                     )
                 }.also { instance = it }
             }
