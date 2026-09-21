@@ -45,7 +45,10 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private val database: AppDatabase,
     override val localPeerId: String,
     preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context),
-    finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context)
+    finishedMissionStore: FinishedMissionStore = FinishedMissionStore(context),
+    canMaterializeProfile: (String) -> Boolean = { profileId ->
+        ProfileManager.getProfile(context, profileId) != null
+    }
 ) : StructuredPreferenceSyncStore {
     private val recordRepository = StructuredPreferenceRecordRepository(database, localPeerId)
     private val completedDownloadAdapter = CompletedDownloadSyncAdapter(
@@ -56,10 +59,9 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
     private val adapters = listOf(
         FeedGroupSyncAdapter(
             database,
-            recordRepository
-        ) { profileId ->
-            ProfileManager.getProfile(context, profileId) != null
-        },
+            recordRepository,
+            canMaterializeProfile
+        ),
         HomeTabSyncAdapter(context, preferences, database, recordRepository),
         ChannelProfileSyncAdapter(preferences, recordRepository),
         FilterSyncAdapter(context, preferences, recordRepository),
