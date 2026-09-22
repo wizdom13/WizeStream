@@ -39,10 +39,10 @@
         app:iconSpaceReserved="false" />
 
     <Preference
-        android:key="profile_delete"
-        android:icon="@drawable/ic_delete"
-        android:title="@string/profile_delete_title"
-        android:summary="@string/profile_delete_summary"
+        android:key="profile_actions"
+        android:icon="@drawable/ic_more_vert"
+        android:title="@string/profile_actions_title"
+        android:summary="@string/profile_actions_summary"
         app:iconSpaceReserved="false" />
 
 </PreferenceScreen>
