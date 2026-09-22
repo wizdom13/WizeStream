@@ -84,7 +84,7 @@
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textSize="16sp"
                         app:layout_constraintBottom_toTopOf="@+id/sub_channel_title_view"
-                        app:layout_constraintEnd_toStartOf="@+id/channel_subscribe_button"
+                        app:layout_constraintEnd_toStartOf="@+id/channel_group_button"
                         app:layout_constraintStart_toEndOf="@+id/channel_avatar_view"
                         app:layout_constraintTop_toTopOf="parent"
                         tools:text="@tools:sample/lorem[10]" />
@@ -101,7 +101,7 @@
                         android:textSize="14sp"
                         android:visibility="gone"
                         app:layout_constraintBottom_toTopOf="@+id/channel_subscriber_view"
-                        app:layout_constraintEnd_toStartOf="@+id/channel_subscribe_button"
+                        app:layout_constraintEnd_toStartOf="@+id/channel_group_button"
                         app:layout_constraintStart_toEndOf="@+id/channel_avatar_view"
                         app:layout_constraintTop_toBottomOf="@+id/channel_title_view"
                         tools:text="@tools:sample/lorem[10]"
@@ -117,10 +117,26 @@
                         android:layout_marginBottom="8dp"
                         android:textSize="12sp"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/channel_subscribe_button"
+                        app:layout_constraintEnd_toStartOf="@+id/channel_group_button"
                         app:layout_constraintStart_toEndOf="@+id/channel_avatar_view"
                         app:layout_constraintTop_toBottomOf="@+id/sub_channel_title_view"
                         tools:text="123,141,411 subscribers" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/channel_group_button"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/channel_add_to_groups"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_add"
+                        android:visibility="gone"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/channel_subscribe_button"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="?attr/colorOnSurface"
+                        tools:visibility="visible" />
 
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/channel_subscribe_button"
