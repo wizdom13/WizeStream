@@ -130,7 +130,7 @@ class ProfileSubscriptionIsolationTest {
             FeedGroupEntity(
                 uid = 0,
                 name = "Study",
-                icon = FeedGroupIcon.STUDY,
+                icon = FeedGroupIcon.EDUCATION,
                 profileId = profileA
             )
         )
