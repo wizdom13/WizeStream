@@ -30,13 +30,13 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
     private static final String KEY_DESCRIPTION = "profile_description";
     private static final String KEY_ICON = "profile_icon";
     private static final String KEY_CREATE = "profile_create";
-    private static final String KEY_DELETE = "profile_delete";
+    private static final String KEY_ACTIONS = "profile_actions";
 
     private ListPreference activePreference;
     private EditTextPreference namePreference;
     private EditTextPreference descriptionPreference;
     private ListPreference iconPreference;
-    private Preference deletePreference;
+    private Preference actionsPreference;
     private final CompositeDisposable disposables = new CompositeDisposable();
 
     @Override
@@ -47,7 +47,7 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
         namePreference = findPreference(KEY_NAME);
         descriptionPreference = findPreference(KEY_DESCRIPTION);
         iconPreference = findPreference(KEY_ICON);
-        deletePreference = findPreference(KEY_DELETE);
+        actionsPreference = findPreference(KEY_ACTIONS);
         final Preference createPreference = findPreference(KEY_CREATE);
 
         configureNonPersistentPreferences();
@@ -114,8 +114,8 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
             return true;
         });
 
-        deletePreference.setOnPreferenceClickListener(preference -> {
-            showDeleteProfileDialog();
+        actionsPreference.setOnPreferenceClickListener(preference -> {
+            showProfileActionsDialog();
             return true;
         });
     }
@@ -187,6 +187,27 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
                     ).show();
                 }));
         dialog.show();
+    }
+
+    private void showProfileActionsDialog() {
+        final ProfileRecord current = ProfileManager.getActiveProfile(requireContext());
+        if (current.getId().equals(ProfileManager.DEFAULT_PROFILE_ID)) {
+            Toast.makeText(
+                    requireContext(),
+                    R.string.profile_delete_default_unavailable,
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        final String displayName = ProfileManager.getDisplayName(requireContext(), current);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.profile_actions_dialog_title, displayName))
+                .setItems(
+                        new CharSequence[] {getString(R.string.profile_delete_title)},
+                        (dialog, which) -> showDeleteProfileDialog())
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void showDeleteProfileDialog() {
@@ -267,7 +288,7 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
         iconPreference.setValue(active.getIconKey());
         iconPreference.setSummary(iconPreference.getEntry());
 
-        deletePreference.setEnabled(!active.getId().equals(ProfileManager.DEFAULT_PROFILE_ID));
+        actionsPreference.setEnabled(!active.getId().equals(ProfileManager.DEFAULT_PROFILE_ID));
     }
 
     private int iconLabel(@NonNull final ProfileIcon icon) {
