@@ -238,6 +238,28 @@ class FeedDatabaseManager @JvmOverloads constructor(
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    fun groupIdsForSubscription(subscriptionId: Long): Flowable<List<Long>> {
+        return feedGroupTable
+            .getGroupIdsForSubscriptionForProfile(activeProfileId, subscriptionId)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    fun setGroupsForSubscription(
+        subscriptionId: Long,
+        groupIds: List<Long>
+    ): Completable {
+        return Completable.fromAction {
+            feedGroupTable.setGroupsForSubscriptionForProfile(
+                activeProfileId,
+                subscriptionId,
+                groupIds
+            )
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     fun updateSubscriptionsForGroup(groupId: Long, subscriptionIds: List<Long>): Completable {
         return Completable
             .fromCallable {
