@@ -124,6 +124,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     private MenuItem menuNotifyButton;
     private MenuItem menuNotificationKeywordsButton;
     private MenuItem menuAutomaticDownloadsButton;
+    private MenuItem menuSubscribeProfileButton;
     private SubscriptionEntity channelSubscription;
 
     public static ChannelFragment getInstance(final int serviceId, final String url,
@@ -201,13 +202,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 menuNotificationKeywordsButton =
                         menu.findItem(R.id.menu_item_notification_keywords);
                 menuAutomaticDownloadsButton = menu.findItem(R.id.menu_item_automatic_downloads);
-                final MenuItem subscribeProfileItem =
-                        menu.findItem(R.id.menu_item_subscribe_profile);
-                if (subscribeProfileItem != null) {
-                    subscribeProfileItem.setVisible(
-                            currentInfo != null
-                                    && ProfileManager.getProfiles(requireContext()).size() > 1);
-                }
+                menuSubscribeProfileButton = menu.findItem(R.id.menu_item_subscribe_profile);
+                updateSubscribeProfileButton();
                 updateRssButton();
                 updateNotifyButton(channelSubscription);
             }
@@ -747,6 +743,15 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
     }
 
+    private void updateSubscribeProfileButton() {
+        if (menuSubscribeProfileButton == null || getContext() == null) {
+            return;
+        }
+        menuSubscribeProfileButton.setVisible(
+                currentInfo != null
+                        && ProfileManager.getProfiles(requireContext()).size() > 1);
+    }
+
     private void updateRssButton() {
         if (menuRssButton == null || currentInfo == null) {
             return;
@@ -956,6 +961,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         super.startLoading(forceLoad);
 
         currentInfo = null;
+        updateSubscribeProfileButton();
         updateTabs();
         if (currentWorker != null) {
             currentWorker.dispose();
@@ -1027,6 +1033,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
 
         updateRssButton();
+        updateSubscribeProfileButton();
 
         channelContentNotSupported = false;
         for (final Throwable throwable : result.getErrors()) {
