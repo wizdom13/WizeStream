@@ -38,6 +38,9 @@
     <string name="profile_create_summary">Create a separate local profile and switch to it</string>
     <string name="profile_create_dialog_title">New profile</string>
     <string name="profile_create_hint">Profile name</string>
+    <string name="profile_actions_title">Profile actions</string>
+    <string name="profile_actions_summary">Manage destructive actions for the current profile</string>
+    <string name="profile_actions_dialog_title">Profile actions: %1$s</string>
     <string name="profile_delete_title">Delete profile</string>
     <string name="profile_delete_summary">Delete this profile and return to Default</string>
     <string name="profile_delete_confirmation_title">Delete %1$s?</string>
