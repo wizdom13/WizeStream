@@ -35,6 +35,17 @@ public class Material3TypographyResourcesTest {
                 resourcesDirectory.resolve("values/styles_misc.xml"));
         final String popupBackground = Files.readString(
                 resourcesDirectory.resolve("drawable/popup_menu_background.xml"));
+        final String streamActionRow = Files.readString(
+                resourcesDirectory.resolve("layout/dialog_stream_action_item.xml"));
+        final String dialogTitle = Files.readString(
+                resourcesDirectory.resolve("layout/dialog_title.xml"));
+        final String dialogStyles = Files.readString(
+                resourcesDirectory.resolve("values/styles.xml"));
+        final Path infoItemDialogPath = Files.exists(Path.of(
+                "src/main/java/org/schabi/newpipe/info_list/dialog/InfoItemDialog.java"))
+                ? Path.of("src/main/java/org/schabi/newpipe/info_list/dialog/InfoItemDialog.java")
+                : Path.of("app/src/main/java/org/schabi/newpipe/info_list/dialog/InfoItemDialog.java");
+        final String infoItemDialog = Files.readString(infoItemDialogPath);
 
         assertTrue(styles.contains(
                 "<style name=\"PlayQueueItemTitle\" "
@@ -55,6 +66,21 @@ public class Material3TypographyResourcesTest {
                         + "?attr/colorSurfaceContainer</item>"));
         assertTrue(popupBackground.contains(
                 "<solid android:color=\"?attr/colorSurfaceContainer\" />"));
+        assertTrue(streamActionRow.contains(
+                "android:textAppearance=\"@style/TextAppearance.Material3.BodyLarge\""));
+        assertTrue(streamActionRow.contains("android:minHeight=\"48dp\""));
+        assertTrue(dialogTitle.contains(
+                "android:textAppearance=\"@style/TextAppearance.Material3.TitleLarge\""));
+        assertTrue(dialogTitle.contains(
+                "android:textAppearance=\"@style/TextAppearance.Material3.BodyMedium\""));
+        assertTrue(dialogStyles.contains(
+                "<style name=\"ThemeOverlay_wizestream_StreamActionDialog\""));
+        assertTrue(dialogStyles.contains(
+                "<item name=\"colorSurface\">?attr/colorSurfaceContainer</item>"));
+        assertTrue(infoItemDialog.contains(
+                "R.style.ThemeOverlay_wizestream_StreamActionDialog"));
+        assertTrue(infoItemDialog.contains("R.layout.dialog_stream_action_item"));
+        assertTrue(infoItemDialog.contains(".setAdapter(actionAdapter, action)"));
         assertFalse(styles.contains(
                 "parent=\"TextAppearance.AppCompat.Widget.PopupMenu"));
     }

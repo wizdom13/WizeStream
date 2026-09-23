@@ -321,6 +321,16 @@
         <item name="windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
     </style>
 
+    <style name="ThemeOverlay_wizestream_StreamActionDialog"
+        parent="ThemeOverlay_wizestream_Dialog">
+        <item name="colorSurface">?attr/colorSurfaceContainer</item>
+        <item name="colorBackgroundFloating">?attr/colorSurface</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="windowBackground">?attr/colorSurface</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+    </style>
+
     <style name="LightDialogTheme" parent="Theme.Material3.DayNight.Dialog">
         <item name="colorPrimary">@color/light_m3_primary_color</item>
         <item name="colorPrimaryContainer">@color/light_m3_primary_container_color</item>
