@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1022000">WizeStream 1.22.0</a></li>
 <li><a href="#release-1021000">WizeStream 1.21.0</a></li>
 <li><a href="#release-1020002">WizeStream 1.20.2</a></li>
 <li><a href="#release-1020001">WizeStream 1.20.1</a></li>
@@ -75,6 +76,33 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1022000" data-version="1.22.0" data-version-code="1022000">
+<h2>WizeStream 1.22.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added channel actions for assigning subscriptions to feed groups and subscribing a channel to another local profile without switching profiles.</li>
+<li>Added device synchronization for blocked videos, blocked channels, blocked keywords, blocking targets, and AiSList behavior while keeping downloaded AiSList data local to each device.</li>
+<li>Added members-only feed visibility controls, including a global Content Blocking preference synchronized across devices and a feed-specific visibility choice.</li>
+<li>Added an Appearance option to choose Wavy or Line for the feed refresh indicator, with Wavy as the default.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Hardened profile deletion behind a neutral Profile actions entry while retaining the final confirmation step and protecting the Default profile.</li>
+<li>Added bounded retries for transient YouTube channel-feed server errors while keeping permanent client errors non-retryable.</li>
+<li>Polished stream action dialogs with Material 3 surfaces, typography, and touch targets.</li>
+<li>Reused the active decoder across repeated Video Adjustments off/on cycles to avoid unnecessary player rebuilds.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Restored PeerTube TLS compatibility on Android 6 and 7.0 while preserving normal hostname verification and modern Android trust behavior.</li>
+<li>Prevented Android 17 foreground-service restart crashes in the persistent Device Sync listener.</li>
+<li>Restored uncropped bookmarked playlist artwork in Card and Grid views.</li>
+<li>Recovered the video surface after native Picture-in-Picture entry to prevent intermittent black video, especially with portrait streams.</li>
+<li>Kept What’s New feed cards consistent when switching or refreshing List, Card, and Grid layouts.</li>
+</ul>
+</div>
+</section>
 <section id="release-1021000" data-version="1.21.0" data-version-code="1021000">
 <h2>WizeStream 1.21.0</h2>
 <div class="release-notes">

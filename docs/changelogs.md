@@ -4,6 +4,30 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.22.0 (`1022000`)
+
+### New features
+
+- Added channel actions for assigning subscriptions to feed groups and subscribing a channel to another local profile without switching profiles.
+- Added device synchronization for blocked videos, blocked channels, blocked keywords, blocking targets, and AiSList behavior while keeping downloaded AiSList data local to each device.
+- Added members-only feed visibility controls, including a global Content Blocking preference synchronized across devices and a feed-specific visibility choice.
+- Added an Appearance option to choose Wavy or Line for the feed refresh indicator, with Wavy as the default.
+
+### Improvements
+
+- Hardened profile deletion behind a neutral Profile actions entry while retaining the final confirmation step and protecting the Default profile.
+- Added bounded retries for transient YouTube channel-feed server errors while keeping permanent client errors non-retryable.
+- Polished stream action dialogs with Material 3 surfaces, typography, and touch targets.
+- Reused the active decoder across repeated Video Adjustments off/on cycles to avoid unnecessary player rebuilds.
+
+### Fixes
+
+- Restored PeerTube TLS compatibility on Android 6 and 7.0 while preserving normal hostname verification and modern Android trust behavior.
+- Prevented Android 17 foreground-service restart crashes in the persistent Device Sync listener.
+- Restored uncropped bookmarked playlist artwork in Card and Grid views.
+- Recovered the video surface after native Picture-in-Picture entry to prevent intermittent black video, especially with portrait streams.
+- Kept What’s New feed cards consistent when switching or refreshing List, Card, and Grid layouts.
+
 ## WizeStream 1.21.0 (`1021000`)
 
 ### New features

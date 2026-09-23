@@ -1,0 +1,6 @@
+• Add profile/group subscription actions and blocked-content device sync.
+• Add members-only feed visibility controls and selectable wavy/line refresh indicators.
+• Improve profile deletion safety, stream dialogs and transient YouTube feed recovery.
+• Fix Android 6/7 PeerTube TLS and Android 17 device-sync restart crashes.
+• Fix repeated Video Adjustments decoder rebuilds and vertical-video PiP black screens.
+• Keep playlist artwork and What’s New card layouts consistent.
