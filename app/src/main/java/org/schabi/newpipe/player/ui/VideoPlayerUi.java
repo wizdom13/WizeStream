@@ -1763,17 +1763,33 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
      * the resumed view has reached the UI queue.
      */
     protected final void restoreVideoSurfaceAfterResume() {
+        restoreVideoSurfaceAfterLayoutTransition();
+    }
+
+    /**
+     * Restores the active video surface after a layout transition such as wake/resume or native
+     * picture-in-picture entry. SurfaceView geometry can change without a fresh surface callback,
+     * especially for portrait video, so explicitly restore the last known aspect ratio and rebind
+     * the decoder output once the view queue reaches the new layout.
+     */
+    public final void restoreVideoSurfaceAfterLayoutTransition() {
         if (!player.getPlaybackPresentationMode().rendersVideo()) {
             return;
         }
         setupVideoSurfaceIfNeeded();
-        binding.surfaceView.post(() -> {
-            if (binding.getRoot().getParent() == null || surfaceHolderCallback == null) {
-                return;
-            }
-            restoreVideoAspectRatioFromPlayer();
-            surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder());
-        });
+        binding.surfaceView.post(() -> rebindVideoSurfaceAfterLayoutTransition(2));
+    }
+
+    private void rebindVideoSurfaceAfterLayoutTransition(final int retriesRemaining) {
+        if (binding.getRoot().getParent() == null || surfaceHolderCallback == null) {
+            return;
+        }
+        restoreVideoAspectRatioFromPlayer();
+        if (!surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder())
+                && retriesRemaining > 0) {
+            binding.surfaceView.postOnAnimation(
+                    () -> rebindVideoSurfaceAfterLayoutTransition(retriesRemaining - 1));
+        }
     }
 
     private void clearVideoSurface() {
