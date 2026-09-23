@@ -21,7 +21,7 @@ import com.google.android.material.color.MaterialColors;
  * Material-colored wave for both determinate and indeterminate refresh states.
  */
 public final class FeedProgressIndicator extends ProgressBar {
-    private static final long INDETERMINATE_DURATION_MILLIS = 1_100L;
+    private static final long PHASE_ANIMATION_DURATION_MILLIS = 1_100L;
     private static final long PROGRESS_ANIMATION_DURATION_MILLIS = 180L;
     private static final float TWO_PI = (float) (Math.PI * 2.0);
 
@@ -35,7 +35,7 @@ public final class FeedProgressIndicator extends ProgressBar {
     private final float indeterminateSegmentWidth;
 
     @Nullable
-    private ValueAnimator indeterminateAnimator;
+    private ValueAnimator phaseAnimator;
     @Nullable
     private ValueAnimator progressAnimator;
 
@@ -119,26 +119,22 @@ public final class FeedProgressIndicator extends ProgressBar {
         super.setIndeterminate(value);
         if (value) {
             cancelProgressAnimator();
-            startIndeterminateAnimator();
         } else {
-            cancelIndeterminateAnimator();
-            phase = 0.0f;
             displayedProgress = getProgress();
-            invalidate();
         }
+        updatePhaseAnimatorState();
+        invalidate();
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (isIndeterminate()) {
-            startIndeterminateAnimator();
-        }
+        updatePhaseAnimatorState();
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        cancelIndeterminateAnimator();
+        cancelPhaseAnimator();
         cancelProgressAnimator();
         super.onDetachedFromWindow();
     }
@@ -146,47 +142,47 @@ public final class FeedProgressIndicator extends ProgressBar {
     @Override
     protected void onVisibilityChanged(@NonNull final View changedView, final int visibility) {
         super.onVisibilityChanged(changedView, visibility);
-        updateIndeterminateAnimatorState();
+        updatePhaseAnimatorState();
     }
 
     @Override
     protected void onWindowVisibilityChanged(final int visibility) {
         super.onWindowVisibilityChanged(visibility);
-        updateIndeterminateAnimatorState();
+        updatePhaseAnimatorState();
     }
 
-    private void updateIndeterminateAnimatorState() {
-        if (isIndeterminate() && isShown() && getWindowVisibility() == VISIBLE) {
-            startIndeterminateAnimator();
+    private void updatePhaseAnimatorState() {
+        if (isAttachedToWindow() && isShown() && getWindowVisibility() == VISIBLE) {
+            startPhaseAnimator();
         } else {
-            cancelIndeterminateAnimator();
+            cancelPhaseAnimator();
         }
     }
 
-    private void startIndeterminateAnimator() {
+    private void startPhaseAnimator() {
         if (!isAttachedToWindow()
                 || !isShown()
                 || getWindowVisibility() != VISIBLE
-                || indeterminateAnimator != null) {
+                || phaseAnimator != null) {
             return;
         }
 
-        indeterminateAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
-        indeterminateAnimator.setDuration(INDETERMINATE_DURATION_MILLIS);
-        indeterminateAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        indeterminateAnimator.setRepeatMode(ValueAnimator.RESTART);
-        indeterminateAnimator.setInterpolator(new LinearInterpolator());
-        indeterminateAnimator.addUpdateListener(animation -> {
+        phaseAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+        phaseAnimator.setDuration(PHASE_ANIMATION_DURATION_MILLIS);
+        phaseAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        phaseAnimator.setRepeatMode(ValueAnimator.RESTART);
+        phaseAnimator.setInterpolator(new LinearInterpolator());
+        phaseAnimator.addUpdateListener(animation -> {
             phase = (float) animation.getAnimatedValue();
             invalidate();
         });
-        indeterminateAnimator.start();
+        phaseAnimator.start();
     }
 
-    private void cancelIndeterminateAnimator() {
-        if (indeterminateAnimator != null) {
-            indeterminateAnimator.cancel();
-            indeterminateAnimator = null;
+    private void cancelPhaseAnimator() {
+        if (phaseAnimator != null) {
+            phaseAnimator.cancel();
+            phaseAnimator = null;
         }
     }
 
@@ -205,8 +201,9 @@ public final class FeedProgressIndicator extends ProgressBar {
             return;
         }
 
+        final float centerY = (getPaddingTop() + getHeight() - getPaddingBottom()) / 2.0f;
+        drawRemainingTrack(canvas, left, right, centerY);
         buildWavePath(left, right);
-        canvas.drawPath(wavePath, trackPaint);
 
         final int saveCount = canvas.save();
         if (isIndeterminate()) {
@@ -218,11 +215,57 @@ public final class FeedProgressIndicator extends ProgressBar {
         canvas.restoreToCount(saveCount);
     }
 
+    private void drawRemainingTrack(@NonNull final Canvas canvas,
+                                    final float left,
+                                    final float right,
+                                    final float centerY) {
+        if (isIndeterminate()) {
+            final float segmentStart = indeterminateSegmentStart(left, right);
+            final float segmentEnd = segmentStart + indeterminateSegmentWidth;
+            final float visibleStart = Math.max(left, segmentStart);
+            final float visibleEnd = Math.min(right, segmentEnd);
+
+            if (visibleStart > left) {
+                canvas.drawLine(left, centerY, visibleStart, centerY, trackPaint);
+            }
+            if (visibleEnd < right) {
+                canvas.drawLine(visibleEnd, centerY, right, centerY, trackPaint);
+            }
+            return;
+        }
+
+        final float boundary = determinateBoundary(left, right);
+        if (getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
+            if (boundary > left) {
+                canvas.drawLine(left, centerY, boundary, centerY, trackPaint);
+            }
+        } else if (boundary < right) {
+            canvas.drawLine(boundary, centerY, right, centerY, trackPaint);
+        }
+    }
+
+    private float determinateBoundary(final float left, final float right) {
+        final float fraction = getMax() <= 0 ? 0.0f : displayedProgress / getMax();
+        final float clampedFraction = Math.max(0.0f, Math.min(1.0f, fraction));
+        return getLayoutDirection() == LAYOUT_DIRECTION_RTL
+                ? right - (right - left) * clampedFraction
+                : left + (right - left) * clampedFraction;
+    }
+
+    private float indeterminateSegmentStart(final float left, final float right) {
+        final float availableWidth = right - left;
+        final float travel = availableWidth + indeterminateSegmentWidth * 2.0f;
+        final float directionPhase = getLayoutDirection() == LAYOUT_DIRECTION_RTL
+                ? 1.0f - phase
+                : phase;
+        return left - indeterminateSegmentWidth + travel * directionPhase;
+    }
+
     private void buildWavePath(final float left, final float right) {
         wavePath.reset();
 
         final float centerY = (getPaddingTop() + getHeight() - getPaddingBottom()) / 2.0f;
-        final float phaseOffset = isIndeterminate() ? phase * TWO_PI : 0.0f;
+        final float phaseOffset = phase * TWO_PI;
         final float step = Math.max(1.0f, getResources().getDisplayMetrics().density);
 
         wavePath.moveTo(left, centerY);
@@ -239,28 +282,18 @@ public final class FeedProgressIndicator extends ProgressBar {
     private void clipDeterminateSegment(@NonNull final Canvas canvas,
                                         final float left,
                                         final float right) {
-        final float fraction = getMax() <= 0 ? 0.0f : displayedProgress / getMax();
-        final float clampedFraction = Math.max(0.0f, Math.min(1.0f, fraction));
-
+        final float boundary = determinateBoundary(left, right);
         if (getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
-            final float start = right - (right - left) * clampedFraction;
-            canvas.clipRect(start, 0.0f, right, getHeight());
+            canvas.clipRect(boundary, 0.0f, right, getHeight());
         } else {
-            final float end = left + (right - left) * clampedFraction;
-            canvas.clipRect(left, 0.0f, end, getHeight());
+            canvas.clipRect(left, 0.0f, boundary, getHeight());
         }
     }
 
     private void clipIndeterminateSegment(@NonNull final Canvas canvas,
                                           final float left,
                                           final float right) {
-        final float availableWidth = right - left;
-        final float travel = availableWidth + indeterminateSegmentWidth * 2.0f;
-        final float directionPhase = getLayoutDirection() == LAYOUT_DIRECTION_RTL
-                ? 1.0f - phase
-                : phase;
-        final float segmentStart = left - indeterminateSegmentWidth
-                + travel * directionPhase;
+        final float segmentStart = indeterminateSegmentStart(left, right);
         final float segmentEnd = segmentStart + indeterminateSegmentWidth;
 
         canvas.clipRect(
