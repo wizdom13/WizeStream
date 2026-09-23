@@ -731,10 +731,11 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         ) { item ->
             val stream = item.streamWithState.stream
             arrayOf(stream.title, stream.uploader)
-        }
-        displayedItems.forEach {
-            it.itemVersion = itemVersion
-            it.onUploaderSelected = ::openUploaderChannel
+        }.map { item ->
+            item.copy(itemVersion = itemVersion).also { displayItem ->
+                displayItem.execBindEnd = item.execBindEnd
+                displayItem.onUploaderSelected = ::openUploaderChannel
+            }
         }
 
         // This need to be saved in a variable as the update occurs async
