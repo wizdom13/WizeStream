@@ -108,6 +108,9 @@ class LocalItemListAdapterTest {
                     val holder = adapter.createViewHolder(FrameLayout(context), type)
                     val handle = holder.itemView.findViewById<View>(R.id.itemHandle)
                     val thumbnail = holder.itemView.findViewById<View>(R.id.itemThumbnailContainer)
+                    val image = holder.itemView.findViewById<android.widget.ImageView>(
+                        R.id.itemThumbnailView
+                    )
                     val title = holder.itemView.findViewById<TextView>(R.id.itemTitleView)
                     var thumbnailWidth = 0
                     var thumbnailHeight = 0
@@ -124,6 +127,17 @@ class LocalItemListAdapterTest {
                         holder.itemView.layout(0, 0, width, holder.itemView.measuredHeight)
                         assertTrue(thumbnail.width > 0)
                         assertTrue(thumbnail.height > 0)
+                        if (mode == ItemViewMode.CARD) {
+                            assertEquals(
+                                android.widget.ImageView.ScaleType.FIT_START,
+                                image.scaleType
+                            )
+                        } else if (mode == ItemViewMode.GRID) {
+                            assertEquals(
+                                android.widget.ImageView.ScaleType.FIT_CENTER,
+                                image.scaleType
+                            )
+                        }
                         if (mode == ItemViewMode.LIST) {
                             assertTrue(title.left >= thumbnail.right)
                             assertTrue(title.top < thumbnail.bottom)
