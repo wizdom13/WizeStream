@@ -50,8 +50,12 @@ public class MembersOnlyContentIntegrationTest {
 
     @Test
     public void hidePreferenceFiltersRemoteAndPersistedFeedItems() throws Exception {
-        final String settings = read("src/main/res/xml/content_settings.xml");
-        assertTrue(settings.contains("@string/hide_members_only_videos_key"));
+        final String contentSettings = read("src/main/res/xml/content_settings.xml");
+        final String blockingSettings = read(
+                "src/main/res/xml/content_blocking_settings.xml");
+        assertTrue(!contentSettings.contains("@string/hide_members_only_videos_key"));
+        assertTrue(blockingSettings.contains("@string/hide_members_only_videos_key"));
+        assertTrue(blockingSettings.contains("android:defaultValue=\"true\""));
 
         final String adapter = read(
                 "src/main/java/org/schabi/newpipe/info_list/InfoListAdapter.java"
