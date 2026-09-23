@@ -38,7 +38,14 @@ class DeviceSyncListenerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val explicitlyEnabled = intent?.takeIf {
+        if (DeviceSyncListenerPolicy.shouldStopSystemRestart(intent != null)) {
+            Log.i(TAG, "Ignoring system resurrection of the device sync foreground listener")
+            stopListenerAndSelf()
+            return START_NOT_STICKY
+        }
+
+        val startIntent = requireNotNull(intent)
+        val explicitlyEnabled = startIntent.takeIf {
             it.hasExtra(EXTRA_BACKGROUND_SYNC_ENABLED)
         }?.getBooleanExtra(EXTRA_BACKGROUND_SYNC_ENABLED, false)
         val canRun = if (explicitlyEnabled != null) {
@@ -54,9 +61,27 @@ class DeviceSyncListenerService : Service() {
             return START_NOT_STICKY
         }
 
-        promoteToForeground()
+        try {
+            promoteToForeground()
+        } catch (error: RuntimeException) {
+            if (!DeviceSyncListenerPolicy.isForegroundPromotionRejected(error.javaClass.name)) {
+                throw error
+            }
+            Log.w(
+                TAG,
+                "Android rejected foreground promotion for the device sync listener; " +
+                    "stopping until the next user-visible start",
+                error
+            )
+            stopListenerAndSelf()
+            return START_NOT_STICKY
+        }
+
         startListener()
-        return START_STICKY
+        // A sticky restart is delivered with a null Intent and can occur while the app is fully
+        // backgrounded. Modern Android may then reject startForeground(), so rely on boot/package
+        // events and the next visible MainActivity start instead of asking Android to resurrect us.
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {

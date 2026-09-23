@@ -55,6 +55,26 @@ class DeviceSyncBackgroundPolicyTest {
     }
 
     @Test
+    fun `system resurrection without a start intent is stopped`() {
+        assertTrue(DeviceSyncListenerPolicy.shouldStopSystemRestart(hasStartIntent = false))
+        assertFalse(DeviceSyncListenerPolicy.shouldStopSystemRestart(hasStartIntent = true))
+    }
+
+    @Test
+    fun `foreground promotion rejection is treated as recoverable`() {
+        assertTrue(
+            DeviceSyncListenerPolicy.isForegroundPromotionRejected(
+                "android.app.ForegroundServiceStartNotAllowedException"
+            )
+        )
+        assertFalse(
+            DeviceSyncListenerPolicy.isForegroundPromotionRejected(
+                "java.lang.SecurityException"
+            )
+        )
+    }
+
+    @Test
     fun `only local network transports are eligible`() {
         assertTrue(DeviceSyncBackgroundPolicy.hasLocalTransport(wifi = true, ethernet = false))
         assertTrue(DeviceSyncBackgroundPolicy.hasLocalTransport(wifi = false, ethernet = true))
