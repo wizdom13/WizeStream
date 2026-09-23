@@ -11,7 +11,7 @@ Release history is listed newest first. The number beside each release is its An
 - Added channel actions for assigning subscriptions to feed groups and subscribing a channel to another local profile without switching profiles.
 - Added device synchronization for blocked videos, blocked channels, blocked keywords, blocking targets, and AiSList behavior while keeping downloaded AiSList data local to each device.
 - Added members-only feed visibility controls, including a global Content Blocking preference synchronized across devices and a feed-specific visibility choice.
-- Added an Appearance option to choose Wavy or Line for the feed refresh indicator, with Wavy as the default.
+- Added an Appearance option to choose Line or Wavy for the feed refresh indicator, with Line as the default.
 
 ### Improvements
 
