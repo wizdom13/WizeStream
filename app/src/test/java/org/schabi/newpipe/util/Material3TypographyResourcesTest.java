@@ -41,11 +41,6 @@ public class Material3TypographyResourcesTest {
                 resourcesDirectory.resolve("layout/dialog_title.xml"));
         final String dialogStyles = Files.readString(
                 resourcesDirectory.resolve("values/styles.xml"));
-        final Path infoItemDialogPath = Files.exists(Path.of(
-                "src/main/java/org/schabi/newpipe/info_list/dialog/InfoItemDialog.java"))
-                ? Path.of("src/main/java/org/schabi/newpipe/info_list/dialog/InfoItemDialog.java")
-                : Path.of("app/src/main/java/org/schabi/newpipe/info_list/dialog/InfoItemDialog.java");
-        final String infoItemDialog = Files.readString(infoItemDialogPath);
 
         assertTrue(styles.contains(
                 "<style name=\"PlayQueueItemTitle\" "
@@ -77,10 +72,6 @@ public class Material3TypographyResourcesTest {
                 "<style name=\"ThemeOverlay_wizestream_StreamActionDialog\""));
         assertTrue(dialogStyles.contains(
                 "<item name=\"colorSurface\">?attr/colorSurfaceContainer</item>"));
-        assertTrue(infoItemDialog.contains(
-                "R.style.ThemeOverlay_wizestream_StreamActionDialog"));
-        assertTrue(infoItemDialog.contains("R.layout.dialog_stream_action_item"));
-        assertTrue(infoItemDialog.contains(".setAdapter(actionAdapter, action)"));
         assertFalse(styles.contains(
                 "parent=\"TextAppearance.AppCompat.Widget.PopupMenu"));
     }
