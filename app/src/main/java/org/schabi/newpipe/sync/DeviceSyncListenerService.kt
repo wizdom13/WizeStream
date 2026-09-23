@@ -38,7 +38,13 @@ class DeviceSyncListenerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val explicitlyEnabled = intent?.takeIf {
+        if (DeviceSyncListenerPolicy.shouldStopSystemRestart(intent != null)) {
+            Log.i(TAG, "Ignoring system resurrection of the device sync foreground listener")
+            stopListenerAndSelf()
+            return START_NOT_STICKY
+        }
+
+        val explicitlyEnabled = intent.takeIf {
             it.hasExtra(EXTRA_BACKGROUND_SYNC_ENABLED)
         }?.getBooleanExtra(EXTRA_BACKGROUND_SYNC_ENABLED, false)
         val canRun = if (explicitlyEnabled != null) {
