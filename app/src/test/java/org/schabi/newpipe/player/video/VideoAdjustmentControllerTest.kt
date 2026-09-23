@@ -43,23 +43,41 @@ class VideoAdjustmentControllerTest {
     fun defaultPlaybackNeverInstallsAnEffectsPipeline() {
         controller.attach(engine)
         assertFalse(controller.pipelineActive)
+        assertFalse(controller.effectsPipelinePrepared)
         verify(engine, never()).setVideoEffects(anyList())
     }
 
     @Test
-    fun enablingAndDisablingRebuildsButSliderChangesStayOnTheSameEngine() {
+    fun firstEnableRebuildsThenOnOffCyclesReuseThePreparedEngine() {
         controller.attach(engine)
         controller.update(VideoAdjustmentState(enabled = true))
         assertEquals(1, restarts)
         assertTrue(controller.pipelineActive)
+        assertTrue(controller.effectsPipelinePrepared)
+
         val activeEngine = engine
         controller.update(controller.state.copy(brightness = 30, saturation = 0))
         assertEquals(1, restarts)
         assertTrue(activeEngine === engine)
-        controller.update(controller.state.copy(enabled = false))
-        assertEquals(2, restarts)
-        assertFalse(controller.pipelineActive)
-        verify(engine, never()).setVideoEffects(anyList())
+
+        clearInvocations(activeEngine)
+        repeat(10) {
+            controller.update(controller.state.copy(enabled = false))
+            assertEquals(1, restarts)
+            assertFalse(controller.pipelineActive)
+            assertTrue(controller.effectsPipelinePrepared)
+            assertTrue(activeEngine === engine)
+            verify(activeEngine).setVideoEffects(emptyList())
+
+            clearInvocations(activeEngine)
+            controller.update(controller.state.copy(enabled = true))
+            assertEquals(1, restarts)
+            assertTrue(controller.pipelineActive)
+            assertTrue(controller.effectsPipelinePrepared)
+            assertTrue(activeEngine === engine)
+            verify(activeEngine).setVideoEffects(listOf(effect))
+            clearInvocations(activeEngine)
+        }
     }
 
     @Test
@@ -73,6 +91,7 @@ class VideoAdjustmentControllerTest {
         controller.update(controller.state.copy(enabled = true))
         assertEquals(1, restarts)
         assertTrue(controller.pipelineActive)
+        assertTrue(controller.effectsPipelinePrepared)
         assertEquals(45, controller.state.brightness)
         assertEquals(-20, controller.state.contrast)
         assertEquals(135, controller.state.saturation)
@@ -119,6 +138,7 @@ class VideoAdjustmentControllerTest {
         assertTrue(controller.recover(error))
         assertFalse(controller.recover(error))
         assertFalse(controller.state.enabled)
+        assertFalse(controller.effectsPipelinePrepared)
         assertTrue(controller.failed)
         assertEquals(150, controller.state.saturation)
         assertFalse(saved.last().enabled)
@@ -172,6 +192,7 @@ class VideoAdjustmentControllerTest {
         val replacement = mock(ExoPlayer::class.java)
         controller.attach(replacement)
         assertEquals(VideoAdjustmentState(true, 35, -10, 175), controller.state)
+        assertTrue(controller.effectsPipelinePrepared)
         verify(replacement).setVideoEffects(listOf(effect))
     }
 

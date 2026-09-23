@@ -27,6 +27,8 @@ class VideoAdjustmentController(
         private set
     var pipelineActive = false
         private set
+    var effectsPipelinePrepared = false
+        private set
     var failed = false
         private set
     var hdr = false
@@ -37,12 +39,15 @@ class VideoAdjustmentController(
     /** Must run before prepare; a never-enabled player does not create a GL effects pipeline. */
     fun attach(player: ExoPlayer) {
         engine = player
-        pipelineActive = state.enabled
+        pipelineActive = false
+        effectsPipelinePrepared = false
         hdr = false
         player.addAnalyticsListener(this)
-        if (pipelineActive) {
+        if (state.enabled) {
             try {
                 player.setVideoEffects(effects(state))
+                pipelineActive = true
+                effectsPipelinePrepared = true
             } catch (error: RuntimeException) {
                 // attach runs before prepare: no renderer has started, so this engine can
                 // continue normally without recursively restarting an unfinished init.
@@ -57,6 +62,7 @@ class VideoAdjustmentController(
         engine?.removeAnalyticsListener(this)
         engine = null
         pipelineActive = false
+        effectsPipelinePrepared = false
     }
 
     fun update(newState: VideoAdjustmentState) {
@@ -67,25 +73,54 @@ class VideoAdjustmentController(
         save(state)
         val player = engine
         if (player != null) {
-            if (pipelineActive != state.enabled) {
-                // Rebuilding also removes the GL pipeline completely when switched off.
-                restartPlayback()
-            } else if (pipelineActive && state.copy(remember = previous.remember) != previous) {
-                try {
-                    player.setVideoEffects(effects(state))
-                } catch (error: RuntimeException) {
-                    // Effect construction/installation can fail synchronously, before a
-                    // PlaybackException reaches the regular player error listener.
-                    recoverEffects()
+            when {
+                state.enabled && !pipelineActive && !effectsPipelinePrepared -> {
+                    // A player created without effects needs one rebuild so the GL pipeline is
+                    // installed before prepare. Once prepared, keep this decoder alive.
+                    restartPlayback()
                     return
                 }
-                if (!player.playWhenReady) {
-                    // Decode the paused frame again so the editor also previews while paused.
-                    player.seekTo(player.currentPosition)
+
+                pipelineActive != state.enabled -> {
+                    val newEffects = if (state.enabled) effects(state) else emptyList()
+                    if (!applyEffects(player, newEffects, state.enabled)) {
+                        return
+                    }
+                }
+
+                pipelineActive &&
+                    state.copy(remember = previous.remember) != previous -> {
+                    if (!applyEffects(player, effects(state), true)) {
+                        return
+                    }
                 }
             }
         }
         notifyChanged()
+    }
+
+    private fun applyEffects(
+        player: ExoPlayer,
+        newEffects: List<Effect>,
+        active: Boolean
+    ): Boolean {
+        return try {
+            player.setVideoEffects(newEffects)
+            pipelineActive = active
+            if (active) {
+                effectsPipelinePrepared = true
+            }
+            if (!player.playWhenReady) {
+                // Decode the paused frame again so toggles and slider edits preview immediately.
+                player.seekTo(player.currentPosition)
+            }
+            true
+        } catch (error: RuntimeException) {
+            // Effect construction/installation can fail synchronously, before a PlaybackException
+            // reaches the regular player error listener.
+            recoverEffects()
+            false
+        }
     }
 
     /** One retry without effects; subsequent errors follow the regular playback error path. */
