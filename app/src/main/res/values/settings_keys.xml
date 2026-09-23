@@ -510,6 +510,7 @@
     <string name="feed_show_live_items_key">feed_show_live_items</string>
     <string name="feed_show_video_items_key">feed_show_video_items</string>
     <string name="feed_show_shorts_items_key">feed_show_shorts_items</string>
+    <string name="feed_show_members_only_items_key">feed_show_members_only_items</string>
 
     <string name="show_thumbnail_key">show_thumbnail_key</string>
 
