@@ -105,14 +105,6 @@
                     android:visibility="gone"
                     tools:visibility="visible">
 
-                    <org.schabi.newpipe.local.feed.FeedProgressIndicator
-                        android:id="@+id/loading_wavy_progress_bar"
-                        android:layout_width="match_parent"
-                        android:layout_height="24dp"
-                        android:layout_gravity="center_vertical"
-                        android:accessibilityLiveRegion="polite"
-                        android:visibility="gone" />
-
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/loading_progress_bar"
                         android:layout_width="match_parent"

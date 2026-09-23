@@ -84,8 +84,6 @@ public class FeedRefreshControlsTest {
                 document, "@+id/feed_controls_row");
         final Element progressContainer = findByAndroidId(
                 document, "@+id/refresh_progress_container");
-        final Element wavyProgress = findByAndroidId(
-                document, "@+id/loading_wavy_progress_bar");
         final Element progress = findByAndroidId(
                 document, "@+id/loading_progress_bar");
         final Element indeterminateProgress = findByAndroidId(
@@ -112,17 +110,6 @@ public class FeedRefreshControlsTest {
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
         assertEquals("gone",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
-
-        assertNotNull(wavyProgress);
-        assertEquals(
-                "org.schabi.newpipe.local.feed.FeedProgressIndicator",
-                wavyProgress.getTagName());
-        assertEquals("match_parent",
-                wavyProgress.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
-        assertEquals("24dp",
-                wavyProgress.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
-        assertEquals("gone",
-                wavyProgress.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
 
         assertNotNull(progress);
         assertNotNull(indeterminateProgress);
@@ -169,39 +156,18 @@ public class FeedRefreshControlsTest {
                 "org/schabi/newpipe/local/feed/FeedFragment.kt");
         assertTrue(source.contains("streamFilterChips.root.isVisible = false"));
         assertTrue(source.contains("streamFilterChips.root.isVisible = true"));
-        assertTrue(source.contains("feed_refresh_indicator_style_key"));
-        assertTrue(source.contains("loadingWavyProgressBar.isVisible = useWavyIndicator"));
-        assertTrue(source.contains("loadingProgressBar.isVisible = !useWavyIndicator"));
-        assertTrue(source.contains("loadingIndeterminateProgressBar.isVisible ="));
-        assertTrue(source.contains("!useWavyIndicator && isIndeterminate"));
     }
 
     @Test
-    public void wavyIndicatorAndAppearancePreferenceRemainAvailable()
+    public void determinateCounterUsesTheCircularIndicatorsExactCanvasCenter()
             throws Exception {
         final String source = readSource(
                 "org/schabi/newpipe/local/feed/FeedProgressIndicator.java");
-        final String appearance = Files.readString(
-                resourcesDirectory.resolve("xml/appearance_settings.xml"));
-        final String settingsKeys = Files.readString(
-                resourcesDirectory.resolve("values/settings_keys.xml"));
-        final String defaults = Files.readString(
-                resourcesDirectory.resolve("raw/wizestream_default_preferences.json"));
 
-        assertTrue(source.contains("extends ProgressBar"));
-        assertTrue(source.contains("buildWavePath"));
-        assertTrue(source.contains("clipDeterminateSegment"));
-        assertTrue(source.contains("clipIndeterminateSegment"));
-        assertTrue(source.contains("setProgressCompat"));
-        assertTrue(source.contains("colorPrimary"));
-        assertTrue(source.contains("colorSurfaceVariant"));
-
-        assertTrue(appearance.contains("@string/feed_refresh_indicator_style_key"));
-        assertTrue(appearance.contains("@string/feed_refresh_indicator_style_wavy_value"));
-        assertTrue(appearance.contains("@array/feed_refresh_indicator_style_entries"));
-        assertTrue(settingsKeys.contains("feed_refresh_indicator_style_wavy_value"));
-        assertTrue(settingsKeys.contains("feed_refresh_indicator_style_line_value"));
-        assertTrue(defaults.contains("\"feed_refresh_indicator_style\": \"wavy\""));
+        assertTrue(source.contains("super.onDraw(canvas)"));
+        assertTrue(source.contains("counterBounds.exactCenterX()"));
+        assertTrue(source.contains("counterBounds.exactCenterY()"));
+        assertTrue(source.contains("canvas.drawText(counterText"));
     }
 
     @Test

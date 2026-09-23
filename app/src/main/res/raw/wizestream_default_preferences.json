@@ -37,7 +37,6 @@
   "default_popup_resolution": "480p",
   "show_higher_resolutions": false,
   "list_view_mode": "card",
-  "feed_refresh_indicator_style": "wavy",
   "cross_network_downloads": false,
   "use_external_video_player": false,
   "show_comments": true,

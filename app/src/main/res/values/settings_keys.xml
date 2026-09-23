@@ -1688,19 +1688,6 @@
     <string name="streams_notifications_channels_key">streams_notifications_channels</string>
     <string name="player_notification_screen_key">player_notification_screen</string>
 
-    <!-- Feed appearance -->
-    <string name="feed_refresh_indicator_style_key">feed_refresh_indicator_style</string>
-    <string name="feed_refresh_indicator_style_wavy_value">wavy</string>
-    <string name="feed_refresh_indicator_style_line_value">line</string>
-    <string-array name="feed_refresh_indicator_style_entries">
-        <item>@string/feed_refresh_indicator_style_wavy</item>
-        <item>@string/feed_refresh_indicator_style_line</item>
-    </string-array>
-    <string-array name="feed_refresh_indicator_style_values">
-        <item>@string/feed_refresh_indicator_style_wavy_value</item>
-        <item>@string/feed_refresh_indicator_style_line_value</item>
-    </string-array>
-
     <!-- Listen mode visualizer -->
     <string name="visualizer_style_key">visualizer_style</string>
     <string name="default_visualizer_style_value">centered_bars</string>

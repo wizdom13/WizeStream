@@ -511,46 +511,24 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         val isIndeterminate = progressState.currentProgress < 0 ||
             progressState.maxProgress < 0
-        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val indicatorStyle = preferences.getString(
-            getString(R.string.feed_refresh_indicator_style_key),
-            getString(R.string.feed_refresh_indicator_style_wavy_value)
-        )
-        val useWavyIndicator =
-            indicatorStyle != getString(R.string.feed_refresh_indicator_style_line_value)
-
-        feedBinding.loadingWavyProgressBar.isVisible = useWavyIndicator
-        feedBinding.loadingProgressBar.isVisible = !useWavyIndicator && !isIndeterminate
-        feedBinding.loadingIndeterminateProgressBar.isVisible =
-            !useWavyIndicator && isIndeterminate
-        feedBinding.loadingWavyProgressBar.isIndeterminate =
-            useWavyIndicator && isIndeterminate
+        feedBinding.loadingProgressBar.isVisible = !isIndeterminate
+        feedBinding.loadingIndeterminateProgressBar.isVisible = isIndeterminate
 
         if (isIndeterminate) {
-            val description = if (progressState.progressMessage > 0) {
-                getString(progressState.progressMessage)
-            } else {
-                getString(R.string.feed_notification_loading)
-            }
-            if (useWavyIndicator) {
-                feedBinding.loadingWavyProgressBar.contentDescription = description
-            } else {
-                feedBinding.loadingIndeterminateProgressBar.contentDescription = description
-            }
+            feedBinding.loadingIndeterminateProgressBar.contentDescription =
+                if (progressState.progressMessage > 0) {
+                    getString(progressState.progressMessage)
+                } else {
+                    getString(R.string.feed_notification_loading)
+                }
         } else {
             val maxProgress = progressState.maxProgress.coerceAtLeast(1)
             val currentProgress = progressState.currentProgress.coerceIn(0, maxProgress)
-            val description = getString(R.string.feed_notification_loading) + " " +
+            feedBinding.loadingProgressBar.max = maxProgress
+            feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
+            feedBinding.loadingProgressBar.contentDescription =
+                getString(R.string.feed_notification_loading) + " " +
                 currentProgress + "/" + maxProgress
-            if (useWavyIndicator) {
-                feedBinding.loadingWavyProgressBar.max = maxProgress
-                feedBinding.loadingWavyProgressBar.setProgressCompat(currentProgress, true)
-                feedBinding.loadingWavyProgressBar.contentDescription = description
-            } else {
-                feedBinding.loadingProgressBar.max = maxProgress
-                feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
-                feedBinding.loadingProgressBar.contentDescription = description
-            }
         }
     }
 
