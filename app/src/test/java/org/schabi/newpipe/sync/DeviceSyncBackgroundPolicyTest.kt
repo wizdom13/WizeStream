@@ -55,6 +55,20 @@ class DeviceSyncBackgroundPolicyTest {
     }
 
     @Test
+    fun `foreground promotion rejection is treated as recoverable`() {
+        assertTrue(
+            DeviceSyncListenerPolicy.isForegroundPromotionRejected(
+                "android.app.ForegroundServiceStartNotAllowedException"
+            )
+        )
+        assertFalse(
+            DeviceSyncListenerPolicy.isForegroundPromotionRejected(
+                "java.lang.SecurityException"
+            )
+        )
+    }
+
+    @Test
     fun `only local network transports are eligible`() {
         assertTrue(DeviceSyncBackgroundPolicy.hasLocalTransport(wifi = true, ethernet = false))
         assertTrue(DeviceSyncBackgroundPolicy.hasLocalTransport(wifi = false, ethernet = true))
