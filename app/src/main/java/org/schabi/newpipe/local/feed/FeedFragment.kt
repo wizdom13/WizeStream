@@ -386,7 +386,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             dialogItems += getString(R.string.members_only)
             checkedItems += preferences.getBoolean(
                 getString(R.string.feed_show_members_only_items_key),
-                true
+                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
             )
             dialogItems.lastIndex
         } else {
@@ -668,7 +668,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             MembersOnlyContentHelper.shouldHide(requireContext()),
             preferences.getBoolean(
                 getString(R.string.feed_show_members_only_items_key),
-                true
+                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
             )
         )
         val blockingRules = ContentBlockingHelper.getRules(
@@ -1000,6 +1000,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     companion object {
         const val KEY_GROUP_ID = "ARG_GROUP_ID"
         const val KEY_GROUP_NAME = "ARG_GROUP_NAME"
+        internal const val DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED = true
         private const val STREAM_FILTER_PREF_PREFIX = "feed_stream_filter_"
 
         internal fun streamFilterPreferenceKey(groupId: Long): String = "$STREAM_FILTER_PREF_PREFIX$groupId"
