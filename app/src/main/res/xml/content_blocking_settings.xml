@@ -21,6 +21,14 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/hide_members_only_videos_key"
+        android:summary="@string/hide_members_only_videos_summary"
+        android:title="@string/hide_members_only_videos_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <PreferenceCategory
         android:title="@string/aislist_category_title"
         app:iconSpaceReserved="false">
