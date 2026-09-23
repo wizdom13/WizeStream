@@ -243,11 +243,16 @@ public class FeedRefreshControlsTest {
                 "override fun onDestroyView()",
                 "// Handling"
         ).contains("unregisterOnSharedPreferenceChangeListener(onSettingsChangeListener)"));
-        assertTrue(methodBody(
+        final String filteredItems = methodBody(
                 source,
                 "private fun showFilteredFeedItems",
-                "override fun setContextualSearchQuery"
-        ).contains("if (_feedBinding == null)"));
+                "override fun setContextualSearchQuery");
+        assertTrue(filteredItems.contains("if (_feedBinding == null)"));
+        assertTrue(filteredItems.contains("item.copy(itemVersion = itemVersion)"));
+        assertTrue(filteredItems.contains("displayItem.execBindEnd = item.execBindEnd"));
+        assertTrue(filteredItems.contains(
+                "displayItem.onUploaderSelected = ::openUploaderChannel"));
+        assertFalse(filteredItems.contains("it.itemVersion = itemVersion"));
     }
 
     private String readSource(final String relativePath) throws Exception {
