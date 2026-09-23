@@ -7,7 +7,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -57,8 +60,12 @@ public final class InfoItemDialog {
                            @NonNull final StreamInfoItem info,
                            @NonNull final List<StreamDialogEntry> entries) {
 
-        // Create the dialog's title
-        final View bannerView = View.inflate(activity, R.layout.dialog_title, null);
+        final Context dialogContext = new ContextThemeWrapper(
+                activity, ThemeHelper.getDialogTheme(activity));
+
+        // Create the dialog's title using the same themed context as the action rows.
+        final View bannerView = LayoutInflater.from(dialogContext)
+                .inflate(R.layout.dialog_title, null);
         bannerView.setSelected(true);
 
         final TextView titleView = bannerView.findViewById(R.id.itemTitleView);
@@ -80,9 +87,19 @@ public final class InfoItemDialog {
         final DialogInterface.OnClickListener action = (d, index) ->
             entries.get(index).action.onClick(fragment, info);
 
-        dialog = new MaterialAlertDialogBuilder(activity, ThemeHelper.getDialogTheme(activity))
+        // AlertDialog's stock list item can fall back to legacy typography. Use an explicit
+        // Material 3 BodyLarge row so the stream action popup matches the rest of WizeStream.
+        final ArrayAdapter<String> actionAdapter = new ArrayAdapter<>(
+                dialogContext,
+                R.layout.dialog_stream_action_item,
+                android.R.id.text1,
+                items);
+
+        dialog = new MaterialAlertDialogBuilder(
+                dialogContext,
+                R.style.ThemeOverlay_wizestream_StreamActionDialog)
                 .setCustomTitle(bannerView)
-                .setItems(items, action)
+                .setAdapter(actionAdapter, action)
                 .create();
 
     }

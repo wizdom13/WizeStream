@@ -20,9 +20,8 @@
         android:marqueeRepeatLimit="marquee_forever"
         android:scrollHorizontally="true"
         android:singleLine="true"
-        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="@dimen/channel_item_detail_title_text_size"
         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. " />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -37,9 +36,8 @@
         android:marqueeRepeatLimit="marquee_forever"
         android:scrollHorizontally="true"
         android:singleLine="true"
-        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="@dimen/video_item_search_uploader_text_size"
         android:visibility="gone"
         tools:text="UPLOADER"
         tools:visibility="visible" />
