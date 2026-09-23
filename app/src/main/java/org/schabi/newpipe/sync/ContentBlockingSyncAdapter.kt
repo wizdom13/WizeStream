@@ -118,6 +118,10 @@ internal class ContentBlockingSyncAdapter(
                 context.getString(R.string.aislist_warn_behavior_key),
                 state.aiSListWarnBehavior
             )
+            .putBoolean(
+                context.getString(R.string.hide_members_only_videos_key),
+                state.hideMembersOnlyVideos
+            )
             .putStringSet(
                 context.getString(R.string.blocked_videos_key),
                 blockedVideos
@@ -156,7 +160,11 @@ internal class ContentBlockingSyncAdapter(
                 context.getString(R.string.aislist_enabled_key),
                 false
             ),
-            aiSListWarnBehavior = warnBehavior
+            aiSListWarnBehavior = warnBehavior,
+            hideMembersOnlyVideos = preferences.getBoolean(
+                context.getString(R.string.hide_members_only_videos_key),
+                true
+            )
         )
     }
 
