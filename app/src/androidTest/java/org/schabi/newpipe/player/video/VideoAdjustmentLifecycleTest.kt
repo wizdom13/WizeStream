@@ -102,10 +102,24 @@ class VideoAdjustmentLifecycleTest {
                 }
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { originalOrder = queue.streams.toList() }
-                val actions = listOf("enable", "disable", "enable", "disable", "enable", "failure")
+                val actions = buildList {
+                    add("enable")
+                    repeat(8) {
+                        add("disable")
+                        add("enable")
+                    }
+                    add("failure")
+                }
+                var preparedPlayer: androidx.media3.exoplayer.ExoPlayer? = null
+                var preparedTrackSelector: Any? = null
+                var preparedLoadController: Any? = null
                 for ((index, action) in actions.withIndex()) {
-                    val expectedPosition = 500L + index * 350L
-                    ready.set(CountDownLatch(1))
+                    val expectedPosition = 500L + index * 150L
+                    val expectsRebuild = action == "enable" && preparedPlayer == null ||
+                        action == "failure"
+                    if (expectsRebuild) {
+                        ready.set(CountDownLatch(1))
+                    }
                     scenario.onActivity {
                         val active = player!!
                         active.exoPlayer.seekTo(expectedPosition)
@@ -113,15 +127,44 @@ class VideoAdjustmentLifecycleTest {
                         val beforeTrackSelector = active.trackSelector
                         val beforeLoadController = active.loadController
                         if (action == "failure") {
-                            active.onPlayerError(PlaybackException("Injected GPU failure", null, PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED))
+                            active.onPlayerError(
+                                PlaybackException(
+                                    "Injected GPU failure",
+                                    null,
+                                    PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED
+                                )
+                            )
                         } else {
-                            active.videoAdjustments.update(VideoAdjustmentState(enabled = action == "enable", saturation = 0))
+                            active.videoAdjustments.update(
+                                VideoAdjustmentState(
+                                    enabled = action == "enable",
+                                    saturation = 0
+                                )
+                            )
                         }
-                        assertNotSame(before, active.exoPlayer)
-                        assertNotSame(beforeTrackSelector, active.trackSelector)
-                        assertNotSame(beforeLoadController, active.loadController)
+
+                        if (expectsRebuild) {
+                            assertNotSame(before, active.exoPlayer)
+                            assertNotSame(beforeTrackSelector, active.trackSelector)
+                            assertNotSame(beforeLoadController, active.loadController)
+                        } else {
+                            assertSame(preparedPlayer, active.exoPlayer)
+                            assertSame(preparedTrackSelector, active.trackSelector)
+                            assertSame(preparedLoadController, active.loadController)
+                        }
+
+                        if (preparedPlayer == null && action == "enable") {
+                            preparedPlayer = active.exoPlayer
+                            preparedTrackSelector = active.trackSelector
+                            preparedLoadController = active.loadController
+                        }
                     }
-                    assertTrue("Playback did not recover after $action", ready.get().await(20, TimeUnit.SECONDS))
+                    if (expectsRebuild) {
+                        assertTrue(
+                            "Playback did not recover after $action",
+                            ready.get().await(20, TimeUnit.SECONDS)
+                        )
+                    }
                     scenario.onActivity {
                         val active = player!!
                         assertSame(queue, active.playQueue)
