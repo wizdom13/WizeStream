@@ -13,6 +13,10 @@ internal object DeviceSyncListenerPolicy {
         return backgroundSyncEnabled && hasTrustedPeers
     }
 
+    fun shouldStopSystemRestart(hasStartIntent: Boolean): Boolean {
+        return !hasStartIntent
+    }
+
     fun isForegroundPromotionRejected(exceptionClassName: String): Boolean {
         return exceptionClassName == FOREGROUND_SERVICE_START_NOT_ALLOWED
     }
