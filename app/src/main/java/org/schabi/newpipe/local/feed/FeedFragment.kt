@@ -360,7 +360,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun showStreamVisibilityDialog() {
-        val dialogItems = arrayOf(
+        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val membersOnlyFilteringEnabled = MembersOnlyContentHelper.shouldHide(requireContext())
+
+        val dialogItems = mutableListOf(
             getString(R.string.feed_show_watched),
             getString(R.string.feed_show_partially_watched),
             getString(R.string.feed_show_upcoming),
@@ -368,10 +371,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             getString(R.string.videos_string),
             getString(R.string.channel_tab_shorts)
         )
-
-        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-
-        val checkedDialogItems = booleanArrayOf(
+        val checkedItems = mutableListOf(
             viewModel.getShowPlayedItemsFromPreferences(),
             viewModel.getShowPartiallyPlayedItemsFromPreferences(),
             viewModel.getShowFutureItemsFromPreferences(),
@@ -379,10 +379,24 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             preferences.getBoolean(getString(R.string.feed_show_video_items_key), true),
             preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true)
         )
+        val membersOnlyIndex = if (membersOnlyFilteringEnabled) {
+            dialogItems += getString(R.string.members_only)
+            checkedItems += preferences.getBoolean(
+                getString(R.string.feed_show_members_only_items_key),
+                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
+            )
+            dialogItems.lastIndex
+        } else {
+            -1
+        }
+        val checkedDialogItems = checkedItems.toBooleanArray()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.feed_hide_streams_title)
-            .setMultiChoiceItems(dialogItems, checkedDialogItems) { _, which, isChecked ->
+            .setMultiChoiceItems(
+                dialogItems.toTypedArray(),
+                checkedDialogItems
+            ) { _, which, isChecked ->
                 checkedDialogItems[which] = isChecked
             }
             .setPositiveButton(R.string.ok) { _, _ ->
@@ -393,6 +407,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                     putBoolean(getString(R.string.feed_show_live_items_key), checkedDialogItems[3])
                     putBoolean(getString(R.string.feed_show_video_items_key), checkedDialogItems[4])
                     putBoolean(getString(R.string.feed_show_shorts_items_key), checkedDialogItems[5])
+                    if (membersOnlyIndex >= 0) {
+                        putBoolean(
+                            getString(R.string.feed_show_members_only_items_key),
+                            checkedDialogItems[membersOnlyIndex]
+                        )
+                    }
                 }
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
@@ -640,12 +660,18 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             else -> StreamItem.ItemVersion.NORMAL
         }
 
-        val hideMembersOnly = MembersOnlyContentHelper.shouldHide(requireContext())
+        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val hideMembersOnly = shouldHideMembersOnlyInFeed(
+            MembersOnlyContentHelper.shouldHide(requireContext()),
+            preferences.getBoolean(
+                getString(R.string.feed_show_members_only_items_key),
+                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
+            )
+        )
         val blockingRules = ContentBlockingHelper.getRules(
             requireContext(),
             ContentBlockingHelper.Target.SUBSCRIPTIONS
         )
-        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val shownStreamCategories = buildSet {
             if (preferences.getBoolean(getString(R.string.feed_show_live_items_key), true)) {
                 add(StreamListFilter.LIVE)
@@ -971,6 +997,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     companion object {
         const val KEY_GROUP_ID = "ARG_GROUP_ID"
         const val KEY_GROUP_NAME = "ARG_GROUP_NAME"
+        internal const val DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED = true
         private const val STREAM_FILTER_PREF_PREFIX = "feed_stream_filter_"
 
         internal fun streamFilterPreferenceKey(groupId: Long): String = "$STREAM_FILTER_PREF_PREFIX$groupId"
@@ -978,6 +1005,11 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         internal fun restoreStreamFilter(storedValue: String?): StreamListFilter = storedValue?.let { value ->
             runCatching { StreamListFilter.valueOf(value) }.getOrDefault(StreamListFilter.NONE)
         } ?: StreamListFilter.NONE
+
+        internal fun shouldHideMembersOnlyInFeed(
+            hideMembersOnlyGlobally: Boolean,
+            showMembersOnlyInFeed: Boolean
+        ): Boolean = hideMembersOnlyGlobally && !showMembersOnlyInFeed
 
         @JvmStatic
         fun newInstance(groupId: Long = FeedGroupEntity.GROUP_ALL_ID, groupName: String? = null): FeedFragment {

@@ -25,7 +25,7 @@ public final class MembersOnlyContentHelper {
      */
     public static boolean shouldHide(final Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
-                context.getString(R.string.hide_members_only_videos_key), false);
+                context.getString(R.string.hide_members_only_videos_key), true);
     }
 
     /**

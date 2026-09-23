@@ -112,6 +112,9 @@ class ContentBlockingHelperTest {
                 ContentBlockingHelper.RuleChange.VIDEOS));
         assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
                 ContentBlockingHelper.Target.RELATED_ITEMS,
+                ContentBlockingHelper.RuleChange.MEMBERS_ONLY));
+        assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.RELATED_ITEMS,
                 ContentBlockingHelper.RuleChange.AISLIST_ENABLED));
         assertTrue(ContentBlockingHelper.shouldReloadForRuleChange(
                 ContentBlockingHelper.Target.RELATED_ITEMS,
@@ -126,6 +129,9 @@ class ContentBlockingHelperTest {
         assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
                 ContentBlockingHelper.Target.COMMENTS,
                 ContentBlockingHelper.RuleChange.VIDEOS));
+        assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.MEMBERS_ONLY));
         assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
                 ContentBlockingHelper.Target.COMMENTS,
                 ContentBlockingHelper.RuleChange.AISLIST_ENABLED));

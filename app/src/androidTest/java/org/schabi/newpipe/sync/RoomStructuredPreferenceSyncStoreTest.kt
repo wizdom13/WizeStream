@@ -237,6 +237,7 @@ class RoomStructuredPreferenceSyncStoreTest {
         val blockingTargetsKey = context.getString(R.string.content_blocking_targets_key)
         val aiSListEnabledKey = context.getString(R.string.aislist_enabled_key)
         val aiSListWarnBehaviorKey = context.getString(R.string.aislist_warn_behavior_key)
+        val hideMembersOnlyKey = context.getString(R.string.hide_members_only_videos_key)
         val phoneChannel = "https://example.com/channel/blocked\tBlocked channel"
         val tabletVideo = "https://example.com/watch?v=blocked\tBlocked video"
 
@@ -295,6 +296,7 @@ class RoomStructuredPreferenceSyncStoreTest {
             .putStringSet(blockingTargetsKey, setOf("search"))
             .putBoolean(aiSListEnabledKey, true)
             .putString(aiSListWarnBehaviorKey, "hide")
+            .putBoolean(hideMembersOnlyKey, false)
             .commit()
         synchronize(
             StructuredPreferenceCategory.CONTENT_BLOCKING,
@@ -313,6 +315,10 @@ class RoomStructuredPreferenceSyncStoreTest {
         assertEquals(
             "hide",
             tabletPreferences.getString(aiSListWarnBehaviorKey, null)
+        )
+        assertEquals(
+            false,
+            tabletPreferences.getBoolean(hideMembersOnlyKey, true)
         )
 
         phonePreferences.edit().putStringSet(blockedChannelsKey, emptySet()).commit()

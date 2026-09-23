@@ -1,6 +1,8 @@
 package org.schabi.newpipe.local.feed
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.util.StreamListFilter
 
@@ -18,5 +20,14 @@ class FeedFilterPersistenceTest {
         assertEquals(StreamListFilter.UPCOMING, FeedFragment.restoreStreamFilter("UPCOMING"))
         assertEquals(StreamListFilter.NONE, FeedFragment.restoreStreamFilter("REMOVED_FILTER"))
         assertEquals(StreamListFilter.NONE, FeedFragment.restoreStreamFilter(null))
+    }
+
+    @Test
+    fun membersOnlyFeedVisibilityDefaultsToShownAndCanBeHiddenExplicitly() {
+        assertTrue(FeedFragment.DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED)
+        assertFalse(FeedFragment.shouldHideMembersOnlyInFeed(false, true))
+        assertFalse(FeedFragment.shouldHideMembersOnlyInFeed(false, false))
+        assertFalse(FeedFragment.shouldHideMembersOnlyInFeed(true, true))
+        assertTrue(FeedFragment.shouldHideMembersOnlyInFeed(true, false))
     }
 }

@@ -142,6 +142,9 @@ public final class ContentBlockingHelper {
         if (context.getString(R.string.blocked_keywords_key).equals(key)) {
             return RuleChange.KEYWORDS;
         }
+        if (context.getString(R.string.hide_members_only_videos_key).equals(key)) {
+            return RuleChange.MEMBERS_ONLY;
+        }
         if (context.getString(R.string.aislist_enabled_key).equals(key)) {
             return RuleChange.AISLIST_ENABLED;
         }
@@ -157,6 +160,7 @@ public final class ContentBlockingHelper {
         VIDEOS,
         CHANNELS,
         KEYWORDS,
+        MEMBERS_ONLY,
         AISLIST_ENABLED,
         AISLIST_WARN_BEHAVIOR
     }

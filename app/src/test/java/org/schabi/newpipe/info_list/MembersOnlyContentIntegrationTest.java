@@ -5,6 +5,7 @@
 
 package org.schabi.newpipe.info_list;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
@@ -46,12 +47,18 @@ public class MembersOnlyContentIntegrationTest {
         );
         assertTrue(helper.contains("R.string.members_only_explanation"));
         assertTrue(helper.contains("android.R.string.ok"));
+        assertTrue(helper.contains("R.string.hide_members_only_videos_key), true"));
     }
 
     @Test
     public void hidePreferenceFiltersRemoteAndPersistedFeedItems() throws Exception {
-        final String settings = read("src/main/res/xml/content_settings.xml");
-        assertTrue(settings.contains("@string/hide_members_only_videos_key"));
+        final String contentSettings = read("src/main/res/xml/content_settings.xml");
+        final String blockingSettings = read(
+                "src/main/res/xml/content_blocking_settings.xml");
+        assertFalse(contentSettings.contains("@string/hide_members_only_videos_key"));
+        assertTrue(blockingSettings.contains(
+                "android:defaultValue=\"true\"\n"
+                    + "        android:key=\"@string/hide_members_only_videos_key\""));
 
         final String adapter = read(
                 "src/main/java/org/schabi/newpipe/info_list/InfoListAdapter.java"
