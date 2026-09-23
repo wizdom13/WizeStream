@@ -514,7 +514,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val indicatorStyle = preferences.getString(
             getString(R.string.feed_refresh_indicator_style_key),
-            getString(R.string.feed_refresh_indicator_style_wavy_value)
+            getString(R.string.feed_refresh_indicator_style_line_value)
         )
         val useWavyIndicator =
             indicatorStyle != getString(R.string.feed_refresh_indicator_style_line_value)
