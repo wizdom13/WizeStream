@@ -55,6 +55,12 @@ class DeviceSyncBackgroundPolicyTest {
     }
 
     @Test
+    fun `system resurrection without a start intent is stopped`() {
+        assertTrue(DeviceSyncListenerPolicy.shouldStopSystemRestart(hasStartIntent = false))
+        assertFalse(DeviceSyncListenerPolicy.shouldStopSystemRestart(hasStartIntent = true))
+    }
+
+    @Test
     fun `foreground promotion rejection is treated as recoverable`() {
         assertTrue(
             DeviceSyncListenerPolicy.isForegroundPromotionRejected(
