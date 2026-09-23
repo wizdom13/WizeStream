@@ -63,7 +63,7 @@
         app:useSimpleSummaryProvider="true" />
 
     <ListPreference
-        android:defaultValue="@string/feed_refresh_indicator_style_wavy_value"
+        android:defaultValue="@string/feed_refresh_indicator_style_line_value"
         android:entries="@array/feed_refresh_indicator_style_entries"
         android:entryValues="@array/feed_refresh_indicator_style_values"
         android:key="@string/feed_refresh_indicator_style_key"
