@@ -439,7 +439,8 @@ class Player(
             appContext.getString(R.string.disable_media_tunneling_key),
             false
         ) && !audioController.equalizerState.isEnabled &&
-            !playbackPresentationMode.allowsVisualizer() && !videoAdjustments.pipelineActive
+            !playbackPresentationMode.allowsVisualizer() &&
+            !videoAdjustments.effectsPipelinePrepared
         trackSelector.parameters = trackSelector.buildUponParameters()
             .setTunnelingEnabled(tunnelingEnabled)
             .build()
