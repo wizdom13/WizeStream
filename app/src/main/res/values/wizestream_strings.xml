@@ -51,6 +51,9 @@
     <string name="profile_deleted">Profile deleted</string>
     <string name="profile_switched">Switched to %1$s</string>
     <string name="drawer_profiles_format">Profiles · %1$s</string>
+    <string name="feed_refresh_indicator_style_title">Feed refresh indicator</string>
+    <string name="feed_refresh_indicator_style_wavy">Wavy</string>
+    <string name="feed_refresh_indicator_style_line">Line</string>
     <string name="channel_add_to_groups">Add to groups</string>
     <string name="channel_groups_dialog_title">Channel groups</string>
     <string name="channel_groups_empty">Create a subscription group first</string>
