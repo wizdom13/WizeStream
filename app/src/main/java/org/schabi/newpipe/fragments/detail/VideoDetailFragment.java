@@ -3098,6 +3098,10 @@ public final class VideoDetailFragment
     public void onNativePipModeChanged(final boolean inPictureInPictureMode) {
         if (inPictureInPictureMode) {
             prepareNativePipEntry();
+            if (player != null) {
+                player.UIs().get(MainPlayerUi.class)
+                        .ifPresent(MainPlayerUi::restoreVideoSurfaceAfterLayoutTransition);
+            }
             return;
         }
         if (player == null) {

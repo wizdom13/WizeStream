@@ -25,6 +25,22 @@ public class NativePipButtonIntegrationTest {
         assertTrue(dedicatedEntry.contains("activity.enterPictureInPictureMode(params)"));
         assertFalse(dedicatedEntry.contains("prepareNativePipEntry()"));
         assertFalse(homeEntry.contains("prepareNativePipEntry()"));
+
+        final String detailSource = readSource(
+                "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
+        final String confirmedPipCallback = methodBody(
+                detailSource, "public void onNativePipModeChanged(");
+        final String playerUiSource = readSource(
+                "org/schabi/newpipe/player/ui/VideoPlayerUi.java");
+
+        assertTrue(confirmedPipCallback.contains("prepareNativePipEntry()"));
+        assertTrue(confirmedPipCallback.contains(
+                "restoreVideoSurfaceAfterLayoutTransition"));
+        assertTrue(playerUiSource.contains(
+                "public final void restoreVideoSurfaceAfterLayoutTransition()"));
+        assertTrue(playerUiSource.contains("restoreVideoAspectRatioFromPlayer()"));
+        assertTrue(playerUiSource.contains("rebindVideoSurfaceIfValid"));
+        assertTrue(playerUiSource.contains("postOnAnimation"));
     }
 
     @Test
