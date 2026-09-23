@@ -44,7 +44,8 @@ class DeviceSyncListenerService : Service() {
             return START_NOT_STICKY
         }
 
-        val explicitlyEnabled = intent.takeIf {
+        val startIntent = requireNotNull(intent)
+        val explicitlyEnabled = startIntent.takeIf {
             it.hasExtra(EXTRA_BACKGROUND_SYNC_ENABLED)
         }?.getBooleanExtra(EXTRA_BACKGROUND_SYNC_ENABLED, false)
         val canRun = if (explicitlyEnabled != null) {
