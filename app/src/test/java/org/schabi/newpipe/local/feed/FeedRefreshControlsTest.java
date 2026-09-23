@@ -195,6 +195,13 @@ public class FeedRefreshControlsTest {
         assertTrue(source.contains("setProgressCompat"));
         assertTrue(source.contains("colorPrimary"));
         assertTrue(source.contains("colorSurfaceVariant"));
+        assertTrue(source.contains("canvas.drawLine"));
+        assertFalse(source.contains("canvas.drawPath(wavePath, trackPaint)"));
+        assertTrue(source.contains("final float phaseOffset = phase * TWO_PI"));
+        assertTrue(source.contains("startPhaseAnimator"));
+        assertTrue(source.contains("isAttachedToWindow() && isShown()"));
+        assertTrue(source.contains("determinateBoundary"));
+        assertTrue(source.contains("indeterminateSegmentStart"));
 
         assertTrue(appearance.contains("@string/feed_refresh_indicator_style_key"));
         assertTrue(appearance.contains("@string/feed_refresh_indicator_style_wavy_value"));
