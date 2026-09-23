@@ -155,10 +155,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 getString(R.string.grid_columns_key).equals(key)
             ) {
                 updateListViewModeOnResume = true
-            } else if (
-                ContentBlockingHelper.isPreferenceKey(requireContext(), key) ||
-                getString(R.string.hide_members_only_videos_key) == key
-            ) {
+            } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
         }
