@@ -43,14 +43,21 @@
         tools:visible="true" />
 
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/menu_item_subscribe_profile"
         android:orderInCategory="3"
+        android:title="@string/channel_subscribe_to_profile"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="4"
         android:title="@string/settings"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/menu_item_openInBrowser"
-        android:orderInCategory="4"
+        android:orderInCategory="5"
         android:title="@string/open_in_browser"
         app:showAsAction="never" />
     <item

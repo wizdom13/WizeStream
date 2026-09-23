@@ -16,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,11 +28,13 @@ import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
 import com.evernote.android.state.State;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.jakewharton.rxbinding4.view.RxView;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.database.feed.model.FeedGroupEntity;
 import org.schabi.newpipe.database.subscription.NotificationMode;
 import org.schabi.newpipe.database.subscription.SubscriptionEntity;
 import org.schabi.newpipe.databinding.FragmentChannelBinding;
@@ -44,10 +47,13 @@ import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.fragments.BaseStateFragment;
 import org.schabi.newpipe.fragments.detail.TabAdapter;
 import org.schabi.newpipe.ktx.AnimationType;
+import org.schabi.newpipe.local.feed.FeedDatabaseManager;
 import org.schabi.newpipe.local.feed.notifications.NotificationHelper;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.local.subscription.SubscriptionManager;
+import org.schabi.newpipe.profiles.ProfileManager;
+import org.schabi.newpipe.profiles.ProfileRecord;
 import org.schabi.newpipe.settings.notifications.NotificationConfigDialog;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
@@ -63,13 +69,17 @@ import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.util.image.ImageStrategy;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import coil3.util.CoilUtils;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Action;
@@ -114,6 +124,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     private MenuItem menuNotifyButton;
     private MenuItem menuNotificationKeywordsButton;
     private MenuItem menuAutomaticDownloadsButton;
+    private MenuItem menuSubscribeProfileButton;
     private SubscriptionEntity channelSubscription;
 
     public static ChannelFragment getInstance(final int serviceId, final String url,
@@ -191,6 +202,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 menuNotificationKeywordsButton =
                         menu.findItem(R.id.menu_item_notification_keywords);
                 menuAutomaticDownloadsButton = menu.findItem(R.id.menu_item_automatic_downloads);
+                menuSubscribeProfileButton = menu.findItem(R.id.menu_item_subscribe_profile);
+                updateSubscribeProfileButton();
                 updateRssButton();
                 updateNotifyButton(channelSubscription);
             }
@@ -210,6 +223,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                                 channelSubscription.getUid(), currentInfo.getServiceId(),
                                 currentInfo.getUrl(), currentInfo.getName());
                     }
+                } else if (itemId == R.id.menu_item_subscribe_profile) {
+                    showSubscribeToProfileDialog();
                 } else if (itemId == R.id.action_settings) {
                     NavigationHelper.openSettings(requireContext());
                 } else if (itemId == R.id.menu_item_rss) {
@@ -295,6 +310,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         };
         binding.subChannelAvatarView.setOnClickListener(openSubChannel);
         binding.subChannelTitleView.setOnClickListener(openSubChannel);
+        binding.channelGroupButton.setOnClickListener(v -> showChannelGroupsDialog());
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(final int position) {
@@ -325,7 +341,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         };
 
         final Observable<List<SubscriptionEntity>> observable = subscriptionManager
-                .subscriptionTable()
                 .getSubscriptionFlowable(info.getServiceId(), info.getUrl())
                 .toObservable();
 
@@ -487,6 +502,254 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
 
         animate(binding.channelSubscribeButton, true, 100, AnimationType.LIGHT_SCALE_AND_ALPHA);
+    }
+
+    private void showChannelGroupsDialog() {
+        final ChannelInfo info = currentInfo;
+        if (info == null) {
+            return;
+        }
+
+        final Context appContext = requireContext().getApplicationContext();
+        final String profileId = ProfileManager.getActiveProfileId(appContext);
+        final FeedDatabaseManager feedManager = new FeedDatabaseManager(appContext, profileId);
+        final SubscriptionManager activeManager = new SubscriptionManager(appContext, profileId);
+
+        disposables.add(
+                feedManager.groups()
+                        .firstOrError()
+                        .flatMap(groups -> activeManager
+                                .getSubscriptionFlowable(
+                                        info.getServiceId(),
+                                        info.getUrl())
+                                .firstOrError()
+                                .flatMap(subscriptions -> {
+                                    final SubscriptionEntity existing =
+                                            subscriptions.isEmpty()
+                                                    ? null : subscriptions.get(0);
+                                    final boolean subscribedInCurrentMode =
+                                            existing != null
+                                                    && activeManager
+                                                    .isSubscribedInCurrentMode(existing);
+                                    if (existing == null) {
+                                        return Single.just(
+                                                new GroupPickerData(
+                                                        profileId,
+                                                        groups,
+                                                        null,
+                                                        false,
+                                                        new HashSet<>()));
+                                    }
+                                    return feedManager
+                                            .groupIdsForSubscription(existing.getUid())
+                                            .firstOrError()
+                                            .map(groupIds -> new GroupPickerData(
+                                                    profileId,
+                                                    groups,
+                                                    existing,
+                                                    subscribedInCurrentMode,
+                                                    new HashSet<>(groupIds)));
+                                }))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                this::showChannelGroupsPicker,
+                                error -> showSnackBarError(new ErrorInfo(
+                                        error,
+                                        UserAction.SUBSCRIPTION_CHANGE,
+                                        "Loading channel groups for " + info.getUrl(),
+                                        info)))
+        );
+    }
+
+    private void showChannelGroupsPicker(@NonNull final GroupPickerData data) {
+        if (data.groups.isEmpty()) {
+            Toast.makeText(
+                    requireContext(),
+                    R.string.channel_groups_empty,
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        final CharSequence[] labels = new CharSequence[data.groups.size()];
+        final boolean[] checked = new boolean[data.groups.size()];
+        final Set<Long> selectedGroupIds = new HashSet<>(data.selectedGroupIds);
+        for (int i = 0; i < data.groups.size(); i++) {
+            final FeedGroupEntity group = data.groups.get(i);
+            labels[i] = group.getName();
+            checked[i] = selectedGroupIds.contains(group.getUid());
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.channel_groups_dialog_title)
+                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
+                    final long groupId = data.groups.get(which).getUid();
+                    if (isChecked) {
+                        selectedGroupIds.add(groupId);
+                    } else {
+                        selectedGroupIds.remove(groupId);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.save, (dialog, which) ->
+                        applyChannelGroups(data, selectedGroupIds))
+                .show();
+    }
+
+    private void applyChannelGroups(
+            @NonNull final GroupPickerData data,
+            @NonNull final Set<Long> selectedGroupIds) {
+        final ChannelInfo info = currentInfo;
+        if (info == null) {
+            return;
+        }
+
+        final Context appContext = requireContext().getApplicationContext();
+        disposables.add(
+                Single.fromCallable(() -> {
+                            final SubscriptionManager manager =
+                                    new SubscriptionManager(appContext, data.profileId);
+                            SubscriptionEntity subscription = data.subscription;
+
+                            if (!selectedGroupIds.isEmpty()
+                                    && (subscription == null
+                                    || !data.subscribedInCurrentMode)) {
+                                subscription = manager.insertSubscriptionAndReturn(
+                                        SubscriptionEntity.from(info));
+                            }
+                            if (subscription == null) {
+                                return false;
+                            }
+
+                            new FeedDatabaseManager(appContext, data.profileId)
+                                    .setGroupsForSubscription(
+                                            subscription.getUid(),
+                                            new ArrayList<>(selectedGroupIds))
+                                    .blockingAwait();
+                            return true;
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                changed -> {
+                                    if (changed && binding != null) {
+                                        Snackbar.make(
+                                                binding.getRoot(),
+                                                R.string.channel_groups_updated,
+                                                Snackbar.LENGTH_SHORT
+                                        ).show();
+                                    }
+                                },
+                                error -> showSnackBarError(new ErrorInfo(
+                                        error,
+                                        UserAction.SUBSCRIPTION_CHANGE,
+                                        "Updating channel groups for " + info.getUrl(),
+                                        info)))
+        );
+    }
+
+    private void showSubscribeToProfileDialog() {
+        final ChannelInfo info = currentInfo;
+        if (info == null) {
+            return;
+        }
+
+        final String activeProfileId = ProfileManager.getActiveProfileId(requireContext());
+        final List<ProfileRecord> otherProfiles = new ArrayList<>();
+        for (final ProfileRecord profile : ProfileManager.getProfiles(requireContext())) {
+            if (!profile.getId().equals(activeProfileId)) {
+                otherProfiles.add(profile);
+            }
+        }
+        if (otherProfiles.isEmpty()) {
+            return;
+        }
+
+        final CharSequence[] labels = new CharSequence[otherProfiles.size()];
+        for (int i = 0; i < otherProfiles.size(); i++) {
+            labels[i] = ProfileManager.getDisplayName(requireContext(), otherProfiles.get(i));
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.channel_subscribe_to_profile_title)
+                .setItems(labels, (dialog, which) ->
+                        subscribeToProfile(otherProfiles.get(which)))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void subscribeToProfile(@NonNull final ProfileRecord profile) {
+        final ChannelInfo info = currentInfo;
+        if (info == null) {
+            return;
+        }
+
+        final Context appContext = requireContext().getApplicationContext();
+        final String displayName =
+                ProfileManager.getDisplayName(requireContext(), profile);
+        disposables.add(
+                Single.fromCallable(() -> {
+                            final SubscriptionManager manager =
+                                    new SubscriptionManager(appContext, profile.getId());
+                            return manager.insertSubscriptionAndReturn(
+                                    SubscriptionEntity.from(info));
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                ignored -> {
+                                    if (binding != null) {
+                                        Snackbar.make(
+                                                binding.getRoot(),
+                                                getString(
+                                                        R.string.channel_subscribed_to_profile,
+                                                        displayName),
+                                                Snackbar.LENGTH_LONG
+                                        ).show();
+                                    }
+                                },
+                                error -> showSnackBarError(new ErrorInfo(
+                                        error,
+                                        UserAction.SUBSCRIPTION_CHANGE,
+                                        "Subscribing " + info.getUrl()
+                                                + " to profile " + displayName,
+                                        info)))
+        );
+    }
+
+    private static final class GroupPickerData {
+        @NonNull
+        private final String profileId;
+        @NonNull
+        private final List<FeedGroupEntity> groups;
+        @Nullable
+        private final SubscriptionEntity subscription;
+        private final boolean subscribedInCurrentMode;
+        @NonNull
+        private final Set<Long> selectedGroupIds;
+
+        private GroupPickerData(
+                @NonNull final String profileId,
+                @NonNull final List<FeedGroupEntity> groups,
+                @Nullable final SubscriptionEntity subscription,
+                final boolean subscribedInCurrentMode,
+                @NonNull final Set<Long> selectedGroupIds) {
+            this.profileId = profileId;
+            this.groups = groups;
+            this.subscription = subscription;
+            this.subscribedInCurrentMode = subscribedInCurrentMode;
+            this.selectedGroupIds = selectedGroupIds;
+        }
+    }
+
+    private void updateSubscribeProfileButton() {
+        if (menuSubscribeProfileButton == null || getContext() == null) {
+            return;
+        }
+        menuSubscribeProfileButton.setVisible(
+                currentInfo != null
+                        && ProfileManager.getProfiles(requireContext()).size() > 1);
     }
 
     private void updateRssButton() {
@@ -698,6 +961,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         super.startLoading(forceLoad);
 
         currentInfo = null;
+        updateSubscribeProfileButton();
         updateTabs();
         if (currentWorker != null) {
             currentWorker.dispose();
@@ -723,6 +987,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         CoilUtils.dispose(binding.channelAvatarView);
         CoilHelper.INSTANCE.clearBanner(binding.channelBannerImage);
         CoilUtils.dispose(binding.subChannelAvatarView);
+        binding.channelGroupButton.setVisibility(View.GONE);
         animate(binding.channelSubscribeButton, false, 100);
     }
 
@@ -749,6 +1014,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 ExtractorImageCompat.parentChannelAvatarImages(result));
 
         binding.channelTitleView.setText(result.getName());
+        binding.channelGroupButton.setVisibility(View.VISIBLE);
         binding.channelSubscriberView.setVisibility(View.VISIBLE);
         if (result.getSubscriberCount() >= 0) {
             binding.channelSubscriberView.setText(Localization
@@ -767,6 +1033,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
 
         updateRssButton();
+        updateSubscribeProfileButton();
 
         channelContentNotSupported = false;
         for (final Throwable throwable : result.getErrors()) {

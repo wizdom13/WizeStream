@@ -51,6 +51,14 @@ class ProfileSubscriptionIsolationTest {
         assertEquals("Personal channel", subscriptionsB.single().name)
         assertEquals(profileA, subscriptionsA.single().profileId)
         assertEquals(profileB, subscriptionsB.single().profileId)
+        assertEquals(
+            1,
+            managerA.getSubscriptionFlowable(0, url).blockingFirst().size
+        )
+        assertEquals(
+            1,
+            managerB.getSubscriptionFlowable(0, url).blockingFirst().size
+        )
 
         managerA.deleteSubscription(0, url).blockingAwait()
         assertTrue(managerA.subscriptions().blockingFirst().isEmpty())
@@ -116,6 +124,45 @@ class ProfileSubscriptionIsolationTest {
         )
         assertTrue(
             groupDao.getSubscriptionIdsForDirectForProfile(profileB, groupBId).isEmpty()
+        )
+
+        val secondGroupAId = groupDao.insert(
+            FeedGroupEntity(
+                uid = 0,
+                name = "Study",
+                icon = FeedGroupIcon.EDUCATION,
+                profileId = profileA
+            )
+        )
+        groupDao.setGroupsForSubscriptionForProfile(
+            profileA,
+            subscriptionA.uid,
+            listOf(groupAId, secondGroupAId, groupBId)
+        )
+        assertEquals(
+            listOf(groupAId, secondGroupAId),
+            groupDao.getGroupIdsForSubscriptionForProfile(
+                profileA,
+                subscriptionA.uid
+            ).blockingFirst()
+        )
+        assertTrue(
+            groupDao.getGroupIdsForSubscriptionForProfile(
+                profileB,
+                subscriptionB.uid
+            ).blockingFirst().isEmpty()
+        )
+
+        groupDao.setGroupsForSubscriptionForProfile(
+            profileA,
+            subscriptionA.uid,
+            emptyList()
+        )
+        assertTrue(
+            groupDao.getGroupIdsForSubscriptionForProfile(
+                profileA,
+                subscriptionA.uid
+            ).blockingFirst().isEmpty()
         )
     }
 }

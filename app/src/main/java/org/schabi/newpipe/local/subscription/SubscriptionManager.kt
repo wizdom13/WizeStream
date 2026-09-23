@@ -44,6 +44,13 @@ class SubscriptionManager @JvmOverloads constructor(
         return subscriptionTable.getSubscriptionForProfile(profileId, subscriptionId)
     }
 
+    fun getSubscriptionFlowable(
+        serviceId: Int,
+        url: String
+    ): Flowable<List<SubscriptionEntity>> {
+        return subscriptionTable.getSubscriptionFlowableForProfile(profileId, serviceId, url)
+    }
+
     fun getSubscriptions(
         currentGroupId: Long = FeedGroupEntity.GROUP_ALL_ID,
         filterQuery: String = "",
@@ -259,6 +266,10 @@ class SubscriptionManager @JvmOverloads constructor(
     }
 
     fun insertSubscription(subscriptionEntity: SubscriptionEntity) {
+        insertSubscriptionAndReturn(subscriptionEntity)
+    }
+
+    fun insertSubscriptionAndReturn(subscriptionEntity: SubscriptionEntity): SubscriptionEntity {
         val storedEntity = database.runInTransaction<SubscriptionEntity> {
             val url = requireNotNull(subscriptionEntity.url)
             subscriptionEntity.profileId = profileId
@@ -287,6 +298,7 @@ class SubscriptionManager @JvmOverloads constructor(
             }
         }
         recordSubscriptionUpsert(storedEntity)
+        return storedEntity
     }
 
     fun deleteSubscription(subscriptionEntity: SubscriptionEntity) {

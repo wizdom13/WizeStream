@@ -132,6 +132,25 @@ abstract class FeedGroupDAO {
 
     @Query(
         """
+        SELECT fgs.group_id
+        FROM feed_group_subscription_join fgs
+        INNER JOIN feed_group g
+            ON g.uid = fgs.group_id
+        INNER JOIN subscriptions s
+            ON s.uid = fgs.subscription_id
+        WHERE g.profile_id = :profileId
+        AND s.profile_id = :profileId
+        AND fgs.subscription_id = :subscriptionId
+        ORDER BY g.sort_order ASC
+        """
+    )
+    abstract fun getGroupIdsForSubscriptionForProfile(
+        profileId: String,
+        subscriptionId: Long
+    ): Flowable<List<Long>>
+
+    @Query(
+        """
         SELECT fgs.subscription_id
         FROM feed_group_subscription_join fgs
         INNER JOIN feed_group g
@@ -193,6 +212,57 @@ abstract class FeedGroupDAO {
         }
         insertSubscriptionsToGroup(
             validIds.map { FeedGroupSubscriptionEntity(groupId, it) }
+        )
+    }
+
+    @Query(
+        """
+        DELETE FROM feed_group_subscription_join
+        WHERE subscription_id = :subscriptionId
+        AND group_id IN (
+            SELECT uid FROM feed_group WHERE profile_id = :profileId
+        )
+        """
+    )
+    protected abstract fun deleteGroupsForSubscriptionForProfile(
+        profileId: String,
+        subscriptionId: Long
+    ): Int
+
+    @Query(
+        """
+        SELECT uid FROM feed_group
+        WHERE profile_id = :profileId
+        AND uid IN (:groupIds)
+        """
+    )
+    protected abstract fun validGroupIds(
+        profileId: String,
+        groupIds: List<Long>
+    ): List<Long>
+
+    @Transaction
+    open fun setGroupsForSubscriptionForProfile(
+        profileId: String,
+        subscriptionId: Long,
+        groupIds: List<Long>
+    ) {
+        val subscriptionExists = validSubscriptionIds(
+            profileId,
+            listOf(subscriptionId)
+        ).isNotEmpty()
+        if (!subscriptionExists) {
+            return
+        }
+
+        deleteGroupsForSubscriptionForProfile(profileId, subscriptionId)
+        val validGroups = if (groupIds.isEmpty()) {
+            emptyList()
+        } else {
+            validGroupIds(profileId, groupIds)
+        }
+        insertSubscriptionsToGroup(
+            validGroups.map { FeedGroupSubscriptionEntity(it, subscriptionId) }
         )
     }
 
