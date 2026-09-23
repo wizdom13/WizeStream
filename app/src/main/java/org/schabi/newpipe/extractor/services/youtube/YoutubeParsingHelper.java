@@ -2260,6 +2260,15 @@ YoutubeParsingHelper {
         }
     }
 
+    private static final int CHANNEL_SERVER_ERROR_MAX_ATTEMPTS = 3;
+
+    static boolean shouldRetryChannelServerError(final int errorCode,
+                                                 final int attempt) {
+        return errorCode >= 500
+                && errorCode < 600
+                && attempt < CHANNEL_SERVER_ERROR_MAX_ATTEMPTS;
+    }
+
     public static ChannelResponseData getChannelResponse(final String channelId,
                                                           final String params,
                                                           final Localization loc,
@@ -2278,6 +2287,7 @@ YoutubeParsingHelper {
         JsonObject ajaxJson = null;
 
         int level = 0;
+        int channelServerErrorAttempts = 0;
         while (level < 3) {
             final JsonBuilder<JsonObject> bodyBuilder = prepareDesktopJsonBuilder(
                             loc, country)
@@ -2297,15 +2307,26 @@ YoutubeParsingHelper {
                 final int errorCode = errorJsonObject.getInt("code");
                 if (errorCode == 404) {
                     throw new ContentNotAvailableException("This channel doesn't exist.");
-                } else if (errorCode == 500) {
-                    throw new ParsingException(errorJsonObject.getString("status") + "\": "
-                            + errorJsonObject.getString("message"));
-                }else {
-                    throw new ContentNotAvailableException("Got error:\""
+                }
+
+                channelServerErrorAttempts++;
+                if (shouldRetryChannelServerError(errorCode, channelServerErrorAttempts)) {
+                    continue;
+                }
+
+                if (errorCode >= 500 && errorCode < 600) {
+                    throw new ParsingException("YouTube channel request failed after "
+                            + channelServerErrorAttempts + " attempts: "
                             + errorJsonObject.getString("status") + "\": "
                             + errorJsonObject.getString("message"));
                 }
+
+                throw new ContentNotAvailableException("Got error:\""
+                        + errorJsonObject.getString("status") + "\": "
+                        + errorJsonObject.getString("message"));
             }
+
+            channelServerErrorAttempts = 0;
 
             final JsonObject endpoint = jsonResponse.getArray("onResponseReceivedActions")
                     .getObject(0)
