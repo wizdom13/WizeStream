@@ -204,11 +204,11 @@ public class FeedRefreshControlsTest {
         assertTrue(source.contains("indeterminateSegmentStart"));
 
         assertTrue(appearance.contains("@string/feed_refresh_indicator_style_key"));
-        assertTrue(appearance.contains("@string/feed_refresh_indicator_style_wavy_value"));
+        assertTrue(appearance.contains("@string/feed_refresh_indicator_style_line_value"));
         assertTrue(appearance.contains("@array/feed_refresh_indicator_style_entries"));
         assertTrue(settingsKeys.contains("feed_refresh_indicator_style_wavy_value"));
         assertTrue(settingsKeys.contains("feed_refresh_indicator_style_line_value"));
-        assertTrue(defaults.contains("\"feed_refresh_indicator_style\": \"wavy\""));
+        assertTrue(defaults.contains("\"feed_refresh_indicator_style\": \"line\""));
     }
 
     @Test
