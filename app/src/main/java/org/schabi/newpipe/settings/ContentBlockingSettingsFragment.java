@@ -22,6 +22,7 @@ import org.schabi.newpipe.util.AiSListRepository;
 import org.schabi.newpipe.util.AiSListSyncWorker;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.ContentBlockingHelper.Entry;
+import org.schabi.newpipe.util.ServiceHelper;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -50,6 +51,11 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
         aiSListStatusPreference = requirePreference(R.string.aislist_status_key);
         aiSListWarnBehaviorPreference = requirePreference(R.string.aislist_warn_behavior_key);
 
+        requirePreference(R.string.hide_members_only_videos_key)
+                .setOnPreferenceChangeListener((preference, newValue) -> {
+                    ServiceHelper.setHideMembersOnlyVideos((Boolean) newValue);
+                    return true;
+                });
         blockedKeywordsPreference.setOnBindEditTextListener(editText -> {
             editText.setInputType(InputType.TYPE_CLASS_TEXT
                     | InputType.TYPE_TEXT_FLAG_MULTI_LINE);

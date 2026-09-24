@@ -18,7 +18,6 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.util.Localization;
-import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.image.ImageStrategy;
 import org.schabi.newpipe.util.image.PreferredImageQuality;
 
@@ -37,11 +36,6 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
 
         setupAppLanguagePreferences();
         setupImageQualityPref();
-        requirePreference(R.string.hide_members_only_videos_key)
-                .setOnPreferenceChangeListener((preference, newValue) -> {
-                    ServiceHelper.setHideMembersOnlyVideos((Boolean) newValue);
-                    return true;
-                });
     }
 
     private void setupAppLanguagePreferences() {

@@ -60,6 +60,18 @@ public class MembersOnlyContentIntegrationTest {
                 "android:defaultValue=\"true\"\n"
                     + "        android:key=\"@string/hide_members_only_videos_key\""));
 
+        final String contentSettingsFragment = read(
+                "src/main/java/org/schabi/newpipe/settings/ContentSettingsFragment.java"
+        );
+        final String contentBlockingSettingsFragment = read(
+                "src/main/java/org/schabi/newpipe/settings/ContentBlockingSettingsFragment.java"
+        );
+        assertFalse(contentSettingsFragment.contains("hide_members_only_videos_key"));
+        assertTrue(contentBlockingSettingsFragment.contains(
+                "requirePreference(R.string.hide_members_only_videos_key)"));
+        assertTrue(contentBlockingSettingsFragment.contains(
+                "ServiceHelper.setHideMembersOnlyVideos"));
+
         final String adapter = read(
                 "src/main/java/org/schabi/newpipe/info_list/InfoListAdapter.java"
         );
