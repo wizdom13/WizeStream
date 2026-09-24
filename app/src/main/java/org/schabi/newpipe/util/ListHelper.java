@@ -33,6 +33,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ListHelper {
     // Video format in order of quality. 0=lowest quality, n=highest quality
@@ -47,6 +49,8 @@ public final class ListHelper {
             List.of(MediaFormat.MP3, MediaFormat.M4A, MediaFormat.WEBMA);
     // Use a Set for better performance
     private static final Set<String> HIGH_RESOLUTION_LIST = Set.of("1440p", "2160p");
+    private static final Pattern RESOLUTION_PATTERN =
+            Pattern.compile("^(\\d+)(?:p(\\d+))?.*");
 
 
     /**
@@ -558,8 +562,8 @@ public final class ListHelper {
      * <li>Find a format and resolution match and ignore the refresh</li>
      * <li>Find a resolution match</li>
      * <li>Find a resolution match and ignore the refresh</li>
-     * <li>Find a resolution just below the requested resolution and ignore the refresh</li>
-     * <li>Give up</li>
+     * <li>Find the closest resolution below the requested resolution</li>
+     * <li>If none exists, find the closest resolution above the requested resolution</li>
      * </ol>
      *
      * @param targetResolution the resolution to look for
@@ -575,14 +579,17 @@ public final class ListHelper {
         int resMatchOnlyIndex = -1;
         int resMatchOnlyNoRefreshIndex = -1;
         int lowerResMatchNoRefreshIndex = -1;
-        final String targetResolutionNoRefresh = targetResolution.replaceAll("p\\d+$", "p");
+        int higherResMatchNoRefreshIndex = -1;
+        final String targetResolutionNoRefresh =
+                resolutionWithoutRefreshOrVariantMetadata(targetResolution);
 
         for (int idx = 0; idx < videoStreams.size(); idx++) {
             final MediaFormat format = targetFormat == null
                     ? null
                     : videoStreams.get(idx).getFormat();
             final String resolution = videoStreams.get(idx).getResolution();
-            final String resolutionNoRefresh = resolution.replaceAll("p\\d+$", "p");
+            final String resolutionNoRefresh =
+                    resolutionWithoutRefreshOrVariantMetadata(resolution);
 
             if (format == targetFormat && resolution.equals(targetResolution)) {
                 fullMatchIndex = idx;
@@ -601,9 +608,24 @@ public final class ListHelper {
                 resMatchOnlyNoRefreshIndex = idx;
             }
 
-            if (lowerResMatchNoRefreshIndex == -1 && compareVideoStreamResolution(
-                    resolutionNoRefresh, targetResolutionNoRefresh) < 0) {
+            final int resolutionComparison = compareVideoStreamResolution(
+                    resolutionNoRefresh, targetResolutionNoRefresh);
+            if (resolutionComparison < 0
+                    && (lowerResMatchNoRefreshIndex == -1
+                    || compareVideoStreamResolution(
+                            resolutionNoRefresh,
+                            resolutionWithoutRefreshOrVariantMetadata(
+                                    videoStreams.get(lowerResMatchNoRefreshIndex)
+                                            .getResolution())) > 0)) {
                 lowerResMatchNoRefreshIndex = idx;
+            } else if (resolutionComparison > 0
+                    && (higherResMatchNoRefreshIndex == -1
+                    || compareVideoStreamResolution(
+                            resolutionNoRefresh,
+                            resolutionWithoutRefreshOrVariantMetadata(
+                                    videoStreams.get(higherResMatchNoRefreshIndex)
+                                            .getResolution())) < 0)) {
+                higherResMatchNoRefreshIndex = idx;
             }
         }
 
@@ -619,7 +641,8 @@ public final class ListHelper {
         if (resMatchOnlyNoRefreshIndex != -1) {
             return resMatchOnlyNoRefreshIndex;
         }
-        return lowerResMatchNoRefreshIndex;
+        return lowerResMatchNoRefreshIndex != -1
+                ? lowerResMatchNoRefreshIndex : higherResMatchNoRefreshIndex;
     }
 
     /**
@@ -676,18 +699,43 @@ public final class ListHelper {
 
     private static int compareVideoStreamResolution(@NonNull final String r1,
                                                     @NonNull final String r2) {
-        try {
-            final int res1 = Integer.parseInt(r1.replaceAll("0p\\d+$", "1")
-                    .replaceAll("[^\\d.]", ""));
-            final int res2 = Integer.parseInt(r2.replaceAll("0p\\d+$", "1")
-                    .replaceAll("[^\\d.]", ""));
-            return res1 - res2;
-        } catch (final NumberFormatException e) {
-            // Consider the first one greater because we don't know if the two streams are
-            // different or not (a NumberFormatException was thrown so we don't know the resolution
-            // of one stream or of all streams)
+        final long rank1 = resolutionRank(r1);
+        final long rank2 = resolutionRank(r2);
+        if (rank1 >= 0 && rank2 >= 0) {
+            return Long.compare(rank1, rank2);
+        }
+        if (rank1 >= 0) {
             return 1;
         }
+        if (rank2 >= 0) {
+            return -1;
+        }
+        return r1.compareTo(r2);
+    }
+
+    private static long resolutionRank(@NonNull final String resolution) {
+        final Matcher matcher = RESOLUTION_PATTERN.matcher(resolution);
+        if (!matcher.matches()) {
+            return -1;
+        }
+        try {
+            final long height = Long.parseLong(matcher.group(1));
+            final String frameRateGroup = matcher.group(2);
+            final long frameRate = frameRateGroup == null ? 0 : Long.parseLong(frameRateGroup);
+            return height * 1_000L + Math.min(frameRate, 999L);
+        } catch (final NumberFormatException ignored) {
+            return -1;
+        }
+    }
+
+    @NonNull
+    private static String resolutionWithoutRefreshOrVariantMetadata(
+            @NonNull final String resolution) {
+        final Matcher matcher = RESOLUTION_PATTERN.matcher(resolution);
+        if (matcher.matches()) {
+            return matcher.group(1) + "p";
+        }
+        return resolution.replaceAll("p\\d+$", "p");
     }
 
     static boolean isLimitingDataUsage(@NonNull final Context context) {

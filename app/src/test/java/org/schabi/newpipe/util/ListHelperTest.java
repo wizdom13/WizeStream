@@ -204,11 +204,51 @@ public class ListHelperTest {
         assertEquals("480p", result.getResolution());
         assertEquals(MediaFormat.WEBM, result.getFormat());
 
-        // Doesn't have the resolution, will return the best one
+        // Requested quality is above every available stream, so use the closest lower one.
         result = testList.get(ListHelper.getDefaultResolutionIndex(
                 "2160p60", BEST_RESOLUTION_KEY, MediaFormat.WEBM, testList));
         assertEquals("720p", result.getResolution());
         assertEquals(MediaFormat.MPEG_4, result.getFormat());
+    }
+
+    @Test
+    public void crossServiceResolutionLabelsUseActualVideoHeight() {
+        final List<VideoStream> decoratedStreams = new ArrayList<>(List.of(
+                generateVideoStream("rumble-720", MediaFormat.MPEG_4,
+                        "720p@1500k", false),
+                generateVideoStream("rumble-480", MediaFormat.MPEG_4,
+                        "480p@1000k", false),
+                generateVideoStream("rumble-240", MediaFormat.MPEG_4,
+                        "240p@500k", false)));
+
+        VideoStream result = decoratedStreams.get(ListHelper.getDefaultResolutionIndex(
+                "360p", BEST_RESOLUTION_KEY, MediaFormat.MPEG_4, decoratedStreams));
+        assertEquals("240p@500k", result.getResolution());
+
+        result = decoratedStreams.get(ListHelper.getDefaultResolutionIndex(
+                "144p", BEST_RESOLUTION_KEY, MediaFormat.MPEG_4, decoratedStreams));
+        assertEquals("240p@500k", result.getResolution());
+
+        result = decoratedStreams.get(ListHelper.getDefaultResolutionIndex(
+                "480p", BEST_RESOLUTION_KEY, MediaFormat.MPEG_4, decoratedStreams));
+        assertEquals("480p@1000k", result.getResolution());
+
+        final List<VideoStream> sorted = ListHelper.getSortedStreamVideosList(
+                MediaFormat.MPEG_4, true, decoratedStreams, null, false, false);
+        assertEquals(List.of("720p@1500k", "480p@1000k", "240p@500k"),
+                sorted.stream().map(VideoStream::getResolution).toList());
+    }
+
+    @Test
+    public void targetBelowAllAvailableQualitiesUsesNearestHigherQuality() {
+        final List<VideoStream> sparseStreams = new ArrayList<>(List.of(
+                generateVideoStream("1080", MediaFormat.MPEG_4, "1080p", false),
+                generateVideoStream("720", MediaFormat.MPEG_4, "720p", false),
+                generateVideoStream("480", MediaFormat.MPEG_4, "480p", false)));
+
+        final VideoStream result = sparseStreams.get(ListHelper.getDefaultResolutionIndex(
+                "144p", BEST_RESOLUTION_KEY, MediaFormat.MPEG_4, sparseStreams));
+        assertEquals("480p", result.getResolution());
     }
 
     @Test
@@ -457,8 +497,8 @@ public class ListHelperTest {
         assertEquals(7, ListHelper.getVideoStreamIndex("200p", null, testList));
         assertEquals(7, ListHelper.getVideoStreamIndex("200p60", null, testList));
 
-        // Can't find a match
-        assertEquals(-1, ListHelper.getVideoStreamIndex("100p", null, testList));
+        // If every available quality is higher, use the nearest higher quality.
+        assertEquals(7, ListHelper.getVideoStreamIndex("100p", null, testList));
     }
 
     @NonNull
