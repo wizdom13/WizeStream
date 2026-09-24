@@ -1,0 +1,5 @@
+• Apply video resolution preferences consistently across services, including PeerTube and Rumble.
+• Keep BitChute restricted videos playable where BitChute still allows playback.
+• Fix the Settings > Content crash caused by the moved members-only preference.
+• Prevent Rumble tracking redirect loops and recover stale main-tab fragment state.
+• Refine the optional Wavy feed refresh indicator.
