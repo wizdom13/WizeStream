@@ -604,10 +604,12 @@ public class RumbleStreamExtractor extends StreamExtractor {
             throws IOException, ExtractionException {
 
 
-        doc = RumbleParsingHelper.fetchParseValidate(downloader, getUrl());
+        final String pageUrl =
+                RumbleParsingHelper.removeQueryAndFragment(getOriginalUrl());
+        doc = RumbleParsingHelper.fetchParseValidate(downloader, pageUrl);
 
         final String queryUrl = "https://rumble.com/embedJS/u4/?request=video&ver=2&v=v"
-                + RumbleParsingHelper.getEmbedVideoId(getUrl(), () -> doc.toString());
+                + RumbleParsingHelper.getEmbedVideoId(pageUrl, () -> doc.toString());
 
         final Response response2 = downloader.get(
                 queryUrl);
