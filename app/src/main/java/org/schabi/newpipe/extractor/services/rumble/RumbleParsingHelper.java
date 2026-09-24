@@ -36,6 +36,19 @@ public final class RumbleParsingHelper {
 
     private static final Map<String, List<String>> HEADERS = new HashMap<>();
 
+    public static String removeQueryAndFragment(final String url) {
+        int end = url.length();
+        final int queryIndex = url.indexOf('?');
+        if (queryIndex >= 0) {
+            end = Math.min(end, queryIndex);
+        }
+        final int fragmentIndex = url.indexOf('#');
+        if (fragmentIndex >= 0) {
+            end = Math.min(end, fragmentIndex);
+        }
+        return url.substring(0, end);
+    }
+
     public static int parseDurationStringForRelatedStreams(final String input)
             throws ParsingException {
         // input has the form of h:m:s
