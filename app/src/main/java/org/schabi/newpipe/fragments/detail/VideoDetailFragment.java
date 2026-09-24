@@ -80,6 +80,7 @@ import org.schabi.newpipe.error.ReCaptchaActivity;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -1422,8 +1423,11 @@ public final class VideoDetailFragment
                 .subscribe(result -> {
                     isLoading.set(false);
                     hideMainPlayerOnLoadingNewStream();
-                    if (result.getAgeLimit() != NO_AGE_LIMIT && !prefs.getBoolean(
-                            getString(R.string.show_age_restricted_content), false)) {
+                    if (shouldHideAgeRestrictedContent(
+                            result.getServiceId(),
+                            result.getAgeLimit(),
+                            prefs.getBoolean(
+                                    getString(R.string.show_age_restricted_content), false))) {
                         hideAgeRestrictedContent();
                     } else {
                         handleResult(result);
@@ -2074,6 +2078,14 @@ public final class VideoDetailFragment
                 && phoneDetailLayout
                 && !tvLayout
                 && !tabletLayout;
+    }
+
+    static boolean shouldHideAgeRestrictedContent(final int streamServiceId,
+                                                  final int ageLimit,
+                                                  final boolean showAgeRestrictedContent) {
+        return streamServiceId != ServiceList.BitChute.getServiceId()
+                && ageLimit != NO_AGE_LIMIT
+                && !showAgeRestrictedContent;
     }
 
     static boolean shouldHidePreviousStreamContent(final boolean streamInfoCached) {
