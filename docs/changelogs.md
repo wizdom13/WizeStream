@@ -4,6 +4,20 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.22.1 (`1022001`)
+
+### Improvements
+
+- Applied the existing default, popup, and mobile-data video resolution preferences consistently across supported video services, including PeerTube and Rumble, with nearest-quality fallback when the exact resolution is unavailable.
+- Kept BitChute videos playable when BitChute marks them as restricted while preserving the existing restricted-content preference behavior for other services.
+- Refined the optional Wavy feed refresh indicator so the inactive track stays straight and only the active progress wave moves.
+
+### Fixes
+
+- Fixed a crash when opening Settings > Content after the members-only preference was moved into Content Blocking.
+- Prevented Rumble tracking redirects from looping while resolving stream URLs.
+- Recovered safely from stale main-tab fragment state after activity or navigation restoration.
+
 ## WizeStream 1.22.0 (`1022000`)
 
 ### New features

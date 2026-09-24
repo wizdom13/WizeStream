@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1022001">WizeStream 1.22.1</a></li>
 <li><a href="#release-1022000">WizeStream 1.22.0</a></li>
 <li><a href="#release-1021000">WizeStream 1.21.0</a></li>
 <li><a href="#release-1020002">WizeStream 1.20.2</a></li>
@@ -76,6 +77,23 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1022001" data-version="1.22.1" data-version-code="1022001">
+<h2>WizeStream 1.22.1</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Applied the existing default, popup, and mobile-data video resolution preferences consistently across supported video services, including PeerTube and Rumble, with nearest-quality fallback when the exact resolution is unavailable.</li>
+<li>Kept BitChute videos playable when BitChute marks them as restricted while preserving the existing restricted-content preference behavior for other services.</li>
+<li>Refined the optional Wavy feed refresh indicator so the inactive track stays straight and only the active progress wave moves.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Fixed a crash when opening Settings &gt; Content after the members-only preference was moved into Content Blocking.</li>
+<li>Prevented Rumble tracking redirects from looping while resolving stream URLs.</li>
+<li>Recovered safely from stale main-tab fragment state after activity or navigation restoration.</li>
+</ul>
+</div>
+</section>
 <section id="release-1022000" data-version="1.22.0" data-version-code="1022000">
 <h2>WizeStream 1.22.0</h2>
 <div class="release-notes">
