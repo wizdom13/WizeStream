@@ -13,6 +13,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -28,6 +29,7 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.MenuItemCompat;
@@ -1051,6 +1053,7 @@ public class MainFragment extends BaseFragment
     public static final class SelectedTabsPagerAdapter
             extends FragmentStatePagerAdapterMenuWorkaround {
         private final Context context;
+        private final FragmentManager fragmentManager;
         private final List<Tab> internalTabsList;
         /**
          * Keep reference to LocalPlaylistFragments, because their data can be modified by the user
@@ -1067,6 +1070,7 @@ public class MainFragment extends BaseFragment
                                          final List<Tab> tabsList) {
             super(fragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             this.context = context;
+            this.fragmentManager = fragmentManager;
             this.internalTabsList = new ArrayList<>(tabsList);
         }
 
@@ -1108,6 +1112,48 @@ public class MainFragment extends BaseFragment
         @Nullable
         public Fragment getPrimaryFragment() {
             return primaryFragment;
+        }
+
+        @Override
+        public void restoreState(@Nullable final Parcelable state,
+                                 @Nullable final ClassLoader loader) {
+            if (!(state instanceof Bundle)) {
+                super.restoreState(state, loader);
+                return;
+            }
+
+            super.restoreState(removeMissingFragmentEntries(
+                    (Bundle) state,
+                    loader,
+                    (bundle, key) -> fragmentManager.getFragment(bundle, key)
+            ), loader);
+        }
+
+        @VisibleForTesting
+        static Bundle removeMissingFragmentEntries(
+                @NonNull final Bundle state,
+                @Nullable final ClassLoader loader,
+                @NonNull final FragmentStateValidator validator) {
+            final Bundle cleanedState = new Bundle(state);
+            cleanedState.setClassLoader(loader);
+            for (final String key : new ArrayList<>(cleanedState.keySet())) {
+                if (!key.startsWith("f")) {
+                    continue;
+                }
+                try {
+                    validator.validate(cleanedState, key);
+                } catch (final IllegalStateException e) {
+                    Log.w("MainFragment",
+                            "Discarding stale main-tab fragment state for " + key, e);
+                    cleanedState.remove(key);
+                }
+            }
+            return cleanedState;
+        }
+
+        @VisibleForTesting
+        interface FragmentStateValidator {
+            void validate(@NonNull Bundle state, @NonNull String key);
         }
 
         @Override
