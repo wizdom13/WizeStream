@@ -562,8 +562,8 @@ public final class ListHelper {
      * <li>Find a format and resolution match and ignore the refresh</li>
      * <li>Find a resolution match</li>
      * <li>Find a resolution match and ignore the refresh</li>
-     * <li>Find a resolution just below the requested resolution and ignore the refresh</li>
-     * <li>Give up</li>
+     * <li>Find the closest resolution below the requested resolution</li>
+     * <li>If none exists, find the closest resolution above the requested resolution</li>
      * </ol>
      *
      * @param targetResolution the resolution to look for
