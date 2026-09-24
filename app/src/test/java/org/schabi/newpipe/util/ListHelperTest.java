@@ -204,7 +204,7 @@ public class ListHelperTest {
         assertEquals("480p", result.getResolution());
         assertEquals(MediaFormat.WEBM, result.getFormat());
 
-        // Doesn't have the resolution, will return the best one
+        // Requested quality is above every available stream, so use the closest lower one.
         result = testList.get(ListHelper.getDefaultResolutionIndex(
                 "2160p60", BEST_RESOLUTION_KEY, MediaFormat.WEBM, testList));
         assertEquals("720p", result.getResolution());
