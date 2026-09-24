@@ -20,6 +20,17 @@ public class RumbleParsingHelperTest {
     private static final String URL = "https://rumble.com/v-test.html";
 
     @Test
+    public void removesTrackingQueryBeforeFetchingRumblePage() {
+        assertEquals(
+                "https://rumble.com/v7fudk0-hayden-panettiere-cause-of-death"
+                        + "-alan-ritchson-blackmailed-she-hulk-loves-p.html",
+                RumbleParsingHelper.removeQueryAndFragment(
+                        "https://rumble.com/v7fudk0-hayden-panettiere-cause-of-death"
+                                + "-alan-ritchson-blackmailed-she-hulk-loves-p.html"
+                                + "?e9s=src_v1_epp#comments"));
+    }
+
+    @Test
     public void parsesRelatedStreamDurationsAcrossSupportedShapes() throws Exception {
         assertEquals(45,
                 RumbleParsingHelper.parseDurationStringForRelatedStreams("0:45"));
