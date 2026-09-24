@@ -29,6 +29,7 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.MenuItemCompat;
@@ -1121,21 +1122,38 @@ public class MainFragment extends BaseFragment
                 return;
             }
 
-            final Bundle cleanedState = new Bundle((Bundle) state);
+            super.restoreState(removeMissingFragmentEntries(
+                    (Bundle) state,
+                    loader,
+                    (bundle, key) -> fragmentManager.getFragment(bundle, key)
+            ), loader);
+        }
+
+        @VisibleForTesting
+        static Bundle removeMissingFragmentEntries(
+                @NonNull final Bundle state,
+                @Nullable final ClassLoader loader,
+                @NonNull final FragmentStateValidator validator) {
+            final Bundle cleanedState = new Bundle(state);
             cleanedState.setClassLoader(loader);
             for (final String key : new ArrayList<>(cleanedState.keySet())) {
                 if (!key.startsWith("f")) {
                     continue;
                 }
                 try {
-                    fragmentManager.getFragment(cleanedState, key);
+                    validator.validate(cleanedState, key);
                 } catch (final IllegalStateException e) {
                     Log.w("MainFragment",
                             "Discarding stale main-tab fragment state for " + key, e);
                     cleanedState.remove(key);
                 }
             }
-            super.restoreState(cleanedState, loader);
+            return cleanedState;
+        }
+
+        @VisibleForTesting
+        interface FragmentStateValidator {
+            void validate(@NonNull Bundle state, @NonNull String key);
         }
 
         @Override
