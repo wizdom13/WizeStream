@@ -61,6 +61,12 @@ public final class FullscreenOrientationPolicy {
             final VideoContentOrientation contentOrientation,
             final boolean landscape,
             final boolean targetFullscreen) {
+        // A manual fullscreen exit while the device is physically in landscape must always
+        // request portrait. Content orientation can temporarily be UNKNOWN during renderer
+        // changes, so relying on it here can leave the activity stuck in landscape.
+        if (landscape && !targetFullscreen) {
+            return true;
+        }
         if (contentOrientation == VideoContentOrientation.LANDSCAPE) {
             return true;
         }
@@ -81,15 +87,24 @@ public final class FullscreenOrientationPolicy {
         return fullscreen
                 && previousContentOrientation != contentOrientation
                 && (contentOrientation == VideoContentOrientation.PORTRAIT
-                || contentOrientation == VideoContentOrientation.LANDSCAPE);
+                || contentOrientation == VideoContentOrientation.LANDSCAPE
+                || contentOrientation == VideoContentOrientation.SQUARE);
     }
 
     public static int targetConfigurationOrientation(
             final boolean fullscreen,
             final VideoContentOrientation contentOrientation) {
-        return fullscreen && contentOrientation == VideoContentOrientation.LANDSCAPE
-                ? Configuration.ORIENTATION_LANDSCAPE
-                : Configuration.ORIENTATION_PORTRAIT;
+        if (!fullscreen) {
+            return Configuration.ORIENTATION_PORTRAIT;
+        }
+        if (contentOrientation == VideoContentOrientation.PORTRAIT
+                || contentOrientation == VideoContentOrientation.SQUARE) {
+            return Configuration.ORIENTATION_PORTRAIT;
+        }
+        // Before Media3 reports a valid size, preserve the traditional fullscreen-button
+        // behavior and request landscape. Once the content orientation becomes known,
+        // shouldAlignFullscreenToKnownContent() corrects portrait and square streams.
+        return Configuration.ORIENTATION_LANDSCAPE;
     }
 
     public static boolean isTargetOrientation(final int currentOrientation,

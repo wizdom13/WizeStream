@@ -39,11 +39,23 @@ public class MainPlayerUiFullscreenTest {
     }
 
     @Test
-    public void unknownAndSquareContentNeverForceOrientationForFullscreenButton() {
+    public void unknownAndSquareContentDoNotForceOrientationWhenEnteringFromPortrait() {
         assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false, true));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true, false));
         assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false, true));
-        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true, false));
+    }
+
+    @Test
+    public void manualFullscreenExitFromLandscapeAlwaysUsesOrientationAction() {
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(LANDSCAPE, true, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(PORTRAIT, true, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, true, false));
+        assertTrue(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, true, false));
+    }
+
+    @Test
+    public void manualFullscreenExitAlreadyInPortraitDoesNotForceUnknownOrSquareRotation() {
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(UNKNOWN, false, false));
+        assertFalse(MainPlayerUi.shouldUseScreenRotationAction(SQUARE, false, false));
     }
 
     @Test
