@@ -1,6 +1,7 @@
 package org.schabi.newpipe.extractor.services.rumble;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -15,6 +16,8 @@ import org.schabi.newpipe.extractor.exceptions.PrivateContentException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class RumbleParsingHelperTest {
     private static final String URL = "https://rumble.com/v-test.html";
@@ -28,6 +31,16 @@ public class RumbleParsingHelperTest {
                         "https://rumble.com/v7fudk0-hayden-panettiere-cause-of-death"
                                 + "-alan-ritchson-blackmailed-she-hulk-loves-p.html"
                                 + "?e9s=src_v1_epp#comments"));
+    }
+
+    @Test
+    public void providesMinimalAnonymousSessionCookieForAllRumblePages() {
+        final Map<String, List<String>> headers = RumbleParsingHelper.getMinimalHeaders();
+
+        assertTrue(headers.containsKey("Cookie"));
+        assertFalse(headers.get("Cookie").isEmpty());
+        assertTrue(headers.get("Cookie").get(0)
+                .matches("PNRC=\\d+ ; RNRC=\\d+"));
     }
 
     @Test
