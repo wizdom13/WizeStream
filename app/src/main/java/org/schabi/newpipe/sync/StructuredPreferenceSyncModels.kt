@@ -164,7 +164,8 @@ internal data class SyncedContentBlockingState(
     val targets: List<String>,
     val aiSListEnabled: Boolean,
     val aiSListWarnBehavior: String,
-    val hideMembersOnlyVideos: Boolean = true
+    val hideMembersOnlyVideos: Boolean = true,
+    val matchKeywordsInChannelNames: Boolean = false
 )
 
 @Serializable
