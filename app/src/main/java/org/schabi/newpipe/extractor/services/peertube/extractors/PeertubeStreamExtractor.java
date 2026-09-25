@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.downloader.Response;
+import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
@@ -399,6 +400,10 @@ public class PeertubeStreamExtractor extends StreamExtractor {
             throw new ExtractionException("Could not extract PeerTube stream data");
         }
         PeertubeParsingHelper.validate(json);
+        if (Utils.isBlank(json.getString("name"))) {
+            throw new ContentNotAvailableException(
+                    "PeerTube video metadata is incomplete or unavailable");
+        }
     }
 
     private void loadSubtitles() {
