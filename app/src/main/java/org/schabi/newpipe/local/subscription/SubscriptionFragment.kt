@@ -458,7 +458,8 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                                 error,
                                 UserAction.SUBSCRIPTION_CHANGE,
                                 "Subscribing ${selectedItem.url} to profile $displayName",
-                                selectedItem
+                                selectedItem.serviceId,
+                                selectedItem.url
                             )
                         )
                     }
