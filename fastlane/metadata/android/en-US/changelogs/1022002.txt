@@ -1,0 +1,5 @@
+• Add Subscribe to profile… from the Subscriptions long-press menu.
+• Add optional blocked-keyword matching for channel names with Device Sync.
+• Improve channel pages on phones in landscape.
+• Fix double-tap seek crashes caused by zero-second plural formatting.
+• Improve Rumble session handling and incomplete PeerTube API responses.

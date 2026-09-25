@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1022002">WizeStream 1.22.2</a></li>
 <li><a href="#release-1022001">WizeStream 1.22.1</a></li>
 <li><a href="#release-1022000">WizeStream 1.22.0</a></li>
 <li><a href="#release-1021000">WizeStream 1.21.0</a></li>
@@ -77,6 +78,23 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1022002" data-version="1.22.2" data-version-code="1022002">
+<h2>WizeStream 1.22.2</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added “Subscribe to profile…” to the Subscriptions-tab long-press menu when multiple local profiles exist, without switching away from the active profile.</li>
+<li>Added an optional “Also match channel names” Content Blocking setting so blocked keywords can also match uploader and channel names while preserving the existing title-only behavior by default; the setting is synchronized through Device Sync.</li>
+<li>Improved channel pages on phones in landscape by hiding the banner and allowing the metadata header to scroll away, leaving more room for the video list.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Prevented double-tap fast seeking from crashing on affected Android resource configurations when the internal seek counter resets to zero.</li>
+<li>Improved Rumble playback reliability by reusing the active session headers for page requests.</li>
+<li>Handled incomplete PeerTube API responses more safely instead of failing the whole request.</li>
+</ul>
+</div>
+</section>
 <section id="release-1022001" data-version="1.22.1" data-version-code="1022001">
 <h2>WizeStream 1.22.1</h2>
 <div class="release-notes">
