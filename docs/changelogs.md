@@ -4,6 +4,20 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.22.2 (`1022002`)
+
+### Improvements
+
+- Added “Subscribe to profile…” to the Subscriptions-tab long-press menu when multiple local profiles exist, without switching away from the active profile.
+- Added an optional “Also match channel names” Content Blocking setting so blocked keywords can also match uploader and channel names while preserving the existing title-only behavior by default; the setting is synchronized through Device Sync.
+- Improved channel pages on phones in landscape by hiding the banner and allowing the metadata header to scroll away, leaving more room for the video list.
+
+### Fixes
+
+- Prevented double-tap fast seeking from crashing on affected Android resource configurations when the internal seek counter resets to zero.
+- Improved Rumble playback reliability by reusing the active session headers for page requests.
+- Handled incomplete PeerTube API responses more safely instead of failing the whole request.
+
 ## WizeStream 1.22.1 (`1022001`)
 
 ### Improvements
