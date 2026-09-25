@@ -122,6 +122,10 @@ internal class ContentBlockingSyncAdapter(
                 context.getString(R.string.hide_members_only_videos_key),
                 state.hideMembersOnlyVideos
             )
+            .putBoolean(
+                context.getString(R.string.blocked_keywords_channel_names_key),
+                state.matchKeywordsInChannelNames
+            )
             .putStringSet(
                 context.getString(R.string.blocked_videos_key),
                 blockedVideos
@@ -164,6 +168,10 @@ internal class ContentBlockingSyncAdapter(
             hideMembersOnlyVideos = preferences.getBoolean(
                 context.getString(R.string.hide_members_only_videos_key),
                 true
+            ),
+            matchKeywordsInChannelNames = preferences.getBoolean(
+                context.getString(R.string.blocked_keywords_channel_names_key),
+                false
             )
         )
     }

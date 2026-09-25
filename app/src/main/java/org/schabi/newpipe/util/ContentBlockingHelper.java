@@ -47,6 +47,8 @@ public final class ContentBlockingHelper {
                 copySet(preferences, context.getString(R.string.blocked_channels_key)),
                 preferences.getString(context.getString(
                         R.string.blocked_keywords_key), ""),
+                preferences.getBoolean(context.getString(
+                        R.string.blocked_keywords_channel_names_key), false),
                 aiBlockedChannels);
     }
 
@@ -142,6 +144,9 @@ public final class ContentBlockingHelper {
         if (context.getString(R.string.blocked_keywords_key).equals(key)) {
             return RuleChange.KEYWORDS;
         }
+        if (context.getString(R.string.blocked_keywords_channel_names_key).equals(key)) {
+            return RuleChange.KEYWORD_CHANNEL_NAMES;
+        }
         if (context.getString(R.string.hide_members_only_videos_key).equals(key)) {
             return RuleChange.MEMBERS_ONLY;
         }
@@ -160,6 +165,7 @@ public final class ContentBlockingHelper {
         VIDEOS,
         CHANNELS,
         KEYWORDS,
+        KEYWORD_CHANNEL_NAMES,
         MEMBERS_ONLY,
         AISLIST_ENABLED,
         AISLIST_WARN_BEHAVIOR
@@ -333,6 +339,7 @@ public final class ContentBlockingHelper {
         private final Set<String> blockedChannelNames;
         @NonNull
         private final List<String> blockedKeywords;
+        private final boolean matchKeywordsInChannelNames;
         @NonNull
         private final Set<String> aiBlockedChannels;
 
@@ -341,12 +348,14 @@ public final class ContentBlockingHelper {
                       @NonNull final Set<String> blockedChannelKeys,
                       @NonNull final Set<String> blockedChannelNames,
                       @NonNull final List<String> blockedKeywords,
+                      final boolean matchKeywordsInChannelNames,
                       @NonNull final Set<String> aiBlockedChannels) {
             this.enabled = enabled;
             this.blockedVideoUrls = blockedVideoUrls;
             this.blockedChannelKeys = blockedChannelKeys;
             this.blockedChannelNames = blockedChannelNames;
             this.blockedKeywords = blockedKeywords;
+            this.matchKeywordsInChannelNames = matchKeywordsInChannelNames;
             this.aiBlockedChannels = aiBlockedChannels;
         }
 
@@ -355,7 +364,8 @@ public final class ContentBlockingHelper {
                             @NonNull final Set<String> videoEntries,
                             @NonNull final Set<String> channelEntries,
                             @Nullable final String keywords) {
-            return create(enabled, videoEntries, channelEntries, keywords, Collections.emptySet());
+            return create(enabled, videoEntries, channelEntries, keywords,
+                    false, Collections.emptySet());
         }
 
         @NonNull
@@ -363,6 +373,17 @@ public final class ContentBlockingHelper {
                             @NonNull final Set<String> videoEntries,
                             @NonNull final Set<String> channelEntries,
                             @Nullable final String keywords,
+                            @NonNull final Set<String> aiBlockedChannels) {
+            return create(enabled, videoEntries, channelEntries, keywords,
+                    false, aiBlockedChannels);
+        }
+
+        @NonNull
+        static Rules create(final boolean enabled,
+                            @NonNull final Set<String> videoEntries,
+                            @NonNull final Set<String> channelEntries,
+                            @Nullable final String keywords,
+                            final boolean matchKeywordsInChannelNames,
                             @NonNull final Set<String> aiBlockedChannels) {
             final Set<String> videos = new HashSet<>();
             for (final String value : videoEntries) {
@@ -390,6 +411,7 @@ public final class ContentBlockingHelper {
                     channels,
                     channelNames,
                     keywordList,
+                    matchKeywordsInChannelNames,
                     new HashSet<>(aiBlockedChannels));
         }
 
@@ -404,7 +426,9 @@ public final class ContentBlockingHelper {
                                 stream.getServiceId(),
                                 stream.getUploaderUrl(),
                                 stream.getUploaderName())
-                        || containsKeyword(stream.getName());
+                        || containsKeyword(stream.getName())
+                        || matchKeywordsInChannelNames
+                        && containsKeyword(stream.getUploaderName());
             }
             if (item instanceof ChannelInfoItem) {
                 return isBlockedChannel(item.getServiceId(), item.getUrl(), item.getName())
@@ -414,13 +438,17 @@ public final class ContentBlockingHelper {
                 final PlaylistInfoItem playlist = (PlaylistInfoItem) item;
                 return isBlockedChannel(
                         playlist.getServiceId(), null, playlist.getUploaderName())
-                        || containsKeyword(playlist.getName());
+                        || containsKeyword(playlist.getName())
+                        || matchKeywordsInChannelNames
+                        && containsKeyword(playlist.getUploaderName());
             }
             if (item instanceof PostInfoItem) {
                 final PostInfoItem post = (PostInfoItem) item;
                 return isBlockedChannel(
                         post.getServiceId(), post.getUploaderUrl(), post.getUploaderName())
-                        || containsKeyword(post.getName(), post.getContent());
+                        || containsKeyword(post.getName(), post.getContent())
+                        || matchKeywordsInChannelNames
+                        && containsKeyword(post.getUploaderName());
             }
             return containsKeyword(item.getName());
         }

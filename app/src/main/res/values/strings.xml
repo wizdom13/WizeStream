@@ -422,6 +422,7 @@
     <string name="blocked_videos_key" translatable="false">blocked_videos</string>
     <string name="blocked_channels_key" translatable="false">blocked_channels</string>
     <string name="blocked_keywords_key" translatable="false">blocked_keywords</string>
+    <string name="blocked_keywords_channel_names_key" translatable="false">blocked_keywords_channel_names</string>
     <string name="manage_blocked_channels_key" translatable="false">manage_blocked_channels</string>
     <string name="manage_blocked_videos_key" translatable="false">manage_blocked_videos</string>
     <string name="clear_blocked_content_key" translatable="false">clear_blocked_content</string>
@@ -480,6 +481,8 @@
     <string name="aislist_warnlist_playback_message">%1$s appears on the AiSList community warnlist as possibly using AI-generated content.</string>
     <string name="aislist_play_anyway">Play anyway</string>
     <string name="blocked_keywords_title">Blocked keywords</string>
+    <string name="blocked_keywords_channel_names_title">Also match channel names</string>
+    <string name="blocked_keywords_channel_names_summary">Apply blocked keywords to uploader and channel names as well as content titles</string>
     <string name="manage_blocked_channels_title">Blocked channels</string>
     <string name="manage_blocked_videos_title">Blocked videos</string>
     <string name="clear_blocked_content_title">Clear all blocking rules</string>

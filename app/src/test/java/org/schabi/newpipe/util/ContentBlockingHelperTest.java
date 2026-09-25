@@ -75,6 +75,25 @@ class ContentBlockingHelperTest {
     }
 
     @Test
+    void channelNameKeywordMatchingIsOptIn() {
+        final ContentBlockingHelper.Rules rules = ContentBlockingHelper.Rules.create(
+                true, Set.of(), Set.of(), "drama", true, Set.of());
+
+        assertTrue(rules.isBlocked(stream(
+                "video-1", "Allowed title", "Chinese Drama Channel", null)));
+
+        final PlaylistInfoItem playlist =
+                new PlaylistInfoItem(0, "playlist-1", "Allowed list");
+        playlist.setUploaderName("Drama Network");
+        assertTrue(rules.isBlocked(playlist));
+
+        final PostInfoItem post = new PostInfoItem(0, "post-1", "Allowed post");
+        post.setUploaderName("Drama Network");
+        post.setContent("Allowed content");
+        assertTrue(rules.isBlocked(post));
+    }
+
+    @Test
     void uploaderNamesDoNotTriggerPlaylistOrPostKeywordRules() {
         final ContentBlockingHelper.Rules rules = ContentBlockingHelper.Rules.create(
                 true, Set.of(), Set.of(), "ki");
@@ -129,6 +148,9 @@ class ContentBlockingHelperTest {
         assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
                 ContentBlockingHelper.Target.COMMENTS,
                 ContentBlockingHelper.RuleChange.VIDEOS));
+        assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
+                ContentBlockingHelper.Target.COMMENTS,
+                ContentBlockingHelper.RuleChange.KEYWORD_CHANNEL_NAMES));
         assertFalse(ContentBlockingHelper.shouldReloadForRuleChange(
                 ContentBlockingHelper.Target.COMMENTS,
                 ContentBlockingHelper.RuleChange.MEMBERS_ONLY));
