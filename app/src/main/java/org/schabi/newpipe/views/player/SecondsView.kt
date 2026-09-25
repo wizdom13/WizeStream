@@ -28,11 +28,18 @@ class SecondsView(context: Context, attrs: AttributeSet?) : LinearLayout(context
 
     var seconds: Int = 0
         set(value) {
-            binding.tvSeconds.text = context.resources.getQuantityString(
-                R.plurals.seconds,
-                value,
-                value
-            )
+            // Fast-seek resets this counter to zero before the first real seek increment.
+            // Some Android resource configurations cannot resolve R.plurals.seconds for zero,
+            // so keep the internal reset out of plural formatting entirely.
+            binding.tvSeconds.text = if (value > 0) {
+                context.resources.getQuantityString(
+                    R.plurals.seconds,
+                    value,
+                    value
+                )
+            } else {
+                ""
+            }
             field = value
         }
 
