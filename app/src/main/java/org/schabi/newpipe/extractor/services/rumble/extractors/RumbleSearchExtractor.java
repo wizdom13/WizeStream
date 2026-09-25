@@ -1,6 +1,5 @@
 package org.schabi.newpipe.extractor.services.rumble.extractors;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -128,7 +127,7 @@ public class RumbleSearchExtractor extends SearchExtractor {
             return null;
         }
 
-        doc = Jsoup.parse(getDownloader().get(page.getUrl()).responseBody());
+        doc = RumbleParsingHelper.fetchParseValidate(getDownloader(), page.getUrl());
         return extractAndGetInfoItemsFromPage();
     }
 }
