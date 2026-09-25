@@ -87,15 +87,24 @@ public final class FullscreenOrientationPolicy {
         return fullscreen
                 && previousContentOrientation != contentOrientation
                 && (contentOrientation == VideoContentOrientation.PORTRAIT
-                || contentOrientation == VideoContentOrientation.LANDSCAPE);
+                || contentOrientation == VideoContentOrientation.LANDSCAPE
+                || contentOrientation == VideoContentOrientation.SQUARE);
     }
 
     public static int targetConfigurationOrientation(
             final boolean fullscreen,
             final VideoContentOrientation contentOrientation) {
-        return fullscreen && contentOrientation == VideoContentOrientation.LANDSCAPE
-                ? Configuration.ORIENTATION_LANDSCAPE
-                : Configuration.ORIENTATION_PORTRAIT;
+        if (!fullscreen) {
+            return Configuration.ORIENTATION_PORTRAIT;
+        }
+        if (contentOrientation == VideoContentOrientation.PORTRAIT
+                || contentOrientation == VideoContentOrientation.SQUARE) {
+            return Configuration.ORIENTATION_PORTRAIT;
+        }
+        // Before Media3 reports a valid size, preserve the traditional fullscreen-button
+        // behavior and request landscape. Once the content orientation becomes known,
+        // shouldAlignFullscreenToKnownContent() corrects portrait and square streams.
+        return Configuration.ORIENTATION_LANDSCAPE;
     }
 
     public static boolean isTargetOrientation(final int currentOrientation,
