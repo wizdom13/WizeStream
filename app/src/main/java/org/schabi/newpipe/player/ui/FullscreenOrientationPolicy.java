@@ -61,6 +61,12 @@ public final class FullscreenOrientationPolicy {
             final VideoContentOrientation contentOrientation,
             final boolean landscape,
             final boolean targetFullscreen) {
+        // A manual fullscreen exit while the device is physically in landscape must always
+        // request portrait. Content orientation can temporarily be UNKNOWN during renderer
+        // changes, so relying on it here can leave the activity stuck in landscape.
+        if (landscape && !targetFullscreen) {
+            return true;
+        }
         if (contentOrientation == VideoContentOrientation.LANDSCAPE) {
             return true;
         }
