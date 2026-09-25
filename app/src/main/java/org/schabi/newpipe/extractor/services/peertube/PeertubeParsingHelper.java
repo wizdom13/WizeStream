@@ -27,7 +27,13 @@ public final class PeertubeParsingHelper {
     }
 
     public static void validate(final JsonObject json) throws ContentNotAvailableException {
-        final String error = json.getString("error");
+        String error = json.getString("error");
+        if (Utils.isBlank(error)) {
+            error = json.getString("message");
+        }
+        if (Utils.isBlank(error)) {
+            error = json.getString("detail");
+        }
         if (!Utils.isBlank(error)) {
             throw new ContentNotAvailableException(error);
         }
