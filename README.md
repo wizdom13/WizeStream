@@ -21,14 +21,17 @@
 <hr>
 
 <div align="center">
-  <h3>🧪 Help test WizeFiles Beta</h3>
+  <h3>📁 WizeFiles — free and open source</h3>
   <p>
-    We’re looking for testers for <strong>WizeFiles</strong>, a new Android file manager
-    from the developer of WizeStream.
+    <strong>WizeFiles</strong> is an open-source Android file manager from the developer of
+    WizeStream, licensed under GNU GPL-3.0-only with no Free/Pro feature split or paid tier.
   </p>
   <p>
-    <a href="https://github.com/wizdom13/WizeFiles-Beta">
-      <strong>View the beta, download it, and share your feedback →</strong>
+    Its source code is maintained in the <strong>WizeFiles-Pro</strong> repository.
+  </p>
+  <p>
+    <a href="https://github.com/wizdom13/WizeFiles-Pro">
+      <strong>View WizeFiles on GitHub →</strong>
     </a>
   </p>
 </div>
