@@ -1,7 +1,6 @@
 package org.schabi.newpipe.local.subscription
 
 import android.content.Context
-import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.LayoutInflater
@@ -23,9 +22,12 @@ import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.Section
 import com.xwray.groupie.viewbinding.GroupieViewHolder
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity.Companion.GROUP_ALL_ID
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.databinding.DialogTitleBinding
 import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.databinding.FragmentSubscriptionBinding
@@ -53,12 +55,15 @@ import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
 import org.schabi.newpipe.local.subscription.item.SearchNoResultsPlaceholderItem
+import org.schabi.newpipe.profiles.ProfileManager
+import org.schabi.newpipe.profiles.ProfileRecord
 import org.schabi.newpipe.util.GridLayoutManagerHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.external_communication.ShareUtils
 import org.schabi.newpipe.util.image.ExtractorImageCompat
+import org.schabi.newpipe.util.image.ImageStrategy
 
 class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualSearchable {
     private var _binding: FragmentSubscriptionBinding? = null
@@ -363,25 +368,26 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     }
 
     private fun showLongTapDialog(selectedItem: ChannelInfoItem) {
-        val commands = arrayOf(
-            getString(R.string.share),
-            getString(R.string.open_in_browser),
-            getString(R.string.unsubscribe)
-        )
-
-        val actions = DialogInterface.OnClickListener { _, i ->
-            when (i) {
-                0 -> ShareUtils.shareText(
+        val commands = mutableListOf<Pair<String, () -> Unit>>(
+            getString(R.string.share) to {
+                ShareUtils.shareText(
                     requireContext(),
                     selectedItem.name,
                     selectedItem.url,
                     ExtractorImageCompat.thumbnailImages(selectedItem)
                 )
-
-                1 -> ShareUtils.openUrlInBrowser(requireContext(), selectedItem.url)
-
-                2 -> deleteChannel(selectedItem)
+            },
+            getString(R.string.open_in_browser) to {
+                ShareUtils.openUrlInBrowser(requireContext(), selectedItem.url)
             }
+        )
+        if (ProfileManager.getProfiles(requireContext()).size > 1) {
+            commands += getString(R.string.channel_subscribe_to_profile) to {
+                showSubscribeToProfileDialog(selectedItem)
+            }
+        }
+        commands += getString(R.string.unsubscribe) to {
+            deleteChannel(selectedItem)
         }
 
         val dialogTitleBinding = DialogTitleBinding.inflate(LayoutInflater.from(requireContext()))
@@ -391,8 +397,73 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
         AlertDialog.Builder(requireContext())
             .setCustomTitle(dialogTitleBinding.root)
-            .setItems(commands, actions)
+            .setItems(commands.map { it.first }.toTypedArray()) { _, which ->
+                commands[which].second.invoke()
+            }
             .show()
+    }
+
+    private fun showSubscribeToProfileDialog(selectedItem: ChannelInfoItem) {
+        val activeProfileId = ProfileManager.getActiveProfileId(requireContext())
+        val otherProfiles = ProfileManager.getProfiles(requireContext())
+            .filter { it.id != activeProfileId }
+        if (otherProfiles.isEmpty()) {
+            return
+        }
+
+        val labels = otherProfiles
+            .map { ProfileManager.getDisplayName(requireContext(), it) }
+            .toTypedArray()
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.channel_subscribe_to_profile_title)
+            .setItems(labels) { _, which ->
+                subscribeToProfile(selectedItem, otherProfiles[which])
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun subscribeToProfile(selectedItem: ChannelInfoItem, profile: ProfileRecord) {
+        val appContext = requireContext().applicationContext
+        val displayName = ProfileManager.getDisplayName(requireContext(), profile)
+        val entity = SubscriptionEntity(
+            serviceId = selectedItem.serviceId,
+            url = selectedItem.url,
+            name = selectedItem.name,
+            avatarUrl = ImageStrategy.imageListToDbUrl(
+                ExtractorImageCompat.thumbnailImages(selectedItem)
+            ),
+            subscriberCount = selectedItem.subscriberCount.takeIf { it >= 0 },
+            description = selectedItem.description
+        )
+
+        disposables.add(
+            Single.fromCallable {
+                SubscriptionManager(appContext, profile.id)
+                    .insertSubscriptionAndReturn(entity)
+            }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    {
+                        Toast.makeText(
+                            requireContext(),
+                            getString(R.string.channel_subscribed_to_profile, displayName),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    },
+                    { error ->
+                        showSnackBarError(
+                            ErrorInfo(
+                                error,
+                                UserAction.SUBSCRIPTION_CHANGE,
+                                "Subscribing ${selectedItem.url} to profile $displayName",
+                                selectedItem
+                            )
+                        )
+                    }
+                )
+        )
     }
 
     private fun deleteChannel(selectedItem: ChannelInfoItem) {
