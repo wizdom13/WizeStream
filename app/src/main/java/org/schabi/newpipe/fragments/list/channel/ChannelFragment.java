@@ -6,6 +6,7 @@ import static org.schabi.newpipe.ktx.ViewUtils.animateBackgroundColor;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -28,6 +29,7 @@ import androidx.preference.PreferenceManager;
 import androidx.viewpager.widget.ViewPager;
 
 import com.evernote.android.state.State;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
@@ -57,6 +59,7 @@ import org.schabi.newpipe.profiles.ProfileRecord;
 import org.schabi.newpipe.settings.notifications.NotificationConfigDialog;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
+import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ExpandableSearchViewHelper;
@@ -271,12 +274,54 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
             // do not waste space for the banner if it is not going to be loaded
             binding.channelBannerContainer.setVisibility(View.GONE);
         }
+        applyLandscapeHeaderPolicy();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull final Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        applyLandscapeHeaderPolicy();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         updateSwipeState();
+    }
+
+    static boolean shouldUseCompactLandscapeHeader(final int orientation,
+                                                   final boolean largeScreenDevice) {
+        return orientation == Configuration.ORIENTATION_LANDSCAPE && !largeScreenDevice;
+    }
+
+    private void applyLandscapeHeaderPolicy() {
+        if (binding == null || activity == null) {
+            return;
+        }
+
+        final boolean largeScreenDevice = DeviceUtils.isTablet(activity)
+                || DeviceUtils.isTv(activity)
+                || DeviceUtils.isDesktopMode(activity);
+        final boolean compactLandscape = shouldUseCompactLandscapeHeader(
+                getResources().getConfiguration().orientation,
+                largeScreenDevice);
+
+        final ViewGroup.LayoutParams rawLayoutParams = binding.channelMetadataRow.getLayoutParams();
+        if (rawLayoutParams instanceof AppBarLayout.LayoutParams) {
+            final AppBarLayout.LayoutParams layoutParams =
+                    (AppBarLayout.LayoutParams) rawLayoutParams;
+            layoutParams.setScrollFlags(compactLandscape
+                    ? AppBarLayout.LayoutParams.SCROLL_FLAG_SCROLL : 0);
+            binding.channelMetadataRow.setLayoutParams(layoutParams);
+        }
+
+        if (compactLandscape) {
+            binding.channelBannerContainer.setVisibility(View.GONE);
+        } else if (currentInfo != null
+                && ImageStrategy.shouldLoadImages()
+                && !currentInfo.getBanners().isEmpty()) {
+            binding.channelBannerContainer.setVisibility(View.VISIBLE);
+        }
     }
 
     private void updateSwipeState() {
@@ -1008,6 +1053,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
             binding.channelBannerImage.setVisibility(View.GONE);
             binding.channelBannerContainer.setVisibility(View.GONE);
         }
+        applyLandscapeHeaderPolicy();
 
         CoilHelper.INSTANCE.loadAvatar(binding.channelAvatarView, result.getAvatars());
         CoilHelper.INSTANCE.loadAvatar(binding.subChannelAvatarView,
