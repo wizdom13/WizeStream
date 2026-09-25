@@ -25,6 +25,18 @@ public class FullscreenOrientationPolicyTest {
     }
 
     @Test
+    public void unknownFullscreenEntryFallsBackToLandscapeUntilMetadataArrives() {
+        assertEquals(Configuration.ORIENTATION_LANDSCAPE,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, UNKNOWN));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, PORTRAIT));
+        assertEquals(Configuration.ORIENTATION_PORTRAIT,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, SQUARE));
+        assertEquals(Configuration.ORIENTATION_LANDSCAPE,
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, LANDSCAPE));
+    }
+
+    @Test
     public void pendingExitOverridesPortraitVideoPreservation() {
         assertEquals(FullscreenOrientationPolicy.EXIT_FULLSCREEN,
                 FullscreenOrientationPolicy.resolveFullscreenState(
@@ -134,12 +146,12 @@ public class FullscreenOrientationPolicyTest {
                 true, UNKNOWN, PORTRAIT));
         assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
                 true, UNKNOWN, LANDSCAPE));
+        assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, UNKNOWN, SQUARE));
         assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
                 false, UNKNOWN, PORTRAIT));
         assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
                 true, PORTRAIT, PORTRAIT));
-        assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
-                true, UNKNOWN, SQUARE));
     }
 
     @Test
