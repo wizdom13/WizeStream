@@ -82,6 +82,14 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/blocked_keywords_channel_names_key"
+        android:summary="@string/blocked_keywords_channel_names_summary"
+        android:title="@string/blocked_keywords_channel_names_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <Preference
         android:key="@string/manage_blocked_channels_key"
         android:title="@string/manage_blocked_channels_title"
