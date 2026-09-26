@@ -194,7 +194,7 @@ object ProfileManager {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
         val profile = readProfile(prefs, profileId) ?: return 0L
-        prefs.getLong(profileKey(profileId, UPDATED_AT_SUFFIX), profile.createdAt)
+        readLongCompat(prefs, profileKey(profileId, UPDATED_AT_SUFFIX), profile.createdAt)
     }
 
     @JvmStatic
@@ -242,7 +242,8 @@ object ProfileManager {
         val current = readProfile(prefs, profileId)
 
         if (current != null) {
-            val currentUpdatedAt = prefs.getLong(
+            val currentUpdatedAt = readLongCompat(
+                prefs,
                 profileKey(profileId, UPDATED_AT_SUFFIX),
                 current.createdAt
             )
@@ -316,7 +317,7 @@ object ProfileManager {
             if (!prefs.contains(profileKey(profileId, UPDATED_AT_SUFFIX))) {
                 editor.putLong(
                     profileKey(profileId, UPDATED_AT_SUFFIX),
-                    prefs.getLong(profileKey(profileId, CREATED_AT_SUFFIX), 0L)
+                    readLongCompat(prefs, profileKey(profileId, CREATED_AT_SUFFIX), 0L)
                 )
                 changed = true
             }
@@ -394,8 +395,30 @@ object ProfileManager {
             iconKey = ProfileIcon.fromKey(
                 prefs.getString(profileKey(profileId, ICON_SUFFIX), null)
             ).key,
-            createdAt = prefs.getLong(profileKey(profileId, CREATED_AT_SUFFIX), 0L)
+            createdAt = readLongCompat(
+                prefs,
+                profileKey(profileId, CREATED_AT_SUFFIX),
+                0L
+            )
         )
+    }
+
+    private fun readLongCompat(
+        prefs: SharedPreferences,
+        key: String,
+        defaultValue: Long
+    ): Long {
+        val storedValue = prefs.all[key] ?: return defaultValue
+        val normalizedValue = when (storedValue) {
+            is Number -> storedValue.toLong()
+            is String -> storedValue.toLongOrNull()
+            else -> null
+        } ?: return defaultValue
+
+        if (storedValue !is Long) {
+            prefs.edit().putLong(key, normalizedValue).apply()
+        }
+        return normalizedValue
     }
 
     private fun defaultProfile(): ProfileRecord {
