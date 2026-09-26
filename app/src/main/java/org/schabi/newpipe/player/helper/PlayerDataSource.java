@@ -118,6 +118,7 @@ public class PlayerDataSource {
 
         // set the maximum size to manifest creators
         YoutubeProgressiveDashManifestCreator.getCache().setMaximumSize(MAX_MANIFEST_CACHE_SIZE);
+        YoutubeAdaptiveDashManifestCreator.getCache().setMaximumSize(MAX_MANIFEST_CACHE_SIZE);
         YoutubeOtfDashManifestCreator.getCache().setMaximumSize(MAX_MANIFEST_CACHE_SIZE);
         YoutubePostLiveStreamDvrDashManifestCreator.getCache().setMaximumSize(
                 MAX_MANIFEST_CACHE_SIZE);
