@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
+import org.schabi.newpipe.extractor.services.niconico.linkHandler.NiconicoTrendLinkHandlerFactory;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -92,5 +93,20 @@ public class NiconicoParsingTest {
         assertTrue(parsed.isEmpty());
         assertFalse(parsed.containsKey("audio"));
         assertFalse(parsed.containsKey("video"));
+    }
+
+    @Test
+    public void liveDiscoveryKiosksMapToCurrentNiconicoEndpoints() throws Exception {
+        final NiconicoTrendLinkHandlerFactory factory = new NiconicoTrendLinkHandlerFactory();
+
+        assertEquals("Recommended Lives",
+                factory.getId(NiconicoService.RECOMMEND_LIVES_URL));
+        assertEquals("Top Lives",
+                factory.getId(NiconicoService.TOP_LIVES_URL));
+        assertEquals(NiconicoService.RECOMMEND_LIVES_URL,
+                factory.getUrl("Recommended Lives", List.of(), List.of()));
+        assertEquals(NiconicoService.TOP_LIVES_URL,
+                factory.getUrl("Top Lives", List.of(), List.of()));
+        assertTrue(NiconicoService.RECOMMEND_LIVES_URL.contains("/api/v2/"));
     }
 }
