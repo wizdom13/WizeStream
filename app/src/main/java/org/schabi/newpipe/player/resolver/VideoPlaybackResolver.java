@@ -288,6 +288,9 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         }
     }
 
+    /**
+     * Clear any codec-family exclusion retained for decoder recovery.
+     */
     public synchronized void clearRejectedVideoCodecFamily() {
         rejectedVideoCodecFamily = null;
     }
