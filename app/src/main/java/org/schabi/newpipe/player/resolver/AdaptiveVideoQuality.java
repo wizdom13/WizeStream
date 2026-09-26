@@ -3,6 +3,7 @@ package org.schabi.newpipe.player.resolver;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.schabi.newpipe.extractor.stream.DeliveryMethod;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -22,9 +23,15 @@ final class AdaptiveVideoQuality {
     @NonNull
     static List<VideoStream> youtubeCandidates(@NonNull final Context context,
                                                @NonNull final List<VideoStream> streams) {
+        return youtubeCandidates(streams, ListHelper.getResolutionLimitForPlayback(context));
+    }
+
+    @NonNull
+    static List<VideoStream> youtubeCandidates(@NonNull final List<VideoStream> streams,
+                                               @Nullable final String resolutionLimit) {
         final Map<String, LinkedHashMap<String, VideoStream>> groups = new LinkedHashMap<>();
         for (final VideoStream stream : streams) {
-            if (!isEligible(context, stream)) {
+            if (!isEligible(stream, resolutionLimit)) {
                 continue;
             }
             final String codecFamily = codecFamily(stream.getCodec());
@@ -50,8 +57,8 @@ final class AdaptiveVideoQuality {
         return fallback;
     }
 
-    private static boolean isEligible(@NonNull final Context context,
-                                      @NonNull final VideoStream stream) {
+    private static boolean isEligible(@NonNull final VideoStream stream,
+                                      @Nullable final String resolutionLimit) {
         return stream.isVideoOnly()
                 && stream.isUrl()
                 && stream.getItagItem() != null
@@ -64,7 +71,7 @@ final class AdaptiveVideoQuality {
                 && stream.getInitEnd() >= 0
                 && stream.getIndexStart() >= 0
                 && stream.getIndexEnd() >= 0
-                && ListHelper.isVideoStreamWithinResolutionLimit(context, stream);
+                && ListHelper.isVideoStreamWithinResolutionLimit(stream, resolutionLimit);
     }
 
     @NonNull
