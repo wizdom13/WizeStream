@@ -21,6 +21,7 @@
 
     <org.schabi.newpipe.views.NewPipeTextView
         android:id="@+id/metadata_content_view"
+        android:foreground="@drawable/tv_focus_ring"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"

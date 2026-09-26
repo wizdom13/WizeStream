@@ -11,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:baselineAligned="false"
-        android:focusableInTouchMode="true"
         android:orientation="horizontal"
         tools:ignore="RtlHardcoded">
 
@@ -172,6 +171,7 @@
                     <!-- TITLE -->
                     <FrameLayout
                         android:id="@+id/detail_title_root_layout"
+                        android:foreground="@drawable/tv_focus_ring"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
@@ -253,6 +253,7 @@
                             <!--UPLOADER-->
                             <LinearLayout
                                 android:id="@+id/detail_uploader_root_layout"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:layout_toStartOf="@id/details_panel"
@@ -425,6 +426,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_playlist_append"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -441,6 +443,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_background"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -457,6 +460,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_popup"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -473,6 +477,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_download"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -504,6 +509,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_share"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -520,6 +526,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_open_in_browser"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -536,6 +543,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_cast"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -552,6 +560,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_play_with_kodi"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"
@@ -568,6 +577,7 @@
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_controls_crash_the_player"
+                                android:foreground="@drawable/tv_focus_ring"
                                 android:layout_width="@dimen/detail_control_width"
                                 android:layout_height="@dimen/detail_control_height"
                                 android:layout_gravity="center_vertical"

@@ -5,8 +5,7 @@
     android:id="@+id/video_item_detail"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/windowBackground"
-    android:focusableInTouchMode="true">
+    android:background="?attr/windowBackground">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/detail_main_content"
@@ -159,6 +158,7 @@
                 <!-- TITLE -->
                 <RelativeLayout
                     android:id="@+id/detail_title_root_layout"
+                    android:foreground="@drawable/tv_focus_ring"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -245,6 +245,7 @@
                         <!--UPLOADER-->
                         <LinearLayout
                             android:id="@+id/detail_uploader_root_layout"
+                            android:foreground="@drawable/tv_focus_ring"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_toStartOf="@id/details_panel"
@@ -420,6 +421,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_playlist_append"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -437,6 +439,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_background"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -454,6 +457,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_popup"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -471,6 +475,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_download"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -501,6 +506,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_share"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -518,6 +524,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_open_in_browser"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -535,6 +542,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_cast"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -552,6 +560,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_play_with_kodi"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
@@ -569,6 +578,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_crash_the_player"
+                            android:foreground="@drawable/tv_focus_ring"
                             style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
