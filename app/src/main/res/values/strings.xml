@@ -391,6 +391,19 @@
     <string name="device_sync_category_blocked_content">Blocked content</string>
     <string name="device_sync_category_settings">Allowlisted settings</string>
     <string name="device_sync_category_completed_downloads">Completed download metadata</string>
+    <string name="device_sync_categories_title">Sync categories</string>
+    <string name="device_sync_profiles_required_summary">Required so synchronized data stays assigned to the correct profile.</string>
+    <string name="device_sync_watch_history_summary">Synchronizes only when watch history is enabled in History settings.</string>
+    <string name="device_sync_subscriptions_key" translatable="false">device_sync_subscriptions</string>
+    <string name="device_sync_playlists_key" translatable="false">device_sync_playlists</string>
+    <string name="device_sync_watch_history_key" translatable="false">device_sync_watch_history</string>
+    <string name="device_sync_feed_groups_key" translatable="false">device_sync_feed_groups</string>
+    <string name="device_sync_home_tabs_key" translatable="false">device_sync_home_tabs</string>
+    <string name="device_sync_channel_profiles_key" translatable="false">device_sync_channel_profiles</string>
+    <string name="device_sync_filters_key" translatable="false">device_sync_filters</string>
+    <string name="device_sync_content_blocking_key" translatable="false">device_sync_content_blocking</string>
+    <string name="device_sync_settings_key" translatable="false">device_sync_settings</string>
+    <string name="device_sync_completed_downloads_key" translatable="false">device_sync_completed_downloads</string>
     <string name="device_sync_search_history_title">Synchronize search history</string>
     <string name="device_sync_search_history_summary">Private by default. Enable to exchange search history with trusted devices; the other device must also enable it.</string>
     <string name="device_sync_sync_failed">Synchronization failed</string>
