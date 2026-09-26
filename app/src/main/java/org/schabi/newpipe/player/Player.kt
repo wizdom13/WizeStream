@@ -168,10 +168,8 @@ class Player(
 
     private var activeTrackSelector: DefaultTrackSelector? = null
     private var activeLoadController: LoadController? = null
-    private val dataSource = PlayerDataSource(
-        appContext,
-        DefaultBandwidthMeter.Builder(appContext).build()
-    )
+    private val bandwidthMeter = DefaultBandwidthMeter.Builder(appContext).build()
+    private val dataSource = PlayerDataSource(appContext, bandwidthMeter)
     private val playerVisualizerAudioProcessor = VisualizerAudioProcessor()
     private val renderFactory: DefaultRenderersFactory = CustomRenderersFactory(
         appContext,
@@ -343,6 +341,8 @@ class Player(
     }
 
     fun getTrackSelectorForLifecycle(): DefaultTrackSelector? = activeTrackSelector
+
+    fun getBandwidthMeterForLifecycle(): DefaultBandwidthMeter = bandwidthMeter
 
     fun clearTrackSelectorForLifecycle(trackSelector: DefaultTrackSelector) {
         if (activeTrackSelector === trackSelector) {
