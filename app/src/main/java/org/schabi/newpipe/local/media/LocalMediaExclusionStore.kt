@@ -63,14 +63,11 @@ class LocalMediaExclusionStore(context: Context) {
             .apply()
     }
 
-    private fun ignoredItems(): Set<String> =
-        preferences.getStringSet(IGNORED_ITEMS_KEY, emptySet()).orEmpty()
+    private fun ignoredItems(): Set<String> = preferences.getStringSet(IGNORED_ITEMS_KEY, emptySet()).orEmpty()
 
-    private fun ignoredMediaFolders(): Set<String> =
-        preferences.getStringSet(IGNORED_MEDIA_FOLDERS_KEY, emptySet()).orEmpty()
+    private fun ignoredMediaFolders(): Set<String> = preferences.getStringSet(IGNORED_MEDIA_FOLDERS_KEY, emptySet()).orEmpty()
 
-    private fun ignoredDocumentFolders(): Set<String> =
-        preferences.getStringSet(IGNORED_DOCUMENT_FOLDERS_KEY, emptySet()).orEmpty()
+    private fun ignoredDocumentFolders(): Set<String> = preferences.getStringSet(IGNORED_DOCUMENT_FOLDERS_KEY, emptySet()).orEmpty()
 
     private fun updateSet(key: String, mutate: (MutableSet<String>) -> Unit) {
         val updated = preferences.getStringSet(key, emptySet()).orEmpty().toMutableSet()
