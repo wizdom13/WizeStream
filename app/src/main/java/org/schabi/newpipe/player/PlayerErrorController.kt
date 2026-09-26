@@ -110,6 +110,7 @@ internal class PlayerErrorController(
         cancelPendingMediaUrlRecovery()
         recoveryGuard.reset()
         decoderRecoveryGuard.reset()
+        videoResolver.clearRejectedVideoCodecFamily()
     }
 
     private fun tryRecoverFromYouTubeAv1DecoderFailure(error: PlaybackException): Boolean {
@@ -149,7 +150,7 @@ internal class PlayerErrorController(
         player.setRecovery()
         player.onBuffering()
         cancelPendingMediaUrlRecovery()
-        videoResolver.rejectVideoCodecFamilyOnce(item.url, stream.codec)
+        videoResolver.rejectVideoCodecFamilyForStream(item.url, stream.codec)
         PlayerDataSource.invalidateYoutubeManifestCaches()
         player.reloadPlayQueueManager()
         return true
