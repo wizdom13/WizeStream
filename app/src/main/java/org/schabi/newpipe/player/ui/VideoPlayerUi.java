@@ -129,6 +129,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     //////////////////////////////////////////////////////////////////////////*/
 
     private static final int POPUP_MENU_ID_QUALITY = 69;
+    private static final int AUTO_QUALITY_MENU_ITEM_ID = -1;
     private static final int POPUP_MENU_ID_AUDIO_TRACK = 70;
     private static final int POPUP_MENU_ID_PLAYBACK_SPEED = 79;
     private static final int POPUP_MENU_ID_CAPTION = 89;
@@ -1250,6 +1251,11 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             return;
         }
 
+        qualityPopupMenu.getMenu().add(
+                POPUP_MENU_ID_QUALITY,
+                AUTO_QUALITY_MENU_ITEM_ID,
+                Menu.NONE,
+                R.string.auto);
         for (int i = 0; i < availableStreams.size(); i++) {
             final VideoStream videoStream = availableStreams.get(i);
             qualityPopupMenu.getMenu().add(POPUP_MENU_ID_QUALITY, i, Menu.NONE, MediaFormat
@@ -1257,9 +1263,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
         qualityPopupMenu.setOnMenuItemClickListener(this);
         qualityPopupMenu.setOnDismissListener(this);
-
-        player.getSelectedVideoStream()
-                .ifPresent(s -> binding.qualityTextView.setText(s.getResolution()));
+        updateQualityLabel(null);
     }
 
     private void buildAudioTrackMenu() {
@@ -1367,10 +1371,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private void onQualityClicked() {
         qualityPopupMenu.show();
         isSomePopupMenuVisible = true;
-
-        player.getSelectedVideoStream()
-                .map(s -> MediaFormat.getNameById(s.getFormatId()) + " " + s.getResolution())
-                .ifPresent(binding.qualityTextView::setText);
+        updateQualityLabel(null);
     }
 
     private void onAudioTracksClicked() {
@@ -1407,6 +1408,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void onQualityItemClick(@NonNull final MenuItem menuItem) {
+        if (menuItem.getItemId() == AUTO_QUALITY_MENU_ITEM_ID) {
+            if (!player.isAutoQualitySelected()) {
+                player.setPlaybackQuality(context.getString(R.string.auto_resolution_key));
+            }
+            binding.qualityTextView.setText(R.string.auto);
+            return;
+        }
+
         final int menuItemIndex = menuItem.getItemId();
         @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
         if (currentMetadata == null || currentMetadata.getMaybeQuality().isEmpty()) {
@@ -1416,13 +1425,15 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         final MediaItemTag.Quality quality = currentMetadata.getMaybeQuality().get();
         final List<VideoStream> availableStreams = quality.getSortedVideoStreams();
         final int selectedStreamIndex = quality.getSelectedVideoStreamIndex();
-        if (selectedStreamIndex == menuItemIndex || availableStreams.size() <= menuItemIndex) {
+        if (!quality.isAdaptive() && selectedStreamIndex == menuItemIndex) {
+            return;
+        }
+        if (menuItemIndex < 0 || availableStreams.size() <= menuItemIndex) {
             return;
         }
 
         final String newResolution = availableStreams.get(menuItemIndex).getResolution();
         player.setPlaybackQuality(newResolution);
-
         binding.qualityTextView.setText(menuItem.getTitle());
     }
 
@@ -1456,8 +1467,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             Log.d(TAG, "onDismiss() called with: menu = [" + menu + "]");
         }
         isSomePopupMenuVisible = false; //TODO check if this works
-        player.getSelectedVideoStream()
-                .ifPresent(s -> binding.qualityTextView.setText(s.getResolution()));
+        updateQualityLabel(null);
 
         if (player.isPlaying()) {
             hideControls(DEFAULT_CONTROLS_DURATION, 0);
@@ -1479,6 +1489,54 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     //endregion
 
 
+    private void updateQualityLabel(@Nullable final Tracks currentTracks) {
+        if (!player.isAutoQualitySelected()) {
+            player.getSelectedVideoStream()
+                    .ifPresent(stream -> binding.qualityTextView.setText(stream.getResolution()));
+            return;
+        }
+
+        final String currentResolution = currentTracks == null
+                ? player.getSelectedVideoStream()
+                        .map(VideoStream::getResolution)
+                        .orElse(null)
+                : selectedAdaptiveResolution(currentTracks);
+        binding.qualityTextView.setText(currentResolution == null
+                ? context.getString(R.string.auto)
+                : context.getString(R.string.auto) + " · " + currentResolution);
+    }
+
+    @Nullable
+    private String selectedAdaptiveResolution(@NonNull final Tracks currentTracks) {
+        @Nullable final MediaItemTag metadata = player.getCurrentMetadata();
+        if (metadata == null || metadata.getMaybeQuality().isEmpty()) {
+            return null;
+        }
+
+        final List<VideoStream> streams =
+                metadata.getMaybeQuality().get().getSortedVideoStreams();
+        for (final Tracks.Group group : currentTracks.getGroups()) {
+            if (group.getType() != C.TRACK_TYPE_VIDEO || !group.isSelected()) {
+                continue;
+            }
+            for (int index = 0; index < group.length; index++) {
+                if (!group.isTrackSelected(index)) {
+                    continue;
+                }
+                final String formatId = group.getMediaTrackGroup().getFormat(index).id;
+                if (formatId == null) {
+                    continue;
+                }
+                for (final VideoStream stream : streams) {
+                    if (formatId.equals(Integer.toString(stream.getItag()))) {
+                        return stream.getResolution();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
     // Captions (text tracks)
     //////////////////////////////////////////////////////////////////////////*/
@@ -1487,6 +1545,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onTextTracksChanged(@NonNull final Tracks currentTracks) {
         super.onTextTracksChanged(currentTracks);
+        updateQualityLabel(currentTracks);
 
         final boolean trackTypeTextSupported = !currentTracks.containsType(C.TRACK_TYPE_TEXT)
                 || currentTracks.isTypeSupported(C.TRACK_TYPE_TEXT, false);
