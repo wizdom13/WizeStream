@@ -68,6 +68,7 @@ private val folderArtworkMimeTypes = setOf(
 )
 
 class LocalMediaDocumentBrowser(private val context: Context) {
+    private val exclusionStore = LocalMediaExclusionStore(context)
     fun roots(rootUris: Set<String>): List<LocalMediaDocumentEntry> = rootUris.map { rootUri ->
         val document = runCatching {
             DocumentFile.fromTreeUri(context, Uri.parse(rootUri))
@@ -95,6 +96,7 @@ class LocalMediaDocumentBrowser(private val context: Context) {
         return children
             .filter { it.isDirectory || isSupportedMedia(it.name.orEmpty(), it.type) }
             .map { document -> document.toEntry(location, folderArtworkUri) }
+            .filterNot(exclusionStore::isDocumentEntryExcluded)
             .sortedWith(entryComparator)
     }
 
@@ -116,11 +118,26 @@ class LocalMediaDocumentBrowser(private val context: Context) {
             )
             children.forEach { document ->
                 if (result.size >= maximumItems) return@forEach
+                val displayName = document.name.orEmpty().ifBlank {
+                    document.uri.lastPathSegment.orEmpty()
+                }
+                val childLocation = locationForDocument(
+                    location,
+                    directory,
+                    document,
+                    displayName
+                )
                 when {
-                    document.isDirectory -> pending.add(document to document.name.orEmpty())
+                    document.isDirectory &&
+                        !exclusionStore.isDocumentLocationExcluded(childLocation) -> {
+                        pending.add(document to document.name.orEmpty())
+                    }
 
                     isSupportedMedia(document.name.orEmpty(), document.type) -> {
-                        result += document.toMediaItem(folder, folderArtworkUri)
+                        val item = document.toMediaItem(folder, folderArtworkUri)
+                        if (!exclusionStore.isExcluded(item)) {
+                            result += item
+                        }
                     }
                 }
             }
@@ -150,6 +167,20 @@ class LocalMediaDocumentBrowser(private val context: Context) {
     }
 
     fun isAvailable(location: LocalMediaDocumentLocation): Boolean = resolve(location) != null
+
+    private fun locationForDocument(
+        base: LocalMediaDocumentLocation,
+        directory: DocumentFile,
+        document: DocumentFile,
+        displayName: String
+    ): LocalMediaDocumentLocation {
+        val current = resolve(base)
+        return if (current?.uri == directory.uri) {
+            base.copy(path = base.path + displayName)
+        } else {
+            base
+        }
+    }
 
     private fun resolve(location: LocalMediaDocumentLocation): DocumentFile? {
         var document = runCatching {
