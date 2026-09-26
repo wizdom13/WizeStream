@@ -1425,7 +1425,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         final MediaItemTag.Quality quality = currentMetadata.getMaybeQuality().get();
         final List<VideoStream> availableStreams = quality.getSortedVideoStreams();
         final int selectedStreamIndex = quality.getSelectedVideoStreamIndex();
-        if (!quality.isAdaptive() && selectedStreamIndex == menuItemIndex) {
+        if (!player.isAutoQualitySelected()
+                && !quality.isAdaptive()
+                && selectedStreamIndex == menuItemIndex) {
             return;
         }
         if (menuItemIndex < 0 || availableStreams.size() <= menuItemIndex) {
