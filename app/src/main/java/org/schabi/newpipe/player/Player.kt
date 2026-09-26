@@ -281,8 +281,9 @@ class Player(
             return selected == appContext.getString(R.string.auto_resolution_key)
         }
 
-        override fun isAutoQuality(playbackQuality: String): Boolean =
-            playbackQuality == appContext.getString(R.string.auto_resolution_key)
+        override fun isAutoQuality(playbackQuality: String): Boolean {
+            return playbackQuality == appContext.getString(R.string.auto_resolution_key)
+        }
     }
 
     fun handleIntent(intent: Intent) = intentController.handle(intent)
