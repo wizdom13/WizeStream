@@ -534,13 +534,19 @@ class DeviceSyncManager private constructor(context: Context) {
     ): Boolean {
         val key = when (category) {
             StructuredPreferenceCategory.FEED_GROUPS -> R.string.device_sync_feed_groups_key
+
             StructuredPreferenceCategory.HOME_TABS -> R.string.device_sync_home_tabs_key
+
             StructuredPreferenceCategory.CHANNEL_PROFILES ->
                 R.string.device_sync_channel_profiles_key
+
             StructuredPreferenceCategory.FILTERS -> R.string.device_sync_filters_key
+
             StructuredPreferenceCategory.CONTENT_BLOCKING ->
                 R.string.device_sync_content_blocking_key
+
             StructuredPreferenceCategory.SETTINGS -> R.string.device_sync_settings_key
+
             StructuredPreferenceCategory.COMPLETED_DOWNLOADS ->
                 R.string.device_sync_completed_downloads_key
         }
