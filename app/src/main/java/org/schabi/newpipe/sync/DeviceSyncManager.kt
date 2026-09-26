@@ -149,6 +149,11 @@ class DeviceSyncManager private constructor(context: Context) {
                 result = subscription?.getOrNull(),
                 error = subscription?.exceptionOrNull().diagnosticMessage()
                     ?: if (profile.isFailure) PROFILE_SYNC_REQUIRED else null,
+                playlistSkipped = true,
+                watchHistorySkipped = true,
+                searchHistorySkipped = true,
+                learningNotesSkipped = true,
+                structuredPreferenceSkipped = StructuredPreferenceCategory.entries.toSet(),
                 retryDiagnostics = retryDiagnostics
             )
         }
