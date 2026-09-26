@@ -74,7 +74,7 @@ class LiveQualityController(private val player: Player) {
     fun hasSelectableOptions(): Boolean = isLivePlayback && options.size > 1
 
     fun resetForNewItem() {
-        clearOverride()
+        clearLiveOverrideIfApplied()
         options = emptyList()
         selected = null
         appliedOverride = null
@@ -91,7 +91,7 @@ class LiveQualityController(private val player: Player) {
         val newStreamKey = info?.let { "${it.serviceId}:${it.url}" }
 
         if (newStreamKey != streamKey) {
-            clearOverride()
+            clearLiveOverrideIfApplied()
             selected = null
             appliedOverride = null
             streamKey = newStreamKey
@@ -110,7 +110,9 @@ class LiveQualityController(private val player: Player) {
 
     fun onTracksChanged(tracks: Tracks) {
         if (!isLivePlayback) {
+            clearLiveOverrideIfApplied()
             options = emptyList()
+            selected = null
             appliedOverride = null
             return
         }
@@ -164,6 +166,12 @@ class LiveQualityController(private val player: Player) {
             .setOverrideForType(TrackSelectionOverride(match.first, match.second))
         player.trackSelector.setParameters(parameters)
         appliedOverride = match
+    }
+
+    private fun clearLiveOverrideIfApplied() {
+        if (appliedOverride != null || selected != null) {
+            clearOverride()
+        }
     }
 
     private fun clearOverride() {
