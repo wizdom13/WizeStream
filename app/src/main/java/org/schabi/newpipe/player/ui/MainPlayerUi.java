@@ -103,6 +103,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private static final int DETAIL_TITLE_TEXT_SIZE_TABLET = 15; // sp
 
     private boolean isFullscreen = false;
+    private boolean manualLandscapeFullscreen;
     private boolean touchLocked;
     private FullscreenOrientationPolicy.VideoContentOrientation videoContentOrientation =
             FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
@@ -1147,14 +1148,18 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                         || videoContentOrientation
                         == FullscreenOrientationPolicy.VideoContentOrientation.LANDSCAPE;
         if (FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
-                isFullscreen, previousContentOrientation, videoContentOrientation)
+                isFullscreen,
+                manualLandscapeFullscreen,
+                previousContentOrientation,
+                videoContentOrientation)
                 && !DeviceUtils.isTv(context)
                 && !DeviceUtils.isTablet(context)) {
             // Fullscreen can be entered before Media3 reports a valid size. Once the
             // content orientation becomes known, align and lock the requested orientation.
             player.getFragmentListener().ifPresent(
                     listener -> listener.onScreenRotationButtonClicked(true));
-        } else if (globalScreenOrientationLocked(context)
+        } else if (!manualLandscapeFullscreen
+                && globalScreenOrientationLocked(context)
                 && PlayerRotationMode.get(context) != PlayerRotationMode.FIXED
                 && isFullscreen
                 && orientationSpecificContent
@@ -1199,6 +1204,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
         isFullscreen = fullscreen;
         if (!fullscreen) {
+            manualLandscapeFullscreen = false;
             setTouchLocked(false);
         }
         binding.touchLockButton.setVisibility(fullscreen ? View.VISIBLE : View.GONE);
@@ -1226,11 +1232,14 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      */
     public void toggleFullscreenWithOrientation() {
         final boolean targetFullscreen = !isFullscreen();
-        if (shouldUseScreenRotationAction(
-                getVideoContentOrientation(), isLandscape(), targetFullscreen)) {
-            player.getFragmentListener()
-                    .ifPresent(listener ->
-                            listener.onScreenRotationButtonClicked(targetFullscreen));
+        if (targetFullscreen) {
+            // Explicit fullscreen intent is authoritative: unlike automatic rotation,
+            // the button/swipe should always enter landscape on phones.
+            manualLandscapeFullscreen = true;
+        }
+        final PlayerServiceEventListener listener = player.getFragmentListener().orElse(null);
+        if (listener != null) {
+            listener.onManualFullscreenButtonClicked(targetFullscreen);
         } else {
             setFullscreen(targetFullscreen);
         }
