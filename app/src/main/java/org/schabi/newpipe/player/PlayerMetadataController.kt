@@ -98,6 +98,7 @@ internal class PlayerMetadataController(
         }
         if (player.exoPlayerIsNull()) return
 
+        player.liveQualityController.onItemLoaded()
         localMetadataController.cancel()
         playbackParametersController.applySpeedProfile(info)
         sponsorBlockController.updateSegments(info)
@@ -113,6 +114,7 @@ internal class PlayerMetadataController(
     fun updateMetadataForLocalMedia(
         item: org.schabi.newpipe.player.playqueue.PlayQueueItem
     ) {
+        player.liveQualityController.onItemLoaded()
         sponsorBlockController.reset()
         thumbnailController.loadLocal(item)
         localMetadataController.load(item)
