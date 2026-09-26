@@ -21,6 +21,14 @@
         android:layout_alignBottom="@+id/surfaceView"
         android:background="@android:color/black" />
 
+    <org.schabi.newpipe.views.DanmakuOverlayView
+        android:id="@+id/danmakuOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
     <androidx.media3.ui.SubtitleView
         android:id="@+id/subtitleView"
         android:layout_width="match_parent"
@@ -320,6 +328,23 @@
                             android:textStyle="bold"
                             tools:ignore="HardcodedText,RtlHardcoded"
                             tools:text="FIT" />
+
+                        <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/danmakuToggle"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/danmaku_enable"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_icon_buttons_padding"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/ic_danmaku_disabled"
+                            android:visibility="gone"
+                            app:tint="@color/white"
+                            tools:ignore="RtlHardcoded"
+                            tools:visibility="visible" />
 
                         <FrameLayout
                             android:layout_width="wrap_content"

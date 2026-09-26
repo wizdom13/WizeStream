@@ -1664,6 +1664,17 @@
     <string name="search_button_behavior_current_tab">Search current tab</string>
     <string name="search_button_behavior_current_service">Search current service</string>
 
+    <!-- Danmaku / bullet comments -->
+    <string name="danmaku_settings_title">Danmaku / bullet comments</string>
+    <string name="danmaku_enabled_title">Show danmaku</string>
+    <string name="danmaku_enabled_summary">Overlay time-synchronized comments on supported videos and live streams</string>
+    <string name="danmaku_enable">Show danmaku</string>
+    <string name="danmaku_disable">Hide danmaku</string>
+    <string name="danmaku_opacity_title">Danmaku opacity</string>
+    <string name="danmaku_text_size_title">Danmaku text size</string>
+    <string name="danmaku_max_rows_title">Maximum danmaku rows</string>
+    <string name="danmaku_duration_title">Danmaku display duration</string>
+
     <!-- Video color adjustments (issue #546) -->
     <string name="video_adjustments" tools:ignore="MissingTranslation">Video adjustments</string>
     <string name="video_adjustments_enable" tools:ignore="MissingTranslation">Enable adjustments</string>
