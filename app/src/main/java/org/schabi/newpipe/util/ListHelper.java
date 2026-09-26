@@ -779,6 +779,11 @@ public final class ListHelper {
      * @param context App context
      * @return maximum resolution allowed or null if there is no maximum
      */
+    @Nullable
+    public static String getResolutionLimitForPlayback(@NonNull final Context context) {
+        return getResolutionLimit(context);
+    }
+
     private static String getResolutionLimit(@NonNull final Context context) {
         String resolutionLimit = null;
         if (isMeteredNetwork(context)) {
