@@ -51,6 +51,8 @@ public final class DanmakuController {
     @Nullable
     private Disposable tickerDisposable;
     @Nullable
+    private Disposable reconnectDisposable;
+    @Nullable
     private BulletCommentsExtractor extractor;
     @NonNull
     private List<BulletCommentsInfoItem> comments = Collections.emptyList();
@@ -130,9 +132,7 @@ public final class DanmakuController {
             return;
         }
 
-        if (extractor != null && extractor.isLive()) {
-            extractor.reconnect();
-        }
+        reconnectLiveExtractor();
         seekToCurrentPosition();
         binding.danmakuOverlay.resumeComments();
 
@@ -303,6 +303,7 @@ public final class DanmakuController {
 
     private void resetExtraction() {
         stopTicker();
+        cancelReconnect();
         if (loadDisposable != null) {
             loadDisposable.dispose();
             loadDisposable = null;
@@ -323,7 +324,33 @@ public final class DanmakuController {
         }
     }
 
+    private void reconnectLiveExtractor() {
+        final BulletCommentsExtractor currentExtractor = extractor;
+        if (currentExtractor == null || !currentExtractor.isLive()
+                || reconnectDisposable != null) {
+            return;
+        }
+
+        reconnectDisposable = Schedulers.io().scheduleDirect(() -> {
+            try {
+                currentExtractor.reconnect();
+            } catch (final Exception error) {
+                Log.w(TAG, "Could not reconnect live danmaku extractor", error);
+            } finally {
+                reconnectDisposable = null;
+            }
+        });
+    }
+
+    private void cancelReconnect() {
+        if (reconnectDisposable != null) {
+            reconnectDisposable.dispose();
+            reconnectDisposable = null;
+        }
+    }
+
     private void disconnectLiveExtractor() {
+        cancelReconnect();
         if (extractor != null && extractor.isLive()) {
             try {
                 extractor.disconnect();
