@@ -327,7 +327,7 @@ public final class DanmakuController {
     private void reconnectLiveExtractor() {
         final BulletCommentsExtractor currentExtractor = extractor;
         if (currentExtractor == null || !currentExtractor.isLive()
-                || reconnectDisposable != null) {
+                || (reconnectDisposable != null && !reconnectDisposable.isDisposed())) {
             return;
         }
 
@@ -336,8 +336,6 @@ public final class DanmakuController {
                 currentExtractor.reconnect();
             } catch (final Exception error) {
                 Log.w(TAG, "Could not reconnect live danmaku extractor", error);
-            } finally {
-                reconnectDisposable = null;
             }
         });
     }
