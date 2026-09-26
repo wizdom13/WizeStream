@@ -131,7 +131,9 @@
     </string-array>
 
     <string name="default_resolution_key">default_resolution</string>
-    <string name="default_resolution_value">720p60</string>
+    <string name="auto_resolution_key">auto_resolution</string>
+    <string name="default_resolution_value">@string/auto_resolution_key</string>
+    <string name="legacy_default_resolution_value">720p60</string>
     <string name="show_higher_resolutions_key">show_higher_resolutions</string>
     <string name="default_popup_resolution_key">default_popup_resolution</string>
     <string name="default_popup_resolution_value">480p</string>
@@ -148,6 +150,7 @@
     </string-array>
 
     <string-array name="resolution_list_values">
+        <item>@string/auto_resolution_key</item>
         <item>@string/best_resolution_key</item>
         <item>1080p60</item>
         <item>1080p</item>
@@ -159,6 +162,7 @@
         <item>144p</item>
     </string-array>
     <string-array name="resolution_list_description">
+        <item>@string/auto</item>
         <item>@string/best_resolution</item>
         <item>1080p60</item>
         <item>1080p</item>
