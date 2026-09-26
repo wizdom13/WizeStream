@@ -1623,6 +1623,21 @@
     <string name="local_media_audio_stereo">Stereo</string>
     <string name="local_media_audio_channels">%1$d channels</string>
     <string name="local_media_audio_bitrate">%1$d kbps</string>
+    <string name="local_media_settings_summary">Control local library exclusions and on-device media behavior</string>
+    <string name="local_media_ignore_item">Ignore this media</string>
+    <string name="local_media_ignore_folder">Ignore this folder</string>
+    <string name="local_media_ignored_confirmation">Hidden from Local media</string>
+    <string name="local_media_ignored_status_key" translatable="false">local_media_ignored_status</string>
+    <string name="local_media_clear_ignored_key" translatable="false">local_media_clear_ignored</string>
+    <string name="local_media_ignored_status_title">Ignored media</string>
+    <string name="local_media_ignored_none">No files or folders are ignored</string>
+    <plurals name="local_media_ignored_count">
+        <item quantity="one">%d ignored item or folder</item>
+        <item quantity="other">%d ignored items or folders</item>
+    </plurals>
+    <string name="local_media_clear_ignored_title">Clear ignored media</string>
+    <string name="local_media_clear_ignored_summary">Show all ignored local files and folders again</string>
+    <string name="local_media_clear_ignored_confirmation">Clear all ignored local media and folders?</string>
 
     <!-- Proxy -->
     <string name="proxy_settings_title">Proxy</string>
