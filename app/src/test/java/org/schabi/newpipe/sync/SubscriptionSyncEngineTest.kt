@@ -16,6 +16,30 @@ import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.profiles.ProfileManager
 
 class SubscriptionSyncEngineTest {
+
+    @Test
+    fun `disabled subscription sync rejects outgoing and incoming requests`() {
+        val localStore = newStore()
+        val remoteStore = newStore()
+        val disabled = SubscriptionSyncEngine(localStore) { false }
+
+        assertFalse(disabled.isEnabled())
+        val outgoingRejected = runCatching {
+            disabled.createRequest(remoteStore.localPeerId)
+        }.exceptionOrNull()
+        assertTrue(outgoingRejected is SubscriptionSyncException)
+
+        val response = disabled.handleRequest(
+            remoteStore.localPeerId,
+            SubscriptionSyncRequest(
+                knownRevisions = emptyMap(),
+                changes = emptyList(),
+                hasMore = false
+            )
+        )
+        assertFalse(response.accepted)
+    }
+
     @Test
     fun `subscription additions synchronize in both directions and are idempotent`() {
         val phoneStore = newStore()
