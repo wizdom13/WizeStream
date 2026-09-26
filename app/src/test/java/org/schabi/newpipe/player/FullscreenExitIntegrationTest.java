@@ -24,25 +24,35 @@ public class FullscreenExitIntegrationTest {
     }
 
     @Test
-    public void orientationAwareActionUsesRotationCallbackWithDirectFallback()
+    public void manualFullscreenUsesExplicitRotationCallbackWithDirectFallback()
             throws Exception {
         final String source = read("org/schabi/newpipe/player/ui/MainPlayerUi.java");
         final String toggle = methodBody(
                 source, "public void toggleFullscreenWithOrientation()");
 
+        assertTrue(toggle.contains("manualLandscapeFullscreen = true"));
         assertTrue(toggle.contains(
-                "listener.onScreenRotationButtonClicked(targetFullscreen)"));
+                "listener.onManualFullscreenButtonClicked(targetFullscreen)"));
         assertTrue(toggle.contains("setFullscreen(targetFullscreen);"));
     }
 
     @Test
-    public void rotationButtonLetsConfigurationCallbackOwnFullscreenState()
+    public void rotationCallbacksShareConfigurationOwnedFullscreenTransition()
             throws Exception {
         final String source = read(
                 "org/schabi/newpipe/fragments/detail/VideoDetailFragment.java");
-        final String rotation = methodBody(
+        final String automatic = methodBody(
                 source, "public void onScreenRotationButtonClicked(final boolean fullscreen)");
+        final String manual = methodBody(
+                source, "public void onManualFullscreenButtonClicked(final boolean fullscreen)");
+        final String rotation = methodBody(
+                source, "private void requestFullscreenOrientation(");
 
+        assertTrue(automatic.contains(
+                "requestFullscreenOrientation(fullscreen, false)"));
+        assertTrue(manual.contains(
+                "requestFullscreenOrientation(fullscreen, true)"));
+        assertTrue(rotation.contains("manualTargetConfigurationOrientation(fullscreen)"));
         assertTrue(rotation.contains("targetConfigurationOrientation("));
         assertTrue(rotation.contains("pendingFullscreenState"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_PORTRAIT"));
