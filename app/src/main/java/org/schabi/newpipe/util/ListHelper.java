@@ -98,6 +98,20 @@ public final class ListHelper {
     }
 
     /**
+     * Pick the fixed stream used when Auto cannot build an adaptive ladder.
+     * The metered-network cap is still respected.
+     */
+    public static int getAutoResolutionFallbackIndex(
+            @NonNull final Context context,
+            @NonNull final List<VideoStream> videoStreams) {
+        final String resolutionLimit = getResolutionLimit(context);
+        final String target = resolutionLimit == null
+                ? context.getString(R.string.best_resolution_key)
+                : resolutionLimit;
+        return getDefaultResolutionWithDefaultFormat(context, target, videoStreams);
+    }
+
+    /**
      * @param context      Android app context
      * @param videoStreams list of the video streams to check
      * @return index of the video stream with the default index
