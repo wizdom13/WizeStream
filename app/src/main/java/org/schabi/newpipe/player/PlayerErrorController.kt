@@ -40,6 +40,7 @@ internal class PlayerErrorController(
     private val videoResolver: VideoPlaybackResolver
 ) {
     private val recoveryGuard = PlayerHttpErrorRecovery.RecoveryGuard()
+    private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
 
@@ -54,6 +55,9 @@ internal class PlayerErrorController(
         if (downloaded != null && org.schabi.newpipe.download.DownloadedCopyRepository.reject(downloaded)) {
             player.setRecovery()
             player.reloadPlayQueueManager()
+            return
+        }
+        if (tryRecoverFromYouTubeAv1DecoderFailure(error)) {
             return
         }
         if (tryRecoverFromYouTubeMediaUrlFailure(error)) {
@@ -105,8 +109,51 @@ internal class PlayerErrorController(
     fun resetRecovery() {
         cancelPendingMediaUrlRecovery()
         recoveryGuard.reset()
+        decoderRecoveryGuard.reset()
     }
 
+    private fun tryRecoverFromYouTubeAv1DecoderFailure(error: PlaybackException): Boolean {
+        val item = player.playQueue?.item ?: return false
+        if (!PlayerHttpErrorRecovery.isYouTubeService(item.serviceId)) {
+            return false
+        }
+
+        val stream = player.selectedVideoStream.orElse(null) ?: return false
+        if (!PlayerHttpErrorRecovery.isRecoverableAv1DecoderInitFailure(
+                error.errorCode,
+                stream
+            )
+        ) {
+            return false
+        }
+
+        val quality = player.currentMetadata?.maybeQuality?.orElse(null) ?: return false
+        if (!VideoPlaybackResolver.hasAlternativeCodecFamily(
+                quality.sortedVideoStreams,
+                stream.codec
+            )
+        ) {
+            return false
+        }
+
+        val recoveryKey = "${item.serviceId}:${item.url}"
+        if (!decoderRecoveryGuard.acquire(recoveryKey)) {
+            return false
+        }
+
+        Log.w(
+            Player.TAG,
+            "Retrying YouTube playback after AV1 decoder initialization failure " +
+                "with a different codec family"
+        )
+        player.setRecovery()
+        player.onBuffering()
+        cancelPendingMediaUrlRecovery()
+        videoResolver.rejectVideoCodecFamilyOnce(item.url, stream.codec)
+        PlayerDataSource.invalidateYoutubeManifestCaches()
+        player.reloadPlayQueueManager()
+        return true
+    }
     private fun tryRecoverFromYouTubeMediaUrlFailure(error: PlaybackException): Boolean {
         val item = player.playQueue?.item ?: return false
         if (!PlayerHttpErrorRecovery.isRecoverableYouTubeMediaUrlFailure(error, item)) {
