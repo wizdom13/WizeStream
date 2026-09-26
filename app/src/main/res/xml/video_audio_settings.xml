@@ -179,6 +179,60 @@
 
     <PreferenceCategory
         android:layout="@layout/settings_category_header_layout"
+        android:title="@string/danmaku_settings_title"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/danmaku_enabled_key"
+            android:summary="@string/danmaku_enabled_summary"
+            android:title="@string/danmaku_enabled_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SeekBarPreference
+            android:defaultValue="85"
+            android:key="@string/danmaku_opacity_key"
+            android:max="100"
+            android:title="@string/danmaku_opacity_title"
+            app:min="10"
+            app:iconSpaceReserved="false"
+            app:showSeekBarValue="true"
+            app:singleLineTitle="false" />
+
+        <SeekBarPreference
+            android:defaultValue="18"
+            android:key="@string/danmaku_text_size_key"
+            android:max="32"
+            android:title="@string/danmaku_text_size_title"
+            app:min="12"
+            app:iconSpaceReserved="false"
+            app:showSeekBarValue="true"
+            app:singleLineTitle="false" />
+
+        <SeekBarPreference
+            android:defaultValue="6"
+            android:key="@string/danmaku_max_rows_key"
+            android:max="12"
+            android:title="@string/danmaku_max_rows_title"
+            app:min="1"
+            app:iconSpaceReserved="false"
+            app:showSeekBarValue="true"
+            app:singleLineTitle="false" />
+
+        <SeekBarPreference
+            android:defaultValue="8"
+            android:key="@string/danmaku_duration_key"
+            android:max="15"
+            android:title="@string/danmaku_duration_title"
+            app:min="4"
+            app:iconSpaceReserved="false"
+            app:showSeekBarValue="true"
+            app:singleLineTitle="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:layout="@layout/settings_category_header_layout"
         android:title="@string/settings_category_player_behavior_title"
         app:singleLineTitle="false"
         app:iconSpaceReserved="false">
