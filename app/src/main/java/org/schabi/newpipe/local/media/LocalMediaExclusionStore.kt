@@ -18,7 +18,11 @@ class LocalMediaExclusionStore(context: Context) {
     )
 
     fun isExcluded(item: LocalMediaItem): Boolean {
-        return item.contentUri in ignoredItems() || mediaFolderKey(item) in ignoredMediaFolders()
+        if (item.contentUri in ignoredItems()) {
+            return true
+        }
+        return item.mediaStoreId >= 0 &&
+            mediaFolderKey(item) in ignoredMediaFolders()
     }
 
     fun ignoreItem(item: LocalMediaItem) {
