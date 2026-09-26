@@ -265,6 +265,24 @@ class Player(
         } else {
             ListHelper.getPopupResolutionIndex(appContext, sortedVideos, playbackQuality)
         }
+
+        override fun getAutoFallbackResolutionIndex(
+            sortedVideos: MutableList<VideoStream>
+        ): Int = ListHelper.getAutoResolutionFallbackIndex(appContext, sortedVideos)
+
+        override fun isDefaultAutoQuality(): Boolean {
+            if (!videoPlayerSelected()) {
+                return false
+            }
+            val selected = preferences.getString(
+                appContext.getString(R.string.default_resolution_key),
+                appContext.getString(R.string.default_resolution_value)
+            )
+            return selected == appContext.getString(R.string.auto_resolution_key)
+        }
+
+        override fun isAutoQuality(playbackQuality: String): Boolean =
+            playbackQuality == appContext.getString(R.string.auto_resolution_key)
     }
 
     fun handleIntent(intent: Intent) = intentController.handle(intent)
@@ -594,6 +612,12 @@ class Player(
 
     val selectedVideoStream: Optional<VideoStream>
         get() = metadataController.selectedVideoStream()
+
+    val isAutoQualitySelected: Boolean
+        get() = videoResolver.isAutoQualitySelected
+
+    val isAdaptiveQualityActive: Boolean
+        get() = videoResolver.isAdaptiveQualityActive
 
     val selectedAudioStream: Optional<AudioStream>
         get() = metadataController.selectedAudioStream()
