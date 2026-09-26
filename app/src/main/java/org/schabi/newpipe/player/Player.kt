@@ -189,6 +189,7 @@ class Player(
 
     private val videoResolver = VideoPlaybackResolver(appContext, dataSource, qualityResolver())
     private val audioResolver = AudioPlaybackResolver(appContext, dataSource)
+    val liveQualityController = LiveQualityController(this)
     private val captionController =
         PlayerCaptionController(this, appContext, preferences) { activeTrackSelector }
     private val streamController = PlayerStreamController(
@@ -690,6 +691,16 @@ class Player(
 
     val isLive: Boolean
         get() = seekController.isLive()
+
+    fun isLiveQualityPlayback(): Boolean = liveQualityController.isLivePlayback
+
+    fun hasSelectableLiveQualities(): Boolean = liveQualityController.hasSelectableOptions()
+
+    fun getLiveQualityOptions(): List<LiveQualityController.Option> = liveQualityController.options
+
+    fun getCurrentLiveQualityLabel(): String = liveQualityController.currentLabel
+
+    fun selectLiveQuality(index: Int): String? = liveQualityController.select(index)
 
     fun setPlaybackQuality(quality: String?) = streamController.setPlaybackQuality(quality)
 
