@@ -84,11 +84,27 @@ public final class FullscreenOrientationPolicy {
             final boolean fullscreen,
             final VideoContentOrientation previousContentOrientation,
             final VideoContentOrientation contentOrientation) {
+        return shouldAlignFullscreenToKnownContent(
+                fullscreen, false, previousContentOrientation, contentOrientation);
+    }
+
+    public static boolean shouldAlignFullscreenToKnownContent(
+            final boolean fullscreen,
+            final boolean manualLandscapeFullscreen,
+            final VideoContentOrientation previousContentOrientation,
+            final VideoContentOrientation contentOrientation) {
         return fullscreen
+                && !manualLandscapeFullscreen
                 && previousContentOrientation != contentOrientation
                 && (contentOrientation == VideoContentOrientation.PORTRAIT
                 || contentOrientation == VideoContentOrientation.LANDSCAPE
                 || contentOrientation == VideoContentOrientation.SQUARE);
+    }
+
+    public static int manualTargetConfigurationOrientation(final boolean fullscreen) {
+        return fullscreen
+                ? Configuration.ORIENTATION_LANDSCAPE
+                : Configuration.ORIENTATION_PORTRAIT;
     }
 
     public static int targetConfigurationOrientation(
