@@ -1049,6 +1049,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private void search(@NonNull final String theSearchString,
                         final String[] theContentFilter,
                         final int[] theSortFilter) {
+        if (!isSearchUiReady(isAdded(), activity != null, searchBinding != null)) {
+            return;
+        }
         if (DEBUG) {
             Log.d(TAG, "search() called with: query = [" + theSearchString + "]");
         }
@@ -1103,6 +1106,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         // load search results
         suggestionPublisher.onNext(theSearchString);
         startLoading(false);
+    }
+
+    static boolean isSearchUiReady(final boolean fragmentAdded,
+                                   final boolean hasActivity,
+                                   final boolean hasBinding) {
+        return fragmentAdded && hasActivity && hasBinding;
     }
 
     @Override
