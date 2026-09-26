@@ -69,6 +69,7 @@ import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.ktx.AnimationType;
+import org.schabi.newpipe.player.LiveQualityController;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.DisplayPortion;
@@ -1203,6 +1204,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     binding.surfaceView.setVisibility(View.VISIBLE);
                     binding.endScreen.setVisibility(View.GONE);
                     binding.playbackLiveSync.setVisibility(View.VISIBLE);
+                    updateQualityLabel(null);
                     break;
 
                 case VIDEO_STREAM:
@@ -1244,6 +1246,11 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
         qualityPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_QUALITY);
 
+        if (player.isLiveQualityPlayback()) {
+            buildLiveQualityMenu();
+            return;
+        }
+
         final List<VideoStream> availableStreams = Optional.ofNullable(player.getCurrentMetadata())
                 .flatMap(MediaItemTag::getMaybeQuality)
                 .map(MediaItemTag.Quality::getSortedVideoStreams)
@@ -1267,6 +1274,27 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             qualityPopupMenu.getMenu().add(POPUP_MENU_ID_QUALITY, i, Menu.NONE, MediaFormat
                     .getNameById(videoStream.getFormatId()) + " " + videoStream.getResolution());
         }
+        qualityPopupMenu.setOnMenuItemClickListener(this);
+        qualityPopupMenu.setOnDismissListener(this);
+        updateQualityLabel(null);
+    }
+
+    private void buildLiveQualityMenu() {
+        qualityPopupMenu.getMenu().add(
+                POPUP_MENU_ID_QUALITY,
+                0,
+                Menu.NONE,
+                R.string.auto);
+
+        final List<LiveQualityController.Option> options = player.getLiveQualityOptions();
+        for (int index = 0; index < options.size(); index++) {
+            qualityPopupMenu.getMenu().add(
+                    POPUP_MENU_ID_QUALITY,
+                    index + 1,
+                    Menu.NONE,
+                    options.get(index).getLabel());
+        }
+
         qualityPopupMenu.setOnMenuItemClickListener(this);
         qualityPopupMenu.setOnDismissListener(this);
         updateQualityLabel(null);
@@ -1375,6 +1403,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     protected abstract void onPlaybackSpeedClicked();
 
     private void onQualityClicked() {
+        if (player.isLiveQualityPlayback()) {
+            buildQualityMenu();
+        }
         qualityPopupMenu.show();
         isSomePopupMenuVisible = true;
         updateQualityLabel(null);
@@ -1414,6 +1445,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void onQualityItemClick(@NonNull final MenuItem menuItem) {
+        if (player.isLiveQualityPlayback()) {
+            final String label = player.selectLiveQuality(menuItem.getItemId());
+            if (label != null) {
+                binding.qualityTextView.setText(label);
+            }
+            return;
+        }
+
         if (menuItem.getItemId() == AUTO_QUALITY_MENU_ITEM_ID) {
             if (!player.isAutoQualitySelected()) {
                 player.setPlaybackQuality(context.getString(R.string.auto_resolution_key));
@@ -1503,6 +1542,13 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
 
     private void updateQualityLabel(@Nullable final Tracks currentTracks) {
+        if (player.isLiveQualityPlayback()) {
+            binding.qualityTextView.setText(player.getCurrentLiveQualityLabel());
+            binding.qualityTextView.setVisibility(
+                    player.hasSelectableLiveQualities() ? View.VISIBLE : View.GONE);
+            return;
+        }
+
         if (!player.isAutoQualitySelected()) {
             player.getSelectedVideoStream()
                     .ifPresent(stream -> binding.qualityTextView.setText(stream.getResolution()));

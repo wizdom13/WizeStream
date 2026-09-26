@@ -50,6 +50,7 @@ internal class PlayerLifecycleController(
     private var pendingAudioTrackRecoveryRestart: Runnable? = null
 
     fun initPlayback(queue: PlayQueue, playOnReady: Boolean) {
+        player.liveQualityController.resetForNewItem()
         cancelPendingAudioTrackRecoveryRestart()
         val trackSelectionParameters = player.getTrackSelectorForLifecycle()?.parameters
         destroyPlayer()

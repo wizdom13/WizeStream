@@ -47,6 +47,7 @@ internal class PlayerMedia3ListenerController(
                 "ExoPlayer - onTracksChanged(), track group size = ${tracks.groups.size}"
             )
         }
+        player.liveQualityController.onTracksChanged(tracks)
         player.UIs().call { ui -> ui.onTextTracksChanged(tracks) }
     }
 
@@ -85,6 +86,7 @@ internal class PlayerMedia3ListenerController(
 
         val newIndex = newPosition.mediaItemIndex
         if (newIndex != oldPosition.mediaItemIndex) {
+            player.liveQualityController.resetForNewItem()
             player.UIs().call(PlayerUi::onMediaItemTransition)
             errorController.resetRecovery()
         }
