@@ -45,7 +45,7 @@ public class AdaptiveVideoQualityTest {
     @Test
     public void duplicateRepresentationsDoNotCreateDuplicateAdaptiveTracks() throws Exception {
         final VideoStream first720 = stream(136, "720p", "avc1.4d401f", 2_000_000);
-        final VideoStream duplicate720 = stream(298, "720p", "avc1.4d401f", 2_500_000);
+        final VideoStream duplicate720 = stream(136, "720p", "avc1.4d401f", 2_500_000);
         final VideoStream lower = stream(135, "480p", "avc1.4d401e", 1_000_000);
 
         final List<VideoStream> candidates = AdaptiveVideoQuality.youtubeCandidates(
