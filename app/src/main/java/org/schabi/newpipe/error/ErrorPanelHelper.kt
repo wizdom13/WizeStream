@@ -20,12 +20,14 @@ import org.schabi.newpipe.util.text.setTextWithLinks
 
 class ErrorPanelHelper(
     private val fragment: Fragment,
-    rootView: View,
+    private val rootView: View,
     onRetry: Runnable?
 ) {
     private val context: Context = rootView.context!!
 
     private val errorPanelRoot: View = rootView.findViewById(R.id.error_panel)
+    private val itemsList: View? = rootView.findViewById(R.id.items_list)
+    private val listWasFocusable: Boolean = itemsList?.isFocusable ?: false
 
     // the only element that is visible by default
     private val errorTextView: TextView =
@@ -116,11 +118,26 @@ class ErrorPanelHelper(
     }
 
     private fun setRootVisible() {
+        val button = firstVisibleErrorButton()
+        if (button != null) {
+            itemsList?.isFocusable = false
+        }
         errorPanelRoot.animate(true, 300)
+        if (fragment.isResumed) {
+            button?.requestFocus()
+        }
+    }
+
+    private fun firstVisibleErrorButton(): Button? = when {
+        errorActionButton.isVisible -> errorActionButton
+        errorRetryButton.isVisible -> errorRetryButton
+        errorOpenInBrowserButton.isVisible -> errorOpenInBrowserButton
+        else -> null
     }
 
     fun hide() {
         errorActionButton.setOnClickListener(null)
+        itemsList?.isFocusable = listWasFocusable
         errorPanelRoot.animate(false, 150)
     }
 
@@ -131,6 +148,7 @@ class ErrorPanelHelper(
     fun dispose() {
         errorActionButton.setOnClickListener(null)
         errorRetryButton.setOnClickListener(null)
+        itemsList?.isFocusable = listWasFocusable
         errorDisposable?.dispose()
     }
 
