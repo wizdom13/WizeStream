@@ -42,6 +42,10 @@ class LocalMediaViewModel(application: Application) : AndroidViewModel(applicati
         )
     }
 
+    fun refresh() {
+        currentAccess?.let { load(it, force = true) }
+    }
+
     fun load(access: LocalMediaAccess, force: Boolean = false) {
         if (!access.hasAnyAccess) {
             currentAccess = access
