@@ -47,6 +47,13 @@
         app:iconSpaceReserved="false" />
 
     <PreferenceScreen
+        android:fragment="org.schabi.newpipe.settings.LocalMediaSettingsFragment"
+        android:icon="@drawable/ic_music_note"
+        android:title="@string/local_media"
+        android:summary="@string/local_media_settings_summary"
+        app:iconSpaceReserved="false" />
+
+    <PreferenceScreen
         android:fragment="org.schabi.newpipe.settings.ContentSettingsFragment"
         android:icon="@drawable/ic_language"
         android:title="@string/content"
