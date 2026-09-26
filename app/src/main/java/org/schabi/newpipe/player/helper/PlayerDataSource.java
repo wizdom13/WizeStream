@@ -25,6 +25,7 @@ import androidx.media3.datasource.cache.SimpleCache;
 
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.extractor.services.bilibili.BilibiliService;
+import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeAdaptiveDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeOtfDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubePostLiveStreamDvrDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeProgressiveDashManifestCreator;
@@ -241,6 +242,7 @@ public class PlayerDataSource {
      */
     public static void invalidateYoutubeManifestCaches() {
         YoutubeProgressiveDashManifestCreator.getCache().clear();
+        YoutubeAdaptiveDashManifestCreator.getCache().clear();
         YoutubeOtfDashManifestCreator.getCache().clear();
         YoutubePostLiveStreamDvrDashManifestCreator.getCache().clear();
     }
