@@ -32,21 +32,104 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="@string/device_sync_search_history_key"
-        android:summary="@string/device_sync_search_history_summary"
-        android:title="@string/device_sync_search_history_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false" />
+    <PreferenceCategory
+        android:layout="@layout/settings_category_header_layout"
+        android:title="@string/device_sync_categories_title">
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="@string/device_sync_learning_notes_key"
-        android:summary="@string/device_sync_learning_notes_summary"
-        android:title="@string/device_sync_learning_notes_title"
-        app:iconSpaceReserved="false"
-        app:singleLineTitle="false" />
+        <Preference
+            android:summary="@string/device_sync_profiles_required_summary"
+            android:title="@string/device_sync_category_profiles"
+            app:iconSpaceReserved="false"
+            app:selectable="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_subscriptions_key"
+            android:title="@string/device_sync_category_subscriptions"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_playlists_key"
+            android:title="@string/device_sync_category_playlists"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_watch_history_key"
+            android:summary="@string/device_sync_watch_history_summary"
+            android:title="@string/device_sync_category_watch_history"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/device_sync_search_history_key"
+            android:summary="@string/device_sync_search_history_summary"
+            android:title="@string/device_sync_search_history_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/device_sync_learning_notes_key"
+            android:summary="@string/device_sync_learning_notes_summary"
+            android:title="@string/device_sync_learning_notes_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_feed_groups_key"
+            android:title="@string/device_sync_category_feed_groups"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_home_tabs_key"
+            android:title="@string/device_sync_category_home_tabs"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_channel_profiles_key"
+            android:title="@string/device_sync_category_channel_profiles"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_filters_key"
+            android:title="@string/device_sync_category_filters"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_content_blocking_key"
+            android:title="@string/device_sync_category_blocked_content"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_settings_key"
+            android:title="@string/device_sync_category_settings"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/device_sync_completed_downloads_key"
+            android:title="@string/device_sync_category_completed_downloads"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+    </PreferenceCategory>
 
     <Preference
         android:key="@string/device_sync_identity_key"
