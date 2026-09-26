@@ -116,7 +116,7 @@ public class PlayerHttpErrorRecoveryTest {
         assertTrue(PlayerHttpErrorRecovery.isRecoverableAv1DecoderInitFailure(
                 PlaybackException.ERROR_CODE_DECODER_INIT_FAILED, av1));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableAv1DecoderInitFailure(
-                PlaybackException.ERROR_CODE_DECODING_FAILED, av1));
+                PlaybackException.ERROR_CODE_TIMEOUT, av1));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableAv1DecoderInitFailure(
                 PlaybackException.ERROR_CODE_DECODER_INIT_FAILED, avc));
         assertFalse(PlayerHttpErrorRecovery.isRecoverableAv1DecoderInitFailure(
