@@ -1,5 +1,6 @@
 package org.schabi.newpipe.profiles
 
+import androidx.preference.PreferenceManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.util.UUID
@@ -49,6 +50,36 @@ class ProfileManagerTest {
             )
             assertEquals(null, ProfileManager.getProfile(context, profileId))
         } finally {
+            ProfileManager.setActiveProfile(context, ProfileManager.DEFAULT_PROFILE_ID)
+        }
+    }
+
+    @Test
+    fun repairsIntegerProfileTimestampsDuringRead() {
+        val created = ProfileManager.createProfile(
+            context,
+            "Timestamp " + UUID.randomUUID().toString().take(8),
+            "legacy timestamp profile",
+            ProfileIcon.PERSON.key
+        )
+        assertNotNull(created)
+        val profile = requireNotNull(created)
+        val createdAtKey = "wizestream_profile_${profile.id}_created_at"
+        val updatedAtKey = "wizestream_profile_${profile.id}_updated_at"
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+
+        try {
+            prefs.edit()
+                .putInt(createdAtKey, 123)
+                .putInt(updatedAtKey, 456)
+                .commit()
+
+            assertEquals(123L, ProfileManager.getProfile(context, profile.id)?.createdAt)
+            assertEquals(456L, ProfileManager.getProfileSyncUpdatedAt(context, profile.id))
+            assertTrue(prefs.all[createdAtKey] is Long)
+            assertTrue(prefs.all[updatedAtKey] is Long)
+        } finally {
+            ProfileManager.deleteProfile(context, profile.id)
             ProfileManager.setActiveProfile(context, ProfileManager.DEFAULT_PROFILE_ID)
         }
     }
