@@ -454,6 +454,8 @@ class Player(
 
     private fun restartForVideoAdjustments() = lifecycleController.restartForVideoAdjustments()
 
+    fun restartForAudioTrackRecovery() = lifecycleController.restartForAudioTrackRecovery()
+
     fun updateAudioTunneling() {
         val trackSelector = activeTrackSelector ?: return
         val tunnelingEnabled = !preferences.getBoolean(

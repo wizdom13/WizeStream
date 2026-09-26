@@ -29,8 +29,7 @@ public class PlayerEngineLifecycleContractTest {
 
         assertTrue(methodBody(playerSource, "fun clearExoPlayerForLifecycle()")
                 .contains("media3Player = null"));
-        assertTrue(methodBody(lifecycleSource,
-                "private fun destroyPlayer(preserveQueue: Boolean = false)")
+        assertTrue(methodBody(lifecycleSource, "private fun destroyPlayer(")
                 .contains("player.clearExoPlayerForLifecycle()"));
     }
 
