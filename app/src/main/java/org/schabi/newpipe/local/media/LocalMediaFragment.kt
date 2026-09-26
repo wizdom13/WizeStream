@@ -244,6 +244,10 @@ class LocalMediaFragment : Fragment() {
         super.onResume()
         ThemeHelper.setTitleToAppCompatActivity(activity, getString(R.string.local_media))
         if (::adapter.isInitialized) applyItemViewMode()
+        if (::viewModel.isInitialized) viewModel.refresh()
+        if (::browserViewModel.isInitialized && filter == Filter.BROWSE) {
+            browserViewModel.refresh()
+        }
         requireActivity().invalidateOptionsMenu()
     }
 
