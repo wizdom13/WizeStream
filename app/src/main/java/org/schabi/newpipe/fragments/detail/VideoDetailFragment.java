@@ -23,6 +23,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
@@ -2107,6 +2108,10 @@ public final class VideoDetailFragment
         return fullscreen ? 0 : Math.max(baseStartMargin, 0);
     }
 
+    static int getPlayerPlaceholderBackgroundColor(final boolean fullscreen) {
+        return fullscreen ? Color.BLACK : Color.TRANSPARENT;
+    }
+
     static int getDetailNavigationBottomInset(final boolean fullscreen,
                                               final boolean wideDetailLayout,
                                               final int navigationBarInset,
@@ -2891,6 +2896,8 @@ public final class VideoDetailFragment
         } else {
             showSystemUi();
         }
+        binding.playerPlaceholder.setBackgroundColor(
+                getPlayerPlaceholderBackgroundColor(fullscreen));
         updateDetailContentTopMargin(fullscreen);
         updateDetailContentStartMargins(fullscreen);
         updateDetailNavigationBottomInset();
