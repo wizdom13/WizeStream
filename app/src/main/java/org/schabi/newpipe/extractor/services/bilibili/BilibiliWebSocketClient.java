@@ -70,11 +70,12 @@ public class BilibiliWebSocketClient {
             }
             executor = Executors.newSingleThreadScheduledExecutor();
             executor.scheduleAtFixedRate(() -> {
+                if (shouldStop.get()) {
+                    return;
+                }
                 try {
-                    while (!shouldStop.get()) {
-                        send(encode("",2));
-                    }
-                } catch (IOException e) {
+                    send(encode("", 2));
+                } catch (final IOException e) {
                     e.printStackTrace();
                 }
             }, 30000, 30000, TimeUnit.MILLISECONDS);
@@ -157,6 +158,7 @@ public class BilibiliWebSocketClient {
         return webSocketClient;
     }
     public void wrappedReconnect() throws URISyntaxException, InterruptedException {
+        shouldStop.set(false);
         webSocketClient.stopTimer();
         webSocketClient = new WrappedWebSocketClient();
         webSocketClient.connectBlocking();
