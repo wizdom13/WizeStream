@@ -387,7 +387,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     getString(R.string.device_sync_category_subscriptions),
                     attempt.result?.sentChanges,
                     attempt.result?.receivedChanges,
-                    attempt.error
+                    attempt.error,
+                    attempt.subscriptionSkipped
                 )
             )
             add(
@@ -395,7 +396,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                     getString(R.string.device_sync_category_playlists),
                     attempt.playlistResult?.sentChanges,
                     attempt.playlistResult?.receivedChanges,
-                    attempt.playlistError
+                    attempt.playlistError,
+                    attempt.playlistSkipped
                 )
             )
             add(
@@ -432,7 +434,8 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
                         structuredPreferenceCategoryName(category),
                         result?.sentChanges,
                         result?.receivedChanges,
-                        attempt.structuredPreferenceErrors[category]
+                        attempt.structuredPreferenceErrors[category],
+                        category in attempt.structuredPreferenceSkipped
                     )
                 )
             }
