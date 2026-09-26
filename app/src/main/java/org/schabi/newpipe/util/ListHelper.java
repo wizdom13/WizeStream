@@ -98,6 +98,24 @@ public final class ListHelper {
     }
 
     /**
+     * Pick the fixed stream used when Auto cannot build an adaptive ladder.
+     * The metered-network cap is still respected.
+     *
+     * @param context app context used to resolve preferences and network state
+     * @param videoStreams available sorted video streams
+     * @return index of the best allowed fixed fallback stream
+     */
+    public static int getAutoResolutionFallbackIndex(
+            @NonNull final Context context,
+            @NonNull final List<VideoStream> videoStreams) {
+        final String resolutionLimit = getResolutionLimit(context);
+        final String target = resolutionLimit == null
+                ? context.getString(R.string.best_resolution_key)
+                : resolutionLimit;
+        return getDefaultResolutionWithDefaultFormat(context, target, videoStreams);
+    }
+
+    /**
      * @param context      Android app context
      * @param videoStreams list of the video streams to check
      * @return index of the video stream with the default index
@@ -743,11 +761,44 @@ public final class ListHelper {
     }
 
     /**
-     * The maximum resolution allowed.
+     * Whether a video stream is within the active metered-network resolution limit.
+     * Auto quality uses this to keep every adaptive representation below the configured cap.
      *
-     * @param context App context
-     * @return maximum resolution allowed or null if there is no maximum
+     * @param context app context used to resolve the active network limit
+     * @param stream video stream to evaluate
+     * @return whether the stream is allowed by the current resolution cap
      */
+    public static boolean isVideoStreamWithinResolutionLimit(
+            @NonNull final Context context,
+            @NonNull final VideoStream stream) {
+        return isVideoStreamWithinResolutionLimit(stream, getResolutionLimit(context));
+    }
+
+    /**
+     * Pure resolution-cap check used by adaptive quality selection and tests.
+     *
+     * @param stream video stream to evaluate
+     * @param limit maximum allowed resolution, or {@code null} for no limit
+     * @return whether the stream is at or below the provided limit
+     */
+    public static boolean isVideoStreamWithinResolutionLimit(
+            @NonNull final VideoStream stream,
+            @Nullable final String limit) {
+        return limit == null
+                || compareVideoStreamResolution(stream.getResolution(), limit) <= 0;
+    }
+
+    /**
+     * Return the active metered-network resolution limit for playback.
+     *
+     * @param context app context used to inspect network and preferences
+     * @return maximum allowed resolution, or {@code null} when unlimited
+     */
+    @Nullable
+    public static String getResolutionLimitForPlayback(@NonNull final Context context) {
+        return getResolutionLimit(context);
+    }
+
     private static String getResolutionLimit(@NonNull final Context context) {
         String resolutionLimit = null;
         if (isMeteredNetwork(context)) {

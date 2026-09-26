@@ -53,6 +53,16 @@ public final class StreamInfoTag implements MediaItemTag {
         return new StreamInfoTag(streamInfo, quality, audioTrack, null);
     }
 
+    public static StreamInfoTag adaptive(
+            @NonNull final StreamInfo streamInfo,
+            @NonNull final List<VideoStream> sortedVideoStreams,
+            @NonNull final List<AudioStream> audioStreams,
+            final int selectedAudioStreamIndex) {
+        final Quality quality = Quality.adaptive(sortedVideoStreams);
+        final AudioTrack audioTrack = AudioTrack.of(audioStreams, selectedAudioStreamIndex);
+        return new StreamInfoTag(streamInfo, quality, audioTrack, null);
+    }
+
     public static StreamInfoTag of(@NonNull final StreamInfo streamInfo,
                                    @NonNull final List<AudioStream> audioStreams,
                                    final int selectedAudioStreamIndex) {

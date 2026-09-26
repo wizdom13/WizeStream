@@ -168,10 +168,8 @@ class Player(
 
     private var activeTrackSelector: DefaultTrackSelector? = null
     private var activeLoadController: LoadController? = null
-    private val dataSource = PlayerDataSource(
-        appContext,
-        DefaultBandwidthMeter.Builder(appContext).build()
-    )
+    private val bandwidthMeter = DefaultBandwidthMeter.Builder(appContext).build()
+    private val dataSource = PlayerDataSource(appContext, bandwidthMeter)
     private val playerVisualizerAudioProcessor = VisualizerAudioProcessor()
     private val renderFactory: DefaultRenderersFactory = CustomRenderersFactory(
         appContext,
@@ -265,6 +263,27 @@ class Player(
         } else {
             ListHelper.getPopupResolutionIndex(appContext, sortedVideos, playbackQuality)
         }
+
+        override fun getAutoFallbackResolutionIndex(
+            sortedVideos: MutableList<VideoStream>
+        ): Int {
+            return ListHelper.getAutoResolutionFallbackIndex(appContext, sortedVideos)
+        }
+
+        override fun isDefaultAutoQuality(): Boolean {
+            if (!videoPlayerSelected()) {
+                return false
+            }
+            val selected = preferences.getString(
+                appContext.getString(R.string.default_resolution_key),
+                appContext.getString(R.string.default_resolution_value)
+            )
+            return selected == appContext.getString(R.string.auto_resolution_key)
+        }
+
+        override fun isAutoQuality(playbackQuality: String): Boolean {
+            return playbackQuality == appContext.getString(R.string.auto_resolution_key)
+        }
     }
 
     fun handleIntent(intent: Intent) = intentController.handle(intent)
@@ -325,6 +344,8 @@ class Player(
     }
 
     fun getTrackSelectorForLifecycle(): DefaultTrackSelector? = activeTrackSelector
+
+    fun getBandwidthMeterForLifecycle(): DefaultBandwidthMeter = bandwidthMeter
 
     fun clearTrackSelectorForLifecycle(trackSelector: DefaultTrackSelector) {
         if (activeTrackSelector === trackSelector) {
@@ -594,6 +615,12 @@ class Player(
 
     val selectedVideoStream: Optional<VideoStream>
         get() = metadataController.selectedVideoStream()
+
+    val isAutoQualitySelected: Boolean
+        get() = videoResolver.isAutoQualitySelected
+
+    val isAdaptiveQualityActive: Boolean
+        get() = videoResolver.isAdaptiveQualityActive
 
     val selectedAudioStream: Optional<AudioStream>
         get() = metadataController.selectedAudioStream()

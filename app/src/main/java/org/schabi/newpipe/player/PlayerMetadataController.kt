@@ -7,6 +7,7 @@ package org.schabi.newpipe.player
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.media3.common.C
 import androidx.media3.common.Player as Media3Player
 import java.util.Optional
 import org.schabi.newpipe.R
@@ -145,15 +146,30 @@ internal class PlayerMetadataController(
 
     fun thumbnail(): Bitmap? = thumbnailController.getCurrentThumbnail()
 
-    fun selectedVideoStream(): Optional<VideoStream> = Optional.ofNullable(currentMetadata)
-        .flatMap(MediaItemTag::getMaybeQuality)
-        .filter { quality ->
-            quality.selectedVideoStreamIndex >= 0 &&
-                quality.selectedVideoStreamIndex < quality.sortedVideoStreams.size
+    fun selectedVideoStream(): Optional<VideoStream> {
+        val quality = currentMetadata?.maybeQuality?.orElse(null) ?: return Optional.empty()
+        if (!quality.isAdaptive) {
+            return Optional.ofNullable(
+                quality.sortedVideoStreams.getOrNull(quality.selectedVideoStreamIndex)
+            )
         }
-        .map { quality ->
-            quality.sortedVideoStreams[quality.selectedVideoStreamIndex]
-        }
+
+        val selectedFormatId = player.getExoPlayer()?.currentTracks?.groups
+            ?.asSequence()
+            ?.filter { group -> group.type == C.TRACK_TYPE_VIDEO && group.isSelected }
+            ?.flatMap { group ->
+                (0 until group.length).asSequence()
+                    .filter(group::isTrackSelected)
+                    .map { index -> group.mediaTrackGroup.getFormat(index).id }
+            }
+            ?.firstOrNull { id -> !id.isNullOrBlank() }
+
+        return Optional.ofNullable(
+            quality.sortedVideoStreams.firstOrNull { stream ->
+                stream.itag.toString() == selectedFormatId
+            }
+        )
+    }
 
     fun selectedAudioStream(): Optional<AudioStream> = Optional.ofNullable(currentMetadata)
         .flatMap(MediaItemTag::getMaybeAudioTrack)

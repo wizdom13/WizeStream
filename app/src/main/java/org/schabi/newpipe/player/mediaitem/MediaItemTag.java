@@ -113,16 +113,23 @@ public interface MediaItemTag {
         @NonNull
         private final List<VideoStream> sortedVideoStreams;
         private final int selectedVideoStreamIndex;
+        private final boolean adaptive;
 
         private Quality(@NonNull final List<VideoStream> sortedVideoStreams,
-                        final int selectedVideoStreamIndex) {
+                        final int selectedVideoStreamIndex,
+                        final boolean adaptive) {
             this.sortedVideoStreams = sortedVideoStreams;
             this.selectedVideoStreamIndex = selectedVideoStreamIndex;
+            this.adaptive = adaptive;
         }
 
         static Quality of(@NonNull final List<VideoStream> sortedVideoStreams,
                           final int selectedVideoStreamIndex) {
-            return new Quality(sortedVideoStreams, selectedVideoStreamIndex);
+            return new Quality(sortedVideoStreams, selectedVideoStreamIndex, false);
+        }
+
+        static Quality adaptive(@NonNull final List<VideoStream> sortedVideoStreams) {
+            return new Quality(sortedVideoStreams, -1, true);
         }
 
         @NonNull
@@ -132,6 +139,10 @@ public interface MediaItemTag {
 
         public int getSelectedVideoStreamIndex() {
             return selectedVideoStreamIndex;
+        }
+
+        public boolean isAdaptive() {
+            return adaptive;
         }
 
         @Nullable

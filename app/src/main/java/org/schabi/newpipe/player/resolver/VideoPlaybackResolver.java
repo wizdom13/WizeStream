@@ -43,6 +43,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     @Nullable
     private String playbackQuality;
+    private boolean autoQualitySelected;
+    private boolean adaptiveQualityActive;
     @Nullable
     private String audioTrack;
     @Nullable
@@ -78,15 +80,21 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     @Nullable
     public MediaSource resolve(@NonNull final StreamInfo info,
                                @Nullable final String qualityOverride) {
+        final boolean autoRequested = qualityOverride == null
+                ? qualityResolver.isDefaultAutoQuality()
+                : qualityResolver.isAutoQuality(qualityOverride);
+        autoQualitySelected = autoRequested;
+        adaptiveQualityActive = false;
+
         final MediaSource liveSource = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info);
         if (liveSource != null) {
             streamSourceType = SourceType.LIVE_STREAM;
+            adaptiveQualityActive = autoRequested;
             return liveSource;
         }
 
         final List<MediaSource> mediaSources = new ArrayList<>();
 
-        // Create video stream source
         final Integer rejectedItag = consumeRejectedItag(info.getUrl());
         final List<VideoStream> playableVideoStreams = withoutRejectedItag(
                 getPlayableStreams(info.getVideoStreams(), info.getServiceId()), rejectedItag);
@@ -97,31 +105,66 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         if (rejectedItag != null) {
             Log.w(TAG, "Falling back from rejected YouTube video itag " + rejectedItag);
         }
+
         final List<AudioStream> audioStreamsList =
                 getFilteredAudioStreams(context, info.getAudioStreams());
-
-        final int videoIndex;
-        if (videoStreamsList.isEmpty()) {
-            videoIndex = -1;
-        } else if (qualityOverride == null) {
-            videoIndex = qualityResolver.getDefaultResolutionIndex(videoStreamsList);
-        } else {
-            videoIndex = qualityResolver.getOverrideResolutionIndex(videoStreamsList,
-                    qualityOverride);
-        }
-
         final int audioIndex =
                 ListHelper.getAudioFormatIndex(context, audioStreamsList, audioTrack);
-        final MediaItemTag tag =
-                StreamInfoTag.of(info, videoStreamsList, videoIndex, audioStreamsList, audioIndex);
-        @Nullable final VideoStream video = tag.getMaybeQuality()
-                .map(MediaItemTag.Quality::getSelectedVideoStream)
-                .orElse(null);
-        @Nullable final AudioStream audio = tag.getMaybeAudioTrack()
+
+        final List<VideoStream> adaptiveCandidates = autoRequested
+                && info.getServiceId() == ServiceList.YouTube.getServiceId()
+                ? AdaptiveVideoQuality.youtubeCandidates(context, videoStreamsList)
+                : List.of();
+        final boolean useAdaptiveSource = adaptiveCandidates.size() >= 2;
+
+        int videoIndex = -1;
+        if (!videoStreamsList.isEmpty() && !useAdaptiveSource) {
+            if (autoRequested) {
+                if (adaptiveCandidates.size() == 1) {
+                    videoIndex = videoStreamsList.indexOf(adaptiveCandidates.get(0));
+                }
+                if (videoIndex < 0) {
+                    videoIndex = qualityResolver.getAutoFallbackResolutionIndex(videoStreamsList);
+                }
+            } else if (qualityOverride == null) {
+                videoIndex = qualityResolver.getDefaultResolutionIndex(videoStreamsList);
+            } else {
+                videoIndex = qualityResolver.getOverrideResolutionIndex(
+                        videoStreamsList, qualityOverride);
+            }
+        }
+
+        MediaItemTag tag = useAdaptiveSource
+                ? StreamInfoTag.adaptive(info, videoStreamsList, audioStreamsList, audioIndex)
+                : StreamInfoTag.of(
+                        info, videoStreamsList, videoIndex, audioStreamsList, audioIndex);
+        @Nullable VideoStream video = useAdaptiveSource
+                ? adaptiveCandidates.get(0)
+                : tag.getMaybeQuality()
+                        .map(MediaItemTag.Quality::getSelectedVideoStream)
+                        .orElse(null);
+        final AudioStream audio = tag.getMaybeAudioTrack()
                 .map(MediaItemTag.AudioTrack::getSelectedAudioStream)
                 .orElse(null);
 
-        if (video != null) {
+        if (useAdaptiveSource) {
+            try {
+                mediaSources.add(PlaybackResolver.buildYoutubeAdaptiveVideoMediaSource(
+                        dataSource, adaptiveCandidates, info, tag));
+                adaptiveQualityActive = true;
+            } catch (final ResolverException e) {
+                Log.w(TAG, "Unable to create adaptive video source; using fixed fallback", e);
+                adaptiveQualityActive = false;
+                videoIndex = qualityResolver.getAutoFallbackResolutionIndex(videoStreamsList);
+                tag = StreamInfoTag.of(
+                        info, videoStreamsList, videoIndex, audioStreamsList, audioIndex);
+                video = tag.getMaybeQuality()
+                        .map(MediaItemTag.Quality::getSelectedVideoStream)
+                        .orElse(null);
+            }
+        }
+
+        if (!adaptiveQualityActive && video != null) {
             try {
                 final MediaSource streamSource = PlaybackResolver.buildMediaSource(
                         dataSource, video, info, PlaybackResolver.cacheKeyOf(info, video), tag);
@@ -132,8 +175,6 @@ public class VideoPlaybackResolver implements PlaybackResolver {
             }
         }
 
-        // Use the audio stream if there is no video stream, or
-        // merge with audio stream in case if video does not contain audio
         if (audio != null && (video == null || video.isVideoOnly() || audioTrack != null)) {
             try {
                 final MediaSource audioSource = PlaybackResolver.buildMediaSource(
@@ -148,15 +189,12 @@ public class VideoPlaybackResolver implements PlaybackResolver {
             streamSourceType = SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY;
         }
 
-        // If there is no audio or video sources, then this media source cannot be played back
         if (mediaSources.isEmpty()) {
             return null;
         }
 
-        // Below are auxiliary media sources
-
         // Create subtitle sources. StreamInfo is cached, but the translation preference can change
-        // afterwards, so synthesize the one requested YouTube translation at resolution time too.
+        // afterwards, so synthesize the requested YouTube translation at resolution time too.
         final List<SubtitlesStream> subtitlesStreams = info.getSubtitles() == null
                 ? null : new ArrayList<>(info.getSubtitles());
         if (subtitlesStreams != null
@@ -176,11 +214,9 @@ public class VideoPlaybackResolver implements PlaybackResolver {
             }
         }
 
-        if (mediaSources.size() == 1) {
-            return mediaSources.get(0);
-        } else {
-            return new MergingMediaSource(true, mediaSources.toArray(new MediaSource[0]));
-        }
+        return mediaSources.size() == 1
+                ? mediaSources.get(0)
+                : new MergingMediaSource(true, mediaSources.toArray(new MediaSource[0]));
     }
 
     /**
@@ -200,6 +236,14 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     public void setPlaybackQuality(@Nullable final String playbackQuality) {
         this.playbackQuality = playbackQuality;
+    }
+
+    public boolean isAutoQualitySelected() {
+        return autoQualitySelected;
+    }
+
+    public boolean isAdaptiveQualityActive() {
+        return adaptiveQualityActive;
     }
 
     @Nullable
@@ -254,5 +298,11 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         int getDefaultResolutionIndex(List<VideoStream> sortedVideos);
 
         int getOverrideResolutionIndex(List<VideoStream> sortedVideos, String playbackQuality);
+
+        int getAutoFallbackResolutionIndex(List<VideoStream> sortedVideos);
+
+        boolean isDefaultAutoQuality();
+
+        boolean isAutoQuality(String playbackQuality);
     }
 }
