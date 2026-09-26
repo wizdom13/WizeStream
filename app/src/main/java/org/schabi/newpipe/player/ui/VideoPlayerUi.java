@@ -173,6 +173,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         playerUiTheme = new PlayerUiTheme(context, binding.playbackSeekBar);
         danmakuController = new DanmakuController(player, binding);
         setupFromView();
+        player.getCurrentStreamInfo().ifPresent(danmakuController::onMetadataChanged);
     }
 
     public void setupFromView() {
