@@ -260,8 +260,8 @@ class LiveQualityController(private val player: Player) {
             }
             return when {
                 codecs.contains("av01", ignoreCase = true) -> "AV1"
-                codecs.contains("vp9", ignoreCase = true) -> "VP9"
-                codecs.contains("vp8", ignoreCase = true) -> "VP8"
+                containsCodecFamily(codecs, "vp09", "vp9") -> "VP9"
+                containsCodecFamily(codecs, "vp08", "vp8") -> "VP8"
                 containsCodecFamily(codecs, "avc", "h264") -> "H264"
                 containsCodecFamily(codecs, "hevc", "h265", "hev1", "hvc1") -> "HEVC"
                 else -> codecs.substringBefore('.').uppercase(Locale.getDefault())
