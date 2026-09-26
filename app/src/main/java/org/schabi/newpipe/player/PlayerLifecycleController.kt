@@ -157,6 +157,7 @@ internal class PlayerLifecycleController(
         val loadController = LoadController()
         val exoPlayer = ExoPlayer.Builder(context, renderFactory)
             .setTrackSelector(trackSelector)
+            .setBandwidthMeter(player.getBandwidthMeterForLifecycle())
             .setLoadControl(loadController)
             .setUsePlatformDiagnostics(false)
             .build()
