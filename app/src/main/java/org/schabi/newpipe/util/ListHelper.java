@@ -743,6 +743,18 @@ public final class ListHelper {
     }
 
     /**
+     * Whether a video stream is within the active metered-network resolution limit.
+     * Auto quality uses this to keep every adaptive representation below the configured cap.
+     */
+    public static boolean isVideoStreamWithinResolutionLimit(
+            @NonNull final Context context,
+            @NonNull final VideoStream stream) {
+        final String limit = getResolutionLimit(context);
+        return limit == null
+                || compareVideoStreamResolution(stream.getResolution(), limit) <= 0;
+    }
+
+    /**
      * The maximum resolution allowed.
      *
      * @param context App context
