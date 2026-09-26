@@ -769,7 +769,7 @@ class LocalMediaFragment : Fragment() {
     }
 
     private fun showActions(item: LocalMediaItem) {
-        val actions = listOf(
+        val actions = mutableListOf(
             R.string.play,
             R.string.local_media_play_background,
             R.string.enqueue,
@@ -777,6 +777,9 @@ class LocalMediaFragment : Fragment() {
             R.string.add_to_playlist,
             R.string.local_media_ignore_item
         )
+        if (item.mediaStoreId >= 0 && item.relativePath.isNotBlank()) {
+            actions += R.string.local_media_ignore_folder
+        }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(item.title)
             .setItems(actions.map(::getString).toTypedArray()) { _, which ->
@@ -807,6 +810,13 @@ class LocalMediaFragment : Fragment() {
                         exclusionStore.ignoreItem(item)
                         viewModel.refresh()
                         browserViewModel.refresh()
+                        showIgnoredConfirmation()
+                    }
+
+                    R.string.local_media_ignore_folder -> {
+                        exclusionStore.ignoreMediaFolder(item)
+                        activeGroup = null
+                        viewModel.refresh()
                         showIgnoredConfirmation()
                     }
                 }
