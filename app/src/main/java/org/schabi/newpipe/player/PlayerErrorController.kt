@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.media3.common.PlaybackException
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.common.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW
 import androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
 import androidx.media3.common.PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED
@@ -119,7 +120,14 @@ internal class PlayerErrorController(
             return false
         }
 
-        val stream = player.selectedVideoStream.orElse(null) ?: return false
+        val quality = player.currentMetadata?.maybeQuality?.orElse(null) ?: return false
+        val stream = player.selectedVideoStream.orElse(null)
+            ?: (error as? ExoPlaybackException)?.rendererFormat?.id?.let { formatId ->
+                quality.sortedVideoStreams.firstOrNull { candidate ->
+                    candidate.itag.toString() == formatId
+                }
+            }
+            ?: return false
         if (!PlayerHttpErrorRecovery.isRecoverableAv1DecoderInitFailure(
                 error.errorCode,
                 stream
@@ -128,7 +136,6 @@ internal class PlayerErrorController(
             return false
         }
 
-        val quality = player.currentMetadata?.maybeQuality?.orElse(null) ?: return false
         if (!VideoPlaybackResolver.hasAlternativeCodecFamily(
                 quality.sortedVideoStreams,
                 stream.codec
