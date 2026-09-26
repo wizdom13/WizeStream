@@ -49,6 +49,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     private String audioTrack;
     @Nullable
     private RejectedVideoStream rejectedVideoStream;
+    @Nullable
+    private RejectedVideoCodecFamily rejectedVideoCodecFamily;
 
     public enum SourceType {
         LIVE_STREAM,
@@ -96,14 +98,25 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         final List<MediaSource> mediaSources = new ArrayList<>();
 
         final Integer rejectedItag = consumeRejectedItag(info.getUrl());
-        final List<VideoStream> playableVideoStreams = withoutRejectedItag(
-                getPlayableStreams(info.getVideoStreams(), info.getServiceId()), rejectedItag);
-        final List<VideoStream> playableVideoOnlyStreams = withoutRejectedItag(
-                getPlayableStreams(info.getVideoOnlyStreams(), info.getServiceId()), rejectedItag);
+        final String rejectedCodecFamily = getRejectedCodecFamily(info.getUrl());
+        final List<VideoStream> playableVideoStreams = withoutRejectedCodecFamily(
+                withoutRejectedItag(
+                        getPlayableStreams(info.getVideoStreams(), info.getServiceId()),
+                        rejectedItag),
+                rejectedCodecFamily);
+        final List<VideoStream> playableVideoOnlyStreams = withoutRejectedCodecFamily(
+                withoutRejectedItag(
+                        getPlayableStreams(info.getVideoOnlyStreams(), info.getServiceId()),
+                        rejectedItag),
+                rejectedCodecFamily);
         final List<VideoStream> videoStreamsList = ListHelper.getSortedStreamVideosList(context,
                 playableVideoStreams, playableVideoOnlyStreams, false, true);
         if (rejectedItag != null) {
             Log.w(TAG, "Falling back from rejected YouTube video itag " + rejectedItag);
+        }
+        if (rejectedCodecFamily != null) {
+            Log.w(TAG, "Falling back from rejected video codec family "
+                    + rejectedCodecFamily);
         }
 
         final List<AudioStream> audioStreamsList =
@@ -260,6 +273,28 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         rejectedVideoStream = new RejectedVideoStream(streamUrl, itag);
     }
 
+    /**
+     * Exclude a codec family while resolving the current stream after a decoder failure.
+     *
+     * @param streamUrl canonical stream URL the rejection belongs to
+     * @param codec codec string whose family should be excluded
+     */
+    public synchronized void rejectVideoCodecFamilyForStream(
+            @NonNull final String streamUrl,
+            @Nullable final String codec) {
+        final String codecFamily = AdaptiveVideoQuality.codecFamily(codec);
+        if (!codecFamily.isEmpty()) {
+            rejectedVideoCodecFamily = new RejectedVideoCodecFamily(streamUrl, codecFamily);
+        }
+    }
+
+    /**
+     * Clear any codec-family exclusion retained for decoder recovery.
+     */
+    public synchronized void clearRejectedVideoCodecFamily() {
+        rejectedVideoCodecFamily = null;
+    }
+
     @Nullable
     private synchronized Integer consumeRejectedItag(@NonNull final String streamUrl) {
         if (rejectedVideoStream == null || !rejectedVideoStream.streamUrl.equals(streamUrl)) {
@@ -269,6 +304,15 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         final int itag = rejectedVideoStream.itag;
         rejectedVideoStream = null;
         return itag;
+    }
+
+    @Nullable
+    private synchronized String getRejectedCodecFamily(@NonNull final String streamUrl) {
+        if (rejectedVideoCodecFamily == null
+                || !rejectedVideoCodecFamily.streamUrl.equals(streamUrl)) {
+            return null;
+        }
+        return rejectedVideoCodecFamily.codecFamily;
     }
 
     @NonNull
@@ -283,6 +327,41 @@ public class VideoPlaybackResolver implements PlaybackResolver {
                 .collect(Collectors.toList());
     }
 
+    @NonNull
+    private static List<VideoStream> withoutRejectedCodecFamily(
+            @NonNull final List<VideoStream> streams,
+            @Nullable final String rejectedCodecFamily) {
+        if (rejectedCodecFamily == null || rejectedCodecFamily.isEmpty()) {
+            return streams;
+        }
+        return streams.stream()
+                .filter(stream -> !rejectedCodecFamily.equals(
+                        AdaptiveVideoQuality.codecFamily(stream.getCodec())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Check whether playback metadata contains a video stream from another codec family.
+     *
+     * @param streams candidate video streams for the current item
+     * @param codec codec family currently failing
+     * @return whether at least one non-empty different codec family is available
+     */
+    public static boolean hasAlternativeCodecFamily(
+            @NonNull final List<VideoStream> streams,
+            @Nullable final String codec) {
+        final String rejectedCodecFamily = AdaptiveVideoQuality.codecFamily(codec);
+        if (rejectedCodecFamily.isEmpty()) {
+            return false;
+        }
+
+        return streams.stream()
+                .map(VideoStream::getCodec)
+                .map(AdaptiveVideoQuality::codecFamily)
+                .anyMatch(codecFamily -> !codecFamily.isEmpty()
+                        && !rejectedCodecFamily.equals(codecFamily));
+    }
+
     private static final class RejectedVideoStream {
         @NonNull
         private final String streamUrl;
@@ -291,6 +370,19 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         private RejectedVideoStream(@NonNull final String streamUrl, final int itag) {
             this.streamUrl = streamUrl;
             this.itag = itag;
+        }
+    }
+
+    private static final class RejectedVideoCodecFamily {
+        @NonNull
+        private final String streamUrl;
+        @NonNull
+        private final String codecFamily;
+
+        private RejectedVideoCodecFamily(@NonNull final String streamUrl,
+                                         @NonNull final String codecFamily) {
+            this.streamUrl = streamUrl;
+            this.codecFamily = codecFamily;
         }
     }
 
