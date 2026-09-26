@@ -257,6 +257,22 @@ public final class SettingMigrations {
         }
     };
 
+    private static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        protected void migrate(@NonNull final Context context) {
+            // Auto is the new fresh-install default. Existing users who never explicitly stored
+            // a resolution keep the previous 720p60 effective default after upgrading.
+            final String resolutionKey = context.getString(R.string.default_resolution_key);
+            if (!sp.contains(resolutionKey)) {
+                sp.edit()
+                        .putString(
+                                resolutionKey,
+                                context.getString(R.string.legacy_default_resolution_value))
+                        .apply();
+            }
+        }
+    };
+
     static Set<String> copyAndAdd(final Set<String> values, final String value) {
         final Set<String> updatedValues = new HashSet<>(values);
         updatedValues.add(value);
@@ -280,12 +296,13 @@ public final class SettingMigrations {
             MIGRATION_7_8,
             MIGRATION_8_9,
             MIGRATION_9_10,
+            MIGRATION_10_11,
     };
 
     /**
      * Version number for preferences. Must be incremented every time a migration is necessary.
      */
-    private static final int VERSION = 10;
+    private static final int VERSION = 11;
 
 
     static void runMigrationsIfNeeded(@NonNull final Context context) {
