@@ -16,6 +16,7 @@ import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.ServiceList.YouTube
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamInfo
+import androidx.media3.common.C
 import org.schabi.newpipe.extractor.stream.VideoStream
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
@@ -145,15 +146,30 @@ internal class PlayerMetadataController(
 
     fun thumbnail(): Bitmap? = thumbnailController.getCurrentThumbnail()
 
-    fun selectedVideoStream(): Optional<VideoStream> = Optional.ofNullable(currentMetadata)
-        .flatMap(MediaItemTag::getMaybeQuality)
-        .filter { quality ->
-            quality.selectedVideoStreamIndex >= 0 &&
-                quality.selectedVideoStreamIndex < quality.sortedVideoStreams.size
+    fun selectedVideoStream(): Optional<VideoStream> {
+        val quality = currentMetadata?.maybeQuality?.orElse(null) ?: return Optional.empty()
+        if (!quality.isAdaptive) {
+            return Optional.ofNullable(
+                quality.sortedVideoStreams.getOrNull(quality.selectedVideoStreamIndex)
+            )
         }
-        .map { quality ->
-            quality.sortedVideoStreams[quality.selectedVideoStreamIndex]
-        }
+
+        val selectedFormatId = player.getExoPlayer()?.currentTracks?.groups
+            ?.asSequence()
+            ?.filter { group -> group.type == C.TRACK_TYPE_VIDEO && group.isSelected }
+            ?.flatMap { group ->
+                (0 until group.length).asSequence()
+                    .filter(group::isTrackSelected)
+                    .map { index -> group.mediaTrackGroup.getFormat(index).id }
+            }
+            ?.firstOrNull { id -> !id.isNullOrBlank() }
+
+        return Optional.ofNullable(
+            quality.sortedVideoStreams.firstOrNull { stream ->
+                stream.itag.toString() == selectedFormatId
+            }
+        )
+    }
 
     fun selectedAudioStream(): Optional<AudioStream> = Optional.ofNullable(currentMetadata)
         .flatMap(MediaItemTag::getMaybeAudioTrack)
