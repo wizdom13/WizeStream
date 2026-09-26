@@ -145,7 +145,8 @@ class DeviceSyncLogRepository(context: Context) {
                     result?.sentChanges,
                     result?.receivedChanges,
                     error,
-                    retryDiagnostic = retryDiagnostics[DeviceSyncLogCategory.SUBSCRIPTIONS]
+                    subscriptionSkipped,
+                    retryDiagnostics[DeviceSyncLogCategory.SUBSCRIPTIONS]
                 )
             )
             add(
@@ -154,7 +155,8 @@ class DeviceSyncLogRepository(context: Context) {
                     playlistResult?.sentChanges,
                     playlistResult?.receivedChanges,
                     playlistError,
-                    retryDiagnostic = retryDiagnostics[DeviceSyncLogCategory.PLAYLISTS]
+                    playlistSkipped,
+                    retryDiagnostics[DeviceSyncLogCategory.PLAYLISTS]
                 )
             )
             add(
@@ -195,7 +197,8 @@ class DeviceSyncLogRepository(context: Context) {
                         syncResult?.sentChanges,
                         syncResult?.receivedChanges,
                         structuredPreferenceErrors[category],
-                        retryDiagnostic = retryDiagnostics[category.toLogCategory()]
+                        category in structuredPreferenceSkipped,
+                        retryDiagnostics[category.toLogCategory()]
                     )
                 )
             }
