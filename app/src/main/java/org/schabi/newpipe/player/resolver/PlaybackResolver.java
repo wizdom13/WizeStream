@@ -25,6 +25,7 @@ import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.services.youtube.ItagItem;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.CreationException;
+import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeAdaptiveDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeOtfDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubePostLiveStreamDvrDashManifestCreator;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeProgressiveDashManifestCreator;
@@ -44,6 +45,7 @@ import org.schabi.newpipe.util.StreamTypeUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -538,6 +540,29 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             default:
                 throw new ResolverException("Unsupported delivery method for YouTube contents: "
                         + deliveryMethod);
+        }
+    }
+
+    static MediaSource buildYoutubeAdaptiveVideoMediaSource(
+            final PlayerDataSource dataSource,
+            final List<VideoStream> videoStreams,
+            final StreamInfo streamInfo,
+            final MediaItemTag metadata) throws ResolverException {
+        if (videoStreams.size() < 2) {
+            throw new ResolverException("Adaptive video source requires at least two streams");
+        }
+        final VideoStream first = videoStreams.get(0);
+        try {
+            final String manifestString = YoutubeAdaptiveDashManifestCreator
+                    .fromProgressiveVideoStreams(videoStreams, streamInfo.getDuration());
+            final DashManifest manifest = createDashManifest(manifestString, first);
+            return dataSource.getYoutubeDashMediaSourceFactory().createMediaSource(
+                    manifest,
+                    metadata.asMediaItem().buildUpon()
+                            .setUri(Uri.parse(first.getContent()))
+                            .build());
+        } catch (final CreationException | IOException | NullPointerException e) {
+            throw new ResolverException("Unable to build adaptive YouTube DASH source", e);
         }
     }
 
