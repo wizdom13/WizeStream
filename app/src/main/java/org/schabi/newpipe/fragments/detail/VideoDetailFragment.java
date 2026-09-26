@@ -2915,6 +2915,16 @@ public final class VideoDetailFragment
 
     @Override
     public void onScreenRotationButtonClicked(final boolean fullscreen) {
+        requestFullscreenOrientation(fullscreen, false);
+    }
+
+    @Override
+    public void onManualFullscreenButtonClicked(final boolean fullscreen) {
+        requestFullscreenOrientation(fullscreen, true);
+    }
+
+    private void requestFullscreenOrientation(final boolean fullscreen,
+                                              final boolean manualFullscreen) {
         final Optional<MainPlayerUi> playerUi = player == null
                 ? Optional.empty() : player.UIs().get(MainPlayerUi.class);
         final MainPlayerUi ui = playerUi.orElse(null);
@@ -2936,8 +2946,9 @@ public final class VideoDetailFragment
                 ui == null
                         ? FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN
                         : ui.getVideoContentOrientation();
-        final int targetOrientation =
-                FullscreenOrientationPolicy.targetConfigurationOrientation(
+        final int targetOrientation = manualFullscreen
+                ? FullscreenOrientationPolicy.manualTargetConfigurationOrientation(fullscreen)
+                : FullscreenOrientationPolicy.targetConfigurationOrientation(
                         fullscreen, contentOrientation);
         pendingFullscreenOrientation = targetOrientation;
         pendingFullscreenState = fullscreen
@@ -2945,12 +2956,13 @@ public final class VideoDetailFragment
                 : FullscreenOrientationPolicy.EXIT_FULLSCREEN;
 
         // If Android is already in the requested orientation it will not emit another
-        // configuration callback. Portrait fullscreen must still explicitly lock the activity
-        // so a physical device rotation does not rotate vertical content after manual entry.
+        // configuration callback. Content-aware portrait fullscreen still locks the activity,
+        // while explicit manual fullscreen remains landscape until the user exits it.
         if (FullscreenOrientationPolicy.isTargetOrientation(
                 currentOrientation, targetOrientation)) {
-            if (FullscreenOrientationPolicy.shouldLockPortraitFullscreen(
-                    fullscreen, contentOrientation)) {
+            if (!manualFullscreen
+                    && FullscreenOrientationPolicy.shouldLockPortraitFullscreen(
+                            fullscreen, contentOrientation)) {
                 activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             }
             if (ui != null) {
