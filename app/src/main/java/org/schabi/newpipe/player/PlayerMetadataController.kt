@@ -7,6 +7,7 @@ package org.schabi.newpipe.player
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.media3.common.C
 import androidx.media3.common.Player as Media3Player
 import java.util.Optional
 import org.schabi.newpipe.R
@@ -16,7 +17,6 @@ import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.ServiceList.YouTube
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamInfo
-import androidx.media3.common.C
 import org.schabi.newpipe.extractor.stream.VideoStream
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
