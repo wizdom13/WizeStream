@@ -12,9 +12,19 @@ import android.provider.MediaStore
 import java.io.File
 
 class LocalMediaRepository(private val context: Context) {
+    private val exclusionStore = LocalMediaExclusionStore(context)
+
     fun query(access: LocalMediaAccess): LocalMediaLibrary = LocalMediaLibrary(
-        audioItems = if (access.canReadAudio) queryAudio() else emptyList(),
-        videoItems = if (access.canReadVideo) queryVideo() else emptyList()
+        audioItems = if (access.canReadAudio) {
+            queryAudio().filterNot(exclusionStore::isExcluded)
+        } else {
+            emptyList()
+        },
+        videoItems = if (access.canReadVideo) {
+            queryVideo().filterNot(exclusionStore::isExcluded)
+        } else {
+            emptyList()
+        }
     )
 
     private fun queryAudio(): List<LocalMediaItem> {
