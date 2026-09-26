@@ -69,6 +69,7 @@ import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.ktx.AnimationType;
+import org.schabi.newpipe.player.DanmakuController;
 import org.schabi.newpipe.player.LiveQualityController;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
@@ -117,6 +118,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     protected PlayerBinding binding;
     private final PlayerUiTheme playerUiTheme;
+    private final DanmakuController danmakuController;
     private final Handler controlsVisibilityHandler = new Handler(Looper.getMainLooper());
     @Nullable
     private SurfaceHolderCallback surfaceHolderCallback;
@@ -169,6 +171,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         super(player);
         binding = playerBinding;
         playerUiTheme = new PlayerUiTheme(context, binding.playbackSeekBar);
+        danmakuController = new DanmakuController(player, binding);
         setupFromView();
     }
 
@@ -219,6 +222,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playbackSeekBar.setOnSeekBarChangeListener(this);
         binding.captionTextView.setOnClickListener(makeOnClickListener(this::onCaptionClicked));
         binding.resizeTextView.setOnClickListener(makeOnClickListener(this::onResizeClicked));
+        binding.danmakuToggle.setOnClickListener(makeOnClickListener(danmakuController::toggle));
         binding.playbackLiveSync.setOnClickListener(makeOnClickListener(player::seekToDefault));
 
         playerGestureListener = buildGestureListener();
@@ -297,6 +301,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playbackSeekBar.setOnSeekBarChangeListener(null);
         binding.captionTextView.setOnClickListener(null);
         binding.resizeTextView.setOnClickListener(null);
+        binding.danmakuToggle.setOnClickListener(null);
         binding.playbackLiveSync.setOnClickListener(null);
 
         binding.getRoot().setOnTouchListener(null);
@@ -434,6 +439,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void destroy() {
         playerUiTheme.close();
+        danmakuController.destroy();
         super.destroy();
         clearScaledEndScreenThumbnail();
         deinitPlayerSeekOverlay();
@@ -927,6 +933,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onMediaItemTransition() {
         super.onMediaItemTransition();
         binding.surfaceView.clearAspectRatio();
+        danmakuController.reset();
     }
 
     @Override
@@ -934,6 +941,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         super.onPlaying();
 
         updateStreamRelatedViews();
+        danmakuController.start();
 
         binding.playbackSeekBar.setEnabled(true);
         applyPlayerSeekBarColor();
@@ -957,6 +965,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBuffering() {
         super.onBuffering();
+        danmakuController.suspendForBuffering();
         binding.loadingPanel.setBackgroundColor(Color.TRANSPARENT);
         binding.loadingPanel.setVisibility(View.VISIBLE);
         binding.getRoot().setKeepScreenOn(true);
@@ -965,6 +974,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPaused() {
         super.onPaused();
+        danmakuController.pause();
 
         // Don't let UI elements popup during double tap seeking. This state is entered sometimes
         // during seeking/loading. This if-else check ensures that the controls aren't popping up.
@@ -988,6 +998,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPausedSeek() {
         super.onPausedSeek();
+        danmakuController.suspendForBuffering();
         animatePlayButtons(false, 100);
         binding.getRoot().setKeepScreenOn(true);
     }
@@ -995,6 +1006,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onCompleted() {
         super.onCompleted();
+        danmakuController.pause();
+        binding.danmakuOverlay.clearComments();
 
         animate(binding.playPauseButton, false, 0, AnimationType.SCALE_AND_ALPHA, 0,
                 () -> {
@@ -1155,6 +1168,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         super.onMetadataChanged(info);
         binding.surfaceView.resetUserTransform();
 
+        danmakuController.onMetadataChanged(info);
         updateStreamRelatedViews();
 
         binding.titleTextView.setText(info.getName());
@@ -1166,6 +1180,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
+        danmakuController.reset();
         binding.surfaceView.resetUserTransform();
         binding.qualityTextView.setVisibility(View.GONE);
         binding.audioTrackTextView.setVisibility(View.GONE);
