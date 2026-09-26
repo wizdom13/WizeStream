@@ -130,6 +130,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     private static final int POPUP_MENU_ID_QUALITY = 69;
     private static final int AUTO_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE;
+    private static final int BEST_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE - 1;
     private static final int POPUP_MENU_ID_AUDIO_TRACK = 70;
     private static final int POPUP_MENU_ID_PLAYBACK_SPEED = 79;
     private static final int POPUP_MENU_ID_CAPTION = 89;
@@ -1256,6 +1257,11 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 AUTO_QUALITY_MENU_ITEM_ID,
                 Menu.NONE,
                 R.string.auto);
+        qualityPopupMenu.getMenu().add(
+                POPUP_MENU_ID_QUALITY,
+                BEST_QUALITY_MENU_ITEM_ID,
+                Menu.NONE,
+                R.string.best_resolution);
         for (int i = 0; i < availableStreams.size(); i++) {
             final VideoStream videoStream = availableStreams.get(i);
             qualityPopupMenu.getMenu().add(POPUP_MENU_ID_QUALITY, i, Menu.NONE, MediaFormat
@@ -1413,6 +1419,11 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 player.setPlaybackQuality(context.getString(R.string.auto_resolution_key));
             }
             binding.qualityTextView.setText(R.string.auto);
+            return;
+        }
+        if (menuItem.getItemId() == BEST_QUALITY_MENU_ITEM_ID) {
+            player.setPlaybackQuality(context.getString(R.string.best_resolution_key));
+            binding.qualityTextView.setText(R.string.best_resolution);
             return;
         }
 
