@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/local_media">
+
+    <Preference
+        android:key="@string/local_media_ignored_status_key"
+        android:title="@string/local_media_ignored_status_title"
+        app:iconSpaceReserved="false"
+        app:selectable="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/local_media_clear_ignored_key"
+        android:summary="@string/local_media_clear_ignored_summary"
+        android:title="@string/local_media_clear_ignored_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+</PreferenceScreen>
