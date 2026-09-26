@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import androidx.media3.common.PlaybackException;
 import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker;
 
@@ -76,6 +77,29 @@ final class PlayerHttpErrorRecovery {
         }
     }
 
+    static final class OneShotRecoveryGuard {
+        @Nullable
+        private String currentRecoveryKey;
+        private boolean acquired;
+
+        boolean acquire(@NonNull final String recoveryKey) {
+            if (!recoveryKey.equals(currentRecoveryKey)) {
+                currentRecoveryKey = recoveryKey;
+                acquired = false;
+            }
+            if (acquired) {
+                return false;
+            }
+            acquired = true;
+            return true;
+        }
+
+        void reset() {
+            currentRecoveryKey = null;
+            acquired = false;
+        }
+    }
+
     static final class RecoveryAttempt {
         private final int number;
         private final long delayMillis;
@@ -92,6 +116,18 @@ final class PlayerHttpErrorRecovery {
         long getDelayMillis() {
             return delayMillis;
         }
+    }
+
+    static boolean isRecoverableAv1DecoderInitFailure(
+            final int errorCode,
+            @Nullable final VideoStream stream) {
+        if (errorCode != PlaybackException.ERROR_CODE_DECODER_INIT_FAILED || stream == null) {
+            return false;
+        }
+
+        final String codec = stream.getCodec();
+        final String normalizedCodec = codec == null ? "" : codec.toLowerCase(Locale.ROOT);
+        return normalizedCodec.contains("av01") || normalizedCodec.contains("av1");
     }
 
     static boolean isRecoverableYouTubeMediaUrlFailure(@NonNull final Throwable error,
