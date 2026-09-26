@@ -39,6 +39,7 @@ public final class SettingsResourceRegistry {
         add(DeviceSyncSettingsFragment.class, R.xml.device_sync_settings);
         add(HistorySettingsFragment.class, R.xml.history_settings);
         add(LearningSettingsFragment.class, R.xml.learning_settings);
+        add(LocalMediaSettingsFragment.class, R.xml.local_media_settings);
         add(NotificationsSettingsFragment.class, R.xml.notifications_settings);
         add(PlayerNotificationSettingsFragment.class, R.xml.player_notification_settings);
         add(ProxySettingsFragment.class, R.xml.proxy_settings);
