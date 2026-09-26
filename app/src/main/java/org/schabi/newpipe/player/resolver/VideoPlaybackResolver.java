@@ -193,6 +193,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
             return null;
         }
 
+        // Create subtitle sources. StreamInfo is cached, but the translation preference can change
+        // afterwards, so synthesize the requested YouTube translation at resolution time too.
         final List<SubtitlesStream> subtitlesStreams = info.getSubtitles() == null
                 ? null : new ArrayList<>(info.getSubtitles());
         if (subtitlesStreams != null
