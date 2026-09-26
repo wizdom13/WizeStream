@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.content.res.Configuration;
+import android.graphics.Color;
 
 import org.junit.Test;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
@@ -18,6 +19,14 @@ public class VideoDetailLayoutStateTest {
     @Test
     public void fullscreenDetailContentStartsAtTheTopOfTheWindow() {
         assertEquals(0, VideoDetailFragment.getDetailContentTopMargin(true, 30));
+    }
+
+    @Test
+    public void fullscreenUsesBlackPlayerBackdropForLetterboxing() {
+        assertEquals(Color.BLACK,
+                VideoDetailFragment.getPlayerPlaceholderBackgroundColor(true));
+        assertEquals(Color.TRANSPARENT,
+                VideoDetailFragment.getPlayerPlaceholderBackgroundColor(false));
     }
 
     @Test
