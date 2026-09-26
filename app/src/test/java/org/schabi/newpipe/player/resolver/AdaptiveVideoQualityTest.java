@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player.resolver;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -52,6 +53,20 @@ public class AdaptiveVideoQualityTest {
 
         assertEquals(List.of("720p", "480p"),
                 candidates.stream().map(VideoStream::getResolution).toList());
+    }
+
+    @Test
+    public void codecFallbackRequiresASecondCodecFamily() throws Exception {
+        final VideoStream av1 = stream(398, "720p", "av01.0.05M.08", 1_200_000);
+        final VideoStream av1Lower = stream(397, "480p", "av01.0.04M.08", 800_000);
+        final VideoStream avc = stream(136, "720p", "avc1.4d401f", 2_000_000);
+
+        assertFalse(VideoPlaybackResolver.hasAlternativeCodecFamily(
+                List.of(av1, av1Lower), av1.getCodec()));
+        assertTrue(VideoPlaybackResolver.hasAlternativeCodecFamily(
+                List.of(av1, av1Lower, avc), av1.getCodec()));
+        assertFalse(VideoPlaybackResolver.hasAlternativeCodecFamily(
+                List.of(av1, avc), null));
     }
 
     @Test
