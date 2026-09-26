@@ -399,7 +399,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         setupElementsVisibility();
         setupElementsSize(context.getResources());
         binding.getRoot().setVisibility(View.VISIBLE);
-        binding.playPauseButton.requestFocus();
+        if (shouldRequestPlaybackButtonFocus()) {
+            binding.playPauseButton.requestFocus();
+        }
     }
 
     @Override
@@ -943,7 +945,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 () -> {
                     updatePlayPauseButton(PlayButtonAction.PAUSE);
                     animatePlayButtons(true, 200);
-                    if (!isAnyListViewOpen()) {
+                    if (shouldRequestPlaybackButtonFocus()) {
                         binding.playPauseButton.requestFocus();
                     }
                 });
@@ -973,9 +975,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     () -> {
                         updatePlayPauseButton(PlayButtonAction.PLAY);
                         animatePlayButtons(true, 200);
-                        if (!isAnyListViewOpen()) {
-                            binding.playPauseButton.requestFocus();
-                        }
+                        if (shouldRequestPlaybackButtonFocus()) {
+                        binding.playPauseButton.requestFocus();
+                    }
                     });
         }
 
@@ -1008,6 +1010,21 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         animate(binding.currentDisplaySeek, false, 200, AnimationType.SCALE_AND_ALPHA);
         binding.loadingPanel.setVisibility(View.GONE);
         animate(binding.surfaceForeground, true, 100);
+    }
+
+    static boolean shouldRequestPlaybackButtonFocus(final boolean tv,
+                                                    final boolean fullscreen,
+                                                    final boolean popup,
+                                                    final boolean listOpen) {
+        return !listOpen && (!tv || fullscreen || popup);
+    }
+
+    private boolean shouldRequestPlaybackButtonFocus() {
+        return shouldRequestPlaybackButtonFocus(
+                DeviceUtils.isTv(context),
+                isFullscreen(),
+                player.popupPlayerSelected(),
+                isAnyListViewOpen());
     }
 
     private void animatePlayButtons(final boolean show, final long duration) {
