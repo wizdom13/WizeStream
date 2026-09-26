@@ -6,12 +6,15 @@
 package org.schabi.newpipe.sync
 
 class StructuredPreferenceSyncEngine internal constructor(
-    private val store: StructuredPreferenceSyncStore
+    private val store: StructuredPreferenceSyncStore,
+    private val categoryEnabled: (StructuredPreferenceCategory) -> Boolean = { true }
 ) {
+    fun isEnabled(category: StructuredPreferenceCategory): Boolean = categoryEnabled(category)
     internal fun createRequest(
         peerId: String,
         category: StructuredPreferenceCategory
     ): StructuredPreferenceSyncRequest {
+        ensureEnabled(category)
         store.reconcileLocal(category)
         val batch = store.getPendingChanges(
             category,
@@ -31,6 +34,7 @@ class StructuredPreferenceSyncEngine internal constructor(
         request: StructuredPreferenceSyncRequest
     ): StructuredPreferenceSyncResponse {
         return try {
+            ensureEnabled(request.category)
             StructuredPreferenceSyncValidation.validateRequest(request)
             store.reconcileLocal(request.category)
             store.applyChanges(request.category, request.changes)
@@ -86,6 +90,15 @@ class StructuredPreferenceSyncEngine internal constructor(
 
     internal fun clearPeerKnowledge() {
         store.clearPeerKnowledge()
+    }
+
+    private fun ensureEnabled(category: StructuredPreferenceCategory) {
+        if (!categoryEnabled(category)) {
+            val label = category.name.lowercase().replace('_', ' ')
+            throw StructuredPreferenceSyncException(
+                "$label synchronization is disabled on this device"
+            )
+        }
     }
 
     companion object {
