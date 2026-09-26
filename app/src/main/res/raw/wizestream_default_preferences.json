@@ -16,7 +16,7 @@
   "enable_playback_resume": true,
   "file_replacement_character": "_",
   "update_app_key": false,
-  "default_resolution": "720p60",
+  "default_resolution": "auto_resolution",
   "channel_tabs": [
     "show_channel_tabs_livestreams",
     "show_channel_tabs_likes",
