@@ -272,6 +272,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.initListeners()
         feedBinding.refreshRootView.setOnClickListener { reloadContent() }
         feedBinding.refreshIcon.setOnClickListener { reloadContent() }
+        feedBinding.refreshSubtitleText.setOnClickListener { showNotLoadedSubscriptions() }
         feedBinding.swipeRefreshLayout.setOnRefreshListener { reloadContent() }
         feedBinding.cancelRefreshButton.setOnClickListener {
             it.isEnabled = false
@@ -633,9 +634,14 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         feedBinding.refreshSubtitleText.isVisible = feedsNotLoaded
         if (feedsNotLoaded) {
             feedBinding.refreshSubtitleText.text = getString(
-                R.string.feed_subscription_not_loaded_count,
+                R.string.feed_subscription_not_loaded_count_details,
                 loadedState.notLoadedCount
             )
+            feedBinding.refreshSubtitleText.isClickable = true
+            feedBinding.refreshSubtitleText.isFocusable = true
+        } else {
+            feedBinding.refreshSubtitleText.isClickable = false
+            feedBinding.refreshSubtitleText.isFocusable = false
         }
 
         if (oldestSubscriptionUpdate != loadedState.oldestUpdate ||
@@ -645,6 +651,85 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             handleItemsErrors(loadedState.itemsErrors)
         }
         oldestSubscriptionUpdate = loadedState.oldestUpdate
+    }
+
+    private fun showNotLoadedSubscriptions() {
+        val loadedState = latestLoadedState ?: return
+        val failedIds = FeedFailureDetails.subscriptionIds(loadedState.itemsErrors)
+        if (failedIds.isEmpty()) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.feed_not_loaded_details_title)
+                .setMessage(R.string.feed_not_loaded_details_unavailable)
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+
+        disposables.add(
+            Single.fromCallable {
+                val dao = NewPipeDatabase.getInstance(requireContext()).subscriptionDAO()
+                failedIds.mapNotNull { id ->
+                    runCatching { dao.getSubscription(id) }.getOrNull()
+                }
+            }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { subscriptions ->
+                        if (!isAdded || _feedBinding == null) {
+                            return@subscribe
+                        }
+                        showFailedSubscriptionsDialog(subscriptions)
+                    },
+                    { error ->
+                        Log.e(TAG, "Unable to load failed subscriptions", error)
+                        ErrorUtil.showUiErrorSnackbar(
+                            this,
+                            "Loading failed subscription details",
+                            error
+                        )
+                    }
+                )
+        )
+    }
+
+    private fun showFailedSubscriptionsDialog(subscriptions: List<SubscriptionEntity>) {
+        if (subscriptions.isEmpty()) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.feed_not_loaded_details_title)
+                .setMessage(R.string.feed_not_loaded_details_unavailable)
+                .setPositiveButton(R.string.ok, null)
+                .show()
+            return
+        }
+
+        val ordered = subscriptions.sortedBy { it.name.lowercase() }
+        val labels = ordered.map { subscription ->
+            subscription.name.ifBlank { subscription.url.orEmpty() }
+        }.toTypedArray()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.feed_not_loaded_details_title)
+            .setItems(labels) { dialog, which ->
+                val subscription = ordered[which]
+                dialog.dismiss()
+                try {
+                    NavigationHelper.openChannelFragment(
+                        fm,
+                        subscription.serviceId,
+                        subscription.url.orEmpty(),
+                        subscription.name
+                    )
+                } catch (error: Exception) {
+                    ErrorUtil.showUiErrorSnackbar(
+                        this,
+                        "Opening failed subscription",
+                        error
+                    )
+                }
+            }
+            .setNegativeButton(R.string.close, null)
+            .show()
     }
 
     private fun showFilteredFeedItems(
