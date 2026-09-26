@@ -703,10 +703,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             return
         }
 
-        val ordered = subscriptions.sortedBy { it.name.lowercase() }
-        val labels = ordered.map { subscription ->
-            subscription.name.ifBlank { subscription.url.orEmpty() }
-        }.toTypedArray()
+        val ordered = subscriptions.sortedBy { it.name.orEmpty().lowercase() }
+        val labels = ordered.map(::failedSubscriptionLabel).toTypedArray()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.feed_not_loaded_details_title)
@@ -718,7 +716,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                         fm,
                         subscription.serviceId,
                         subscription.url.orEmpty(),
-                        subscription.name
+                        failedSubscriptionLabel(subscription)
                     )
                 } catch (error: Exception) {
                     ErrorUtil.showUiErrorSnackbar(
@@ -730,6 +728,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             }
             .setNegativeButton(R.string.close, null)
             .show()
+    }
+
+    private fun failedSubscriptionLabel(subscription: SubscriptionEntity): String {
+        return subscription.name
+            ?.takeIf { it.isNotBlank() }
+            ?: subscription.url.orEmpty()
     }
 
     private fun showFilteredFeedItems(
