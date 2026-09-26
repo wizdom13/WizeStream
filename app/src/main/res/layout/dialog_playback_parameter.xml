@@ -25,8 +25,8 @@
             android:layout_centerHorizontal="true"
             android:gravity="center"
             android:text="@string/playback_tempo"
-            android:textColor="?attr/colorOnSurface"
-            android:textStyle="bold" />
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="?attr/colorOnSurface" />
 
         <RelativeLayout
             android:id="@+id/tempoControl"
@@ -134,7 +134,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="5dp"
-            android:background="?attr/colorSurfaceVariant" />
+            android:background="?attr/colorOutlineVariant" />
 
         <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/pitchControlText"
@@ -144,8 +144,8 @@
             android:layout_centerHorizontal="true"
             android:gravity="center"
             android:text="@string/playback_pitch"
-            android:textColor="?attr/colorOnSurface"
-            android:textStyle="bold" />
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="?attr/colorOnSurface" />
 
         <ImageView
             android:id="@+id/pitchToogleControlModes"
@@ -404,7 +404,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="5dp"
-            android:background="?attr/colorSurfaceVariant" />
+            android:background="?attr/colorOutlineVariant" />
 
         <LinearLayout
             android:id="@+id/stepSizeSelector"
@@ -494,7 +494,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="5dp"
-            android:background="?attr/colorSurfaceVariant" />
+            android:background="?attr/colorOutlineVariant" />
 
         <LinearLayout
             android:id="@+id/additionalOptions"
