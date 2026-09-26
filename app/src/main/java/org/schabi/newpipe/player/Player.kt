@@ -266,7 +266,9 @@ class Player(
 
         override fun getAutoFallbackResolutionIndex(
             sortedVideos: MutableList<VideoStream>
-        ): Int = ListHelper.getAutoResolutionFallbackIndex(appContext, sortedVideos)
+        ): Int {
+            return ListHelper.getAutoResolutionFallbackIndex(appContext, sortedVideos)
+        }
 
         override fun isDefaultAutoQuality(): Boolean {
             if (!videoPlayerSelected()) {
