@@ -118,6 +118,10 @@ final class PlayerHttpErrorRecovery {
         }
     }
 
+    static boolean isRecoverableAudioTrackInitFailure(final int errorCode) {
+        return errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED;
+    }
+
     static boolean isRecoverableAv1DecoderInitFailure(
             final int errorCode,
             @Nullable final VideoStream stream) {
