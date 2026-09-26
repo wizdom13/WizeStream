@@ -105,12 +105,12 @@ class LocalMediaDocumentBrowser(private val context: Context) {
         maximumItems: Int = MAXIMUM_GROUP_ITEMS
     ): List<LocalMediaItem> {
         val root = resolve(location) ?: return emptyList()
-        val pending = ArrayDeque<Pair<DocumentFile, String>>()
+        val pending = ArrayDeque<Triple<DocumentFile, String, LocalMediaDocumentLocation>>()
         val visited = mutableSetOf<String>()
         val result = mutableListOf<LocalMediaItem>()
-        pending.add(root to root.name.orEmpty())
+        pending.add(Triple(root, root.name.orEmpty(), location))
         while (pending.isNotEmpty() && result.size < maximumItems) {
-            val (directory, folder) = pending.removeFirst()
+            val (directory, folder, currentLocation) = pending.removeFirst()
             if (!visited.add(directory.uri.toString())) continue
             val children = runCatching { directory.listFiles() }.getOrDefault(emptyArray())
             val folderArtworkUri = chooseLocalFolderArtwork(
@@ -121,16 +121,15 @@ class LocalMediaDocumentBrowser(private val context: Context) {
                 val displayName = document.name.orEmpty().ifBlank {
                     document.uri.lastPathSegment.orEmpty()
                 }
-                val childLocation = locationForDocument(
-                    location,
-                    directory,
-                    document,
-                    displayName
+                val childLocation = currentLocation.copy(
+                    path = currentLocation.path + displayName
                 )
                 when {
                     document.isDirectory &&
                         !exclusionStore.isDocumentLocationExcluded(childLocation) -> {
-                        pending.add(document to document.name.orEmpty())
+                        pending.add(
+                            Triple(document, document.name.orEmpty(), childLocation)
+                        )
                     }
 
                     isSupportedMedia(document.name.orEmpty(), document.type) -> {
@@ -167,20 +166,6 @@ class LocalMediaDocumentBrowser(private val context: Context) {
     }
 
     fun isAvailable(location: LocalMediaDocumentLocation): Boolean = resolve(location) != null
-
-    private fun locationForDocument(
-        base: LocalMediaDocumentLocation,
-        directory: DocumentFile,
-        document: DocumentFile,
-        displayName: String
-    ): LocalMediaDocumentLocation {
-        val current = resolve(base)
-        return if (current?.uri == directory.uri) {
-            base.copy(path = base.path + displayName)
-        } else {
-            base
-        }
-    }
 
     private fun resolve(location: LocalMediaDocumentLocation): DocumentFile? {
         var document = runCatching {
