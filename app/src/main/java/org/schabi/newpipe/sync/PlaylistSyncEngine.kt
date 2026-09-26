@@ -6,9 +6,12 @@
 package org.schabi.newpipe.sync
 
 class PlaylistSyncEngine internal constructor(
-    private val store: PlaylistSyncStore
+    private val store: PlaylistSyncStore,
+    private val enabled: () -> Boolean = { true }
 ) {
+    fun isEnabled(): Boolean = enabled()
     internal fun createRequest(peerId: String): PlaylistSyncRequest {
+        ensureEnabled()
         store.reconcileLocalPlaylists()
         val batch = store.getPendingChanges(
             peerId,
@@ -26,6 +29,7 @@ class PlaylistSyncEngine internal constructor(
         request: PlaylistSyncRequest
     ): PlaylistSyncResponse {
         return try {
+            ensureEnabled()
             PlaylistSyncValidation.validateRequest(request)
             store.reconcileLocalPlaylists()
             store.applyChanges(request.changes)
@@ -67,6 +71,14 @@ class PlaylistSyncEngine internal constructor(
 
     internal fun clearPeerKnowledge() {
         store.clearPeerKnowledge()
+    }
+
+    private fun ensureEnabled() {
+        if (!enabled()) {
+            throw PlaylistSyncException(
+                "Playlist synchronization is disabled on this device"
+            )
+        }
     }
 
     companion object {
