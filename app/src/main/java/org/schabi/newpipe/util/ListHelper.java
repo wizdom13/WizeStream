@@ -100,6 +100,10 @@ public final class ListHelper {
     /**
      * Pick the fixed stream used when Auto cannot build an adaptive ladder.
      * The metered-network cap is still respected.
+     *
+     * @param context app context used to resolve preferences and network state
+     * @param videoStreams available sorted video streams
+     * @return index of the best allowed fixed fallback stream
      */
     public static int getAutoResolutionFallbackIndex(
             @NonNull final Context context,
@@ -759,6 +763,10 @@ public final class ListHelper {
     /**
      * Whether a video stream is within the active metered-network resolution limit.
      * Auto quality uses this to keep every adaptive representation below the configured cap.
+     *
+     * @param context app context used to resolve the active network limit
+     * @param stream video stream to evaluate
+     * @return whether the stream is allowed by the current resolution cap
      */
     public static boolean isVideoStreamWithinResolutionLimit(
             @NonNull final Context context,
@@ -766,6 +774,13 @@ public final class ListHelper {
         return isVideoStreamWithinResolutionLimit(stream, getResolutionLimit(context));
     }
 
+    /**
+     * Pure resolution-cap check used by adaptive quality selection and tests.
+     *
+     * @param stream video stream to evaluate
+     * @param limit maximum allowed resolution, or {@code null} for no limit
+     * @return whether the stream is at or below the provided limit
+     */
     public static boolean isVideoStreamWithinResolutionLimit(
             @NonNull final VideoStream stream,
             @Nullable final String limit) {
@@ -778,6 +793,12 @@ public final class ListHelper {
      *
      * @param context App context
      * @return maximum resolution allowed or null if there is no maximum
+     */
+    /**
+     * Return the active metered-network resolution limit for playback.
+     *
+     * @param context app context used to inspect network and preferences
+     * @return maximum allowed resolution, or {@code null} when unlimited
      */
     @Nullable
     public static String getResolutionLimitForPlayback(@NonNull final Context context) {
