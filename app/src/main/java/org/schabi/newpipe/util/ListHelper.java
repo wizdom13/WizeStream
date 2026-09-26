@@ -789,12 +789,6 @@ public final class ListHelper {
     }
 
     /**
-     * The maximum resolution allowed.
-     *
-     * @param context App context
-     * @return maximum resolution allowed or null if there is no maximum
-     */
-    /**
      * Return the active metered-network resolution limit for playback.
      *
      * @param context app context used to inspect network and preferences
