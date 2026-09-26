@@ -126,8 +126,10 @@ data class DeviceSyncAttempt(
     val profileError: String? = null,
     val result: SubscriptionSyncResult? = null,
     val error: String? = null,
+    val subscriptionSkipped: Boolean = false,
     val playlistResult: PlaylistSyncResult? = null,
     val playlistError: String? = null,
+    val playlistSkipped: Boolean = false,
     val watchHistoryResult: HistorySyncResult? = null,
     val watchHistoryError: String? = null,
     val watchHistorySkipped: Boolean = false,
@@ -139,6 +141,7 @@ data class DeviceSyncAttempt(
     val learningNotesSkipped: Boolean = false,
     val structuredPreferenceResults: Map<StructuredPreferenceCategory, StructuredPreferenceSyncResult?> = emptyMap(),
     val structuredPreferenceErrors: Map<StructuredPreferenceCategory, String?> = emptyMap(),
+    val structuredPreferenceSkipped: Set<StructuredPreferenceCategory> = emptySet(),
     val retryDiagnostics: Map<DeviceSyncLogCategory, String> = emptyMap()
 )
 
@@ -148,17 +151,15 @@ data class DeviceSyncSummary(
     val succeeded: Int
         get() = attempts.count {
             it.profileResult != null &&
-                it.result != null &&
-                it.playlistResult != null &&
+                (it.subscriptionSkipped || it.result != null) &&
+                (it.playlistSkipped || it.playlistResult != null) &&
                 (it.watchHistorySkipped || it.watchHistoryResult != null) &&
                 (it.searchHistorySkipped || it.searchHistoryResult != null) &&
                 (it.learningNotesSkipped || it.learningNotesResult != null) &&
-                (
-                    it.structuredPreferenceResults.isEmpty() ||
-                        StructuredPreferenceCategory.entries.all { category ->
-                            it.structuredPreferenceResults[category] != null
-                        }
-                    )
+                StructuredPreferenceCategory.entries.all { category ->
+                    category in it.structuredPreferenceSkipped ||
+                        it.structuredPreferenceResults[category] != null
+                }
         }
 
     val failed: Int

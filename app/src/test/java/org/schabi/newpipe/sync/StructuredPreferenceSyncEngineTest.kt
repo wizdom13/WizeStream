@@ -13,6 +13,34 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StructuredPreferenceSyncEngineTest {
+
+    @Test
+    fun `disabled structured category rejects outgoing and incoming requests`() {
+        val localStore = newStore()
+        val remoteStore = newStore()
+        val disabledCategory = StructuredPreferenceCategory.FILTERS
+        val disabled = StructuredPreferenceSyncEngine(localStore) {
+            it != disabledCategory
+        }
+
+        assertFalse(disabled.isEnabled(disabledCategory))
+        val outgoingRejected = runCatching {
+            disabled.createRequest(remoteStore.localPeerId, disabledCategory)
+        }.exceptionOrNull()
+        assertTrue(outgoingRejected is StructuredPreferenceSyncException)
+
+        val response = disabled.handleRequest(
+            remoteStore.localPeerId,
+            StructuredPreferenceSyncRequest(
+                category = disabledCategory,
+                knownRevisions = emptyMap(),
+                changes = emptyList(),
+                hasMore = false
+            )
+        )
+        assertFalse(response.accepted)
+    }
+
     @Test
     fun `feed group membership edits merge and deletion tombstones converge`() {
         val phoneStore = newStore()

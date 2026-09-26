@@ -6,9 +6,12 @@
 package org.schabi.newpipe.sync
 
 class SubscriptionSyncEngine internal constructor(
-    private val store: SubscriptionSyncStore
+    private val store: SubscriptionSyncStore,
+    private val enabled: () -> Boolean = { true }
 ) {
+    fun isEnabled(): Boolean = enabled()
     internal fun createRequest(peerId: String): SubscriptionSyncRequest {
+        ensureEnabled()
         store.reconcileLocalSubscriptions()
         val batch = store.getPendingChanges(
             peerId,
@@ -26,6 +29,7 @@ class SubscriptionSyncEngine internal constructor(
         request: SubscriptionSyncRequest
     ): SubscriptionSyncResponse {
         return try {
+            ensureEnabled()
             SubscriptionSyncValidation.validateRequest(request)
             store.reconcileLocalSubscriptions()
             store.applyChanges(request.changes)
@@ -66,6 +70,14 @@ class SubscriptionSyncEngine internal constructor(
 
     internal fun clearPeerKnowledge() {
         store.clearPeerKnowledge()
+    }
+
+    private fun ensureEnabled() {
+        if (!enabled()) {
+            throw SubscriptionSyncException(
+                "Subscription synchronization is disabled on this device"
+            )
+        }
     }
 
     companion object {

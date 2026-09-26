@@ -16,6 +16,30 @@ import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
 import org.schabi.newpipe.profiles.ProfileManager
 
 class PlaylistSyncEngineTest {
+
+    @Test
+    fun `disabled playlist sync rejects outgoing and incoming requests`() {
+        val localStore = newStore()
+        val remoteStore = newStore()
+        val disabled = PlaylistSyncEngine(localStore) { false }
+
+        assertFalse(disabled.isEnabled())
+        val outgoingRejected = runCatching {
+            disabled.createRequest(remoteStore.localPeerId)
+        }.exceptionOrNull()
+        assertTrue(outgoingRejected is PlaylistSyncException)
+
+        val response = disabled.handleRequest(
+            remoteStore.localPeerId,
+            PlaylistSyncRequest(
+                knownRevisions = emptyMap(),
+                changes = emptyList(),
+                hasMore = false
+            )
+        )
+        assertFalse(response.accepted)
+    }
+
     @Test
     fun `legacy remote playlist counters are normalized before synchronization`() {
         val synchronized = SyncedRemotePlaylist.from(
