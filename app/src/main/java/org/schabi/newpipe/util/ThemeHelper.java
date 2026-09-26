@@ -130,67 +130,13 @@ public final class ThemeHelper {
 
     @StyleRes
     private static int getDialogTheme(final Context context, final boolean minWidth) {
-        final boolean light = isLightThemeSelected(context);
-        final int defaultTheme = minWidth
-                ? (light ? R.style.LightDialogMinWidthTheme : R.style.DarkDialogMinWidthTheme)
-                : (light ? R.style.LightDialogTheme : R.style.DarkDialogTheme);
-        if (isFollowSystemThemeColor(context)) {
-            // A full dialog theme replaces the activity's Material You palette.
-            // Keep its colors (including black surfaces) and overlay only dialog styling.
-            return minWidth ? R.style.ThemeOverlay_wizestream_Dialog_MinWidth
-                    : R.style.ThemeOverlay_wizestream_Dialog;
-        }
-        if (isThemeColor(context, R.string.theme_color_wizestream_value,
-                "wizestream")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_wizestream
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_wizestream)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_wizestream
-                            : R.style.DarkDialogTheme_ThemeColor_wizestream);
-        } else if (isThemeColor(context, R.string.theme_color_neutral_value, "neutral")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Neutral
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Neutral)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Neutral
-                            : R.style.DarkDialogTheme_ThemeColor_Neutral);
-        } else if (isThemeColor(context, R.string.theme_color_green_value, "green")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Green
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Green)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Green
-                            : R.style.DarkDialogTheme_ThemeColor_Green);
-        } else if (isThemeColor(context, R.string.theme_color_blue_value, "blue")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Blue
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Blue)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Blue
-                            : R.style.DarkDialogTheme_ThemeColor_Blue);
-        } else if (isThemeColor(context, R.string.theme_color_purple_value, "purple")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Purple
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Purple)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Purple
-                            : R.style.DarkDialogTheme_ThemeColor_Purple);
-        } else if (isThemeColor(context, R.string.theme_color_orange_value, "orange")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Orange
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Orange)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Orange
-                            : R.style.DarkDialogTheme_ThemeColor_Orange);
-        } else if (isThemeColor(context, R.string.theme_color_pink_value, "pink")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Pink
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Pink)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Pink
-                            : R.style.DarkDialogTheme_ThemeColor_Pink);
-        } else if (isThemeColor(context, R.string.theme_color_red_value, "red")) {
-            return minWidth
-                    ? (light ? R.style.LightDialogMinWidthTheme_ThemeColor_Red
-                            : R.style.DarkDialogMinWidthTheme_ThemeColor_Red)
-                    : (light ? R.style.LightDialogTheme_ThemeColor_Red
-                            : R.style.DarkDialogTheme_ThemeColor_Red);
-        }
-        return defaultTheme;
+        // Dialogs should inherit the already-resolved activity palette (including
+        // Material You, custom theme colors, service accents, and AMOLED surfaces)
+        // and only add Material 3 dialog styling. Full dialog themes replace those
+        // resolved colors and are the main reason legacy-looking dialogs can diverge
+        // from the screen that launched them.
+        return minWidth ? R.style.ThemeOverlay_wizestream_Dialog_MinWidth
+                : R.style.ThemeOverlay_wizestream_Dialog;
     }
 
     private static boolean isThemeColor(final Context context, final int stringRes,
