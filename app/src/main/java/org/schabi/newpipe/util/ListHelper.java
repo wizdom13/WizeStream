@@ -763,7 +763,12 @@ public final class ListHelper {
     public static boolean isVideoStreamWithinResolutionLimit(
             @NonNull final Context context,
             @NonNull final VideoStream stream) {
-        final String limit = getResolutionLimit(context);
+        return isVideoStreamWithinResolutionLimit(stream, getResolutionLimit(context));
+    }
+
+    public static boolean isVideoStreamWithinResolutionLimit(
+            @NonNull final VideoStream stream,
+            @Nullable final String limit) {
         return limit == null
                 || compareVideoStreamResolution(stream.getResolution(), limit) <= 0;
     }
