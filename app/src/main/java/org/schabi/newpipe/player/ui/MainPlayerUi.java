@@ -1227,8 +1227,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     }
 
     /**
-     * Toggles fullscreen through the same orientation-aware path as the screen rotation button.
-     * Player gestures must use this instead of changing only the fullscreen UI state.
+     * Applies explicit user fullscreen intent. On phones, manual entry targets landscape and
+     * manual exit targets portrait; automatic device rotation remains content-aware.
      */
     public void toggleFullscreenWithOrientation() {
         final boolean targetFullscreen = !isFullscreen();
