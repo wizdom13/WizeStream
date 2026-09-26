@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.LayoutRes
@@ -81,6 +82,7 @@ class LocalMediaFragment : Fragment() {
     private lateinit var browserViewModel: LocalMediaBrowserViewModel
     private var browserState = LocalMediaBrowserState()
     private var searchField: TextInputEditText? = null
+    private val exclusionStore by lazy { LocalMediaExclusionStore(requireContext()) }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -559,14 +561,31 @@ class LocalMediaFragment : Fragment() {
             R.string.local_media_enqueue_next,
             R.string.add_to_playlist
         )
-        if (allowRemoval || location.path.isEmpty()) actions += R.string.local_media_remove_folder
+        if (location.path.isNotEmpty()) {
+            actions += R.string.local_media_ignore_folder
+        }
+        if (allowRemoval || location.path.isEmpty()) {
+            actions += R.string.local_media_remove_folder
+        }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(title)
             .setItems(actions.map(::getString).toTypedArray()) { _, which ->
-                if (actions[which] == R.string.local_media_remove_folder) {
-                    browserViewModel.removeRoot(location.rootUri)
-                } else {
-                    collectFolderForAction(location, title, actions[which])
+                when (actions[which]) {
+                    R.string.local_media_remove_folder -> {
+                        browserViewModel.removeRoot(location.rootUri)
+                    }
+
+                    R.string.local_media_ignore_folder -> {
+                        exclusionStore.ignoreDocumentLocation(location)
+                        if (browserState.location == location) {
+                            browserViewModel.goBack()
+                        } else {
+                            browserViewModel.refresh()
+                        }
+                        showIgnoredConfirmation()
+                    }
+
+                    else -> collectFolderForAction(location, title, actions[which])
                 }
             }.show()
     }
@@ -691,21 +710,49 @@ class LocalMediaFragment : Fragment() {
 
     private fun showActiveGroupActions() {
         val group = activeGroup ?: return
-        val actions = arrayOf(
-            getString(R.string.local_media_play_background),
-            getString(R.string.enqueue),
-            getString(R.string.local_media_enqueue_next),
-            getString(R.string.add_to_playlist)
+        val actions = mutableListOf(
+            R.string.local_media_play_background,
+            R.string.enqueue,
+            R.string.local_media_enqueue_next,
+            R.string.add_to_playlist
         )
+        if (group.kind == LocalMediaGroupKind.VIDEO_FOLDER) {
+            actions += R.string.local_media_ignore_folder
+        }
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(group.title)
-            .setItems(actions) { _, which ->
-                val queue = LocalMediaGroupQueueBuilder.queue(group, shuffle = false)
-                when (which) {
-                    0 -> NavigationHelper.playOnBackgroundPlayer(requireContext(), queue, true)
-                    1 -> NavigationHelper.enqueueOnPlayer(requireContext(), queue)
-                    2 -> NavigationHelper.enqueueNextOnPlayer(requireContext(), queue)
-                    3 -> addGroupToPlaylist(group)
+            .setItems(actions.map(::getString).toTypedArray()) { _, which ->
+                when (actions[which]) {
+                    R.string.local_media_ignore_folder -> {
+                        group.items.firstOrNull()?.let(exclusionStore::ignoreMediaFolder)
+                        activeGroup = null
+                        viewModel.refresh()
+                        showIgnoredConfirmation()
+                    }
+
+                    else -> {
+                        val queue = LocalMediaGroupQueueBuilder.queue(group, shuffle = false)
+                        when (actions[which]) {
+                            R.string.local_media_play_background -> {
+                                NavigationHelper.playOnBackgroundPlayer(
+                                    requireContext(),
+                                    queue,
+                                    true
+                                )
+                            }
+
+                            R.string.enqueue -> {
+                                NavigationHelper.enqueueOnPlayer(requireContext(), queue)
+                            }
+
+                            R.string.local_media_enqueue_next -> {
+                                NavigationHelper.enqueueNextOnPlayer(requireContext(), queue)
+                            }
+
+                            R.string.add_to_playlist -> addGroupToPlaylist(group)
+                        }
+                    }
                 }
             }.show()
     }
@@ -722,27 +769,32 @@ class LocalMediaFragment : Fragment() {
     }
 
     private fun showActions(item: LocalMediaItem) {
-        val actions = arrayOf(
-            getString(R.string.play),
-            getString(R.string.local_media_play_background),
-            getString(R.string.enqueue),
-            getString(R.string.local_media_enqueue_next),
-            getString(R.string.add_to_playlist)
+        val actions = listOf(
+            R.string.play,
+            R.string.local_media_play_background,
+            R.string.enqueue,
+            R.string.local_media_enqueue_next,
+            R.string.add_to_playlist,
+            R.string.local_media_ignore_item
         )
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(item.title)
-            .setItems(actions) { _, which ->
+            .setItems(actions.map(::getString).toTypedArray()) { _, which ->
                 val queue = LocalMediaPlayQueue(listOf(item.toPlayQueueItem()), 0)
-                when (which) {
-                    0 -> play(item)
+                when (actions[which]) {
+                    R.string.play -> play(item)
 
-                    1 -> NavigationHelper.playOnBackgroundPlayer(requireContext(), queue, true)
+                    R.string.local_media_play_background -> {
+                        NavigationHelper.playOnBackgroundPlayer(requireContext(), queue, true)
+                    }
 
-                    2 -> NavigationHelper.enqueueOnPlayer(requireContext(), queue)
+                    R.string.enqueue -> NavigationHelper.enqueueOnPlayer(requireContext(), queue)
 
-                    3 -> NavigationHelper.enqueueNextOnPlayer(requireContext(), queue)
+                    R.string.local_media_enqueue_next -> {
+                        NavigationHelper.enqueueNextOnPlayer(requireContext(), queue)
+                    }
 
-                    4 -> disposables.add(
+                    R.string.add_to_playlist -> disposables.add(
                         PlaylistDialog.createCorrespondingDialog(
                             requireContext(),
                             listOf(StreamEntity(item.toPlayQueueItem()))
@@ -750,8 +802,23 @@ class LocalMediaFragment : Fragment() {
                             dialog.show(parentFragmentManager, "LocalMediaPlaylist")
                         }
                     )
+
+                    R.string.local_media_ignore_item -> {
+                        exclusionStore.ignoreItem(item)
+                        viewModel.refresh()
+                        browserViewModel.refresh()
+                        showIgnoredConfirmation()
+                    }
                 }
             }.show()
+    }
+
+    private fun showIgnoredConfirmation() {
+        Toast.makeText(
+            requireContext(),
+            R.string.local_media_ignored_confirmation,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun showSortDialog() {
