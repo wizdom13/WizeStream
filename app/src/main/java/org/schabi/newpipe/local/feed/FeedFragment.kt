@@ -271,6 +271,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     override fun initListeners() {
         super.initListeners()
         feedBinding.refreshRootView.setOnClickListener { reloadContent() }
+        feedBinding.refreshIcon.setOnClickListener { reloadContent() }
         feedBinding.swipeRefreshLayout.setOnRefreshListener { reloadContent() }
         feedBinding.cancelRefreshButton.setOnClickListener {
             it.isEnabled = false
