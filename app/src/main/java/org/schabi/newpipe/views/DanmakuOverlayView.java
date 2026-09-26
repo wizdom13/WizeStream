@@ -121,7 +121,10 @@ public final class DanmakuOverlayView extends FrameLayout {
         text.setGravity(Gravity.CENTER);
         text.setTextSize(TypedValue.COMPLEX_UNIT_SP,
                 (float) (textSizeSp * Math.max(0.75, item.getRelativeFontSize())));
-        text.setTextColor(withOpacity(item.getArgbColor(), opacityPercent));
+        final int commentColor = item.getArgbColor() == 0
+                ? Color.WHITE
+                : item.getArgbColor();
+        text.setTextColor(withOpacity(commentColor, opacityPercent));
         text.setShadowLayer(2.0f, 0.0f, 0.0f, withOpacity(Color.BLACK, opacityPercent));
         if (item.getPosition() == BulletCommentsInfoItem.Position.SUPERCHAT) {
             text.setTypeface(Typeface.DEFAULT_BOLD);
