@@ -42,6 +42,7 @@ internal class PlayerErrorController(
 ) {
     private val recoveryGuard = PlayerHttpErrorRecovery.RecoveryGuard()
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
 
@@ -51,6 +52,10 @@ internal class PlayerErrorController(
         if (player.videoAdjustments.recover(error)) return
 
         player.saveStreamProgressState()
+        if (tryRecoverFromAudioTrackInitFailure(error)) {
+            return
+        }
+
         val downloaded = org.schabi.newpipe.player.mediaitem.MediaItemTag.from(player.exoPlayer.currentMediaItem)
             .flatMap { it.maybeStreamInfo }.orElse(null) as? org.schabi.newpipe.download.DownloadedStreamInfo
         if (downloaded != null && org.schabi.newpipe.download.DownloadedCopyRepository.reject(downloaded)) {
@@ -111,9 +116,31 @@ internal class PlayerErrorController(
         cancelPendingMediaUrlRecovery()
         recoveryGuard.reset()
         decoderRecoveryGuard.reset()
+        audioTrackRecoveryGuard.reset()
         videoResolver.clearRejectedVideoCodecFamily()
     }
 
+    private fun tryRecoverFromAudioTrackInitFailure(error: PlaybackException): Boolean {
+        if (!PlayerHttpErrorRecovery.isRecoverableAudioTrackInitFailure(error.errorCode)) {
+            return false
+        }
+
+        val item = player.playQueue?.item ?: return false
+        val recoveryKey = "${item.serviceId}:${item.url}"
+        if (!audioTrackRecoveryGuard.acquire(recoveryKey)) {
+            return false
+        }
+
+        Log.w(
+            Player.TAG,
+            "Recreating playback engine after AudioTrack initialization failure"
+        )
+        player.setRecovery()
+        player.onBuffering()
+        cancelPendingMediaUrlRecovery()
+        player.restartForAudioTrackRecovery()
+        return true
+    }
     private fun tryRecoverFromYouTubeAv1DecoderFailure(error: PlaybackException): Boolean {
         val item = player.playQueue?.item ?: return false
         if (!PlayerHttpErrorRecovery.isYouTubeService(item.serviceId)) {
