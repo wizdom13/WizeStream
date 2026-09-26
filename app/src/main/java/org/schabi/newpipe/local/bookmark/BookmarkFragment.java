@@ -196,9 +196,6 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
             @Override
             public void held(final LocalItem selectedItem) {
-                if (isContextualSearchActive()) {
-                    return;
-                }
                 if (selectedItem instanceof PlaylistMetadataEntry) {
                     showLocalDialog((PlaylistMetadataEntry) selectedItem);
                 } else if (selectedItem instanceof PlaylistRemoteEntity) {
