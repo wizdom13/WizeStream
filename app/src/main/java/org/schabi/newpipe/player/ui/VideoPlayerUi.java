@@ -129,7 +129,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     //////////////////////////////////////////////////////////////////////////*/
 
     private static final int POPUP_MENU_ID_QUALITY = 69;
-    private static final int AUTO_QUALITY_MENU_ITEM_ID = -1;
+    private static final int AUTO_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE;
     private static final int POPUP_MENU_ID_AUDIO_TRACK = 70;
     private static final int POPUP_MENU_ID_PLAYBACK_SPEED = 79;
     private static final int POPUP_MENU_ID_CAPTION = 89;
