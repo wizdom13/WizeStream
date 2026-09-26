@@ -240,6 +240,22 @@ public class ListHelperTest {
     }
 
     @Test
+    public void adaptiveResolutionLimitIncludesOnlyAllowedQualities() {
+        final VideoStream stream720 = generateVideoStream(
+                "720", MediaFormat.MPEG_4, "720p", true);
+        final VideoStream stream720HighFrameRate = generateVideoStream(
+                "720-60", MediaFormat.MPEG_4, "720p60", true);
+        final VideoStream stream1080 = generateVideoStream(
+                "1080", MediaFormat.MPEG_4, "1080p", true);
+
+        assertTrue(ListHelper.isVideoStreamWithinResolutionLimit(stream720, "720p"));
+        assertFalse(ListHelper.isVideoStreamWithinResolutionLimit(
+                stream720HighFrameRate, "720p"));
+        assertFalse(ListHelper.isVideoStreamWithinResolutionLimit(stream1080, "720p"));
+        assertTrue(ListHelper.isVideoStreamWithinResolutionLimit(stream1080, null));
+    }
+
+    @Test
     public void targetBelowAllAvailableQualitiesUsesNearestHigherQuality() {
         final List<VideoStream> sparseStreams = new ArrayList<>(List.of(
                 generateVideoStream("1080", MediaFormat.MPEG_4, "1080p", false),
