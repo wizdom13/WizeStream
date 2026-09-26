@@ -246,18 +246,22 @@ class LiveQualityController(private val player: Player) {
         }
 
         @JvmStatic
-        fun codecName(codecs: String?): String = when {
-            codecs == null -> ""
-            codecs.contains("av01", ignoreCase = true) -> "AV1"
-            codecs.contains("vp9", ignoreCase = true) -> "VP9"
-            codecs.contains("vp8", ignoreCase = true) -> "VP8"
-            codecs.contains("avc", ignoreCase = true) ||
-                codecs.contains("h264", ignoreCase = true) -> "H264"
-            codecs.contains("hevc", ignoreCase = true) ||
-                codecs.contains("h265", ignoreCase = true) ||
-                codecs.contains("hev1", ignoreCase = true) ||
-                codecs.contains("hvc1", ignoreCase = true) -> "HEVC"
-            else -> codecs.substringBefore('.').uppercase(Locale.getDefault())
+        fun codecName(codecs: String?): String {
+            if (codecs == null) {
+                return ""
+            }
+            return when {
+                codecs.contains("av01", ignoreCase = true) -> "AV1"
+                codecs.contains("vp9", ignoreCase = true) -> "VP9"
+                codecs.contains("vp8", ignoreCase = true) -> "VP8"
+                containsCodecFamily(codecs, "avc", "h264") -> "H264"
+                containsCodecFamily(codecs, "hevc", "h265", "hev1", "hvc1") -> "HEVC"
+                else -> codecs.substringBefore('.').uppercase(Locale.getDefault())
+            }
+        }
+
+        private fun containsCodecFamily(codecs: String, vararg names: String): Boolean {
+            return names.any { codecs.contains(it, ignoreCase = true) }
         }
 
         private fun isHdr(format: Format): Boolean {
