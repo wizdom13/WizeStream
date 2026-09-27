@@ -1638,6 +1638,13 @@
     <string name="local_media_audio_bitrate">%1$d kbps</string>
 
     <string name="local_media_settings_summary">Control local library exclusions and on-device media behavior</string>
+    <string name="local_media_group_all_by_folder_key" translatable="false">local_media_group_all_by_folder</string>
+    <string name="local_media_group_all_by_folder_title">Group All media by folder</string>
+    <string name="local_media_group_all_by_folder_summary">Show audio and video together in filesystem folders in the All view</string>
+    <plurals name="local_media_item_count">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
     <string name="local_media_ignore_item">Ignore this media</string>
     <string name="local_media_ignore_folder">Ignore this folder</string>
     <string name="local_media_ignored_confirmation">Hidden from Local media</string>
