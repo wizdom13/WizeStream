@@ -159,17 +159,16 @@
                             android:layout_height="wrap_content"
                             android:gravity="start|center_vertical"
                             android:text="@string/tab_subscriptions"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                            android:textColor="?attr/colorOnSurface" />
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/subscriptions_header_info"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="start|center_vertical"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="12sp"
                             tools:text="1 selected" />
                     </LinearLayout>
 
@@ -209,7 +208,7 @@
             android:id="@+id/separator"
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="?attr/colorSurfaceVariant"
+            android:background="?attr/colorOutlineVariant"
             android:visibility="gone" />
 
         <RelativeLayout
