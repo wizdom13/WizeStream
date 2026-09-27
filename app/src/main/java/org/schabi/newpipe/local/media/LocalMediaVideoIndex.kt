@@ -8,7 +8,8 @@ enum class LocalMediaVideoCategory { VIDEOS, FOLDERS }
 object LocalMediaVideoIndex {
     fun folders(
         items: List<LocalMediaItem>,
-        unknownFolder: String
+        unknownFolder: String,
+        kind: LocalMediaGroupKind = LocalMediaGroupKind.VIDEO_FOLDER
     ): List<LocalMediaGroup> = items.groupBy { item ->
         "${item.volumeName}:${item.relativePath}"
     }.map { (key, groupedItems) ->
@@ -21,7 +22,7 @@ object LocalMediaVideoIndex {
                 compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaItem::title)
             ),
             thumbnailUri = groupedItems.firstNotNullOfOrNull(LocalMediaItem::thumbnailUri),
-            kind = LocalMediaGroupKind.VIDEO_FOLDER
+            kind = kind
         )
     }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, LocalMediaGroup::title))
 
