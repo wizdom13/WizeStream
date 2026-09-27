@@ -8,13 +8,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.time.format.DateTimeFormatter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.schabi.newpipe.database.LocalItem
-import org.schabi.newpipe.util.OnClickGesture
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.R
+import org.schabi.newpipe.database.LocalItem
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
 import org.schabi.newpipe.local.LocalItemBuilder
+import org.schabi.newpipe.util.OnClickGesture
 
 @RunWith(AndroidJUnit4::class)
 class RemotePlaylistItemHolderTest {
@@ -70,8 +70,10 @@ class RemotePlaylistItemHolderTest {
             val playlist = remotePlaylist(streamCount = 42)
             holder.updateFromItem(playlist, null, DateTimeFormatter.ISO_LOCAL_DATE)
 
-            assertTrue(holder.itemView.findViewById<View>(R.id.itemThumbnailContainer)
-                .performLongClick())
+            assertTrue(
+                holder.itemView.findViewById<View>(R.id.itemThumbnailContainer)
+                    .performLongClick()
+            )
             assertEquals(playlist, heldItem)
         }
     }
