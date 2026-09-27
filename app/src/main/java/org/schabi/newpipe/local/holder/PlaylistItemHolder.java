@@ -1,5 +1,6 @@
 package org.schabi.newpipe.local.holder;
 
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -41,8 +42,20 @@ public abstract class PlaylistItemHolder extends LocalItemHolder {
             }
         });
 
-        itemView.setLongClickable(true);
-        itemView.setOnLongClickListener(view -> {
+        bindLongPressTarget(itemView, localItem);
+        final View thumbnailContainer = itemView.findViewById(R.id.itemThumbnailContainer);
+        if (thumbnailContainer != null) {
+            bindLongPressTarget(thumbnailContainer, localItem);
+        }
+        final View titleView = itemView.findViewById(R.id.itemTitleView);
+        if (titleView != null) {
+            bindLongPressTarget(titleView, localItem);
+        }
+    }
+
+    private void bindLongPressTarget(final View target, final LocalItem localItem) {
+        target.setLongClickable(true);
+        target.setOnLongClickListener(view -> {
             if (itemBuilder.getOnItemSelectedListener() != null) {
                 itemBuilder.getOnItemSelectedListener().held(localItem);
             }
