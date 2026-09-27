@@ -322,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
     public void onPictureInPictureUiStateChanged(
             @NonNull final PictureInPictureUiState pipState) {
         super.onPictureInPictureUiStateChanged(pipState);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             nativePipController.onPictureInPictureUiStateChanged(
                     pipState.isTransitioningToPip());
         }
