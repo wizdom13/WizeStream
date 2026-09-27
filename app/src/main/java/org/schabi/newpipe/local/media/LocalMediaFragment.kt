@@ -24,6 +24,7 @@ import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
@@ -404,6 +405,14 @@ class LocalMediaFragment : Fragment() {
         if (!::adapter.isInitialized || filter == Filter.BROWSE) return
         val term = query.trim().lowercase(Locale.getDefault())
         if (
+            filter == Filter.ALL &&
+            groupAllMediaByFolder() &&
+            activeGroup == null
+        ) {
+            showAllMediaGroups(term)
+            return
+        }
+        if (
             filter == Filter.AUDIO &&
             audioCategory != LocalMediaAudioCategory.TRACKS &&
             activeGroup == null
@@ -459,6 +468,25 @@ class LocalMediaFragment : Fragment() {
         } else {
             view?.findViewById<View>(R.id.localMediaMessagePanel)?.visibility = View.GONE
         }
+    }
+
+    private fun groupAllMediaByFolder(): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(
+            getString(R.string.local_media_group_all_by_folder_key),
+            false
+        )
+
+    private fun showAllMediaGroups(term: String) {
+        val groups = LocalMediaVideoIndex.folders(
+            allItems,
+            getString(R.string.local_media_unknown_folder),
+            LocalMediaGroupKind.MEDIA_FOLDER
+        ).filter { group ->
+            term.isEmpty() || listOf(group.title, group.subtitle).any { value ->
+                value.lowercase(Locale.getDefault()).contains(term)
+            }
+        }
+        renderGroups(groups)
     }
 
     private fun showAudioGroups(term: String) {
@@ -720,7 +748,10 @@ class LocalMediaFragment : Fragment() {
             R.string.local_media_enqueue_next,
             R.string.add_to_playlist
         )
-        if (group.kind == LocalMediaGroupKind.VIDEO_FOLDER) {
+        if (
+            group.kind == LocalMediaGroupKind.VIDEO_FOLDER ||
+            group.kind == LocalMediaGroupKind.MEDIA_FOLDER
+        ) {
             actions += R.string.local_media_ignore_folder
         }
 
@@ -887,10 +918,10 @@ private class LocalMediaGroupAdapter(
         private val subtitle = view.findViewById<TextView>(R.id.localMediaGroupItemSubtitle)
 
         fun bind(group: LocalMediaGroup) {
-            val countPlural = if (group.kind == LocalMediaGroupKind.VIDEO_FOLDER) {
-                R.plurals.videos
-            } else {
-                R.plurals.local_media_track_count
+            val countPlural = when (group.kind) {
+                LocalMediaGroupKind.VIDEO_FOLDER -> R.plurals.videos
+                LocalMediaGroupKind.MEDIA_FOLDER -> R.plurals.local_media_item_count
+                else -> R.plurals.local_media_track_count
             }
             val count = itemView.resources.getQuantityString(
                 countPlural,
