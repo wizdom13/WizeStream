@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,6 +31,9 @@ import org.schabi.newpipe.info_list.InfoListAdapter;
 import org.schabi.newpipe.info_list.StreamSelectionController;
 import org.schabi.newpipe.info_list.dialog.StreamDialogEntry;
 import org.schabi.newpipe.info_list.ItemViewMode;
+import org.schabi.newpipe.local.subscription.ChannelSubscriptionActions;
+import org.schabi.newpipe.profiles.ProfileManager;
+import org.schabi.newpipe.profiles.ProfileRecord;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.util.ContentBlockingHelper;
@@ -41,9 +45,13 @@ import org.schabi.newpipe.util.StateSaver;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.views.SuperScrollLayoutManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.function.Supplier;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
         implements ListViewContract<I, N>, StateSaver.WriteRead,
@@ -301,17 +309,7 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
 
             @Override
             public void held(final ChannelInfoItem selectedItem) {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle(selectedItem.getName())
-                        .setItems(new String[]{getString(R.string.block_channel)},
-                                (dialog, which) -> {
-                                    ContentBlockingHelper.blockChannel(requireContext(),
-                                            selectedItem.getUrl(), selectedItem.getName());
-                                    android.widget.Toast.makeText(requireContext(),
-                                            R.string.channel_blocked,
-                                            android.widget.Toast.LENGTH_SHORT).show();
-                                })
-                        .show();
+                showChannelActions(selectedItem);
             }
         });
 
@@ -329,6 +327,71 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
 
         // Ensure that there is always a scroll listener (e.g. when rotating the device)
         useNormalItemListScrollListener();
+    }
+
+    private void showChannelActions(@NonNull final ChannelInfoItem selectedItem) {
+        final List<String> labels = new ArrayList<>();
+        final List<Runnable> actions = new ArrayList<>();
+
+        labels.add(getString(R.string.subscribe_button_title));
+        actions.add(() -> ChannelSubscriptionActions.subscribe(requireContext(), selectedItem)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        ignored -> Toast.makeText(requireContext(),
+                                R.string.you_successfully_subscribed,
+                                Toast.LENGTH_SHORT).show(),
+                        error -> ErrorUtil.showUiErrorSnackbar(this,
+                                "Subscribing to channel", error)));
+
+        final List<ProfileRecord> otherProfiles =
+                ChannelSubscriptionActions.otherProfiles(requireContext());
+        if (!otherProfiles.isEmpty()) {
+            labels.add(getString(R.string.channel_subscribe_to_profile));
+            actions.add(() -> showSubscribeToProfileDialog(selectedItem, otherProfiles));
+        }
+
+        labels.add(getString(R.string.block_channel));
+        actions.add(() -> {
+            ContentBlockingHelper.blockChannel(requireContext(),
+                    selectedItem.getUrl(), selectedItem.getName());
+            Toast.makeText(requireContext(), R.string.channel_blocked,
+                    Toast.LENGTH_SHORT).show();
+        });
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(selectedItem.getName())
+                .setItems(labels.toArray(new String[0]),
+                        (dialog, which) -> actions.get(which).run())
+                .show();
+    }
+
+    private void showSubscribeToProfileDialog(
+            @NonNull final ChannelInfoItem selectedItem,
+            @NonNull final List<ProfileRecord> profiles) {
+        final String[] labels = profiles.stream()
+                .map(profile -> ProfileManager.getDisplayName(requireContext(), profile))
+                .toArray(String[]::new);
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.channel_subscribe_to_profile_title)
+                .setItems(labels, (dialog, which) -> {
+                    final ProfileRecord profile = profiles.get(which);
+                    ChannelSubscriptionActions.subscribeToProfile(
+                                    requireContext(), selectedItem, profile)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(
+                                    ignored -> Toast.makeText(
+                                            requireContext(),
+                                            getString(R.string.channel_subscribed_to_profile,
+                                                    ProfileManager.getDisplayName(
+                                                            requireContext(), profile)),
+                                            Toast.LENGTH_LONG).show(),
+                                    error -> ErrorUtil.showUiErrorSnackbar(
+                                            this, "Subscribing channel to profile", error));
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     /**
