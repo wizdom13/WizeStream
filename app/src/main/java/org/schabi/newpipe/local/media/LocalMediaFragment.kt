@@ -470,8 +470,9 @@ class LocalMediaFragment : Fragment() {
         }
     }
 
-    private fun groupAllMediaByFolder(): Boolean =
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(
+    private fun groupAllMediaByFolder(): Boolean = PreferenceManager
+        .getDefaultSharedPreferences(requireContext())
+        .getBoolean(
             getString(R.string.local_media_group_all_by_folder_key),
             false
         )
