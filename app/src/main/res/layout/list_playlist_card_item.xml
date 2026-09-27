@@ -53,7 +53,6 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                 android:textColor="@color/info_list_thumbnail_badge_text_color"
-                android:textStyle="bold"
                 app:layout_constraintBottom_toTopOf="@id/playIcon"
                 app:layout_constraintEnd_toEndOf="@id/videoCountOverlay"
                 app:layout_constraintStart_toStartOf="@id/videoCountOverlay"
