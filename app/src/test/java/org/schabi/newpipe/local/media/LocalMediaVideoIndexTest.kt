@@ -28,6 +28,26 @@ class LocalMediaVideoIndexTest {
     }
 
     @Test
+    fun `mixed media can share a folder group`() {
+        val groups = LocalMediaVideoIndex.folders(
+            listOf(
+                video(1, title = "Movie"),
+                video(2, title = "Song").copy(
+                    contentUri = "content://audio/2",
+                    mimeType = "audio/mpeg",
+                    isVideo = false
+                )
+            ),
+            "Unknown folder",
+            LocalMediaGroupKind.MEDIA_FOLDER
+        )
+
+        assertEquals(1, groups.size)
+        assertEquals(LocalMediaGroupKind.MEDIA_FOLDER, groups.single().kind)
+        assertEquals(setOf(false, true), groups.single().items.map(LocalMediaItem::isVideo).toSet())
+    }
+
+    @Test
     fun `videos inside folders are sorted by title`() {
         val groups = LocalMediaVideoIndex.folders(
             listOf(video(1, title = "Zulu"), video(2, title = "Alpha")),
