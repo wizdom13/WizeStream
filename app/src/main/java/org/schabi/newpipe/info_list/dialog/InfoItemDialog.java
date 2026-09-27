@@ -362,6 +362,10 @@ public final class InfoItemDialog {
             return this;
         }
 
+        static int markAsWatchedDefaultSection() {
+            return 0;
+        }
+
         /**
          * Add the entries which are usually at the bottom of the action list.
          * @return the current {@link Builder} instance
