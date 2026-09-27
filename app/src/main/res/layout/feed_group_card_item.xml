@@ -9,10 +9,10 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="?attr/colorSurface"
-    app:cardElevation="2dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+    app:cardElevation="0dp"
     app:rippleColor="?attr/colorControlHighlight"
-    app:strokeColor="?attr/colorOutline"
+    app:strokeColor="?attr/colorOutlineVariant"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -36,15 +36,14 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
-            android:background="?attr/colorSurfaceVariant"
+            android:background="?attr/colorSecondaryContainer"
             android:ellipsize="end"
             android:gravity="center_vertical"
             android:maxLines="1"
             android:padding="10dp"
             android:textAllCaps="false"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold"
+            android:textColor="?attr/colorOnSecondaryContainer"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
             tools:text="All" />
     </LinearLayout>
 
