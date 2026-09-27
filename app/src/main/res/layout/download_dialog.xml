@@ -55,7 +55,7 @@
         android:orientation="horizontal"
         tools:ignore="RtlHardcoded">
 
-        <RadioButton
+        <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/video_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -64,7 +64,7 @@
             android:checked="true"
             android:text="@string/video" />
 
-        <RadioButton
+        <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/audio_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -72,7 +72,7 @@
             android:textColor="@color/download_option_text_color"
             android:text="@string/audio" />
 
-        <RadioButton
+        <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/subtitle_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -81,7 +81,7 @@
             android:text="@string/caption_setting_title" />
     </RadioGroup>
 
-    <Spinner
+    <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/quality_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -92,7 +92,7 @@
         android:minWidth="150dp"
         tools:listitem="@layout/stream_quality_item" />
 
-    <Spinner
+    <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/audio_track_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -103,7 +103,7 @@
         android:minWidth="150dp"
         tools:visibility="gone" />
 
-    <Spinner
+    <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/audio_stream_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -125,7 +125,7 @@
         android:textColor="?attr/colorOnSurfaceVariant"
         tools:visibility="gone" />
 
-    <Spinner
+    <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/audio_output_format_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -147,7 +147,7 @@
         android:textColor="?attr/colorOnSurfaceVariant"
         tools:visibility="gone" />
 
-    <Spinner
+    <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/mp3_bitrate_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -169,7 +169,7 @@
         android:gravity="center"
         android:text="@string/audio_track_present_in_video"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="12sp" />
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/download_segments"
@@ -211,16 +211,14 @@
             tools:ignore="RtlHardcoded,RtlSymmetry"
             tools:text="3" />
 
-        <SeekBar
+        <com.google.android.material.slider.Slider
             android:id="@+id/threads"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="31"
-            android:progress="3"
-            android:progressTint="?attr/colorPrimary"
-            android:progressBackgroundTint="?attr/colorSurfaceVariant"
-            android:secondaryProgressTint="?attr/colorSurfaceVariant"
-            android:thumbTint="?attr/colorPrimary" />
+            android:stepSize="1"
+            android:value="3"
+            android:valueFrom="1"
+            android:valueTo="32" />
     </LinearLayout>
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -233,7 +231,7 @@
         android:gravity="center"
         android:text="@string/streams_not_yet_supported_removed"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="12sp" />
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
         </RelativeLayout>
     </org.schabi.newpipe.views.MaxHeightScrollView>
