@@ -55,7 +55,7 @@ class RemotePlaylistItemHolderTest {
             val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
             var heldItem: LocalItem? = null
             val builder = LocalItemBuilder(context)
-            builder.setOnItemSelectedListener(object : OnClickGesture<LocalItem>() {
+            builder.setOnItemSelectedListener(object : OnClickGesture<LocalItem> {
                 override fun selected(selectedItem: LocalItem) = Unit
 
                 override fun held(selectedItem: LocalItem) {
