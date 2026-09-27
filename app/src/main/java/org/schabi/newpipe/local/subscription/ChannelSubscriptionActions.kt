@@ -21,9 +21,7 @@ object ChannelSubscriptionActions {
         subscribeToProfile(
             context,
             item,
-            ProfileManager.getProfiles(context).first {
-                it.id == ProfileManager.getActiveProfileId(context)
-            }
+            ProfileManager.getActiveProfile(context)
         )
 
     @JvmStatic
