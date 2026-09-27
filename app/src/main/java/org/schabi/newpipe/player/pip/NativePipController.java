@@ -130,10 +130,14 @@ public final class NativePipController {
      * idempotent fallback for older devices and vendor implementations.</p>
      */
     public void onPictureInPictureUiStateChanged(final boolean transitioningToPip) {
-        if (!transitioningToPip) {
+        if (!shouldPrepareForPipTransition(transitioningToPip)) {
             return;
         }
         currentFragment().ifPresent(VideoDetailFragment::prepareNativePipEntry);
+    }
+
+    static boolean shouldPrepareForPipTransition(final boolean transitioningToPip) {
+        return transitioningToPip;
     }
 
     public void onPictureInPictureModeChanged(final boolean inPictureInPictureMode) {
