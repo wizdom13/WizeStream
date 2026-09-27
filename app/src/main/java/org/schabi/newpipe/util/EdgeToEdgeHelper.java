@@ -1,6 +1,7 @@
 package org.schabi.newpipe.util;
 
 import android.app.Activity;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
@@ -135,7 +136,11 @@ public final class EdgeToEdgeHelper {
                     navigationRailRight, navigationRailBottom, safeInsets);
             final ViewGroup.LayoutParams updatedScrimParams =
                     navigationScrim.getLayoutParams();
-            updatedScrimParams.height = navigationScrimHeight + safeInsets.bottom;
+            final boolean isLandscape = navigationScrim.getResources()
+                    .getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            updatedScrimParams.height = isLandscape
+                    ? navigationScrimHeight
+                    : navigationScrimHeight + safeInsets.bottom;
             navigationScrim.setLayoutParams(updatedScrimParams);
             playerSheet.setPadding(
                     playerLeft,
