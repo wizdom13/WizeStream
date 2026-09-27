@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.23.0 (`1023000`)
+
+### New features
+
+- Added optional danmaku bullet-comment overlays for supported services.
+- Added live-stream quality selection and adaptive Auto quality for supported streams.
+- Added Local Media exclusions plus an option to group the All media view by filesystem folder.
+- Added selectable Device Sync categories so individual data groups can be enabled or disabled per paired device.
+
+### Improvements
+
+- Modernized dialogs, settings, cards, chips, playback controls, search surfaces, and shared widgets across WizeStream with Material 3 styling and typography.
+- Improved Android TV D-pad navigation and moved Mark as watched / Mark as unwatched higher in stream action menus for easier TV access.
+- Added NicoNico live discovery and clearer reporting when subscriptions fail to refresh.
+- Improved native Picture-in-Picture transitions and kept the Android navigation area transparent in landscape.
+- Improved fullscreen behavior, adaptive video quality selection, decoder fallback, and transient audio-output recovery.
+
+### Fixes
+
+- Restored long-press actions for searched bookmarked playlists, including Tablet Mode Grid view, while keeping reordering disabled during filtering.
+- Kept fullscreen letterbox areas black and made explicit fullscreen entry consistently target landscape.
+- Guarded search refreshes after view teardown and repaired legacy profile timestamp values during migration.
+
 ## WizeStream 1.22.2 (`1022002`)
 
 ### Improvements
