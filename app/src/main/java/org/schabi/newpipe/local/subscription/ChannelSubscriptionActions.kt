@@ -17,12 +17,11 @@ object ChannelSubscriptionActions {
     }
 
     @JvmStatic
-    fun subscribe(context: Context, item: ChannelInfoItem): Single<Long> =
-        subscribeToProfile(
-            context,
-            item,
-            ProfileManager.getActiveProfile(context)
-        )
+    fun subscribe(context: Context, item: ChannelInfoItem): Single<Long> = subscribeToProfile(
+        context,
+        item,
+        ProfileManager.getActiveProfile(context)
+    )
 
     @JvmStatic
     fun subscribeToProfile(
