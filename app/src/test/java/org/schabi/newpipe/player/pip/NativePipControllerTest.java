@@ -63,6 +63,12 @@ public class NativePipControllerTest {
     }
 
     @Test
+    public void transitionPreparationOnlyRunsWhileEnteringPip() {
+        assertTrue(NativePipController.shouldPrepareForPipTransition(true));
+        assertFalse(NativePipController.shouldPrepareForPipTransition(false));
+    }
+
+    @Test
     public void internalNavigationCanDisableAutoEnterWithoutChangingEligibility() {
         assertTrue(NativePipController.shouldAutoEnter(true, true, true, true, true));
         assertFalse(NativePipController.shouldAutoEnter(false, true, true, true, true));
