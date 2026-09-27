@@ -31,6 +31,7 @@ import org.schabi.newpipe.info_list.InfoListAdapter;
 import org.schabi.newpipe.info_list.StreamSelectionController;
 import org.schabi.newpipe.info_list.dialog.StreamDialogEntry;
 import org.schabi.newpipe.info_list.ItemViewMode;
+import org.schabi.newpipe.local.feed.FeedDatabaseManager;
 import org.schabi.newpipe.local.subscription.ChannelSubscriptionActions;
 import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.profiles.ProfileRecord;
@@ -351,6 +352,9 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
             actions.add(() -> showSubscribeToProfileDialog(selectedItem, otherProfiles));
         }
 
+        labels.add(getString(R.string.feed_groups_header_title));
+        actions.add(() -> showAddToGroupDialog(selectedItem));
+
         labels.add(getString(R.string.block_channel));
         actions.add(() -> {
             ContentBlockingHelper.blockChannel(requireContext(),
@@ -364,6 +368,55 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
                 .setItems(labels.toArray(new String[0]),
                         (dialog, which) -> actions.get(which).run())
                 .show();
+    }
+
+    private void showAddToGroupDialog(@NonNull final ChannelInfoItem selectedItem) {
+        final FeedDatabaseManager feedManager = new FeedDatabaseManager(requireContext());
+        feedManager.groups().firstOrError()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(groups -> {
+                    if (groups.isEmpty()) {
+                        Toast.makeText(requireContext(), R.string.no_feed_groups,
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    final String[] labels = groups.stream()
+                            .map(group -> group.getName())
+                            .toArray(String[]::new);
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle(R.string.feed_groups_header_title)
+                            .setMultiChoiceItems(labels, null, null)
+                            .setPositiveButton(R.string.done, (dialog, which) -> {
+                                final AlertDialog groupDialog = (AlertDialog) dialog;
+                                final List<Long> selectedGroupIds = new ArrayList<>();
+                                for (int index = 0; index < groups.size(); index++) {
+                                    if (groupDialog.getListView().isItemChecked(index)) {
+                                        selectedGroupIds.add(groups.get(index).getUid());
+                                    }
+                                }
+                                if (selectedGroupIds.isEmpty()) {
+                                    return;
+                                }
+                                ChannelSubscriptionActions.addToGroups(
+                                                requireContext(),
+                                                selectedItem,
+                                                selectedGroupIds)
+                                        .subscribeOn(Schedulers.io())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(
+                                                () -> Toast.makeText(
+                                                        requireContext(),
+                                                        R.string.feed_group_dialog_success,
+                                                        Toast.LENGTH_SHORT).show(),
+                                                error -> ErrorUtil.showUiErrorSnackbar(
+                                                        this,
+                                                        "Adding channel to feed group",
+                                                        error));
+                            })
+                            .setNegativeButton(R.string.cancel, null)
+                            .show();
+                }, error -> ErrorUtil.showUiErrorSnackbar(
+                        this, "Loading feed groups", error));
     }
 
     private void showSubscribeToProfileDialog(
