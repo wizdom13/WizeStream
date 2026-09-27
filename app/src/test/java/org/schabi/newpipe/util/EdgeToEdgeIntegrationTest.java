@@ -133,6 +133,16 @@ public class EdgeToEdgeIntegrationTest {
     }
 
     @Test
+    public void landscapeKeepsTheSystemNavigationAreaTransparent() throws Exception {
+        final String insetHelper = Files.readString(mainDirectory.resolve(
+                "java/org/schabi/newpipe/util/EdgeToEdgeHelper.java"));
+
+        assertTrue(insetHelper.contains("Configuration.ORIENTATION_LANDSCAPE"));
+        assertTrue(insetHelper.contains("? navigationScrimHeight"));
+        assertTrue(insetHelper.contains(": navigationScrimHeight + safeInsets.bottom"));
+    }
+
+    @Test
     public void bottomSystemBarScrimCoversTheCollapsedPlayerSheet() throws Exception {
         final List<String> layouts = List.of(
                 "res/layout/activity_main.xml",
