@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1023000">WizeStream 1.23.0</a></li>
 <li><a href="#release-1022002">WizeStream 1.22.2</a></li>
 <li><a href="#release-1022001">WizeStream 1.22.1</a></li>
 <li><a href="#release-1022000">WizeStream 1.22.0</a></li>
@@ -78,6 +79,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1023000" data-version="1.23.0" data-version-code="1023000">
+<h2>WizeStream 1.23.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added optional danmaku bullet-comment overlays for supported services.</li>
+<li>Added live-stream quality selection and adaptive Auto quality for supported streams.</li>
+<li>Added Local Media exclusions plus an option to group the All media view by filesystem folder.</li>
+<li>Added selectable Device Sync categories so individual data groups can be enabled or disabled per paired device.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Modernized dialogs, settings, cards, chips, playback controls, search surfaces, and shared widgets across WizeStream with Material 3 styling and typography.</li>
+<li>Improved Android TV D-pad navigation and moved Mark as watched / Mark as unwatched higher in stream action menus for easier TV access.</li>
+<li>Added NicoNico live discovery and clearer reporting when subscriptions fail to refresh.</li>
+<li>Improved native Picture-in-Picture transitions and kept the Android navigation area transparent in landscape.</li>
+<li>Improved fullscreen behavior, adaptive video quality selection, decoder fallback, and transient audio-output recovery.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Restored long-press actions for searched bookmarked playlists, including Tablet Mode Grid view, while keeping reordering disabled during filtering.</li>
+<li>Kept fullscreen letterbox areas black and made explicit fullscreen entry consistently target landscape.</li>
+<li>Guarded search refreshes after view teardown and repaired legacy profile timestamp values during migration.</li>
+</ul>
+</div>
+</section>
 <section id="release-1022002" data-version="1.22.2" data-version-code="1022002">
 <h2>WizeStream 1.22.2</h2>
 <div class="release-notes">
