@@ -17,7 +17,7 @@ object ChannelSubscriptionActions {
     }
 
     @JvmStatic
-    fun subscribe(context: Context, item: ChannelInfoItem): Single<Long> = subscribeToProfile(
+    fun subscribe(context: Context, item: ChannelInfoItem): Single<SubscriptionEntity> = subscribeToProfile(
         context,
         item,
         ProfileManager.getActiveProfile(context)
@@ -28,7 +28,7 @@ object ChannelSubscriptionActions {
         context: Context,
         item: ChannelInfoItem,
         profile: ProfileRecord
-    ): Single<Long> {
+    ): Single<SubscriptionEntity> {
         val entity = SubscriptionEntity(
             serviceId = item.serviceId,
             url = item.url,
