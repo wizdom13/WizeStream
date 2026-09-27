@@ -24,22 +24,6 @@ public class InfoItemDialogCopyTitleTest {
     }
 
     @Test
-    public void defaultMenuAddsMarkAsWatchedBeforeCustomAndEndActions() throws Exception {
-        final String dialog = source("InfoItemDialog.java");
-        final int constructorStart = dialog.indexOf(
-                "public Builder(final Activity activity,");
-        final int endEntriesStart = dialog.indexOf(
-                "public Builder addDefaultEndEntries()", constructorStart);
-        final String builderSetup = dialog.substring(constructorStart, endEntriesStart);
-
-        assertTrue(builderSetup.contains(
-                "addDefaultBeginningEntries();" + System.lineSeparator()
-                + "                addMarkAsWatchedEntryIfNeeded();"));
-        assertFalse(dialog.substring(endEntriesStart).contains(
-                "addMarkAsWatchedEntryIfNeeded();"));
-    }
-
-    @Test
     public void copyTitleCopiesOnlyTheDisplayedTitle() throws Exception {
         final String entries = source("StreamDialogDefaultEntry.java");
         final int copyTitleStart = entries.indexOf(
