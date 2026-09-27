@@ -3,6 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/local_media">
 
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="@string/local_media_group_all_by_folder_key"
+        android:summary="@string/local_media_group_all_by_folder_summary"
+        android:title="@string/local_media_group_all_by_folder_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <Preference
         android:key="@string/local_media_ignored_status_key"
         android:title="@string/local_media_ignored_status_title"
