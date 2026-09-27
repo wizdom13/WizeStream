@@ -135,6 +135,7 @@ public final class InfoItemDialog {
          *     | ENQUEUE_NEXT                               |
          *     | START_ON_BACKGROUND                        |
          *     | START_ON_POPUP                             |
+         *     | MARK_AS_WATCHED                            |
          *     + - - - - - - - - - - - - - - - - - - - - - -+
          *     | entries added manually with                |
          *     | addEntry() and addAllEntries()             |
@@ -226,6 +227,7 @@ public final class InfoItemDialog {
             this.addDefaultEntriesAutomatically = addDefaultEntriesAutomatically;
             if (addDefaultEntriesAutomatically) {
                 addDefaultBeginningEntries();
+                addMarkAsWatchedEntryIfNeeded();
             }
         }
 
@@ -376,7 +378,6 @@ public final class InfoItemDialog {
             );
             addPlayWithKodiEntryIfNeeded();
             addLearningContentEntryIfNeeded();
-            addMarkAsWatchedEntryIfNeeded();
             addEntry(StreamDialogDefaultEntry.SHOW_CHANNEL_DETAILS);
             return this;
         }
