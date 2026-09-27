@@ -128,6 +128,8 @@ public final class NativePipController {
      * fullscreen/bottom-sheet preparation here prevents those layout changes from happening
      * halfway through the system PiP animation. The regular mode-changed callback remains an
      * idempotent fallback for older devices and vendor implementations.</p>
+     *
+     * @param transitioningToPip whether Android is currently starting a PiP transition
      */
     public void onPictureInPictureUiStateChanged(final boolean transitioningToPip) {
         if (!shouldPrepareForPipTransition(transitioningToPip)) {
