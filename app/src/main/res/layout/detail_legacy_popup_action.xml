@@ -14,4 +14,4 @@
     android:gravity="center"
     android:paddingVertical="@dimen/detail_control_padding"
     android:text="@string/controls_popup_title"
-    android:textSize="@dimen/detail_control_text_size" />
+    android:textAppearance="@style/TextAppearance.Material3.LabelMedium" />
