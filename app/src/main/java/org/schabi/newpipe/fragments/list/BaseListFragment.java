@@ -376,7 +376,7 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(groups -> {
                     if (groups.isEmpty()) {
-                        Toast.makeText(requireContext(), R.string.no_feed_groups,
+                        Toast.makeText(requireContext(), R.string.no_feed_group_created_yet,
                                 Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -406,7 +406,7 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
                                         .subscribe(
                                                 () -> Toast.makeText(
                                                         requireContext(),
-                                                        R.string.feed_group_dialog_success,
+                                                        R.string.you_successfully_subscribed,
                                                         Toast.LENGTH_SHORT).show(),
                                                 error -> ErrorUtil.showUiErrorSnackbar(
                                                         this,
