@@ -11,7 +11,7 @@
         android:layout_height="48dp"
         android:contentDescription="@string/sponsor_block_color_preview" />
 
-    <TextView
+    <org.schabi.newpipe.views.NewPipeTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:labelFor="@id/red"
@@ -25,7 +25,7 @@
         android:contentDescription="@string/sponsor_block_color_red"
         android:max="255" />
 
-    <TextView
+    <org.schabi.newpipe.views.NewPipeTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:labelFor="@id/green"
@@ -39,7 +39,7 @@
         android:contentDescription="@string/sponsor_block_color_green"
         android:max="255" />
 
-    <TextView
+    <org.schabi.newpipe.views.NewPipeTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:labelFor="@id/blue"
