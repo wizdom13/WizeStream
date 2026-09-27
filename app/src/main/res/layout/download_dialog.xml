@@ -211,14 +211,16 @@
             tools:ignore="RtlHardcoded,RtlSymmetry"
             tools:text="3" />
 
-        <com.google.android.material.slider.Slider
+        <androidx.appcompat.widget.AppCompatSeekBar
             android:id="@+id/threads"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:stepSize="1"
-            android:value="3"
-            android:valueFrom="1"
-            android:valueTo="32" />
+            android:max="31"
+            android:progress="3"
+            android:progressTint="?attr/colorPrimary"
+            android:progressBackgroundTint="?attr/colorOutlineVariant"
+            android:secondaryProgressTint="?attr/colorOutlineVariant"
+            android:thumbTint="?attr/colorPrimary" />
     </LinearLayout>
 
     <org.schabi.newpipe.views.NewPipeTextView
