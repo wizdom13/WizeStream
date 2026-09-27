@@ -1,0 +1,6 @@
+• Add danmaku overlays, live quality selection, and adaptive Auto quality.
+• Add Local Media exclusions and optional All-media folder grouping.
+• Add selectable Device Sync categories.
+• Complete broad Material 3 UI modernization.
+• Improve Android TV controls, PiP transitions, fullscreen, and playback recovery.
+• Fix bookmark long-press actions in filtered Grid views.
