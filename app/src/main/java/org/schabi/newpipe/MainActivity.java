@@ -21,6 +21,7 @@
 package org.schabi.newpipe;
 
 import android.app.AlertDialog;
+import android.app.PictureInPictureUiState;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -315,6 +316,16 @@ public class MainActivity extends AppCompatActivity {
     public void onUserLeaveHint() {
         nativePipController.onUserLeaveHint();
         super.onUserLeaveHint();
+    }
+
+    @Override
+    public void onPictureInPictureUiStateChanged(
+            @NonNull final PictureInPictureUiState pipState) {
+        super.onPictureInPictureUiStateChanged(pipState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            nativePipController.onPictureInPictureUiStateChanged(
+                    pipState.isTransitioningToPip());
+        }
     }
 
     @Override
