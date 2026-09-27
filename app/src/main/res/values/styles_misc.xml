@@ -2,7 +2,7 @@
 <resources>
 
     <!-- Follows service's primary color -->
-    <style name="ServiceColoredButton" parent="Widget.AppCompat.Button.Colored">
+    <style name="ServiceColoredButton" parent="Widget.Material3.Button.FilledButton">
         <item name="colorButtonNormal">?attr/colorPrimary</item>
         <item name="android:textColor">@color/subscribe_text_color</item>
         <item name="colorControlHighlight">@color/dark_ripple_color</item>
@@ -12,7 +12,7 @@
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
-    <style name="MaterialStateActionButton" parent="Widget.AppCompat.Button.Borderless.Colored">
+    <style name="MaterialStateActionButton" parent="Widget.Material3.Button.TextButton">
         <item name="colorAccent">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorPrimary</item>
         <item name="colorControlHighlight">?attr/colorControlHighlight</item>
@@ -59,7 +59,7 @@
     <style name="Widget.WizeStream.SeekBar" parent="Widget.AppCompat.SeekBar">
         <item name="android:thumbTint">?attr/colorPrimary</item>
         <item name="android:progressTint">?attr/colorPrimary</item>
-        <item name="android:progressBackgroundTint">?attr/colorSurfaceVariant</item>
+        <item name="android:progressBackgroundTint">?attr/colorOutlineVariant</item>
         <item name="android:secondaryProgressTint">?attr/colorPrimaryContainer</item>
     </style>
 
@@ -132,7 +132,7 @@
         <item name="android:textColor">@color/white_secondary</item>
     </style>
 
-    <style name="FloatingActionButtonTheme" parent="Widget.Design.FloatingActionButton">
+    <style name="FloatingActionButtonTheme" parent="Widget.Material3.FloatingActionButton.Primary">
         <item name="tint">?attr/actionColor</item>
     </style>
 
