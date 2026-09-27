@@ -4,6 +4,7 @@ import android.content.Context
 import io.reactivex.rxjava3.core.Single
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.profiles.ProfileRecord
 import org.schabi.newpipe.util.image.ExtractorImageCompat
@@ -22,6 +23,16 @@ object ChannelSubscriptionActions {
         item,
         ProfileManager.getActiveProfile(context)
     )
+
+    @JvmStatic
+    fun addToGroups(
+        context: Context,
+        item: ChannelInfoItem,
+        groupIds: List<Long>
+    ) = subscribe(context, item).flatMapCompletable { subscription ->
+        FeedDatabaseManager(context.applicationContext)
+            .setGroupsForSubscription(subscription.uid, groupIds)
+    }
 
     @JvmStatic
     fun subscribeToProfile(
