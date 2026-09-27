@@ -14,14 +14,14 @@
         android:paddingEnd="24dp"
         android:paddingBottom="8dp">
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/adjustments_enabled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="48dp"
             android:text="@string/video_adjustments_enable" />
 
-        <TextView
+        <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/adjustments_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -30,7 +30,7 @@
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <TextView
+        <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/brightness_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -48,7 +48,7 @@
             android:valueTo="100"
             app:labelBehavior="floating" />
 
-        <TextView
+        <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/contrast_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -66,7 +66,7 @@
             android:valueTo="100"
             app:labelBehavior="floating" />
 
-        <TextView
+        <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/saturation_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -84,14 +84,14 @@
             android:valueTo="200"
             app:labelBehavior="floating" />
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/adjustments_remember"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="48dp"
             android:text="@string/video_adjustments_remember" />
 
-        <TextView
+        <org.schabi.newpipe.views.NewPipeTextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="4dp"
