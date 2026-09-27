@@ -5,7 +5,7 @@ package org.schabi.newpipe.local.media
 
 enum class LocalMediaAudioCategory { TRACKS, ARTISTS, ALBUMS, GENRES }
 
-enum class LocalMediaGroupKind { ARTIST, ALBUM, GENRE, VIDEO_FOLDER }
+enum class LocalMediaGroupKind { ARTIST, ALBUM, GENRE, MEDIA_FOLDER, VIDEO_FOLDER }
 
 data class LocalMediaGroup(
     val stableKey: String,
