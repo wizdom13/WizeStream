@@ -16,7 +16,6 @@ import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.databinding.FragmentSubscriptionBinding
 import org.schabi.newpipe.local.subscription.item.ChannelItem
 import org.schabi.newpipe.util.NavigationHelper
-import org.schabi.newpipe.util.OnClickGesture
 
 class GroupChannelsFragment : Fragment() {
     private var _binding: FragmentSubscriptionBinding? = null
@@ -41,15 +40,6 @@ class GroupChannelsFragment : Fragment() {
             groupName
         }
 
-        adapter.setOnItemClickListener { item, _ ->
-            val channel = (item as? ChannelItem)?.item ?: return@setOnItemClickListener
-            NavigationHelper.openChannelFragment(
-                parentFragmentManager,
-                channel.serviceId,
-                channel.url,
-                channel.name
-            )
-        }
         binding.itemsList.layoutManager = GridLayoutManager(requireContext(), 1)
         binding.itemsList.adapter = adapter
 
@@ -58,14 +48,18 @@ class GroupChannelsFragment : Fragment() {
             adapter.update(
                 channels.map { channel ->
                     ChannelItem(channel, -1, ChannelItem.ItemVersion.MINI).apply {
-                        gesturesListener = object : OnClickGesture<org.schabi.newpipe.extractor.channel.ChannelInfoItem> {
-                            override fun selected(selectedItem: org.schabi.newpipe.extractor.channel.ChannelInfoItem) =
-                                NavigationHelper.openChannelFragment(
-                                    parentFragmentManager,
-                                    selectedItem.serviceId,
-                                    selectedItem.url,
-                                    selectedItem.name
-                                )
+                        gesturesListener = object :
+                            org.schabi.newpipe.util.OnClickGesture<
+                                org.schabi.newpipe.extractor.channel.ChannelInfoItem
+                            > {
+                            override fun selected(
+                                selectedItem: org.schabi.newpipe.extractor.channel.ChannelInfoItem
+                            ) = NavigationHelper.openChannelFragment(
+                                parentFragmentManager,
+                                selectedItem.serviceId,
+                                selectedItem.url,
+                                selectedItem.name
+                            )
                         }
                     }
                 }
