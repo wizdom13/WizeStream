@@ -13,12 +13,6 @@ object FullscreenCommentsSidebar {
         if (manager.findFragmentByTag(TAG) != null) return
 
         manager.beginTransaction()
-            .setCustomAnimations(
-                R.anim.slide_in_right,
-                R.anim.slide_out_right,
-                R.anim.slide_in_right,
-                R.anim.slide_out_right
-            )
             .add(
                 R.id.fullscreenCommentsContainer,
                 CommentsFragment.getInstance(serviceId, url, title),
