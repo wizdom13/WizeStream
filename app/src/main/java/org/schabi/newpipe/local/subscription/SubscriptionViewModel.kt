@@ -43,7 +43,6 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         ) { groups, listView, query ->
             Triple(groups, listView, query)
         }
-        )
         .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
         .map { (feedGroups, listViewMode, query) ->
             val filteredGroups = if (ContextualSearchHelper.isActive(query)) {
