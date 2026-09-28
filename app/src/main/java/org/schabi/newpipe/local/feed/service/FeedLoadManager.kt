@@ -43,7 +43,9 @@ class FeedLoadManager(private val context: Context) {
     private val notificationUpdater = PublishProcessor.create<String>()
     private val currentProgress = AtomicInteger(-1)
     private val maxProgress = AtomicInteger(-1)
-    @Volatile private var currentUpdateDescription = ""
+
+    @Volatile
+    private var currentUpdateDescription = ""
     private val cancelSignal = AtomicBoolean()
     private val cancelNotifier = BehaviorProcessor.createDefault(false)
     private val feedResultsHolder = FeedResultsHolder()
