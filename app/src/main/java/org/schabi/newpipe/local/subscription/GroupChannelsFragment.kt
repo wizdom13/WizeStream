@@ -14,8 +14,10 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.databinding.FragmentSubscriptionBinding
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.local.subscription.item.ChannelItem
 import org.schabi.newpipe.util.NavigationHelper
+import org.schabi.newpipe.util.OnClickGesture
 
 class GroupChannelsFragment : Fragment() {
     private var _binding: FragmentSubscriptionBinding? = null
@@ -48,12 +50,9 @@ class GroupChannelsFragment : Fragment() {
             adapter.update(
                 channels.map { channel ->
                     ChannelItem(channel, -1, ChannelItem.ItemVersion.MINI).apply {
-                        gesturesListener = object :
-                            org.schabi.newpipe.util.OnClickGesture<
-                                org.schabi.newpipe.extractor.channel.ChannelInfoItem
-                            > {
+                        gesturesListener = object : OnClickGesture<ChannelInfoItem> {
                             override fun selected(
-                                selectedItem: org.schabi.newpipe.extractor.channel.ChannelInfoItem
+                                selectedItem: ChannelInfoItem
                             ) = NavigationHelper.openChannelFragment(
                                 parentFragmentManager,
                                 selectedItem.serviceId,
