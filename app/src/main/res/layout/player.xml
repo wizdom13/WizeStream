@@ -1012,6 +1012,16 @@
 
     </RelativeLayout>
 
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fullscreenCommentsContainer"
+        android:layout_width="420dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:background="?attr/colorSurface"
+        android:elevation="16dp"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
     <View
         android:id="@+id/closingOverlay"
         android:layout_width="match_parent"
