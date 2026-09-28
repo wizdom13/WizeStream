@@ -120,6 +120,10 @@ data class StreamItem(
 
         updateDurationMarginForProgress(viewBinding)
 
+        viewBinding.itemThumbnailView.scaleType = ShortsThumbnailPolicy.scaleType(
+            stream.url,
+            stream.duration
+        )
         CoilHelper.loadThumbnail(viewBinding.itemThumbnailView, stream.thumbnailUrl)
 
         if (itemVersion != ItemVersion.MINI) {
