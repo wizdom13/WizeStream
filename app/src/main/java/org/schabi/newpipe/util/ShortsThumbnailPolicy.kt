@@ -5,8 +5,9 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 object ShortsThumbnailPolicy {
     @JvmStatic
-    fun scaleType(stream: StreamInfoItem): ImageView.ScaleType =
-        if (StreamListFilter.categoryOf(stream) == StreamListFilter.SHORTS) {
+    fun scaleType(stream: StreamInfoItem): ImageView.ScaleType = if (
+        StreamListFilter.categoryOf(stream) == StreamListFilter.SHORTS
+    ) {
             ImageView.ScaleType.FIT_CENTER
         } else {
             ImageView.ScaleType.CENTER_CROP
