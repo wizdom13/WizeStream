@@ -13,6 +13,6 @@ object TvPlayerKeyPolicy {
     fun isForwardSeek(keyCode: Int): Boolean = keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
 
     @JvmStatic
-    fun shouldCloseOnSecondBack(lastBackAt: Long, now: Long): Boolean =
-        lastBackAt > 0 && now - lastBackAt <= DOUBLE_BACK_WINDOW_MS
+    fun shouldCloseOnSecondBack(lastBackAt: Long, now: Long): Boolean = lastBackAt > 0 &&
+        now - lastBackAt <= DOUBLE_BACK_WINDOW_MS
 }
