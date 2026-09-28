@@ -263,6 +263,21 @@
                         tools:ignore="RtlHardcoded" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/commentsButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/comments"
+                        android:focusable="true"
+                        android:padding="11dp"
+                        android:src="@drawable/video_detail_navigation_comments_icon"
+                        android:visibility="gone"
+                        app:tint="@color/white"
+                        tools:visibility="visible" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/segmentsButton"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
