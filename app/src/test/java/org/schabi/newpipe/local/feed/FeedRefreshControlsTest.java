@@ -101,12 +101,12 @@ public class FeedRefreshControlsTest {
                 controlsRow.getAttributeNS(ANDROID_NAMESPACE, "orientation"));
 
         assertNotNull(progressContainer);
-        assertEquals("FrameLayout", progressContainer.getTagName());
+        assertEquals("LinearLayout", progressContainer.getTagName());
         assertEquals("0dp",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_width"));
         assertEquals("1",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_weight"));
-        assertEquals("24dp",
+        assertEquals("wrap_content",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "layout_height"));
         assertEquals("gone",
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
