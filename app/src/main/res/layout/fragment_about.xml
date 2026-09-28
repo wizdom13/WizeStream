@@ -146,6 +146,14 @@
             android:textColor="?attr/colorOnSurfaceVariant" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/about_star_github_link"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:text="@string/github_star_prompt_action" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/about_github_link"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
