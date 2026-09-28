@@ -48,7 +48,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         .map { (feedGroups, listViewMode, query) ->
             val filteredGroups = if (ContextualSearchHelper.isActive(query)) {
                 feedGroups.filter { group ->
-                    ContextualSearchHelper.matches(group.name, query)
+                    ContextualSearchHelper.matches(query, group.name)
                 }
             } else {
                 feedGroups
