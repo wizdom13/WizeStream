@@ -4,6 +4,28 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.24.0 (`1024000`)
+
+### New features
+
+- Added a privacy-friendly GitHub star prompt that can open the project page without requiring a WizeStream account.
+- Added direct access to the channels inside an opened subscription group.
+- Added fullscreen comments in a side panel so video playback can remain fullscreen while browsing comments.
+- Added configurable Subscriptions grid column presets alongside the responsive Auto layout.
+
+### Improvements
+
+- Improved Subscriptions search so both subscribed channels and feed groups are filtered by the current query.
+- Improved Feed refresh progress with the current/total count and the channel currently being fetched.
+- Improved Android TV playback with direct D-pad left/right seeking and double-Back player exit behavior.
+- Improved Shorts thumbnail presentation so portrait artwork is preserved instead of zoom-cropped.
+- Added subscription/group actions to searched channels and improved playlist thumbnail/title click targets.
+
+### Fixes
+
+- Show clearer content-unavailable messages for known removed, copyright-taken-down, community-guidelines, deleted, and unavailable videos while preserving real parser errors.
+- Honor the global members-only hiding preference consistently in the Feed.
+
 ## WizeStream 1.23.0 (`1023000`)
 
 ### New features
