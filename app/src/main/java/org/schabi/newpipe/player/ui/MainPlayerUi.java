@@ -186,6 +186,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.screenRotationButton.setOnClickListener(
                 makeOnClickListener(this::toggleFullscreenWithOrientation));
         binding.queueButton.setOnClickListener(v -> onQueueClicked());
+        binding.commentsButton.setOnClickListener(v -> onCommentsClicked());
         binding.segmentsButton.setOnClickListener(v -> onSegmentsClicked());
         binding.sleepTimerButton.setOnClickListener(v ->
                 getParentActivity().ifPresent(activity -> SleepTimerDialog.show(activity, player)));
@@ -279,6 +280,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         super.deinitListeners();
 
         binding.queueButton.setOnClickListener(null);
+        binding.commentsButton.setOnClickListener(null);
         binding.segmentsButton.setOnClickListener(null);
         binding.sleepTimerButton.setOnClickListener(null);
         binding.equalizerButton.setOnClickListener(null);
@@ -1092,6 +1094,23 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     //////////////////////////////////////////////////////////////////////////*/
     //region Video size, orientation, fullscreen
 
+
+    private void onCommentsClicked() {
+        if (!isFullscreen) {
+            return;
+        }
+        player.getCurrentStreamInfo().ifPresent(info ->
+                getParentActivity().ifPresent(activity -> {
+                    binding.fullscreenCommentsContainer.setVisibility(View.VISIBLE);
+                    FullscreenCommentsSidebar.show(
+                            activity,
+                            info.getServiceId(),
+                            info.getUrl(),
+                            info.getName());
+                    hideControls(0, 0);
+                }));
+    }
+
     private void setupScreenRotationButton() {
         binding.screenRotationButton.setVisibility(globalScreenOrientationLocked(context)
                 || PlayerRotationMode.get(context) == PlayerRotationMode.FIXED
@@ -1208,6 +1227,14 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             setTouchLocked(false);
         }
         binding.touchLockButton.setVisibility(fullscreen ? View.VISIBLE : View.GONE);
+        binding.commentsButton.setVisibility(fullscreen ? View.VISIBLE : View.GONE);
+        if (!fullscreen) {
+            getParentActivity().ifPresent(activity -> {
+                if (FullscreenCommentsSidebar.hide(activity)) {
+                    binding.fullscreenCommentsContainer.setVisibility(View.GONE);
+                }
+            });
+        }
         if (isFullscreen) {
             // Android needs tens milliseconds to send new insets but a user is able to see
             // how controls changes it's position from `0` to `nav bar height` padding.
