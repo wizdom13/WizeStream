@@ -61,8 +61,4 @@ public final class GitHubStarPromptController {
                                 final boolean dismissed) {
         return starts >= MINIMUM_APP_STARTS && !completed && !dismissed;
     }
-
-    private GitHubStarPromptController() {
-        throw new AssertionError("No instances");
-    }
 }
