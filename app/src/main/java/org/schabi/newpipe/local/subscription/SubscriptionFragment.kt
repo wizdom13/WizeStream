@@ -138,6 +138,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         setClickListenerToMenuItem(menu.add(R.string.saved_search_feeds)) {
             showSavedSearchFeedsDialog()
         }.setIcon(R.drawable.ic_search)
+        buildGridColumnsMenu(menu)
         buildImportExportMenu(menu)
     }
 
@@ -180,6 +181,23 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                     }
                 )
         )
+    }
+
+    private fun buildGridColumnsMenu(menu: Menu) {
+        if (!SubscriptionViewModel.shouldUseGridForSubscription(requireContext())) return
+
+        val submenu = menu.addSubMenu(R.string.grid_columns)
+        SubscriptionGridColumns.presets.forEach { columns ->
+            val label = if (columns == SubscriptionGridColumns.AUTO) {
+                getString(R.string.auto)
+            } else {
+                columns.toString()
+            }
+            addMenuItemToSubmenu(submenu, label) {
+                SubscriptionGridColumns.set(requireContext(), columns)
+                applySubscriptionLayout()
+            }
+        }
     }
 
     private fun buildImportExportMenu(menu: Menu) {
@@ -252,21 +270,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         super.initViews(rootView, savedInstanceState)
         _binding = FragmentSubscriptionBinding.bind(rootView)
 
-        val gridMode = SubscriptionViewModel.shouldUseGridForSubscription(requireContext())
-        val minimumItemWidth = resources.getDimensionPixelSize(
-            R.dimen.channel_item_grid_min_width
-        )
-        binding.itemsList.layoutManager = if (gridMode) {
-            GridLayoutManagerHelper.create(binding.itemsList, minimumItemWidth) { spanCount ->
-                groupAdapter.spanCount = spanCount
-                groupAdapter.spanSizeLookup
-            }
-        } else {
-            groupAdapter.spanCount = 1
-            GridLayoutManager(requireContext(), 1).apply {
-                spanSizeLookup = groupAdapter.spanSizeLookup
-            }
-        }
+        applySubscriptionLayout()
         binding.itemsList.adapter = groupAdapter
         binding.itemsList.itemAnimator = null
 
@@ -280,6 +284,28 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         }
 
         setupInitialLayout()
+    }
+
+    private fun applySubscriptionLayout() {
+        val gridMode = SubscriptionViewModel.shouldUseGridForSubscription(requireContext())
+        val fixedColumns = SubscriptionGridColumns.get(requireContext())
+        val minimumItemWidth = resources.getDimensionPixelSize(R.dimen.channel_item_grid_min_width)
+        binding.itemsList.layoutManager = if (gridMode && fixedColumns > 0) {
+            groupAdapter.spanCount = fixedColumns
+            GridLayoutManager(requireContext(), fixedColumns).apply {
+                spanSizeLookup = groupAdapter.spanSizeLookup
+            }
+        } else if (gridMode) {
+            GridLayoutManagerHelper.create(binding.itemsList, minimumItemWidth) { spanCount ->
+                groupAdapter.spanCount = spanCount
+                groupAdapter.spanSizeLookup
+            }
+        } else {
+            groupAdapter.spanCount = 1
+            GridLayoutManager(requireContext(), 1).apply {
+                spanSizeLookup = groupAdapter.spanSizeLookup
+            }
+        }
     }
 
     private fun setupInitialLayout() {
