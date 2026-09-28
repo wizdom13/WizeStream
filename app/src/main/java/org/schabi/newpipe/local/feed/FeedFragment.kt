@@ -84,6 +84,7 @@ import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedLoadService
 import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.search.ContextualSearchable
+import org.schabi.newpipe.local.subscription.GroupChannelsFragment
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
 import org.schabi.newpipe.util.ContentBlockingHelper
@@ -318,10 +319,21 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         activity.supportActionBar?.subtitle = groupName
 
         inflater.inflate(R.menu.menu_feed_fragment, menu)
+        menu.findItem(R.id.menu_item_feed_channels)?.isVisible =
+            groupId != FeedGroupEntity.GROUP_ALL_ID
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.menu_item_feed_sort) {
+        if (item.itemId == R.id.menu_item_feed_channels) {
+            parentFragmentManager.beginTransaction()
+                .replace(
+                    R.id.fragment_holder,
+                    GroupChannelsFragment.newInstance(groupId, groupName)
+                )
+                .addToBackStack(null)
+                .commit()
+            return true
+        } else if (item.itemId == R.id.menu_item_feed_sort) {
             AlertDialog.Builder(requireContext())
                 .setTitle(R.string.feed_sort_title)
                 .setSingleChoiceItems(
