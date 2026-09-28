@@ -26,8 +26,8 @@ class FeedFilterPersistenceTest {
     fun membersOnlyFeedVisibilityDefaultsToShownAndCanBeHiddenExplicitly() {
         assertTrue(FeedFragment.DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED)
         assertFalse(FeedFragment.shouldHideMembersOnlyInFeed(false, true))
-        assertFalse(FeedFragment.shouldHideMembersOnlyInFeed(false, false))
-        assertFalse(FeedFragment.shouldHideMembersOnlyInFeed(true, true))
+        assertTrue(FeedFragment.shouldHideMembersOnlyInFeed(false, false))
+        assertTrue(FeedFragment.shouldHideMembersOnlyInFeed(true, true))
         assertTrue(FeedFragment.shouldHideMembersOnlyInFeed(true, false))
     }
 }
