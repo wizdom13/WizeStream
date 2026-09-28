@@ -18,6 +18,7 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.about.changelog.ChangelogActivity
 import org.schabi.newpipe.databinding.ActivityAboutBinding
 import org.schabi.newpipe.databinding.FragmentAboutBinding
+import org.schabi.newpipe.support.GitHubStarPromptController
 import org.schabi.newpipe.util.EdgeToEdgeHelper
 import org.schabi.newpipe.util.ThemeHelper
 import org.schabi.newpipe.util.external_communication.ShareUtils
@@ -81,6 +82,9 @@ class AboutActivity : AppCompatActivity() {
                     startActivity(Intent(requireContext(), ChangelogActivity::class.java))
                 }
                 aboutGithubLink.openLink(R.string.github_url)
+                aboutStarGithubLink.setOnClickListener {
+                    GitHubStarPromptController.openRepository(requireContext())
+                }
                 aboutWebsiteLink.openLink(R.string.website_url)
                 aboutPrivacyPolicyLink.openLink(R.string.privacy_policy_url)
                 faqLink.openLink(R.string.faq_url)
