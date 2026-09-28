@@ -36,14 +36,15 @@ public abstract class PlaylistItemHolder extends LocalItemHolder {
     public void updateFromItem(final LocalItem localItem,
                                final HistoryRecordManager historyRecordManager,
                                final DateTimeFormatter dateTimeFormatter) {
-        itemView.setOnClickListener(view -> {
-            if (itemBuilder.getOnItemSelectedListener() != null) {
-                itemBuilder.getOnItemSelectedListener().selected(localItem);
-            }
-        });
+        bindClickTarget(itemView, localItem);
+        bindClickTarget(itemThumbnailView, localItem);
+        bindClickTarget(itemTitleView, localItem);
+        final View thumbnailContainer = itemView.findViewById(R.id.itemThumbnailContainer);
+        if (thumbnailContainer != null) {
+            bindClickTarget(thumbnailContainer, localItem);
+        }
 
         bindLongPressTarget(itemView, localItem);
-        final View thumbnailContainer = itemView.findViewById(R.id.itemThumbnailContainer);
         if (thumbnailContainer != null) {
             bindLongPressTarget(thumbnailContainer, localItem);
         }
@@ -51,6 +52,14 @@ public abstract class PlaylistItemHolder extends LocalItemHolder {
         if (titleView != null) {
             bindLongPressTarget(titleView, localItem);
         }
+    }
+
+    private void bindClickTarget(final View target, final LocalItem localItem) {
+        target.setOnClickListener(view -> {
+            if (itemBuilder.getOnItemSelectedListener() != null) {
+                itemBuilder.getOnItemSelectedListener().selected(localItem);
+            }
+        });
     }
 
     private void bindLongPressTarget(final View target, final LocalItem localItem) {
