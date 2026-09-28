@@ -120,6 +120,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private final PlayerUiTheme playerUiTheme;
     private final DanmakuController danmakuController;
     private final Handler controlsVisibilityHandler = new Handler(Looper.getMainLooper());
+    private long lastTvBackPressedAt;
     @Nullable
     private SurfaceHolderCallback surfaceHolderCallback;
     @Nullable
@@ -1740,10 +1741,32 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public boolean onKeyDown(final int keyCode) {
+        if (DeviceUtils.isTv(context) && TvPlayerKeyPolicy.isSeekKey(keyCode)
+                && !isAnyListViewOpen() && player.getCurrentState()
+                != org.schabi.newpipe.player.Player.STATE_BLOCKED) {
+            if (TvPlayerKeyPolicy.isForwardSeek(keyCode)) {
+                player.fastForward();
+            } else {
+                player.fastRewind();
+            }
+            showControlsThenHide();
+            return true;
+        }
+
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK:
-                if (DeviceUtils.isTv(context) && isControlsVisible()) {
-                    hideControls(0, 0);
+                if (DeviceUtils.isTv(context)) {
+                    final long now = android.os.SystemClock.elapsedRealtime();
+                    if (TvPlayerKeyPolicy.shouldCloseOnSecondBack(lastTvBackPressedAt, now)) {
+                        lastTvBackPressedAt = 0L;
+                        context.sendBroadcast(new Intent(VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER)
+                                .setPackage(App.PACKAGE_NAME));
+                        return true;
+                    }
+                    lastTvBackPressedAt = now;
+                    if (isControlsVisible()) {
+                        hideControls(0, 0);
+                    }
                     return true;
                 }
                 break;
