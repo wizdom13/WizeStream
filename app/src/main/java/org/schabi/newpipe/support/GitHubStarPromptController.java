@@ -14,10 +14,12 @@ import org.schabi.newpipe.util.external_communication.ShareUtils;
 
 public final class GitHubStarPromptController {
     static final int MINIMUM_APP_STARTS = 12;
+    static final int REPROMPT_INTERVAL_STARTS = 12;
 
     private static final String KEY_APP_STARTS = "github_star_prompt_app_starts";
     private static final String KEY_COMPLETED = "github_star_prompt_completed";
     private static final String KEY_DISMISSED = "github_star_prompt_dismissed";
+    private static final String KEY_NEXT_PROMPT_START = "github_star_prompt_next_start";
 
     private final AppCompatActivity activity;
     private final SharedPreferences preferences;
@@ -35,7 +37,9 @@ public final class GitHubStarPromptController {
 
         final int starts = preferences.getInt(KEY_APP_STARTS, 0) + 1;
         preferences.edit().putInt(KEY_APP_STARTS, starts).apply();
-        if (!shouldPrompt(starts, false, false)) {
+        final int nextPromptStart = preferences.getInt(
+                KEY_NEXT_PROMPT_START, MINIMUM_APP_STARTS);
+        if (!shouldPrompt(starts, nextPromptStart, false, false)) {
             return;
         }
 
@@ -48,7 +52,9 @@ public final class GitHubStarPromptController {
                 })
                 .setNeutralButton(R.string.github_star_prompt_never, (dialog, which) ->
                         preferences.edit().putBoolean(KEY_DISMISSED, true).apply())
-                .setNegativeButton(R.string.not_now, null)
+                .setNegativeButton(R.string.not_now, (dialog, which) ->
+                        preferences.edit().putInt(
+                                KEY_NEXT_PROMPT_START, starts + REPROMPT_INTERVAL_STARTS).apply())
                 .show();
     }
 
@@ -57,8 +63,12 @@ public final class GitHubStarPromptController {
     }
 
     static boolean shouldPrompt(final int starts,
+                                final int nextPromptStart,
                                 final boolean completed,
                                 final boolean dismissed) {
-        return starts >= MINIMUM_APP_STARTS && !completed && !dismissed;
+        return starts >= MINIMUM_APP_STARTS
+                && starts >= nextPromptStart
+                && !completed
+                && !dismissed;
     }
 }
