@@ -32,6 +32,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     private val mutableStateLiveData = MutableLiveData<SubscriptionState>()
     private val mutableFeedGroupsLiveData = MutableLiveData<Pair<List<Group>, Boolean>>()
+    private val filterQuery = BehaviorProcessor.createDefault("")
     val stateLiveData: LiveData<SubscriptionState> = mutableStateLiveData
     val feedGroupsLiveData: LiveData<Pair<List<Group>, Boolean>> = mutableFeedGroupsLiveData
 
@@ -64,8 +65,6 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
             { mutableFeedGroupsLiveData.postValue(it) },
             { mutableStateLiveData.postValue(SubscriptionState.ErrorState(it)) }
         )
-
-    private val filterQuery = BehaviorProcessor.createDefault("")
 
     private var stateItemsDisposable = Flowable.combineLatest(
         FeedScope.changes(application),
