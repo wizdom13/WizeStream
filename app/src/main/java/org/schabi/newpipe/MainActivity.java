@@ -105,6 +105,7 @@ import org.schabi.newpipe.settings.tabs.TabletNavigationPositionResolver;
 import org.schabi.newpipe.settings.tabs.TabsManager;
 import org.schabi.newpipe.settings.migration.MigrationManager;
 import org.schabi.newpipe.sync.DeviceSyncListenerService;
+import org.schabi.newpipe.support.GitHubStarPromptController;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
@@ -175,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
     private String activeProfileId;
     private NativePipController nativePipController;
     private ChangelogPromptController changelogPromptController;
+    private GitHubStarPromptController githubStarPromptController;
     private boolean searchNavigationActive;
     private int lastMainTabPosition;
     private int pendingMainTabPosition = -1;
@@ -275,6 +277,7 @@ public class MainActivity extends AppCompatActivity {
 
         MigrationManager.showUserInfoIfPresent(this);
         changelogPromptController = new ChangelogPromptController(this);
+        githubStarPromptController = new GitHubStarPromptController(this);
     }
 
     @Override
@@ -301,6 +304,9 @@ public class MainActivity extends AppCompatActivity {
         DeviceSyncListenerService.Companion.startIfEnabled(this);
         nativePipController.onMainActivityStarted();
         openMiniPlayerUponPlayerStarted();
+        if (githubStarPromptController != null) {
+            githubStarPromptController.onAppStart();
+        }
     }
 
     @Override
