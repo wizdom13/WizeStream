@@ -84,7 +84,6 @@ import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedLoadService
 import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.search.ContextualSearchable
-import org.schabi.newpipe.local.subscription.GroupChannelsFragment
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
 import org.schabi.newpipe.util.ContentBlockingHelper
@@ -325,13 +324,11 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.menu_item_feed_channels) {
-            parentFragmentManager.beginTransaction()
-                .replace(
-                    R.id.fragment_holder,
-                    GroupChannelsFragment.newInstance(groupId, groupName)
-                )
-                .addToBackStack(null)
-                .commit()
+            NavigationHelper.openGroupChannelsFragment(
+                parentFragmentManager,
+                groupId,
+                groupName
+            )
             return true
         } else if (item.itemId == R.id.menu_item_feed_sort) {
             AlertDialog.Builder(requireContext())
