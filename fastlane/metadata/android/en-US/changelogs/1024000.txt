@@ -1,0 +1,6 @@
+• Add fullscreen comments sidebar and direct group-channel access.
+• Add configurable Subscriptions grid columns and improved channel/group search.
+• Show current channel and progress count while refreshing the Feed.
+• Improve Android TV with direct D-pad seeking and double-Back player exit.
+• Preserve portrait Shorts thumbnails and clarify removed/taken-down video errors.
+• Improve searched-channel subscription actions and members-only Feed filtering.
