@@ -30,7 +30,12 @@ object FeedEventManager {
 
     sealed class Event {
         data object IdleEvent : Event()
-        data class ProgressEvent(val currentProgress: Int = -1, val maxProgress: Int = -1, @StringRes val progressMessage: Int = 0) : Event() {
+        data class ProgressEvent(
+            val currentProgress: Int = -1,
+            val maxProgress: Int = -1,
+            @StringRes val progressMessage: Int = 0,
+            val updateDescription: String = ""
+        ) : Event() {
             constructor(@StringRes progressMessage: Int) : this(-1, -1, progressMessage)
         }
 
