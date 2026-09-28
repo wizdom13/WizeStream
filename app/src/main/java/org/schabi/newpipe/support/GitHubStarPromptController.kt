@@ -34,7 +34,7 @@ class GitHubStarPromptController(private val activity: AppCompatActivity) {
             .setNeutralButton(R.string.github_star_prompt_never) { _, _ ->
                 preferences.edit().putBoolean(KEY_DISMISSED, true).apply()
             }
-            .setNegativeButton(R.string.not_now) { _, _ ->
+            .setNegativeButton(R.string.app_update_later) { _, _ ->
                 preferences.edit()
                     .putInt(KEY_NEXT_PROMPT_START, starts + REPROMPT_INTERVAL_STARTS)
                     .apply()
