@@ -1100,7 +1100,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         internal fun shouldHideMembersOnlyInFeed(
             hideMembersOnlyGlobally: Boolean,
             showMembersOnlyInFeed: Boolean
-        ): Boolean = hideMembersOnlyGlobally && !showMembersOnlyInFeed
+        ): Boolean = hideMembersOnlyGlobally || !showMembersOnlyInFeed
 
         @JvmStatic
         fun newInstance(groupId: Long = FeedGroupEntity.GROUP_ALL_ID, groupName: String? = null): FeedFragment {
