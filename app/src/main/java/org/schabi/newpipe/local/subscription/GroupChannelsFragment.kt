@@ -76,9 +76,10 @@ class GroupChannelsFragment : Fragment() {
         private const val KEY_GROUP_ID = "group_id"
         private const val KEY_GROUP_NAME = "group_name"
 
-        fun newInstance(groupId: Long, groupName: String): GroupChannelsFragment =
-            GroupChannelsFragment().apply {
+        fun newInstance(groupId: Long, groupName: String): GroupChannelsFragment {
+            return GroupChannelsFragment().apply {
                 arguments = bundleOf(KEY_GROUP_ID to groupId, KEY_GROUP_NAME to groupName)
             }
+        }
     }
 }
