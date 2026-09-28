@@ -266,6 +266,9 @@ class ErrorInfo private constructor(
                 throwable is ContentNotAvailableException ->
                     ErrorMessage(R.string.content_not_available)
 
+                StreamUnavailableErrorClassifier.isKnownUnavailable(throwable) ->
+                    ErrorMessage(R.string.content_not_available)
+
                 // other extractor exceptions
                 throwable is ContentNotSupportedException ->
                     ErrorMessage(R.string.content_not_supported)
