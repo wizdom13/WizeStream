@@ -20,6 +20,7 @@ import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.AiSListContentHelper;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
+import org.schabi.newpipe.util.ShortsThumbnailPolicy;
 import org.schabi.newpipe.util.MembersOnlyContentHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.StreamTypeUtil;
@@ -152,6 +153,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         updateDurationMarginForProgress();
 
         // Default thumbnail is shown on error, while loading and if the url is empty
+        itemThumbnailView.setScaleType(ShortsThumbnailPolicy.scaleType(item));
         CoilHelper.INSTANCE.loadThumbnail(itemThumbnailView,
                 ExtractorImageCompat.thumbnailImages(item));
 
