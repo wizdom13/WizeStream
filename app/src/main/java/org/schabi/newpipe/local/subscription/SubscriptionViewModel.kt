@@ -39,12 +39,24 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         .combineLatest(
             feedDatabaseManager.groups(),
             listViewModeFlowable,
-            ::Pair
+            filterQuery.distinctUntilChanged()
+        ) { groups, listView, query ->
+            Triple(groups, listView, query)
+        }
         )
         .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
-        .map { (feedGroups, listViewMode) ->
+        .map { (feedGroups, listViewMode, query) ->
+            val filteredGroups = if (ContextualSearchHelper.isActive(query)) {
+                feedGroups.filter { group ->
+                    ContextualSearchHelper.matches(group.name, query)
+                }
+            } else {
+                feedGroups
+            }
             Pair(
-                feedGroups.map(if (listViewMode) ::FeedGroupCardItem else ::FeedGroupCardGridItem),
+                filteredGroups.map(
+                    if (listViewMode) ::FeedGroupCardItem else ::FeedGroupCardGridItem
+                ),
                 listViewMode
             )
         }
