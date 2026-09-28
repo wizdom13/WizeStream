@@ -57,6 +57,7 @@ import org.schabi.newpipe.local.history.StatisticsPlaylistFragment;
 import org.schabi.newpipe.local.media.LocalMediaFragment;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.local.subscription.SubscriptionFragment;
+import org.schabi.newpipe.local.subscription.GroupChannelsFragment;
 import org.schabi.newpipe.local.subscription.SubscriptionsImportFragment;
 import org.schabi.newpipe.learning.LearningDashboardFragment;
 import org.schabi.newpipe.player.PlayQueueActivity;
@@ -650,6 +651,16 @@ public final class NavigationHelper {
     public static void openLocalMediaAudioFragment(final FragmentManager fragmentManager) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, LocalMediaFragment.newAudioTracksInstance())
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public static void openGroupChannelsFragment(final FragmentManager fragmentManager,
+                                                 final long groupId,
+                                                 @NonNull final String groupName) {
+        defaultTransaction(fragmentManager)
+                .replace(R.id.fragment_holder, GroupChannelsFragment.Companion.newInstance(
+                        groupId, groupName))
                 .addToBackStack(null)
                 .commit();
     }
