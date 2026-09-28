@@ -8,7 +8,8 @@ sealed class FeedState {
     data class ProgressState(
         val currentProgress: Int = -1,
         val maxProgress: Int = -1,
-        @StringRes val progressMessage: Int = 0
+        @StringRes val progressMessage: Int = 0,
+        val updateDescription: String = ""
     ) : FeedState()
 
     data class LoadedState(
