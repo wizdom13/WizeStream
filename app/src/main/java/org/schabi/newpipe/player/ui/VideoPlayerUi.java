@@ -1759,8 +1759,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     final long now = android.os.SystemClock.elapsedRealtime();
                     if (TvPlayerKeyPolicy.shouldCloseOnSecondBack(lastTvBackPressedAt, now)) {
                         lastTvBackPressedAt = 0L;
-                        context.sendBroadcast(new Intent(VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER)
-                                .setPackage(App.PACKAGE_NAME));
+                        context.sendBroadcast(
+                                new Intent(VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER)
+                                        .setPackage(App.PACKAGE_NAME));
                         return true;
                     }
                     lastTvBackPressedAt = now;
