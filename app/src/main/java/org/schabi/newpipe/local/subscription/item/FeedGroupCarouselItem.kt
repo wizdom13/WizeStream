@@ -10,6 +10,7 @@ import com.xwray.groupie.viewbinding.GroupieViewHolder
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.local.subscription.SubscriptionGridColumns
+import org.schabi.newpipe.local.subscription.SubscriptionGridSpanPolicy
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.ThemeHelper.getGridSpanCount
 
@@ -77,11 +78,10 @@ class FeedGroupCarouselItem(
             LinearLayoutManager(context)
         } else {
             val configuredColumns = SubscriptionGridColumns.get(context)
-            val spanCount = if (configuredColumns == SubscriptionGridColumns.AUTO) {
+            val spanCount = SubscriptionGridSpanPolicy.resolve(
+                configuredColumns,
                 getGridSpanCount(context, DeviceUtils.dpToPx(112, context))
-            } else {
-                configuredColumns
-            }
+            )
             GridLayoutManager(context, spanCount)
         }
 
