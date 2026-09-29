@@ -106,6 +106,12 @@ jobs:
           path: app/build/reports/lint-results-debug.*
           if-no-files-found: ignore
 
+      - name: Verify 16 KB native-library compatibility
+        run: |
+          APK_PATH="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+          test -n "$APK_PATH"
+          python3 scripts/check_android_16kb_elf.py "$APK_PATH"
+
       - name: Verify debug APK identity
         run: |
           APK_PATH="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
