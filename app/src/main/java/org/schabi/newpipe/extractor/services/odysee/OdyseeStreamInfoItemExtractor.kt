@@ -13,8 +13,8 @@ class OdyseeStreamInfoItemExtractor(private val claim: JsonObject) : StreamInfoI
     }
 
     override fun getUrl(): String = OdyseeApi.webUrl(
-            claim.getString("canonical_url", claim.getString("permanent_url", ""))
-        )
+        claim.getString("canonical_url", claim.getString("permanent_url", ""))
+    )
 
     override fun getThumbnails(): List<Image> {
         val url = claim.getObject("value").getObject("thumbnail").getString("url", "")
