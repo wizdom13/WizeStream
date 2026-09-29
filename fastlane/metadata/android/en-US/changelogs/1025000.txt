@@ -1,0 +1,6 @@
+• Restore SoundCloud charts and fix the feed-group Channels crash.
+• Improve TV D-pad navigation and compact fullscreen comments.
+• Apply Subscriptions grid column presets to groups.
+• Keep fullscreen exit available after playback ends.
+• Improve Android 16 KB native-library compatibility.
+• Add experimental Odysee integration; search, playback, channels, and subscription refresh have known issues.

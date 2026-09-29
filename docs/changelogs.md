@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.25.0 (`1025000`)
+
+### New features
+
+- Added an experimental Odysee service integration.
+
+### Improvements
+
+- Improved Android TV fullscreen D-pad navigation between playback controls and the action row.
+- Made fullscreen comments panels more compact on TVs and phones.
+- Applied the Subscriptions grid column presets to feed groups as well as subscribed channels.
+- Improved native-library compatibility with Android devices using 16 KB memory pages.
+
+### Fixes
+
+- Restored SoundCloud charts using public chart playlists when the legacy charts endpoint is unavailable.
+- Fixed a crash when opening the channels inside a feed group.
+- Kept fullscreen exit available after playback finishes, including Back, the exit button, and the swipe-down gesture.
+
+### Known issues
+
+- Odysee search, playback, channel browsing, and subscription refresh may fail. Request handling, URL recognition, and pagination fixes are still pending.
+
 ## WizeStream 1.24.0 (`1024000`)
 
 ### New features

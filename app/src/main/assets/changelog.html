@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1025000">WizeStream 1.25.0</a></li>
 <li><a href="#release-1024000">WizeStream 1.24.0</a></li>
 <li><a href="#release-1023000">WizeStream 1.23.0</a></li>
 <li><a href="#release-1022002">WizeStream 1.22.2</a></li>
@@ -80,6 +81,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1025000" data-version="1.25.0" data-version-code="1025000">
+<h2>WizeStream 1.25.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added an experimental Odysee service integration.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Improved Android TV fullscreen D-pad navigation between playback controls and the action row.</li>
+<li>Made fullscreen comments panels more compact on TVs and phones.</li>
+<li>Applied the Subscriptions grid column presets to feed groups as well as subscribed channels.</li>
+<li>Improved native-library compatibility with Android devices using 16 KB memory pages.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Restored SoundCloud charts using public chart playlists when the legacy charts endpoint is unavailable.</li>
+<li>Fixed a crash when opening the channels inside a feed group.</li>
+<li>Kept fullscreen exit available after playback finishes, including Back, the exit button, and the swipe-down gesture.</li>
+</ul>
+<h3>Known issues</h3>
+<ul>
+<li>Odysee search, playback, channel browsing, and subscription refresh may fail. Request handling, URL recognition, and pagination fixes are still pending.</li>
+</ul>
+</div>
+</section>
 <section id="release-1024000" data-version="1.24.0" data-version-code="1024000">
 <h2>WizeStream 1.24.0</h2>
 <div class="release-notes">
