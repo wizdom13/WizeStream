@@ -1046,6 +1046,21 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public boolean onKeyDown(final int keyCode) {
+        if (TvPlayerFocusPolicy.shouldMoveToActions(
+                keyCode, isFullscreen, DeviceUtils.isTv(context))
+                && binding.playbackControlRoot.isShown()) {
+            if (binding.commentsButton.getVisibility() == View.VISIBLE
+                    && binding.commentsButton.requestFocus()) {
+                return true;
+            }
+            if (binding.queueButton.getVisibility() == View.VISIBLE
+                    && binding.queueButton.requestFocus()) {
+                return true;
+            }
+            if (binding.moreOptionsButton.requestFocus()) {
+                return true;
+            }
+        }
         if (keyCode == KeyEvent.KEYCODE_BACK && isFullscreen && !DeviceUtils.isTv(context)) {
             toggleFullscreenWithOrientation();
             return true;
@@ -1105,6 +1120,12 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
         player.getCurrentStreamInfo().ifPresent(info ->
                 getParentActivity().ifPresent(activity -> {
+                    final ViewGroup.LayoutParams layoutParams =
+                            binding.fullscreenCommentsContainer.getLayoutParams();
+                    layoutParams.width = (int) (TvPlayerFocusPolicy.commentsWidthDp(
+                            DeviceUtils.isTv(context))
+                            * context.getResources().getDisplayMetrics().density);
+                    binding.fullscreenCommentsContainer.setLayoutParams(layoutParams);
                     binding.fullscreenCommentsContainer.setVisibility(View.VISIBLE);
                     FullscreenCommentsSidebar.show(
                             activity,
