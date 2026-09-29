@@ -325,7 +325,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.menu_item_feed_channels) {
             NavigationHelper.openGroupChannelsFragment(
-                parentFragmentManager,
+                requireActivity().supportFragmentManager,
                 groupId,
                 groupName
             )
