@@ -270,6 +270,9 @@ dependencies {
     // Open casting support for FCast and Chromecast-compatible receivers
     implementation("org.fcast:sender-sdk:0.6.1")
 
+    // JNA 5.17 fixes Android 16 KB page-size support in libjnidispatch.so.
+    implementation("net.java.dev.jna:jna:5.17.0@aar")
+
     // Checkstyle
     checkstyle(libs.puppycrawl.checkstyle)
     ktlint(libs.pinterest.ktlint)
