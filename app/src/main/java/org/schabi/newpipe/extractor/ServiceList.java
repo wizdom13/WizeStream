@@ -9,6 +9,7 @@ import org.schabi.newpipe.extractor.services.rumble.RumbleService;
 import org.schabi.newpipe.extractor.services.soundcloud.SoundcloudService;
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService;
 import org.schabi.newpipe.extractor.services.niconico.NiconicoService;
+import org.schabi.newpipe.extractor.services.odysee.OdyseeService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +51,7 @@ public final class ServiceList {
     public static final BilibiliService BiliBili;
     public static final BitchuteService BitChute;
     public static final RumbleService Rumble;
+    public static final OdyseeService Odysee;
     /**
      * When creating a new service, put this service in the end of this list,
      * and give it the next free id.
@@ -64,7 +66,8 @@ public final class ServiceList {
                     BiliBili = new BilibiliService(5),
                     NicoNico = new NiconicoService(6),
                     BitChute = new BitchuteService(7),
-                    Rumble = new RumbleService(8)
+                    Rumble = new RumbleService(8),
+                    Odysee = new OdyseeService(9)
             ));
 
     /**
