@@ -498,10 +498,6 @@ class MainPlayerGestureListener(
             return false
         }
 
-        if (player.currentState == Player.STATE_COMPLETED) {
-            return false
-        }
-
         val totalDeltaX = movingEvent.x - initialEvent.x
         val totalDeltaY = movingEvent.y - initialEvent.y
         val gestureState = singleFingerGestureClassifier.update(
@@ -517,6 +513,9 @@ class MainPlayerGestureListener(
 
         when (gestureState) {
             SingleFingerGestureClassifier.State.HORIZONTAL_SEEK -> {
+                if (player.currentState == Player.STATE_COMPLETED) {
+                    return false
+                }
                 if (!playerUi.isFullscreen) {
                     return false
                 }
@@ -532,6 +531,9 @@ class MainPlayerGestureListener(
             }
 
             SingleFingerGestureClassifier.State.VERTICAL_ADJUSTMENT -> {
+                if (player.currentState == Player.STATE_COMPLETED) {
+                    return false
+                }
                 if (!playerUi.isFullscreen) {
                     return false
                 }
