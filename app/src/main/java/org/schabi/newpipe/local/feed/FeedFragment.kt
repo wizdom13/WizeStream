@@ -324,11 +324,15 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.menu_item_feed_channels) {
-            NavigationHelper.openGroupChannelsFragment(
-                requireActivity().supportFragmentManager,
-                groupId,
-                groupName
-            )
+            when (GroupChannelsNavigationHost.forOpenedFeedGroup()) {
+                GroupChannelsNavigationHost.ACTIVITY -> {
+                    NavigationHelper.openGroupChannelsFragment(
+                        requireActivity().supportFragmentManager,
+                        groupId,
+                        groupName
+                    )
+                }
+            }
             return true
         } else if (item.itemId == R.id.menu_item_feed_sort) {
             AlertDialog.Builder(requireContext())
