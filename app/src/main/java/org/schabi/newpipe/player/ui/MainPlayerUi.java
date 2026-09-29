@@ -1046,6 +1046,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public boolean onKeyDown(final int keyCode) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && isFullscreen && !DeviceUtils.isTv(context)) {
+            toggleFullscreenWithOrientation();
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_SPACE && isFullscreen) {
             player.playPause();
             if (player.isPlaying()) {
