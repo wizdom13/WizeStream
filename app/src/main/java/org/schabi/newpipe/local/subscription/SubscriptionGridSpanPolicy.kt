@@ -6,8 +6,8 @@ object SubscriptionGridSpanPolicy {
         configuredColumns: Int,
         autoColumns: Int
     ): Int = if (configuredColumns == SubscriptionGridColumns.AUTO) {
-            autoColumns
-        } else {
-            configuredColumns
-        }
+        autoColumns
+    } else {
+        configuredColumns
+    }
 }
