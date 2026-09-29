@@ -19,13 +19,16 @@ class AdditionalStreamingServicesTest {
 
     @Test
     void registersServicesWithoutChangingExistingIds() {
-        assertEquals(9, ServiceList.all().size());
+        assertEquals(10, ServiceList.all().size());
         assertSame(ServiceList.BitChute, ServiceList.all().get(7));
         assertSame(ServiceList.Rumble, ServiceList.all().get(8));
+        assertSame(ServiceList.Odysee, ServiceList.all().get(9));
         assertEquals(7, ServiceList.BitChute.getServiceId());
         assertEquals(8, ServiceList.Rumble.getServiceId());
+        assertEquals(9, ServiceList.Odysee.getServiceId());
         assertEquals("BitChute", ServiceList.BitChute.getServiceInfo().getName());
         assertEquals("Rumble", ServiceList.Rumble.getServiceInfo().getName());
+        assertEquals("Odysee", ServiceList.Odysee.getServiceInfo().getName());
     }
 
     @Test
