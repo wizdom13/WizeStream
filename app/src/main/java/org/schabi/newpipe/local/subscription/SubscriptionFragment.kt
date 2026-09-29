@@ -196,6 +196,11 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
             addMenuItemToSubmenu(submenu, label) {
                 SubscriptionGridColumns.set(requireContext(), columns)
                 applySubscriptionLayout()
+                if (::feedGroupsCarousel.isInitialized) {
+                    feedGroupsCarousel.notifyChanged(
+                        FeedGroupCarouselItem.PAYLOAD_UPDATE_GRID_COLUMNS
+                    )
+                }
             }
         }
     }
