@@ -1023,6 +1023,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         updatePlayBackElementsCurrentDuration(binding.playbackSeekBar.getMax());
 
         showControls(500);
+        binding.screenRotationButton.setVisibility(isFullscreen() ? View.VISIBLE
+                : binding.screenRotationButton.getVisibility());
         animate(binding.currentDisplaySeek, false, 200, AnimationType.SCALE_AND_ALPHA);
         binding.loadingPanel.setVisibility(View.GONE);
         animate(binding.surfaceForeground, true, 100);
