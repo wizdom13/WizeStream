@@ -12,11 +12,3 @@ class GroupChannelsNavigationPolicyTest {
         )
     }
 }
-
-enum class GroupChannelsNavigationHost {
-    ACTIVITY;
-
-    companion object {
-        fun forOpenedFeedGroup(): GroupChannelsNavigationHost = ACTIVITY
-    }
-}
