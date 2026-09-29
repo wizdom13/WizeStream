@@ -8,8 +8,8 @@ class CompletedPlaybackFullscreenGestureTest {
     fun completedPlaybackStillClassifiesDownwardFullscreenSwipe() {
         val classifier = SingleFingerGestureClassifier(40f)
         val state = classifier.update(
-            deltaX = 0f,
-            deltaY = 120f,
+            totalDeltaX = 0f,
+            totalDeltaY = 120f,
             fullscreenSwipeEligible = true
         )
 
