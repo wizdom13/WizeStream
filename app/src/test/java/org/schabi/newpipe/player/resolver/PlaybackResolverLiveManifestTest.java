@@ -14,14 +14,14 @@ import java.util.Collections;
 
 public class PlaybackResolverLiveManifestTest {
     @Test
-    public void manifestOnlyYoutubeLivePrefersRefreshableHls() {
+    public void manifestOnlyYoutubeLiveCanSelectDashWithHlsFallback() {
         final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
 
         assertTrue(PlaybackResolver.isManifestOnlyYoutubeLive(info));
     }
 
     @Test
-    public void misclassifiedManifestOnlyYoutubeLiveStillUsesHls() {
+    public void misclassifiedManifestOnlyYoutubeLiveStillUsesLiveSourceSelection() {
         final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
         info.setStreamType(StreamType.VIDEO_STREAM);
 

@@ -39,6 +39,7 @@ import org.schabi.newpipe.player.datasource.NonUriHlsDataSourceFactory;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
+import org.schabi.newpipe.player.mediasource.YoutubeLiveMediaSource;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.StreamTypeUtil;
 
@@ -206,12 +207,16 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
 
         try {
             final StreamInfoTag tag = StreamInfoTag.of(info);
-            // Manifest-only YouTube lives can expose a finite DASH DVR window whose declared end
-            // is only a few seconds beyond the initial live edge. HLS keeps refreshing its media
-            // playlist, so prefer it for this narrow fallback path. Some YouTube client responses
-            // also misclassify these lives as regular videos, so do not rely on the stream type.
+            // HLS can expose only a few seconds of history. Prefer a refreshable DASH DVR window,
+            // while retaining HLS recovery for finite snapshots and failed DASH preparation.
             if (isManifestOnlyYoutubeLive) {
-                return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
+                final MediaSource hls = buildLiveMediaSource(
+                        dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
+                if (info.getDashMpdUrl().isEmpty()) {
+                    return hls;
+                }
+                return new YoutubeLiveMediaSource(buildLiveMediaSource(
+                        dataSource, info.getDashMpdUrl(), C.CONTENT_TYPE_DASH, tag), hls);
             }
             // Prefer DASH over HLS because of an exoPlayer bug that causes the background player to
             // also fetch the video stream even if it is supposed to just fetch the audio stream.

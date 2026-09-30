@@ -55,6 +55,7 @@ internal class PlayerLifecycleController(
         val trackSelectionParameters = player.getTrackSelectorForLifecycle()?.parameters
         destroyPlayer()
         initPlayer(playOnReady, trackSelectionParameters)
+        playbackParametersController.setStream(queue.item)
         val skipSilence = player.prefs.getBoolean(
             context.getString(R.string.playback_skip_silence_key),
             player.playbackSkipSilence
@@ -113,7 +114,6 @@ internal class PlayerLifecycleController(
         val previous = player.getExoPlayer() ?: return
         val playOnReady = previous.playWhenReady
         val parameters = previous.playbackParameters
-        val skipSilence = previous.skipSilenceEnabled
         val repeatMode = previous.repeatMode
         val shuffle = previous.shuffleModeEnabled
         val trackSelectionParameters = player.getTrackSelectorForLifecycle()?.parameters
@@ -135,10 +135,10 @@ internal class PlayerLifecycleController(
             initPlayer(playOnReady, trackSelectionParameters)
             player.exoPlayer.apply {
                 playbackParameters = parameters
-                skipSilenceEnabled = skipSilence
                 this.repeatMode = repeatMode
                 shuffleModeEnabled = shuffle
             }
+            playbackParametersController.refreshSkipSilence()
             reloadPlayQueueManager()
             player.UIs().call(PlayerUi::initPlayback)
             player.applyPlayerVolume()

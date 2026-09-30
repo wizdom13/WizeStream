@@ -5,6 +5,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import androidx.media3.common.C;
 import androidx.media3.exoplayer.dash.manifest.DashManifest;
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser;
 import androidx.media3.exoplayer.dash.manifest.Period;
@@ -52,7 +53,11 @@ public class YoutubeDashLiveManifestParser extends DashManifestParser {
             @NonNull final List<Period> periods) {
         return super.buildMediaPresentationDescription(
                 AVAILABILITY_START_TIME_TO_USE,
-                durationMs,
+                // A dynamic YouTube MPD may describe the current DVR snapshot with a finite
+                // duration. Treating it as the end of the broadcast stops playback at that edge
+                // even though later manifest refreshes contain more segments. Static archives
+                // keep their declared duration.
+                dynamic ? C.TIME_UNSET : durationMs,
                 minBufferTimeMs,
                 dynamic,
                 minUpdateTimeMs,

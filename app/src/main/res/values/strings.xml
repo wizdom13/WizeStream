@@ -997,6 +997,7 @@
     <string name="playback_pitch">Pitch</string>
     <string name="unhook_checkbox">Unhook (may cause distortion)</string>
     <string name="skip_silence_checkbox">Fast-forward during silence</string>
+    <string name="skip_silence_unavailable_live">Fast-forward during silence (unavailable during live streams)</string>
     <string name="playback_step">Step</string>
     <string name="playback_reset">Reset</string>
     <string name="percent">Percent</string>

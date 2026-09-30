@@ -1040,6 +1040,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         getParentActivity().ifPresent(activity ->
                 PlaybackParameterDialog.newInstance(player.getPlaybackSpeed(),
                                 player.getPlaybackPitch(), player.getPlaybackSkipSilence(),
+                                player.getPlaybackSkipSilenceAvailable(),
                                 player::setPlaybackParameters)
                         .show(activity.getSupportFragmentManager(), null));
     }

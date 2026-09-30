@@ -393,6 +393,9 @@ class Player(
     val playbackSkipSilence: Boolean
         get() = playbackParametersController.skipSilence
 
+    val playbackSkipSilenceAvailable: Boolean
+        get() = playbackParametersController.skipSilenceAvailable
+
     val playbackParameters: PlaybackParameters
         get() = playbackParametersController.parameters
 

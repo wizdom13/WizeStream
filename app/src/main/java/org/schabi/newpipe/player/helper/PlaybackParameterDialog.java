@@ -88,16 +88,21 @@ public class PlaybackParameterDialog extends DialogFragment {
     @State
     boolean skipSilence = DEFAULT_SKIP_SILENCE;
 
+    @State
+    boolean skipSilenceAvailable = true;
+
     private DialogPlaybackParameterBinding binding;
 
     public static PlaybackParameterDialog newInstance(
             final double playbackTempo,
             final double playbackPitch,
             final boolean playbackSkipSilence,
+            final boolean skipSilenceAvailable,
             final Callback callback
     ) {
         final PlaybackParameterDialog dialog = new PlaybackParameterDialog();
         dialog.callback = callback;
+        dialog.skipSilenceAvailable = skipSilenceAvailable;
 
         dialog.initialTempo = playbackTempo;
         dialog.initialPitchPercent = playbackPitch;
@@ -261,6 +266,9 @@ public class PlaybackParameterDialog extends DialogFragment {
                 });
 
         setAndUpdateSkipSilence(skipSilence);
+        binding.skipSilenceCheckbox.setEnabled(skipSilenceAvailable);
+        binding.skipSilenceCheckbox.setText(skipSilenceAvailable
+                ? R.string.skip_silence_checkbox : R.string.skip_silence_unavailable_live);
         binding.skipSilenceCheckbox.setOnCheckedChangeListener((compoundButton, isChecked) -> {
             skipSilence = isChecked;
             updateCallback();
@@ -437,8 +445,8 @@ public class PlaybackParameterDialog extends DialogFragment {
     // -- Additional options --
 
     private void setAndUpdateSkipSilence(final boolean newSkipSilence) {
-        this.skipSilence = newSkipSilence;
-        binding.skipSilenceCheckbox.setChecked(newSkipSilence);
+        this.skipSilence = newSkipSilence && skipSilenceAvailable;
+        binding.skipSilenceCheckbox.setChecked(this.skipSilence);
     }
 
     @SuppressWarnings("SameParameterValue") // this method was written to be reusable

@@ -717,14 +717,18 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     @Override
     public String getDashMpdUrl() throws ParsingException {
         assertPageFetched();
-        if (streamType == StreamType.VIDEO_STREAM)return "";
+        if (streamType == StreamType.VIDEO_STREAM
+                && !playerResponse.getObject("videoDetails").getBoolean("isLive", false)
+                && !playerResponse.getObject("playabilityStatus").has("liveStreamability")) {
+            return "";
+        }
         if (streamType == StreamType.LIVE_STREAM && !StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
             return "";
         }
         String dashUrl = getManifestUrl(
                 "dash",
                 Arrays.asList(visionOsStreamingData, safariStreamingData, androidStreamingData,
-                        iosStreamingData));
+                        iosStreamingData, tvHtml5SimplyEmbedStreamingData, webStreamingData));
 
         if (!dashUrl.isEmpty()) {
             dashUrl = deobfuscateManifestUrl(dashUrl);

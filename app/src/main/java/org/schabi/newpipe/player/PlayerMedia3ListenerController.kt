@@ -34,6 +34,7 @@ internal class PlayerMedia3ListenerController(
     }
 
     fun onTimelineChanged(timeline: Timeline, reason: Int) {
+        playbackParametersController.refreshSkipSilence()
         val item = player.currentItem
         if (item != null && player.isLive) {
             playbackParametersController.applySpeedProfile(item)

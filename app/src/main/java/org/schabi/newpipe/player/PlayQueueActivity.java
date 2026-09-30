@@ -563,7 +563,8 @@ public final class PlayQueueActivity extends AppCompatActivity
             return;
         }
         PlaybackParameterDialog.newInstance(player.getPlaybackSpeed(), player.getPlaybackPitch(),
-                player.getPlaybackSkipSilence(), this).show(getSupportFragmentManager(), TAG);
+                player.getPlaybackSkipSilence(), player.getPlaybackSkipSilenceAvailable(), this)
+                .show(getSupportFragmentManager(), TAG);
     }
 
     @Override
