@@ -11,8 +11,9 @@ import org.schabi.newpipe.R
 
 object KioskTranslator {
     @JvmStatic
-    fun getTranslatedKioskName(kioskId: String, context: Context): String {
+    fun getTranslatedKioskName(kioskId: String?, context: Context): String {
         return when (kioskId) {
+            null, "" -> context.getString(R.string.search)
             "Trending" -> context.getString(R.string.trending)
             "Top 50" -> context.getString(R.string.top_50)
             "New & hot" -> context.getString(R.string.new_and_hot)
@@ -34,8 +35,9 @@ object KioskTranslator {
     }
 
     @JvmStatic
-    fun getKioskIcon(kioskId: String): Int {
+    fun getKioskIcon(kioskId: String?): Int {
         return when (kioskId) {
+            null, "" -> R.drawable.ic_search
             "Trending", "Top 50", "New & hot", "conferences" -> R.drawable.ic_whatshot
             "Local" -> R.drawable.ic_home
             "Recently added", "recent" -> R.drawable.ic_add_circle_outline

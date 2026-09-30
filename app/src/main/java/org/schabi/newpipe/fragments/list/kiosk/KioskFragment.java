@@ -6,6 +6,7 @@
 package org.schabi.newpipe.fragments.list.kiosk;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -124,10 +125,12 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     public void onCreateOptionsMenu(@NonNull final Menu menu,
                                     @NonNull final MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add(R.string.discovery_personalize).setOnMenuItemClickListener(item -> {
-            DiscoveryPersonalization.configure(requireContext(), this::reloadContent);
-            return true;
-        });
+        if (!TextUtils.isEmpty(kioskId)) {
+            menu.add(R.string.discovery_personalize).setOnMenuItemClickListener(item -> {
+                DiscoveryPersonalization.configure(requireContext(), this::reloadContent);
+                return true;
+            });
+        }
         final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null && useAsFrontPage) {
             supportActionBar.setDisplayHomeAsUpEnabled(false);
@@ -174,7 +177,7 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     public void showEmptyState() {
         // show "no live streams" for live stream kiosk
         super.showEmptyState();
-        if ("live".equals(currentInfo.getId())
+        if (currentInfo != null && "live".equals(currentInfo.getId())
                 && ServiceList.MediaCCC.getServiceId() == currentInfo.getServiceId()) {
             setEmptyStateMessage(R.string.no_live_streams);
         }

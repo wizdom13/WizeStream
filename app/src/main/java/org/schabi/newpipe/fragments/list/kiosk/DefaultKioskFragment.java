@@ -1,9 +1,11 @@
 package org.schabi.newpipe.fragments.list.kiosk;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import com.evernote.android.state.State;
 
+import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.NewPipe;
@@ -20,9 +22,7 @@ public class DefaultKioskFragment extends KioskFragment {
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (serviceId < 0) {
-            updateSelectedDefaultKiosk();
-        }
+        updateSelectedDefaultKiosk();
     }
 
     @Override
@@ -47,7 +47,9 @@ public class DefaultKioskFragment extends KioskFragment {
             final KioskList kioskList = NewPipe.getService(serviceId).getKioskList();
             kioskId = youtubeMusicMode
                     ? "trending_music" : kioskList.getDefaultKioskId();
-            url = kioskList.getListLinkHandlerFactoryByType(kioskId).fromId(kioskId).getUrl();
+            // Odysee supports search but exposes no discovery kiosk.
+            url = TextUtils.isEmpty(kioskId) ? ""
+                    : kioskList.getListLinkHandlerFactoryByType(kioskId).fromId(kioskId).getUrl();
 
             kioskTranslatedName = KioskTranslator.getTranslatedKioskName(kioskId, requireContext());
             name = kioskTranslatedName;
@@ -58,5 +60,22 @@ public class DefaultKioskFragment extends KioskFragment {
             showError(new ErrorInfo(e, UserAction.REQUESTED_KIOSK,
                     "Loading default kiosk for selected service"));
         }
+    }
+
+    @Override
+    public void startLoading(final boolean forceLoad) {
+        if (TextUtils.isEmpty(kioskId)) {
+            if (currentWorker != null) {
+                currentWorker.dispose();
+            }
+            currentInfo = null;
+            currentNextPage = null;
+            infoListAdapter.clearStreamItemList();
+            showListFooter(false);
+            showEmptyState();
+            setEmptyStateMessage(R.string.main_bg_subtitle);
+            return;
+        }
+        super.startLoading(forceLoad);
     }
 }
