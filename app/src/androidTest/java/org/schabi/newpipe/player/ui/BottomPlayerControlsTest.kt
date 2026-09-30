@@ -124,9 +124,10 @@ class BottomPlayerControlsTest {
         bitmap.recycle()
         // Connected tests uninstall the app; preserve previews outside its data directory.
         val destination = "/sdcard/Download/wizestream-player-layout-previews"
-        val command = "mkdir -p '$destination' && cp '${file.absolutePath}' '$destination/'"
-        val output = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
-        ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
+        listOf("mkdir -p $destination", "cp ${file.absolutePath} $destination/").forEach { command ->
+            val output = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+            ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
+        }
     }
 
     private fun dp(value: Int) = (value * context.resources.displayMetrics.density + 0.5f).toInt()
