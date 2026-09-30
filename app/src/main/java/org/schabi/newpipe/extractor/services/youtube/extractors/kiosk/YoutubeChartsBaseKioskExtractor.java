@@ -147,10 +147,10 @@ abstract class YoutubeChartsBaseKioskExtractor extends KioskExtractor<StreamInfo
         return InfoItemsPage.emptyPage();
     }
 
-    private static final class ChartsVideoInfoItemExtractor implements StreamInfoItemExtractor {
+    static final class ChartsVideoInfoItemExtractor implements StreamInfoItemExtractor {
         private final JsonObject video;
 
-        private ChartsVideoInfoItemExtractor(final JsonObject video) {
+        ChartsVideoInfoItemExtractor(final JsonObject video) {
             this.video = video;
         }
 
@@ -186,7 +186,7 @@ abstract class YoutubeChartsBaseKioskExtractor extends KioskExtractor<StreamInfo
         @Nullable
         @Override
         public String getTextualUploadDate() {
-            return null;
+            return getUploadDate().offsetDateTime().toLocalDate().toString();
         }
 
         @Nonnull

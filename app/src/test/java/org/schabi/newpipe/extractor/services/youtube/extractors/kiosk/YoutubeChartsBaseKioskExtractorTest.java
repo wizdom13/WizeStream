@@ -15,6 +15,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class YoutubeChartsBaseKioskExtractorTest {
     @Test
+    void chartDatesRetainTheirSourceText() throws Exception {
+        final JsonObject video = JsonParser.object().from(
+                "{\"releaseDate\":{\"year\":2026,\"month\":9,\"day\":27}}");
+        final var item = new YoutubeChartsBaseKioskExtractor.ChartsVideoInfoItemExtractor(video);
+
+        assertEquals("2026-09-27", item.getTextualUploadDate());
+        assertEquals("2026-09-27T00:00Z", item.getUploadDate().offsetDateTime().toString());
+        assertTrue(item.getUploadDate().isApproximation());
+    }
+
+    @Test
     void categoryKiosksUseDistinctChartTypes() throws Exception {
         final JsonObject musicRequest = requestFor(YoutubeTrendingMusicExtractor.CHART_TYPE);
         final JsonObject moviesRequest =

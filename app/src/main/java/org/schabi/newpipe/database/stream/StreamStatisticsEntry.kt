@@ -51,6 +51,7 @@ data class StreamStatisticsEntry(
             duration = streamEntity.duration
             uploaderName = streamEntity.uploader
             uploaderUrl = streamEntity.uploaderUrl
+            textualUploadDate = streamEntity.textualUploadDate
             uploadDate = streamEntity.uploadDate?.let {
                 DateWrapper(it, streamEntity.isUploadDateApproximation ?: false)
             }
