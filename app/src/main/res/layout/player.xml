@@ -159,8 +159,9 @@
                                 android:orientation="vertical"
                                 tools:ignore="NestedWeights,RtlHardcoded">
 
-                                <org.schabi.newpipe.views.NewPipeTextView
+                                <org.schabi.newpipe.views.MediaTextView
                                     android:id="@+id/titleTextView"
+                                    app:mediaTextRole="videoTitle"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:ellipsize="marquee"
@@ -174,8 +175,9 @@
                                     tools:ignore="RtlHardcoded"
                                     tools:text="The Video Title LONG very LONG" />
 
-                                <org.schabi.newpipe.views.NewPipeTextView
+                                <org.schabi.newpipe.views.MediaTextView
                                     android:id="@+id/channelTextView"
+                                    app:mediaTextRole="channelName"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:ellipsize="marquee"

@@ -19,4 +19,11 @@
     <attr name="card_item_background_color" format="color" />
     <attr name="card_item_contrast_color" format="color" />
     <attr name="border_color" format="color" />
+    <declare-styleable name="MediaTextView">
+        <attr name="mediaTextRole" format="enum">
+            <enum name="videoTitle" value="0" />
+            <enum name="channelName" value="1" />
+        </attr>
+    </declare-styleable>
+
 </resources>

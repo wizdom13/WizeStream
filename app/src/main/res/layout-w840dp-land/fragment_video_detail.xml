@@ -180,8 +180,9 @@
                         android:paddingStart="12dp"
                         tools:ignore="RtlSymmetry">
 
-                        <org.schabi.newpipe.views.NewPipeTextView
+                        <org.schabi.newpipe.views.MediaTextView
                             android:id="@+id/detail_video_title_view"
+                            app:mediaTextRole="videoTitle"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginEnd="30dp"
@@ -293,8 +294,9 @@
                                     android:gravity="center_vertical"
                                     android:orientation="vertical">
 
-                                    <org.schabi.newpipe.views.NewPipeTextView
+                                    <org.schabi.newpipe.views.MediaTextView
                                         android:id="@+id/detail_sub_channel_text_view"
+                                        app:mediaTextRole="channelName"
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
                                         android:layout_marginLeft="15dp"
@@ -690,8 +692,9 @@
             android:theme="@style/ContrastTintTheme"
             tools:ignore="RtlHardcoded">
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <org.schabi.newpipe.views.MediaTextView
                 android:id="@+id/overlay_title_text_view"
+                app:mediaTextRole="videoTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="marquee"
@@ -704,8 +707,9 @@
                 tools:ignore="RtlHardcoded"
                 tools:text="The Video Title LONG very LONVideo Title LONG very LONG" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <org.schabi.newpipe.views.MediaTextView
                 android:id="@+id/overlay_channel_text_view"
+                app:mediaTextRole="channelName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="marquee"

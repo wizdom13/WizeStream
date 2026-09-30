@@ -98,6 +98,9 @@ public final class SettingsSearchIndex {
                 || key.equals(context.getString(R.string.primary_floating_player_action_key))) {
             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
         }
+        if (key.equals(context.getString(R.string.tv_related_sidebar_width_key))) {
+            return DeviceUtils.isTv(context);
+        }
         if (key.equals(context.getString(R.string.grid_columns_key))
                 || key.equals(context.getString(R.string.tablet_navigation_portrait_position_key))
                 || key.equals(context.getString(

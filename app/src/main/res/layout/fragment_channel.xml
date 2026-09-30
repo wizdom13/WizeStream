@@ -72,8 +72,9 @@
                         app:tint="@null"
                         tools:visibility="visible" />
 
-                    <org.schabi.newpipe.views.NewPipeTextView
+                    <org.schabi.newpipe.views.MediaTextView
                         android:id="@+id/channel_title_view"
+                        app:mediaTextRole="channelName"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"

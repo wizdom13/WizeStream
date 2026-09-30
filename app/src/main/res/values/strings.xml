@@ -1774,4 +1774,12 @@
     <string name="learning_playlist_end">You have reached the end of the learning playlist.</string>
     <string name="learning_load_next_lesson">Load next video</string>
     <string name="learning_next_lesson_error">Could not load the next video. Reopen the playlist to try again.</string>
+    <string name="video_title_text_size_title">Video title text size</string>
+    <string name="channel_name_text_size_title">Channel name text size</string>
+    <string name="media_text_size_default">Default (100%)</string>
+    <string name="tv_related_sidebar_width_title">TV recommendations sidebar width</string>
+    <string name="tv_related_sidebar_compact">Compact (25%)</string>
+    <string name="tv_related_sidebar_balanced">Balanced (33%)</string>
+    <string name="tv_related_sidebar_wide">Wide (44%)</string>
+
 </resources>

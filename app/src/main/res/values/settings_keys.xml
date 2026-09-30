@@ -1817,4 +1817,34 @@
         <item>@string/search_button_behavior_current_service</item>
     </string-array>
     <string name="learning_playlist_navigation_key" translatable="false">learning_playlist_navigation</string>
+    <string name="video_title_text_size_key">video_title_text_size</string>
+    <string name="channel_name_text_size_key">channel_name_text_size</string>
+    <string-array name="media_text_size_values">
+        <item>80</item>
+        <item>90</item>
+        <item>100</item>
+        <item>110</item>
+        <item>125</item>
+        <item>150</item>
+    </string-array>
+    <string-array name="media_text_size_description">
+        <item>80%</item>
+        <item>90%</item>
+        <item>@string/media_text_size_default</item>
+        <item>110%</item>
+        <item>125%</item>
+        <item>150%</item>
+    </string-array>
+    <string name="tv_related_sidebar_width_key">tv_related_sidebar_width</string>
+    <string-array name="tv_related_sidebar_width_values">
+        <item>compact</item>
+        <item>balanced</item>
+        <item>wide</item>
+    </string-array>
+    <string-array name="tv_related_sidebar_width_description">
+        <item>@string/tv_related_sidebar_compact</item>
+        <item>@string/tv_related_sidebar_balanced</item>
+        <item>@string/tv_related_sidebar_wide</item>
+    </string-array>
+
 </resources>

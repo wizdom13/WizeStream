@@ -22,8 +22,9 @@
         app:shapeAppearance="@style/CircularImageView"
         tools:ignore="RtlHardcoded" />
 
-    <TextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemTitleView"
+        app:mediaTextRole="channelName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/itemThumbnailView"

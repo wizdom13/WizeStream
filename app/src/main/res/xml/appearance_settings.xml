@@ -106,6 +106,36 @@
         app:iconSpaceReserved="false"
         app:useSimpleSummaryProvider="true" />
 
+    <ListPreference
+        android:defaultValue="100"
+        android:entries="@array/media_text_size_description"
+        android:entryValues="@array/media_text_size_values"
+        android:key="@string/video_title_text_size_key"
+        android:title="@string/video_title_text_size_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:defaultValue="100"
+        android:entries="@array/media_text_size_description"
+        android:entryValues="@array/media_text_size_values"
+        android:key="@string/channel_name_text_size_key"
+        android:title="@string/channel_name_text_size_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:defaultValue="compact"
+        android:entries="@array/tv_related_sidebar_width_description"
+        android:entryValues="@array/tv_related_sidebar_width_values"
+        android:key="@string/tv_related_sidebar_width_key"
+        android:title="@string/tv_related_sidebar_width_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
     <Preference
         android:key="@string/caption_settings_key"
         android:summary="@string/caption_setting_description"

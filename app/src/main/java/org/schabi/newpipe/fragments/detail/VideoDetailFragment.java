@@ -139,6 +139,7 @@ import org.schabi.newpipe.util.PlayButtonHelper;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.ThemeHelper;
+import org.schabi.newpipe.util.TvRelatedSidebar;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
@@ -227,6 +228,8 @@ public final class VideoDetailFragment
                 } else if (getString(R.string.pin_video_while_scrolling_key).equals(key)) {
                     pinVideoWhileScrolling = sharedPreferences.getBoolean(key, false);
                     updatePinnedPlayerLayout();
+                } else if (getString(R.string.tv_related_sidebar_width_key).equals(key)) {
+                    applyRelatedSidebarWidth();
                 } else if (getString(R.string.show_dislike_key).equals(key)) {
                     showDislikes = sharedPreferences.getBoolean(key, true);
                     if (currentInfo != null && binding != null) {
@@ -406,6 +409,7 @@ public final class VideoDetailFragment
     public View onCreateView(@NonNull final LayoutInflater inflater, final ViewGroup container,
                              final Bundle savedInstanceState) {
         binding = FragmentVideoDetailBinding.inflate(inflater, container, false);
+        applyRelatedSidebarWidth();
         return binding.getRoot();
     }
 
@@ -432,6 +436,7 @@ public final class VideoDetailFragment
         }
 
         activity.sendBroadcast(new Intent(ACTION_VIDEO_FRAGMENT_RESUMED));
+        applyRelatedSidebarWidth();
 
         updateOverlayPlayQueueButtonVisibility();
         applyTitleDisplayPolicy(
@@ -484,6 +489,12 @@ public final class VideoDetailFragment
                 restorePlayerLayoutAfterResume();
             });
             binding.getRoot().requestLayout();
+        }
+    }
+
+    private void applyRelatedSidebarWidth() {
+        if (binding != null && binding.relatedItemsLayout != null) {
+            TvRelatedSidebar.apply(binding.detailMainContent, binding.relatedItemsLayout);
         }
     }
 

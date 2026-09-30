@@ -23,8 +23,9 @@
         tools:ignore="RtlHardcoded"
         tools:src="@tools:sample/avatars" />
 
-    <org.schabi.newpipe.views.NewPipeTextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemTitleView"
+        app:mediaTextRole="channelName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_mid"

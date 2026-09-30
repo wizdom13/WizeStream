@@ -1,6 +1,5 @@
 package org.schabi.newpipe.player.ui
 
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +21,6 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
     private var positions = emptyList<Position>()
     private var buttonStates = emptyList<ButtonState>()
     private var metadataParams: ViewGroup.LayoutParams? = null
-    private var titleSize = 0f
     private var moreVisibility = View.VISIBLE
     private var secondaryVisibility = View.INVISIBLE
     private var secondaryAlpha = 1f
@@ -97,7 +95,6 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
             ButtonState(it, it.layoutParams, it.paddingLeft, it.paddingTop, it.paddingRight, it.paddingBottom, it.nextFocusUpId, it.nextFocusDownId)
         }
         metadataParams = binding.metadataControls.layoutParams
-        titleSize = binding.titleTextView.textSize
         moreVisibility = binding.moreOptionsButton.visibility
         secondaryVisibility = binding.secondaryControls.visibility
         secondaryAlpha = binding.secondaryControls.alpha
@@ -124,7 +121,7 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
             }
         )
         content.addView(binding.metadataView, rowParams())
-        binding.titleTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, titleSize * 1.2f)
+        binding.titleTextView.setPresentationScale(1.2f)
 
         val actionRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -169,7 +166,7 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
             it.view.nextFocusDownId = it.down
         }
         binding.metadataControls.layoutParams = metadataParams
-        binding.titleTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, titleSize)
+        binding.titleTextView.setPresentationScale(1.0f)
         binding.moreOptionsButton.visibility = moreVisibility
         binding.secondaryControls.visibility = secondaryVisibility
         binding.secondaryControls.alpha = secondaryAlpha

@@ -107,8 +107,9 @@
         tools:ignore="RtlHardcoded"
         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tristique vitae sem vitae blanditLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum" />
 
-    <org.schabi.newpipe.views.NewPipeTextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemUploaderView"
+        app:mediaTextRole="channelName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:lines="1"

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
@@ -13,14 +14,14 @@ import com.xwray.groupie.viewbinding.GroupieViewHolder
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.databinding.FeedItemCarouselBinding
-import org.schabi.newpipe.databinding.FragmentSubscriptionBinding
+import org.schabi.newpipe.databinding.FragmentGroupChannelsBinding
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.local.subscription.item.ChannelItem
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 
 class GroupChannelsFragment : Fragment() {
-    private var _binding: FragmentSubscriptionBinding? = null
+    private var _binding: FragmentGroupChannelsBinding? = null
     private val binding get() = _binding!!
     private val adapter = GroupAdapter<GroupieViewHolder<FeedItemCarouselBinding>>()
     private lateinit var viewModel: GroupChannelsViewModel
@@ -29,10 +30,10 @@ class GroupChannelsFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = inflater.inflate(R.layout.fragment_subscription, container, false)
+    ): View = inflater.inflate(R.layout.fragment_group_channels, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        _binding = FragmentSubscriptionBinding.bind(view)
+        _binding = FragmentGroupChannelsBinding.bind(view)
         val groupId = arguments?.getLong(KEY_GROUP_ID) ?: FeedGroupEntity.GROUP_ALL_ID
         val groupName = arguments?.getString(KEY_GROUP_NAME).orEmpty()
 
@@ -46,9 +47,17 @@ class GroupChannelsFragment : Fragment() {
         binding.itemsList.adapter = adapter
 
         viewModel = ViewModelProvider(this)[GroupChannelsViewModel::class.java]
-        viewModel.channels.observe(viewLifecycleOwner) { channels ->
+        binding.errorPanel.errorRetryButton.apply {
+            isVisible = true
+            setOnClickListener { viewModel.load(groupId) }
+        }
+        viewModel.state.observe(viewLifecycleOwner) { state ->
+            binding.loadingProgressBar.isVisible = state.loading
+            binding.itemsList.isVisible = !state.loading && state.error == null && state.channels.isNotEmpty()
+            binding.emptyStateView.root.isVisible = !state.loading && state.error == null && state.channels.isEmpty()
+            binding.errorPanel.root.isVisible = state.error != null
             adapter.update(
-                channels.map { channel ->
+                state.channels.map { channel ->
                     ChannelItem(channel, -1, ChannelItem.ItemVersion.MINI).apply {
                         gesturesListener = object : OnClickGesture<ChannelInfoItem> {
                             override fun selected(
@@ -68,6 +77,7 @@ class GroupChannelsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        binding.itemsList.adapter = null
         _binding = null
         super.onDestroyView()
     }

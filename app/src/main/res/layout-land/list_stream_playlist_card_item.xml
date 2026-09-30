@@ -70,8 +70,9 @@
         app:layout_constraintTop_toTopOf="@id/itemThumbnailContainer"
         tools:visibility="visible" />
 
-    <org.schabi.newpipe.views.NewPipeTextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemVideoTitleView"
+        app:mediaTextRole="videoTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/video_item_search_image_right_margin"
@@ -109,8 +110,9 @@
             app:layout_constraintTop_toTopOf="parent"
             app:shapeAppearance="@style/CircularImageView" />
 
-        <org.schabi.newpipe.views.NewPipeTextView
+        <org.schabi.newpipe.views.MediaTextView
             android:id="@+id/itemUploaderView"
+            app:mediaTextRole="channelName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_small"

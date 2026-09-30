@@ -15,12 +15,19 @@ class GroupChannelsViewModel(application: Application) : AndroidViewModel(applic
     private val database = NewPipeDatabase.getInstance(application)
     private val subscriptionManager = SubscriptionManager(application)
     private val profileId = ProfileManager.getActiveProfileId(application)
-    private val mutableChannels = MutableLiveData<List<ChannelInfoItem>>()
-    val channels: LiveData<List<ChannelInfoItem>> = mutableChannels
+    data class State(
+        val channels: List<ChannelInfoItem> = emptyList(),
+        val loading: Boolean = false,
+        val error: Throwable? = null
+    )
+
+    private val mutableState = MutableLiveData(State(loading = true))
+    val state: LiveData<State> = mutableState
     private var disposable: Disposable? = null
 
     fun load(groupId: Long) {
         disposable?.dispose()
+        mutableState.value = State(loading = true)
         val source = if (groupId == FeedGroupEntity.GROUP_ALL_ID) {
             subscriptionManager.subscriptions()
         } else {
@@ -35,7 +42,10 @@ class GroupChannelsViewModel(application: Application) : AndroidViewModel(applic
         disposable = source
             .subscribeOn(Schedulers.io())
             .map { subscriptions -> subscriptions.map { it.toChannelInfoItem() } }
-            .subscribe(mutableChannels::postValue)
+            .subscribe(
+                { mutableState.postValue(State(channels = it)) },
+                { mutableState.postValue(State(error = it)) }
+            )
     }
 
     override fun onCleared() {

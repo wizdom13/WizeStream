@@ -84,8 +84,9 @@
         app:layout_constraintTop_toBottomOf="@id/itemThumbnailContainer"
         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit" />
 
-    <org.schabi.newpipe.views.NewPipeTextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemUploaderView"
+        app:mediaTextRole="channelName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:lines="1"
