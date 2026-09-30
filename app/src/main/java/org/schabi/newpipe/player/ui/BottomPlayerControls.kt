@@ -7,6 +7,9 @@ import android.view.ViewGroup
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.preference.PreferenceManager
 import org.schabi.newpipe.R
@@ -26,6 +29,28 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
     private var seekUp = View.NO_ID
     private var seekDown = View.NO_ID
     private var focusStates = emptyList<FocusState>()
+
+    fun applyWindowInsets(fullscreen: Boolean, controlsPadding: Int, topControlsPadding: Int) {
+        val insets = ViewCompat.getRootWindowInsets(binding.root)
+        val bars = insets?.getInsets(WindowInsetsCompat.Type.systemBars()) ?: Insets.NONE
+        val cutout = insets?.getInsets(WindowInsetsCompat.Type.displayCutout()) ?: Insets.NONE
+        applyInsets(
+            fullscreen,
+            VideoPlayerUi.calculateControlsEdgePadding(fullscreen, controlsPadding, bars.left, cutout.left),
+            VideoPlayerUi.calculateTopControlsPadding(fullscreen, topControlsPadding, bars.top, cutout.top),
+            VideoPlayerUi.calculateControlsEdgePadding(fullscreen, controlsPadding, bars.right, cutout.right),
+            VideoPlayerUi.calculateControlsEdgePadding(fullscreen, 0, bars.bottom, cutout.bottom)
+        )
+    }
+
+    fun applyInsets(fullscreen: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        if (update(fullscreen, left, top, right, bottom)) {
+            binding.topControls.setPadding(0, 0, 0, 0)
+        } else {
+            binding.topControls.setPadding(left, top, right, 0)
+            binding.bottomControls.setPadding(left, 0, right, bottom)
+        }
+    }
 
     fun update(fullscreen: Boolean, left: Int, top: Int, right: Int, bottom: Int): Boolean {
         val wanted = fullscreen && PreferenceManager.getDefaultSharedPreferences(context)

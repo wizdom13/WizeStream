@@ -478,36 +478,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     protected final void updateFullscreenOverlayInsets() {
-        Insets systemBarInsets = Insets.NONE;
-        Insets displayCutoutInsets = Insets.NONE;
-        final WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(binding.getRoot());
-        if (rootInsets != null) {
-            systemBarInsets = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            displayCutoutInsets = rootInsets.getInsets(
-                    WindowInsetsCompat.Type.displayCutout());
-        }
-
         binding.playbackControlRoot.setPadding(0, 0, 0, 0);
-        final int leftPadding = calculateControlsEdgePadding(
-                isFullscreen(), controlsBasePadding,
-                systemBarInsets.left, displayCutoutInsets.left);
-        final int topPadding = calculateTopControlsPadding(
-                isFullscreen(), topControlsBasePadding,
-                systemBarInsets.top, displayCutoutInsets.top);
-        final int rightPadding = calculateControlsEdgePadding(
-                isFullscreen(), controlsBasePadding,
-                systemBarInsets.right, displayCutoutInsets.right);
-        final int bottomPadding = calculateControlsEdgePadding(
-                isFullscreen(), 0, systemBarInsets.bottom, displayCutoutInsets.bottom);
-
-        if (bottomPlayerControls.update(isFullscreen(), leftPadding,
-                topPadding, rightPadding, bottomPadding)) {
-            binding.topControls.setPadding(0, 0, 0, 0);
-            binding.bottomControls.setPadding(0, 0, 0, 0);
-        } else {
-            binding.topControls.setPadding(leftPadding, topPadding, rightPadding, 0);
-            binding.bottomControls.setPadding(leftPadding, 0, rightPadding, bottomPadding);
-        }
+        bottomPlayerControls.applyWindowInsets(isFullscreen(),
+                controlsBasePadding, topControlsBasePadding);
     }
 
     static int calculateTopControlsPadding(final boolean fullscreen,

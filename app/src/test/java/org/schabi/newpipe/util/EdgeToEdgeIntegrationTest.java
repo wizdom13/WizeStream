@@ -211,8 +211,6 @@ public class EdgeToEdgeIntegrationTest {
         assertTrue(playerSource.contains("WindowInsetsCompat.Type.displayCutout()"));
         assertTrue(playerSource.contains(
                 "binding.playbackControlRoot.setPadding(0, 0, 0, 0)"));
-        assertTrue(playerSource.contains("binding.topControls.setPadding("));
-        assertTrue(playerSource.contains("binding.bottomControls.setPadding("));
         assertTrue(mainPlayerSource.contains(
                 "binding.getRoot().post(this::updateFullscreenOverlayInsets)"));
     }

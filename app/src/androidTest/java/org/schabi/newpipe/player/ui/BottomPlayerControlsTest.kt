@@ -88,6 +88,10 @@ class BottomPlayerControlsTest {
                         binding.playPauseButton.performClick()
                         if (it == 0) savePreview(binding, "$width-$height${if (rtl) "-rtl" else ""}")
                         assertFalse(controller.update(false, 12, 24, 12, 24))
+                        controller.applyInsets(false, 12, 24, 12, 24)
+                        assertEquals(24, binding.topControls.paddingTop)
+                        assertEquals(12, binding.bottomControls.paddingLeft)
+                        assertEquals(24, binding.bottomControls.paddingBottom)
                         originalParents.forEach { (view, parent) -> assertSame(parent, view.parent) }
                         assertSame(originalParams, binding.playPauseButton.layoutParams)
                         assertEquals(originalTitleSize, binding.titleTextView.textSize, 0.01f)
