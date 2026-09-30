@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="proxy_region_help_title">Region-restricted videos</string>
+    <string name="proxy_region_help_summary">Use an HTTP or SOCKS5 proxy in a region where the video is available. Some services may still reject proxy addresses. Device sync uses your local network and does not use the app proxy.</string>
+    <string name="sync_vpn_help_title">VPN and local sync</string>
+    <string name="sync_vpn_help_summary">Keep both devices on the same Wi-Fi or Ethernet network. If a device-wide VPN blocks sync, allow local network (LAN) access in its settings, or use WizeStream’s app proxy without the VPN. Android’s “Block connections without VPN” setting can still prevent local connections.</string>
+</resources>

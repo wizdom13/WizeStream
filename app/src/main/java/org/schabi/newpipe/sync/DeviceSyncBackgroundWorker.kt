@@ -7,7 +7,6 @@ package org.schabi.newpipe.sync
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
@@ -53,12 +52,7 @@ class DeviceSyncBackgroundWorker(
     private fun hasLocalNetwork(context: Context): Boolean {
         val connectivityManager = context.getSystemService<ConnectivityManager>()
             ?: return false
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return DeviceSyncBackgroundPolicy.hasLocalTransport(
-            wifi = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI),
-            ethernet = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-        )
+        return localSyncNetworks(connectivityManager).isNotEmpty()
     }
 
     companion object {

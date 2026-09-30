@@ -7,7 +7,6 @@ package org.schabi.newpipe.sync
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import io.libp2p.core.Host
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -24,16 +23,10 @@ object AndroidNetworkAddressProvider {
             ?: throw PairingException("Could not inspect this device's network connections")
         val activeNetwork = connectivityManager.activeNetwork
 
-        @Suppress("DEPRECATION")
-        val networkSnapshot = connectivityManager.allNetworks
+        val networkSnapshot = localSyncNetworks(connectivityManager)
         val candidates = networkSnapshot
             .asSequence()
             .flatMap { network ->
-                val capabilities = connectivityManager.getNetworkCapabilities(network)
-                val isWifiOrEthernet = capabilities?.let {
-                    it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                        it.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-                } == true
                 connectivityManager.getLinkProperties(network)
                     ?.linkAddresses
                     .orEmpty()
@@ -41,7 +34,7 @@ object AndroidNetworkAddressProvider {
                     .map { linkAddress ->
                         NetworkAddressCandidate(
                             address = linkAddress.address,
-                            isWifiOrEthernet = isWifiOrEthernet,
+                            isWifiOrEthernet = true,
                             isActiveNetwork = network == activeNetwork
                         )
                     }

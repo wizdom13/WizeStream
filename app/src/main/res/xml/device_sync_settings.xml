@@ -11,6 +11,13 @@
         app:singleLineTitle="false" />
 
     <Preference
+        android:title="@string/sync_vpn_help_title"
+        android:summary="@string/sync_vpn_help_summary"
+        android:selectable="false"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
         android:key="@string/device_sync_sync_now_key"
         android:summary="@string/device_sync_sync_now_summary"
         android:title="@string/device_sync_sync_now_title"

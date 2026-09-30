@@ -9,9 +9,6 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkAddress
 import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkCapabilities.TRANSPORT_ETHERNET
-import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.util.Log
@@ -179,7 +176,6 @@ internal class AndroidPeerDiscovery(context: Context) {
         }
     }
 
-    @Suppress("DEPRECATION")
     private fun subnetAddressesFor(peer: TrustedPeer): List<String> {
         val ports = peer.addresses.asSequence()
             .mapNotNull(::tcpPortFromMultiaddress)
@@ -191,9 +187,8 @@ internal class AndroidPeerDiscovery(context: Context) {
             return emptyList()
         }
 
-        val targets = connectivityManager.allNetworks
+        val targets = localSyncNetworks(connectivityManager)
             .asSequence()
-            .filter(::isLocalNetwork)
             .flatMap { network ->
                 connectivityManager.getLinkProperties(network)
                     ?.linkAddresses
@@ -247,12 +242,6 @@ internal class AndroidPeerDiscovery(context: Context) {
         } finally {
             executor.shutdownNow()
         }
-    }
-
-    private fun isLocalNetwork(network: Network): Boolean {
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasTransport(TRANSPORT_WIFI) ||
-            capabilities.hasTransport(TRANSPORT_ETHERNET)
     }
 
     private fun isTcpPortOpen(probe: SubnetProbe): Boolean {

@@ -51,6 +51,20 @@
             app:singleLineTitle="false" />
 
         <Preference
+            android:title="@string/proxy_region_help_title"
+            android:summary="@string/proxy_region_help_summary"
+            android:selectable="false"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:title="@string/sync_vpn_help_title"
+            android:summary="@string/sync_vpn_help_summary"
+            android:selectable="false"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
             android:selectable="false"
             android:summary="@string/proxy_privacy_notice"
             app:iconSpaceReserved="false"
