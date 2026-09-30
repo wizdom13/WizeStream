@@ -70,6 +70,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private val binding get() = _binding!!
 
     private lateinit var viewModel: SubscriptionViewModel
+    private lateinit var activeProfileId: String
     private lateinit var subscriptionManager: SubscriptionManager
     private lateinit var importExportHelper: SubscriptionsImportExportHelper
     private lateinit var savedSearchFeedManager: SavedSearchFeedManager
@@ -100,9 +101,10 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        subscriptionManager = SubscriptionManager(requireContext())
+        activeProfileId = ProfileManager.getActiveProfileId(context)
+        subscriptionManager = SubscriptionManager(context, activeProfileId)
         importExportHelper = SubscriptionsImportExportHelper(this)
-        savedSearchFeedManager = SavedSearchFeedManager(requireContext())
+        savedSearchFeedManager = SavedSearchFeedManager(context, activeProfileId)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -280,6 +282,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         binding.itemsList.itemAnimator = null
 
         viewModel = ViewModelProvider(this)[SubscriptionViewModel::class.java]
+        viewModel.setProfile(activeProfileId)
         viewModel.setFilterQuery(contextualSearchQuery)
         viewModel.stateLiveData.observe(viewLifecycleOwner) { it?.let(this::handleResult) }
         viewModel.feedGroupsLiveData.observe(viewLifecycleOwner) {
