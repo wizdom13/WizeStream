@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 collect_previews() {
-    adb pull /sdcard/Android/data/org.wisso.newpipematerial.debug/files/player-layout-previews \
+    adb pull /sdcard/Download/wizestream-player-layout-previews \
         "${RUNNER_TEMP:-$ROOT_DIR/app/build/outputs}/player-layout-previews" || true
 }
 

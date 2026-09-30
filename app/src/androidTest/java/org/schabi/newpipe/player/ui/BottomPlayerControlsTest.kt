@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
+import android.os.ParcelFileDescriptor
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
@@ -118,8 +119,14 @@ class BottomPlayerControlsTest {
         val bitmap = Bitmap.createBitmap(binding.root.width, binding.root.height, Bitmap.Config.ARGB_8888)
         binding.root.draw(Canvas(bitmap))
         val folder = File(context.getExternalFilesDir(null), "player-layout-previews").apply { mkdirs() }
-        File(folder, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val file = File(folder, "$name.png")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
+        // Connected tests uninstall the app; preserve previews outside its data directory.
+        val destination = "/sdcard/Download/wizestream-player-layout-previews"
+        val command = "mkdir -p '$destination' && cp '${file.absolutePath}' '$destination/'"
+        val output = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
     }
 
     private fun dp(value: Int) = (value * context.resources.displayMetrics.density + 0.5f).toInt()
