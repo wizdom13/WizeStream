@@ -355,6 +355,13 @@ public final class PlayerHolder {
                 }
 
                 @Override
+                public void onManualFullscreenButtonClicked(final boolean fullscreen) {
+                    if (listener != null) {
+                        listener.onManualFullscreenButtonClicked(fullscreen);
+                    }
+                }
+
+                @Override
                 public void onMoreOptionsLongClicked() {
                     if (listener != null) {
                         listener.onMoreOptionsLongClicked();

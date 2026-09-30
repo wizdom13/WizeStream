@@ -121,6 +121,7 @@ import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.player.ui.FullscreenCommentsSidebar;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
@@ -258,6 +259,12 @@ public final class VideoDetailFragment
     @Nullable
     private String aiWarningBypassedUrl;
     private boolean nativePipPrepared;
+    private final View.OnLayoutChangeListener nativePipLayoutListener =
+            (view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                if (nativePipPrepared && bottom - top != oldBottom - oldTop) {
+                    setHeightThumbnail();
+                }
+            };
     private boolean nativePipForcedFullscreen;
     private int nativePipPreviousBottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
@@ -542,6 +549,12 @@ public final class VideoDetailFragment
         if (binding == null) {
             return;
         }
+        if (nativePipPrepared) {
+            // PiP changes the window configuration, not the user's fullscreen intent. The
+            // layout listener applies the measured window size once the resize has completed.
+            setHeightThumbnail();
+            return;
+        }
         final int orientation = newConfig.orientation;
         final boolean keepPhonePlayerLayout =
                 FullscreenOrientationPolicy.shouldKeepPhonePlayerLayoutForLandscape(
@@ -625,6 +638,7 @@ public final class VideoDetailFragment
 
     private boolean isPhoneVideoFullscreenEligible() {
         return player != null
+                && !nativePipPrepared
                 && !DeviceUtils.isTablet(activity)
                 && !DeviceUtils.isTv(activity)
                 && !DeviceUtils.isDesktopMode(activity)
@@ -783,6 +797,7 @@ public final class VideoDetailFragment
         activityToolbarLayout = null;
         toolbarLayoutChangeListener = null;
         activityStatusBarInset = 0;
+        binding.getRoot().removeOnLayoutChangeListener(nativePipLayoutListener);
         ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), null);
         detailNavigationBaseBottomMargin = 0;
         appBarBaseStartMargin = 0;
@@ -2052,7 +2067,11 @@ public final class VideoDetailFragment
         }
     }
 
-    private void setHeightThumbnail(final int newHeight, final DisplayMetrics metrics) {
+    private void setHeightThumbnail(final int requestedHeight, final DisplayMetrics metrics) {
+        // A portrait video's fullscreen state need not change when entering PiP. Never retain
+        // the pre-PiP thumbnail height: it centers the surface outside the small visible window.
+        final int newHeight = nativePipPrepared && binding.getRoot().getHeight() > 0
+                ? binding.getRoot().getHeight() : requestedHeight;
         binding.detailThumbnailImageView.setLayoutParams(
                 new FrameLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
@@ -3163,7 +3182,7 @@ public final class VideoDetailFragment
 
     public float getNativePipAspectRatio() {
         return player == null ? 0.0f : player.UIs().get(MainPlayerUi.class)
-                .map(ui -> ui.getBinding().surfaceView.getVideoAspectRatio())
+                .map(MainPlayerUi::getVideoAspectRatio)
                 .orElse(0.0f);
     }
 
@@ -3186,6 +3205,8 @@ public final class VideoDetailFragment
             return;
         }
         nativePipPrepared = true;
+        binding.getRoot().addOnLayoutChangeListener(nativePipLayoutListener);
+        FullscreenCommentsSidebar.hide(activity);
         nativePipPreviousBottomSheetState = bottomSheetBehavior.getState();
         if (nativePipPreviousBottomSheetState != BottomSheetBehavior.STATE_EXPANDED) {
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -3196,7 +3217,9 @@ public final class VideoDetailFragment
         }
         ui.closeItemsList();
         ui.hideControls(0, 0);
-        player.useVideoAndSubtitles(true);
+        setHeightThumbnail();
+        // Eligibility already requires video playback. Re-enabling it here can reload the
+        // media source (always for local files), clearing the decoded frame during PiP entry.
     }
 
     public void onNativePipModeChanged(final boolean inPictureInPictureMode) {
@@ -3204,11 +3227,19 @@ public final class VideoDetailFragment
             prepareNativePipEntry();
             if (player != null) {
                 player.UIs().get(MainPlayerUi.class)
-                        .ifPresent(MainPlayerUi::restoreVideoSurfaceAfterLayoutTransition);
+                        .ifPresent(ui -> {
+                            ui.hideControls(0, 0);
+                            ui.restoreVideoSurfaceAfterLayoutTransition();
+                        });
             }
             return;
         }
+        if (binding != null) {
+            binding.getRoot().removeOnLayoutChangeListener(nativePipLayoutListener);
+        }
+        nativePipPrepared = false;
         if (player == null) {
+            nativePipForcedFullscreen = false;
             return;
         }
         player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
@@ -3221,7 +3252,9 @@ public final class VideoDetailFragment
             }
         });
         nativePipForcedFullscreen = false;
-        nativePipPrepared = false;
+        if (binding != null) {
+            refreshFullscreenLayout(isFullscreen());
+        }
         scheduleResumeLayoutRestore();
     }
 
