@@ -131,7 +131,12 @@ class LearningRemindersTest {
             try {
                 awaitDashboard(scenario, study)
                 LearningMode.setProfileIncluded(context, other, true)
-                onActivity(scenario) { it.startActivity(LearningReminders.intent(context, other)) }
+                val destination = LearningReminders.intent(context, other)
+                assertFalse(destination.filterEquals(LearningReminders.intent(context, study)))
+                // ActivityScenario tracks lifecycle events by intent data. Keep its launch
+                // identity while changing the profile extra used by production routing.
+                destination.data = LearningReminders.intent(context, study).data
+                onActivity(scenario) { it.startActivity(destination) }
                 awaitDashboard(scenario, other)
                 assertTrue(database.learningDashboardDAO().observeDailyStudyActivity(study).blockingFirst().isEmpty())
                 assertTrue(database.learningDashboardDAO().observeDailyStudyActivity(other).blockingFirst().isEmpty())
