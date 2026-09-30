@@ -119,6 +119,8 @@ import org.schabi.newpipe.util.SerializedCache;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.StateSaver;
 import org.schabi.newpipe.util.ThemeHelper;
+import org.schabi.newpipe.util.TvRemoteAction;
+import org.schabi.newpipe.util.TvRemoteKeyDispatcher;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.FocusOverlayView;
 
@@ -186,6 +188,21 @@ public class MainActivity extends AppCompatActivity {
     /*//////////////////////////////////////////////////////////////////////////
     // Activity's LifeCycle
     //////////////////////////////////////////////////////////////////////////*/
+
+    private final TvRemoteKeyDispatcher remoteKeys = new TvRemoteKeyDispatcher(this);
+
+    @Override
+    public boolean dispatchKeyEvent(final KeyEvent event) {
+        return remoteKeys.dispatch(event) || super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onWindowFocusChanged(final boolean hasFocus) {
+        if (!hasFocus) {
+            remoteKeys.clear();
+        }
+        super.onWindowFocusChanged(hasFocus);
+    }
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -988,7 +1005,8 @@ public class MainActivity extends AppCompatActivity {
         }
         StateSaver.clearStateFiles();
         if (getIntent() != null && (getIntent().hasExtra(Constants.KEY_LINK_TYPE)
-                || getIntent().getBooleanExtra(KEY_OPEN_LOCAL_MEDIA_AUDIO, false))) {
+                || getIntent().getBooleanExtra(KEY_OPEN_LOCAL_MEDIA_AUDIO, false)
+                || getIntent().hasExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION))) {
             // When user watch a video inside popup and then tries to open the video in main player
             // while the app is closed he will see a blank fragment on place of kiosk.
             // Let's open it first
@@ -1380,6 +1398,13 @@ public class MainActivity extends AppCompatActivity {
                                 serviceId, url, title);
                         break;
                 }
+            } else if (intent.hasExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION)) {
+                final TvRemoteAction destination = TvRemoteAction.fromId(
+                        intent.getStringExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION));
+                intent.removeExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION);
+                if (destination != null) {
+                    openRemoteDestination(destination);
+                }
             } else if (intent.hasExtra(Constants.KEY_OPEN_SEARCH)) {
                 String searchString = intent.getStringExtra(Constants.KEY_SEARCH_STRING);
                 if (searchString == null) {
@@ -1399,6 +1424,47 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (final Exception e) {
             ErrorUtil.showUiErrorSnackbar(this, "Handling intent", e);
+        }
+    }
+
+    /**
+     * Opens a remote shortcut using the same destinations as the navigation drawer.
+     * @param destination the app screen to open
+     */
+    public void openRemoteDestination(@NonNull final TvRemoteAction destination) {
+        final FragmentManager manager = getSupportFragmentManager();
+        if (manager.isStateSaved() || destination.getPlayback()
+                || destination == TvRemoteAction.SETTINGS) {
+            return;
+        }
+        mainBinding.getRoot().closeDrawers();
+        PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer();
+        if (!bottomSheetHiddenOrCollapsed()) {
+            BottomSheetBehavior.from(mainBinding.fragmentPlayerHolder)
+                    .setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+        switch (destination) {
+            case HOME:
+                NavigationHelper.gotoMainFragment(manager);
+                break;
+            case SEARCH:
+                NavigationHelper.openSearchFragment(manager,
+                        ServiceHelper.getSelectedServiceId(this), "");
+                break;
+            case FEED:
+                NavigationHelper.openFeedFragment(manager);
+                break;
+            case SUBSCRIPTIONS:
+                NavigationHelper.openSubscriptionFragment(manager);
+                break;
+            case BOOKMARKS:
+                NavigationHelper.openBookmarksFragment(manager);
+                break;
+            case HISTORY:
+                NavigationHelper.openStatisticFragment(manager);
+                break;
+            default:
+                break;
         }
     }
 

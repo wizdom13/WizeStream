@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
@@ -55,6 +56,7 @@ import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PermissionHelper;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.ThemeHelper;
+import org.schabi.newpipe.util.TvRemoteKeyDispatcher;
 
 import java.util.List;
 import java.util.Optional;
@@ -92,6 +94,21 @@ public final class PlayQueueActivity extends AppCompatActivity
     ////////////////////////////////////////////////////////////////////////////
     // Activity Lifecycle
     ////////////////////////////////////////////////////////////////////////////
+
+    private final TvRemoteKeyDispatcher remoteKeys = new TvRemoteKeyDispatcher(this, () -> player);
+
+    @Override
+    public boolean dispatchKeyEvent(final KeyEvent event) {
+        return remoteKeys.dispatch(event) || super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onWindowFocusChanged(final boolean hasFocus) {
+        if (!hasFocus) {
+            remoteKeys.clear();
+        }
+        super.onWindowFocusChanged(hasFocus);
+    }
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {

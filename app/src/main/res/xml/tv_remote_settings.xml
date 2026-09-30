@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/remote_keys_title">
+
+    <Preference
+        android:key="tv_remote_help"
+        android:summary="@string/remote_keys_help"
+        android:selectable="false"
+        app:iconSpaceReserved="false" />
+
+    <PreferenceCategory android:title="@string/remote_playback">
+        <Preference
+            android:key="tv_remote_play_pause"
+            android:title="@string/remote_play_pause"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_rewind"
+            android:title="@string/rewind"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_forward"
+            android:title="@string/forward"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_previous"
+            android:title="@string/previous_stream"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_next"
+            android:title="@string/next_stream"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_mute"
+            android:title="@string/remote_mute"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/remote_navigation">
+        <Preference
+            android:key="tv_remote_home"
+            android:title="@string/remote_home"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_search"
+            android:title="@string/search"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_feed"
+            android:title="@string/remote_feed"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_subscriptions"
+            android:title="@string/tab_subscriptions"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_bookmarks"
+            android:title="@string/bottom_navigation_tab_bookmarks"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_history"
+            android:title="@string/action_history"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
+            android:key="tv_remote_settings"
+            android:title="@string/settings"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <Preference
+        android:key="tv_remote_reset"
+        android:title="@string/remote_reset"
+        app:iconSpaceReserved="false" />
+</PreferenceScreen>

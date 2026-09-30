@@ -1,6 +1,7 @@
 package org.schabi.newpipe.settings;
 
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,6 +30,7 @@ import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.EdgeToEdgeHelper;
 import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.ThemeHelper;
+import org.schabi.newpipe.util.TvRemoteKeyDispatcher;
 import org.schabi.newpipe.views.FocusOverlayView;
 
 import java.util.concurrent.TimeUnit;
@@ -69,6 +71,21 @@ public class SettingsActivity extends AppCompatActivity implements
     private View searchContainer;
     private EditText searchEditText;
     private String searchText = "";
+
+    private final TvRemoteKeyDispatcher remoteKeys = new TvRemoteKeyDispatcher(this);
+
+    @Override
+    public boolean dispatchKeyEvent(final KeyEvent event) {
+        return remoteKeys.dispatch(event) || super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onWindowFocusChanged(final boolean hasFocus) {
+        if (!hasFocus) {
+            remoteKeys.clear();
+        }
+        super.onWindowFocusChanged(hasFocus);
+    }
 
     @Override
     protected void onCreate(@Nullable final Bundle savedInstanceState) {

@@ -1734,4 +1734,21 @@
     <string name="video_adjustments_hdr" tools:ignore="MissingTranslation">HDR video: adjustments are bypassed</string>
     <string name="video_adjustments_failed" tools:ignore="MissingTranslation">Video adjustments could not run on this video or device. Continuing with adjustments off.</string>
     <string name="video_adjustments_description" tools:ignore="MissingTranslation">Applies to SDR videos in this player, including downloaded videos. Screen brightness is separate. Remember adjustments to use them in future playback sessions.</string>
+    <string name="remote_keys_title">Remote control keys</string>
+    <string name="remote_keys_summary">Assign buttons for playback and app navigation</string>
+    <string name="remote_keys_help">Choose an action, then press a color, number, letter, function, media, channel, Menu, Guide, Info, Search, Bookmark, or Captions button. Shortcuts work while browsing, playing, or in settings, except when typing. D-pad, OK, Back, volume, and system buttons keep their usual functions. Some buttons are reserved by the TV and cannot be assigned.</string>
+    <string name="remote_playback">Playback controls</string>
+    <string name="remote_navigation">App navigation</string>
+    <string name="remote_play_pause">Play / pause</string>
+    <string name="remote_mute">Mute / unmute</string>
+    <string name="remote_home">Home</string>
+    <string name="remote_feed">What’s New</string>
+    <string name="remote_unassigned">Not assigned</string>
+    <string name="remote_capture">Press the button you want to assign, then select Assign. D-pad, OK, Back, volume, and system buttons cannot be assigned.</string>
+    <string name="remote_selected">Selected button: %1$s</string>
+    <string name="remote_conflict">%1$s is assigned to “%2$s”. Select Assign to replace that assignment.</string>
+    <string name="remote_assign">Assign</string>
+    <string name="remote_remove">Remove assignment</string>
+    <string name="remote_reset">Reset remote keys</string>
+    <string name="remote_reset_message">Remove all custom button assignments and restore the default controls?</string>
 </resources>
