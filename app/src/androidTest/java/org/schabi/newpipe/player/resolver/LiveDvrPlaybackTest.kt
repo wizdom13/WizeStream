@@ -41,6 +41,7 @@ class LiveDvrPlaybackTest {
         val fixture = Fixture()
         withPlayer(fixture) { player ->
             awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY }
+            assertEquals(0, fixture.hlsLoads.get())
             instrumentation.runOnMainSync {
                 assertTrue(player.isCurrentMediaItemDynamic)
                 assertTrue(player.isCurrentMediaItemSeekable)
@@ -54,11 +55,16 @@ class LiveDvrPlaybackTest {
             awaitPlayer(player) { it.duration == 32000L }
             instrumentation.runOnMainSync {
                 assertEquals(0L, player.currentPosition)
+                player.seekTo(20000)
+            }
+            // Newly published segments remain playable beyond the initial snapshot's end.
+            awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY && it.currentPosition == 20000L }
+            instrumentation.runOnMainSync {
                 player.seekTo(6000)
             }
             awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY && it.currentPosition == 6000L }
             instrumentation.runOnMainSync { player.seekToDefaultPosition() }
-            awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY && it.currentPosition > 16000 }
+            awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY && it.currentPosition > 6000 }
             instrumentation.runOnMainSync { assertTrue(player.isCurrentMediaItemDynamic) }
             assertTrue(fixture.dashLoads.get() >= 2)
             assertEquals(0, fixture.hlsLoads.get())
@@ -86,6 +92,18 @@ class LiveDvrPlaybackTest {
             awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY }
             assertTrue(fixture.hlsLoads.get() > 0)
         }
+    }
+
+    @Test
+    fun dynamicSnapshotUsesTheCurrentMedia3ParserHook() {
+        val manifest = YoutubeDashLiveManifestParser().parse(
+            Uri.parse(DASH_URL),
+            ByteArrayInputStream(Fixture().manifest())
+        )
+        assertTrue(manifest.dynamic)
+        assertEquals(C.TIME_UNSET, manifest.durationMs)
+        assertEquals(0L, manifest.availabilityStartTimeMs)
+        assertEquals(1000L, manifest.minUpdatePeriodMs)
     }
 
     @Test
