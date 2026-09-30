@@ -1,9 +1,12 @@
 package org.schabi.newpipe.settings
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
+import android.os.Looper
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.widget.EditText
@@ -14,6 +17,8 @@ import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.Timer
+import java.util.TimerTask
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -160,24 +165,45 @@ class TvRemoteSettingsTest {
         val intent = Intent(context, MainActivity::class.java)
             .setAction(Intent.ACTION_VIEW)
             .putExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION, TvRemoteAction.BOOKMARKS.id)
-        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-            awaitFocus(scenario)
-            scenario.onActivity { activity ->
-                activity.supportFragmentManager.executePendingTransactions()
-                assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is BookmarkFragment)
-                assertFalse(activity.intent.hasExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION))
-                assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PROG_RED)))
-                assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_PROG_RED)))
-                activity.supportFragmentManager.executePendingTransactions()
-                assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is StatisticsPlaylistFragment)
+        val watchdog = Timer("remote-navigation-timeout", true)
+        watchdog.schedule(
+            object : TimerTask() {
+                override fun run() {
+                    val detail = "Remote navigation did not finish. Main thread:\n" +
+                        Looper.getMainLooper().thread.stackTrace.joinToString("\n")
+                    InstrumentationRegistry.getInstrumentation().finish(
+                        Activity.RESULT_CANCELED,
+                        Bundle().apply {
+                            putString("shortMsg", detail)
+                            putString("stream", "\n$detail\n")
+                        }
+                    )
+                }
+            },
+            60_000
+        )
+        try {
+            ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+                awaitFocus(scenario)
+                scenario.onActivity { activity ->
+                    activity.supportFragmentManager.executePendingTransactions()
+                    assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is BookmarkFragment)
+                    assertFalse(activity.intent.hasExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION))
+                    assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PROG_RED)))
+                    assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_PROG_RED)))
+                    activity.supportFragmentManager.executePendingTransactions()
+                    assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is StatisticsPlaylistFragment)
+                }
+                idle()
+                scenario.onActivity { activity ->
+                    assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PROG_GREEN)))
+                    assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_PROG_GREEN)))
+                    activity.supportFragmentManager.executePendingTransactions()
+                    assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is SubscriptionFragment)
+                }
             }
-            idle()
-            scenario.onActivity { activity ->
-                assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PROG_GREEN)))
-                assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_PROG_GREEN)))
-                activity.supportFragmentManager.executePendingTransactions()
-                assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is SubscriptionFragment)
-            }
+        } finally {
+            watchdog.cancel()
         }
     }
 
