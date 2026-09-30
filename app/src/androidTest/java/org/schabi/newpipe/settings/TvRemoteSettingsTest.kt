@@ -1,11 +1,10 @@
 package org.schabi.newpipe.settings
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.KeyEvent
@@ -17,8 +16,8 @@ import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
-import java.util.Timer
-import java.util.TimerTask
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -153,7 +152,7 @@ class TvRemoteSettingsTest {
         }
     }
 
-    @Test
+    @Test(timeout = 30_000)
     fun navigationIntentAndAssignedButtonsOpenTheExpectedMainActivityScreens() {
         // The first MainActivity launch asks for notifications; that system dialog owns focus.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -165,27 +164,10 @@ class TvRemoteSettingsTest {
         val intent = Intent(context, MainActivity::class.java)
             .setAction(Intent.ACTION_VIEW)
             .putExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION, TvRemoteAction.BOOKMARKS.id)
-        val watchdog = Timer("remote-navigation-timeout", true)
-        watchdog.schedule(
-            object : TimerTask() {
-                override fun run() {
-                    val detail = "Remote navigation did not finish. Main thread:\n" +
-                        Looper.getMainLooper().thread.stackTrace.joinToString("\n")
-                    InstrumentationRegistry.getInstrumentation().finish(
-                        Activity.RESULT_CANCELED,
-                        Bundle().apply {
-                            putString("shortMsg", detail)
-                            putString("stream", "\n$detail\n")
-                        }
-                    )
-                }
-            },
-            60_000
-        )
-        try {
-            ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+            try {
                 awaitFocus(scenario)
-                scenario.onActivity { activity ->
+                onMainActivity(scenario) { activity ->
                     activity.supportFragmentManager.executePendingTransactions()
                     assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is BookmarkFragment)
                     assertFalse(activity.intent.hasExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION))
@@ -194,16 +176,15 @@ class TvRemoteSettingsTest {
                     activity.supportFragmentManager.executePendingTransactions()
                     assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is StatisticsPlaylistFragment)
                 }
-                idle()
-                scenario.onActivity { activity ->
+                onMainActivity(scenario) { activity ->
                     assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PROG_GREEN)))
                     assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_PROG_GREEN)))
                     activity.supportFragmentManager.executePendingTransactions()
                     assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) is SubscriptionFragment)
                 }
+            } finally {
+                onMainActivity(scenario) { it.finish() }
             }
-        } finally {
-            watchdog.cancel()
         }
     }
 
@@ -234,11 +215,33 @@ class TvRemoteSettingsTest {
         val deadline = SystemClock.uptimeMillis() + 5_000
         do {
             var focused = false
-            scenario.onActivity { focused = it.hasWindowFocus() }
+            onMainActivity(scenario) { focused = it.hasWindowFocus() }
             if (focused) return
             SystemClock.sleep(50)
         } while (SystemClock.uptimeMillis() < deadline)
         throw AssertionError("Activity did not receive window focus")
+    }
+
+    // ActivityScenario.onActivity waits for global idleness when called off the main thread.
+    // Loading animations on older Android versions can keep that wait from completing. Post the
+    // assertion directly instead, and wait for its completion with a bounded, observable condition.
+    private fun <A : androidx.appcompat.app.AppCompatActivity> onMainActivity(
+        scenario: ActivityScenario<A>,
+        action: (A) -> Unit
+    ) {
+        val completed = CountDownLatch(1)
+        var failure: Throwable? = null
+        Handler(Looper.getMainLooper()).post {
+            try {
+                scenario.onActivity { action(it) }
+            } catch (error: Throwable) {
+                failure = error
+            } finally {
+                completed.countDown()
+            }
+        }
+        assertTrue("Activity callback did not complete", completed.await(10, TimeUnit.SECONDS))
+        failure?.let { throw it }
     }
 
     private fun openSettings(activity: SettingsActivity) {
