@@ -130,7 +130,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private lateinit var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
     private var updateListViewModeOnResume = false
 
-    private var lastNewItemsCount = 0
+    private var lastHighlightedRangeEnd = 0
 
     private val feedHeaderOffsetListener = AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
         feedHeaderExpanded = verticalOffset == 0
@@ -969,9 +969,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
      * Highlights all items that are after the specified time
      */
     private fun highlightNewItemsAfter(updateTime: OffsetDateTime) {
-        var highlightCount = 0
-
-        var doCheck = true
+        val highlightedPositions = feedHighlightPositions(
+            (0 until groupAdapter.itemCount).map {
+                (groupAdapter.getItem(it) as StreamItem).streamWithState.stream
+            },
+            updateTime
+        )
 
         for (i in 0 until groupAdapter.itemCount) {
             val item = groupAdapter.getItem(i) as StreamItem
@@ -980,26 +983,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             var backgroundSupplier = { ctx: Context ->
                 resolveDrawable(ctx, android.R.attr.selectableItemBackground)
             }
-            if (doCheck) {
-                // A Shorts retention timestamp does not establish when it was published.
-                val stream = item.streamWithState.stream
-                if (!stream.hasSyntheticUploadDate && stream.uploadDate?.isAfter(updateTime) != false) {
-                    highlightCount++
-
-                    typeface = Typeface.DEFAULT_BOLD
-                    backgroundSupplier = { ctx: Context ->
-                        // Merge the drawables together. Otherwise we would lose the "select" effect
-                        LayerDrawable(
-                            arrayOf(
-                                resolveDrawable(ctx, R.attr.dashed_border),
-                                resolveDrawable(ctx, android.R.attr.selectableItemBackground)
-                            )
+            if (i in highlightedPositions) {
+                typeface = Typeface.DEFAULT_BOLD
+                backgroundSupplier = { ctx: Context ->
+                    // Keep the selection effect alongside the new-item background.
+                    LayerDrawable(
+                        arrayOf(
+                            resolveDrawable(ctx, R.attr.dashed_border),
+                            resolveDrawable(ctx, android.R.attr.selectableItemBackground)
                         )
-                    }
-                } else {
-                    // Decreases execution time due to the order of the items (newest always on top)
-                    // Once a item is is before the updateTime we can skip all following items
-                    doCheck = false
+                    )
                 }
             }
 
@@ -1014,22 +1007,23 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }
 
         // Rebind enough remaining items to both apply new highlights and clear stale ones.
-        // The displayed list can shrink below lastNewItemsCount after filtering or refreshing,
+        // The displayed list can shrink below lastHighlightedRangeEnd after filtering or refreshing,
         // including all the way to zero, so cap the range to the current adapter size.
+        val highlightRangeEnd = highlightedPositions.maxOrNull()?.plus(1) ?: 0
         val rebindCount = calculateFeedHighlightRebindCount(
-            lastNewItemsCount,
-            highlightCount,
+            lastHighlightedRangeEnd,
+            highlightRangeEnd,
             groupAdapter.itemCount
         )
         if (rebindCount > 0) {
             groupAdapter.notifyItemRangeChanged(0, rebindCount)
         }
 
-        if (highlightCount > 0) {
+        if (highlightedPositions.isNotEmpty()) {
             showNewItemsLoaded()
         }
 
-        lastNewItemsCount = highlightCount
+        lastHighlightedRangeEnd = highlightRangeEnd
     }
 
     private fun showNewItemsLoaded() {
