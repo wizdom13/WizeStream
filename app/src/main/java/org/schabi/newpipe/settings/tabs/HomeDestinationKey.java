@@ -12,6 +12,7 @@ public final class HomeDestinationKey {
         BOOKMARKS,
         DOWNLOADS,
         LOCAL_MEDIA,
+        LEARNING,
         HISTORY,
         KIOSK
     }
@@ -26,6 +27,8 @@ public final class HomeDestinationKey {
             new HomeDestinationKey(Type.DOWNLOADS, -1, null);
     public static final HomeDestinationKey LOCAL_MEDIA =
             new HomeDestinationKey(Type.LOCAL_MEDIA, -1, null);
+    public static final HomeDestinationKey LEARNING =
+            new HomeDestinationKey(Type.LEARNING, -1, null);
     public static final HomeDestinationKey HISTORY =
             new HomeDestinationKey(Type.HISTORY, -1, null);
 

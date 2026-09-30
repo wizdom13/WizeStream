@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.schabi.newpipe.MainActivity;
+import org.schabi.newpipe.learning.LearningPlaylistContext;
 import org.schabi.newpipe.player.playqueue.PlayQueueEvent.AppendEvent;
 import org.schabi.newpipe.player.playqueue.PlayQueueEvent.ErrorEvent;
 import org.schabi.newpipe.player.playqueue.PlayQueueEvent.InitEvent;
@@ -17,6 +18,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -44,6 +46,22 @@ public abstract class PlayQueue implements Serializable {
 
     private List<PlayQueueItem> backup;
     private List<PlayQueueItem> streams;
+    @Nullable
+    private LearningPlaylistContext learningPlaylistContext;
+
+    @Nullable
+    public LearningPlaylistContext getLearningPlaylistContext() {
+        return learningPlaylistContext;
+    }
+
+    public void setLearningPlaylistContext(@Nullable final LearningPlaylistContext context) {
+        learningPlaylistContext = context;
+    }
+
+    /** A failed page request must not be presented as the end of a course. */
+    public boolean hasLoadError() {
+        return false;
+    }
 
     private transient PublishSubject<PlayQueueEvent> eventBroadcast;
     private transient Flowable<PlayQueueEvent> broadcastReceiver;
@@ -275,13 +293,22 @@ public abstract class PlayQueue implements Serializable {
      * @param items {@link PlayQueueItem}s to append
      */
     public synchronized void append(@NonNull final List<PlayQueueItem> items) {
+        if (items.stream().anyMatch(item -> !item.isAutoQueued())) {
+            learningPlaylistContext = null;
+        }
+        appendFromSource(items);
+    }
+
+    /** Extends the original playlist; user queue edits use {@link #append(List)} instead. */
+    protected synchronized void appendFromSource(@NonNull final List<PlayQueueItem> items) {
         final List<PlayQueueItem> itemList = new ArrayList<>(items);
 
         if (isShuffled()) {
             backup.addAll(itemList);
             Collections.shuffle(itemList);
         }
-        if (!streams.isEmpty() && streams.get(streams.size() - 1).isAutoQueued()
+        if (!itemList.isEmpty() && !streams.isEmpty()
+                && streams.get(streams.size() - 1).isAutoQueued()
                 && !itemList.get(0).isAutoQueued()) {
             streams.remove(streams.size() - 1);
         }
@@ -322,6 +349,7 @@ public abstract class PlayQueue implements Serializable {
         if (index >= streams.size() || index < 0) {
             return;
         }
+        learningPlaylistContext = null;
         removeInternal(index);
         broadcast(new RemoveEvent(index, getIndex()));
     }
@@ -387,6 +415,7 @@ public abstract class PlayQueue implements Serializable {
             return;
         }
 
+        learningPlaylistContext = null;
         final int current = getIndex();
         if (source == current) {
             queueIndex.set(target);
@@ -447,6 +476,7 @@ public abstract class PlayQueue implements Serializable {
      * top, so shuffling a size-2 list does nothing)
      */
     public synchronized void shuffle() {
+        learningPlaylistContext = null;
         // Create a backup if it doesn't already exist
         // Note: The backup-list has to be created at all cost (even when size <= 2).
         // Otherwise it's not possible to enter shuffle-mode!
@@ -478,6 +508,7 @@ public abstract class PlayQueue implements Serializable {
      * The original order is retained so {@link #unshuffle()} can restore it.
      */
     public synchronized void shuffleFromStart() {
+        learningPlaylistContext = null;
         if (size() <= 1) {
             return;
         }
@@ -558,6 +589,9 @@ public abstract class PlayQueue implements Serializable {
      */
     public boolean equalStreams(@Nullable final PlayQueue other) {
         if (other == null) {
+            return false;
+        }
+        if (!Objects.equals(learningPlaylistContext, other.learningPlaylistContext)) {
             return false;
         }
         if (size() != other.size()) {

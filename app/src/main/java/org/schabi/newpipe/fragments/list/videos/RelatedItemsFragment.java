@@ -1,5 +1,8 @@
 package org.schabi.newpipe.fragments.list.videos;
 
+import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
+import org.schabi.newpipe.learning.LearningPlaylistPanel;
+import io.reactivex.rxjava3.disposables.Disposable;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -43,6 +46,35 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
     //////////////////////////////////////////////////////////////////////////*/
 
     private RelatedItemsHeaderBinding headerBinding;
+    private Disposable learningPanelSubscription;
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        observeLearningPlaylist();
+    }
+
+    @Override
+    public void onStop() {
+        clearLearningPlaylistObserver();
+        super.onStop();
+    }
+
+    private void clearLearningPlaylistObserver() {
+        if (learningPanelSubscription != null) {
+            learningPanelSubscription.dispose();
+            learningPanelSubscription = null;
+        }
+    }
+
+    private void observeLearningPlaylist() {
+        clearLearningPlaylistObserver();
+        if (headerBinding != null && getParentFragment()
+                instanceof VideoDetailFragment detail) {
+            learningPanelSubscription = LearningPlaylistPanel.observe(
+                    detail, headerBinding.learningPlaylistPanel, serviceId, url, true);
+        }
+    }
 
     public static RelatedItemsFragment getInstance(final StreamInfo info) {
         return getInstance(info, false);
@@ -89,16 +121,13 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
 
     @Override
     public void onDestroyView() {
+        clearLearningPlaylistObserver();
         headerBinding = null;
         super.onDestroyView();
     }
 
     @Override
     protected Supplier<View> getListHeaderSupplier() {
-        if (relatedItemsInfo == null || relatedItemsInfo.getRelatedItems() == null) {
-            return null;
-        }
-
         headerBinding = RelatedItemsHeaderBinding
                 .inflate(activity.getLayoutInflater(), itemsList, false);
 
@@ -110,6 +139,7 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
                 PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
                         .putBoolean(getString(R.string.auto_queue_key), b).apply());
 
+        observeLearningPlaylist();
         return headerBinding::getRoot;
     }
 
@@ -132,6 +162,18 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
         super.showLoading();
         if (headerBinding != null) {
             headerBinding.getRoot().setVisibility(View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public void showEmptyState() {
+        if (getParentFragment()
+                instanceof VideoDetailFragment detail
+                && detail.hasLearningPlaylist(serviceId, url)) {
+            hideLoading();
+            showListFooter(false);
+        } else {
+            super.showEmptyState();
         }
     }
 

@@ -1,5 +1,6 @@
 package org.schabi.newpipe.settings.tabs;
 
+import org.schabi.newpipe.learning.LearningDashboardFragment;
 import android.content.Context;
 
 import androidx.annotation.DrawableRes;
@@ -169,7 +170,8 @@ public abstract class Tab {
         PLAYLIST(new PlaylistTab()),
         FEEDGROUP(new FeedGroupTab()),
         DOWNLOADS(new DownloadsTab()),
-        LOCAL_MEDIA(new LocalMediaTab());
+        LOCAL_MEDIA(new LocalMediaTab()),
+        LEARNING(new LearningTab());
 
         private final Tab tab;
 
@@ -183,6 +185,31 @@ public abstract class Tab {
 
         public Tab getTab() {
             return tab;
+        }
+    }
+
+    public static class LearningTab extends Tab {
+        public static final int ID = 12;
+
+        @Override
+        public int getTabId() {
+            return ID;
+        }
+
+        @Override
+        public String getTabName(final Context context) {
+            return context.getString(R.string.learning_dashboard_title);
+        }
+
+        @DrawableRes
+        @Override
+        public int getTabIconRes(final Context context) {
+            return R.drawable.ic_school;
+        }
+
+        @Override
+        public Fragment getFragment(final Context context) {
+            return new LearningDashboardFragment();
         }
     }
 

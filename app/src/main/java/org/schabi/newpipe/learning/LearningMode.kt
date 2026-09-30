@@ -51,6 +51,13 @@ object LearningMode {
     )
 
     @JvmStatic
+    fun isPlaylistNavigationEnabled(context: Context): Boolean = isEnabled(context) && preference(
+        context,
+        R.string.learning_playlist_navigation_key,
+        true
+    )
+
+    @JvmStatic
     fun isNotesSyncEnabled(context: Context): Boolean = areNotesEnabled(context) && preference(
         context,
         R.string.device_sync_learning_notes_key,

@@ -208,10 +208,10 @@ class StructuredPreferenceSyncEngineTest {
         val tabletStore = newStore()
         val phone = StructuredPreferenceSyncEngine(phoneStore)
         val tablet = StructuredPreferenceSyncEngine(tabletStore)
-        val feed = SyncedHomeTab(SyncedHomeTabType.FEED)
+        val learning = SyncedHomeTab(SyncedHomeTabType.LEARNING)
         val subscriptions = SyncedHomeTab(SyncedHomeTabType.SUBSCRIPTIONS)
-        phoneStore.upsertHomeTabs(listOf(feed, subscriptions))
-        tabletStore.upsertHomeTabs(listOf(subscriptions, feed))
+        phoneStore.upsertHomeTabs(listOf(learning, subscriptions))
+        tabletStore.upsertHomeTabs(listOf(subscriptions, learning))
 
         synchronize(
             StructuredPreferenceCategory.HOME_TABS,

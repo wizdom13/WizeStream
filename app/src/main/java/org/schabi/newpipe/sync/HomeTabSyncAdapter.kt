@@ -110,6 +110,8 @@ internal class HomeTabSyncAdapter(
 
             is Tab.DownloadsTab -> SyncedHomeTab(SyncedHomeTabType.DOWNLOADS)
 
+            is Tab.LearningTab -> SyncedHomeTab(SyncedHomeTabType.LEARNING)
+
             is Tab.KioskTab -> SyncedHomeTab(
                 type = SyncedHomeTabType.KIOSK,
                 serviceId = tab.kioskServiceId,
@@ -173,6 +175,8 @@ internal class HomeTabSyncAdapter(
             SyncedHomeTabType.HISTORY -> Tab.Type.HISTORY.tab
 
             SyncedHomeTabType.DOWNLOADS -> Tab.Type.DOWNLOADS.tab
+
+            SyncedHomeTabType.LEARNING -> Tab.Type.LEARNING.tab
 
             SyncedHomeTabType.KIOSK -> Tab.KioskTab(
                 requireNotNull(tab.serviceId),

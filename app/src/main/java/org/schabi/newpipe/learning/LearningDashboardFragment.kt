@@ -56,9 +56,11 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
 
     override fun onResume() {
         super.onResume()
-        setTitle(getString(R.string.learning_dashboard_title))
-        if (!LearningMode.isEnabled(requireContext())) {
-            parentFragmentManager.popBackStack()
+        if (parentFragment !is org.schabi.newpipe.fragments.MainFragment) {
+            setTitle(getString(R.string.learning_dashboard_title))
+            if (!LearningMode.isEnabled(requireContext())) {
+                parentFragmentManager.popBackStack()
+            }
         }
     }
 

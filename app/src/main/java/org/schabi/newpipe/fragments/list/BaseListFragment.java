@@ -37,6 +37,7 @@ import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.profiles.ProfileRecord;
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.GridLayoutManagerHelper;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -534,14 +535,21 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
             return;
         }
         onItemSelected(selectedItem);
+        final PlayQueue selectionQueue = getPlayQueueForSelection(selectedItem);
         if (shouldPlayOnBackground(selectedItem)) {
             NavigationHelper.playOnBackgroundPlayer(requireContext(),
-                    new SinglePlayQueue(selectedItem), true);
+                    selectionQueue == null ? new SinglePlayQueue(selectedItem) : selectionQueue,
+                    true);
             return;
         }
         NavigationHelper.openVideoDetailFragment(requireContext(), getFM(),
                 selectedItem.getServiceId(), selectedItem.getUrl(), selectedItem.getName(),
-                null, false);
+                selectionQueue, false);
+    }
+
+    @Nullable
+    protected PlayQueue getPlayQueueForSelection(final StreamInfoItem item) {
+        return null;
     }
 
     protected boolean shouldPlayOnBackground(@NonNull final StreamInfoItem item) {

@@ -1,5 +1,7 @@
 package org.schabi.newpipe.settings.tabs;
 
+import java.util.stream.Collectors;
+import org.schabi.newpipe.learning.LearningMode;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.widget.Toast;
@@ -35,6 +37,18 @@ public final class TabsManager {
             Toast.makeText(context, R.string.saved_tabs_invalid_json, Toast.LENGTH_SHORT).show();
             return getDefaultTabs();
         }
+    }
+
+    /** Keep disabled Learning tabs saved so enabling Learning restores the user's home layout. */
+    public List<Tab> getVisibleTabs() {
+        return visibleTabs(getTabs(), LearningMode.isEnabled(context));
+    }
+
+    static List<Tab> visibleTabs(final List<Tab> configured, final boolean learningEnabled) {
+        final List<Tab> visible = configured.stream()
+                .filter(tab -> learningEnabled || !(tab instanceof Tab.LearningTab))
+                .collect(Collectors.toList());
+        return visible.isEmpty() ? TabsJsonHelper.getDefaultTabs() : visible;
     }
 
     public void saveTabs(final List<Tab> tabList) {
@@ -73,7 +87,9 @@ public final class TabsManager {
 
     private SharedPreferences.OnSharedPreferenceChangeListener getPreferenceChangeListener() {
         return (sp, key) -> {
-            if (savedTabsKey.equals(key) && savedTabsChangeListener != null) {
+            if (savedTabsChangeListener != null && (savedTabsKey.equals(key)
+                    || context.getString(R.string.learning_mode_key).equals(key)
+                    || (key != null && key.startsWith("learning_profile_enabled_")))) {
                 savedTabsChangeListener.onTabsChanged();
             }
         };

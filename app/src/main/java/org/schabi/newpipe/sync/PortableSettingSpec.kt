@@ -130,6 +130,7 @@ internal fun portableSettingSpecs(context: Context): List<PortableSettingSpec> =
     ),
     portableSetting(context, PortableSettingId.LEARNING_MODE, R.string.learning_mode_key),
     portableSetting(context, PortableSettingId.LEARNING_NOTES, R.string.learning_notes_key),
+    portableSetting(context, PortableSettingId.LEARNING_PLAYLIST_NAVIGATION, R.string.learning_playlist_navigation_key),
     portableSetting(
         context,
         PortableSettingId.LEARNING_PLAYLIST_PROGRESS,

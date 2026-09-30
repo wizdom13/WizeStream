@@ -13,6 +13,16 @@
         android:layout_height="wrap_content"
         android:animateLayoutChanges="true">
 
+        <include
+            android:id="@+id/learning_playlist_panel"
+            layout="@layout/learning_playlist_panel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/detail_upload_date_view"
             android:layout_width="0dp"
@@ -25,7 +35,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@+id/detail_select_description_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/learning_playlist_panel"
             tools:text="Published on Oct 2, 2009" />
 
         <ImageView
@@ -43,7 +53,7 @@
             app:layout_constraintBottom_toTopOf="@+id/barrier"
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/learning_playlist_panel" />
 
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/barrier"

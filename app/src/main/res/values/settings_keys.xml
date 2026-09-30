@@ -1816,4 +1816,5 @@
         <item>@string/search_button_behavior_current_tab</item>
         <item>@string/search_button_behavior_current_service</item>
     </string-array>
+    <string name="learning_playlist_navigation_key" translatable="false">learning_playlist_navigation</string>
 </resources>

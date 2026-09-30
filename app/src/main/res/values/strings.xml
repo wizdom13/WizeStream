@@ -1764,4 +1764,14 @@
     <string name="remote_remove">Remove assignment</string>
     <string name="remote_reset">Reset remote keys</string>
     <string name="remote_reset_message">Remove all custom button assignments and restore the default controls?</string>
+    <string name="learning_playlist_adding">Adding playlist to Learning…</string>
+    <string name="learning_playlist_navigation_title">Course navigation</string>
+    <string name="learning_playlist_navigation_summary">Show the course, lesson position, and next video when opening a Learning playlist.</string>
+    <string name="learning_course_format">Learning playlist: %1$s</string>
+    <string name="learning_lesson_position">Video %1$d of %2$d</string>
+    <string name="learning_lesson_position_partial">Video %1$d · More videos may be available</string>
+    <string name="learning_next_lesson">Up next in this playlist</string>
+    <string name="learning_playlist_end">You have reached the end of the learning playlist.</string>
+    <string name="learning_load_next_lesson">Load next video</string>
+    <string name="learning_next_lesson_error">Could not load the next video. Reopen the playlist to try again.</string>
 </resources>

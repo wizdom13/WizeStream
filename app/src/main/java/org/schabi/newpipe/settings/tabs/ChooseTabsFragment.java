@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
@@ -249,6 +250,9 @@ public class ChooseTabsFragment extends Fragment {
         appendGroup(returnList, R.string.add_tab_current_service, currentService);
 
         final ArrayList<ChooseTabListItem> customContent = new ArrayList<>();
+        if (LearningMode.isEnabled(context)) {
+            addSingletonTabIfAvailable(context, customContent, Tab.Type.LEARNING);
+        }
         addGenericTab(customContent, Tab.Type.KIOSK, getString(R.string.kiosk_page_summary),
                 R.drawable.ic_whatshot);
         addGenericTab(customContent, Tab.Type.FEEDGROUP,

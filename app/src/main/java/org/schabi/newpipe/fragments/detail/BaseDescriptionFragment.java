@@ -24,6 +24,7 @@ import androidx.core.text.HtmlCompat;
 
 import com.google.android.material.chip.Chip;
 
+import org.schabi.newpipe.learning.LearningPlaylistPanel;
 import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.FragmentDescriptionBinding;
@@ -39,11 +40,32 @@ import org.schabi.newpipe.util.text.TextLinkifier;
 
 import java.util.List;
 
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public abstract class BaseDescriptionFragment extends BaseFragment {
     private final CompositeDisposable descriptionDisposables = new CompositeDisposable();
     protected FragmentDescriptionBinding binding;
+    private Disposable learningPanelSubscription;
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (getParentFragment() instanceof VideoDetailFragment detail) {
+            learningPanelSubscription = LearningPlaylistPanel.observe(
+                    detail, binding.learningPlaylistPanel, getServiceId(), getStreamUrl(),
+                    this instanceof LocalMediaDescriptionFragment);
+        }
+    }
+
+    @Override
+    public void onStop() {
+        if (learningPanelSubscription != null) {
+            learningPanelSubscription.dispose();
+            learningPanelSubscription = null;
+        }
+        super.onStop();
+    }
 
     @Override
     public View onCreateView(@NonNull final LayoutInflater inflater,

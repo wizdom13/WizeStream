@@ -381,7 +381,7 @@ public class MainFragment extends BaseFragment
     private void setupTabs() {
         tabsSetupInProgress = true;
         tabsList.clear();
-        tabsList.addAll(tabsManager.getTabs());
+        tabsList.addAll(tabsManager.getVisibleTabs());
 
         final boolean replacePagerAdapter = pagerAdapter == null
                 || !pagerAdapter.sameTabs(tabsList);

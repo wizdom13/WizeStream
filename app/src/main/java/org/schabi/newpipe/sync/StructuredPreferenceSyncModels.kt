@@ -91,6 +91,7 @@ internal enum class SyncedHomeTabType {
     BOOKMARKS,
     HISTORY,
     DOWNLOADS,
+    LEARNING,
     KIOSK,
     CHANNEL,
     LOCAL_PLAYLIST,
@@ -231,6 +232,7 @@ internal enum class PortableSettingId {
     LEARNING_MODE,
     LEARNING_NOTES,
     LEARNING_PLAYLIST_PROGRESS,
+    LEARNING_PLAYLIST_NAVIGATION,
     LEARNING_COUNT_BACKGROUND;
 
     val valueType: PortableSettingValueType
@@ -255,6 +257,7 @@ internal enum class PortableSettingId {
             LEARNING_MODE,
             LEARNING_NOTES,
             LEARNING_PLAYLIST_PROGRESS,
+            LEARNING_PLAYLIST_NAVIGATION,
             LEARNING_COUNT_BACKGROUND -> PortableSettingValueType.BOOLEAN
 
             PLAYBACK_SPEED,
@@ -761,7 +764,8 @@ internal object StructuredPreferenceSyncValidation {
             SyncedHomeTabType.FEED,
             SyncedHomeTabType.BOOKMARKS,
             SyncedHomeTabType.HISTORY,
-            SyncedHomeTabType.DOWNLOADS -> {
+            SyncedHomeTabType.DOWNLOADS,
+            SyncedHomeTabType.LEARNING -> {
                 if (!noDetails) {
                     invalidRecord("A simple home tab has unexpected data")
                 }

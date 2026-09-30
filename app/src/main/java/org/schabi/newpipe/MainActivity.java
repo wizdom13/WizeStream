@@ -408,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
         drawerKioskTargets.clear();
 
         final Set<HomeDestinationKey> homeDestinations = HomeDestinationResolver.fromTabs(this,
-                TabsManager.getManager(this).getTabs());
+                TabsManager.getManager(this).getVisibleTabs());
 
         addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.SUBSCRIPTIONS,
                 ITEM_ID_SUBSCRIPTIONS, R.string.tab_subscriptions, R.drawable.ic_tv);
@@ -423,9 +423,8 @@ public class MainActivity extends AppCompatActivity {
         addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.HISTORY,
                 ITEM_ID_HISTORY, R.string.action_history, R.drawable.ic_history);
         if (LearningMode.isEnabled(this)) {
-            menu.add(R.id.menu_tabs_group, ITEM_ID_LEARNING, ORDER,
-                            R.string.learning_dashboard_title)
-                    .setIcon(R.drawable.ic_school);
+            addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.LEARNING,
+                    ITEM_ID_LEARNING, R.string.learning_dashboard_title, R.drawable.ic_school);
         }
 
         try {
@@ -1076,7 +1075,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void showMainNavigationForSearch() {
         searchNavigationActive = true;
-        final List<Tab> tabs = TabsManager.getManager(this).getTabs();
+        final List<Tab> tabs = TabsManager.getManager(this).getVisibleTabs();
         if (tabs.isEmpty()) {
             hideSearchNavigationViews();
             return;

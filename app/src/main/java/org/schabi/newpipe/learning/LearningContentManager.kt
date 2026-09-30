@@ -52,6 +52,8 @@ class LearningContentManager private constructor(context: Context) {
         )
     }
 
+    fun isSourceMarked(sourceId: String): Boolean = markedSourceIds.contains(sourceId)
+
     fun isStreamLearning(serviceId: Int, url: String): Boolean = eligibleStreamKeys.contains(streamKey(serviceId, url))
 
     fun isStreamSourceMarked(serviceId: Int, url: String): Boolean = markedSourceIds.contains(streamSourceId(serviceId, url))

@@ -21,6 +21,7 @@ abstract class AbstractInfoPlayQueue<T extends ListInfo<? extends InfoItem>>
         extends PlayQueue {
     boolean isInitial;
     private boolean isComplete;
+    private boolean loadError;
 
     final int serviceId;
     final String baseUrl;
@@ -65,6 +66,11 @@ abstract class AbstractInfoPlayQueue<T extends ListInfo<? extends InfoItem>>
         return isComplete;
     }
 
+    @Override
+    public boolean hasLoadError() {
+        return loadError;
+    }
+
     SingleObserver<T> getHeadListObserver() {
         return new SingleObserver<>() {
             @Override
@@ -85,7 +91,7 @@ abstract class AbstractInfoPlayQueue<T extends ListInfo<? extends InfoItem>>
                 }
                 nextPage = result.getNextPage();
 
-                append(extractListItems(result.getRelatedItems()
+                appendFromSource(extractListItems(result.getRelatedItems()
                         .stream()
                         .filter(StreamInfoItem.class::isInstance)
                         .map(StreamInfoItem.class::cast)
@@ -99,6 +105,7 @@ abstract class AbstractInfoPlayQueue<T extends ListInfo<? extends InfoItem>>
             public void onError(@NonNull final Throwable e) {
                 Log.e(getTag(), "Error fetching more playlist, marking playlist as complete.", e);
                 isComplete = true;
+                loadError = true;
                 notifyChange();
             }
         };
@@ -124,7 +131,7 @@ abstract class AbstractInfoPlayQueue<T extends ListInfo<? extends InfoItem>>
                 }
                 nextPage = result.getNextPage();
 
-                append(extractListItems(result.getItems()
+                appendFromSource(extractListItems(result.getItems()
                         .stream()
                         .filter(StreamInfoItem.class::isInstance)
                         .map(StreamInfoItem.class::cast)
@@ -138,6 +145,7 @@ abstract class AbstractInfoPlayQueue<T extends ListInfo<? extends InfoItem>>
             public void onError(@NonNull final Throwable e) {
                 Log.e(getTag(), "Error fetching more playlist, marking playlist as complete.", e);
                 isComplete = true;
+                loadError = true;
                 notifyChange();
             }
         };

@@ -68,6 +68,10 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationBarView;
 
+import org.schabi.newpipe.learning.LearningPlaylistNavigation;
+import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningContentManager;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.cast.FCastManager;
@@ -149,6 +153,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import coil3.util.CoilUtils;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -239,6 +245,9 @@ public final class VideoDetailFragment
     protected String url = null;
     @Nullable
     protected PlayQueue playQueue = null;
+    private final PublishSubject<Optional<PlayQueue>> learningQueueChanges =
+            PublishSubject.create();
+
     @State
     int bottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
@@ -1502,8 +1511,8 @@ public final class VideoDetailFragment
             pageAdapter.addFragment(EmptyFragment.newInstance(false), DESCRIPTION_TAB_TAG);
         }
 
-        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())
-                && org.schabi.newpipe.learning.LearningContentManager.getInstance(requireContext())
+        if (LearningMode.areNotesEnabled(requireContext())
+                && LearningContentManager.getInstance(requireContext())
                         .isStreamLearning(serviceId, url)) {
             pageAdapter.addFragment(EmptyFragment.newInstance(false), NOTES_TAB_TAG);
         }
@@ -1565,8 +1574,8 @@ public final class VideoDetailFragment
             pageAdapter.updateItem(DESCRIPTION_TAB_TAG, new DescriptionFragment(info));
         }
 
-        if (org.schabi.newpipe.learning.LearningMode.areNotesEnabled(requireContext())
-                && org.schabi.newpipe.learning.LearningContentManager.getInstance(requireContext())
+        if (LearningMode.areNotesEnabled(requireContext())
+                && LearningContentManager.getInstance(requireContext())
                         .isStreamLearning(info.getServiceId(), info.getUrl())) {
             pageAdapter.updateItem(
                     NOTES_TAB_TAG,
@@ -2266,6 +2275,54 @@ public final class VideoDetailFragment
         binding.detailContentRootHiding.setVisibility(View.VISIBLE);
     }
 
+    /** Observe the current queue and its pages without retaining destroyed child views. */
+    public Observable<Optional<PlayQueue>> learningQueueUpdates() {
+        return Observable.defer(() -> learningQueueChanges
+                .startWithItem(Optional.ofNullable(playQueue))
+                .switchMap(optional -> {
+                    if (optional.isEmpty()) {
+                        return Observable.just(optional);
+                    }
+                    final PlayQueue queue = optional.get();
+                    if (queue.getLearningPlaylistContext() == null) {
+                        return Observable.just(optional);
+                    }
+                    if (queue.getBroadcastReceiver() == null) {
+                        queue.init();
+                    }
+                    return queue.getBroadcastReceiver().toObservable()
+                            .map(event -> optional);
+                }));
+    }
+
+    public boolean hasLearningPlaylist(final int streamServiceId, final String streamUrl) {
+        final var navigation = LearningPlaylistNavigation.from(
+                playQueue, ProfileManager.getActiveProfileId(requireContext()),
+                streamServiceId, streamUrl);
+        return navigation != null && LearningMode.isPlaylistNavigationEnabled(requireContext())
+                && LearningContentManager.getInstance(requireContext())
+                        .isSourceMarked(navigation.getCourse().getSourceId());
+    }
+
+    public void openNextLearningLesson(final PlayQueue queue) {
+        final var navigation = LearningPlaylistNavigation.from(
+                queue, ProfileManager.getActiveProfileId(requireContext()), serviceId, url);
+        if (queue != playQueue || navigation == null || navigation.getNext() == null
+                || !LearningMode.isPlaylistNavigationEnabled(requireContext())
+                || !LearningContentManager.getInstance(requireContext())
+                        .isSourceMarked(navigation.getCourse().getSourceId())) {
+            return;
+        }
+        final PlayQueueItem next = navigation.getNext();
+        queue.setIndex(queue.getIndex() + 1);
+        if (next.isLocalMedia()) {
+            NavigationHelper.playOnMainPlayer(requireContext(), queue, false);
+        } else {
+            NavigationHelper.openVideoDetailFragment(requireContext(), getFM(),
+                    next.getServiceId(), next.getUrl(), next.getTitle(), queue, false);
+        }
+    }
+
     protected void setInitialData(final int newServiceId,
                                   @Nullable final String newUrl,
                                   @NonNull final String newTitle,
@@ -2274,6 +2331,7 @@ public final class VideoDetailFragment
         this.url = newUrl;
         this.title = newTitle;
         this.playQueue = newPlayQueue;
+        learningQueueChanges.onNext(Optional.ofNullable(newPlayQueue));
         final PlayQueueItem queueItem = newPlayQueue == null ? null : newPlayQueue.getItem();
         currentLocalItem = queueItem != null && queueItem.isLocalMedia() ? queueItem : null;
     }
@@ -2716,6 +2774,7 @@ public final class VideoDetailFragment
     @Override
     public void onQueueUpdate(final PlayQueue queue) {
         playQueue = queue;
+        learningQueueChanges.onNext(Optional.of(queue));
         final PlayQueueItem queueItem = queue.getItem();
         if (queueItem != null && queueItem.isLocalMedia() && binding != null
                 && (currentLocalItem == null || !currentLocalItem.isSameItem(queueItem))) {

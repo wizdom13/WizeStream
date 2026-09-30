@@ -72,7 +72,7 @@ class LearningSettingsFragment : BasePreferenceFragment() {
         included.isChecked = LearningMode.isProfileIncluded(context, profileId)
         included.summary = getString(R.string.learning_profile_included_summary, ProfileManager.getDisplayName(context, ProfileManager.getActiveProfile(context)))
         val enabled = masterEnabled && included.isChecked
-        listOf(R.string.learning_notes_key, R.string.learning_playlist_progress_key, R.string.learning_count_background_key).forEach {
+        listOf(R.string.learning_notes_key, R.string.learning_playlist_progress_key, R.string.learning_playlist_navigation_key, R.string.learning_count_background_key).forEach {
             requirePreference<Preference>(it).isEnabled = enabled
         }
         val reminder = requirePreference<SwitchPreferenceCompat>(R.string.learning_reminders_key)

@@ -28,6 +28,7 @@ import com.google.android.material.shape.ShapeAppearanceModel;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.schabi.newpipe.learning.LearningPlaylistContext;
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity;
@@ -204,6 +205,16 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         infoListAdapter.setUseMiniVariant(true);
 
         observeBookmark();
+    }
+
+    @Override
+    protected PlayQueue getPlayQueueForSelection(final StreamInfoItem item) {
+        return isLearningPlaylist() ? getPlayQueueStartingAt(item) : null;
+    }
+
+    private boolean isLearningPlaylist() {
+        return LearningMode.isEnabled(requireContext())
+                && learningContentManager.isRemotePlaylistMarked(serviceId, url);
     }
 
     private PlayQueue getPlayQueueStartingAt(final StreamInfoItem infoItem) {
@@ -744,15 +755,25 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
                 infoItems.add((StreamInfoItem) i);
             }
         }
-        return new PlaylistPlayQueue(
+        final boolean learning = isLearningPlaylist();
+        final int selectedIndex = learning && index >= 0 && index < infoItems.size()
+                ? Math.max(0, unfilteredItems.indexOf(infoItems.get(index))) : index;
+        final PlayQueue queue = new PlaylistPlayQueue(
                 currentInfo.getServiceId(),
                 currentInfo.getUrl(),
-                selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER
+                learning || selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER
                         && !ContextualSearchHelper.isActive(contextualSearchQuery)
-                        ? currentInfo.getNextPage() : null,
-                infoItems,
-                index
+                        ? currentNextPage : null,
+                learning ? unfilteredItems : infoItems,
+                selectedIndex
         );
+        if (learning) {
+            queue.setLearningPlaylistContext(new LearningPlaylistContext(
+                    LearningContentManager.remotePlaylistSourceId(serviceId, url),
+                    currentInfo.getName(),
+                    ProfileManager.getActiveProfileId(requireContext())));
+        }
+        return queue;
     }
 
     /*//////////////////////////////////////////////////////////////////////////

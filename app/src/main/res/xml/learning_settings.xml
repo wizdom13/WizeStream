@@ -49,6 +49,14 @@
 
     <SwitchPreferenceCompat
         android:defaultValue="true"
+        android:key="@string/learning_playlist_navigation_key"
+        android:summary="@string/learning_playlist_navigation_summary"
+        android:title="@string/learning_playlist_navigation_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
         android:key="@string/learning_count_background_key"
         android:summary="@string/learning_count_background_summary"
         android:title="@string/learning_count_background_title"

@@ -11,6 +11,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -37,6 +38,9 @@ import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity;
 import org.schabi.newpipe.databinding.DialogEditTextBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.UserAction;
+import org.schabi.newpipe.learning.LearningContentManager;
+import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningPlaylistMarker;
 import org.schabi.newpipe.local.BaseLocalListFragment;
 import org.schabi.newpipe.local.holder.LocalBookmarkPlaylistItemHolder;
 import org.schabi.newpipe.local.holder.RemoteBookmarkPlaylistItemHolder;
@@ -56,6 +60,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 
@@ -619,13 +624,20 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     ///////////////////////////////////////////////////////////////////////////
 
     private void showRemoteDeleteDialog(final PlaylistRemoteEntity item) {
+        final List<String> actions = new ArrayList<>();
+        actions.add(getString(R.string.playlist_move_to_category));
+        actions.add(getString(R.string.delete));
+        if (LearningMode.isEnabled(requireContext())) {
+            actions.add(learningActionLabel(item));
+        }
         new MaterialAlertDialogBuilder(requireContext())
-                .setItems(new String[]{getString(R.string.playlist_move_to_category),
-                    getString(R.string.delete)}, (dialog, which) -> {
+                .setItems(actions.toArray(new String[0]), (dialog, which) -> {
                     if (which == 0) {
                         chooseCategory(item);
-                    } else {
+                    } else if (which == 1) {
                         showDeleteDialog(item.getOrderingName(), item);
+                    } else {
+                        toggleLearningPlaylist(item);
                     }
                 }).show();
     }
@@ -646,6 +658,11 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             items.add(unsetThumbnail);
         }
 
+        final String learning = learningActionLabel(selectedItem);
+        if (LearningMode.isEnabled(requireContext())) {
+            items.add(learning);
+        }
+
         final DialogInterface.OnClickListener action = (d, index) -> {
             if (items.get(index).equals(rename)) {
                 showRenameDialog(selectedItem);
@@ -653,6 +670,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                 showDeleteDialog(selectedItem.getOrderingName(), selectedItem);
             } else if (items.get(index).equals(moveToCategory)) {
                 chooseCategory(selectedItem);
+            } else if (items.get(index).equals(learning)) {
+                toggleLearningPlaylist(selectedItem);
             } else if (isThumbnailPermanent && items.get(index).equals(unsetThumbnail)) {
                 final long thumbnailStreamId = localPlaylistManager
                         .getAutomaticPlaylistThumbnailStreamId(selectedItem.getUid());
@@ -663,9 +682,56 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             }
         };
 
-        new AlertDialog.Builder(activity)
+        new MaterialAlertDialogBuilder(requireContext())
                 .setItems(items.toArray(new String[0]), action)
                 .show();
+    }
+
+    private boolean isLearningPlaylist(final PlaylistLocalItem item) {
+        final LearningContentManager manager = LearningContentManager.getInstance(requireContext());
+        if (item instanceof PlaylistRemoteEntity remote) {
+            return remote.getUrl() != null
+                    && manager.isRemotePlaylistMarked(remote.getServiceId(), remote.getUrl());
+        }
+        return manager.isLocalPlaylistMarked(item.getUid());
+    }
+
+    private String learningActionLabel(final PlaylistLocalItem item) {
+        return getString(isLearningPlaylist(item)
+                ? R.string.learning_remove_content : R.string.learning_mark_content);
+    }
+
+    private void toggleLearningPlaylist(final PlaylistLocalItem item) {
+        if (!LearningMode.isEnabled(requireContext())) {
+            return;
+        }
+        final LearningContentManager manager = LearningContentManager.getInstance(requireContext());
+        final boolean marked = isLearningPlaylist(item);
+        final String title = item.getOrderingName() == null
+                ? getString(R.string.learning_dashboard_untitled_playlist) : item.getOrderingName();
+        final Completable update;
+        if (item instanceof PlaylistRemoteEntity remote) {
+            if (remote.getUrl() == null) {
+                return;
+            }
+            update = marked ? manager.setRemotePlaylistMarked(remote.getServiceId(),
+                    remote.getUrl(), title, remote.getThumbnailUrl(),
+                    Collections.emptyList(), false)
+                    : LearningPlaylistMarker.markRemote(manager,
+                            remote.getServiceId(), remote.getUrl());
+            if (!marked) {
+                Toast.makeText(requireContext(), R.string.learning_playlist_adding,
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            update = manager.setLocalPlaylistMarked(item.getUid(), title, !marked);
+        }
+        disposables.add(update.observeOn(AndroidSchedulers.mainThread()).subscribe(
+                () -> Toast.makeText(requireContext(), marked
+                        ? R.string.learning_content_removed : R.string.learning_content_added,
+                        Toast.LENGTH_SHORT).show(),
+                error -> Toast.makeText(requireContext(), R.string.learning_content_update_error,
+                        Toast.LENGTH_LONG).show()));
     }
 
     private boolean isPlaylistListFiltered() {
@@ -826,7 +892,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         dialogBinding.dialogEditText.setInputType(InputType.TYPE_CLASS_TEXT);
         dialogBinding.dialogEditText.setText(selectedItem.getOrderingName());
 
-        new AlertDialog.Builder(activity)
+        new MaterialAlertDialogBuilder(requireContext())
                 .setView(dialogBinding.getRoot())
                 .setPositiveButton(R.string.rename_playlist, (dialog, which) ->
                         changeLocalPlaylistName(
@@ -841,7 +907,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             return;
         }
 
-        new AlertDialog.Builder(activity)
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(name)
                 .setMessage(R.string.delete_playlist_prompt)
                 .setCancelable(true)

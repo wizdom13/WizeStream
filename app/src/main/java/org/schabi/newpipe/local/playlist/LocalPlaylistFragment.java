@@ -35,9 +35,11 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.evernote.android.state.State;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.schabi.newpipe.learning.LearningPlaylistContext;
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
@@ -224,7 +226,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                         return;
                     }
                     NavigationHelper.openVideoDetailFragment(requireContext(), getFM(),
-                            item.getServiceId(), item.getUrl(), item.getTitle(), null, false);
+                            item.getServiceId(), item.getUrl(), item.getTitle(),
+                            isLearningPlaylist() ? getPlayQueueStartingAt(entry) : null, false);
                 }
             }
 
@@ -716,7 +719,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         dialogBinding.dialogEditText.setSelection(dialogBinding.dialogEditText.getText().length());
         dialogBinding.dialogEditText.setText(name);
 
-        new AlertDialog.Builder(getContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.rename_playlist)
                 .setView(dialogBinding.getRoot())
                 .setCancelable(true)
@@ -1237,13 +1240,28 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     }
 
     private PlayQueue getPlayQueue(final List<? extends LocalItem> infoItems, final int index) {
-        final List<PlayQueueItem> queueItems = new ArrayList<>(infoItems.size());
-        for (final LocalItem item : infoItems) {
+        final boolean learning = isLearningPlaylist();
+        final List<? extends LocalItem> orderedItems = learning ? unfilteredItems : infoItems;
+        final int selectedIndex = learning && index >= 0 && index < infoItems.size()
+                ? Math.max(0, orderedItems.indexOf(infoItems.get(index))) : index;
+        final List<PlayQueueItem> queueItems = new ArrayList<>(orderedItems.size());
+        for (final LocalItem item : orderedItems) {
             if (item instanceof PlaylistStreamEntry) {
                 queueItems.add(((PlaylistStreamEntry) item).toPlayQueueItem());
             }
         }
-        return new LocalMediaPlayQueue(queueItems, index);
+        final PlayQueue queue = new LocalMediaPlayQueue(queueItems, selectedIndex);
+        if (learning) {
+            queue.setLearningPlaylistContext(new LearningPlaylistContext(
+                    LearningContentManager.localPlaylistSourceId(playlistId), name,
+                    ProfileManager.getActiveProfileId(requireContext())));
+        }
+        return queue;
+    }
+
+    private boolean isLearningPlaylist() {
+        return LearningMode.isEnabled(requireContext())
+                && learningContentManager.isLocalPlaylistMarked(playlistId);
     }
 
     /**
