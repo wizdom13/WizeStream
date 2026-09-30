@@ -2,6 +2,7 @@ package org.schabi.newpipe.extractor.services.odysee
 
 import com.grack.nanojson.JsonObject
 import com.grack.nanojson.JsonParser
+import java.net.URI
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 
@@ -28,7 +29,15 @@ object OdyseeApi {
 
     @JvmStatic
     fun lbryUriFromWebUrl(url: String): String {
-        val path = java.net.URI(url).path.trim('/')
+        val uri = URI(url)
+        // Service detection also receives search queries. A relative URI such as "Astrum"
+        // has a path, but must not turn a search into Odysee playback.
+        require(
+            (uri.scheme.equals("https", ignoreCase = true) || uri.scheme.equals("http", ignoreCase = true)) &&
+                (uri.host.equals("odysee.com", ignoreCase = true) || uri.host.equals("www.odysee.com", ignoreCase = true)) &&
+                uri.userInfo == null
+        ) { "Not an Odysee web URL" }
+        val path = uri.path.orEmpty().trim('/')
         require(path.isNotBlank()) { "Invalid Odysee URL" }
         return "lbry://" + path.replace(":", "#")
     }
