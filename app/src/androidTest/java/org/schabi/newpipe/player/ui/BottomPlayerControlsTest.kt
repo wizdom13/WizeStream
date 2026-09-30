@@ -39,6 +39,7 @@ class BottomPlayerControlsTest {
                     val binding = PlayerBinding.inflate(LayoutInflater.from(themed))
                     binding.root.layoutDirection = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
                     binding.playbackControlRoot.visibility = View.VISIBLE
+                    binding.loadingPanel.visibility = View.GONE
                     binding.metadataView.visibility = View.VISIBLE
                     binding.titleTextView.text = "A lesson worth coming back to"
                     binding.channelTextView.text = "WizeStream · Learning and discovery"
