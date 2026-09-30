@@ -322,6 +322,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void destroy() {
+        getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         if (videoAdjustmentDialog != null) {
             videoAdjustmentDialog.dismiss();
             videoAdjustmentDialog = null;
@@ -351,6 +352,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void smoothStopForImmediateReusing() {
+        getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         setTouchLocked(false);
         super.smoothStopForImmediateReusing();
         // Android TV will handle back button in case controls will be visible
@@ -1121,13 +1123,6 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
         player.getCurrentStreamInfo().ifPresent(info ->
                 getParentActivity().ifPresent(activity -> {
-                    final ViewGroup.LayoutParams layoutParams =
-                            binding.fullscreenCommentsContainer.getLayoutParams();
-                    layoutParams.width = (int) (TvPlayerFocusPolicy.commentsWidthDp(
-                            DeviceUtils.isTv(context))
-                            * context.getResources().getDisplayMetrics().density);
-                    binding.fullscreenCommentsContainer.setLayoutParams(layoutParams);
-                    binding.fullscreenCommentsContainer.setVisibility(View.VISIBLE);
                     FullscreenCommentsSidebar.show(
                             activity,
                             info.getServiceId(),
@@ -1155,6 +1150,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         if (Objects.equals(videoOrientationStreamKey, streamKey)) {
             return;
         }
+        getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         videoOrientationStreamKey = streamKey;
         videoContentOrientation = FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
         setupScreenRotationButton();
@@ -1255,11 +1251,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.touchLockButton.setVisibility(fullscreen ? View.VISIBLE : View.GONE);
         binding.commentsButton.setVisibility(fullscreen ? View.VISIBLE : View.GONE);
         if (!fullscreen) {
-            getParentActivity().ifPresent(activity -> {
-                if (FullscreenCommentsSidebar.hide(activity)) {
-                    binding.fullscreenCommentsContainer.setVisibility(View.GONE);
-                }
-            });
+            getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         }
         if (isFullscreen) {
             // Android needs tens milliseconds to send new insets but a user is able to see

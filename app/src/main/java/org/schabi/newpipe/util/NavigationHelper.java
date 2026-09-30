@@ -560,6 +560,7 @@ public final class NavigationHelper {
         if (isEmpty(comment.getUploaderUrl())) {
             return;
         }
+        org.schabi.newpipe.player.ui.FullscreenCommentsSidebar.hide(activity);
         try {
             openChannelFragment(activity.getSupportFragmentManager(), comment.getServiceId(),
                     comment.getUploaderUrl(), comment.getUploaderName());
@@ -570,6 +571,9 @@ public final class NavigationHelper {
 
     public static void openCommentRepliesFragment(@NonNull final FragmentActivity activity,
                                                   @NonNull final CommentsInfoItem comment) {
+        if (org.schabi.newpipe.player.ui.FullscreenCommentsSidebar.showReplies(activity, comment)) {
+            return;
+        }
         closeCommentRepliesFragments(activity);
         defaultTransaction(activity.getSupportFragmentManager())
                 .replace(R.id.fragment_holder, new CommentRepliesFragment(comment),
