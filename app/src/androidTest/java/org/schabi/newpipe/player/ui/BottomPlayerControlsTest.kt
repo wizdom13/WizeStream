@@ -102,6 +102,7 @@ class BottomPlayerControlsTest {
                     assertEquals(3, clicks)
                 }
             }
+            preservePreviews()
         } finally {
             prefs.edit().apply { previous?.let { putBoolean(key, it) } ?: remove(key) }.commit()
         }
@@ -123,10 +124,17 @@ class BottomPlayerControlsTest {
         val file = File(folder, "$name.png")
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
+    }
+
+    private fun preservePreviews() {
         // Connected tests uninstall the app; preserve previews outside its data directory.
+        // UiAutomation must connect off the main thread on older Android versions.
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val folder = File(context.getExternalFilesDir(null), "player-layout-previews")
         val destination = "/sdcard/Download/wizestream-player-layout-previews"
-        listOf("mkdir -p $destination", "cp ${file.absolutePath} $destination/").forEach { command ->
-            val output = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        val commands = listOf("mkdir -p $destination") + folder.listFiles().orEmpty().map { "cp ${it.absolutePath} $destination/" }
+        commands.forEach { command ->
+            val output = automation.executeShellCommand(command)
             ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
         }
     }
