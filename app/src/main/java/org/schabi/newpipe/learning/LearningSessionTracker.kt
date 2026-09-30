@@ -16,6 +16,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 import org.schabi.newpipe.NewPipeDatabase
+import org.schabi.newpipe.R
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
@@ -29,7 +30,10 @@ class LearningSessionTracker(context: Context) {
     private val preferences = PreferenceManager.getDefaultSharedPreferences(appContext)
     private val profilePreferenceListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == ProfileManager.ACTIVE_PROFILE_ID_PREFERENCE_KEY) {
+            if (key == ProfileManager.ACTIVE_PROFILE_ID_PREFERENCE_KEY ||
+                key == appContext.getString(R.string.learning_mode_key) ||
+                key == LearningMode.profilePreferenceKey(ProfileManager.getActiveProfileId(appContext))
+            ) {
                 stop()
             }
         }

@@ -9,10 +9,12 @@ import androidx.annotation.NonNull;
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.profiles.ProfileDeletionManager;
 import org.schabi.newpipe.profiles.ProfileIcon;
 import org.schabi.newpipe.profiles.ProfileManager;
@@ -52,6 +54,12 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
 
         configureNonPersistentPreferences();
         configureIconPreference();
+        requirePreference(R.string.learning_profile_included_key)
+                .setOnPreferenceChangeListener((preference, value) -> {
+                    LearningMode.setProfileIncluded(requireContext(),
+                            ProfileManager.getActiveProfileId(requireContext()), (Boolean) value);
+                    return true;
+                });
         bindListeners(createPreference);
         refreshPreferences();
     }
@@ -275,6 +283,11 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
 
         final ProfileRecord active = ProfileManager.getActiveProfile(requireContext());
         activePreference.setEntries(entries);
+        final SwitchPreferenceCompat learning = requirePreference(
+                R.string.learning_profile_included_key);
+        learning.setChecked(LearningMode.isProfileIncluded(requireContext(), active.getId()));
+        learning.setSummary(getString(R.string.learning_profile_included_summary,
+                ProfileManager.getDisplayName(requireContext(), active)));
         activePreference.setEntryValues(values);
         activePreference.setValue(active.getId());
         activePreference.setSummary(ProfileManager.getDisplayName(requireContext(), active));

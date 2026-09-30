@@ -121,6 +121,7 @@ open class App :
         initNotificationChannels()
         org.schabi.newpipe.download.AutomaticDownloads.initialize(this)
         AiSListSyncWorker.initialize(this)
+        org.schabi.newpipe.learning.LearningReminders.initialize(this)
 
         ServiceHelper.initServices(this)
 

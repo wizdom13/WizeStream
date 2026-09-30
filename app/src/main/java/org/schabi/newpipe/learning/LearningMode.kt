@@ -8,14 +8,33 @@ package org.schabi.newpipe.learning
 import android.content.Context
 import androidx.preference.PreferenceManager
 import org.schabi.newpipe.R
+import org.schabi.newpipe.profiles.ProfileManager
 
 object LearningMode {
     @JvmStatic
-    fun isEnabled(context: Context): Boolean = preference(
+    fun isEnabled(context: Context): Boolean = isEnabled(context, ProfileManager.getActiveProfileId(context))
+
+    @JvmStatic
+    fun isEnabled(context: Context, profileId: String): Boolean = preference(
         context,
         R.string.learning_mode_key,
         false
-    )
+    ) && isProfileIncluded(context, profileId)
+
+    @JvmStatic
+    fun profilePreferenceKey(profileId: String): String = "learning_profile_enabled_$profileId"
+
+    @JvmStatic
+    fun isProfileIncluded(context: Context, profileId: String): Boolean = PreferenceManager
+        .getDefaultSharedPreferences(context.applicationContext)
+        .getBoolean(profilePreferenceKey(profileId), true)
+
+    @JvmStatic
+    fun setProfileIncluded(context: Context, profileId: String, included: Boolean) {
+        PreferenceManager.getDefaultSharedPreferences(context.applicationContext).edit()
+            .putBoolean(profilePreferenceKey(profileId), included).apply()
+        LearningReminders.initialize(context)
+    }
 
     @JvmStatic
     fun areNotesEnabled(context: Context): Boolean = isEnabled(context) && preference(

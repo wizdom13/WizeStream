@@ -5,6 +5,7 @@ import androidx.preference.PreferenceManager
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
+import org.schabi.newpipe.learning.LearningReminders
 import org.schabi.newpipe.local.bookmark.PlaylistCategories
 import org.schabi.newpipe.sync.HistorySyncRecorder
 
@@ -44,6 +45,8 @@ object ProfileDeletionManager {
             check(ProfileManager.deleteProfile(appContext, profileId)) {
                 "Profile metadata no longer exists"
             }
+            LearningReminders.cancelNotification(appContext, profileId)
+            LearningReminders.initialize(appContext)
         }.subscribeOn(Schedulers.io())
     }
 }

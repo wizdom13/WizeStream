@@ -16,6 +16,25 @@ import org.schabi.newpipe.learning.LearningContentKey
 
 @Dao
 interface LearningContentDAO {
+    @Query(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM learning_content_sources sources
+            INNER JOIN playlists ON playlists.uid = sources.local_playlist_id
+            WHERE sources.source_type = 'LOCAL_PLAYLIST'
+              AND playlists.profile_id = :profileId
+              AND EXISTS (SELECT 1 FROM playlist_stream_join
+                          WHERE playlist_id = playlists.uid)
+            UNION ALL
+            SELECT 1 FROM learning_content_sources sources
+            WHERE sources.source_type = 'REMOTE_PLAYLIST'
+              AND EXISTS (SELECT 1 FROM learning_content_streams
+                          WHERE source_id = sources.source_id)
+        )
+        """
+    )
+    fun hasLearningPlaylists(profileId: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun upsertSource(source: LearningContentSourceEntity)
 

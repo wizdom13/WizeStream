@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import java.util.UUID
 import org.schabi.newpipe.R
+import org.schabi.newpipe.learning.LearningMode
 
 object ProfileManager {
     const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
@@ -121,6 +122,7 @@ object ProfileManager {
             .putString(profileKey(profile.id, ICON_SUFFIX), profile.iconKey)
             .putLong(profileKey(profile.id, CREATED_AT_SUFFIX), profile.createdAt)
             .putLong(profileKey(profile.id, UPDATED_AT_SUFFIX), now)
+            .putBoolean(LearningMode.profilePreferenceKey(profile.id), false)
             .putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, profile.id)
             .apply()
         profile

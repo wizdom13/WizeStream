@@ -16,6 +16,16 @@
     <string name="settings_category_learning_title">Learning Mode</string>
     <string name="settings_category_learning_summary">Optional notes, progress, dashboard, and study statistics</string>
     <string name="learning_mode_key" translatable="false">learning_mode_enabled</string>
+    <string name="learning_profile_included_key" translatable="false">learning_profile_included</string>
+    <string name="learning_reminders_key" translatable="false">learning_daily_reminders</string>
+    <string name="learning_reminder_time_key" translatable="false">learning_daily_reminder_time</string>
+    <string name="learning_profile_included_title">Include this profile in Learning</string>
+    <string name="learning_profile_included_summary">Allow Learning tools and streak tracking for %1$s when Learning Mode is enabled</string>
+    <string name="learning_reminders_title">Daily learning reminder</string>
+    <string name="learning_reminders_summary">Remind this profile to watch or review a lesson each day when it has learning playlists, regardless of time already studied. Android may delay reminders to save battery.</string>
+    <string name="learning_reminder_time_title">Reminder time</string>
+    <string name="learning_reminder_notification_title">Continue learning · %1$s</string>
+    <string name="learning_reminder_notification_text">Take a moment to watch or review a lesson today. Tap to open Learning.</string>
     <string name="learning_notes_key" translatable="false">learning_notes_enabled</string>
     <string name="learning_playlist_progress_key" translatable="false">learning_playlist_progress_enabled</string>
     <string name="learning_count_background_key" translatable="false">learning_count_background_playback</string>

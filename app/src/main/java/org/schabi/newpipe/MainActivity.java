@@ -85,6 +85,7 @@ import org.schabi.newpipe.fragments.list.comments.CommentRepliesFragment;
 import org.schabi.newpipe.fragments.list.search.SearchFragment;
 import org.schabi.newpipe.local.feed.notifications.NotificationWorker;
 import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningReminders;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.gesture.CustomBottomSheetBehavior;
 import org.schabi.newpipe.player.event.OnKeyDownListener;
@@ -228,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        LearningReminders.selectProfile(this, getIntent());
         super.onCreate(savedInstanceState);
         EdgeToEdgeHelper.enable(this);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -260,7 +262,8 @@ public class MainActivity extends AppCompatActivity {
                 (view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
                         nativePipController.updatePictureInPictureParams());
 
-        if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+        if (getSupportFragmentManager().getBackStackEntryCount() == 0
+                || getIntent().hasExtra(LearningReminders.EXTRA_PROFILE_ID)) {
             initFragments();
         }
 
@@ -732,6 +735,7 @@ public class MainActivity extends AppCompatActivity {
         Localization.initPrettyTime(Localization.resolvePrettyTime());
         super.onResume();
         applyLargeScreenChrome();
+        LearningReminders.initialize(this);
 
         final String currentProfileId = ProfileManager.getActiveProfileId(this);
         if (!Objects.equals(activeProfileId, currentProfileId)) {
@@ -1006,6 +1010,7 @@ public class MainActivity extends AppCompatActivity {
         StateSaver.clearStateFiles();
         if (getIntent() != null && (getIntent().hasExtra(Constants.KEY_LINK_TYPE)
                 || getIntent().getBooleanExtra(KEY_OPEN_LOCAL_MEDIA_AUDIO, false)
+                || getIntent().hasExtra(LearningReminders.EXTRA_PROFILE_ID)
                 || getIntent().hasExtra(TvRemoteKeyDispatcher.EXTRA_DESTINATION))) {
             // When user watch a video inside popup and then tries to open the video in main player
             // while the app is closed he will see a blank fragment on place of kiosk.
@@ -1363,7 +1368,25 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "handleIntent() called with: intent = [" + intent + "]");
             }
 
-            if (intent.hasExtra(Constants.KEY_LINK_TYPE)) {
+            if (intent.hasExtra(LearningReminders.EXTRA_PROFILE_ID)) {
+                if (!LearningReminders.selectProfile(this, intent)) {
+                    return;
+                }
+                if (!Objects.equals(activeProfileId, ProfileManager.getActiveProfileId(this))) {
+                    activeProfileId = ProfileManager.getActiveProfileId(this);
+                    recreate();
+                    return;
+                }
+                intent.removeExtra(LearningReminders.EXTRA_PROFILE_ID);
+                mainBinding.getRoot().closeDrawers();
+                PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer();
+                if (!bottomSheetHiddenOrCollapsed()) {
+                    BottomSheetBehavior.from(mainBinding.fragmentPlayerHolder)
+                            .setState(BottomSheetBehavior.STATE_COLLAPSED);
+                }
+                NavigationHelper.openMainFragment(getSupportFragmentManager());
+                NavigationHelper.openLearningDashboardFragment(getSupportFragmentManager());
+            } else if (intent.hasExtra(Constants.KEY_LINK_TYPE)) {
                 final String url = intent.getStringExtra(Constants.KEY_URL);
                 final int serviceId = intent.getIntExtra(Constants.KEY_SERVICE_ID, 0);
                 String title = intent.getStringExtra(Constants.KEY_TITLE);

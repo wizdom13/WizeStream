@@ -29,6 +29,13 @@
             android:key="profile_icon"
             android:title="@string/profile_icon_title"
             app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/learning_profile_included_key"
+            android:persistent="false"
+            android:title="@string/learning_profile_included_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
     </PreferenceCategory>
 
     <Preference

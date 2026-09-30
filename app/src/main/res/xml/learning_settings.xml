@@ -20,6 +20,26 @@
         app:singleLineTitle="false" />
 
     <SwitchPreferenceCompat
+        android:key="@string/learning_profile_included_key"
+        android:persistent="false"
+        android:title="@string/learning_profile_included_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:key="@string/learning_reminders_key"
+        android:persistent="false"
+        android:title="@string/learning_reminders_title"
+        android:summary="@string/learning_reminders_summary"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <Preference
+        android:key="@string/learning_reminder_time_key"
+        android:title="@string/learning_reminder_time_title"
+        app:iconSpaceReserved="false" />
+
+    <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="@string/learning_playlist_progress_key"
         android:summary="@string/learning_playlist_progress_summary"
