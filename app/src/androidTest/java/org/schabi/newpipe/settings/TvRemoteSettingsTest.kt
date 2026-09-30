@@ -1,7 +1,9 @@
 package org.schabi.newpipe.settings
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.widget.EditText
@@ -148,6 +150,11 @@ class TvRemoteSettingsTest {
 
     @Test
     fun navigationIntentAndAssignedButtonsOpenTheExpectedMainActivityScreens() {
+        // The first MainActivity launch asks for notifications; that system dialog owns focus.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            InstrumentationRegistry.getInstrumentation().uiAutomation
+                .grantRuntimePermission(context.packageName, Manifest.permission.POST_NOTIFICATIONS)
+        }
         keys.assign(TvRemoteAction.HISTORY, KeyEvent.KEYCODE_PROG_RED)
         keys.assign(TvRemoteAction.SUBSCRIPTIONS, KeyEvent.KEYCODE_PROG_GREEN)
         val intent = Intent(context, MainActivity::class.java)

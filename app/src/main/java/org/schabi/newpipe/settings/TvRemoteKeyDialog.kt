@@ -17,10 +17,12 @@ import org.schabi.newpipe.util.TvRemoteKeys
 class TvRemoteKeyDialog : DialogFragment() {
     private var candidate: Int? = null
     private var pressed: Pair<Int, Int>? = null
+    private lateinit var action: TvRemoteAction
+    private lateinit var keys: TvRemoteKeys
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val action = requireNotNull(TvRemoteAction.fromId(requireArguments().getString(ACTION)))
-        val keys = TvRemoteKeys(PreferenceManager.getDefaultSharedPreferences(requireContext()))
+        action = requireNotNull(TvRemoteAction.fromId(requireArguments().getString(ACTION)))
+        keys = TvRemoteKeys(PreferenceManager.getDefaultSharedPreferences(requireContext()))
         candidate = savedInstanceState?.getInt(CANDIDATE, KeyEvent.KEYCODE_UNKNOWN)?.takeIf(TvRemoteKeys::isAssignable)
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle(action.title)
@@ -34,20 +36,6 @@ class TvRemoteKeyDialog : DialogFragment() {
             }
             .create()
 
-        fun showCandidate() {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = candidate != null
-            candidate?.let { code ->
-                val conflict = keys.actionFor(code)?.takeIf { it != action }
-                dialog.setMessage(
-                    if (conflict == null) {
-                        getString(R.string.remote_selected, TvRemoteKeys.label(code))
-                    } else {
-                        getString(R.string.remote_conflict, TvRemoteKeys.label(code), getString(conflict.title))
-                    }
-                )
-            }
-        }
-        dialog.setOnShowListener { showCandidate() }
         dialog.setOnKeyListener { _, code, event ->
             // Let the dialog handle D-pad, confirmation, Back and volume normally.
             if (!TvRemoteKeys.isAssignable(code)) return@setOnKeyListener false
@@ -58,7 +46,7 @@ class TvRemoteKeyDialog : DialogFragment() {
                 KeyEvent.ACTION_UP -> {
                     if (pressed == key && !event.isCanceled) {
                         candidate = code
-                        showCandidate()
+                        showCandidate(dialog)
                         dialog.getButton(AlertDialog.BUTTON_POSITIVE).requestFocus()
                     }
                     pressed = null
@@ -67,6 +55,26 @@ class TvRemoteKeyDialog : DialogFragment() {
             true
         }
         return dialog
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Initialize synchronously once the buttons exist, before the dialog accepts input.
+        showCandidate(requireDialog() as AlertDialog)
+    }
+
+    private fun showCandidate(dialog: AlertDialog) {
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = candidate != null
+        candidate?.let { code ->
+            val conflict = keys.actionFor(code)?.takeIf { it != action }
+            dialog.setMessage(
+                if (conflict == null) {
+                    getString(R.string.remote_selected, TvRemoteKeys.label(code))
+                } else {
+                    getString(R.string.remote_conflict, TvRemoteKeys.label(code), getString(conflict.title))
+                }
+            )
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
