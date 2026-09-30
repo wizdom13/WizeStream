@@ -202,7 +202,15 @@ jobs:
           arch: ${{ matrix.arch }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none ${{ matrix.extra-emulator-options }}
-          script: scripts/build.sh connected ${{ matrix.test-options }}
+          script: bash scripts/connected-tests-with-previews.sh ${{ matrix.test-options }}
+
+      - name: Upload player layout previews
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: player-layout-previews-api${{ matrix.api-level }}
+          path: ${{ runner.temp }}/player-layout-previews/*.png
+          if-no-files-found: ignore
 
       - name: Upload test report when tests fail
         uses: actions/upload-artifact@v7

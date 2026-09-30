@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <item name="bottom_player_controls_panel" type="id" />
+    <string name="bottom_player_controls_key" translatable="false">bottom_player_controls</string>
+    <string name="bottom_player_controls_title">Bottom player controls</string>
+    <string name="bottom_player_controls_summary">Group fullscreen controls around the timeline in portrait and landscape, inspired by SmartTube</string>
+</resources>
