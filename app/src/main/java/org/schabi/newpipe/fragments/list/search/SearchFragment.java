@@ -71,6 +71,7 @@ import org.schabi.newpipe.ktx.ExceptionUtils;
 import org.schabi.newpipe.local.feed.SavedSearchFeedManager;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.settings.NewPipeSettings;
+import org.schabi.newpipe.settings.HistorySettingsFragment;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -103,6 +104,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private static final int MENU_SAVE_SEARCH_FEED = 0x534601;
     private static final int MENU_REFRESH_SEARCH_FEED = 0x534602;
     private static final int MENU_DELETE_SEARCH_FEED = 0x534603;
+    private static final int MENU_CLEAR_SEARCH_HISTORY = 0x534604;
 
     @NonNull
     @Override
@@ -589,6 +591,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                                     @NonNull final MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
 
+        menu.add(Menu.NONE, MENU_CLEAR_SEARCH_HISTORY, Menu.NONE,
+                        R.string.clear_search_history_title)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+
         final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null) {
             supportActionBar.setDisplayShowTitleEnabled(false);
@@ -613,7 +619,15 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
-        if (item.getItemId() == MENU_SAVE_SEARCH_FEED) {
+        if (item.getItemId() == MENU_CLEAR_SEARCH_HISTORY) {
+            HistorySettingsFragment.openDeleteSearchHistoryDialog(requireContext(),
+                    historyRecordManager, disposables, () -> {
+                        if (searchEditText != null) {
+                            suggestionPublisher.onNext(getSearchEditString());
+                        }
+                    });
+            return true;
+        } else if (item.getItemId() == MENU_SAVE_SEARCH_FEED) {
             showSaveSearchFeedDialog();
             return true;
         } else if (item.getItemId() == MENU_REFRESH_SEARCH_FEED) {

@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -725,8 +726,7 @@ public class StatisticsPlaylistFragment
                             NavigationHelper.playOnBackgroundPlayer(requireContext(),
                                     getPlayQueueStartingAt(item), true);
                         } else if (which == 2) {
-                            deleteEntry(Math.max(
-                                    itemListAdapter.getItemsList().indexOf(item), 0));
+                            confirmDeleteEntry(item);
                         }
                     })
                     .show();
@@ -744,8 +744,7 @@ public class StatisticsPlaylistFragment
                     .addEntry(StreamDialogDefaultEntry.DELETE)
                     .setAction(
                             StreamDialogDefaultEntry.DELETE,
-                            (f, i) -> deleteEntry(
-                                    Math.max(itemListAdapter.getItemsList().indexOf(item), 0)))
+                            (f, i) -> confirmDeleteEntry(item))
                     .create()
                     .show();
         } catch (final IllegalArgumentException e) {
@@ -753,29 +752,35 @@ public class StatisticsPlaylistFragment
         }
     }
 
-    private void deleteEntry(final int index) {
-        final LocalItem infoItem = itemListAdapter.getItemsList().get(index);
-        if (infoItem instanceof StreamStatisticsEntry) {
-            final StreamStatisticsEntry entry = (StreamStatisticsEntry) infoItem;
-            final Disposable onDelete = recordManager
-                    .deleteStreamHistoryAndState(entry.getStreamId())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            () -> {
-                                if (getView() != null) {
-                                    Snackbar.make(getView(), R.string.one_item_deleted,
-                                            Snackbar.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(getContext(),
-                                            R.string.one_item_deleted,
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            },
-                            throwable -> showSnackBarError(new ErrorInfo(throwable,
-                                    UserAction.DELETE_FROM_HISTORY, "Deleting item")));
+    @VisibleForTesting
+    AlertDialog confirmDeleteEntry(final StreamStatisticsEntry entry) {
+        return new AlertDialog.Builder(requireContext())
+                .setTitle(entry.getStreamEntity().getTitle())
+                .setMessage(R.string.delete_item_watch_history)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) -> deleteEntry(entry))
+                .show();
+    }
 
-            disposables.add(onDelete);
-        }
+    private void deleteEntry(final StreamStatisticsEntry entry) {
+        final Disposable onDelete = recordManager
+                .deleteStreamHistoryAndState(entry.getStreamId())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (getView() != null) {
+                                Snackbar.make(getView(), R.string.one_item_deleted,
+                                        Snackbar.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getContext(),
+                                        R.string.one_item_deleted,
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        },
+                        throwable -> showSnackBarError(new ErrorInfo(throwable,
+                                UserAction.DELETE_FROM_HISTORY, "Deleting item")));
+
+        disposables.add(onDelete);
     }
 
     @Override

@@ -613,6 +613,8 @@
     <string name="clear_views_history_title">Clear watch history</string>
     <string name="clear_views_history_summary">Deletes the history of played streams and the playback positions</string>
     <string name="delete_view_history_alert">Delete entire watch history?</string>
+    <string name="delete_watch_history_warning">This permanently deletes watch history and playback positions for the current profile. This cannot be undone.</string>
+    <string name="delete_item_watch_history">Delete this video from watch history and remove its saved playback position? This cannot be undone.</string>
     <string name="watch_history_deleted">Watch history deleted</string>
     <string name="clear_playback_states_title">Delete playback positions</string>
     <string name="clear_playback_states_summary">Deletes all playback positions</string>
@@ -621,6 +623,7 @@
     <string name="clear_search_history_title">Clear search history</string>
     <string name="clear_search_history_summary">Deletes history of search keywords</string>
     <string name="delete_search_history_alert">Delete entire search history?</string>
+    <string name="delete_search_history_warning">This permanently deletes search history for all services and profiles. This cannot be undone.</string>
     <string name="search_history_deleted">Search history deleted</string>
     <string name="fast_mode">Fast mode</string>
     <string name="main_tabs_position_summary">Move main tab selector to the bottom</string>
