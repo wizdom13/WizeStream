@@ -58,7 +58,7 @@ public abstract class PlayQueue implements Serializable {
         learningPlaylistContext = context;
     }
 
-    /** A failed page request must not be presented as the end of a course. */
+    /** @return whether a page failed to load, rather than reaching the end of a course. */
     public boolean hasLoadError() {
         return false;
     }
@@ -299,7 +299,10 @@ public abstract class PlayQueue implements Serializable {
         appendFromSource(items);
     }
 
-    /** Extends the original playlist; user queue edits use {@link #append(List)} instead. */
+    /**
+     * Extends the original playlist; user queue edits use {@link #append(List)} instead.
+     * @param items the items fetched from the original playlist
+     */
     protected synchronized void appendFromSource(@NonNull final List<PlayQueueItem> items) {
         final List<PlayQueueItem> itemList = new ArrayList<>(items);
 

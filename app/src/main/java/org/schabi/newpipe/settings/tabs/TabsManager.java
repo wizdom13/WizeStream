@@ -39,7 +39,10 @@ public final class TabsManager {
         }
     }
 
-    /** Keep disabled Learning tabs saved so enabling Learning restores the user's home layout. */
+    /**
+     * Keep disabled Learning tabs saved so enabling Learning restores the user's home layout.
+     * @return the configured tabs available to the active profile
+     */
     public List<Tab> getVisibleTabs() {
         return visibleTabs(getTabs(), LearningMode.isEnabled(context));
     }

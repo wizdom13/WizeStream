@@ -2275,7 +2275,10 @@ public final class VideoDetailFragment
         binding.detailContentRootHiding.setVisibility(View.VISIBLE);
     }
 
-    /** Observe the current queue and its pages without retaining destroyed child views. */
+    /**
+     * Observe the current queue and its pages without retaining destroyed child views.
+     * @return the current queue followed by queue changes and newly loaded pages
+     */
     public Observable<Optional<PlayQueue>> learningQueueUpdates() {
         return Observable.defer(() -> learningQueueChanges
                 .startWithItem(Optional.ofNullable(playQueue))
