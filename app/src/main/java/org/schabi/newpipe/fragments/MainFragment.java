@@ -138,10 +138,15 @@ public class MainFragment extends BaseFragment
                 Log.d(TAG, "TabsManager.SavedTabsChangeListener: "
                         + "onTabsChanged called, isResumed = " + isResumed());
             }
-            if (isResumed()) {
-                setupTabs();
-            } else {
-                hasTabsChanged = true;
+            hasTabsChanged = true;
+            if (isResumed() && binding != null) {
+                // Preference listeners run from a snapshot. Finish notifying the current tabs
+                // before replacing them, so detached children cannot receive this same change.
+                binding.getRoot().post(() -> {
+                    if (isResumed() && binding != null && hasTabsChanged) {
+                        setupTabs();
+                    }
+                });
             }
         });
 

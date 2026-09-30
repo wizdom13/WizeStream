@@ -5,7 +5,9 @@
 
 package org.schabi.newpipe.learning
 
+import android.Manifest
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
@@ -18,6 +20,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -48,6 +51,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.fragments.MainFragment
 import org.schabi.newpipe.fragments.list.playlist.PlaylistFragment
+import org.schabi.newpipe.local.LocalItemListAdapter
 import org.schabi.newpipe.local.bookmark.BookmarkFragment
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager
@@ -76,6 +80,9 @@ class LearningPlaylistIntegrationTest {
 
     @Before
     fun setup() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.POST_NOTIFICATIONS)
+        }
         oldDatabase = databaseField.get(null)
         oldManager = managerField.get(null)
         database = TestDatabase.createReplacingNewPipeDatabase()
@@ -134,8 +141,24 @@ class LearningPlaylistIntegrationTest {
             onActivity(scenario) { prefs.edit().putBoolean(LearningMode.profilePreferenceKey(profile), false).commit() }
             assertEquals(listOf(Tab.Type.BOOKMARKS.tab), tabs.visibleTabs)
             assertEquals(Tab.Type.LEARNING.tab, tabs.tabs.first())
+            waitFor {
+                var hidden = false
+                onActivity(scenario) { activity ->
+                    val main = activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) as? MainFragment
+                    hidden = main != null && main.childFragmentManager.fragments.none { it is LearningDashboardFragment && it.view != null }
+                }
+                hidden
+            }
             onActivity(scenario) { prefs.edit().putBoolean(LearningMode.profilePreferenceKey(profile), true).commit() }
             assertEquals(Tab.Type.LEARNING.tab, tabs.visibleTabs.first())
+            waitFor {
+                var restored = false
+                onActivity(scenario) { activity ->
+                    val main = activity.supportFragmentManager.findFragmentById(R.id.fragment_holder) as? MainFragment
+                    restored = main?.childFragmentManager?.fragments?.any { it is LearningDashboardFragment && it.view != null } == true
+                }
+                restored
+            }
         } finally {
             onActivity(scenario) { it.finish() }
             scenario.close()
@@ -159,7 +182,7 @@ class LearningPlaylistIntegrationTest {
             longPress(scenario, "Local course")
             assertNotNull(findDialogText(context.getString(R.string.learning_remove_content)))
             clickDialogText(context.getString(R.string.rename))
-            waitFor { findDialogText(context.getString(R.string.rename_playlist)) != null }
+            waitFor { findDialogText(context.getString(R.string.cancel)) != null }
             savePreview("learning-playlist-rename")
             clickDialogText(context.getString(R.string.cancel))
             longPress(scenario, "Remote course")
@@ -200,6 +223,12 @@ class LearningPlaylistIntegrationTest {
                 assertEquals(2, local.playQueue.size())
                 assertEquals(1, local.playQueue.index)
                 assertNotNull(local.playQueue.learningPlaylistContext)
+                local.setContextualSearchQuery("")
+                val adapter = local.requireView().findViewById<RecyclerView>(R.id.items_list).adapter as LocalItemListAdapter
+                assertTrue(adapter.swapItems(1, 2))
+                assertEquals("Your next lesson", local.playQueue.item!!.title)
+                assertEquals(0, local.playQueue.index)
+                assertEquals("Introduction", local.playQueue.getItem(1)!!.title)
             }
             lateinit var remote: PlaylistFragment
             onActivity(scenario) { activity ->
@@ -241,6 +270,7 @@ class LearningPlaylistIntegrationTest {
                 container.addView(description.root)
                 container.addView(related.root)
                 activity.setContentView(container)
+                org.schabi.newpipe.util.EdgeToEdgeHelper.applySystemBarPadding(container)
                 LearningPlaylistPanel.render(description.learningPlaylistPanel, queue, 0, lessons[0].url, false) { opened = true }
                 LearningPlaylistPanel.render(related.learningPlaylistPanel, queue, 0, lessons[0].url, true) { opened = true }
                 assertTrue(description.learningPlaylistPanel.root.isVisible)

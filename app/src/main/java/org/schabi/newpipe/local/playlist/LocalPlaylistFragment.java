@@ -1241,7 +1241,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     private PlayQueue getPlayQueue(final List<? extends LocalItem> infoItems, final int index) {
         final boolean learning = isLearningPlaylist();
-        final List<? extends LocalItem> orderedItems = learning ? unfilteredItems : infoItems;
+        final List<? extends LocalItem> orderedItems = learning
+                && ContextualSearchHelper.isActive(contextualSearchQuery)
+                ? unfilteredItems : infoItems;
         final int selectedIndex = learning && index >= 0 && index < infoItems.size()
                 ? Math.max(0, orderedItems.indexOf(infoItems.get(index))) : index;
         final List<PlayQueueItem> queueItems = new ArrayList<>(orderedItems.size());
