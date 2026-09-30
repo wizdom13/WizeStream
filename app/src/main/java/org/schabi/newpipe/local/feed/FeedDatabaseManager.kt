@@ -151,22 +151,8 @@ class FeedDatabaseManager @JvmOverloads constructor(
         items: List<StreamInfoItem>,
         youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
         oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE,
-        uploaderAvatarUrl: String? = null,
-        repositionApproximateShorts: Boolean = false
+        uploaderAvatarUrl: String? = null
     ) {
-        if (repositionApproximateShorts) {
-            items.forEach { item ->
-                val uploadDate = item.uploadDate
-                if (item.isShortFormContent && uploadDate?.isApproximation == true) {
-                    streamTable.updateApproximateUploadDate(
-                        item.serviceId,
-                        item.url,
-                        uploadDate.offsetDateTime()
-                    )
-                }
-            }
-        }
-
         val itemsToInsert = items.mapNotNull { stream ->
             val uploadDate = stream.uploadDate
 

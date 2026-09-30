@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.io.Serializable
 import java.time.OffsetDateTime
+import org.schabi.newpipe.database.stream.StreamUploadDate
 import org.schabi.newpipe.database.stream.model.StreamEntity.Companion.STREAM_SERVICE_ID
 import org.schabi.newpipe.database.stream.model.StreamEntity.Companion.STREAM_TABLE
 import org.schabi.newpipe.database.stream.model.StreamEntity.Companion.STREAM_URL
@@ -137,6 +138,9 @@ data class StreamEntity(
 
     val isLocalMedia: Boolean
         get() = sourceType == SOURCE_TYPE_LOCAL
+
+    val hasSyntheticUploadDate: Boolean
+        get() = StreamUploadDate.isSynthetic(serviceId, isUploadDateApproximation, textualUploadDate)
 
     fun toStreamInfoItem(): StreamInfoItem {
         val item = StreamInfoItem(serviceId, url, title, streamType)

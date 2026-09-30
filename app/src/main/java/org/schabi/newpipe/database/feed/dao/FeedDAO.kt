@@ -123,7 +123,18 @@ abstract class FeedDAO {
         LIMIT 500
         """
     )
-    abstract fun getStreams(
+    protected abstract fun getStreamsInternal(
+        profileId: String,
+        groupId: Long,
+        includePlayed: Boolean,
+        includePartiallyPlayed: Boolean,
+        uploadDateBefore: OffsetDateTime?,
+        serviceId: Int,
+        youtubeModeMask: Int,
+        sortByDiscovery: Boolean
+    ): Maybe<List<StreamWithState>>
+
+    fun getStreams(
         profileId: String,
         groupId: Long,
         includePlayed: Boolean,
@@ -132,7 +143,21 @@ abstract class FeedDAO {
         serviceId: Int,
         youtubeModeMask: Int,
         sortByDiscovery: Boolean = false
-    ): Maybe<List<StreamWithState>>
+    ): Maybe<List<StreamWithState>> = getStreamsInternal(
+        profileId,
+        groupId,
+        includePlayed,
+        includePartiallyPlayed,
+        uploadDateBefore,
+        serviceId,
+        youtubeModeMask,
+        sortByDiscovery
+    ).map { streams ->
+        // Partition the existing bounded result rather than changing retention or excluding
+        // all undated Shorts when there are already 500 dated videos. This stable sort keeps
+        // live/source-dated items in publication order and undated Shorts in first-seen order.
+        if (sortByDiscovery) streams else streams.sortedBy { it.stream.hasSyntheticUploadDate }
+    }
 
     /**
      * Remove links to streams that are older than the given date

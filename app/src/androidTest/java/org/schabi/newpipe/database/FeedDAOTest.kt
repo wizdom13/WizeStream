@@ -8,7 +8,9 @@ import java.io.IOException
 import java.time.OffsetDateTime
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.schabi.newpipe.database.feed.dao.FeedDAO
@@ -258,30 +260,130 @@ class FeedDAOTest {
     }
 
     @Test
-    fun approximateUploadDateCanBeRepositionedWithoutReplacingAnExactDate() {
-        val approximate = stream1.copy(
+    fun cachedUndatedShortsSortAfterPublishedVideosButRemainDiscoverable() {
+        clearAndFillTables()
+        feedDAO.deleteAll()
+        val fallback = OffsetDateTime.parse("2026-09-30T12:00:00Z")
+        val unknown = stream1.copy(
             uid = 10,
-            url = "https://youtube.com/shorts/approximate",
-            uploadDate = OffsetDateTime.parse("2026-09-08T12:00:00Z"),
+            url = "https://youtube.com/shorts/unknown",
+            textualUploadDate = null,
+            uploadDate = fallback,
             isUploadDateApproximation = true
         )
+        val olderUnknown = unknown.copy(uid = 11, url = "https://youtube.com/watch?v=legacy", uploadDate = fallback.minusSeconds(1))
+        val relative = stream2.copy(
+            uid = 12,
+            url = "https://youtube.com/shorts/relative",
+            textualUploadDate = "2 days ago",
+            uploadDate = fallback.minusDays(2),
+            isUploadDateApproximation = true
+        )
+        // Exact source dates without text must not be confused with a fallback.
         val exact = stream2.copy(
-            uid = 11,
-            url = "https://youtube.com/watch?v=exact",
-            uploadDate = OffsetDateTime.parse("2026-09-07T12:00:00Z"),
+            uid = 13,
+            url = "https://youtube.com/shorts/exact",
+            textualUploadDate = null,
+            uploadDate = fallback.minusDays(1),
             isUploadDateApproximation = false
         )
-        streamDAO.insertAll(listOf(approximate, exact))
-        val correctedDate = OffsetDateTime.parse("2026-09-01T12:00:00Z")
-
-        assertEquals(
-            1,
-            streamDAO.updateApproximateUploadDate(serviceId, approximate.url, correctedDate)
+        val live = stream3.copy(uid = 14, url = "https://youtube.com/watch?v=live", uploadDate = null)
+        streamDAO.insertAll(listOf(unknown, olderUnknown, relative, exact, live))
+        feedDAO.insertAll(
+            listOf(
+                FeedEntity(10, 1, firstDiscoveredAt = 500),
+                FeedEntity(11, 1, firstDiscoveredAt = 400),
+                FeedEntity(12, 1, firstDiscoveredAt = 300),
+                FeedEntity(13, 1, firstDiscoveredAt = 200),
+                FeedEntity(14, 1, firstDiscoveredAt = 100)
+            )
         )
-        assertEquals(0, streamDAO.updateApproximateUploadDate(serviceId, exact.url, correctedDate))
-        assertEquals(correctedDate, streamDAO.getStreamDirect(approximate.uid)!!.uploadDate)
-        assertEquals(exact.uploadDate, streamDAO.getStreamDirect(exact.uid)!!.uploadDate)
+        assertEquals(listOf(14L, 13L, 12L, 10L, 11L), feedIds())
+        assertEquals(listOf(10L, 11L, 12L, 13L, 14L), feedIds(sortByDiscovery = true))
+
+        // A subsequent refresh neither promotes existing Shorts nor resets discovery time.
+        streamDAO.upsert(unknown.copy(uid = 0, uploadDate = fallback.plusDays(1)))
+        feedDAO.insert(FeedEntity(10, 1, firstDiscoveredAt = 600))
+        assertEquals(fallback, streamDAO.getStreamDirect(10)!!.uploadDate)
+        assertEquals(500L, feedDAO.getMemberships(1).single { it.streamId == 10L }.firstDiscoveredAt)
+        assertEquals(listOf(14L, 13L, 12L, 10L, 11L), feedIds())
     }
+
+    @Test
+    fun sourceRelativeDateReplacesSyntheticDateAndSurvivesLaterUndatedRefresh() {
+        clearAndFillTables()
+        feedDAO.deleteAll()
+        val fallback = stream1.copy(
+            uid = 10,
+            url = "https://youtube.com/shorts/fallback",
+            textualUploadDate = null,
+            uploadDate = OffsetDateTime.parse("2026-09-30T12:00:00Z"),
+            isUploadDateApproximation = true
+        )
+        streamDAO.insert(fallback)
+        feedDAO.insertAll(listOf(FeedEntity(10, 1), FeedEntity(2, 1)))
+        assertTrue(streamDAO.getStreamDirect(10)!!.hasSyntheticUploadDate)
+        assertEquals(listOf(2L, 10L), feedIds())
+
+        val sourceDate = fallback.uploadDate!!.minusDays(30)
+        streamDAO.upsert(fallback.copy(uid = 0, uploadDate = sourceDate, textualUploadDate = "1 month ago"))
+        val corrected = streamDAO.getStreamDirect(10)!!
+        assertFalse(corrected.hasSyntheticUploadDate)
+        assertEquals(sourceDate, corrected.uploadDate)
+        assertEquals("1 month ago", corrected.textualUploadDate)
+        assertEquals(listOf(10L, 2L), feedIds())
+
+        streamDAO.upsert(fallback.copy(uid = 0, uploadDate = fallback.uploadDate!!.plusDays(1)))
+        assertEquals(sourceDate, streamDAO.getStreamDirect(10)!!.uploadDate)
+        assertEquals("1 month ago", streamDAO.getStreamDirect(10)!!.textualUploadDate)
+
+        val exactDate = sourceDate.minusHours(1)
+        streamDAO.upsert(fallback.copy(uid = 0, uploadDate = exactDate, isUploadDateApproximation = false))
+        streamDAO.upsert(fallback.copy(uid = 0, uploadDate = sourceDate, textualUploadDate = "1 month ago"))
+        assertEquals(exactDate, streamDAO.getStreamDirect(10)!!.uploadDate)
+        assertFalse(streamDAO.getStreamDirect(10)!!.hasSyntheticUploadDate)
+    }
+
+    @Test
+    fun boundedFeedStillIncludesUndatedShortsAfterReordering() {
+        clearAndFillTables()
+        feedDAO.deleteAll()
+        val recent = OffsetDateTime.parse("2026-09-30T12:00:00Z")
+        val streams = (10L..510L).map { id ->
+            stream1.copy(
+                uid = id,
+                url = "https://youtube.com/watch?v=$id",
+                uploadDate = recent.minusSeconds(id),
+                isUploadDateApproximation = false
+            )
+        }
+        streamDAO.insertAll(streams)
+        val undated = stream1.copy(
+            uid = 600,
+            url = "https://youtube.com/shorts/undated",
+            uploadDate = recent,
+            textualUploadDate = null,
+            isUploadDateApproximation = true
+        )
+        streamDAO.insert(undated)
+        feedDAO.insertAll((streams + undated).map { FeedEntity(it.uid, 1) })
+
+        val ids = feedIds()
+        assertEquals(500, ids.size)
+        assertEquals(10L, ids.first())
+        assertEquals(600L, ids.last())
+    }
+
+    private fun feedIds(sortByDiscovery: Boolean = false) = feedDAO.getStreams(
+        SubscriptionEntity.DEFAULT_PROFILE_ID,
+        FeedGroupEntity.GROUP_ALL_ID,
+        includePlayed = true,
+        includePartiallyPlayed = true,
+        uploadDateBefore = null,
+        serviceId = serviceId,
+        youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+        sortByDiscovery = sortByDiscovery
+    ).blockingGet()!!.map { it.stream.uid }
 
     private fun assertEqual(streams: List<StreamWithState>?, allowedStreams: List<StreamEntity>) {
         assertNotNull(streams)

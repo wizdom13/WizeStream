@@ -211,6 +211,7 @@ data class StreamItem(
     }
 
     private fun getFormattedRelativeUploadDate(context: Context): String? {
+        if (stream.hasSyntheticUploadDate) return null
         val uploadDate = stream.uploadDate
         return if (uploadDate != null) {
             var formattedRelativeTime = Localization.relativeTime(uploadDate)

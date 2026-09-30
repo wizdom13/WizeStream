@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.stream.StreamUploadDate
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.Info
@@ -322,7 +323,7 @@ class FeedLoadManager(private val context: Context) {
                     .filterIsInstance<StreamInfoItem>()
             }
 
-            val repositionExistingShorts = FeedItemDateResolver.applyApproximateDates(
+            FeedItemDateResolver.applyApproximateDates(
                 streams!!,
                 OffsetDateTime.now(ZoneOffset.UTC)
             )
@@ -332,8 +333,7 @@ class FeedLoadManager(private val context: Context) {
                     subscriptionEntity,
                     originalInfo!!,
                     streams!!,
-                    errors,
-                    repositionExistingShorts
+                    errors
                 )
             )
         } catch (e: Throwable) {
@@ -399,8 +399,7 @@ class FeedLoadManager(private val context: Context) {
                                 info.uid,
                                 info.streams,
                                 updateModeMask,
-                                uploaderAvatarUrl = info.avatarUrl,
-                                repositionApproximateShorts = info.repositionExistingShorts
+                                uploaderAvatarUrl = info.avatarUrl
                             )
                             subscriptionManager.updateFromInfo(info)
 
@@ -444,6 +443,7 @@ class FeedLoadManager(private val context: Context) {
             return list.filter {
                 !feedDatabaseManager.doesStreamExist(it) &&
                     it.uploadDate != null &&
+                    !StreamUploadDate.isSynthetic(it.serviceId, it.uploadDate?.isApproximation, it.textualUploadDate) &&
                     // Streams older than this date are automatically removed from the feed.
                     // Therefore, streams which are not in the database,
                     // but older than this date, are considered old.

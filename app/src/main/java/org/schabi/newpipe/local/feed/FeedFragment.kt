@@ -981,8 +981,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 resolveDrawable(ctx, android.R.attr.selectableItemBackground)
             }
             if (doCheck) {
-                // If the uploadDate is null or true we should highlight the item
-                if (item.streamWithState.stream.uploadDate?.isAfter(updateTime) != false) {
+                // A Shorts retention timestamp does not establish when it was published.
+                val stream = item.streamWithState.stream
+                if (!stream.hasSyntheticUploadDate && stream.uploadDate?.isAfter(updateTime) != false) {
                     highlightCount++
 
                     typeface = Typeface.DEFAULT_BOLD
