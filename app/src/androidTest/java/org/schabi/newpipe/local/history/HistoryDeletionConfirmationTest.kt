@@ -42,12 +42,13 @@ class HistoryDeletionConfirmationTest {
         database.close()
     }
 
-    @Test
+    @Test(timeout = 30_000)
     fun cancelPreservesWatchHistoryAndConfirmationDeletesOnlyTheSelectedEntryInThisProfile() {
         val profile = ProfileManager.getActiveProfileId(context)
         val selected = addWatchedStream("Selected video", profile)
         val untouched = addWatchedStream("Keep this video", profile)
-        database.streamHistoryDAO().insert(StreamHistoryEntity(selected, OffsetDateTime.now(), 1, "other-profile"))
+        val otherProfile = "00000000-0000-0000-0000-000000000001"
+        database.streamHistoryDAO().insert(StreamHistoryEntity(selected, OffsetDateTime.now(), 1, otherProfile))
         val entry = manager.streamStatistics.blockingFirst().single { it.streamId == selected }
         ActivityScenario.launch(SettingsActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
@@ -63,11 +64,11 @@ class HistoryDeletionConfirmationTest {
                 .timeout(5, TimeUnit.SECONDS).blockingFirst()
             assertTrue(database.streamStateDAO().getStateForProfile(profile, selected).blockingFirst().isEmpty())
             assertNotNull(database.streamHistoryDAO().getLatestEntryForProfile(profile, untouched))
-            assertNotNull(database.streamHistoryDAO().getLatestEntryForProfile("other-profile", selected))
+            assertNotNull(database.streamHistoryDAO().getLatestEntryForProfile(otherProfile, selected))
         }
     }
 
-    @Test
+    @Test(timeout = 30_000)
     fun searchHistoryClearsOnlyAfterConfirmationAndThenRefreshesSuggestions() {
         database.searchHistoryDAO().insertAll(
             listOf(SearchHistoryEntry(OffsetDateTime.now(), 0, "first"), SearchHistoryEntry(OffsetDateTime.now(), 9, "second"))
@@ -97,7 +98,7 @@ class HistoryDeletionConfirmationTest {
 
     private fun addWatchedStream(title: String, profile: String): Long {
         val id = database.streamDAO().insert(
-            StreamEntity(serviceId = 0, url = "https://example.com/$title", title = title, streamType = StreamType.VIDEO_STREAM, duration = 120, uploader = "Channel")
+            StreamEntity(serviceId = 0, url = "https://example.com/${title.replace(' ', '-')}", title = title, streamType = StreamType.VIDEO_STREAM, duration = 120, uploader = "Channel")
         )
         database.streamHistoryDAO().insert(StreamHistoryEntity(id, OffsetDateTime.now(), 1, profile))
         database.streamStateDAO().insert(StreamStateEntity(id, 20_000, profile))
