@@ -80,10 +80,15 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
         val samples = streams.take(3).joinToString(";") {
             "${it.name.take(30)}@${it.textualUploadDate ?: "-"}"
         }
+        val series = streams.filter { it.name.contains("منتجع الخلافة") }
+            .joinToString(";") {
+                "${it.name.take(60)}@${it.textualUploadDate ?: "-"}" +
+                    "#member=${it.requiresMembership()}"
+            }
         return "page=$index items=${items.size} streams=${streams.size} dated=$dated " +
             "undated=$undated members=$membersOnly within13w=$withinRetention " +
             "live=$live shorts=$shorts " +
             "next=$hasNextPage oldest=${oldest ?: "-"} " +
-            "newest=${newest ?: "-"} samples=[$samples]"
+            "newest=${newest ?: "-"} samples=[$samples] series=[$series]"
     }
 }
