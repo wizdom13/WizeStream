@@ -22,10 +22,13 @@ import org.schabi.newpipe.database.stream.StreamUploadDate
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.Info
+import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.feed.FeedExtractor
 import org.schabi.newpipe.extractor.feed.FeedInfo
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.ktx.getStringSafe
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
@@ -304,21 +307,12 @@ class FeedLoadManager(private val context: Context) {
                     }
                     .flatMap { (channelTabInfo, linkHandler) ->
                         errors.addAll(channelTabInfo.errors)
-                        if (channelTabInfo.relatedItems.isEmpty() &&
-                            channelTabInfo.nextPage != null
-                        ) {
-                            val infoItemsPage = getMoreChannelTabItems(
-                                subscriptionEntity.serviceId,
-                                linkHandler,
-                                channelTabInfo.nextPage
-                            )
-                                .blockingGet()
-
-                            errors.addAll(infoItemsPage.errors)
-                            return@flatMap infoItemsPage.items
-                        } else {
-                            return@flatMap channelTabInfo.relatedItems
-                        }
+                        loadFeedChannelTabItems(
+                            subscriptionEntity.serviceId,
+                            linkHandler,
+                            channelTabInfo,
+                            errors
+                        )
                     }
                     .filterIsInstance<StreamInfoItem>()
             }
@@ -346,6 +340,50 @@ class FeedLoadManager(private val context: Context) {
             )
             return Notification.createOnError(wrapper)
         }
+    }
+
+    private fun loadFeedChannelTabItems(
+        serviceId: Int,
+        linkHandler: ListLinkHandler,
+        channelTabInfo: ChannelTabInfo,
+        errors: MutableList<Throwable>
+    ): List<InfoItem> {
+        val collectedItems = channelTabInfo.relatedItems.toMutableList()
+        var pageItems = channelTabInfo.relatedItems
+        var nextPage = channelTabInfo.nextPage
+        var continuationPagesLoaded = 0
+
+        while (!cancelSignal.get()) {
+            val sourceUploadDates = pageItems
+                .filterIsInstance<StreamInfoItem>()
+                .mapNotNull { it.uploadDate?.offsetDateTime() }
+
+            if (!FeedExtractionPlanner.shouldLoadFeedContinuation(
+                    pageItemCount = pageItems.size,
+                    sourceUploadDates = sourceUploadDates,
+                    hasNextPage = nextPage != null,
+                    continuationPagesLoaded = continuationPagesLoaded,
+                    oldestAllowedDate = FeedDatabaseManager.FEED_OLDEST_ALLOWED_DATE
+                )
+            ) {
+                break
+            }
+
+            val page = nextPage ?: break
+            val infoItemsPage = getMoreChannelTabItems(
+                serviceId,
+                linkHandler,
+                page
+            ).blockingGet()
+
+            errors.addAll(infoItemsPage.errors)
+            collectedItems.addAll(infoItemsPage.items)
+            pageItems = infoItemsPage.items
+            nextPage = infoItemsPage.nextPage
+            continuationPagesLoaded++
+        }
+
+        return collectedItems
     }
 
     /**
