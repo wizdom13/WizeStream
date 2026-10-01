@@ -127,7 +127,7 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
 
         if (!StreamTypeUtil.isLiveStream(newerStream.streamType)) {
             // Preserve stable source dates and first-seen timestamps. A source-provided
-            // relative date is still better than the synthetic timestamp of an undated Short.
+            // relative date is still better than a synthetic timestamp for an undated feed item.
             val existingDateIsSynthetic = StreamUploadDate.isSynthetic(
                 newerStream.serviceId,
                 existentMinimalStream.isUploadDateApproximation,
