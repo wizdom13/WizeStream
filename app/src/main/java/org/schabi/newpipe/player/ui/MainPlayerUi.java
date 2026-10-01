@@ -19,6 +19,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -1097,16 +1098,35 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void showControls(final long duration) {
-        if (!touchLocked) {
+        if (canShowControls()) {
             super.showControls(duration);
         }
     }
 
     @Override
     public void showControlsThenHide() {
-        if (!touchLocked) {
+        if (canShowControls()) {
             super.showControlsThenHide();
         }
+    }
+
+    private boolean canShowControls() {
+        return !touchLocked && getParentActivity().map(activity ->
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.N
+                        || !activity.isInPictureInPictureMode()).orElse(true);
+    }
+
+    /** @return the decoder's display ratio, falling back to the last measured surface ratio */
+    public float getVideoAspectRatio() {
+        if (player.getExoPlayer() != null) {
+            final VideoSize size = player.getExoPlayer().getVideoSize();
+            final float ratio = calculateDisplayAspectRatio(size.width, size.height,
+                    size.unappliedRotationDegrees, size.pixelWidthHeightRatio);
+            if (ratio > 0.0f) {
+                return ratio;
+            }
+        }
+        return binding.surfaceView.getVideoAspectRatio();
     }
     //endregion
 
