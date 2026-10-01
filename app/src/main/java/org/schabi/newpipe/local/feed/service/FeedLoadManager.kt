@@ -38,6 +38,7 @@ import org.schabi.newpipe.util.ChannelTabHelper
 import org.schabi.newpipe.util.ExtractorHelper.getChannelInfo
 import org.schabi.newpipe.util.ExtractorHelper.getChannelTab
 import org.schabi.newpipe.util.ExtractorHelper.getMoreChannelTabItems
+import org.schabi.newpipe.util.StreamTypeUtil
 
 class FeedLoadManager(private val context: Context) {
 
@@ -358,13 +359,18 @@ class FeedLoadManager(private val context: Context) {
         var continuationPagesLoaded = 0
 
         while (!cancelSignal.get()) {
-            val sourceUploadDates = pageItems
-                .filterIsInstance<StreamInfoItem>()
-                .mapNotNull { it.uploadDate?.offsetDateTime() }
+            val pageStreams = pageItems.filterIsInstance<StreamInfoItem>()
+            val sourceUploadDates = pageStreams.mapNotNull { it.uploadDate?.offsetDateTime() }
+            val hasUndatedRegularStreams = pageStreams.any {
+                it.uploadDate == null &&
+                    !it.isShortFormContent &&
+                    !StreamTypeUtil.isLiveStream(it.streamType)
+            }
 
             if (!FeedExtractionPlanner.shouldLoadFeedContinuation(
                     pageItemCount = pageItems.size,
                     sourceUploadDates = sourceUploadDates,
+                    hasUndatedRegularStreams = hasUndatedRegularStreams,
                     hasNextPage = nextPage != null,
                     continuationPagesLoaded = continuationPagesLoaded,
                     oldestAllowedDate = FeedDatabaseManager.FEED_OLDEST_ALLOWED_DATE
