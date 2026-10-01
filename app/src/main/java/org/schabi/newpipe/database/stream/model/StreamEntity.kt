@@ -85,7 +85,10 @@ data class StreamEntity(
     var localAlbum: String? = null,
 
     @ColumnInfo(name = STREAM_LOCAL_FOLDER)
-    var localFolder: String? = null
+    var localFolder: String? = null,
+
+    @ColumnInfo(name = STREAM_IS_SHORT_FORM_CONTENT, defaultValue = "0")
+    var isShortFormContent: Boolean = false
 ) : Serializable {
     @Ignore
     constructor(item: StreamInfoItem) : this(
@@ -98,7 +101,8 @@ data class StreamEntity(
         uploaderAvatarUrl = ImageStrategy.imageListToDbUrl(
             ExtractorImageCompat.uploaderAvatarImages(item)
         ),
-        requiresMembership = item.requiresMembership()
+        requiresMembership = item.requiresMembership(),
+        isShortFormContent = item.isShortFormContent
     )
 
     @Ignore
@@ -112,7 +116,8 @@ data class StreamEntity(
         uploaderAvatarUrl = ImageStrategy.imageListToDbUrl(
             ExtractorImageCompat.uploaderAvatarImages(info)
         ),
-        requiresMembership = info.requiresMembership()
+        requiresMembership = info.requiresMembership(),
+        isShortFormContent = info.isShortFormContent
     )
 
     @Ignore
@@ -159,6 +164,7 @@ data class StreamEntity(
             DateWrapper(it, isUploadDateApproximation ?: false)
         }
         item.setRequiresMembership(requiresMembership)
+        item.setShortFormContent(isShortFormContent)
 
         return item
     }
@@ -198,6 +204,7 @@ data class StreamEntity(
         const val STREAM_LOCAL_ALBUM = "local_album"
         const val STREAM_LOCAL_FOLDER = "local_folder"
         const val STREAM_THUMBNAIL_URL = "thumbnail_url"
+        const val STREAM_IS_SHORT_FORM_CONTENT = "is_short_form_content"
 
         const val SOURCE_TYPE_REMOTE = "REMOTE"
         const val SOURCE_TYPE_LOCAL = "LOCAL"

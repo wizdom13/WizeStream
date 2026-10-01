@@ -1143,6 +1143,45 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom28to29PersistsShortFormClassification() {
+        testHelper.createDatabase(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_28
+        ).use { database ->
+            database.execSQL(
+                "INSERT INTO streams " +
+                    "(uid, service_id, url, title, stream_type, duration, uploader) VALUES " +
+                    "(42, 0, 'https://www.youtube.com/shorts/abcdefghijk', " +
+                    "'Short', 'VIDEO_STREAM', 60, 'Channel')"
+            )
+            database.execSQL(
+                "INSERT INTO streams " +
+                    "(uid, service_id, url, title, stream_type, duration, uploader) VALUES " +
+                    "(43, 0, 'https://www.youtube.com/watch?v=abcdefghijk', " +
+                    "'Regular short video', 'VIDEO_STREAM', 60, 'Channel')"
+            )
+        }
+
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_29,
+            true,
+            Migrations.MIGRATION_28_29
+        )
+
+        migrated.query(
+            "SELECT uid, is_short_form_content FROM streams WHERE uid IN (42, 43) ORDER BY uid"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(42L, cursor.getLong(0))
+            assertEquals(1, cursor.getInt(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals(43L, cursor.getLong(0))
+            assertEquals(0, cursor.getInt(1))
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -1164,7 +1203,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_24_25,
                 Migrations.MIGRATION_25_26,
                 Migrations.MIGRATION_26_27,
-                Migrations.MIGRATION_27_28
+                Migrations.MIGRATION_27_28,
+                Migrations.MIGRATION_28_29
             )
             .build()
         testHelper.closeWhenFinished(database)

@@ -17,6 +17,17 @@ class ShortsThumbnailPolicyTest {
     }
 
     @Test
+    fun regularShortDurationVideosKeepCenterCrop() {
+        assertEquals(
+            ImageView.ScaleType.CENTER_CROP,
+            ShortsThumbnailPolicy.scaleType(
+                "https://www.youtube.com/watch?v=example",
+                60
+            )
+        )
+    }
+
+    @Test
     fun regularLongVideosKeepCenterCrop() {
         assertEquals(
             ImageView.ScaleType.CENTER_CROP,

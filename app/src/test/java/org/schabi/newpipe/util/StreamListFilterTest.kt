@@ -78,18 +78,25 @@ class StreamListFilterTest {
     }
 
     @Test
-    fun `videos excludes shorts and live streams`() {
+    fun `videos keep normal short-duration videos but exclude actual Shorts and live streams`() {
         assertTrue(
             StreamListFilter.matches(
                 StreamListFilter.VIDEOS,
-                stream(duration = 181),
+                stream(duration = 30),
+                null
+            )
+        )
+        assertTrue(
+            StreamListFilter.matches(
+                StreamListFilter.VIDEOS,
+                stream(duration = 180),
                 null
             )
         )
         assertFalse(
             StreamListFilter.matches(
                 StreamListFilter.VIDEOS,
-                stream(duration = 180),
+                stream(duration = 180, isShort = true),
                 null
             )
         )
@@ -110,11 +117,18 @@ class StreamListFilterTest {
     }
 
     @Test
-    fun `shorts accepts explicit shorts urls and videos up to three minutes`() {
+    fun `shorts require extractor metadata or an explicit shorts url`() {
+        assertFalse(
+            StreamListFilter.matches(
+                StreamListFilter.SHORTS,
+                stream(duration = 30),
+                null
+            )
+        )
         assertTrue(
             StreamListFilter.matches(
                 StreamListFilter.SHORTS,
-                stream(duration = 180),
+                stream(duration = 600, isShort = true),
                 null
             )
         )
@@ -125,13 +139,20 @@ class StreamListFilterTest {
                 null
             )
         )
-        assertFalse(
-            StreamListFilter.matches(
-                StreamListFilter.SHORTS,
-                stream(duration = 181),
-                null
-            )
+    }
+
+    @Test
+    fun `stream entity preserves extractor short-form metadata`() {
+        val item = stream(
+            url = "https://example.com/watch/short-metadata",
+            duration = 600,
+            isShort = true
         )
+
+        val restored = StreamEntity(item).toStreamInfoItem()
+
+        assertTrue(restored.isShortFormContent)
+        assertEquals(StreamListFilter.SHORTS, StreamListFilter.categoryOf(restored))
     }
 
     @Test
@@ -157,7 +178,7 @@ class StreamListFilterTest {
         assertTrue(
             StreamListFilter.matches(
                 StreamListFilter.SHORTS,
-                historyEntry(duration = 120)
+                historyEntry(duration = 120, isShort = true)
             )
         )
         assertTrue(
@@ -183,9 +204,12 @@ class StreamListFilterTest {
     private fun stream(
         url: String = "https://example.com/watch/video",
         duration: Long = 60,
-        type: StreamType = StreamType.VIDEO_STREAM
+        type: StreamType = StreamType.VIDEO_STREAM,
+        isShort: Boolean = false
     ) = StreamInfoItem(0, url, "Title", type).apply {
         this.duration = duration
+        uploaderName = "Uploader"
+        setShortFormContent(isShort)
     }
 
     private fun historyEntry(
@@ -193,7 +217,8 @@ class StreamListFilterTest {
         duration: Long = 600,
         type: StreamType = StreamType.VIDEO_STREAM,
         progressMillis: Long = 0,
-        uploadDate: OffsetDateTime? = null
+        uploadDate: OffsetDateTime? = null,
+        isShort: Boolean = false
     ) = StreamStatisticsEntry(
         streamEntity = StreamEntity(
             serviceId = 0,
@@ -201,7 +226,8 @@ class StreamListFilterTest {
             title = "Title",
             streamType = type,
             duration = duration,
-            uploader = "Uploader"
+            uploader = "Uploader",
+            isShortFormContent = isShort
         ).apply { this.uploadDate = uploadDate },
         progressMillis = progressMillis,
         streamId = 1,

@@ -48,7 +48,8 @@ object Migrations {
     const val DB_VER_26 = 26
     const val DB_VER_27 = 27
     const val DB_VER_28 = 28
-    const val DB_VER_CURRENT = DB_VER_28
+    const val DB_VER_29 = 29
+    const val DB_VER_CURRENT = DB_VER_29
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -1041,6 +1042,19 @@ object Migrations {
         db.execSQL(
             "ALTER TABLE history_sync_records ADD COLUMN profile_id TEXT NOT NULL " +
                 "DEFAULT '$defaultProfileId'"
+        )
+    }
+
+    val MIGRATION_28_29 = Migration(DB_VER_28, DB_VER_29) { db ->
+        db.execSQL(
+            "ALTER TABLE streams ADD COLUMN is_short_form_content " +
+                "INTEGER NOT NULL DEFAULT 0"
+        )
+        // Preserve the classification of legacy YouTube Shorts that were already cached.
+        // Other services keep the safe default and will populate the flag on the next refresh.
+        db.execSQL(
+            "UPDATE streams SET is_short_form_content = 1 " +
+                "WHERE service_id = 0 AND url LIKE '%/shorts/%'"
         )
     }
 }
