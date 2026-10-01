@@ -17,8 +17,6 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
     PARTIALLY_WATCHED(R.id.filter_partially_watched);
 
     companion object {
-        const val SHORTS_MAX_DURATION_SECONDS = 180L
-
         @JvmStatic
         fun fromChipId(@IdRes chipId: Int): StreamListFilter = entries
             .firstOrNull { it.chipId == chipId } ?: NONE
@@ -68,10 +66,7 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
 
         private fun isShort(stream: StreamInfoItem): Boolean {
             return !StreamTypeUtil.isLiveStream(stream.streamType) &&
-                (
-                    stream.url.contains("/shorts/") ||
-                        stream.duration in 1..SHORTS_MAX_DURATION_SECONDS
-                    )
+                (stream.isShortFormContent || stream.url.contains("/shorts/"))
         }
     }
 }

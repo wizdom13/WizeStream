@@ -94,6 +94,28 @@ class FeedDAOTest {
     }
 
     @Test
+    fun streamUpsertKeepsKnownShortFormClassification() {
+        val identifiedShort = stream1.copy(
+            uid = 0,
+            url = "https://youtube.com/watch?v=short-metadata",
+            duration = 60,
+            isShortFormContent = true
+        )
+        streamDAO.upsert(identifiedShort)
+
+        streamDAO.upsert(
+            identifiedShort.copy(
+                uid = 0,
+                isShortFormContent = false
+            )
+        )
+
+        assertTrue(
+            streamDAO.getStreamDirect(serviceId, identifiedShort.url)!!.isShortFormContent
+        )
+    }
+
+    @Test
     fun testUnlinkStreamsOlderThan_KeepOne() {
         setupUnlinkDelete("2023-08-15T00:00:00Z")
         val streams = feedDAO.getStreams(

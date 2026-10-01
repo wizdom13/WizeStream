@@ -55,6 +55,7 @@ data class StreamStatisticsEntry(
             uploadDate = streamEntity.uploadDate?.let {
                 DateWrapper(it, streamEntity.isUploadDateApproximation ?: false)
             }
+            setShortFormContent(streamEntity.isShortFormContent)
             ExtractorImageCompat.setThumbnailImages(
                 this,
                 ImageStrategy.dbUrlToImageList(streamEntity.thumbnailUrl)

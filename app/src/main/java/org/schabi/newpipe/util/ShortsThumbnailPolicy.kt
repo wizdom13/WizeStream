@@ -14,8 +14,7 @@ object ShortsThumbnailPolicy {
     }
 
     fun scaleType(streamUrl: String?, durationSeconds: Long): ImageView.ScaleType {
-        val isShort = streamUrl?.contains("/shorts/") == true ||
-            durationSeconds in 1..StreamListFilter.SHORTS_MAX_DURATION_SECONDS
+        val isShort = streamUrl?.contains("/shorts/") == true
         return if (isShort) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
     }
 }

@@ -78,7 +78,7 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
     @Query(
         """
         SELECT uid, stream_type, textual_upload_date, upload_date,
-        is_upload_date_approximation, duration, uploader_avatar_url
+        is_upload_date_approximation, duration, uploader_avatar_url, is_short_form_content
         FROM streams WHERE url = :url AND service_id = :serviceId
         """
     )
@@ -152,6 +152,11 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
         if (newerStream.uploaderAvatarUrl.isNullOrBlank()) {
             newerStream.uploaderAvatarUrl = existentMinimalStream.uploaderAvatarUrl
         }
+
+        // Some endpoints cannot identify Shorts reliably. Once an extractor has positively
+        // identified an item as short-form content, do not erase that information on refresh.
+        newerStream.isShortFormContent =
+            newerStream.isShortFormContent || existentMinimalStream.isShortFormContent
     }
 
     @Query(
@@ -208,6 +213,9 @@ abstract class StreamDAO : BasicDAO<StreamEntity> {
         var duration: Long,
 
         @ColumnInfo(name = StreamEntity.STREAM_UPLOADER_AVATAR_URL)
-        var uploaderAvatarUrl: String? = null
+        var uploaderAvatarUrl: String? = null,
+
+        @ColumnInfo(name = StreamEntity.STREAM_IS_SHORT_FORM_CONTENT)
+        var isShortFormContent: Boolean = false
     )
 }
