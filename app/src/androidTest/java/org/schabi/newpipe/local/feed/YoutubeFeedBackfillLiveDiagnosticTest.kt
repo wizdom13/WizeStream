@@ -66,6 +66,10 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
         val dated = streams.count { it.uploadDate != null }
         val undated = streams.size - dated
         val membersOnly = streams.count { it.requiresMembership() }
+        val retentionCutoff = OffsetDateTime.now().minusWeeks(13)
+        val withinRetention = streams.count {
+            it.uploadDate?.offsetDateTime()?.isAfter(retentionCutoff) == true
+        }
         val live = streams.count {
             it.streamType == org.schabi.newpipe.extractor.stream.StreamType.LIVE_STREAM ||
                 it.streamType == org.schabi.newpipe.extractor.stream.StreamType.AUDIO_LIVE_STREAM
@@ -77,7 +81,8 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
             "${it.name.take(30)}@${it.textualUploadDate ?: "-"}"
         }
         return "page=$index items=${items.size} streams=${streams.size} dated=$dated " +
-            "undated=$undated members=$membersOnly live=$live shorts=$shorts " +
+            "undated=$undated members=$membersOnly within13w=$withinRetention " +
+            "live=$live shorts=$shorts " +
             "next=$hasNextPage oldest=${oldest ?: "-"} " +
             "newest=${newest ?: "-"} samples=[$samples]"
     }
