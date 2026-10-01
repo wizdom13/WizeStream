@@ -4,6 +4,28 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.26.0 (`1026000`)
+
+### New features
+
+- Added a Learning home tab, course navigation, daily reminders, and per-profile Learning inclusion.
+- Added an optional SmartTube-inspired fullscreen player layout and customizable remote buttons for playback and navigation.
+
+### Improvements
+
+- Kept fullscreen comments and replies beside the playing video instead of minimizing playback.
+- Improved group-channel browsing and media display controls across phones and Android TV.
+- Kept Device Sync discovery on physical LAN networks when a VPN is active.
+- Improved native Picture-in-Picture so portrait video remains visible as the PiP window resizes.
+- Added safer watch-history deletion and new search-history controls.
+
+### Fixes
+
+- Refreshed subscriptions and groups immediately when switching profiles.
+- Restored live rewind and prevented silence skipping from interfering with live playback.
+- Prevented normal search queries from being misidentified as Odysee links and handled services without a default kiosk at startup.
+- Stopped undated Shorts from appearing as newly published and preserved explicit Shorts metadata so ordinary short-duration videos remain Videos.
+
 ## WizeStream 1.25.0 (`1025000`)
 
 ### New features
