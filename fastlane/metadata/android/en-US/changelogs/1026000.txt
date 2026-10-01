@@ -1,0 +1,6 @@
+• Add Learning home tab, course navigation, daily reminders, and per-profile inclusion.
+• Add optional SmartTube-style fullscreen controls and customizable remote buttons.
+• Keep fullscreen comments and replies beside the playing video.
+• Keep Device Sync discovery on physical LAN networks with VPN active.
+• Improve portrait-video PiP and restore live rewind.
+• Fix Shorts classification, profile refresh, and Odysee URL/startup handling.
