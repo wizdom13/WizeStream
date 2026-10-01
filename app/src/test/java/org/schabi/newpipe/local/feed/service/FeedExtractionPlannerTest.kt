@@ -2,6 +2,7 @@ package org.schabi.newpipe.local.feed.service
 
 import io.reactivex.rxjava3.processors.BehaviorProcessor
 import io.reactivex.rxjava3.schedulers.TestScheduler
+import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -44,6 +45,82 @@ class FeedExtractionPlannerTest {
                 isYouTube = true,
                 hasDedicatedFeedExtractor = false,
                 feedExtractorLookupFailed = true
+            )
+        )
+    }
+
+    @Test
+    fun `empty feed page follows a continuation for extractor compatibility`() {
+        assertTrue(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                pageItemCount = 0,
+                sourceUploadDates = emptyList(),
+                hasNextPage = true,
+                continuationPagesLoaded = 0,
+                oldestAllowedDate = OffsetDateTime.parse("2026-07-01T00:00:00Z")
+            )
+        )
+    }
+
+    @Test
+    fun `recent dated feed pages continue backfilling older videos`() {
+        val cutoff = OffsetDateTime.parse("2026-07-01T00:00:00Z")
+
+        assertTrue(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                pageItemCount = 30,
+                sourceUploadDates = listOf(
+                    OffsetDateTime.parse("2026-09-01T00:00:00Z"),
+                    OffsetDateTime.parse("2026-08-01T00:00:00Z")
+                ),
+                hasNextPage = true,
+                continuationPagesLoaded = 0,
+                oldestAllowedDate = cutoff
+            )
+        )
+    }
+
+    @Test
+    fun `feed backfill stops after reaching retention boundary`() {
+        val cutoff = OffsetDateTime.parse("2026-07-01T00:00:00Z")
+
+        assertFalse(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                pageItemCount = 30,
+                sourceUploadDates = listOf(
+                    OffsetDateTime.parse("2026-07-15T00:00:00Z"),
+                    OffsetDateTime.parse("2026-06-30T00:00:00Z")
+                ),
+                hasNextPage = true,
+                continuationPagesLoaded = 2,
+                oldestAllowedDate = cutoff
+            )
+        )
+    }
+
+    @Test
+    fun `nonempty undated pages do not trigger repeated backfill`() {
+        assertFalse(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                pageItemCount = 20,
+                sourceUploadDates = emptyList(),
+                hasNextPage = true,
+                continuationPagesLoaded = 0,
+                oldestAllowedDate = OffsetDateTime.parse("2026-07-01T00:00:00Z")
+            )
+        )
+    }
+
+    @Test
+    fun `feed backfill respects continuation page cap`() {
+        assertFalse(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                pageItemCount = 30,
+                sourceUploadDates = listOf(OffsetDateTime.parse("2026-09-01T00:00:00Z")),
+                hasNextPage = true,
+                continuationPagesLoaded =
+                    FeedExtractionPlanner.MAX_FEED_CONTINUATION_PAGES_PER_TAB,
+                oldestAllowedDate = OffsetDateTime.parse("2026-07-01T00:00:00Z")
             )
         )
     }

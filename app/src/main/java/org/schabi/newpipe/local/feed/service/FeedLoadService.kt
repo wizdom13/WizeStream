@@ -111,7 +111,11 @@ class FeedLoadService : Service() {
                 selectedScope.youtubeModeMask
             )
         )
-        loadingDisposable = feedLoadManager.startLoading(groupId, scope = feedScope)
+        loadingDisposable = feedLoadManager.startLoading(
+            groupId,
+            ignoreOutdatedThreshold = true,
+            scope = feedScope
+        )
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSubscribe {
                 startForeground(NOTIFICATION_ID, notificationBuilder.build())
