@@ -74,13 +74,17 @@ class FeedLoadManager(private val context: Context) {
         groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
         ignoreOutdatedThreshold: Boolean = false,
         scope: FeedScope? = null,
-        onlySubscriptions: Set<Long>? = null
+        onlySubscriptions: Set<Long>? = null,
+        forceFullExtraction: Boolean = false
     ): Single<List<Notification<FeedUpdateInfo>>> {
         feedScope = scope
         val defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val useFeedExtractor = defaultSharedPreferences.getBoolean(
-            context.getString(R.string.feed_use_dedicated_fetch_method_key),
-            false
+        val useFeedExtractor = FeedExtractionPlanner.shouldUseDedicatedFeed(
+            preferenceEnabled = defaultSharedPreferences.getBoolean(
+                context.getString(R.string.feed_use_dedicated_fetch_method_key),
+                false
+            ),
+            forceFullExtraction = forceFullExtraction
         )
 
         val outdatedThreshold = if (ignoreOutdatedThreshold) {
