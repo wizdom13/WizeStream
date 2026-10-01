@@ -154,8 +154,8 @@ abstract class FeedDAO {
         sortByDiscovery
     ).map { streams ->
         // Partition the existing bounded result rather than changing retention or excluding
-        // all undated Shorts when there are already 500 dated videos. This stable sort keeps
-        // live/source-dated items in publication order and undated Shorts in first-seen order.
+        // undated YouTube feed items when there are already 500 dated videos. This stable sort
+        // keeps live/source-dated items in publication order and synthetic items in first-seen order.
         if (sortByDiscovery) streams else streams.sortedBy { it.stream.hasSyntheticUploadDate }
     }
 
