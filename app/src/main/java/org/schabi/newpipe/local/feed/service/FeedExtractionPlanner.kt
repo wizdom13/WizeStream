@@ -36,6 +36,7 @@ internal object FeedExtractionPlanner {
     fun shouldLoadFeedContinuation(
         pageItemCount: Int,
         sourceUploadDates: List<OffsetDateTime>,
+        hasUndatedRegularStreams: Boolean,
         hasNextPage: Boolean,
         continuationPagesLoaded: Int,
         oldestAllowedDate: OffsetDateTime
@@ -52,11 +53,15 @@ internal object FeedExtractionPlanner {
             return true
         }
 
-        // Undated pages (notably Shorts) cannot prove where they sit in publication order, so do
-        // not crawl them repeatedly. Dated channel tabs can safely continue until the retention
-        // boundary is reached.
-        val oldestSourceDate = sourceUploadDates.minOrNull() ?: return false
-        return oldestSourceDate.isAfter(oldestAllowedDate)
+        val oldestSourceDate = sourceUploadDates.minOrNull()
+        if (oldestSourceDate != null) {
+            return oldestSourceDate.isAfter(oldestAllowedDate)
+        }
+
+        // YouTube continuation pages can omit publication dates for regular videos. Keep paging
+        // those bounded pages so the feed can backfill them; Shorts-only pages remain bounded to
+        // the first page because their publication order is unknown.
+        return hasUndatedRegularStreams
     }
 
     /**
