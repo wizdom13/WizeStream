@@ -28,7 +28,7 @@ class FeedItemDateResolverTest {
     }
 
     @Test
-    fun `existing dates and undated regular videos are unchanged`() {
+    fun `existing dates are preserved and undated regular videos receive first seen dates`() {
         val originalDate = DateWrapper(fetchedAt.minusDays(1))
         val datedShort = stream("https://youtube.com/shorts/dated", isShort = true).apply {
             uploadDate = originalDate
@@ -39,7 +39,35 @@ class FeedItemDateResolverTest {
 
         assertEquals(originalDate, datedShort.uploadDate)
         assertFalse(datedShort.uploadDate!!.isApproximation)
-        assertNull(regularVideo.uploadDate)
+        assertEquals(fetchedAt, regularVideo.uploadDate!!.offsetDateTime())
+        assertTrue(regularVideo.uploadDate!!.isApproximation)
+        assertNull(regularVideo.textualUploadDate)
+    }
+
+    @Test
+    fun `live streams remain undated`() {
+        val live = stream(
+            "https://youtube.com/watch?v=live",
+            isShort = false,
+            type = StreamType.LIVE_STREAM
+        )
+
+        FeedItemDateResolver.applyApproximateDates(listOf(live), fetchedAt)
+
+        assertNull(live.uploadDate)
+    }
+
+    @Test
+    fun `undated items from other services remain unchanged`() {
+        val otherService = stream(
+            "https://example.com/watch/regular",
+            isShort = false,
+            serviceId = 1
+        )
+
+        FeedItemDateResolver.applyApproximateDates(listOf(otherService), fetchedAt)
+
+        assertNull(otherService.uploadDate)
     }
 
     @Test
@@ -66,11 +94,16 @@ class FeedItemDateResolverTest {
         assertEquals(fetchedAt.minusDays(1), newestVideo.uploadDate!!.offsetDateTime())
     }
 
-    private fun stream(url: String, isShort: Boolean) = StreamInfoItem(
-        0,
+    private fun stream(
+        url: String,
+        isShort: Boolean,
+        type: StreamType = StreamType.VIDEO_STREAM,
+        serviceId: Int = 0
+    ) = StreamInfoItem(
+        serviceId,
         url,
         "Title",
-        StreamType.VIDEO_STREAM
+        type
     ).apply {
         setShortFormContent(isShort)
     }
