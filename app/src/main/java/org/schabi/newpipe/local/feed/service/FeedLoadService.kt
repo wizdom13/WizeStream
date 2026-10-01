@@ -114,7 +114,8 @@ class FeedLoadService : Service() {
         loadingDisposable = feedLoadManager.startLoading(
             groupId,
             ignoreOutdatedThreshold = true,
-            scope = feedScope
+            scope = feedScope,
+            forceFullExtraction = true
         )
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSubscribe {
