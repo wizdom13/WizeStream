@@ -7,6 +7,8 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.ListExtractor
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.localization.ContentCountry
+import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.linkhandler.ChannelTabs
@@ -17,6 +19,8 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
     @Test
     @SdkSuppress(minSdkVersion = 35)
     fun inspectAlmurtadVideosTabContinuations() {
+        NewPipe.setPreferredLocalization(Localization("en", "AE"))
+        NewPipe.setPreferredContentCountry(ContentCountry("AE"))
         val service = NewPipe.getService(ServiceList.YouTube.serviceId)
         val channelUrl = "https://www.youtube.com/channel/UCMRVzPpyDEr-yvV3KltkPKw"
         val channelInfo = ChannelInfo.getInfo(service, channelUrl)
@@ -61,13 +65,20 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
         val streams = items.filterIsInstance<StreamInfoItem>()
         val dated = streams.count { it.uploadDate != null }
         val undated = streams.size - dated
+        val membersOnly = streams.count { it.requiresMembership() }
+        val live = streams.count {
+            it.streamType == org.schabi.newpipe.extractor.stream.StreamType.LIVE_STREAM ||
+                it.streamType == org.schabi.newpipe.extractor.stream.StreamType.AUDIO_LIVE_STREAM
+        }
+        val shorts = streams.count { it.isShortFormContent }
         val oldest = streams.mapNotNull { it.uploadDate?.offsetDateTime() }.minOrNull()
         val newest = streams.mapNotNull { it.uploadDate?.offsetDateTime() }.maxOrNull()
         val samples = streams.take(3).joinToString(";") {
             "${it.name.take(30)}@${it.textualUploadDate ?: "-"}"
         }
         return "page=$index items=${items.size} streams=${streams.size} dated=$dated " +
-            "undated=$undated next=$hasNextPage oldest=${oldest ?: "-"} " +
+            "undated=$undated members=$membersOnly live=$live shorts=$shorts " +
+            "next=$hasNextPage oldest=${oldest ?: "-"} " +
             "newest=${newest ?: "-"} samples=[$samples]"
     }
 }
