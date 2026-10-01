@@ -18,6 +18,11 @@ internal object FeedExtractionPlanner {
         feedExtractorLookupFailed: Boolean
     ): Boolean = isYouTube && !hasDedicatedFeedExtractor && !feedExtractorLookupFailed
 
+    fun shouldUseDedicatedFeed(
+        preferenceEnabled: Boolean,
+        forceFullExtraction: Boolean
+    ): Boolean = preferenceEnabled && !forceFullExtraction
+
     fun cancellableDelay(
         delayMillis: Long,
         cancelNotifier: Flowable<Boolean>,
