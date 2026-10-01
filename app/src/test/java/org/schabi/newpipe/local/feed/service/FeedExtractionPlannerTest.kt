@@ -81,6 +81,7 @@ class FeedExtractionPlannerTest {
             FeedExtractionPlanner.shouldLoadFeedContinuation(
                 pageItemCount = 0,
                 sourceUploadDates = emptyList(),
+                hasUndatedRegularStreams = false,
                 hasNextPage = true,
                 continuationPagesLoaded = 0,
                 oldestAllowedDate = OffsetDateTime.parse("2026-07-01T00:00:00Z")
@@ -99,6 +100,7 @@ class FeedExtractionPlannerTest {
                     OffsetDateTime.parse("2026-09-01T00:00:00Z"),
                     OffsetDateTime.parse("2026-08-01T00:00:00Z")
                 ),
+                hasUndatedRegularStreams = false,
                 hasNextPage = true,
                 continuationPagesLoaded = 0,
                 oldestAllowedDate = cutoff
@@ -117,6 +119,7 @@ class FeedExtractionPlannerTest {
                     OffsetDateTime.parse("2026-07-15T00:00:00Z"),
                     OffsetDateTime.parse("2026-06-30T00:00:00Z")
                 ),
+                hasUndatedRegularStreams = false,
                 hasNextPage = true,
                 continuationPagesLoaded = 2,
                 oldestAllowedDate = cutoff
@@ -125,13 +128,28 @@ class FeedExtractionPlannerTest {
     }
 
     @Test
-    fun `nonempty undated pages do not trigger repeated backfill`() {
+    fun `shorts only undated pages do not trigger repeated backfill`() {
         assertFalse(
             FeedExtractionPlanner.shouldLoadFeedContinuation(
                 pageItemCount = 20,
                 sourceUploadDates = emptyList(),
+                hasUndatedRegularStreams = false,
                 hasNextPage = true,
                 continuationPagesLoaded = 0,
+                oldestAllowedDate = OffsetDateTime.parse("2026-07-01T00:00:00Z")
+            )
+        )
+    }
+
+    @Test
+    fun `undated regular video pages continue bounded backfill`() {
+        assertTrue(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                pageItemCount = 20,
+                sourceUploadDates = emptyList(),
+                hasUndatedRegularStreams = true,
+                hasNextPage = true,
+                continuationPagesLoaded = 1,
                 oldestAllowedDate = OffsetDateTime.parse("2026-07-01T00:00:00Z")
             )
         )
@@ -143,6 +161,7 @@ class FeedExtractionPlannerTest {
             FeedExtractionPlanner.shouldLoadFeedContinuation(
                 pageItemCount = 30,
                 sourceUploadDates = listOf(OffsetDateTime.parse("2026-09-01T00:00:00Z")),
+                hasUndatedRegularStreams = true,
                 hasNextPage = true,
                 continuationPagesLoaded =
                     FeedExtractionPlanner.MAX_FEED_CONTINUATION_PAGES_PER_TAB,
