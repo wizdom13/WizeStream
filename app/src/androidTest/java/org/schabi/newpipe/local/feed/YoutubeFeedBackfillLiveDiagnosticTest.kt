@@ -33,7 +33,7 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
         var page: ListExtractor.InfoItemsPage<InfoItem>? = null
 
         val initial = ChannelTabInfo.getInfo(service, videosTab)
-        diagnostics += summarizePage(
+        diagnostics += "videos:" + summarizePage(
             pageIndex,
             initial.relatedItems,
             initial.nextPage != null
@@ -47,11 +47,40 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
         while (page?.hasNextPage() == true && pageIndex < 4) {
             pageIndex++
             page = ChannelTabInfo.getMoreItems(service, videosTab, page!!.nextPage)
-            diagnostics += summarizePage(
+            diagnostics += "videos:" + summarizePage(
                 pageIndex,
                 page.items,
                 page.hasNextPage()
             )
+        }
+
+        val liveTab = channelInfo.tabs.firstOrNull {
+            ChannelTabHelper.getTabName(it) == ChannelTabs.LIVESTREAMS
+        }
+        if (liveTab != null) {
+            val liveInitial = ChannelTabInfo.getInfo(service, liveTab)
+            diagnostics += "live:" + summarizePage(
+                0,
+                liveInitial.relatedItems,
+                liveInitial.nextPage != null
+            )
+            var livePage = ListExtractor.InfoItemsPage(
+                liveInitial.relatedItems,
+                liveInitial.nextPage,
+                liveInitial.errors
+            )
+            var livePageIndex = 0
+            while (livePage.hasNextPage() && livePageIndex < 3) {
+                livePageIndex++
+                livePage = ChannelTabInfo.getMoreItems(service, liveTab, livePage.nextPage)
+                diagnostics += "live:" + summarizePage(
+                    livePageIndex,
+                    livePage.items,
+                    livePage.hasNextPage()
+                )
+            }
+        } else {
+            diagnostics += "live:tab-missing"
         }
 
         throw AssertionError("FEED_DIAG " + diagnostics.joinToString(" | "))
