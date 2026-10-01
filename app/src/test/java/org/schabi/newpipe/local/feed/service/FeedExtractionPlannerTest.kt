@@ -18,6 +18,32 @@ class FeedExtractionPlannerTest {
     }
 
     @Test
+    fun `manual refresh bypasses dedicated feed preference`() {
+        assertFalse(
+            FeedExtractionPlanner.shouldUseDedicatedFeed(
+                preferenceEnabled = true,
+                forceFullExtraction = true
+            )
+        )
+    }
+
+    @Test
+    fun `background refresh can still use dedicated feed preference`() {
+        assertTrue(
+            FeedExtractionPlanner.shouldUseDedicatedFeed(
+                preferenceEnabled = true,
+                forceFullExtraction = false
+            )
+        )
+        assertFalse(
+            FeedExtractionPlanner.shouldUseDedicatedFeed(
+                preferenceEnabled = false,
+                forceFullExtraction = false
+            )
+        )
+    }
+
+    @Test
     fun `only full YouTube channel extraction is throttled`() {
         assertTrue(
             FeedExtractionPlanner.isFullYouTubeExtraction(
