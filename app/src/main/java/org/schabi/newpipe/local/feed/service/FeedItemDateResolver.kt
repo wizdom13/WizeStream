@@ -1,23 +1,28 @@
 package org.schabi.newpipe.local.feed.service
 
 import java.time.OffsetDateTime
+import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.util.StreamTypeUtil
 
 internal object FeedItemDateResolver {
     /**
-     * Retains undated Shorts without claiming to know when they were published.
+     * Retains undated YouTube feed items without claiming to know when they were published.
      *
-     * The database needs a timestamp to expire old entries. This approximate first-seen value
-     * is kept stable by StreamDAO and is not used as a publication date in the feed. Dates of
-     * regular videos from another channel tab cannot establish a Short's publication date.
-     * The Shorts tab supplies neither a date nor source date text; StreamUploadDate recognizes
-     * this same signature in already-cached entries from earlier app versions.
+     * Channel continuation responses can omit publication dates for regular videos, just as the
+     * Shorts grid does. The database still needs a timestamp for retention, so undated non-live
+     * YouTube items receive an approximate first-seen value. StreamUploadDate recognizes this
+     * signature as synthetic, which keeps these items out of "new" notifications/highlights and
+     * places them after source-dated items when sorting by publication date.
      */
     fun applyApproximateDates(streams: List<StreamInfoItem>, fetchedAt: OffsetDateTime) {
-        streams.filter { it.uploadDate == null && it.isShortFormContent }
-            .forEachIndexed { index, stream ->
-                stream.uploadDate = DateWrapper(fetchedAt.minusSeconds(index.toLong()), true)
-            }
+        streams.filter {
+            it.serviceId == ServiceList.YouTube.serviceId &&
+                it.uploadDate == null &&
+                !StreamTypeUtil.isLiveStream(it.streamType)
+        }.forEachIndexed { index, stream ->
+            stream.uploadDate = DateWrapper(fetchedAt.minusSeconds(index.toLong()), true)
+        }
     }
 }
