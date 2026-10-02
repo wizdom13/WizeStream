@@ -10,9 +10,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.schabi.newpipe.about.AboutActivity
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
+import org.schabi.newpipe.about.AboutActivity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupDialog
 import org.schabi.newpipe.profiles.ProfileManager
