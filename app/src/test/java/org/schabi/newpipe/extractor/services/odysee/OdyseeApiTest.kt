@@ -30,8 +30,7 @@ class OdyseeApiTest {
     @Before
     fun setUp() {
         NewPipe.init(object : Downloader() {
-            override fun executeAsync(request: Request, callback: AsyncCallback): org.schabi.newpipe.extractor.downloader.CancellableCall =
-                throw UnsupportedOperationException("This fixture uses synchronous requests")
+            override fun executeAsync(request: Request, callback: AsyncCallback): org.schabi.newpipe.extractor.downloader.CancellableCall = throw UnsupportedOperationException("This fixture uses synchronous requests")
 
             override fun execute(request: Request): Response {
                 assertEquals(OdyseeConstants.SDK_PROXY, request.url())
