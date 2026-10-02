@@ -29,16 +29,12 @@ class TvRemoteKeyDialog : DialogFragment() {
             .setMessage(R.string.remote_capture)
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.remote_assign) { _, _ -> candidate?.let { keys.assign(action, it) } }
-            .apply {
-                if (keys.keyFor(action) != null) {
-                    setNeutralButton(R.string.remote_remove) { _, _ -> keys.remove(action) }
-                }
-            }
+            .setNeutralButton(R.string.remote_direction, null)
             .create()
 
         dialog.setOnKeyListener { _, code, event ->
             // Let the dialog handle D-pad, confirmation, Back and volume normally.
-            if (!TvRemoteKeys.isAssignable(code)) return@setOnKeyListener false
+            if (TvRemoteKeys.isDirection(code) || !TvRemoteKeys.isAssignable(code)) return@setOnKeyListener false
             val key = event.deviceId to code
             when (event.action) {
                 KeyEvent.ACTION_DOWN -> if (event.repeatCount == 0) pressed = key
@@ -60,7 +56,21 @@ class TvRemoteKeyDialog : DialogFragment() {
     override fun onStart() {
         super.onStart()
         // Initialize synchronously once the buttons exist, before the dialog accepts input.
-        showCandidate(requireDialog() as AlertDialog)
+        val dialog = requireDialog() as AlertDialog
+        showCandidate(dialog)
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+            val directions = listOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
+            AlertDialog.Builder(requireContext()).setTitle(R.string.remote_direction_scope)
+                .setItems((directions.map(TvRemoteKeys::label) + getString(R.string.remote_remove)).toTypedArray()) { _, index ->
+                    if (index == directions.size) {
+                        keys.remove(action)
+                        dismiss()
+                    } else {
+                        candidate = directions[index]
+                        showCandidate(dialog)
+                    }
+                }.setNegativeButton(R.string.cancel, null).show()
+        }
     }
 
     private fun showCandidate(dialog: AlertDialog) {

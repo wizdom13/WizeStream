@@ -1049,6 +1049,16 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public boolean onKeyDown(final int keyCode) {
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP && isFullscreen && DeviceUtils.isTv(context)
+                && !isControlsVisible() && !isAnyListViewOpen()
+                && player.getCurrentMetadata() != null) {
+            final boolean opened = getParentActivity().map(activity ->
+                    player.getCurrentMetadata().getMaybeStreamInfo().map(info ->
+                            TvRecommendations.show(activity, info)).orElse(false)).orElse(false);
+            if (opened) {
+                return true;
+            }
+        }
         if (TvPlayerFocusPolicy.shouldMoveToActions(
                 keyCode, isFullscreen, DeviceUtils.isTv(context))
                 && binding.playbackControlRoot.isShown()) {

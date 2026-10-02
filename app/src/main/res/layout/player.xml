@@ -175,7 +175,17 @@
                                     tools:ignore="RtlHardcoded"
                                     tools:text="The Video Title LONG very LONG" />
 
+                                <com.google.android.material.imageview.ShapeableImageView
+                                    android:id="@+id/channelAvatarView"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:layout_marginTop="4dp"
+                                    android:scaleType="centerCrop"
+                                    android:src="@drawable/placeholder_person"
+                                    app:shapeAppearance="@style/CircularImageView" />
+
                                 <org.schabi.newpipe.views.MediaTextView
+                                    android:visibility="gone"
                                     android:id="@+id/channelTextView"
                                     app:mediaTextRole="channelName"
                                     android:layout_width="match_parent"

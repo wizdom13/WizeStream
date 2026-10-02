@@ -1820,6 +1820,7 @@
     <string name="video_title_text_size_key">video_title_text_size</string>
     <string name="channel_name_text_size_key">channel_name_text_size</string>
     <string-array name="media_text_size_values">
+        <item>70</item>
         <item>80</item>
         <item>90</item>
         <item>100</item>
@@ -1828,6 +1829,7 @@
         <item>150</item>
     </string-array>
     <string-array name="media_text_size_description">
+        <item>70%</item>
         <item>80%</item>
         <item>90%</item>
         <item>@string/media_text_size_default</item>

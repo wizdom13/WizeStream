@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="related_channel_avatar_size">24dp</dimen>
+    <dimen name="related_channel_text_size">11sp</dimen>
+    <string name="remote_direction">D-pad shortcut</string>
+    <string name="remote_direction_scope">Choose a direction for fullscreen playback. Normal D-pad navigation remains available in menus and visible player controls.</string>
+    <string name="tv_recommended_videos">Recommended videos</string>
+</resources>
