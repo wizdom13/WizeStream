@@ -331,7 +331,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     @Override
     public void onPrepareOptionsMenu(@NonNull final Menu menu) {
         super.onPrepareOptionsMenu(menu);
-        menu.findItem(R.id.menu_item_learning_notes).setVisible(LearningMode.isEnabled(requireContext()) && learningContentManager.isLocalPlaylistMarked(playlistId));
+        menu.findItem(R.id.menu_item_learning_notes).setVisible(
+                LearningMode.isEnabled(requireContext())
+                        && learningContentManager.isLocalPlaylistMarked(playlistId));
         final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext())
                 && learningContentManager.isLocalPlaylistMarked(playlistId);
         menu.findItem(R.id.menu_item_mark_all_watched).setVisible(enabled);
@@ -436,7 +438,11 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        if (item.getItemId() == R.id.menu_item_share_playlist) {
+        if (item.getItemId() == R.id.menu_item_learning_notes) {
+            LearningPlaylistNotesDialog.show(getParentFragmentManager(),
+                    LearningContentManager.localPlaylistSourceId(playlistId),
+                    ProfileManager.getActiveProfileId(requireContext()));
+        } else if (item.getItemId() == R.id.menu_item_share_playlist) {
             createShareConfirmationDialog();
         } else if (item.getItemId() == R.id.menu_item_download_playlist) {
             showBulkDownloadDialog();
