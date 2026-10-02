@@ -252,7 +252,6 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
         feedGroupCreateBinding.confirmButton.setOnClickListener { handlePositiveButton() }
 
         feedGroupCreateBinding.selectChannelButton.setOnClickListener {
-            feedGroupCreateBinding.subscriptionsSelectorList.scrollToPosition(0)
             showScreen(SubscriptionsPickerScreen)
         }
 
@@ -389,14 +388,11 @@ class FeedGroupDialog : DialogFragment(), BackPressable {
                 .contains(it.subscriptionEntity.uid)
         }
 
+        val layoutManager = feedGroupCreateBinding.subscriptionsSelectorList.layoutManager
+        val listState = subscriptionsListState ?: layoutManager?.onSaveInstanceState()
         subscriptionMainSection.update(subscriptions, false)
-
-        if (subscriptionsListState != null) {
-            feedGroupCreateBinding.subscriptionsSelectorList.layoutManager?.onRestoreInstanceState(subscriptionsListState)
-            subscriptionsListState = null
-        } else {
-            feedGroupCreateBinding.subscriptionsSelectorList.scrollToPosition(0)
-        }
+        layoutManager?.onRestoreInstanceState(listState)
+        subscriptionsListState = null
     }
 
     private fun updateSubscriptionSelectedCount() {
