@@ -44,18 +44,17 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
                                final int format,
                                final int width,
                                final int height) {
-        // Before Android 14 the SurfaceView can retain its holder while fullscreen/orientation
-        // changes leave the decoder attached to a stale output. Android 14+ uses
-        // SURFACE_LIFECYCLE_FOLLOWS_ATTACHMENT in ExpandableSurfaceView, so surfaceCreated already
-        // owns the live output and rebinding it for a size-only callback is redundant. Avoiding
-        // that extra setVideoSurface call also prevents Media3's synchronous detach timeout.
+        // Android 13 and newer can synchronously time out while Media3 detaches the
+        // current output for a redundant size-only callback. surfaceCreated owns the live
+        // output on those versions. Keep the legacy fullscreen/orientation rebind workaround
+        // on Android 12 and older.
         if (shouldRebindOnSurfaceChanged(Build.VERSION.SDK_INT)) {
             bindVideoSurface(holder);
         }
     }
 
     static boolean shouldRebindOnSurfaceChanged(final int sdkInt) {
-        return sdkInt < Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+        return sdkInt < Build.VERSION_CODES.TIRAMISU;
     }
 
     private void bindVideoSurface(final SurfaceHolder holder) {
