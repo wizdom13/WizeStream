@@ -10,7 +10,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.schabi.newpipe.MainActivity
+import org.schabi.newpipe.about.AboutActivity
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
@@ -36,7 +36,7 @@ class FeedGroupPickerTest {
             }
         )
         try {
-            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
                 scenario.onActivity { activity ->
                     FeedGroupDialog.newInstance().showNow(activity.supportFragmentManager, "picker-test")
                     picker(activity).requireView().findViewById<View>(R.id.select_channel_button).performClick()
@@ -80,11 +80,11 @@ class FeedGroupPickerTest {
         }
     }
 
-    private fun picker(activity: MainActivity) = activity.supportFragmentManager.findFragmentByTag("picker-test") as FeedGroupDialog
+    private fun picker(activity: AboutActivity) = activity.supportFragmentManager.findFragmentByTag("picker-test") as FeedGroupDialog
 
-    private fun list(activity: MainActivity) = picker(activity).requireView().findViewById<RecyclerView>(R.id.subscriptions_selector_list)
+    private fun list(activity: AboutActivity) = picker(activity).requireView().findViewById<RecyclerView>(R.id.subscriptions_selector_list)
 
-    private fun await(scenario: ActivityScenario<MainActivity>, condition: (RecyclerView) -> Boolean) {
+    private fun await(scenario: ActivityScenario<AboutActivity>, condition: (RecyclerView) -> Boolean) {
         val deadline = System.currentTimeMillis() + 10000
         while (System.currentTimeMillis() < deadline) {
             var ready = false
