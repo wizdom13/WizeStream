@@ -14,8 +14,10 @@ import org.junit.Test;
 
 public class SurfaceRebindPolicyTest {
     @Test
-    public void surfaceChangedRebindIsLimitedToPreAndroid14() {
+    public void surfaceChangedRebindIsLimitedToPreAndroid13() {
         assertTrue(SurfaceHolderCallback.shouldRebindOnSurfaceChanged(
+                Build.VERSION_CODES.S_V2));
+        assertFalse(SurfaceHolderCallback.shouldRebindOnSurfaceChanged(
                 Build.VERSION_CODES.TIRAMISU));
         assertFalse(SurfaceHolderCallback.shouldRebindOnSurfaceChanged(
                 Build.VERSION_CODES.UPSIDE_DOWN_CAKE));
