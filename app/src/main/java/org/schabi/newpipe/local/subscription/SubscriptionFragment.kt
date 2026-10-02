@@ -13,10 +13,10 @@ import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.evernote.android.state.State
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.xwray.groupie.Group
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.Section
@@ -166,7 +166,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                                 feed.query
                             )
                         }.toTypedArray()
-                        AlertDialog.Builder(requireContext())
+                        MaterialAlertDialogBuilder(requireContext())
                             .setTitle(R.string.saved_search_feeds)
                             .setItems(labels) { _, index ->
                                 NavigationHelper.openSavedSearchFeed(fm, feeds[index])
@@ -429,7 +429,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         dialogTitleBinding.itemTitleView.text = selectedItem.name
         dialogTitleBinding.itemAdditionalDetails.visibility = View.GONE
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setCustomTitle(dialogTitleBinding.root)
             .setItems(commands.map { it.first }.toTypedArray()) { _, which ->
                 commands[which].second.invoke()
@@ -448,7 +448,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         val labels = otherProfiles
             .map { ProfileManager.getDisplayName(requireContext(), it) }
             .toTypedArray()
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.channel_subscribe_to_profile_title)
             .setItems(labels) { _, which ->
                 subscribeToProfile(selectedItem, otherProfiles[which])
