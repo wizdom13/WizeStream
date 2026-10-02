@@ -62,4 +62,10 @@
         android:title="@string/learning_count_background_title"
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="learning_difficulty_enabled"
+        android:title="@string/learning_difficulty_title"
+        android:summary="@string/learning_difficulty_summary"
+        app:iconSpaceReserved="false" />
 </PreferenceScreen>

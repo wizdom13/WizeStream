@@ -12,10 +12,28 @@ import androidx.room.Query
 import io.reactivex.rxjava3.core.Flowable
 import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
 import org.schabi.newpipe.database.learning.model.LearningContentStreamEntity
+import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.learning.LearningContentKey
 
 @Dao
 interface LearningContentDAO {
+    @Query(
+        """
+        SELECT * FROM streams WHERE uid IN (
+            SELECT cs.stream_id FROM learning_content_streams cs
+            JOIN learning_content_sources src ON src.source_id = cs.source_id
+            WHERE (:sourceId IS NULL OR src.source_id = :sourceId)
+            UNION
+            SELECT ps.stream_id FROM playlist_stream_join ps
+            JOIN playlists p ON p.uid = ps.playlist_id
+            JOIN learning_content_sources src ON src.local_playlist_id = p.uid
+            WHERE p.profile_id = :profileId
+              AND (:sourceId IS NULL OR src.source_id = :sourceId)
+        ) ORDER BY title
+    """
+    )
+    fun reviewStreams(sourceId: String?, profileId: String): Flowable<List<StreamEntity>>
+
     @Query(
         """
         SELECT EXISTS(

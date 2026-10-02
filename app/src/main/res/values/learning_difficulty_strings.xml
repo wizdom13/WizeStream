@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="learning_difficulty_title">Lesson difficulty</string>
+    <string name="learning_difficulty_summary">Rate lessons and review hard videos before moving on</string>
+    <string name="learning_difficulty_format">Difficulty: %1$s</string>
+    <string-array name="learning_difficulty_labels">
+        <item>Not rated</item><item>Easy</item><item>Medium</item><item>Hard</item>
+    </string-array>
+    <string name="learning_review_title">Review lessons</string>
+    <string name="learning_review_search">Search course videos</string>
+    <string name="learning_review_hard_only">Hard only</string>
+    <string name="learning_review_all">All lessons</string>
+    <string name="learning_review_watch">Watch lesson</string>
+    <string name="learning_review_count">Review hard lessons (%1$d!)</string>
+    <string name="learning_review_error">Could not load lessons</string>
+</resources>

@@ -31,6 +31,8 @@ import org.reactivestreams.Subscription;
 import org.schabi.newpipe.learning.LearningPlaylistContext;
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.learning.LearningDifficulty;
+import org.schabi.newpipe.learning.LearningReviewDialog;
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
@@ -269,6 +271,9 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     @Override
     public void onPrepareOptionsMenu(@NonNull final Menu menu) {
         super.onPrepareOptionsMenu(menu);
+        menu.findItem(R.id.menu_item_learning_review).setVisible(
+                LearningDifficulty.isEnabled(requireContext())
+                        && learningContentManager.isRemotePlaylistMarked(serviceId, url));
         final MenuItem learningItem = menu.findItem(R.id.menu_item_learning_content);
         if (learningItem == null) {
             return;
@@ -350,6 +355,12 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
+        if (item.getItemId() == R.id.menu_item_learning_review) {
+            LearningReviewDialog.show(getParentFragmentManager(),
+                    LearningContentManager.remotePlaylistSourceId(serviceId, url),
+                    ProfileManager.getActiveProfileId(requireContext()), false);
+            return true;
+        }
         final int itemId = item.getItemId();
         if (itemId == R.id.action_settings) {
             NavigationHelper.openSettings(requireContext());

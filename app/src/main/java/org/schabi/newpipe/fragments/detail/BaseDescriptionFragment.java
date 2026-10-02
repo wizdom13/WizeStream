@@ -25,6 +25,7 @@ import androidx.core.text.HtmlCompat;
 import com.google.android.material.chip.Chip;
 
 import org.schabi.newpipe.learning.LearningPlaylistPanel;
+import org.schabi.newpipe.learning.LearningDifficulty;
 import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.FragmentDescriptionBinding;
@@ -75,6 +76,8 @@ public abstract class BaseDescriptionFragment extends BaseFragment {
         setupDescription();
         setupMetadata(inflater, binding.detailMetadataLayout);
         addTagsMetadataItem(inflater, binding.detailMetadataLayout);
+        LearningDifficulty.addDescriptionButton(binding.detailMetadataLayout,
+                getServiceId(), getStreamUrl());
         return binding.getRoot();
     }
 

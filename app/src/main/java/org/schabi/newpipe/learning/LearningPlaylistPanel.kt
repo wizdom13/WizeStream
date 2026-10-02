@@ -7,7 +7,9 @@ package org.schabi.newpipe.learning
 
 import androidx.core.view.isVisible
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.disposables.SerialDisposable
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.LearningPlaylistPanelBinding
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment
@@ -17,11 +19,26 @@ import org.schabi.newpipe.util.image.CoilHelper
 
 object LearningPlaylistPanel {
     @JvmStatic
-    fun observe(parent: VideoDetailFragment, binding: LearningPlaylistPanelBinding, serviceId: Int, url: String?, showNext: Boolean): Disposable = parent.learningQueueUpdates()
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe({ optional ->
-            render(binding, optional.orElse(null), serviceId, url, showNext) { parent.openNextLearningLesson(it) }
-        }, { binding.root.isVisible = false })
+    fun observe(parent: VideoDetailFragment, binding: LearningPlaylistPanelBinding, serviceId: Int, url: String?, showNext: Boolean): Disposable {
+        val disposables = CompositeDisposable()
+        val review = SerialDisposable()
+        disposables.add(review)
+        disposables.add(
+            parent.learningQueueUpdates().observeOn(AndroidSchedulers.mainThread()).subscribe({ optional ->
+                val queue = optional.orElse(null)
+                render(binding, queue, serviceId, url, showNext) { parent.openNextLearningLesson(it) }
+                val navigation = LearningPlaylistNavigation.from(queue, ProfileManager.getActiveProfileId(binding.root.context), serviceId, url)
+                review.set(
+                    if (binding.root.isVisible && navigation != null) {
+                        LearningReviewDialog.bindShortcut(binding.learningReviewShortcut, parent.parentFragmentManager, navigation.course.sourceId)
+                    } else {
+                        Disposable.empty()
+                    }
+                )
+            }, { binding.root.isVisible = false })
+        )
+        return disposables
+    }
 
     @JvmStatic
     fun render(binding: LearningPlaylistPanelBinding, queue: PlayQueue?, serviceId: Int, url: String?, showNext: Boolean, openNext: (PlayQueue) -> Unit) {
