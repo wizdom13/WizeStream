@@ -165,18 +165,18 @@ public class MainPlayerUiFullscreenTest {
     }
 
     @Test
-    public void manualFullscreenIgnoresVideoShapeAndTargetsLandscape() {
+    public void manualFullscreenRespectsVideoShape() {
         assertEquals(Configuration.ORIENTATION_LANDSCAPE,
-                FullscreenOrientationPolicy.manualTargetConfigurationOrientation(true));
+                FullscreenOrientationPolicy.targetConfigurationOrientation(true, LANDSCAPE));
         assertEquals(Configuration.ORIENTATION_PORTRAIT,
-                FullscreenOrientationPolicy.manualTargetConfigurationOrientation(false));
+                FullscreenOrientationPolicy.targetConfigurationOrientation(false, PORTRAIT));
     }
 
     @Test
-    public void manualLandscapeFullscreenIgnoresLatePortraitOrSquareMetadata() {
-        assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
-                true, true, UNKNOWN, PORTRAIT));
-        assertFalse(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
-                true, true, UNKNOWN, SQUARE));
+    public void fullscreenCorrectsLatePortraitOrSquareMetadata() {
+        assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, UNKNOWN, PORTRAIT));
+        assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
+                true, UNKNOWN, SQUARE));
     }
 }
