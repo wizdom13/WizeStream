@@ -61,6 +61,9 @@
         android:title="@string/learning_reset_progress"
         android:visible="false"
         app:showAsAction="never" />
+    <item android:id="@+id/menu_item_learning_review"
+        android:title="@string/learning_review_title" android:visible="false"
+        app:showAsAction="never" />
     <item android:id="@+id/menu_item_learning_notes"
         android:title="@string/learning_playlist_notes"
         android:visible="false" app:showAsAction="never" />

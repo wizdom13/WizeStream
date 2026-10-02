@@ -42,6 +42,8 @@ import org.reactivestreams.Subscription;
 import org.schabi.newpipe.learning.LearningPlaylistContext;
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.learning.LearningDifficulty;
+import org.schabi.newpipe.learning.LearningReviewDialog;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.database.history.model.StreamHistoryEntry;
 import org.schabi.newpipe.database.playlist.PlaylistStreamEntry;
@@ -331,6 +333,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     @Override
     public void onPrepareOptionsMenu(@NonNull final Menu menu) {
         super.onPrepareOptionsMenu(menu);
+        menu.findItem(R.id.menu_item_learning_review).setVisible(
+                LearningDifficulty.isEnabled(requireContext())
+                        && learningContentManager.isLocalPlaylistMarked(playlistId));
         menu.findItem(R.id.menu_item_learning_notes).setVisible(
                 LearningMode.isEnabled(requireContext())
                         && learningContentManager.isLocalPlaylistMarked(playlistId));
@@ -438,6 +443,12 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
+        if (item.getItemId() == R.id.menu_item_learning_review) {
+            LearningReviewDialog.show(getParentFragmentManager(),
+                    LearningContentManager.localPlaylistSourceId(playlistId),
+                    ProfileManager.getActiveProfileId(requireContext()), false);
+            return true;
+        }
         if (item.getItemId() == R.id.menu_item_learning_notes) {
             LearningPlaylistNotesDialog.show(getParentFragmentManager(),
                     LearningContentManager.localPlaylistSourceId(playlistId),

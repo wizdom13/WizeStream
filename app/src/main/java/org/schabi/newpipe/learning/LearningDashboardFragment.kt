@@ -67,6 +67,7 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
     override fun startLoading(forceLoad: Boolean) {
         super.startLoading(forceLoad)
         disposables.clear()
+        disposables.add(LearningReviewDialog.bindShortcut(binding.learningReviewShortcut, parentFragmentManager, null))
         disposables.add(
             repository.observe()
                 .subscribeOn(Schedulers.io())
