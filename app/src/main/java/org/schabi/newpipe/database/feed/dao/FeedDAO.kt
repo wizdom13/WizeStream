@@ -45,6 +45,9 @@ abstract class FeedDAO {
     abstract fun deleteAllLastUpdatedForProfile(profileId: String): Int
 
     /**
+     * Publication ordering prioritizes source-dated items before applying the 500-item limit.
+     * Synthetic first-seen timestamps must not displace published videos from the result.
+     *
      * @param groupId          the group id to get feed streams of; use
      *                         [FeedGroupEntity.GROUP_ALL_ID] to not filter by group
      * @param includePlayed    if false, only return all of the live, never-played or non-finished
@@ -119,22 +122,16 @@ abstract class FeedDAO {
 
         GROUP BY s.uid
         ORDER BY CASE WHEN :sortByDiscovery THEN MIN(f.first_discovered_at) ELSE 0 END DESC,
+            CASE WHEN NOT :sortByDiscovery
+                AND s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+                AND s.is_upload_date_approximation = 1
+                AND TRIM(COALESCE(s.textual_upload_date, ''), CHAR(9, 10, 11, 12, 13, 32)) = ''
+                THEN 1 ELSE 0 END ASC,
             s.upload_date IS NULL DESC, s.upload_date DESC, s.uploader ASC, s.uid DESC
         LIMIT 500
         """
     )
-    protected abstract fun getStreamsInternal(
-        profileId: String,
-        groupId: Long,
-        includePlayed: Boolean,
-        includePartiallyPlayed: Boolean,
-        uploadDateBefore: OffsetDateTime?,
-        serviceId: Int,
-        youtubeModeMask: Int,
-        sortByDiscovery: Boolean
-    ): Maybe<List<StreamWithState>>
-
-    fun getStreams(
+    abstract fun getStreams(
         profileId: String,
         groupId: Long,
         includePlayed: Boolean,
@@ -143,21 +140,7 @@ abstract class FeedDAO {
         serviceId: Int,
         youtubeModeMask: Int,
         sortByDiscovery: Boolean = false
-    ): Maybe<List<StreamWithState>> = getStreamsInternal(
-        profileId,
-        groupId,
-        includePlayed,
-        includePartiallyPlayed,
-        uploadDateBefore,
-        serviceId,
-        youtubeModeMask,
-        sortByDiscovery
-    ).map { streams ->
-        // Partition the existing bounded result rather than changing retention or excluding
-        // all undated Shorts when there are already 500 dated videos. This stable sort keeps
-        // live/source-dated items in publication order and undated Shorts in first-seen order.
-        if (sortByDiscovery) streams else streams.sortedBy { it.stream.hasSyntheticUploadDate }
-    }
+    ): Maybe<List<StreamWithState>>
 
     /**
      * Remove links to streams that are older than the given date

@@ -367,7 +367,7 @@ class FeedDAOTest {
     }
 
     @Test
-    fun boundedFeedStillIncludesUndatedShortsAfterReordering() {
+    fun publicationLimitPrioritizesSourceDatesWhileDiscoveryKeepsUndatedShorts() {
         clearAndFillTables()
         feedDAO.deleteAll()
         val recent = OffsetDateTime.parse("2026-09-30T12:00:00Z")
@@ -388,12 +388,49 @@ class FeedDAOTest {
             isUploadDateApproximation = true
         )
         streamDAO.insert(undated)
-        feedDAO.insertAll((streams + undated).map { FeedEntity(it.uid, 1) })
+        feedDAO.insertAll((streams + undated).map { FeedEntity(it.uid, 1, firstDiscoveredAt = it.uid) })
 
         val ids = feedIds()
         assertEquals(500, ids.size)
         assertEquals(10L, ids.first())
-        assertEquals(600L, ids.last())
+        assertEquals(509L, ids.last())
+        assertFalse(ids.contains(600L))
+        val discovered = feedIds(sortByDiscovery = true)
+        assertEquals(500, discovered.size)
+        assertEquals(600L, discovered.first())
+    }
+
+    @Test
+    fun syntheticShortsCannotCrowdPublishedVideosOutOfTheFeed() {
+        clearAndFillTables()
+        feedDAO.deleteAll()
+        val recent = OffsetDateTime.parse("2026-09-30T12:00:00Z")
+        val shorts = (100L..599L).map { id ->
+            stream1.copy(
+                uid = id,
+                url = "https://youtube.com/shorts/$id",
+                uploadDate = recent.minusSeconds(id),
+                textualUploadDate = if (id % 2L == 0L) null else " \t\n",
+                isUploadDateApproximation = true,
+                isShortFormContent = true
+            )
+        }
+        val exact = stream1.copy(uploadDate = recent.minusDays(1), textualUploadDate = null, isUploadDateApproximation = false)
+        val relative = stream2.copy(uploadDate = recent.minusDays(2), textualUploadDate = "2 days ago", isUploadDateApproximation = true)
+        val live = stream3.copy(uploadDate = null)
+        val older = stream4.copy(uploadDate = recent.minusDays(30))
+        val published = listOf(exact, relative, live, older)
+        streamDAO.update(published)
+        streamDAO.insertAll(shorts)
+        feedDAO.insertAll((published + shorts).map { FeedEntity(it.uid, 1, firstDiscoveredAt = it.uid) })
+
+        val ids = feedIds()
+        assertEquals(500, ids.size)
+        assertEquals(listOf(3L, 1L, 2L, 4L), ids.take(4))
+        assertEquals((100L..595L).toList(), ids.drop(4))
+
+        // Explicit discovery sorting still selects the newest discoveries, including Shorts.
+        assertEquals((599L downTo 100L).toList(), feedIds(sortByDiscovery = true))
     }
 
     private fun feedIds(sortByDiscovery: Boolean = false) = feedDAO.getStreams(
