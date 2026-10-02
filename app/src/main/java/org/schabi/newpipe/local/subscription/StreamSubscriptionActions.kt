@@ -11,6 +11,7 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.profiles.ProfileManager
@@ -31,7 +32,7 @@ object StreamSubscriptionActions {
             if (fragment.isAdded) Toast.makeText(context, R.string.subscription_change_failed, Toast.LENGTH_LONG).show()
         }
         disposables.add(
-            Single.fromCallable { ChannelInfo.getInfo(serviceId, channelUrl) }
+            Single.fromCallable { ChannelInfo.getInfo(NewPipe.getService(serviceId), channelUrl) }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ info ->
