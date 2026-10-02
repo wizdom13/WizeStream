@@ -112,7 +112,8 @@ class YoutubeFeedBackfillLiveDiagnosticTest {
         val series = streams.filter { it.name.contains("منتجع الخلافة") }
             .joinToString(";") {
                 "${it.name.take(60)}@${it.textualUploadDate ?: "-"}" +
-                    "#member=${it.requiresMembership()}"
+                    "#type=${it.streamType}#duration=${it.duration}" +
+                    "#member=${it.requiresMembership()}#url=${it.url}"
             }
         return "page=$index items=${items.size} streams=${streams.size} dated=$dated " +
             "undated=$undated members=$membersOnly within13w=$withinRetention " +
