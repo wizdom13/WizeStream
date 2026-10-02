@@ -18,7 +18,8 @@ class OdyseeChannelLinkHandlerFactory private constructor() : ListLinkHandlerFac
     ): String = OdyseeApi.webUrl(id)
 
     override fun onAcceptUrl(url: String): Boolean = runCatching {
-        OdyseeApi.lbryUriFromWebUrl(url).substringAfter("lbry://").startsWith("@")
+        val path = OdyseeApi.lbryUriFromWebUrl(url).substringAfter("lbry://")
+        path.startsWith("@") && !path.contains('/')
     }.getOrDefault(false)
 
     companion object {

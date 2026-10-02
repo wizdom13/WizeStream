@@ -88,6 +88,15 @@ class OdyseeLinkHandlerTest {
     }
 
     @Test
+    fun acceptsNativeLbryClaimsWithoutTreatingSearchesAsUrls() {
+        assertEquals("lbry://@channel#abc/video#def", OdyseeStreamLinkHandlerFactory.INSTANCE.fromUrl("lbry://@channel#abc/video#def").id)
+        assertTrue(OdyseeChannelLinkHandlerFactory.INSTANCE.acceptUrl("lbry://@channel#abc"))
+        assertFalse(OdyseeChannelLinkHandlerFactory.INSTANCE.acceptUrl("https://odysee.com/@channel:abc/video:def"))
+        assertFalse(OdyseeStreamLinkHandlerFactory.INSTANCE.acceptUrl("lbry://"))
+        assertFalse(OdyseeStreamLinkHandlerFactory.INSTANCE.acceptUrl("lbry://@channel#abc/"))
+    }
+
+    @Test
     fun keepsPastedYoutubeLinksRoutedToYoutube() {
         assertEquals(ServiceList.YouTube, NewPipe.getServiceByUrl("https://www.youtube.com/watch?v=abcdefghijk"))
         assertEquals(ServiceList.YouTube, NewPipe.getServiceByUrl("https://www.youtube.com/@Astrum"))

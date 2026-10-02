@@ -28,7 +28,7 @@ class OdyseeService(id: Int) : StreamingService(
 
     override fun getChannelLHFactory(): ListLinkHandlerFactory = OdyseeChannelLinkHandlerFactory.INSTANCE
 
-    override fun getChannelTabLHFactory(): ListLinkHandlerFactory? = null
+    override fun getChannelTabLHFactory(): ListLinkHandlerFactory = OdyseeChannelTabLinkHandlerFactory.INSTANCE
 
     override fun getPlaylistLHFactory(): ListLinkHandlerFactory? = null
 
@@ -48,7 +48,7 @@ class OdyseeService(id: Int) : StreamingService(
 
     override fun getChannelExtractor(linkHandler: ListLinkHandler): ChannelExtractor = OdyseeChannelExtractor(this, linkHandler)
 
-    override fun getChannelTabExtractor(linkHandler: ListLinkHandler): ChannelTabExtractor? = null
+    override fun getChannelTabExtractor(linkHandler: ListLinkHandler): ChannelTabExtractor = OdyseeChannelTabExtractor(this, linkHandler)
 
     override fun getPlaylistExtractor(linkHandler: ListLinkHandler): PlaylistExtractor? = null
 

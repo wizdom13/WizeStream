@@ -19,11 +19,7 @@ class OdyseeStreamExtractor(
 
     override fun onFetchPage(downloader: Downloader) {
         val uri = linkHandler.id
-        val resolve = OdyseeApi.rpc(
-            "resolve",
-            JsonObject().apply { put("urls", listOf(uri)) }
-        )
-        claim = resolve.getObject("result").getObject(uri)
+        claim = OdyseeApi.resolveClaim(uri)
         val get = OdyseeApi.rpc(
             "get",
             JsonObject().apply { put("uri", uri) }
@@ -32,7 +28,7 @@ class OdyseeStreamExtractor(
     }
 
     override fun getName(): String {
-        return claim.getObject("value").getString("title", claim.getString("name"))
+        return claim.getObject("value").getString("title", claim.getString("name", ""))
     }
 
     override fun getUploaderName(): String = claim
