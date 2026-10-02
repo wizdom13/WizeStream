@@ -5,6 +5,7 @@ import org.schabi.newpipe.extractor.Image
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.channel.ChannelExtractor
+import org.schabi.newpipe.extractor.exceptions.ParsingException
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfoItemsCollector
@@ -16,11 +17,7 @@ class OdyseeChannelExtractor(
     private lateinit var channel: JsonObject
 
     override fun onFetchPage(downloader: org.schabi.newpipe.extractor.downloader.Downloader) {
-        val uri = linkHandler.id
-        channel = OdyseeApi.rpc(
-            "resolve",
-            JsonObject().apply { put("urls", listOf(uri)) }
-        ).getObject("result").getObject(uri)
+        channel = OdyseeApi.resolveClaim(linkHandler.id)
     }
 
     override fun getName(): String {
@@ -52,10 +49,21 @@ class OdyseeChannelExtractor(
     override fun getInitialPage(): InfoItemsPage<StreamInfoItem> = loadPage(1)
 
     override fun getPage(page: Page): InfoItemsPage<StreamInfoItem> {
-        return loadPage(page.id?.toIntOrNull() ?: 1)
+        val pageNumber = page.id?.toIntOrNull()?.takeIf { it > 0 }
+            ?: throw ParsingException("Invalid Odysee channel continuation")
+        return loadPage(pageNumber)
     }
 
+    override fun getTabs(): List<ListLinkHandler> = listOf(
+        OdyseeChannelTabLinkHandlerFactory.INSTANCE.fromQuery(
+            linkHandler.id,
+            listOf(OdyseeChannelTabLinkHandlerFactory.VIDEOS),
+            emptyList()
+        )
+    )
+
     private fun loadPage(page: Int): InfoItemsPage<StreamInfoItem> {
+        if (!::channel.isInitialized) channel = OdyseeApi.resolveClaim(linkHandler.id)
         val result = OdyseeApi.rpc(
             "claim_search",
             JsonObject().apply {
