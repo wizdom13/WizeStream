@@ -58,7 +58,14 @@ class TvRemoteKeyDialog : DialogFragment() {
         // Initialize synchronously once the buttons exist, before the dialog accepts input.
         val dialog = requireDialog() as AlertDialog
         showCandidate(dialog)
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+        val extra = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        extra.setText(if (keys.keyFor(action) == null) R.string.remote_direction else R.string.remote_remove)
+        extra.setOnClickListener {
+            if (keys.keyFor(action) != null) {
+                keys.remove(action)
+                dismiss()
+                return@setOnClickListener
+            }
             val directions = listOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
             AlertDialog.Builder(requireContext()).setTitle(R.string.remote_direction_scope)
                 .setItems((directions.map(TvRemoteKeys::label) + getString(R.string.remote_remove)).toTypedArray()) { _, index ->

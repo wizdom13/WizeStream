@@ -102,8 +102,8 @@
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/itemUploaderAvatarView"
-            android:layout_width="@dimen/video_item_detail_uploader_image_size"
-            android:layout_height="@dimen/video_item_detail_uploader_image_size"
+            android:layout_width="@dimen/related_channel_avatar_size"
+            android:layout_height="@dimen/related_channel_avatar_size"
             android:contentDescription="@null"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"

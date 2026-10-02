@@ -60,7 +60,10 @@ class TvRemoteKeyDispatcher @JvmOverloads constructor(
                 else -> Unit
             }
         } else if (action == TvRemoteAction.SETTINGS) {
-            if (activity !is SettingsActivity) NavigationHelper.openSettings(activity)
+            if (activity !is SettingsActivity) {
+                PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer()
+                NavigationHelper.openSettings(activity)
+            }
         } else if (activity is MainActivity) {
             activity.openRemoteDestination(action)
         } else {
