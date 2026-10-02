@@ -11,6 +11,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import io.reactivex.rxjava3.core.Flowable
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
+import org.schabi.newpipe.learning.LearningPlaylistNote
 
 @Dao
 interface LearningNoteDAO {
@@ -34,6 +35,25 @@ interface LearningNoteDAO {
             "ORDER BY timestamp_ms ASC, created_at ASC, note_id ASC"
     )
     fun getNotesForStreamDirect(streamId: Long): List<LearningNoteEntity>
+
+    @Query(
+        """
+        SELECT n.*, s.title AS video_title, s.url AS video_url
+        FROM learning_notes n INNER JOIN streams s ON s.uid = n.stream_id
+        WHERE n.stream_id IN (
+            SELECT cs.stream_id FROM learning_content_streams cs
+            INNER JOIN learning_content_sources src ON src.source_id = cs.source_id
+            WHERE src.source_id = :sourceId AND src.source_type = 'REMOTE_PLAYLIST'
+            UNION
+            SELECT ps.stream_id FROM playlist_stream_join ps
+            INNER JOIN learning_content_sources src ON src.local_playlist_id = ps.playlist_id
+            INNER JOIN playlists p ON p.uid = ps.playlist_id
+            WHERE src.source_id = :sourceId AND p.profile_id = :profileId
+        )
+        ORDER BY s.title, n.timestamp_ms, n.note_id
+        """
+    )
+    fun playlistNotes(sourceId: String, profileId: String): Flowable<List<LearningPlaylistNote>>
 
     @Query("DELETE FROM learning_notes WHERE note_id = :noteId")
     fun delete(noteId: String): Int

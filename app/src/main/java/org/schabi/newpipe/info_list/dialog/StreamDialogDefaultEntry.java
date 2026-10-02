@@ -21,6 +21,7 @@ import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.local.dialog.PlaylistAppendDialog;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.subscription.StreamSubscriptionActions;
 import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -52,6 +53,18 @@ public enum StreamDialogDefaultEntry {
     SHOW_CHANNEL_DETAILS(R.string.show_channel_details, (fragment, item) ->
             fetchUploaderUrlIfSparse(fragment.requireContext(), item.getServiceId(), item.getUrl(),
                     item.getUploaderUrl(), url -> openChannelFragment(fragment, item, url))
+    ),
+
+    SUBSCRIBE_CHANNEL(R.string.subscribe_button_title, (fragment, item) ->
+            fetchUploaderUrlIfSparse(fragment.requireContext(), item.getServiceId(), item.getUrl(),
+                    item.getUploaderUrl(), url -> StreamSubscriptionActions.show(
+                            fragment, item.getServiceId(), url, false))
+    ),
+
+    CHANNEL_GROUPS(R.string.feed_groups_header_title, (fragment, item) ->
+            fetchUploaderUrlIfSparse(fragment.requireContext(), item.getServiceId(), item.getUrl(),
+                    item.getUploaderUrl(), url -> StreamSubscriptionActions.show(
+                            fragment, item.getServiceId(), url, true))
     ),
 
     /**

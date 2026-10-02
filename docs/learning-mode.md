@@ -109,3 +109,12 @@ Ratings are per profile, stored locally, and are not included in Learning note
 sync. Remote course search covers videos already loaded and indexed from the
 playlist; opening further playlist pages adds them to review results. Local course
 membership follows the playlist's current contents.
+
+## Playlist notes
+
+Open a designated Learning playlist and choose **View playlist notes** from its menu.
+Select a note to edit it or export/delete it. **Note actions** exports all playlist notes as
+UTF-8 text or CSV, or deletes them after confirmation. Android's document picker lets you
+choose where to save exports. Notes are shared by video: deleting a note also removes it
+from any other playlist containing that video. Remote playlist notes use the indexed
+playlist contents, so open/load the playlist first to update its membership.
