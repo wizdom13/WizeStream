@@ -58,13 +58,20 @@ class FeedGroupPickerTest {
                     assertTrue(avatar.isShown)
                     assertTrue("Selection badge must not cover the avatar", badge.width < avatar.width && badge.height < avatar.height)
                 }
+                instrumentation.waitForIdleSync()
+                var firstVisible = -1
+                scenario.onActivity { activity ->
+                    firstVisible = (list(activity).layoutManager as GridLayoutManager).findFirstVisibleItemPosition()
+                }
                 database.subscriptionDAO().insertIgnore(
                     SubscriptionEntity(serviceId = 0, url = "https://www.youtube.com/@picker-new", name = "ZZ new channel", profileId = profile)
                 )
                 await(scenario) { list -> list.adapter?.itemCount == 101 }
+                instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
-                    assertEquals(60, (list(activity).layoutManager as GridLayoutManager).findFirstVisibleItemPosition())
+                    assertEquals(firstVisible, (list(activity).layoutManager as GridLayoutManager).findFirstVisibleItemPosition())
                     assertEquals(setOf(selectedId), picker(activity).selectedSubscriptions)
+                    picker(activity).dismissNow()
                 }
             }
         } finally {
