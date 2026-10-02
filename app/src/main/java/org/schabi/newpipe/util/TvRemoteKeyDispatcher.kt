@@ -12,6 +12,7 @@ import java.util.function.Supplier
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.player.Player
 import org.schabi.newpipe.player.helper.PlayerHolder
+import org.schabi.newpipe.player.ui.MainPlayerUi
 import org.schabi.newpipe.settings.SettingsActivity
 
 /** Foreground shortcuts also work with a hardware keyboard, but never while entering text. */
@@ -30,7 +31,14 @@ class TvRemoteKeyDispatcher @JvmOverloads constructor(
         event.isCanceled,
         activity.hasWindowFocus() && activity.currentFocus?.onCheckIsTextEditor() != true &&
             !event.isCtrlPressed && !event.isAltPressed && !event.isMetaPressed && !event.isShiftPressed,
-        { code -> keys.actionFor(code)?.takeIf { !it.playback || activePlayer() != null } },
+        { code ->
+            keys.actionFor(code)?.takeIf {
+                (!it.playback || activePlayer() != null) && (
+                    !TvRemoteKeys.isDirection(code) ||
+                        activePlayer()?.UIs()?.get(MainPlayerUi::class.java)?.map { ui -> ui.canUseDirectionalShortcuts() }?.orElse(false) == true
+                    )
+            }
+        },
         ::perform
     )
 
@@ -52,7 +60,10 @@ class TvRemoteKeyDispatcher @JvmOverloads constructor(
                 else -> Unit
             }
         } else if (action == TvRemoteAction.SETTINGS) {
-            if (activity !is SettingsActivity) NavigationHelper.openSettings(activity)
+            if (activity !is SettingsActivity) {
+                PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer()
+                NavigationHelper.openSettings(activity)
+            }
         } else if (activity is MainActivity) {
             activity.openRemoteDestination(action)
         } else {

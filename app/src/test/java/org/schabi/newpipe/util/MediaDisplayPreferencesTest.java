@@ -16,6 +16,7 @@ public class MediaDisplayPreferencesTest {
         for (final String value : new String[]{null, "", "0", "-20", "NaN", "10000"}) {
             assertEquals(1.0f, MediaTextSize.scale(value), 0.0001f);
         }
+        assertEquals(0.7f, MediaTextSize.scale("70"), 0.0001f);
         assertEquals(0.8f, MediaTextSize.scale("80"), 0.0001f);
         assertEquals(1.25f, MediaTextSize.scale("125"), 0.0001f);
         assertEquals(1.5f, MediaTextSize.scale("150"), 0.0001f);

@@ -83,14 +83,15 @@ class TvRemoteKeyPressTest {
     @Test
     fun focusEditingVolumeAndSystemKeysCannotBeAssigned() {
         listOf(
-            KeyEvent.KEYCODE_UNKNOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
-            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_CENTER,
+            KeyEvent.KEYCODE_UNKNOWN, KeyEvent.KEYCODE_DPAD_CENTER,
             KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BACK,
             KeyEvent.KEYCODE_ESCAPE, KeyEvent.KEYCODE_TAB, KeyEvent.KEYCODE_DEL,
             KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_MUTE,
             KeyEvent.KEYCODE_HOME, KeyEvent.KEYCODE_POWER, KeyEvent.KEYCODE_APP_SWITCH
         ).forEach { assertFalse("Reserved key $it", TvRemoteKeys.isAssignable(it)) }
         listOf(
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_PROG_RED, KeyEvent.KEYCODE_PROG_BLUE, KeyEvent.KEYCODE_0,
             KeyEvent.KEYCODE_9, KeyEvent.KEYCODE_INFO, KeyEvent.KEYCODE_GUIDE,
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_CHANNEL_UP

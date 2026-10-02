@@ -37,7 +37,7 @@ public class WideVideoDetailResourcesTest {
 
         assertEquals("0dp", container.getAttribute("android:layout_width"));
         assertEquals("0dp", container.getAttribute("android:layout_height"));
-        assertEquals("0.42", container.getAttribute("app:layout_constraintWidth_percent"));
+        assertEquals("0.50", container.getAttribute("app:layout_constraintWidth_percent"));
         assertEquals("16:9", container.getAttribute("app:layout_constraintDimensionRatio"));
         assertEquals("match_parent", thumbnail.getAttribute("android:layout_width"));
         assertEquals("match_parent", thumbnail.getAttribute("android:layout_height"));

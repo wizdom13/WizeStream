@@ -34,11 +34,13 @@ class TvRemoteKeys(private val preferences: SharedPreferences) {
 
     companion object {
         // Keep focus, text editing, volume and system controls available even with custom bindings.
-        fun isAssignable(code: Int): Boolean = code in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 ||
+        fun isAssignable(code: Int): Boolean = isDirection(code) || code in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 ||
             code in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z ||
             code in KeyEvent.KEYCODE_F1..KeyEvent.KEYCODE_F12 ||
             code in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_9 ||
             code in KeyEvent.KEYCODE_PROG_RED..KeyEvent.KEYCODE_PROG_BLUE || code in otherAssignableKeys
+
+        fun isDirection(code: Int): Boolean = code in setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
 
         private val otherAssignableKeys = setOf(
             KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_INFO, KeyEvent.KEYCODE_GUIDE,

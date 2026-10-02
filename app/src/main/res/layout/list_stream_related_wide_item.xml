@@ -17,7 +17,7 @@
         app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="0.42">
+        app:layout_constraintWidth_percent="0.50">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/itemThumbnailView"
@@ -104,8 +104,8 @@
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/itemUploaderAvatarView"
-            android:layout_width="@dimen/video_item_detail_uploader_image_size"
-            android:layout_height="@dimen/video_item_detail_uploader_image_size"
+            android:layout_width="@dimen/related_channel_avatar_size"
+            android:layout_height="@dimen/related_channel_avatar_size"
             android:contentDescription="@null"
             android:importantForAccessibility="no"
             android:scaleType="centerCrop"
@@ -125,7 +125,7 @@
             android:lines="1"
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="@dimen/video_item_search_uploader_text_size"
+            android:textSize="@dimen/related_channel_text_size"
             app:layout_constraintBottom_toTopOf="@+id/itemAdditionalDetails"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/itemUploaderAvatarView"

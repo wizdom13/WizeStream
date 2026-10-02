@@ -73,6 +73,8 @@ class TvRemoteSettingsTest {
         assertNull(keys.actionFor(KeyEvent.KEYCODE_PROG_RED))
         keys.remove(TvRemoteAction.SEARCH)
         assertNull(keys.actionFor(KeyEvent.KEYCODE_PROG_GREEN))
+        keys.assign(TvRemoteAction.FORWARD, KeyEvent.KEYCODE_DPAD_RIGHT)
+        assertEquals(TvRemoteAction.FORWARD, keys.actionFor(KeyEvent.KEYCODE_DPAD_RIGHT))
         keys.assign(TvRemoteAction.HOME, KeyEvent.KEYCODE_1)
         keys.assign(TvRemoteAction.MUTE, KeyEvent.KEYCODE_MEDIA_STOP)
         keys.reset()

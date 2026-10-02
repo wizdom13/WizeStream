@@ -88,6 +88,7 @@ import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
+import org.schabi.newpipe.util.image.CoilHelper;
 
 import java.util.Collections;
 import java.util.List;
@@ -1161,6 +1162,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
         binding.titleTextView.setText(info.getName());
         binding.channelTextView.setText(info.getUploaderName());
+        binding.channelAvatarView.setContentDescription(info.getUploaderName());
+        CoilHelper.INSTANCE.loadAvatar(binding.channelAvatarView,
+                ExtractorImageCompat.uploaderAvatarImages(info));
 
         this.seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), info.getPreviewFrames());
     }
@@ -1182,6 +1186,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playbackSpeed.setVisibility(View.VISIBLE);
         binding.titleTextView.setText(tag.getTitle());
         binding.channelTextView.setText(tag.getUploaderName());
+        binding.channelAvatarView.setContentDescription(tag.getUploaderName());
+        CoilHelper.INSTANCE.clearAvatar(binding.channelAvatarView);
+        binding.channelAvatarView.setImageResource(R.drawable.placeholder_person);
         seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), Collections.emptyList());
     }
 
