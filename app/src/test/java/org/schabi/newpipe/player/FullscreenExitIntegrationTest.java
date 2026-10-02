@@ -30,7 +30,6 @@ public class FullscreenExitIntegrationTest {
         final String toggle = methodBody(
                 source, "public void toggleFullscreenWithOrientation()");
 
-        assertTrue(toggle.contains("manualLandscapeFullscreen = true"));
         assertTrue(toggle.contains(
                 "listener.onManualFullscreenButtonClicked(targetFullscreen)"));
         assertTrue(toggle.contains("setFullscreen(targetFullscreen);"));
@@ -49,10 +48,9 @@ public class FullscreenExitIntegrationTest {
                 source, "private void requestFullscreenOrientation(");
 
         assertTrue(automatic.contains(
-                "requestFullscreenOrientation(fullscreen, false)"));
+                "requestFullscreenOrientation(fullscreen)"));
         assertTrue(manual.contains(
-                "requestFullscreenOrientation(fullscreen, true)"));
-        assertTrue(rotation.contains("manualTargetConfigurationOrientation(fullscreen)"));
+                "requestFullscreenOrientation(fullscreen)"));
         assertTrue(rotation.contains("targetConfigurationOrientation("));
         assertTrue(rotation.contains("pendingFullscreenState"));
         assertTrue(rotation.contains("SCREEN_ORIENTATION_PORTRAIT"));

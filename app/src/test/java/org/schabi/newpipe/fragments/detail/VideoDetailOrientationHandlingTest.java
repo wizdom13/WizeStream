@@ -38,10 +38,9 @@ public class VideoDetailOrientationHandlingTest {
                 fragment, "private void requestFullscreenOrientation(");
 
         assertTrue(automaticAction.contains(
-                "requestFullscreenOrientation(fullscreen, false)"));
+                "requestFullscreenOrientation(fullscreen)"));
         assertTrue(manualAction.contains(
-                "requestFullscreenOrientation(fullscreen, true)"));
-        assertTrue(rotationAction.contains("!manualFullscreen"));
+                "requestFullscreenOrientation(fullscreen)"));
         assertTrue(rotationAction.contains("shouldLockPortraitFullscreen("));
         assertTrue(rotationAction.contains(
                 "setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)"));
