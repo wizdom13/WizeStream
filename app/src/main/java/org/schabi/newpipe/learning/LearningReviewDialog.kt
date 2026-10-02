@@ -38,11 +38,11 @@ class LearningReviewDialog : DialogFragment() {
         val search = SearchView(requireContext()).apply {
             setIconifiedByDefault(false)
             queryHint = getString(R.string.learning_review_search)
-            setQuery(query, false)
+            setQuery(this@LearningReviewDialog.query, false)
             setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(text: String?) = false
                 override fun onQueryTextChange(text: String?): Boolean {
-                    query = text.orEmpty()
+                    this@LearningReviewDialog.query = text.orEmpty()
                     render()
                     return true
                 }
