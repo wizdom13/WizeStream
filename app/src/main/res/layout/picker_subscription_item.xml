@@ -41,17 +41,19 @@
 
     <FrameLayout
         android:id="@+id/selected_highlight"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="?attr/colorPrimaryContainer"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="2dp"
+        android:background="@drawable/feed_selection_badge"
+        android:importantForAccessibility="no"
         android:visibility="gone"
         tools:visibility="visible">
 
         <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="top|center_horizontal"
-            android:layout_marginTop="4dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="center"
             android:scaleType="centerInside"
             android:src="@drawable/ic_done"
             app:tint="?attr/colorOnPrimaryContainer"

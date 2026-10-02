@@ -23,6 +23,7 @@ data class PickerSubscriptionItem(
     override fun bind(viewBinding: PickerSubscriptionItemBinding, position: Int) {
         CoilHelper.loadAvatar(viewBinding.thumbnailView, subscriptionEntity.avatarUrl)
         viewBinding.titleView.text = subscriptionEntity.name
+        viewBinding.root.isSelected = isSelected
         viewBinding.selectedHighlight.isVisible = isSelected
     }
 
@@ -40,6 +41,7 @@ data class PickerSubscriptionItem(
 
     fun updateSelected(containerView: View, isSelected: Boolean) {
         this.isSelected = isSelected
+        containerView.isSelected = isSelected
         PickerSubscriptionItemBinding.bind(containerView).selectedHighlight
             .animate(isSelected, 150, AnimationType.LIGHT_SCALE_AND_ALPHA)
     }
