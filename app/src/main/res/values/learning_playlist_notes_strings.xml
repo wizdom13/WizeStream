@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="learning_playlist_notes">View playlist notes</string>
+    <string name="learning_notes_export_text">Export as text</string>
+    <string name="learning_notes_export_csv">Export as CSV</string>
+    <string name="learning_notes_delete_all">Delete all playlist notes</string>
+    <string name="learning_notes_delete_all_confirm">Delete these notes? Notes on videos shared with other playlists will also be removed.</string>
+    <string name="learning_notes_exported">Notes exported</string>
+    <string name="learning_notes_export_error">Could not export notes</string>
+    <string name="learning_notes_actions">Note actions</string>
+</resources>

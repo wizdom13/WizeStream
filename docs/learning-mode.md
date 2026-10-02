@@ -94,3 +94,12 @@ content.
 Timestamped learning notes have their own optional synchronization setting under
 **Settings > Device synchronization**. Note synchronization does not synchronize Learning-content
 selections.
+
+## Playlist notes
+
+Open a designated Learning playlist and choose **View playlist notes** from its menu.
+Select a note to edit it or export/delete it. **Note actions** exports all playlist notes as
+UTF-8 text or CSV, or deletes them after confirmation. Android's document picker lets you
+choose where to save exports. Notes are shared by video: deleting a note also removes it
+from any other playlist containing that video. Remote playlist notes use the indexed
+playlist contents, so open/load the playlist first to update its membership.

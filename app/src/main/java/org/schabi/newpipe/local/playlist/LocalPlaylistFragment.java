@@ -66,6 +66,7 @@ import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningPlaylistNotesDialog;
 import org.schabi.newpipe.learning.LearningPlaylistProgress;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
@@ -330,6 +331,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     @Override
     public void onPrepareOptionsMenu(@NonNull final Menu menu) {
         super.onPrepareOptionsMenu(menu);
+        menu.findItem(R.id.menu_item_learning_notes).setVisible(LearningMode.isEnabled(requireContext()) && learningContentManager.isLocalPlaylistMarked(playlistId));
         final boolean enabled = LearningMode.isPlaylistProgressEnabled(requireContext())
                 && learningContentManager.isLocalPlaylistMarked(playlistId);
         menu.findItem(R.id.menu_item_mark_all_watched).setVisible(enabled);

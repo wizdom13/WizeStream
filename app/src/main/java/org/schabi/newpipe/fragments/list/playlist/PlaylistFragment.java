@@ -55,6 +55,7 @@ import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.info_list.dialog.StreamDialogDefaultEntry;
 import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.learning.LearningPlaylistNotesDialog;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
@@ -269,6 +270,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     @Override
     public void onPrepareOptionsMenu(@NonNull final Menu menu) {
         super.onPrepareOptionsMenu(menu);
+        menu.findItem(R.id.menu_item_learning_notes).setVisible(isLearningPlaylist());
         final MenuItem learningItem = menu.findItem(R.id.menu_item_learning_content);
         if (learningItem == null) {
             return;
@@ -351,6 +353,12 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         final int itemId = item.getItemId();
+        if (itemId == R.id.menu_item_learning_notes) {
+            LearningPlaylistNotesDialog.show(getParentFragmentManager(),
+                    LearningContentManager.remotePlaylistSourceId(serviceId, url),
+                    ProfileManager.getActiveProfileId(requireContext()));
+            return true;
+        }
         if (itemId == R.id.action_settings) {
             NavigationHelper.openSettings(requireContext());
         } else if (itemId == R.id.menu_item_openInBrowser) {

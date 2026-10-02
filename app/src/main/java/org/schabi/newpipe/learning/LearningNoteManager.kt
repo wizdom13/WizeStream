@@ -69,6 +69,17 @@ class LearningNoteManager(context: Context) {
         }
     }.subscribeOn(Schedulers.io())
 
+    fun deleteNotes(noteIds: List<String>): Completable = Completable.fromAction {
+        database.runInTransaction {
+            noteIds.distinct().forEach { noteId ->
+                noteDao.getNote(noteId)?.let { note ->
+                    syncRecorder.recordLearningNoteDelete(note)
+                    noteDao.delete(noteId)
+                }
+            }
+        }
+    }.subscribeOn(Schedulers.io())
+
     fun observe(serviceId: Int, url: String): Flowable<List<LearningNoteEntity>> {
         return streamDao.getStream(serviceId.toLong(), url)
             .switchMap { streams ->
