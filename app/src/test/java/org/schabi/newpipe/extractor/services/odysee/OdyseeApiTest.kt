@@ -130,6 +130,7 @@ class OdyseeApiTest {
         assertEquals(1, second.items.size)
         assertFalse(second.hasNextPage())
         assertTrue(second.errors.isEmpty())
-        assertEquals(listOf(1, 2), requests.filter { it.getString("method") == "claim_search" }.map { it.getObject("params").getInt("page") })
+        // ChannelInfo also loads its legacy first page before the app selects the Videos tab.
+        assertEquals(listOf(1, 1, 2), requests.filter { it.getString("method") == "claim_search" }.map { it.getObject("params").getInt("page") })
     }
 }
