@@ -23,7 +23,7 @@ object TvRecommendations {
         val streams = info.relatedItems.filterIsInstance<StreamInfoItem>()
         if (streams.isEmpty() || activity.isFinishing || activity.supportFragmentManager.isStateSaved) return false
         val dialog = BottomSheetDialog(activity)
-        val adapter = InfoListAdapter(activity, ContentBlockingHelper.Target.RELATED_ITEMS).apply {
+        val infoAdapter = InfoListAdapter(activity, ContentBlockingHelper.Target.RELATED_ITEMS).apply {
             setItemViewMode(ItemViewMode.GRID)
             addInfoItemList(streams)
             setOnStreamSelectedListener(object : OnClickGesture<StreamInfoItem> {
@@ -35,7 +35,7 @@ object TvRecommendations {
         }
         val list = RecyclerView(activity).apply {
             layoutManager = GridLayoutManager(activity, 3)
-            this.adapter = adapter
+            adapter = infoAdapter
             contentDescription = activity.getString(R.string.tv_recommended_videos)
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (resources.displayMetrics.heightPixels * 0.6f).toInt())
         }
