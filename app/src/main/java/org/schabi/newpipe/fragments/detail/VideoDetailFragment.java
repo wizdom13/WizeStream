@@ -3014,16 +3014,15 @@ public final class VideoDetailFragment
 
     @Override
     public void onScreenRotationButtonClicked(final boolean fullscreen) {
-        requestFullscreenOrientation(fullscreen, false);
+        requestFullscreenOrientation(fullscreen);
     }
 
     @Override
     public void onManualFullscreenButtonClicked(final boolean fullscreen) {
-        requestFullscreenOrientation(fullscreen, true);
+        requestFullscreenOrientation(fullscreen);
     }
 
-    private void requestFullscreenOrientation(final boolean fullscreen,
-                                              final boolean manualFullscreen) {
+    private void requestFullscreenOrientation(final boolean fullscreen) {
         final Optional<MainPlayerUi> playerUi = player == null
                 ? Optional.empty() : player.UIs().get(MainPlayerUi.class);
         final MainPlayerUi ui = playerUi.orElse(null);
@@ -3045,23 +3044,20 @@ public final class VideoDetailFragment
                 ui == null
                         ? FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN
                         : ui.getVideoContentOrientation();
-        final int targetOrientation = manualFullscreen
-                ? FullscreenOrientationPolicy.manualTargetConfigurationOrientation(fullscreen)
-                : FullscreenOrientationPolicy.targetConfigurationOrientation(
-                        fullscreen, contentOrientation);
+        final int targetOrientation = FullscreenOrientationPolicy.targetConfigurationOrientation(
+                fullscreen, contentOrientation);
         pendingFullscreenOrientation = targetOrientation;
         pendingFullscreenState = fullscreen
                 ? FullscreenOrientationPolicy.ENTER_FULLSCREEN
                 : FullscreenOrientationPolicy.EXIT_FULLSCREEN;
 
         // If Android is already in the requested orientation it will not emit another
-        // configuration callback. Content-aware portrait fullscreen still locks the activity,
-        // while explicit manual fullscreen remains landscape until the user exits it.
+        // configuration callback. Portrait fullscreen must still lock the activity so rotating
+        // the device cannot override the video's content orientation.
         if (FullscreenOrientationPolicy.isTargetOrientation(
                 currentOrientation, targetOrientation)) {
-            if (!manualFullscreen
-                    && FullscreenOrientationPolicy.shouldLockPortraitFullscreen(
-                            fullscreen, contentOrientation)) {
+            if (FullscreenOrientationPolicy.shouldLockPortraitFullscreen(
+                    fullscreen, contentOrientation)) {
                 activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             }
             if (ui != null) {
