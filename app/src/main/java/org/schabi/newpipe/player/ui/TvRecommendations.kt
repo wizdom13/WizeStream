@@ -33,6 +33,7 @@ object TvRecommendations {
                 }
             })
         }
+        if (infoAdapter.itemCount == 0) return false
         val list = RecyclerView(activity).apply {
             layoutManager = GridLayoutManager(activity, 3)
             adapter = infoAdapter
