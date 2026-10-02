@@ -98,9 +98,9 @@ class NativePipPlaybackTest {
                     playerUi().isFullscreen == fullscreen &&
                         !root.isLayoutRequested && !surface.isLayoutRequested &&
                         (
-                            !fullscreen || root.width > root.height &&
+                            !fullscreen || root.height > root.width &&
                                 root.findViewById<View>(R.id.detail_thumbnail_image_view).height == root.height &&
-                                activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                                activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
                             )
                 }
                 // A configuration callback precedes the actual rotation/window transition.
