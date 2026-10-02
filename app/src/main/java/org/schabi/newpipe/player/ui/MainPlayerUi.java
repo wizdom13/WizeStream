@@ -1088,6 +1088,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         return super.onKeyDown(keyCode);
     }
 
+    public boolean canUseDirectionalShortcuts() {
+        return isFullscreen && !isControlsVisible() && !isAnyListViewOpen() && !touchLocked;
+    }
+
     public boolean isTouchLocked() {
         return touchLocked;
     }
