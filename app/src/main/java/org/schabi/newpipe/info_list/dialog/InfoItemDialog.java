@@ -378,6 +378,10 @@ public final class InfoItemDialog {
             );
             addPlayWithKodiEntryIfNeeded();
             addLearningContentEntryIfNeeded();
+            if (infoItem.getServiceId() >= 0) {
+                addEntry(StreamDialogDefaultEntry.SUBSCRIBE_CHANNEL);
+                addEntry(StreamDialogDefaultEntry.CHANNEL_GROUPS);
+            }
             addEntry(StreamDialogDefaultEntry.SHOW_CHANNEL_DETAILS);
             return this;
         }
