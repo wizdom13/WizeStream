@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1026001">WizeStream 1.26.1</a></li>
 <li><a href="#release-1026000">WizeStream 1.26.0</a></li>
 <li><a href="#release-1025000">WizeStream 1.25.0</a></li>
 <li><a href="#release-1024000">WizeStream 1.24.0</a></li>
@@ -82,6 +83,31 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1026001" data-version="1.26.1" data-version-code="1026001">
+<h2>WizeStream 1.26.1</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added playlist-wide Learning notes browsing, editing, deletion, and export as plain text or CSV.</li>
+<li>Added optional, per-profile lesson difficulty ratings with searchable review, hardest-first ordering, and Hard-only shortcuts. Ratings are stored locally and are not synchronized between devices.</li>
+<li>Added Subscribe and Channel groups actions to remote-video long-press menus.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Added a bottom-sheet recommendations grid on TV when pressing Up during fullscreen playback with controls hidden, plus explicitly assignable D-pad shortcuts.</li>
+<li>Added uploader avatars to player metadata, enlarged related-video thumbnails, reduced channel details, and added a 70% title/channel text-size option.</li>
+<li>Updated subscription menus and the group reorder dialog to Material 3 styling.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Backfilled older videos during full-channel What&#x27;s New refreshes and prevented undated Shorts from crowding source-dated videos out of the feed&#x27;s 500-item selection.</li>
+<li>Avoided redundant video-surface rebinds that could trigger Media3 detach timeouts on Android 13 and newer.</li>
+<li>Restored content-aware portrait and square-video fullscreen on phones.</li>
+<li>Kept channel avatars and titles visible during group selection and preserved the picker&#x27;s scroll position.</li>
+<li>Repaired Odysee JSON-RPC requests, API error handling, channel Videos tabs, and continuation loading for subscription feeds.</li>
+</ul>
+</div>
+</section>
 <section id="release-1026000" data-version="1.26.0" data-version-code="1026000">
 <h2>WizeStream 1.26.0</h2>
 <div class="release-notes">

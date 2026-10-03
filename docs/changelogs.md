@@ -4,6 +4,28 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.26.1 (`1026001`)
+
+### New features
+
+- Added playlist-wide Learning notes browsing, editing, deletion, and export as plain text or CSV.
+- Added optional, per-profile lesson difficulty ratings with searchable review, hardest-first ordering, and Hard-only shortcuts. Ratings are stored locally and are not synchronized between devices.
+- Added Subscribe and Channel groups actions to remote-video long-press menus.
+
+### Improvements
+
+- Added a bottom-sheet recommendations grid on TV when pressing Up during fullscreen playback with controls hidden, plus explicitly assignable D-pad shortcuts.
+- Added uploader avatars to player metadata, enlarged related-video thumbnails, reduced channel details, and added a 70% title/channel text-size option.
+- Updated subscription menus and the group reorder dialog to Material 3 styling.
+
+### Fixes
+
+- Backfilled older videos during full-channel What's New refreshes and prevented undated Shorts from crowding source-dated videos out of the feed's 500-item selection.
+- Avoided redundant video-surface rebinds that could trigger Media3 detach timeouts on Android 13 and newer.
+- Restored content-aware portrait and square-video fullscreen on phones.
+- Kept channel avatars and titles visible during group selection and preserved the picker's scroll position.
+- Repaired Odysee JSON-RPC requests, API error handling, channel Videos tabs, and continuation loading for subscription feeds.
+
 ## WizeStream 1.26.0 (`1026000`)
 
 ### New features

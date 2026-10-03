@@ -1,0 +1,7 @@
+• Add Learning playlist notes management/export and local lesson difficulty ratings.
+• Add Subscribe and Channel groups to video long-press menus.
+• Improve TV recommendations, D-pad shortcuts, and player metadata.
+• Restore portrait fullscreen and reduce Android 13+ surface timeouts.
+• Fix older-video feed selection and group-picker scrolling.
+• Repair Odysee API requests and channel feed integration.
+• Refresh subscription dialogs with Material 3 styling.
