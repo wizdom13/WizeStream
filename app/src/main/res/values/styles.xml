@@ -425,12 +425,17 @@
         <item name="android:widgetLayout">@layout/preference_widget_material_switch</item>
     </style>
 
+    <style name="Preference.MaterialEditText" parent="Preference.DialogPreference.EditTextPreference">
+        <item name="dialogLayout">@layout/preference_dialog_material_edittext</item>
+    </style>
+
     <style name="LightSettingsTheme" parent="LightTheme">
         <item name="colorAccent">?attr/colorPrimary</item>
         <item name="android:textColorPrimary">?attr/colorOnSurface</item>
         <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
         <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
         <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
+        <item name="editTextPreferenceStyle">@style/Preference.MaterialEditText</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
     </style>
 
@@ -440,6 +445,7 @@
         <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
         <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
         <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
+        <item name="editTextPreferenceStyle">@style/Preference.MaterialEditText</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
     </style>
 
@@ -449,6 +455,7 @@
         <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
         <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
         <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
+        <item name="editTextPreferenceStyle">@style/Preference.MaterialEditText</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
     </style>
 

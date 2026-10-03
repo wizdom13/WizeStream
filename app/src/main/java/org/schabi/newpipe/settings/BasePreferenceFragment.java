@@ -14,6 +14,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.preference.Preference;
+import androidx.preference.EditTextPreference;
+import androidx.preference.ListPreference;
+import androidx.preference.MultiSelectListPreference;
+import androidx.fragment.app.DialogFragment;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceGroupAdapter;
@@ -39,6 +43,31 @@ public abstract class BasePreferenceFragment extends PreferenceFragmentCompat {
     public void onCreate(@Nullable final Bundle savedInstanceState) {
         defaultPreferences = PreferenceManager.getDefaultSharedPreferences(requireActivity());
         super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onDisplayPreferenceDialog(@NonNull final Preference preference) {
+        final String tag = "androidx.preference.PreferenceFragment.DIALOG";
+        if (getParentFragmentManager().findFragmentByTag(tag) != null) {
+            return;
+        }
+        final DialogFragment dialog;
+        if (preference instanceof EditTextPreference) {
+            dialog = new MaterialEditTextPreferenceDialog();
+        } else if (preference instanceof ListPreference) {
+            dialog = new MaterialListPreferenceDialog();
+        } else if (preference instanceof MultiSelectListPreference) {
+            dialog = new MaterialMultiSelectListPreferenceDialog();
+        } else {
+            super.onDisplayPreferenceDialog(preference);
+            return;
+        }
+        final Bundle arguments = new Bundle();
+        arguments.putString("key", preference.getKey());
+        dialog.setArguments(arguments);
+        dialog.setTargetFragment(this, 0);
+        dialog.show(getParentFragmentManager(), tag);
     }
 
     protected void addPreferencesFromResourceRegistry() {
