@@ -15,6 +15,13 @@ class TvPlayerKeyPolicyTest {
     }
 
     @Test
+    fun visibleControlsAndListsKeepDirectionalNavigation() {
+        assertFalse(TvPlayerKeyPolicy.shouldSeek(KeyEvent.KEYCODE_DPAD_LEFT, true, false))
+        assertFalse(TvPlayerKeyPolicy.shouldSeek(KeyEvent.KEYCODE_DPAD_RIGHT, false, true))
+        assertTrue(TvPlayerKeyPolicy.shouldSeek(KeyEvent.KEYCODE_DPAD_RIGHT, false, false))
+    }
+
+    @Test
     fun secondBackWithinWindowClosesPlayer() {
         assertTrue(TvPlayerKeyPolicy.shouldCloseOnSecondBack(1_000L, 2_500L))
         assertFalse(TvPlayerKeyPolicy.shouldCloseOnSecondBack(1_000L, 3_500L))

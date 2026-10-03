@@ -161,8 +161,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         super.setupAfterIntent();
 
         initVideoPlayer();
-        // Android TV: without it focus will frame the whole player
-        binding.playPauseButton.requestFocus();
+        if (shouldRequestPlaybackButtonFocus()) {
+            binding.playPauseButton.requestFocus();
+        }
 
         // Note: This is for automatically playing (when "Resume playback" is off), see #6179
         if (player.getPlayWhenReady()) {
@@ -1061,7 +1062,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
         if (TvPlayerFocusPolicy.shouldMoveToActions(
                 keyCode, isFullscreen, DeviceUtils.isTv(context))
-                && binding.playbackControlRoot.isShown()) {
+                && binding.playbackControlRoot.isShown()
+                && (binding.playPauseButton.hasFocus() || binding.playPreviousButton.hasFocus()
+                || binding.playNextButton.hasFocus())) {
             if (binding.commentsButton.getVisibility() == View.VISIBLE
                     && binding.commentsButton.requestFocus()) {
                 return true;
