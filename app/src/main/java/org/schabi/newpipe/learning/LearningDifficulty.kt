@@ -43,7 +43,8 @@ object LearningDifficulty {
     }
 
     @JvmStatic
-    fun addDescriptionButton(layout: LinearLayout, service: Int, url: String) {
+    fun addDescriptionButton(layout: LinearLayout, service: Int, url: String?) {
+        if (url.isNullOrBlank()) return
         val context = layout.context
         if (!isEnabled(context) || !LearningContentManager.getInstance(context).isStreamLearning(service, url)) return
         val profile = ProfileManager.getActiveProfileId(context)
