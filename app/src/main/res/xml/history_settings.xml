@@ -38,6 +38,12 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <Preference
+        android:key="history_portability"
+        android:fragment="org.schabi.newpipe.settings.HistoryPortabilitySettingsFragment"
+        android:title="@string/history_portability_title"
+        app:iconSpaceReserved="false" />
+
     <PreferenceCategory
         android:layout="@layout/settings_category_header_layout"
         android:title="@string/settings_category_clear_data_title"

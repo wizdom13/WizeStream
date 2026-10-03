@@ -38,6 +38,7 @@ public final class SettingsResourceRegistry {
         add(DownloadSettingsFragment.class, R.xml.download_settings);
         add(DeviceSyncSettingsFragment.class, R.xml.device_sync_settings);
         add(HistorySettingsFragment.class, R.xml.history_settings);
+        add(HistoryPortabilitySettingsFragment.class, R.xml.history_portability_settings);
         add(LearningSettingsFragment.class, R.xml.learning_settings);
         add(LocalMediaSettingsFragment.class, R.xml.local_media_settings);
         add(NotificationsSettingsFragment.class, R.xml.notifications_settings);
