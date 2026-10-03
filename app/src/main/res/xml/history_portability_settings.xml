@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/history_portability_title">
+    <Preference
+        android:selectable="false"
+        android:summary="@string/history_portability_summary"
+        app:iconSpaceReserved="false" />
+    <Preference
+        android:key="history_export_json"
+        android:title="@string/history_export_json"
+        app:iconSpaceReserved="false" />
+    <Preference
+        android:key="history_export_csv"
+        android:title="@string/history_export_csv"
+        app:iconSpaceReserved="false" />
+    <Preference
+        android:key="history_import_json"
+        android:title="@string/history_import_json"
+        app:iconSpaceReserved="false" />
+    <Preference
+        android:key="history_transfer_status"
+        android:selectable="false"
+        app:iconSpaceReserved="false" />
+</PreferenceScreen>
