@@ -1018,16 +1018,18 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     static boolean shouldRequestPlaybackButtonFocus(final boolean tv,
                                                     final boolean fullscreen,
                                                     final boolean popup,
-                                                    final boolean listOpen) {
-        return !listOpen && (!tv || fullscreen || popup);
+                                                    final boolean listOpen,
+                                                    final boolean hasFocus) {
+        return !listOpen && (!tv || ((fullscreen || popup) && !hasFocus));
     }
 
-    private boolean shouldRequestPlaybackButtonFocus() {
+    protected boolean shouldRequestPlaybackButtonFocus() {
         return shouldRequestPlaybackButtonFocus(
                 DeviceUtils.isTv(context),
                 isFullscreen(),
                 player.popupPlayerSelected(),
-                isAnyListViewOpen());
+                isAnyListViewOpen(),
+                binding.getRoot().getRootView().findFocus() != null);
     }
 
     private void animatePlayButtons(final boolean show, final long duration) {
@@ -1734,8 +1736,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public boolean onKeyDown(final int keyCode) {
-        if (DeviceUtils.isTv(context) && TvPlayerKeyPolicy.isSeekKey(keyCode)
-                && !isAnyListViewOpen() && player.getCurrentState()
+        // Embedded playback must not consume navigation intended for the detail page.
+        if (DeviceUtils.isTv(context) && !isFullscreen() && !player.popupPlayerSelected()) {
+            return false;
+        }
+        if (DeviceUtils.isTv(context) && TvPlayerKeyPolicy.shouldSeek(
+                keyCode, isControlsVisible(), isAnyListViewOpen()) && player.getCurrentState()
                 != org.schabi.newpipe.player.Player.STATE_BLOCKED) {
             if (TvPlayerKeyPolicy.isForwardSeek(keyCode)) {
                 player.fastForward();
