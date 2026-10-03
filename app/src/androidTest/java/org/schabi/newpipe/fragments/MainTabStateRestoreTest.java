@@ -11,8 +11,29 @@ import static org.junit.Assert.assertTrue;
 import android.os.Bundle;
 
 import org.junit.Test;
+import org.schabi.newpipe.settings.tabs.Tab;
+import org.schabi.newpipe.settings.tabs.TabsJsonHelper;
+
+import java.util.List;
 
 public class MainTabStateRestoreTest {
+    @Test
+    public void rejectsShiftedTabsAndOtherProfilesButPreservesMatchingState() {
+        final List<Tab> original = List.of(Tab.Type.FEED.getTab(),
+                Tab.Type.LEARNING.getTab(), Tab.Type.BOOKMARKS.getTab());
+        final Bundle state = new Bundle();
+        state.putString("tab_profile", "default");
+        state.putString("tab_layout", TabsJsonHelper.getJsonToSave(original));
+        assertTrue(MainFragment.SelectedTabsPagerAdapter.matchesTabState(
+                state, "default", original));
+        assertFalse(MainFragment.SelectedTabsPagerAdapter.matchesTabState(
+                state, "other", original));
+        assertFalse(MainFragment.SelectedTabsPagerAdapter.matchesTabState(
+                state, "default", List.of(Tab.Type.FEED.getTab(), Tab.Type.BOOKMARKS.getTab())));
+        assertFalse(MainFragment.SelectedTabsPagerAdapter.matchesTabState(
+                new Bundle(), "default", original));
+    }
+
     @Test
     public void removesOnlyMissingFragmentEntries() {
         final Bundle state = new Bundle();
