@@ -15,6 +15,8 @@ import org.junit.runner.RunWith
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
 import org.schabi.newpipe.database.learning.model.LearningContentStreamEntity
+import org.schabi.newpipe.database.playlist.model.PlaylistEntity
+import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.stream.StreamType
 
@@ -27,6 +29,20 @@ class LearningContentDaoTest {
 
     @After
     fun closeDatabase() = database.close()
+
+    @Test
+    fun courseLookupPreservesOrderAndExcludesOtherProfiles() {
+        val first = database.streamDAO().insert(StreamEntity(serviceId = 0, url = "https://example.com/first", title = "Z", streamType = StreamType.VIDEO_STREAM, duration = 60, uploader = "Teacher"))
+        val second = database.streamDAO().insert(StreamEntity(serviceId = 0, url = "https://example.com/second", title = "A", streamType = StreamType.VIDEO_STREAM, duration = 60, uploader = "Teacher"))
+        val playlist = database.playlistDAO().insert(PlaylistEntity(name = "Course", isThumbnailPermanent = false, thumbnailStreamId = -1, displayIndex = 0, profileId = "owner"))
+        database.playlistStreamDAO().insertAll(listOf(PlaylistStreamEntity(playlist, first, 0), PlaylistStreamEntity(playlist, second, 1)))
+        val dao = database.learningContentDAO()
+        dao.upsertSource(LearningContentSourceEntity("local-playlist:$playlist", LearningContentSourceEntity.TYPE_LOCAL_PLAYLIST, localPlaylistId = playlist))
+        assertEquals(listOf(first, second), dao.courseStreams(playlist, "owner").map { it.uid })
+        assertEquals(1, dao.coursesForStream(second, "owner").size)
+        assertEquals(0, dao.coursesForStream(second, "other").size)
+        assertEquals(0, dao.courseStreams(playlist, "other").size)
+    }
 
     @Test
     fun streamRemainsEligibleWhileAnotherSourceStillReferencesIt() {
