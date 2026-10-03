@@ -64,6 +64,8 @@ import org.schabi.newpipe.settings.tabs.HomeNavigationModeResolver;
 import org.schabi.newpipe.settings.tabs.Tab;
 import org.schabi.newpipe.settings.tabs.TabletNavigationPositionResolver;
 import org.schabi.newpipe.settings.tabs.TabsManager;
+import org.schabi.newpipe.settings.tabs.TabsJsonHelper;
+import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -1057,6 +1059,9 @@ public class MainFragment extends BaseFragment
 
     public static final class SelectedTabsPagerAdapter
             extends FragmentStatePagerAdapterMenuWorkaround {
+        private static final String STATE_PROFILE = "tab_profile";
+        private static final String STATE_LAYOUT = "tab_layout";
+        private final String profileId;
         private final Context context;
         private final FragmentManager fragmentManager;
         private final List<Tab> internalTabsList;
@@ -1075,6 +1080,7 @@ public class MainFragment extends BaseFragment
                                          final List<Tab> tabsList) {
             super(fragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             this.context = context;
+            this.profileId = ProfileManager.getActiveProfileId(context);
             this.fragmentManager = fragmentManager;
             this.internalTabsList = new ArrayList<>(tabsList);
         }
@@ -1119,6 +1125,24 @@ public class MainFragment extends BaseFragment
             return primaryFragment;
         }
 
+        @Nullable
+        @Override
+        public Parcelable saveState() {
+            final Parcelable saved = super.saveState();
+            final Bundle state = saved instanceof Bundle
+                    ? new Bundle((Bundle) saved) : new Bundle();
+            state.putString(STATE_PROFILE, profileId);
+            state.putString(STATE_LAYOUT, TabsJsonHelper.getJsonToSave(internalTabsList));
+            return state;
+        }
+
+        @VisibleForTesting
+        static boolean matchesTabState(final Bundle state, final String profile,
+                                       final List<Tab> tabs) {
+            return profile.equals(state.getString(STATE_PROFILE))
+                    && TabsJsonHelper.getJsonToSave(tabs).equals(state.getString(STATE_LAYOUT));
+        }
+
         @Override
         public void restoreState(@Nullable final Parcelable state,
                                  @Nullable final ClassLoader loader) {
@@ -1127,8 +1151,29 @@ public class MainFragment extends BaseFragment
                 return;
             }
 
+            final Bundle saved = (Bundle) state;
+            if (!matchesTabState(saved, profileId, internalTabsList)) {
+                // FragmentStatePagerAdapter keys its fragments and saved states by position.
+                // A hidden Learning tab shifts those positions; a profile switch also changes
+                // which data the fragments may display. Never restore either stale catalog.
+                final var transaction = fragmentManager.beginTransaction();
+                for (final String key : saved.keySet()) {
+                    if (key.matches("f[0-9]+")) {
+                        try {
+                            final Fragment fragment = fragmentManager.getFragment(saved, key);
+                            if (fragment != null) {
+                                transaction.remove(fragment);
+                            }
+                        } catch (final IllegalStateException ignored) {
+                            // The fragment was already discarded by FragmentManager.
+                        }
+                    }
+                }
+                transaction.commitAllowingStateLoss();
+                return;
+            }
             super.restoreState(removeMissingFragmentEntries(
-                    (Bundle) state,
+                    saved,
                     loader,
                     (bundle, key) -> fragmentManager.getFragment(bundle, key)
             ), loader);
@@ -1174,7 +1219,8 @@ public class MainFragment extends BaseFragment
         }
 
         public boolean sameTabs(final List<Tab> tabsToCompare) {
-            return internalTabsList.equals(tabsToCompare);
+            return profileId.equals(ProfileManager.getActiveProfileId(context))
+                    && internalTabsList.equals(tabsToCompare);
         }
     }
 }
