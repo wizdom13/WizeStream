@@ -1782,4 +1782,8 @@
     <string name="tv_related_sidebar_balanced">Balanced (33%)</string>
     <string name="tv_related_sidebar_wide">Wide (44%)</string>
 
+    <string name="learning_show_all_playlists">Show all courses</string>
+    <string name="learning_for_learning">For learning</string>
+    <string name="learning_choose_course">Choose a course</string>
+    <string name="learning_all_lessons">All lessons</string>
 </resources>

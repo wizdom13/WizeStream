@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -87,6 +88,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private List<Pair<Long, LocalItem.LocalItemType>> deletedItems;
     private List<PlaylistLocalItem> completePlaylists = Collections.emptyList();
     private String contextualSearchQuery = "";
+    private java.util.Set<String> learningSources = Collections.emptySet();
+    private static final String LEARNING_CATEGORY = "builtin:learning";
     private PlaylistCategories categories = new PlaylistCategories();
     @State
     public String selectedCategory = PlaylistCategories.ALL;
@@ -231,6 +234,13 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             debounceSaver.setNoChangesToSave();
         }
         isLoadingComplete.set(false);
+        disposables.add(NewPipeDatabase.getInstance(requireContext()).learningContentDAO()
+                .observeSourceIds().subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread()).subscribe(ids -> {
+                    learningSources = new java.util.HashSet<>(ids);
+                    showFilteredPlaylists();
+                }, error -> showError(new ErrorInfo(error,
+                        UserAction.REQUESTED_BOOKMARK, "Loading learning playlists"))));
 
         getMergedOrderedPlaylists(localPlaylistManager, remotePlaylistManager)
                 .onBackpressureLatest()
@@ -297,6 +307,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                 showLoading();
                 isLoadingComplete.set(false);
 
+
                 if (databaseSubscription != null) {
                     databaseSubscription.cancel();
                 }
@@ -346,8 +357,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
         final List<PlaylistLocalItem> filteredPlaylists = ContextualSearchHelper.filter(
                 completePlaylists.stream()
-                        .filter(playlist -> categories.matches(categoryKey(playlist),
-                                selectedCategory))
+                        .filter(playlist -> LEARNING_CATEGORY.equals(selectedCategory)
+                                ? isLearningPlaylist(playlist)
+                                : categories.matches(categoryKey(playlist), selectedCategory))
                         .collect(java.util.stream.Collectors.toList()),
                 contextualSearchQuery,
                 playlist -> new String[]{playlist.getOrderingName()});
@@ -688,12 +700,13 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     }
 
     private boolean isLearningPlaylist(final PlaylistLocalItem item) {
-        final LearningContentManager manager = LearningContentManager.getInstance(requireContext());
         if (item instanceof PlaylistRemoteEntity remote) {
-            return remote.getUrl() != null
-                    && manager.isRemotePlaylistMarked(remote.getServiceId(), remote.getUrl());
+            return remote.getUrl() != null && learningSources.contains(
+                    LearningContentManager.remotePlaylistSourceId(
+                            remote.getServiceId(), remote.getUrl()));
         }
-        return manager.isLocalPlaylistMarked(item.getUid());
+        return learningSources.contains(
+                LearningContentManager.localPlaylistSourceId(item.getUid()));
     }
 
     private String learningActionLabel(final PlaylistLocalItem item) {
@@ -727,9 +740,12 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             update = manager.setLocalPlaylistMarked(item.getUid(), title, !marked);
         }
         disposables.add(update.observeOn(AndroidSchedulers.mainThread()).subscribe(
-                () -> Toast.makeText(requireContext(), marked
-                        ? R.string.learning_content_removed : R.string.learning_content_added,
-                        Toast.LENGTH_SHORT).show(),
+                () -> {
+                    showFilteredPlaylists();
+                    Toast.makeText(requireContext(), marked
+                            ? R.string.learning_content_removed : R.string.learning_content_added,
+                            Toast.LENGTH_SHORT).show();
+                },
                 error -> Toast.makeText(requireContext(), R.string.learning_content_update_error,
                         Toast.LENGTH_LONG).show()));
     }
@@ -751,7 +767,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             return;
         }
         final MaterialButton button = getView().findViewById(R.id.playlist_category_filter);
-        button.setText(PlaylistCategories.ALL.equals(selectedCategory)
+        button.setText(LEARNING_CATEGORY.equals(selectedCategory)
+                ? getString(R.string.learning_for_learning)
+                : PlaylistCategories.ALL.equals(selectedCategory)
                 ? getString(R.string.playlist_categories_all)
                 : PlaylistCategories.UNCATEGORIZED.equals(selectedCategory)
                 ? getString(R.string.playlist_uncategorized) : categories.name(selectedCategory));
@@ -786,6 +804,10 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         if (playlist == null) {
             ids.add(PlaylistCategories.ALL);
             labels.add(getString(R.string.playlist_categories_all));
+            if (LearningMode.isEnabled(requireContext())) {
+                ids.add(LEARNING_CATEGORY);
+                labels.add(getString(R.string.learning_for_learning));
+            }
         }
         ids.add(PlaylistCategories.UNCATEGORIZED);
         labels.add(getString(R.string.playlist_uncategorized));

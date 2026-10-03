@@ -17,6 +17,35 @@ import org.schabi.newpipe.learning.LearningContentKey
 
 @Dao
 interface LearningContentDAO {
+    @Query("SELECT * FROM learning_content_sources WHERE source_id = :sourceId")
+    fun source(sourceId: String): LearningContentSourceEntity?
+
+    @Query(
+        """
+        SELECT src.* FROM learning_content_sources src
+        WHERE (src.source_type = 'LOCAL_PLAYLIST' AND EXISTS (
+            SELECT 1 FROM playlist_stream_join ps JOIN playlists p ON p.uid = ps.playlist_id
+            WHERE ps.playlist_id = src.local_playlist_id AND ps.stream_id = :streamId
+              AND p.profile_id = :profileId
+        )) OR (src.source_type = 'REMOTE_PLAYLIST' AND EXISTS (
+            SELECT 1 FROM learning_content_streams cs
+            WHERE cs.source_id = src.source_id AND cs.stream_id = :streamId
+        )) ORDER BY src.title, src.source_id
+        """
+    )
+    fun coursesForStream(streamId: Long, profileId: String): List<LearningContentSourceEntity>
+
+    @Query(
+        """
+        SELECT streams.* FROM streams
+        JOIN playlist_stream_join ps ON ps.stream_id = streams.uid
+        JOIN playlists p ON p.uid = ps.playlist_id
+        WHERE p.uid = :playlistId AND p.profile_id = :profileId
+        ORDER BY ps.join_index
+        """
+    )
+    fun courseStreams(playlistId: Long, profileId: String): List<StreamEntity>
+
     @Query(
         """
         SELECT * FROM streams WHERE uid IN (
