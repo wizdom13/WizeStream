@@ -1,5 +1,6 @@
 package org.schabi.newpipe.views
 
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -8,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.R
@@ -52,8 +54,10 @@ class FeedFocusLayoutTest {
             }
             try {
                 instrumentation.setInTouchMode(false)
+                instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_TAB)
                 instrumentation.waitForIdleSync()
                 scenario.onActivity {
+                    assertFalse("Keyboard navigation must leave touch mode", root.isInTouchMode)
                     assertTrue(videos.childCount > 0)
                     assertTrue("Header must accept focus before entering the feed", header.requestFocus())
                     assertTrue("Feed must accept keyboard focus", root.requestFocus(View.FOCUS_FORWARD))
