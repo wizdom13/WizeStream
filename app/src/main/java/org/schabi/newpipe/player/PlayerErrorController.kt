@@ -25,12 +25,14 @@ import androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALF
 import androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED
 import androidx.media3.common.PlaybackException.ERROR_CODE_TIMEOUT
 import androidx.media3.common.PlaybackException.ERROR_CODE_UNSPECIFIED
+import androidx.media3.common.Player as Media3Player
 import androidx.media3.exoplayer.ExoPlaybackException
 import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
+import org.schabi.newpipe.player.resolver.PlaybackResolver
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
 import org.schabi.newpipe.util.InfoCache
 
@@ -43,10 +45,14 @@ internal class PlayerErrorController(
     private val recoveryGuard = PlayerHttpErrorRecovery.RecoveryGuard()
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
+    private var pendingLiveStallRecovery: Runnable? = null
+    private var lastPlayingLiveKey: String? = null
 
     fun onPlayerError(error: PlaybackException) {
+        cancelPendingLiveStallRecovery()
         Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
 
         if (player.videoAdjustments.recover(error)) return
@@ -112,12 +118,90 @@ internal class PlayerErrorController(
         eventDispatcher.notifyPlayerError(error, isCatchableException)
     }
 
+    fun onPlayWhenReadyChanged(playWhenReady: Boolean) {
+        if (!playWhenReady) {
+            cancelPendingLiveStallRecovery()
+        }
+    }
+
+    fun onPlaybackStateChanged(playbackState: Int) {
+        val item = player.playQueue?.item
+        val key = item?.let { "${it.serviceId}:${it.url}" }
+        when (playbackState) {
+            Media3Player.STATE_READY -> {
+                cancelPendingLiveStallRecovery()
+                lastPlayingLiveKey = if (item != null && player.playWhenReady &&
+                    canFallBackToLiveHls(item)
+                ) {
+                    key
+                } else {
+                    null
+                }
+            }
+
+            Media3Player.STATE_BUFFERING -> {
+                if (key == null || key != lastPlayingLiveKey || !player.playWhenReady ||
+                    item == null || !canFallBackToLiveHls(item) ||
+                    pendingLiveStallRecovery != null
+                ) {
+                    return
+                }
+
+                val recovery = Runnable {
+                    pendingLiveStallRecovery = null
+                    val queue = player.playQueue ?: return@Runnable
+                    val currentItem = queue.item ?: return@Runnable
+                    val currentKey = "${currentItem.serviceId}:${currentItem.url}"
+                    val info = player.currentStreamInfo.orElse(null) ?: return@Runnable
+                    if (currentKey != key || !player.playWhenReady || player.exoPlayerIsNull() ||
+                        player.exoPlayer.playbackState != Media3Player.STATE_BUFFERING ||
+                        !canFallBackToLiveHls(currentItem) ||
+                        !liveStallRecoveryGuard.acquire(key)
+                    ) {
+                        return@Runnable
+                    }
+
+                    Log.w(Player.TAG, "Live DASH stalled while buffering; retrying with HLS")
+                    videoResolver.preferHlsForLiveStream(info.url)
+                    lastPlayingLiveKey = null
+                    queue.unsetRecovery(queue.index)
+                    player.reloadPlayQueueManager()
+                }
+                pendingLiveStallRecovery = recovery
+                recoveryHandler.postDelayed(recovery, LIVE_STALL_TIMEOUT_MILLIS)
+            }
+
+            else -> {
+                cancelPendingLiveStallRecovery()
+                lastPlayingLiveKey = null
+            }
+        }
+    }
+
     fun resetRecovery() {
         cancelPendingMediaUrlRecovery()
+        cancelPendingLiveStallRecovery()
+        lastPlayingLiveKey = null
         recoveryGuard.reset()
         decoderRecoveryGuard.reset()
         audioTrackRecoveryGuard.reset()
+        liveStallRecoveryGuard.reset()
         videoResolver.clearRejectedVideoCodecFamily()
+        videoResolver.clearLiveHlsFallback()
+    }
+
+    private fun canFallBackToLiveHls(item: PlayQueueItem): Boolean {
+        val info = player.currentStreamInfo.orElse(null) ?: return false
+        return PlayerHttpErrorRecovery.isYouTubeService(item.serviceId) &&
+            PlaybackResolver.isManifestOnlyYoutubeLive(info) &&
+            info.dashMpdUrl.isNotEmpty() &&
+            !videoResolver.isHlsPreferredForLiveStream(info.url) &&
+            player.videoPlayerSelected() && !player.isAudioOnly
+    }
+
+    private fun cancelPendingLiveStallRecovery() {
+        pendingLiveStallRecovery?.let(recoveryHandler::removeCallbacks)
+        pendingLiveStallRecovery = null
     }
 
     private fun tryRecoverFromAudioTrackInitFailure(error: PlaybackException): Boolean {
@@ -299,5 +383,9 @@ internal class PlayerErrorController(
             )
         }
         ErrorUtil.createNotification(player.context, errorInfo)
+    }
+
+    private companion object {
+        const val LIVE_STALL_TIMEOUT_MILLIS = 10_000L
     }
 }

@@ -5,6 +5,7 @@
 
 package org.schabi.newpipe.player.mediasource
 
+import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Timeline
@@ -15,6 +16,7 @@ import androidx.media3.exoplayer.source.MediaPeriod
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.upstream.Allocator
 import java.io.IOException
+import org.schabi.newpipe.player.Player
 
 /**
  * Use YouTube's refreshable DASH DVR window when available. A finite/static or broken manifest
@@ -27,6 +29,7 @@ class YoutubeLiveMediaSource(
 ) : CompositeMediaSource<Int>() {
     private var usingHls = false
     private var publishedTimeline = false
+    private var timelineRefreshCount = 0
     private val selectedSource: MediaSource
         get() = if (usingHls) hlsSource else dashSource
 
@@ -36,15 +39,36 @@ class YoutubeLiveMediaSource(
         super.prepareSourceInternal(mediaTransferListener)
         usingHls = false
         publishedTimeline = false
+        timelineRefreshCount = 0
         prepareChildSource(DASH, dashSource)
     }
 
     override fun onChildSourceInfoRefreshed(id: Int, mediaSource: MediaSource, timeline: Timeline) {
         if (usingHls && id == DASH) return
+        if (Player.DEBUG) {
+            timelineRefreshCount++
+            if (timeline.isEmpty) {
+                Log.d(TAG, "Live timeline update $timelineRefreshCount: source=$id empty")
+            } else {
+                val window = timeline.getWindow(0, Timeline.Window())
+                val dash = window.manifest as? DashManifest
+                Log.d(
+                    TAG,
+                    "Live timeline update $timelineRefreshCount: source=$id " +
+                        "dynamic=${window.isDynamic} durationMs=${window.durationMs} " +
+                        "defaultPositionMs=${window.defaultPositionMs} " +
+                        "dashDynamic=${dash?.dynamic} dashUpdateMs=${dash?.minUpdatePeriodMs} " +
+                        "dashPeriods=${dash?.periodCount}"
+                )
+            }
+        }
         if (!usingHls && !publishedTimeline) {
             if (timeline.isEmpty) return
             val manifest = timeline.getWindow(0, Timeline.Window()).manifest as? DashManifest
             if (manifest == null || !isRefreshable(manifest)) {
+                if (Player.DEBUG) {
+                    Log.d(TAG, "DASH timeline is not refreshable; using HLS")
+                }
                 useHls()
                 return
             }
@@ -58,6 +82,9 @@ class YoutubeLiveMediaSource(
             super.maybeThrowSourceInfoRefreshError()
         } catch (error: IOException) {
             if (usingHls || publishedTimeline) throw error
+            if (Player.DEBUG) {
+                Log.d(TAG, "DASH preparation failed; using HLS: ${error.javaClass.simpleName}")
+            }
             useHls()
         }
     }
@@ -75,6 +102,7 @@ class YoutubeLiveMediaSource(
     }
 
     companion object {
+        private const val TAG = "YoutubeLiveMediaSource"
         private const val DASH = 0
         private const val HLS = 1
 

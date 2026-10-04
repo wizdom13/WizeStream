@@ -413,9 +413,15 @@ class Player(
     val isPreparedForProgressUpdates: Boolean
         get() = stateController.isPrepared
 
-    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = stateController.onPlayWhenReadyChanged(playWhenReady, reason)
+    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+        stateController.onPlayWhenReadyChanged(playWhenReady, reason)
+        errorController.onPlayWhenReadyChanged(playWhenReady)
+    }
 
-    override fun onPlaybackStateChanged(playbackState: Int) = stateController.onPlaybackStateChanged(playbackState)
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        stateController.onPlaybackStateChanged(playbackState)
+        errorController.onPlaybackStateChanged(playbackState)
+    }
 
     override fun onIsLoadingChanged(isLoading: Boolean) = stateController.onIsLoadingChanged(isLoading)
 

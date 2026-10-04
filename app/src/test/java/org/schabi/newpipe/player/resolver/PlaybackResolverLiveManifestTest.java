@@ -1,17 +1,31 @@
 package org.schabi.newpipe.player.resolver;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.exoplayer.hls.HlsMediaSource;
+import androidx.media3.exoplayer.source.MediaSource;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
+import org.schabi.newpipe.player.helper.PlayerDataSource;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.Collections;
 
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE, sdk = 35)
 public class PlaybackResolverLiveManifestTest {
     @Test
     public void manifestOnlyYoutubeLiveCanSelectDashWithHlsFallback() {
@@ -57,6 +71,21 @@ public class PlaybackResolverLiveManifestTest {
         info.setHlsUrl("");
 
         assertFalse(PlaybackResolver.isManifestOnlyYoutubeLive(info));
+    }
+
+    @Test
+    public void stalledManifestOnlyLiveCanUseHlsWithoutPreparingDash() {
+        final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+        final PlayerDataSource dataSource = mock(PlayerDataSource.class);
+        when(dataSource.getLiveHlsMediaSourceFactory())
+                .thenReturn(new HlsMediaSource.Factory(new DefaultHttpDataSource.Factory()));
+
+        final MediaSource source = PlaybackResolver.maybeBuildLiveMediaSource(
+                dataSource, info, true);
+
+        assertNotNull(source);
+        assertTrue(source instanceof HlsMediaSource);
+        verify(dataSource, never()).getLiveYoutubeDashMediaSourceFactory();
     }
 
     private static StreamInfo createLiveInfo(final int serviceId) {

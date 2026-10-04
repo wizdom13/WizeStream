@@ -51,6 +51,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     private RejectedVideoStream rejectedVideoStream;
     @Nullable
     private RejectedVideoCodecFamily rejectedVideoCodecFamily;
+    @Nullable
+    private String hlsFallbackStreamUrl;
 
     public enum SourceType {
         LIVE_STREAM,
@@ -88,7 +90,7 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         autoQualitySelected = autoRequested;
         adaptiveQualityActive = false;
 
-        final MediaSource liveSource = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info);
+        final MediaSource liveSource = resolveLiveSource(info);
         if (liveSource != null) {
             streamSourceType = SourceType.LIVE_STREAM;
             adaptiveQualityActive = autoRequested;
@@ -240,6 +242,24 @@ public class VideoPlaybackResolver implements PlaybackResolver {
      */
     public Optional<SourceType> getStreamSourceType() {
         return Optional.ofNullable(streamSourceType);
+    }
+
+    @Nullable
+    private MediaSource resolveLiveSource(@NonNull final StreamInfo info) {
+        return PlaybackResolver.maybeBuildLiveMediaSource(
+                dataSource, info, isHlsPreferredForLiveStream(info.getUrl()));
+    }
+
+    public void preferHlsForLiveStream(@NonNull final String streamUrl) {
+        hlsFallbackStreamUrl = streamUrl;
+    }
+
+    public boolean isHlsPreferredForLiveStream(@NonNull final String streamUrl) {
+        return streamUrl.equals(hlsFallbackStreamUrl);
+    }
+
+    public void clearLiveHlsFallback() {
+        hlsFallbackStreamUrl = null;
     }
 
     @Nullable
