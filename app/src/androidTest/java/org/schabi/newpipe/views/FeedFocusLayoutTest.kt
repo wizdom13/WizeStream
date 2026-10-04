@@ -55,9 +55,9 @@ class FeedFocusLayoutTest {
                 instrumentation.waitForIdleSync()
                 scenario.onActivity {
                     assertTrue(videos.childCount > 0)
-                    header.requestFocus()
-                    assertTrue(root.requestFocus(View.FOCUS_FORWARD))
-                    assertTrue(videos.getChildAt(0).hasFocus())
+                    assertTrue("Header must accept focus before entering the feed", header.requestFocus())
+                    assertTrue("Feed must accept keyboard focus", root.requestFocus(View.FOCUS_FORWARD))
+                    assertTrue("Focus must land on a video row", videos.getChildAt(0).hasFocus())
                     assertTrue(header.requestFocus())
                     assertTrue(header.hasFocus())
                     videos.visibility = View.GONE
