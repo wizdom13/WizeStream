@@ -36,6 +36,13 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/learning_all_lessons"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/learning_all_lessons" />
+
         <TextView
             android:id="@+id/learning_next_heading"
             android:layout_width="match_parent"

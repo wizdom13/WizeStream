@@ -7,14 +7,18 @@ package org.schabi.newpipe.learning
 
 import androidx.core.view.isVisible
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.disposables.SerialDisposable
+import io.reactivex.rxjava3.schedulers.Schedulers
+import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.LearningPlaylistPanelBinding
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment
 import org.schabi.newpipe.player.playqueue.PlayQueue
 import org.schabi.newpipe.profiles.ProfileManager
+import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.image.CoilHelper
 
 object LearningPlaylistPanel {
@@ -28,6 +32,25 @@ object LearningPlaylistPanel {
                 val queue = optional.orElse(null)
                 render(binding, queue, serviceId, url, showNext) { parent.openNextLearningLesson(it) }
                 val navigation = LearningPlaylistNavigation.from(queue, ProfileManager.getActiveProfileId(binding.root.context), serviceId, url)
+                binding.learningAllLessons.setOnClickListener {
+                    if (navigation != null) {
+                        disposables.add(
+                            Single.fromCallable {
+                                NewPipeDatabase.getInstance(binding.root.context).learningContentDAO()
+                                    .source(navigation.course.sourceId) ?: error("Course is no longer available")
+                            }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                                .subscribe({ source ->
+                                    if (!parent.isAdded || ProfileManager.getActiveProfileId(binding.root.context) != navigation.course.profileId) return@subscribe
+                                    if (source.localPlaylistId != null) {
+                                        NavigationHelper.openLocalPlaylistFragment(parent.parentFragmentManager, source.localPlaylistId, source.title.orEmpty())
+                                    } else if (source.serviceId != null && source.url != null) {
+                                        NavigationHelper.openPlaylistFragment(parent.parentFragmentManager, source.serviceId, source.url, source.title.orEmpty())
+                                    }
+                                }, { binding.learningAllLessons.isEnabled = false })
+                        )
+                    }
+                }
+                binding.learningAllLessons.isEnabled = true
                 review.set(
                     if (binding.root.isVisible && navigation != null) {
                         LearningReviewDialog.bindShortcut(binding.learningReviewShortcut, parent.parentFragmentManager, navigation.course.sourceId)
