@@ -1,0 +1,7 @@
+• Add a Sync now remote shortcut and optional Wavy player slider.
+• Add timestamp links for YouTube videos and per-video playlist notes.
+• Respect feed refresh thresholds; add Refresh all now.
+• Fix channel About and BitChute tab crashes.
+• Improve stale YouTube stream recovery and Odysee metadata handling.
+• Fix startup themes, feed backgrounds, and player collapse/orientation.
+• Improve TV focus navigation and profile validation diagnostics.
