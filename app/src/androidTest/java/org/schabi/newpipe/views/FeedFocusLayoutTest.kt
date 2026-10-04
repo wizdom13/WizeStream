@@ -25,7 +25,10 @@ class FeedFocusLayoutTest {
             scenario.onActivity { activity ->
                 wasInTouchMode = activity.window.decorView.isInTouchMode
                 root = FeedFocusLayout(activity)
-                header = Button(activity).apply { text = "Tap for details" }
+                header = Button(activity).apply {
+                    text = "Tap for details"
+                    isFocusable = true
+                }
                 root.addView(header, CoordinatorLayout.LayoutParams(300, 80))
                 videos = RecyclerView(activity).apply {
                     id = R.id.items_list
@@ -35,6 +38,7 @@ class FeedFocusLayoutTest {
                         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = object : RecyclerView.ViewHolder(
                             Button(parent.context).apply {
                                 layoutParams = RecyclerView.LayoutParams(300, 80)
+                                isFocusable = true
                             }
                         ) {}
 
@@ -53,7 +57,7 @@ class FeedFocusLayoutTest {
                     assertTrue(videos.childCount > 0)
                     header.requestFocus()
                     assertTrue(root.requestFocus(View.FOCUS_FORWARD))
-                    assertTrue(videos.hasFocus())
+                    assertTrue(videos.getChildAt(0).hasFocus())
                     assertTrue(header.requestFocus())
                     assertTrue(header.hasFocus())
                     videos.visibility = View.GONE
