@@ -1092,7 +1092,11 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     }
 
     public boolean canUseDirectionalShortcuts() {
-        return isFullscreen && !isControlsVisible() && !isAnyListViewOpen() && !touchLocked;
+        return isFullscreen && binding.getRoot().isShown()
+                && !isControlsVisible() && !isAnyListViewOpen() && !touchLocked
+                && getParentActivity().map(activity -> activity.hasWindowFocus()
+                        && (activity.getCurrentFocus() == null || binding.getRoot().hasFocus()))
+                        .orElse(false);
     }
 
     public boolean isTouchLocked() {
