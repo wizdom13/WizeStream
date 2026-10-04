@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remote_sync_result">Synchronization: %1$d successful, %2$d failed. Details are in Device synchronization settings.</string>
+</resources>

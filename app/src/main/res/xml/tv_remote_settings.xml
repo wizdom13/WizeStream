@@ -86,6 +86,12 @@
             android:persistent="false"
             app:iconSpaceReserved="false" />
         <Preference
+            android:key="tv_remote_sync"
+            android:title="@string/device_sync_sync_now_title"
+            android:summary="@string/remote_unassigned"
+            android:persistent="false"
+            app:iconSpaceReserved="false" />
+        <Preference
             android:key="tv_remote_settings"
             android:title="@string/settings"
             android:summary="@string/remote_unassigned"

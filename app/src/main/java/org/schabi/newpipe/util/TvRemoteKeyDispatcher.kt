@@ -61,6 +61,8 @@ class TvRemoteKeyDispatcher @JvmOverloads constructor(
                 TvRemoteAction.MUTE -> player.toggleMute()
                 else -> Unit
             }
+        } else if (action == TvRemoteAction.SYNC) {
+            org.schabi.newpipe.sync.DeviceSyncShortcut.start(activity)
         } else if (action == TvRemoteAction.SETTINGS) {
             if (activity !is SettingsActivity) {
                 PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer()
