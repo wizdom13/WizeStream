@@ -319,9 +319,10 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
             return;
         }
 
-        if (PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer()) {
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        }
+        PlayerHolder.getInstance().exitMainPlayerFullscreenForMiniPlayer();
+        // Navigation may already have cleared the fullscreen flag before collapsing the
+        // sheet. Release its orientation request even when there is no UI state left to exit.
+        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
     }
 
     @Nullable
