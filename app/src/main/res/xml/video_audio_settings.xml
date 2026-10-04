@@ -190,7 +190,7 @@
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
 
-        <SeekBarPreference
+        <org.schabi.newpipe.settings.MaterialSliderPreference
             android:defaultValue="85"
             android:key="@string/danmaku_opacity_key"
             android:max="100"
@@ -200,7 +200,7 @@
             app:showSeekBarValue="true"
             app:singleLineTitle="false" />
 
-        <SeekBarPreference
+        <org.schabi.newpipe.settings.MaterialSliderPreference
             android:defaultValue="18"
             android:key="@string/danmaku_text_size_key"
             android:max="32"
@@ -210,7 +210,7 @@
             app:showSeekBarValue="true"
             app:singleLineTitle="false" />
 
-        <SeekBarPreference
+        <org.schabi.newpipe.settings.MaterialSliderPreference
             android:defaultValue="6"
             android:key="@string/danmaku_max_rows_key"
             android:max="12"
@@ -220,7 +220,7 @@
             app:showSeekBarValue="true"
             app:singleLineTitle="false" />
 
-        <SeekBarPreference
+        <org.schabi.newpipe.settings.MaterialSliderPreference
             android:defaultValue="8"
             android:key="@string/danmaku_duration_key"
             android:max="15"
