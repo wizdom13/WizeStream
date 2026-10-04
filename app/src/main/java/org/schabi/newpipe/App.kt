@@ -107,6 +107,10 @@ open class App :
 
         // Initialize settings first because other initializations can use its values
         NewPipeSettings.initSettings(this)
+        // Apply the saved mode before AppCompat attaches the first activity's base context.
+        // Waiting until MainActivity.onCreate can initially resolve light resources for a
+        // forced dark/black theme, especially on pre-Android 12 cold starts.
+        ThemeHelper.setDayNightMode(this)
         applyDynamicColorsIfAvailable()
 
         NewPipe.init(

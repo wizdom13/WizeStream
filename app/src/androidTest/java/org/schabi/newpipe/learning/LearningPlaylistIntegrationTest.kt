@@ -180,7 +180,7 @@ class LearningPlaylistIntegrationTest {
             clickDialogText(context.getString(R.string.learning_mark_content))
             waitFor { manager.isLocalPlaylistMarked(playlistId) }
             longPress(scenario, "Local course")
-            assertNotNull(findDialogText(context.getString(R.string.learning_remove_content)))
+            waitFor { findDialogText(context.getString(R.string.learning_remove_content)) != null }
             clickDialogText(context.getString(R.string.rename))
             waitFor { findDialogText(context.getString(R.string.cancel)) != null }
             savePreview("learning-playlist-rename")
@@ -308,6 +308,9 @@ class LearningPlaylistIntegrationTest {
     }
 
     private fun longPress(scenario: ActivityScenario<AboutActivity>, title: String) {
+        // Accessibility clicks and dialog dismissal are asynchronous. Do not accept the old
+        // menu's Delete entry as evidence that the next menu has appeared.
+        waitFor { findDialogText(context.getString(R.string.delete)) == null }
         waitFor {
             var pressed = false
             onActivity(scenario) { activity ->
