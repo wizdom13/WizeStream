@@ -1,0 +1,4 @@
+• Add a Video metadata text size setting for views, dates, and duration badges.
+• Restore D-pad access to fullscreen player options on Android TV.
+• Show video controls for manifest-only YouTube live streams.
+• Retry with HLS once if a YouTube live stream stalls while buffering.
