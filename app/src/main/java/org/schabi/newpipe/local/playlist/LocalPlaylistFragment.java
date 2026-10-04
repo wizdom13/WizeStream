@@ -1072,12 +1072,14 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                         getString(marked
                                 ? R.string.learning_remove_content
                                 : R.string.learning_mark_content),
-                        getString(R.string.delete)
+                        getString(R.string.delete),
+                        getString(R.string.playlist_video_notes)
                     }
                     : new String[] {
                         getString(R.string.play),
                         getString(R.string.local_media_play_background),
-                        getString(R.string.delete)
+                        getString(R.string.delete),
+                        getString(R.string.playlist_video_notes)
                     };
             new AlertDialog.Builder(requireContext())
                     .setTitle(item.getStreamEntity().getTitle())
@@ -1103,6 +1105,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                                     ));
                         } else if (which == (learningEnabled ? 3 : 2)) {
                             deleteItem(item);
+                        } else {
+                            showVideoNotes(item);
                         }
                     })
                     .show();
@@ -1120,6 +1124,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                     StreamDialogDefaultEntry.SET_AS_PLAYLIST_THUMBNAIL,
                     StreamDialogDefaultEntry.DELETE
             );
+
+            dialogBuilder.addEntry(new org.schabi.newpipe.info_list.dialog.StreamDialogEntry(
+                    R.string.playlist_video_notes, (f, i) -> showVideoNotes(item)));
 
             // set custom actions
             // all entries modified below have already been added within the builder
@@ -1141,6 +1148,11 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         } catch (final IllegalArgumentException e) {
             InfoItemDialog.Builder.reportErrorDuringInitialization(e, infoItem);
         }
+    }
+
+    private void showVideoNotes(final PlaylistStreamEntry item) {
+        org.schabi.newpipe.learning.VideoNotesDialog.show(getParentFragmentManager(),
+                item.getStreamEntity().getUid(), item.getStreamEntity().getTitle());
     }
 
     private void setInitialData(final long pid, final String title) {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlist_video_notes">Video notes</string>
+    <string name="playlist_video_notes_help">Notes belong to this video and are shared across playlists containing it.</string>
+    <string name="copy_video_title">Copy video title</string>
+    <string name="copy_timestamped_link">Copy link at current position</string>
+    <string name="playlist_video_notes_about">About these notes</string>
+</resources>
