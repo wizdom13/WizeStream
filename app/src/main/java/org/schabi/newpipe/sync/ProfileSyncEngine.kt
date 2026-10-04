@@ -9,9 +9,13 @@ class ProfileSyncEngine internal constructor(
     private val store: ProfileSyncStore
 ) {
     internal fun createRequest(): ProfileSyncRequest {
-        return ProfileSyncRequest(
-            profiles = store.snapshot()
-        ).also(ProfileSyncValidation::validateRequest)
+        val request = ProfileSyncRequest(profiles = store.snapshot())
+        try {
+            ProfileSyncValidation.validateRequest(request)
+        } catch (error: ProfileSyncException) {
+            throw ProfileSyncException("Local profile catalog: ${error.message}", error)
+        }
+        return request
     }
 
     internal fun handleRequest(request: ProfileSyncRequest): ProfileSyncResponse {
@@ -36,7 +40,8 @@ class ProfileSyncEngine internal constructor(
         ProfileSyncValidation.validateResponse(response)
         if (!response.accepted) {
             throw ProfileSyncException(
-                response.error ?: "The remote device rejected profile synchronization"
+                "Remote device rejected profile synchronization: " +
+                    (response.error ?: "No reason supplied")
             )
         }
         return store.apply(response.profiles)

@@ -199,7 +199,7 @@ internal class ProfileSyncProtocolController(
     }
 }
 
-private object ProfileSyncCodec {
+internal object ProfileSyncCodec {
     private val json = Json {
         encodeDefaults = false
         explicitNulls = false
