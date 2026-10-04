@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.27.0 (`1027000`)
+
+### New features
+
+- Added an assignable Sync now remote shortcut that runs device synchronization without leaving playback.
+- Added an optional animated Wavy player slider under Video and audio settings; Standard remains the default.
+- Added timestamped sharing, browser opening, and link copying for non-live YouTube playback.
+- Added per-video notes to saved-playlist menus, available without Learning mode and shared across playlists containing the same video.
+
+### Improvements
+
+- Added an explicit Refresh all now action while normal What's New refreshes respect the configured update threshold.
+- Improved feed focus entry and kept player directional shortcuts within playback controls.
+- Added clearer profile catalog validation diagnostics without exposing profile identities.
+
+### Fixes
+
+- Fixed channel description/About-tab crashes and the BitChute trending tab icon crash.
+- Refreshed cached stream information after stale YouTube DASH manifests.
+- Improved Odysee claim validation and handling of missing optional stream metadata.
+- Applied the saved night mode on initial activity creation and used the active theme background for feed and subscription pages.
+- Minimized embedded playback on Back and released forced phone orientation when collapsing the player.
+
 ## WizeStream 1.26.1 (`1026001`)
 
 ### New features

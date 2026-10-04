@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1027000">WizeStream 1.27.0</a></li>
 <li><a href="#release-1026001">WizeStream 1.26.1</a></li>
 <li><a href="#release-1026000">WizeStream 1.26.0</a></li>
 <li><a href="#release-1025000">WizeStream 1.25.0</a></li>
@@ -83,6 +84,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1027000" data-version="1.27.0" data-version-code="1027000">
+<h2>WizeStream 1.27.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added an assignable Sync now remote shortcut that runs device synchronization without leaving playback.</li>
+<li>Added an optional animated Wavy player slider under Video and audio settings; Standard remains the default.</li>
+<li>Added timestamped sharing, browser opening, and link copying for non-live YouTube playback.</li>
+<li>Added per-video notes to saved-playlist menus, available without Learning mode and shared across playlists containing the same video.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Added an explicit Refresh all now action while normal What&#x27;s New refreshes respect the configured update threshold.</li>
+<li>Improved feed focus entry and kept player directional shortcuts within playback controls.</li>
+<li>Added clearer profile catalog validation diagnostics without exposing profile identities.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Fixed channel description/About-tab crashes and the BitChute trending tab icon crash.</li>
+<li>Refreshed cached stream information after stale YouTube DASH manifests.</li>
+<li>Improved Odysee claim validation and handling of missing optional stream metadata.</li>
+<li>Applied the saved night mode on initial activity creation and used the active theme background for feed and subscription pages.</li>
+<li>Minimized embedded playback on Back and released forced phone orientation when collapsing the player.</li>
+</ul>
+</div>
+</section>
 <section id="release-1026001" data-version="1.26.1" data-version-code="1026001">
 <h2>WizeStream 1.26.1</h2>
 <div class="release-notes">
