@@ -2669,8 +2669,12 @@ public final class VideoDetailFragment
                 info.getAudioStreams().isEmpty() && info.getVideoStreams().isEmpty()
                         ? View.GONE : View.VISIBLE);
 
-        final boolean noVideoStreams =
-                info.getVideoStreams().isEmpty() && info.getVideoOnlyStreams().isEmpty();
+        // YouTube live video can be supplied only through HLS/DASH manifests, without
+        // individual video streams in StreamInfo. Keep its video controls and play icon.
+        final boolean hasLiveVideoManifest = info.getStreamType() == StreamType.LIVE_STREAM
+                && (!info.getHlsUrl().isEmpty() || !info.getDashMpdUrl().isEmpty());
+        final boolean noVideoStreams = info.getVideoStreams().isEmpty()
+                && info.getVideoOnlyStreams().isEmpty() && !hasLiveVideoManifest;
         binding.detailControlsPopup.setVisibility(noVideoStreams ? View.GONE : View.VISIBLE);
         binding.detailThumbnailPlayButton.setImageResource(
                 noVideoStreams ? R.drawable.ic_headset_shadow : R.drawable.ic_play_arrow_shadow);
