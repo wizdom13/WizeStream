@@ -1172,12 +1172,10 @@ public final class VideoDetailFragment
             return true;
         }
 
-        // If we have something in history of played items we replay it here
-        if (isPlayerAvailable()
-                && player.getPlayQueue() != null
-                && player.videoPlayerSelected()
-                && player.getPlayQueue().previous()) {
-            return true; // no code here, as previous() was used in the if
+        // Back leaves the expanded video without changing the current queue item. Let
+        // MainActivity collapse the sheet; previous/next remain playback-control actions.
+        if (isPlayerAvailable() && player.videoPlayerSelected()) {
+            return false;
         }
 
         // That means that we are on the start of the stack,
@@ -3601,6 +3599,7 @@ public final class VideoDetailFragment
                         setOverlayLook(binding.appBarLayout, behavior, 1);
                         break;
                     case BottomSheetBehavior.STATE_COLLAPSED:
+                        clearPendingFullscreenTransition();
                         moveFocusToMainFragment(true);
                         manageSpaceAtTheBottom(false);
 

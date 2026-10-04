@@ -124,6 +124,18 @@ public class VideoDetailBackPressTest {
     }
 
     @Test
+    public void backFromEmbeddedVideoCollapsesWithoutChangingPlaybackHistory() {
+        fullscreen.set(false);
+        when(player.videoPlayerSelected()).thenReturn(true);
+
+        assertFalse(fragment.onBackPressed());
+
+        verify(player, never()).getPlayQueue();
+        verify(player, never()).pause();
+        verify(activity, never()).setRequestedOrientation(anyInt());
+    }
+
+    @Test
     public void tabletBackExitsFullscreenWithoutRequestingPortrait() {
         deviceUtils.when(() -> DeviceUtils.isTablet(activity)).thenReturn(true);
 
