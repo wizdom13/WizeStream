@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import androidx.media3.common.PlaybackException;
 import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.exoplayer.dash.DashManifestStaleException;
 import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker;
 
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -144,7 +145,8 @@ final class PlayerHttpErrorRecovery {
     static boolean isRecoverableMediaUrlFailure(@NonNull final Throwable error) {
         return isRecoverableStatusCode(findInvalidResponseCode(error))
                 || hasUnknownHostCause(error)
-                || hasPlaylistStuckCause(error);
+                || hasPlaylistStuckCause(error)
+                || hasStaleDashManifestCause(error);
     }
 
     static boolean isYouTubeService(final int serviceId) {
@@ -185,6 +187,17 @@ final class PlayerHttpErrorRecovery {
         Throwable current = error;
         while (current != null) {
             if (current instanceof HlsPlaylistTracker.PlaylistStuckException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    static boolean hasStaleDashManifestCause(@NonNull final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof DashManifestStaleException) {
                 return true;
             }
             current = current.getCause();
