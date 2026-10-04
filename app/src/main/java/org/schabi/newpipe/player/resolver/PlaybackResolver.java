@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player.resolver;
 
+import static org.schabi.newpipe.MainActivity.DEBUG;
 import static org.schabi.newpipe.extractor.stream.AudioStream.UNKNOWN_BITRATE;
 import static org.schabi.newpipe.extractor.stream.VideoStream.RESOLUTION_UNKNOWN;
 import static org.schabi.newpipe.player.helper.PlayerDataSource.LIVE_STREAM_EDGE_GAP_MILLIS;
@@ -199,6 +200,13 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
     @Nullable
     static MediaSource maybeBuildLiveMediaSource(final PlayerDataSource dataSource,
                                                  final StreamInfo info) {
+        return maybeBuildLiveMediaSource(dataSource, info, false);
+    }
+
+    @Nullable
+    static MediaSource maybeBuildLiveMediaSource(final PlayerDataSource dataSource,
+                                                 final StreamInfo info,
+                                                 final boolean preferHls) {
         final boolean isManifestOnlyYoutubeLive = isManifestOnlyYoutubeLive(info);
         if (!StreamTypeUtil.isLiveStream(info.getStreamType())
                 && !isManifestOnlyYoutubeLive) {
@@ -212,8 +220,15 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             if (isManifestOnlyYoutubeLive) {
                 final MediaSource hls = buildLiveMediaSource(
                         dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
-                if (info.getDashMpdUrl().isEmpty()) {
+                if (info.getDashMpdUrl().isEmpty() || preferHls) {
+                    if (DEBUG) {
+                        Log.d(TAG, preferHls ? "Live source: HLS after DASH stall"
+                                : "Live source: HLS only");
+                    }
                     return hls;
+                }
+                if (DEBUG) {
+                    Log.d(TAG, "Live source: DASH with HLS fallback");
                 }
                 return new YoutubeLiveMediaSource(buildLiveMediaSource(
                         dataSource, info.getDashMpdUrl(), C.CONTENT_TYPE_DASH, tag), hls);
@@ -221,10 +236,16 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             // Prefer DASH over HLS because of an exoPlayer bug that causes the background player to
             // also fetch the video stream even if it is supposed to just fetch the audio stream.
             if (!info.getDashMpdUrl().isEmpty()) {
+                if (DEBUG) {
+                    Log.d(TAG, "Live source: DASH");
+                }
                 return buildLiveMediaSource(
                         dataSource, info.getDashMpdUrl(), C.CONTENT_TYPE_DASH, tag);
             }
             if (!info.getHlsUrl().isEmpty()) {
+                if (DEBUG) {
+                    Log.d(TAG, "Live source: HLS");
+                }
                 return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
             }
         } catch (final Exception e) {

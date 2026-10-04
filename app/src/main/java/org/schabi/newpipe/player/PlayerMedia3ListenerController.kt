@@ -38,6 +38,17 @@ internal class PlayerMedia3ListenerController(
         val item = player.currentItem
         if (item != null && player.isLive) {
             playbackParametersController.applySpeedProfile(item)
+            if (Player.DEBUG && !timeline.isEmpty) {
+                val index = player.exoPlayer.currentMediaItemIndex
+                    .coerceIn(0, timeline.windowCount - 1)
+                val window = timeline.getWindow(index, Timeline.Window())
+                Log.d(
+                    Player.TAG,
+                    "Live player timeline: reason=$reason dynamic=${window.isDynamic} " +
+                        "durationMs=${window.durationMs} " +
+                        "defaultPositionMs=${window.defaultPositionMs}"
+                )
+            }
         }
     }
 

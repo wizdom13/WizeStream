@@ -388,6 +388,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
+    testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.13.4")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.4")
