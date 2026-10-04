@@ -35,7 +35,9 @@ class TvRemoteKeyDispatcher @JvmOverloads constructor(
             keys.actionFor(code)?.takeIf {
                 (!it.playback || activePlayer() != null) && (
                     !TvRemoteKeys.isDirection(code) ||
-                        activePlayer()?.UIs()?.get(MainPlayerUi::class.java)?.map { ui -> ui.canUseDirectionalShortcuts() }?.orElse(false) == true
+                        activePlayer()?.UIs()?.get(MainPlayerUi::class.java)?.map { ui ->
+                            ui.parentActivity.orElse(null) === activity && ui.canUseDirectionalShortcuts()
+                        }?.orElse(false) == true
                     )
             }
         },
