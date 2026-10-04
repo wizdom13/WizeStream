@@ -37,7 +37,7 @@
             android:progressDrawable="@drawable/progress_stream_thumbnail_material" />
     </org.schabi.newpipe.views.RoundedThumbnailContainer>
 
-    <org.schabi.newpipe.views.NewPipeTextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemDurationView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -55,6 +55,7 @@
         android:textColor="@color/info_list_thumbnail_badge_text_color"
         android:textSize="@dimen/video_item_search_duration_text_size"
         tools:ignore="RtlHardcoded"
+        app:mediaTextRole="videoMetadata"
         tools:text="1:09:10" />
 
     <org.schabi.newpipe.views.NewPipeTextView

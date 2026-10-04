@@ -38,7 +38,7 @@
             android:progressDrawable="@drawable/progress_stream_thumbnail_material" />
     </org.schabi.newpipe.views.RoundedThumbnailContainer>
 
-    <org.schabi.newpipe.views.NewPipeTextView
+    <org.schabi.newpipe.views.MediaTextView
         android:id="@+id/itemDurationView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -52,6 +52,7 @@
         android:textColor="@color/info_list_thumbnail_badge_text_color"
         app:layout_constraintBottom_toBottomOf="@id/itemThumbnailContainer"
         app:layout_constraintRight_toRightOf="@id/itemThumbnailContainer"
+        app:mediaTextRole="videoMetadata"
         tools:text="1:09:10" />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -132,7 +133,7 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Uploader" />
 
-        <org.schabi.newpipe.views.NewPipeTextView
+        <org.schabi.newpipe.views.MediaTextView
             android:id="@+id/itemAdditionalDetails"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -145,6 +146,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/itemUploaderView"
             app:layout_constraintTop_toTopOf="parent"
+            app:mediaTextRole="videoMetadata"
             tools:text="2 years ago • 10M views" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

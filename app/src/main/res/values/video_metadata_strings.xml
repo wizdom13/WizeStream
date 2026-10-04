@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="video_metadata_text_size_key" translatable="false">video_metadata_text_size</string>
+    <string name="video_metadata_text_size_title">Video metadata text size</string>
+</resources>

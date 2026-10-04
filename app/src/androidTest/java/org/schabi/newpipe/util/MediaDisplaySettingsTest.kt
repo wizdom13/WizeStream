@@ -27,6 +27,44 @@ class MediaDisplaySettingsTest {
     private val prefs = PreferenceManager.getDefaultSharedPreferences(context)
 
     @Test
+    fun metadataSizeUpdatesViewsDateAndDurationWithoutChangingTitle() {
+        val key = context.getString(R.string.video_metadata_text_size_key)
+        val old = prefs.getString(key, null)
+        prefs.edit().putString(key, "100").commit()
+        try {
+            ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
+                scenario.onActivity { activity ->
+                    val host = LinearLayout(activity)
+                    activity.setContentView(host)
+                    val row = activity.layoutInflater.inflate(R.layout.list_stream_item, host, false)
+                    host.addView(row)
+                    val details = row.findViewById<TextView>(R.id.itemAdditionalDetails)
+                    val duration = row.findViewById<TextView>(R.id.itemDurationView)
+                    val title = row.findViewById<TextView>(R.id.itemVideoTitleView)
+                    val detailsSize = details.textSize
+                    val durationSize = duration.textSize
+                    val titleSize = title.textSize
+                    prefs.edit().putString(key, "150").commit()
+                    assertTrue(details.textSize > detailsSize)
+                    assertTrue(duration.textSize > durationSize)
+                    assertEquals(titleSize, title.textSize, 0.01f)
+                    val enlarged = details.textSize
+                    host.removeView(row)
+                    host.addView(row)
+                    assertEquals(enlarged, details.textSize, 0.01f)
+                    prefs.edit().putString(key, "100").commit()
+                    assertEquals(detailsSize, details.textSize, 0.01f)
+                    assertEquals(durationSize, duration.textSize, 0.01f)
+                }
+            }
+        } finally {
+            prefs.edit().apply {
+                if (old == null) remove(key) else putString(key, old)
+            }.commit()
+        }
+    }
+
+    @Test
     fun titleAndChannelSizesUpdateIndependentlyAndResetWithoutCompounding() = withSettings {
         val titleKey = context.getString(R.string.video_title_text_size_key)
         val channelKey = context.getString(R.string.channel_name_text_size_key)
