@@ -38,8 +38,8 @@ object KioskTranslator {
     fun getKioskIcon(kioskId: String?): Int {
         return when (kioskId) {
             null, "" -> R.drawable.ic_search
-            "Trending", "Trending This Month", "Top 50", "New & hot", "conferences" ->
-                R.drawable.ic_whatshot
+            "Trending", "Top 50", "New & hot", "conferences" -> R.drawable.ic_whatshot
+            "Trending This Month" -> R.drawable.ic_whatshot
             "Local" -> R.drawable.ic_home
             "Recently added", "recent" -> R.drawable.ic_add_circle_outline
             "Most liked" -> R.drawable.ic_thumb_up
