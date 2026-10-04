@@ -11,6 +11,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.android.material.R as MaterialR
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,7 +35,7 @@ class MainContentThemeTest {
                     val content = main.findViewById<View>(R.id.main_safe_content)
                     assertTrue("Pages must not expose the startup window background", content.background is ColorDrawable)
                     val background = (content.background as ColorDrawable).color
-                    assertEquals(ThemeHelper.resolveColorFromAttr(host, R.attr.colorSurface), background)
+                    assertEquals(ThemeHelper.resolveColorFromAttr(host, MaterialR.attr.colorSurface), background)
                     listOf(
                         R.layout.list_channel_grid_item to R.id.itemTitleView,
                         R.layout.list_stream_item to R.id.itemTitleView
