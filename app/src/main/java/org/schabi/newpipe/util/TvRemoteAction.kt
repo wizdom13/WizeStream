@@ -21,7 +21,8 @@ enum class TvRemoteAction(val id: String, @StringRes val title: Int, val playbac
     SUBSCRIPTIONS("subscriptions", R.string.tab_subscriptions),
     BOOKMARKS("bookmarks", R.string.bottom_navigation_tab_bookmarks),
     HISTORY("history", R.string.action_history),
-    SETTINGS("settings", R.string.settings);
+    SETTINGS("settings", R.string.settings),
+    SYNC("sync", R.string.device_sync_sync_now_title);
 
     val preferenceKey: String get() = "tv_remote_$id"
 

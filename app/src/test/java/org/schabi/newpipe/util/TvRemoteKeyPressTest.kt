@@ -20,6 +20,17 @@ class TvRemoteKeyPressTest {
     ) = press.dispatch(KeyEvent.KEYCODE_PROG_RED, device, event, repeat, canceled, eligible, { assigned }, performed::add)
 
     @Test
+    fun syncShortcutRunsOnceAndDoesNotRequirePlayback() {
+        assigned = TvRemoteAction.SYNC
+        assertFalse(TvRemoteAction.SYNC.playback)
+        assertEquals(TvRemoteAction.SYNC, TvRemoteAction.fromId("sync"))
+        send(KeyEvent.ACTION_DOWN)
+        send(KeyEvent.ACTION_DOWN, repeat = 1)
+        send(KeyEvent.ACTION_UP)
+        assertEquals(listOf(TvRemoteAction.SYNC), performed)
+    }
+
+    @Test
     fun assignedPressConsumesDownRepeatsAndUpButPerformsOnlyOnceOnRelease() {
         assertTrue(send(KeyEvent.ACTION_DOWN))
         assertTrue(send(KeyEvent.ACTION_DOWN, repeat = 1))
