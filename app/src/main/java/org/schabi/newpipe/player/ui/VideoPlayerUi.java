@@ -898,6 +898,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBlocked() {
         super.onBlocked();
+        binding.playbackSeekBar.setPlaybackActive(false);
 
         binding.surfaceView.clearAspectRatio();
 
@@ -926,6 +927,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPlaying() {
         super.onPlaying();
+        binding.playbackSeekBar.setPlaybackActive(true);
 
         updateStreamRelatedViews();
         danmakuController.start();
@@ -952,6 +954,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBuffering() {
         super.onBuffering();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.suspendForBuffering();
         binding.loadingPanel.setBackgroundColor(Color.TRANSPARENT);
         binding.loadingPanel.setVisibility(View.VISIBLE);
@@ -961,6 +964,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPaused() {
         super.onPaused();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.pause();
 
         // Don't let UI elements popup during double tap seeking. This state is entered sometimes
@@ -985,6 +989,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPausedSeek() {
         super.onPausedSeek();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.suspendForBuffering();
         animatePlayButtons(false, 100);
         binding.getRoot().setKeepScreenOn(true);
@@ -993,6 +998,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onCompleted() {
         super.onCompleted();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.pause();
         binding.danmakuOverlay.clearComments();
 
@@ -1388,607 +1394,541 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             return true;
         });
 
-        // Add all available captions
-        for (int i = 0; i < availableLanguages.size(); i++) {
-            final String captionLanguage = availableLanguages.get(i);
-            final MenuItem captionItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
-                    i + 1, Menu.NONE, captionLanguage);
-            captionItem.setOnMenuItemClickListener(menuItem -> {
-                player.setCaptionPreference(captionLanguage);
-                return true;
-            });
-        }
-        captionPopupMenu.setOnDismissListener(this);
-
-        // apply caption language from previous user preference
-        final int textRendererIndex = player.getCaptionRendererIndex();
-        if (textRendererIndex == RENDERER_UNAVAILABLE) {
-            return;
-        }
-
-        // If user prefers to show no caption, then disable the renderer.
-        // Otherwise, DefaultTrackSelector may automatically find an available caption
-        // and display that.
-        final String userPreferredLanguage = player.getCaptionPreference();
-        if (userPreferredLanguage == null) {
-            player.getTrackSelector().setParameters(player.getTrackSelector().buildUponParameters()
-                    .setRendererDisabled(textRendererIndex, true));
-            return;
-        }
-
-        // Only set preferred language if it does not match the user preference,
-        // otherwise there might be an infinite cycle at onTextTracksChanged.
-        final List<String> selectedPreferredLanguages =
-                player.getTrackSelector().getParameters().preferredTextLanguages;
-        if (!selectedPreferredLanguages.contains(userPreferredLanguage)) {
-            player.getTrackSelector().setParameters(player.getTrackSelector().buildUponParameters()
-                    .setPreferredTextLanguages(userPreferredLanguage,
-                            PlayerHelper.captionLanguageStemOf(userPreferredLanguage))
-                    .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
-                    .setRendererDisabled(textRendererIndex, false));
-        }
-    }
-
-    protected abstract void onPlaybackSpeedClicked();
-
-    private void onQualityClicked() {
-        if (player.isLiveQualityPlayback()) {
-            buildQualityMenu();
-        }
-        qualityPopupMenu.show();
-        isSomePopupMenuVisible = true;
-        updateQualityLabel(null);
-    }
-
-    private void onAudioTracksClicked() {
-        audioTrackPopupMenu.show();
-        isSomePopupMenuVisible = true;
-    }
-
-    /**
-     * Called when an item of the quality selector or the playback speed selector is selected.
-     */
-    @Override
-    public boolean onMenuItemClick(@NonNull final MenuItem menuItem) {
-        if (DEBUG) {
-            Log.d(TAG, "onMenuItemClick() called with: "
-                    + "menuItem = [" + menuItem + "], "
-                    + "menuItem.getItemId = [" + menuItem.getItemId() + "]");
-        }
-
-        if (menuItem.getGroupId() == POPUP_MENU_ID_QUALITY) {
-            onQualityItemClick(menuItem);
-            return true;
-        } else if (menuItem.getGroupId() == POPUP_MENU_ID_AUDIO_TRACK) {
-            onAudioTrackItemClick(menuItem);
-            return true;
-        } else if (menuItem.getGroupId() == POPUP_MENU_ID_PLAYBACK_SPEED) {
-            final int speedIndex = menuItem.getItemId();
-            final float speed = PLAYBACK_SPEEDS[speedIndex];
-
-            player.setPlaybackSpeed(speed);
-            binding.playbackSpeed.setText(formatSpeed(speed));
-        }
-
-        return false;
-    }
-
-    private void onQualityItemClick(@NonNull final MenuItem menuItem) {
-        if (player.isLiveQualityPlayback()) {
-            final String label = player.selectLiveQuality(menuItem.getItemId());
-            if (label != null) {
-                binding.qualityTextView.setText(label);
-            }
-            return;
-        }
-
-        if (menuItem.getItemId() == AUTO_QUALITY_MENU_ITEM_ID) {
-            if (!player.isAutoQualitySelected()) {
-                player.setPlaybackQuality(context.getString(R.string.auto_resolution_key));
-            }
-            binding.qualityTextView.setText(R.string.auto);
-            return;
-        }
-        if (menuItem.getItemId() == BEST_QUALITY_MENU_ITEM_ID) {
-            player.setPlaybackQuality(context.getString(R.string.best_resolution_key));
-            binding.qualityTextView.setText(R.string.best_resolution);
-            return;
-        }
-
-        final int menuItemIndex = menuItem.getItemId();
-        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
-        if (currentMetadata == null || currentMetadata.getMaybeQuality().isEmpty()) {
-            return;
-        }
-
-        final MediaItemTag.Quality quality = currentMetadata.getMaybeQuality().get();
-        final List<VideoStream> availableStreams = quality.getSortedVideoStreams();
-        final int selectedStreamIndex = quality.getSelectedVideoStreamIndex();
-        if (!player.isAutoQualitySelected()
-                && !quality.isAdaptive()
-                && selectedStreamIndex == menuItemIndex) {
-            return;
-        }
-        if (menuItemIndex < 0 || availableStreams.size() <= menuItemIndex) {
-            return;
-        }
-
-        final String newResolution = availableStreams.get(menuItemIndex).getResolution();
-        player.setPlaybackQuality(newResolution);
-        binding.qualityTextView.setText(menuItem.getTitle());
-    }
-
-    private void onAudioTrackItemClick(@NonNull final MenuItem menuItem) {
-        final int menuItemIndex = menuItem.getItemId();
-        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
-        if (currentMetadata == null || currentMetadata.getMaybeAudioTrack().isEmpty()) {
-            return;
-        }
-
-        final MediaItemTag.AudioTrack audioTrack =
-                currentMetadata.getMaybeAudioTrack().get();
-        final List<AudioStream> availableStreams = audioTrack.getAudioStreams();
-        final int selectedStreamIndex = audioTrack.getSelectedAudioStreamIndex();
-        if (selectedStreamIndex == menuItemIndex || availableStreams.size() <= menuItemIndex) {
-            return;
-        }
-
-        final String newAudioTrack = availableStreams.get(menuItemIndex).getAudioTrackId();
-        player.setAudioTrack(newAudioTrack);
-
-        binding.audioTrackTextView.setText(menuItem.getTitle());
-    }
-
-    /**
-     * Called when some popup menu is dismissed.
-     */
-    @Override
-    public void onDismiss(@Nullable final PopupMenu menu) {
-        if (DEBUG) {
-            Log.d(TAG, "onDismiss() called with: menu = [" + menu + "]");
-        }
-        isSomePopupMenuVisible = false; //TODO check if this works
-        updateQualityLabel(null);
-
-        if (player.isPlaying()) {
-            hideControls(DEFAULT_CONTROLS_DURATION, 0);
-            hideSystemUIIfNeeded();
-        }
-    }
-
-    private void onCaptionClicked() {
-        if (DEBUG) {
-            Log.d(TAG, "onCaptionClicked() called");
-        }
-        captionPopupMenu.show();
-        isSomePopupMenuVisible = true;
-    }
-
-    public boolean isSomePopupMenuVisible() {
-        return isSomePopupMenuVisible;
-    }
-    //endregion
-
-
-    private void updateQualityLabel(@Nullable final Tracks currentTracks) {
-        if (player.isLiveQualityPlayback()) {
-            binding.qualityTextView.setText(player.getCurrentLiveQualityLabel());
-            binding.qualityTextView.setVisibility(
-                    player.hasSelectableLiveQualities() ? View.VISIBLE : View.GONE);
-            return;
-        }
-
-        if (!player.isAutoQualitySelected()) {
-            player.getSelectedVideoStream()
-                    .ifPresent(stream -> binding.qualityTextView.setText(stream.getResolution()));
-            return;
-        }
-
-        final String currentResolution = currentTracks == null
-                ? player.getSelectedVideoStream()
-                        .map(VideoStream::getResolution)
-                        .orElse(null)
-                : selectedAdaptiveResolution(currentTracks);
-        binding.qualityTextView.setText(currentResolution == null
-                ? context.getString(R.string.auto)
-                : context.getString(R.string.auto) + " · " + currentResolution);
-    }
-
-    @Nullable
-    private String selectedAdaptiveResolution(@NonNull final Tracks currentTracks) {
-        @Nullable final MediaItemTag metadata = player.getCurrentMetadata();
-        if (metadata == null || metadata.getMaybeQuality().isEmpty()) {
-            return null;
-        }
-
-        final List<VideoStream> streams =
-                metadata.getMaybeQuality().get().getSortedVideoStreams();
-        for (final Tracks.Group group : currentTracks.getGroups()) {
-            if (group.getType() != C.TRACK_TYPE_VIDEO || !group.isSelected()) {
-                continue;
-            }
-            for (int index = 0; index < group.length; index++) {
-                if (!group.isTrackSelected(index)) {
-                    continue;
-                }
-                final String formatId = group.getMediaTrackGroup().getFormat(index).id;
-                if (formatId == null) {
-                    continue;
-                }
-                for (final VideoStream stream : streams) {
-                    if (formatId.equals(Integer.toString(stream.getItag()))) {
-                        return stream.getResolution();
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Captions (text tracks)
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Captions (text tracks)
-
-    @Override
-    public void onTextTracksChanged(@NonNull final Tracks currentTracks) {
-        super.onTextTracksChanged(currentTracks);
-        updateQualityLabel(currentTracks);
-
-        final boolean trackTypeTextSupported = !currentTracks.containsType(C.TRACK_TYPE_TEXT)
-                || currentTracks.isTypeSupported(C.TRACK_TYPE_TEXT, false);
-        if (getPlayer().getTrackSelector().getCurrentMappedTrackInfo() == null
-                || !trackTypeTextSupported) {
-            binding.captionTextView.setVisibility(View.GONE);
-            return;
-        }
-
-        // Extract all loaded languages
-        final List<Tracks.Group> textTracks = currentTracks
-                .getGroups()
-                .stream()
-                .filter(trackGroupInfo -> C.TRACK_TYPE_TEXT == trackGroupInfo.getType())
-                .collect(Collectors.toList());
-        final List<String> availableLanguages = textTracks.stream()
-                .map(Tracks.Group::getMediaTrackGroup)
-                .filter(textTrack -> textTrack.length > 0)
-                .map(textTrack -> textTrack.getFormat(0).language)
-                .collect(Collectors.toList());
-
-        // Find selected text track
-        final Optional<Format> selectedTracks = textTracks.stream()
-                .filter(Tracks.Group::isSelected)
-                .filter(info -> info.getMediaTrackGroup().length >= 1)
-                .map(info -> info.getMediaTrackGroup().getFormat(0))
-                .findFirst();
-
-        // Build UI
-        buildCaptionMenu(availableLanguages);
-        if (player.getTrackSelector().getParameters().getRendererDisabled(
-                player.getCaptionRendererIndex()) || selectedTracks.isEmpty()) {
-            binding.captionTextView.setText(R.string.caption_none);
-        } else {
-            binding.captionTextView.setText(selectedTracks.get().language);
-        }
-        binding.captionTextView.setVisibility(
-                availableLanguages.isEmpty() ? View.GONE : View.VISIBLE);
-    }
-
-    @Override
-    public void onCues(@NonNull final List<Cue> cues) {
-        super.onCues(cues);
-        binding.subtitleView.setCues(cues);
-    }
-
-    private void setupSubtitleView() {
-        setupSubtitleView(PlayerHelper.getCaptionScale(context));
-        final CaptionStyleCompat captionStyle = PlayerHelper.getCaptionStyle(context);
-        binding.subtitleView.setApplyEmbeddedStyles(captionStyle == CaptionStyleCompat.DEFAULT);
-        binding.subtitleView.setStyle(captionStyle);
-    }
-
-    /**
-     *
-     * @param captionScale Value returned by {@link PlayerHelper#getCaptionScale}.
-     */
-    protected abstract void setupSubtitleView(float captionScale);
-    //endregion
-
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Click listeners
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Click listeners
-
-    /**
-     * Create on-click listener which manages the player controls after the view on-click action.
-     *
-     * @param runnable The action to be executed.
-     * @return The view click listener.
-     */
-    protected View.OnClickListener makeOnClickListener(@NonNull final Runnable runnable) {
-        return v -> {
-            if (DEBUG) {
-                Log.d(TAG, "onClick() called with: v = [" + v + "]");
-            }
-
-            runnable.run();
-
-            // Manages the player controls after handling the view click.
-            if (player.getCurrentState() == STATE_COMPLETED) {
-                return;
-            }
-            controlsVisibilityHandler.removeCallbacksAndMessages(null);
-            showHideShadow(true, DEFAULT_CONTROLS_DURATION);
-            animate(binding.playbackControlRoot, true, DEFAULT_CONTROLS_DURATION,
-                    AnimationType.ALPHA, 0, () -> {
-                        if (player.getCurrentState() == STATE_PLAYING && !isSomePopupMenuVisible) {
-                            if (v == binding.playPauseButton
-                                    // Hide controls in fullscreen immediately
-                                    || (v == binding.screenRotationButton && isFullscreen())) {
-                                hideControls(0, 0);
-                            } else {
-                                hideControls(DEFAULT_CONTROLS_DURATION, DEFAULT_CONTROLS_HIDE_TIME);
-                            }
-                        }
-                    });
-        };
-    }
-
-    public boolean onKeyDown(final int keyCode) {
-        // Embedded playback must not consume navigation intended for the detail page.
-        if (DeviceUtils.isTv(context) && !isFullscreen() && !player.popupPlayerSelected()) {
-            return false;
-        }
-        if (DeviceUtils.isTv(context) && TvPlayerKeyPolicy.shouldSeek(
-                keyCode, isControlsVisible(), isAnyListViewOpen()) && player.getCurrentState()
-                != org.schabi.newpipe.player.Player.STATE_BLOCKED) {
-            if (TvPlayerKeyPolicy.isForwardSeek(keyCode)) {
-                player.fastForward();
-            } else {
-                player.fastRewind();
-            }
-            showControlsThenHide();
-            return true;
-        }
-
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_BACK:
-                if (DeviceUtils.isTv(context)) {
-                    final long now = android.os.SystemClock.elapsedRealtime();
-                    if (TvPlayerKeyPolicy.shouldCloseOnSecondBack(lastTvBackPressedAt, now)) {
-                        lastTvBackPressedAt = 0L;
-                        context.sendBroadcast(
-                                new Intent(VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER)
-                                        .setPackage(App.PACKAGE_NAME));
-                        return true;
-                    }
-                    lastTvBackPressedAt = now;
-                    if (isControlsVisible()) {
-                        hideControls(0, 0);
-                    }
-                    return true;
-                }
-                break;
-            case KeyEvent.KEYCODE_DPAD_UP:
-            case KeyEvent.KEYCODE_DPAD_LEFT:
-            case KeyEvent.KEYCODE_DPAD_DOWN:
-            case KeyEvent.KEYCODE_DPAD_RIGHT:
-            case KeyEvent.KEYCODE_DPAD_CENTER:
-                if ((binding.getRoot().hasFocus() && !binding.playbackControlRoot.hasFocus())
-                        || isAnyListViewOpen()) {
-                    // do not interfere with focus in playlist and play queue etc.
-                    break;
-                }
-
-                if (player.getCurrentState() == org.schabi.newpipe.player.Player.STATE_BLOCKED) {
-                    return true;
-                }
-
-                if (isControlsVisible()) {
-                    hideControls(DEFAULT_CONTROLS_DURATION, DPAD_CONTROLS_HIDE_TIME);
-                } else {
-                    binding.playPauseButton.requestFocus();
-                    showControlsThenHide();
-                    showSystemUIPartially();
-                    return true;
-                }
-                break;
-            default:
-                break; // ignore other keys
-        }
-
-        return false;
-    }
-
-    private void onMoreOptionsClicked() {
-        if (DEBUG) {
-            Log.d(TAG, "onMoreOptionsClicked() called");
-        }
-
-        final boolean isMoreControlsVisible =
-                binding.secondaryControls.getVisibility() == View.VISIBLE;
-
-        animateRotation(binding.moreOptionsButton, DEFAULT_CONTROLS_DURATION,
-                isMoreControlsVisible ? 0 : 180);
-        animate(binding.secondaryControls, !isMoreControlsVisible, DEFAULT_CONTROLS_DURATION,
-                AnimationType.SLIDE_AND_ALPHA, 0, () -> {
-                    // Fix for a ripple effect on background drawable.
-                    // When view returns from GONE state it takes more milliseconds than returning
-                    // from INVISIBLE state. And the delay makes ripple background end to fast
-                    if (isMoreControlsVisible) {
-                        binding.secondaryControls.setVisibility(View.INVISIBLE);
-                    }
-                });
-        showControls(DEFAULT_CONTROLS_DURATION);
-    }
-
-    private void onPlayWithKodiClicked() {
-        if (player.getCurrentMetadata() != null) {
-            player.pause();
-            KoreUtils.playWithKore(context, Uri.parse(player.getVideoUrl()));
-        }
-    }
-
-    private void onOpenInBrowserClicked() {
-        player.getCurrentStreamInfo().ifPresent(streamInfo ->
-                ShareUtils.openUrlInBrowser(player.getContext(), streamInfo.getOriginalUrl()));
-    }
-    //endregion
-
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Video size
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Video size
-
-    protected void setResizeMode(@AspectRatioFrameLayout.ResizeMode final int resizeMode) {
-        binding.surfaceView.setResizeMode(resizeMode);
-        binding.resizeTextView.setText(PlayerHelper.resizeTypeOf(context, resizeMode));
-    }
-
-    void onResizeClicked() {
-        binding.surfaceView.resetUserTransform();
-        setResizeMode(nextResizeModeAndSaveToPrefs(player, binding.surfaceView.getResizeMode()));
-    }
-
-    @Override
-    public void onVideoSizeChanged(@NonNull final VideoSize videoSize) {
-        super.onVideoSizeChanged(videoSize);
-        applyVideoAspectRatio(videoSize);
-    }
-
-    private void applyVideoAspectRatio(@NonNull final VideoSize videoSize) {
-        final float displayAspectRatio = calculateDisplayAspectRatio(
-                videoSize.width, videoSize.height, videoSize.unappliedRotationDegrees,
-                videoSize.pixelWidthHeightRatio);
-        if (displayAspectRatio == 0.0f) {
-            return;
-        }
-        binding.surfaceView.setAspectRatio(displayAspectRatio);
-    }
-
-    private void restoreVideoAspectRatioFromPlayer() {
-        final ExoPlayer exoPlayer = player.getExoPlayer();
-        if (exoPlayer != null) {
-            applyVideoAspectRatio(exoPlayer.getVideoSize());
-        }
-    }
-
-    static float calculateDisplayAspectRatio(final int width,
-                                             final int height,
-                                             final int unappliedRotationDegrees,
-                                             final float pixelWidthHeightRatio) {
-        if (width <= 0 || height <= 0) {
-            return 0.0f;
-        }
-
-        final float safePixelRatio = Float.isFinite(pixelWidthHeightRatio)
-                && pixelWidthHeightRatio > 0.0f ? pixelWidthHeightRatio : 1.0f;
-        float displayAspectRatio = width * safePixelRatio / height;
-        final int normalizedRotation = Math.floorMod(unappliedRotationDegrees, 360);
-        if (normalizedRotation == 90 || normalizedRotation == 270) {
-            displayAspectRatio = 1.0f / displayAspectRatio;
-        }
-        return Float.isFinite(displayAspectRatio) && displayAspectRatio > 0.0f
-                ? displayAspectRatio : 0.0f;
-    }
-    //endregion
-
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // SurfaceHolderCallback helpers
-    //////////////////////////////////////////////////////////////////////////*/
-    //region SurfaceHolderCallback helpers
-
-    /**
-     * Connects the video surface to the exo player. This can be called anytime without the risk for
-     * issues to occur, since the player will run just fine when no surface is connected. Therefore
-     * the video surface will be setup only when all of these conditions are true: it is not already
-     * setup (this just prevents wasting resources to setup the surface again), there is an exo
-     * player, the root view is attached to a parent and the surface view is valid/unreleased (the
-     * latter two conditions prevent "The surface has been released" errors). So this function can
-     * be called many times and even while the UI is in unready states.
-     */
-    public void setupVideoSurfaceIfNeeded() {
-        if (!surfaceIsSetup && player.getExoPlayer() != null
-                && binding.getRoot().getParent() != null) {
-            // make sure there is nothing left over from previous calls
-            clearVideoSurface();
-
-            surfaceHolderCallback = new SurfaceHolderCallback(context, player.getExoPlayer());
-            binding.surfaceView.getHolder().addCallback(surfaceHolderCallback);
-
-            // ensure player is using an unreleased surface, which the surfaceView might not be
-            // when starting playback on background or during player switching
-            if (binding.surfaceView.getHolder().getSurface().isValid()) {
-                // initially set the surface manually otherwise
-                // onRenderedFirstFrame() will not be called
-                player.getExoPlayer().setVideoSurfaceHolder(binding.surfaceView.getHolder());
-            }
-
-            surfaceIsSetup = true;
-        }
-    }
-
-    /**
-     * Recovers a retained video view after the display wakes. Some devices neither recreate the
-     * surface nor resend an unchanged video size, so explicitly restore both pieces of state once
-     * the resumed view has reached the UI queue.
-     */
-    protected final void restoreVideoSurfaceAfterResume() {
-        restoreVideoSurfaceAfterLayoutTransition();
-    }
-
-    /**
-     * Restores the active video surface after a layout transition such as wake/resume or native
-     * picture-in-picture entry. SurfaceView geometry can change without a fresh surface callback,
-     * especially for portrait video, so explicitly restore the last known aspect ratio and rebind
-     * the decoder output once the view queue reaches the new layout.
-     */
-    public final void restoreVideoSurfaceAfterLayoutTransition() {
-        if (!player.getPlaybackPresentationMode().rendersVideo()) {
-            return;
-        }
-        setupVideoSurfaceIfNeeded();
-        binding.surfaceView.post(() -> rebindVideoSurfaceAfterLayoutTransition(2));
-    }
-
-    private void rebindVideoSurfaceAfterLayoutTransition(final int retriesRemaining) {
-        if (binding.getRoot().getParent() == null || surfaceHolderCallback == null) {
-            return;
-        }
-        restoreVideoAspectRatioFromPlayer();
-        if (!surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder())
-                && retriesRemaining > 0) {
-            binding.surfaceView.postOnAnimation(
-                    () -> rebindVideoSurfaceAfterLayoutTransition(retriesRemaining - 1));
-        }
-    }
-
-    private void clearVideoSurface() {
-        if (surfaceHolderCallback != null) {
-            binding.surfaceView.getHolder().removeCallback(surfaceHolderCallback);
-            surfaceHolderCallback.release();
-            surfaceHolderCallback = null;
-        }
-        Optional.ofNullable(player.getExoPlayer()).ifPresent(ExoPlayer::clearVideoSurface);
-        surfaceIsSetup = false;
-    }
-    //endregion
-
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Getters
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Getters
-
-    public PlayerBinding getBinding() {
-        return binding;
-    }
-
-    public GestureDetector getGestureDetector() {
-        return gestureDetector;
-    }
-    //endregion
-}
+        // Add all availabl…16087 tokens truncated…sable="true"
+                                android:padding="@dimen/player_main_icon_buttons_padding"
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/ic_fullscreen"
+                                android:visibility="gone"
+                                app:tint="@color/white"
+                                tools:ignore="RtlHardcoded"
+                                tools:visibility="visible" />
+
+                        </LinearLayout>
+                    </HorizontalScrollView>
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/sleepTimerCountdown"
+                        android:layout_width="wrap_content"
+                        android:layout_height="28dp"
+                        android:layout_gravity="end"
+                        android:background="#60000000"
+                        android:gravity="center"
+                        android:importantForAccessibility="no"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/player_main_controls_text_size"
+                        android:textStyle="bold"
+                        android:visibility="gone"
+                        tools:text="29:59"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bottomSeekbarPreviewLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@id/bottomControls"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/seekbarPreviewContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingBottom="12dp">
+
+                        <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/currentDisplaySeek"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#60000000"
+                            android:paddingLeft="5dp"
+                            android:paddingRight="5dp"
+                            android:paddingBottom="2dp"
+                            android:textColor="@android:color/white"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            tools:ignore="RtlHardcoded"
+                            tools:text="1:06:29"
+                            tools:visibility="visible" />
+
+                        <ImageView
+                            android:id="@+id/currentSeekbarPreviewThumbnail"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingTop="2dp"
+                            android:src="@drawable/placeholder_thumbnail_video"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bottomControls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:gravity="center"
+                    android:minHeight="40dp"
+                    android:orientation="horizontal"
+                    android:paddingLeft="@dimen/player_main_controls_padding"
+                    android:paddingRight="@dimen/player_main_controls_padding">
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/playbackCurrentTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:minHeight="30dp"
+                        android:text="-:--:--"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/player_main_controls_text_size"
+                        tools:ignore="HardcodedText"
+                        tools:text="1:06:29" />
+
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="2dp"
+                        android:layout_weight="1">
+
+                        <org.schabi.newpipe.views.WavySeekBar
+                            android:id="@+id/playbackSeekBar"
+                            style="@style/Widget.WizeStream.SeekBar"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nextFocusDown="@id/screenRotationButton"
+                            tools:progress="25"
+                            tools:secondaryProgress="50" />
+
+                        <org.schabi.newpipe.views.SponsorBlockSeekBarMarkersView
+                            android:id="@+id/sponsorBlockSeekBarMarkers"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/sponsor_block_marker_height"
+                            android:layout_gravity="center_vertical"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:importantForAccessibility="no"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                    </FrameLayout>
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/playbackEndTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="-:--:--"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/player_main_controls_text_size"
+                        tools:ignore="HardcodedText"
+                        tools:text="1:23:49" />
+
+                    <org.schabi.newpipe.views.NewPipeTextView
+                        android:id="@+id/playbackLiveSync"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:gravity="center"
+                        android:paddingLeft="4dp"
+                        android:paddingRight="4dp"
+                        android:text="@string/duration_live"
+                        android:textAllCaps="true"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/player_main_controls_text_size"
+                        android:visibility="gone"
+                        tools:ignore="HardcodedText,RtlHardcoded,RtlSymmetry" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/screenRotationButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/toggle_screen_orientation"
+                        android:focusable="true"
+                        android:nextFocusUp="@id/playbackSeekBar"
+                        android:padding="@dimen/player_main_icon_buttons_padding"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_fullscreen"
+                        android:visibility="gone"
+                        app:tint="@color/white"
+                        tools:ignore="RtlHardcoded"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:weightSum="5.5">
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/playPreviousButton"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/previous_stream"
+                    android:focusable="true"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_previous"
+                    app:tint="@color/white" />
+
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/playPauseButton"
+                    android:layout_width="0dp"
+                    android:focusable="true"
+                    android:nextFocusUp="@id/commentsButton"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/pause"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_pause"
+                    app:tint="@color/white" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/playNextButton"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/next_stream"
+                    android:focusable="true"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_next"
+                    app:tint="@color/white" />
+
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/itemsListPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/queue_background_color"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <RelativeLayout
+                android:id="@+id/itemsListControl"
+                android:layout_width="match_parent"
+                android:layout_height="60dp">
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/itemsListHeaderTitle"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignEnd="@id/itemsListClose"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="56dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:text="@string/chapters"
+                    android:textColor="@android:color/white"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/repeatButton"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginLeft="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/notification_action_repeat"
+                    android:focusable="true"
+                    android:padding="10dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/exo_legacy_controls_repeat_off"
+                    android:tint="?attr/colorAccent"
+                    tools:ignore="RtlHardcoded" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/shuffleButton"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_centerVertical="true"
+                    android:layout_toRightOf="@id/repeatButton"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/notification_action_shuffle"
+                    android:focusable="true"
+                    android:padding="10dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_shuffle"
+                    android:tint="?attr/colorAccent"
+                    tools:ignore="RtlHardcoded" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/itemsListHeaderDuration"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@id/addToPlaylistButton"
+                    android:layout_toEndOf="@id/shuffleButton"
+                    android:gravity="center"
+                    android:textColor="@android:color/white" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/addToPlaylistButton"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_centerVertical="true"
+                    android:layout_toLeftOf="@+id/itemsListClose"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/add_to_playlist"
+                    android:focusable="true"
+                    android:padding="10dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_playlist_add"
+                    android:tint="?attr/colorAccent"
+                    tools:ignore="RtlHardcoded" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/itemsListClose"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/close"
+                    android:focusable="true"
+                    android:padding="10dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/white" />
+
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/itemsList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/itemsListControl"
+                android:scrollbars="vertical"
+                android:theme="@style/PlayQueueItemTextTheme"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/play_queue_item" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/player_overlays"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:id="@+id/loading_panel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/black"
+                tools:visibility="gone">
+
+                <ProgressBar
+                    android:id="@+id/progressBarLoadingPanel"
+                    style="?android:attr/progressBarStyleLargeInverse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:indeterminate="true" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                tools:ignore="RtlHardcoded">
+
+                <RelativeLayout
+                    android:id="@+id/volumeRelativeLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/background_oval_black_transparent"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ProgressBar
+                        android:id="@+id/volumeProgressBar"
+                        style="?android:progressBarStyleHorizontal"
+                        android:layout_width="128dp"
+                        android:layout_height="128dp"
+                        android:indeterminate="false"
+                        android:progressDrawable="@drawable/progress_circular_white" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/volumeImageView"
+                        android:layout_width="70dp"
+                        android:layout_height="70dp"
+                        android:layout_centerInParent="true"
+                        app:tint="@color/white"
+                        tools:ignore="ContentDescription"
+                        tools:src="@drawable/ic_volume_up" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/brightnessRelativeLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/background_oval_black_transparent"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ProgressBar
+                        android:id="@+id/brightnessProgressBar"
+                        style="?android:progressBarStyleHorizontal"
+                        android:layout_width="128dp"
+                        android:layout_height="128dp"
+                        android:indeterminate="false"
+                        android:progressDrawable="@drawable/progress_circular_white" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/brightnessImageView"
+                        android:layout_width="70dp"
+                        android:layout_height="70dp"
+                        android:layout_centerInParent="true"
+                        app:tint="@color/white"
+                        tools:ignore="ContentDescription"
+                        tools:src="@drawable/ic_brightness_high" />
+                </RelativeLayout>
+
+                <org.schabi.newpipe.views.NewPipeTextView
+                    android:id="@+id/swipeSeekDisplay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/player_seek_gesture_background"
+                    android:paddingStart="@dimen/player_seek_gesture_horizontal_padding"
+                    android:paddingTop="@dimen/player_seek_gesture_vertical_padding"
+                    android:paddingEnd="@dimen/player_seek_gesture_horizontal_padding"
+                    android:paddingBottom="@dimen/player_seek_gesture_vertical_padding"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/player_seek_gesture_text_size"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="+00:15 (03:12)"
+                    tools:visibility="visible" />
+
+                <org.schabi.newpipe.views.NewPipeTextView
+                    android:id="@+id/speedGestureDisplay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:accessibilityLiveRegion="polite"
+                    android:background="@drawable/background_oval_black_transparent"
+                    android:paddingStart="18dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="12dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="1.25×"
+                    tools:visibility="visible" />
+
+            </RelativeLayout>
+            <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/sponsorBlockSkipButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="24dp"
+                android:layout_marginBottom="96dp"
+                android:background="@drawable/sponsor_block_skip_button_background"
+                android:clickable="true"
+                android:contentDescription="@string/sponsor_block_skip_button_content_description"
+                android:focusable="true"
+                android:minHeight="40dp"
+                android:paddingStart="18dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="10dp"
+                android:text="@string/sponsor_block_skip_segment"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+
+        </RelativeLayout>
+
+        <View
+            android:id="@+id/closingOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#AAFF0000"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/closeButton"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="10dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/close"
+            android:textAllCaps="true"
+            android:textColor="@color/white"
+            android:visibility="gone" />
+
+        <org.schabi.newpipe.views.player.PlayerFastSeekOverlay
+            android:id="@+id/fast_seek_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:visibility="invisible" /> <!-- Required for the first appearance fading correctly -->
+
+        <org.schabi.newpipe.views.TouchLockOverlay
+            android:id="@+id/touchLockOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/touchUnlockButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|end"
+                android:layout_margin="32dp"
+                android:minHeight="48dp"
+                android:text="@string/player_touch_unlock"
+                app:icon="@drawable/ic_touch_lock" />
+        </org.schabi.newpipe.views.TouchLockOverlay>
+    </RelativeLayout>
+</RelativeLayout>
