@@ -898,6 +898,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBlocked() {
         super.onBlocked();
+        binding.playbackSeekBar.setPlaybackActive(false);
 
         binding.surfaceView.clearAspectRatio();
 
@@ -926,6 +927,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPlaying() {
         super.onPlaying();
+        binding.playbackSeekBar.setPlaybackActive(true);
 
         updateStreamRelatedViews();
         danmakuController.start();
@@ -952,6 +954,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBuffering() {
         super.onBuffering();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.suspendForBuffering();
         binding.loadingPanel.setBackgroundColor(Color.TRANSPARENT);
         binding.loadingPanel.setVisibility(View.VISIBLE);
@@ -961,6 +964,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPaused() {
         super.onPaused();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.pause();
 
         // Don't let UI elements popup during double tap seeking. This state is entered sometimes
@@ -985,6 +989,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPausedSeek() {
         super.onPausedSeek();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.suspendForBuffering();
         animatePlayButtons(false, 100);
         binding.getRoot().setKeepScreenOn(true);
@@ -993,6 +998,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onCompleted() {
         super.onCompleted();
+        binding.playbackSeekBar.setPlaybackActive(false);
         danmakuController.pause();
         binding.danmakuOverlay.clearComments();
 

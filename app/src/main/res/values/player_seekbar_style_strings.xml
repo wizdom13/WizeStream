@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_seekbar_style_title">Player slider style</string>
+    <string name="player_seekbar_style_standard">Standard</string>
+    <string name="player_seekbar_style_wavy">Wavy</string>
+    <string-array name="player_seekbar_style_entries">
+        <item>@string/player_seekbar_style_standard</item>
+        <item>@string/player_seekbar_style_wavy</item>
+    </string-array>
+    <string-array name="player_seekbar_style_values" translatable="false">
+        <item>standard</item>
+        <item>wavy</item>
+    </string-array>
+</resources>
