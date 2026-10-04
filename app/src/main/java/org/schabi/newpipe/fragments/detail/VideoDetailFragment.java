@@ -2989,7 +2989,7 @@ public final class VideoDetailFragment
             return;
         }
 
-        if (fullscreen) {
+        if (fullscreen && !DeviceUtils.isTv(activity)) {
             binding.overlayPlayPauseButton.requestFocus();
         }
         final Configuration configuration = getResources().getConfiguration();
@@ -3003,6 +3003,12 @@ public final class VideoDetailFragment
             return;
         }
         refreshFullscreenLayout(fullscreen);
+        if (fullscreen && DeviceUtils.isTv(activity)) {
+            player.UIs().get(MainPlayerUi.class).ifPresent(ui -> {
+                ui.showControls(0);
+                ui.getBinding().playPauseButton.requestFocus();
+            });
+        }
         scrollToTop();
     }
 
