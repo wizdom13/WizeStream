@@ -38,7 +38,7 @@ class MainContentThemeTest {
                     assertEquals(ThemeHelper.resolveColorFromAttr(host, MaterialR.attr.colorSurface), background)
                     listOf(
                         R.layout.list_channel_grid_item to R.id.itemTitleView,
-                        R.layout.list_stream_item to R.id.itemTitleView
+                        R.layout.list_stream_item to R.id.itemVideoTitleView
                     ).forEach { (layout, titleId) ->
                         val row = inflater.inflate(layout, null, false)
                         val title = row.findViewById<TextView>(titleId)
