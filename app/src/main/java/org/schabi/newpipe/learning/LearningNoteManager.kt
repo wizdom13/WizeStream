@@ -42,6 +42,23 @@ class LearningNoteManager(context: Context) {
         }.subscribeOn(Schedulers.io())
     }
 
+    fun createForStream(streamId: Long, timestampMillis: Long, noteText: String): Single<LearningNoteEntity> = Single.fromCallable {
+        database.runInTransaction<LearningNoteEntity> {
+            val now = System.currentTimeMillis()
+            val note = LearningNoteEntity(
+                UUID.randomUUID().toString(),
+                streamId,
+                timestampMillis.coerceAtLeast(0),
+                validateText(noteText),
+                now,
+                now
+            )
+            noteDao.upsert(note)
+            syncRecorder.recordLearningNoteUpsert(note.noteId)
+            note
+        }
+    }.subscribeOn(Schedulers.io())
+
     fun update(
         note: LearningNoteEntity,
         timestampMillis: Long,

@@ -930,13 +930,39 @@ public final class VideoDetailFragment
         };
     }
 
+    private String currentTimestampUrl(final StreamInfo info) {
+        if (player == null || player.getCurrentItem() == null
+                || player.getCurrentItem().getServiceId() != info.getServiceId()
+                || !Objects.equals(player.getCurrentItem().getUrl(), info.getUrl())) {
+            return info.getUrl();
+        }
+        return org.schabi.newpipe.util.TimestampedUrl.atPosition(info.getUrl(),
+                info.getServiceId(), player.getExoPlayer().getCurrentPosition(), player.isLive());
+    }
+
     private void setOnLongClickListeners() {
+        binding.detailControlsShare.setOnLongClickListener(makeOnLongClickListener(info ->
+                ShareUtils.shareText(requireContext(), info.getName(), currentTimestampUrl(info),
+                        ExtractorImageCompat.thumbnailImages(info))));
+        binding.detailControlsOpenInBrowser.setOnLongClickListener(makeOnLongClickListener(info ->
+                ShareUtils.openUrlInBrowser(requireContext(), currentTimestampUrl(info))));
         binding.detailTitleRootLayout.setOnLongClickListener(v -> {
             if (isLoading.get() || (currentInfo == null && currentLocalItem == null)) {
                 return false;
             }
-            ShareUtils.copyToClipboard(requireContext(),
-                    binding.detailVideoTitleView.getText().toString());
+            if (currentInfo == null) {
+                ShareUtils.copyToClipboard(requireContext(),
+                        binding.detailVideoTitleView.getText().toString());
+            } else {
+                final String timestampUrl = currentTimestampUrl(currentInfo);
+                new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setItems(new String[] {getString(R.string.copy_video_title),
+                            getString(R.string.copy_timestamped_link)}, (dialog, which) ->
+                                ShareUtils.copyToClipboard(requireContext(), which == 0
+                                        ? binding.detailVideoTitleView.getText().toString()
+                                        : timestampUrl))
+                        .show();
+            }
             return true;
         });
         binding.detailUploaderRootLayout.setOnLongClickListener(makeOnLongClickListener(info -> {
