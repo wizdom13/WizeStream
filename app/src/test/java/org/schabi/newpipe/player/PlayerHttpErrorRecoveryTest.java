@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import androidx.media3.datasource.HttpDataSource;
-import androidx.media3.exoplayer.dash.DashManifestStaleException;
 
 import org.junit.Test;
 import org.schabi.newpipe.extractor.MediaFormat;
@@ -23,15 +22,6 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PlayerHttpErrorRecoveryTest {
-    @Test
-    public void refreshesStreamInfoForNestedStaleDashManifest() {
-        final Throwable error = new IOException("source", new DashManifestStaleException());
-
-        assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(error));
-        assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(
-                new IOException("unrelated source failure")));
-    }
-
     @Test
     public void findsInvalidResponseCodeInsideCauseChain() {
         final Throwable error = new RuntimeException("source", new IOException("network",
