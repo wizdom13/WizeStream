@@ -17,6 +17,7 @@ import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.databinding.FragmentGroupChannelsBinding
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.local.subscription.item.ChannelItem
+import org.schabi.newpipe.util.GridLayoutManagerHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 
@@ -43,7 +44,22 @@ class GroupChannelsFragment : Fragment() {
             groupName
         }
 
-        binding.itemsList.layoutManager = GridLayoutManager(requireContext(), 1)
+        val gridMode = SubscriptionViewModel.shouldUseGridForSubscription(requireContext())
+        binding.itemsList.layoutManager = if (gridMode) {
+            GridLayoutManagerHelper.create(
+                binding.itemsList,
+                resources.getDimensionPixelSize(R.dimen.channel_item_grid_min_width),
+                SubscriptionGridColumns.get(requireContext())
+            ) { spanCount ->
+                adapter.spanCount = spanCount
+                adapter.spanSizeLookup
+            }
+        } else {
+            adapter.spanCount = 1
+            GridLayoutManager(requireContext(), 1).apply {
+                spanSizeLookup = adapter.spanSizeLookup
+            }
+        }
         binding.itemsList.adapter = adapter
 
         viewModel = ViewModelProvider(this)[GroupChannelsViewModel::class.java]
@@ -58,7 +74,11 @@ class GroupChannelsFragment : Fragment() {
             binding.errorPanel.root.isVisible = state.error != null
             adapter.update(
                 state.channels.map { channel ->
-                    ChannelItem(channel, -1, ChannelItem.ItemVersion.MINI).apply {
+                    ChannelItem(
+                        channel,
+                        -1,
+                        if (gridMode) ChannelItem.ItemVersion.GRID else ChannelItem.ItemVersion.MINI
+                    ).apply {
                         gesturesListener = object : OnClickGesture<ChannelInfoItem> {
                             override fun selected(
                                 selectedItem: ChannelInfoItem
