@@ -72,6 +72,29 @@ class FeedDAOTest {
     }
 
     @Test
+    fun thresholdSkipsRecentSubscriptionsButImmediateRefreshIncludesThem() {
+        clearAndFillTables()
+        val now = OffsetDateTime.parse("2026-10-04T12:00:00Z")
+        feedDAO.setLastUpdatedForSubscription(
+            FeedLastUpdatedEntity(1, SubscriptionEntity.YOUTUBE_MODE_REGULAR, now.minusSeconds(60))
+        )
+        feedDAO.setLastUpdatedForSubscription(
+            FeedLastUpdatedEntity(2, SubscriptionEntity.YOUTUBE_MODE_REGULAR, now.minusSeconds(600))
+        )
+        fun eligible(cutoff: OffsetDateTime) = feedDAO.getAllOutdatedForScope(
+            SubscriptionEntity.DEFAULT_PROFILE_ID,
+            serviceId,
+            SubscriptionEntity.YOUTUBE_MODE_REGULAR,
+            cutoff
+        ).blockingFirst().map { it.uid }.toSet()
+
+        // Never-loaded subscriptions remain eligible even while another channel is fresh.
+        assertEquals(setOf(2L, 3L, 4L), eligible(now.minusSeconds(300)))
+        assertEquals(setOf(1L, 2L, 3L, 4L), eligible(now))
+        assertEquals(setOf(1L, 2L, 3L, 4L), eligible(now.plusSeconds(301).minusSeconds(300)))
+    }
+
+    @Test
     fun discoveryAndPublicationSortIndependentlyAndRefreshKeepsFirstDiscovery() {
         clearAndFillTables()
         feedDAO.deleteAll()

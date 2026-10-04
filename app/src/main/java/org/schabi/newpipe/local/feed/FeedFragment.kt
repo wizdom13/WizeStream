@@ -22,7 +22,6 @@ package org.schabi.newpipe.local.feed
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.graphics.drawable.LayerDrawable
@@ -323,7 +322,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.menu_item_feed_channels) {
+        if (item.itemId == R.id.menu_item_feed_refresh_all) {
+            refreshFeed(ignoreOutdatedThreshold = true)
+            return true
+        } else if (item.itemId == R.id.menu_item_feed_channels) {
             when (GroupChannelsNavigationHost.forOpenedFeedGroup()) {
                 GroupChannelsNavigationHost.ACTIVITY -> {
                     NavigationHelper.openGroupChannelsFragment(
@@ -1080,19 +1082,17 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun doInitialLoadLogic() {}
 
-    override fun reloadContent() {
-        hideNewItemsLoaded(false)
-        val feedScope = FeedScope.from(requireContext())
+    override fun reloadContent() = refreshFeed(ignoreOutdatedThreshold = false)
 
+    private fun refreshFeed(ignoreOutdatedThreshold: Boolean) {
+        hideNewItemsLoaded(false)
         getActivity()?.startService(
-            Intent(requireContext(), FeedLoadService::class.java).apply {
-                putExtra(FeedLoadService.EXTRA_GROUP_ID, groupId)
-                putExtra(FeedLoadService.EXTRA_SERVICE_ID, feedScope.serviceId)
-                putExtra(
-                    FeedLoadService.EXTRA_YOUTUBE_MODE_MASK,
-                    feedScope.youtubeModeMask
-                )
-            }
+            FeedLoadService.createLoadIntent(
+                requireContext(),
+                groupId,
+                FeedScope.from(requireContext()),
+                ignoreOutdatedThreshold
+            )
         )
         listState = null
     }

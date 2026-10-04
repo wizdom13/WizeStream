@@ -1292,7 +1292,7 @@
     <string name="feed_group_show_only_ungrouped_subscriptions">Show only ungrouped subscriptions</string>
     <string name="settings_category_feed_title">Feed</string>
     <string name="feed_update_threshold_title">Feed update threshold</string>
-    <string name="feed_update_threshold_summary">Time after last update before a subscription is considered outdated — %s</string>
+    <string name="feed_update_threshold_summary">Minimum time between normal refreshes of each subscription — %s. This does not schedule automatic updates. Use “Refresh all now” in the feed menu to bypass the wait.</string>
     <string name="feed_update_threshold_option_always_update">Always update</string>
     <string name="feed_load_error">Error loading feed</string>
     <string name="feed_load_error_account_info">Could not load feed for \'%s\'.</string>
