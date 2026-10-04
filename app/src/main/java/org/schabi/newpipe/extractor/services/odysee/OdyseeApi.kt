@@ -71,9 +71,10 @@ object OdyseeApi {
     }
 
     fun resolveClaim(uri: String): JsonObject {
-        val claim = rpc("resolve", JsonObject().apply { put("urls", listOf(uri)) })
-            .getObject("result").getObject(uri)
-        if (claim.has("error") || claim.getString("claim_id", "").isBlank() || !claim.has("value")) {
+        val result = rpc("resolve", JsonObject().apply { put("urls", listOf(uri)) })["result"] as? JsonObject
+        val claim = result?.get(uri) as? JsonObject
+            ?: throw ExtractionException("Odysee claim is unavailable")
+        if (claim.has("error") || claim.getString("claim_id", "").isBlank() || claim["value"] !is JsonObject) {
             throw ExtractionException("Odysee claim is unavailable")
         }
         return claim

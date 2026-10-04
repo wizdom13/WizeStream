@@ -19,6 +19,7 @@ import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.linkhandler.ChannelTabs
+import org.schabi.newpipe.extractor.stream.StreamInfo
 
 class OdyseeApiTest {
     private val oldDownloader = NewPipe.getDownloader()
@@ -80,6 +81,74 @@ class OdyseeApiTest {
     }
 
     @Test
+    fun reportedUrlLoadsThroughStreamInfoWithoutOptionalMetadata() {
+        streamFixture(
+            JsonObject().apply {
+                put("claim_id", "abc")
+                put("name", "bizarre-new-kind-of-linux-malware")
+                put("value", JsonObject())
+            }
+        )
+        val info = StreamInfo.getInfo(ServiceList.Odysee, REPORTED_URL)
+        assertEquals("bizarre-new-kind-of-linux-malware", info.name)
+        assertEquals("https://media.example.com/video.mp4", info.videoStreams.single().content)
+        assertEquals("", info.uploaderName)
+        assertFalse(info.errors.any { it is NullPointerException })
+        assertEquals(listOf("resolve", "get"), requests.map { it.getString("method") })
+    }
+
+    @Test
+    fun rejectsNullOrWrongTypeClaimValueBeforeReadingTheTitle() {
+        for (value in listOf(null, "invalid", 42)) {
+            streamFixture(
+                JsonObject().apply {
+                    put("claim_id", "abc")
+                    put("name", "video")
+                    put("value", value)
+                }
+            )
+            assertThrows(ExtractionException::class.java) {
+                ServiceList.Odysee.getStreamExtractor(REPORTED_URL).fetchPage()
+            }
+        }
+    }
+
+    @Test
+    fun missingPlaybackUrlIsAnExtractionError() {
+        streamFixture(
+            JsonObject().apply {
+                put("claim_id", "abc")
+                put("name", "video")
+                put("value", JsonObject().apply { put("title", "Video") })
+            },
+            playable = false
+        )
+        assertThrows(ExtractionException::class.java) {
+            ServiceList.Odysee.getStreamExtractor(REPORTED_URL).fetchPage()
+        }
+    }
+
+    private fun streamFixture(claim: JsonObject, playable: Boolean = true) {
+        val uri = OdyseeApi.lbryUriFromWebUrl(REPORTED_URL)
+        respond = { request ->
+            val result = when (request.getString("method")) {
+                "resolve" -> JsonObject().apply {
+                    assertEquals(uri, request.getObject("params").getArray("urls").getString(0))
+                    put(uri, claim)
+                }
+
+                "get" -> JsonObject().apply {
+                    assertEquals(uri, request.getObject("params").getString("uri"))
+                    if (playable) put("streaming_url", "https://media.example.com/video.mp4")
+                }
+
+                else -> error("Unexpected Odysee request")
+            }
+            JsonWriter.string(JsonObject().apply { put("result", result) })
+        }
+    }
+
+    @Test
     fun channelVideosAndFreshExtractorContinuationUseTheAppFeedContract() {
         respond = { request ->
             val params = request.getObject("params")
@@ -132,5 +201,8 @@ class OdyseeApiTest {
         assertTrue(second.errors.isEmpty())
         // ChannelInfo also loads its legacy first page before the app selects the Videos tab.
         assertEquals(listOf(1, 1, 2), requests.filter { it.getString("method") == "claim_search" }.map { it.getObject("params").getInt("page") })
+    }
+    companion object {
+        private const val REPORTED_URL = "https://odysee.com/@BrodieRobertson:5/bizarre-new-kind-of-linux-malware:0"
     }
 }
