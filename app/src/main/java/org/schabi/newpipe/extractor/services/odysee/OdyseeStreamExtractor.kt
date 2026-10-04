@@ -4,6 +4,7 @@ import com.grack.nanojson.JsonObject
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.downloader.Downloader
+import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.linkhandler.LinkHandler
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamExtractor
@@ -24,34 +25,40 @@ class OdyseeStreamExtractor(
             "get",
             JsonObject().apply { put("uri", uri) }
         )
-        streamingUrl = get.getObject("result").getString("streaming_url", "")
+        streamingUrl = (get["result"] as? JsonObject)?.getString("streaming_url", "").orEmpty()
+        if (streamingUrl.isBlank()) {
+            throw ExtractionException("Odysee did not return a playable stream URL")
+        }
     }
+
+    private val value: JsonObject
+        get() = claim["value"] as JsonObject
+
+    private val channel: JsonObject?
+        get() = claim["signing_channel"] as? JsonObject
 
     override fun getName(): String {
-        return claim.getObject("value").getString("title", claim.getString("name", ""))
+        return value.getString("title", "").ifBlank { claim.getString("name", "") }
+            .ifBlank { throw ExtractionException("Odysee claim has no title or name") }
     }
 
-    override fun getUploaderName(): String = claim
-        .getObject("signing_channel").getObject("value").getString(
-            "title",
-            claim.getObject("signing_channel").getString("name", "")
-        )
+    override fun getUploaderName(): String {
+        val uploader = channel ?: return ""
+        return (uploader["value"] as? JsonObject)?.getString("title", "").orEmpty()
+            .ifBlank { uploader.getString("name", "") }
+    }
 
     override fun getUploaderUrl(): String {
-        val channel = claim.getObject("signing_channel")
-        val uri = channel.getString("canonical_url", channel.getString("short_url", ""))
+        val uploader = channel ?: return ""
+        val uri = uploader.getString("canonical_url", "").ifBlank { uploader.getString("short_url", "") }
         return if (uri.isBlank()) "" else OdyseeApi.webUrl(uri)
     }
 
-    override fun getThumbnailUrl(): String {
-        return claim.getObject("value").getObject("thumbnail").getString("url", "")
-    }
+    override fun getThumbnailUrl(): String = (value["thumbnail"] as? JsonObject)?.getString("url", "").orEmpty()
 
-    override fun getLength(): Long {
-        return claim.getObject("value").getObject("video").getLong("duration", 0L)
-    }
+    override fun getLength(): Long = (value["video"] as? JsonObject)?.getLong("duration", 0L) ?: 0L
 
-    override fun getViewCount(): Long = claim.getObject("meta").getLong("views", -1L)
+    override fun getViewCount(): Long = (claim["meta"] as? JsonObject)?.getLong("views", -1L) ?: -1L
 
     override fun getStreamType(): StreamType = StreamType.VIDEO_STREAM
 
