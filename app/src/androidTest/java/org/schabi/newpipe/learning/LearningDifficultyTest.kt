@@ -1,11 +1,25 @@
 package org.schabi.newpipe.learning
 
 import android.content.Context
+import android.widget.LinearLayout
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class LearningDifficultyTest {
+    @Test
+    fun descriptionsWithoutAStreamDoNotAddDifficultyControls() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val layout = LinearLayout(context)
+            LearningDifficulty.addDescriptionButton(layout, 0, null)
+            LearningDifficulty.addDescriptionButton(layout, 0, "")
+            LearningDifficulty.addDescriptionButton(layout, 0, "  ")
+            assertEquals(0, layout.childCount)
+        }
+    }
+
     @Test
     fun ratingsAreIsolatedByProfileServiceAndUrlAndCanBeCleared() {
         val context = ApplicationProvider.getApplicationContext<Context>()
