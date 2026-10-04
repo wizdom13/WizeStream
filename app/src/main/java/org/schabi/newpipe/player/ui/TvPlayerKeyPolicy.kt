@@ -10,6 +10,9 @@ object TvPlayerKeyPolicy {
         keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
 
     @JvmStatic
+    fun shouldSeek(keyCode: Int, controlsVisible: Boolean, listOpen: Boolean): Boolean = isSeekKey(keyCode) && !controlsVisible && !listOpen
+
+    @JvmStatic
     fun isForwardSeek(keyCode: Int): Boolean = keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
 
     @JvmStatic
