@@ -670,7 +670,7 @@
                         android:layout_marginTop="2dp"
                         android:layout_weight="1">
 
-                        <org.schabi.newpipe.views.FocusAwareSeekBar
+                        <org.schabi.newpipe.views.WavySeekBar
                             android:id="@+id/playbackSeekBar"
                             style="@style/Widget.WizeStream.SeekBar"
                             android:layout_width="match_parent"
