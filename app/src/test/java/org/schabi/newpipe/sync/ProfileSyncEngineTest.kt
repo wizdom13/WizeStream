@@ -26,8 +26,12 @@ class ProfileSyncEngineTest {
         val remoteEngine = ProfileSyncEngine(remote)
 
         val request = localEngine.createRequest()
-        val response = remoteEngine.handleRequest(request)
-        val applied = localEngine.handleResponse(response)
+        val decodedRequest = ProfileSyncCodec.decodeRequest(ProfileSyncCodec.encodeRequest(request))
+        assertEquals(request, decodedRequest)
+        val response = remoteEngine.handleRequest(decodedRequest)
+        val decodedResponse = ProfileSyncCodec.decodeResponse(ProfileSyncCodec.encodeResponse(response))
+        assertEquals(response, decodedResponse)
+        val applied = localEngine.handleResponse(decodedResponse)
 
         assertEquals(1, applied.addedProfiles)
         assertEquals(
@@ -49,9 +53,10 @@ class ProfileSyncEngineTest {
                 profile("not-a-uuid", "Work", 10, 20)
             )
         )
-        assertThrows(ProfileSyncException::class.java) {
+        val invalidError = assertThrows(ProfileSyncException::class.java) {
             ProfileSyncValidation.validateRequest(invalid)
         }
+        assertEquals("Profile catalog entry 2 has a non-canonical UUID", invalidError.message)
 
         val duplicate = profile(
             "11111111-1111-1111-1111-111111111111",
@@ -59,7 +64,7 @@ class ProfileSyncEngineTest {
             10,
             20
         )
-        assertThrows(ProfileSyncException::class.java) {
+        val duplicateError = assertThrows(ProfileSyncException::class.java) {
             ProfileSyncValidation.validateProfiles(
                 listOf(
                     profile(ProfileManager.DEFAULT_PROFILE_ID, "", 0, 0),
@@ -68,6 +73,7 @@ class ProfileSyncEngineTest {
                 )
             )
         }
+        assertEquals("Profile catalog entry 3 repeats a profile identity", duplicateError.message)
     }
 
     @Test

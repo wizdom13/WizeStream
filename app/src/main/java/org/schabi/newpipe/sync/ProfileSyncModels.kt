@@ -84,9 +84,16 @@ internal object ProfileSyncValidation {
             throw ProfileSyncException("The profile catalog has an invalid size")
         }
         val ids = hashSetOf<String>()
-        profiles.forEach { profile ->
-            if (!ids.add(profile.id) || !isCanonicalUuid(profile.id)) {
-                throw ProfileSyncException("A synchronized profile has an invalid identity")
+        profiles.forEachIndexed { index, profile ->
+            if (!isCanonicalUuid(profile.id)) {
+                throw ProfileSyncException(
+                    "Profile catalog entry ${index + 1} has a non-canonical UUID"
+                )
+            }
+            if (!ids.add(profile.id)) {
+                throw ProfileSyncException(
+                    "Profile catalog entry ${index + 1} repeats a profile identity"
+                )
             }
             val normalizedName = ProfilePolicy.normalizeName(profile.name)
             if (
