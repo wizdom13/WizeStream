@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/menu_item_feed_refresh_all"
+        android:title="@string/feed_refresh_all_now"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_item_feed_channels"
         android:icon="@drawable/ic_people"
         android:title="@string/channels"
