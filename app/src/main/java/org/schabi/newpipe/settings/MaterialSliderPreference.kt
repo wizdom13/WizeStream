@@ -28,9 +28,9 @@ class MaterialSliderPreference @JvmOverloads constructor(
         }
 
     init {
-        val bounds = context.obtainStyledAttributes(attrs, intArrayOf(androidx.preference.R.attr.min, android.R.attr.max))
-        minimum = bounds.getInt(0, 0)
-        maximum = bounds.getInt(1, 100).coerceAtLeast(minimum)
+        val bounds = context.obtainStyledAttributes(attrs, R.styleable.MaterialSliderPreference)
+        minimum = bounds.getInt(R.styleable.MaterialSliderPreference_min, 0)
+        maximum = bounds.getInt(R.styleable.MaterialSliderPreference_android_max, 100).coerceAtLeast(minimum)
         bounds.recycle()
         layoutResource = R.layout.preference_material_slider
     }
