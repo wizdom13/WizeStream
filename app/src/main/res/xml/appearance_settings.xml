@@ -127,6 +127,16 @@
         app:useSimpleSummaryProvider="true" />
 
     <ListPreference
+        android:defaultValue="100"
+        android:entries="@array/media_text_size_description"
+        android:entryValues="@array/media_text_size_values"
+        android:key="@string/video_metadata_text_size_key"
+        android:title="@string/video_metadata_text_size_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
         android:defaultValue="compact"
         android:entries="@array/tv_related_sidebar_width_description"
         android:entryValues="@array/tv_related_sidebar_width_values"

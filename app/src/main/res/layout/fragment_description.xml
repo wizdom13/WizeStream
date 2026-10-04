@@ -23,7 +23,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <org.schabi.newpipe.views.NewPipeTextView
+        <org.schabi.newpipe.views.MediaTextView
             android:id="@+id/detail_upload_date_view"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -36,6 +36,7 @@
             app:layout_constraintEnd_toStartOf="@+id/detail_select_description_button"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/learning_playlist_panel"
+            app:mediaTextRole="videoMetadata"
             tools:text="Published on Oct 2, 2009" />
 
         <ImageView

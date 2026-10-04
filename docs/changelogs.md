@@ -4,6 +4,10 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Improvements
+
+- Added a Video metadata text size setting for views, upload dates, and duration badges.
+
 ## WizeStream 1.27.0 (`1027000`)
 
 ### New features

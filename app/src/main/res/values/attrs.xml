@@ -23,6 +23,7 @@
         <attr name="mediaTextRole" format="enum">
             <enum name="videoTitle" value="0" />
             <enum name="channelName" value="1" />
+            <enum name="videoMetadata" value="2" />
         </attr>
     </declare-styleable>
 

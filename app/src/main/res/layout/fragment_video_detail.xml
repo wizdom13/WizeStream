@@ -329,7 +329,7 @@
                             android:paddingLeft="6dp"
                             android:paddingRight="6dp">
 
-                            <org.schabi.newpipe.views.NewPipeTextView
+                            <org.schabi.newpipe.views.MediaTextView
                                 android:id="@+id/detail_view_count_view"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -340,6 +340,7 @@
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textSize="@dimen/video_item_detail_views_text_size"
                                 tools:ignore="RtlHardcoded"
+                                app:mediaTextRole="videoMetadata"
                                 tools:text="2,816,821,505 views" />
 
 

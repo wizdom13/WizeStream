@@ -20,7 +20,7 @@ import androidx.preference.PreferenceManager;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.MediaTextSize;
 
-/** Opt-in title/channel sizing that also updates already visible and recycled items. */
+/** Opt-in title/channel/metadata sizing that also updates already visible and recycled items. */
 public final class MediaTextView extends NewPipeTextView {
     private final SharedPreferences preferences;
     private final String preferenceKey;
@@ -43,8 +43,11 @@ public final class MediaTextView extends NewPipeTextView {
                 attrs, R.styleable.MediaTextView, defStyleAttr, 0);
         final int role = attributes.getInt(R.styleable.MediaTextView_mediaTextRole, 0);
         attributes.recycle();
-        preferenceKey = context.getString(role == 1
-                ? R.string.channel_name_text_size_key : R.string.video_title_text_size_key);
+        preferenceKey = context.getString(switch (role) {
+            case 1 -> R.string.channel_name_text_size_key;
+            case 2 -> R.string.video_metadata_text_size_key;
+            default -> R.string.video_title_text_size_key;
+        });
         preferences = PreferenceManager.getDefaultSharedPreferences(context);
         preferenceListener = (prefs, key) -> {
             if (key == null || key.equals(preferenceKey)) {
