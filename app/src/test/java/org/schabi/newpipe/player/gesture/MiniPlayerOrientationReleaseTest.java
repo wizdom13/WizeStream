@@ -63,7 +63,8 @@ public class MiniPlayerOrientationReleaseTest {
                 verify(activity, never()).setRequestedOrientation(anyInt());
                 verify(holder, never()).exitMainPlayerFullscreenForMiniPlayer();
             } else {
-                verify(activity).setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                verify(activity).setRequestedOrientation(
+                        ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 verify(holder).exitMainPlayerFullscreenForMiniPlayer();
             }
         }
