@@ -83,6 +83,10 @@ class BottomPlayerControlsTest {
                         assertEquals(R.id.playbackSeekBar, binding.commentsButton.nextFocusDownId)
                         assertEquals(R.id.resizeTextView, binding.playbackSeekBar.nextFocusDownId)
                         assertEquals(R.id.playbackSeekBar, binding.resizeTextView.nextFocusUpId)
+                        assertTrue(binding.qualityTextView.isFocusable)
+                        assertTrue(binding.playbackSpeed.isFocusable)
+                        assertTrue(binding.resizeTextView.isFocusable)
+                        assertTrue(binding.captionTextView.isFocusable)
                         val actionScroll = binding.primaryControls.parent.parent as HorizontalScrollView
                         if (width <= 360) {
                             assertTrue("Narrow screens must allow scrolling through all actions", actionScroll.getChildAt(0).width > actionScroll.width)

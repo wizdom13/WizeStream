@@ -1051,8 +1051,16 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public boolean onKeyDown(final int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP && isFullscreen && DeviceUtils.isTv(context)
-                && !isControlsVisible() && !isAnyListViewOpen()
-                && player.getCurrentMetadata() != null) {
+                && binding.getRoot().isShown() && !binding.getRoot().hasFocus()
+                && getParentActivity().map(activity -> activity.hasWindowFocus()).orElse(false)) {
+            showControls(0);
+            if (binding.playPauseButton.requestFocus()) {
+                return true;
+            }
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP && isFullscreen && DeviceUtils.isTv(context)
+                && binding.getRoot().hasFocus() && !isControlsVisible()
+                && !isAnyListViewOpen() && player.getCurrentMetadata() != null) {
             final boolean opened = getParentActivity().map(activity ->
                     player.getCurrentMetadata().getMaybeStreamInfo().map(info ->
                             TvRecommendations.show(activity, info)).orElse(false)).orElse(false);
@@ -1073,7 +1081,12 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                     && binding.queueButton.requestFocus()) {
                 return true;
             }
-            if (binding.moreOptionsButton.requestFocus()) {
+            if (binding.moreOptionsButton.getVisibility() == View.VISIBLE
+                    && binding.moreOptionsButton.requestFocus()) {
+                return true;
+            }
+            if (binding.qualityTextView.getVisibility() == View.VISIBLE
+                    && binding.qualityTextView.requestFocus()) {
                 return true;
             }
         }
