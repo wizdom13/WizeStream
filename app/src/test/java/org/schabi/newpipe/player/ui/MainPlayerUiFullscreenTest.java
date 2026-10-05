@@ -11,6 +11,7 @@ import static org.schabi.newpipe.player.ui.FullscreenOrientationPolicy.VideoCont
 import android.content.res.Configuration;
 
 import org.junit.Test;
+import org.schabi.newpipe.player.helper.PlayerRotationMode;
 
 public class MainPlayerUiFullscreenTest {
     @Test
@@ -179,4 +180,29 @@ public class MainPlayerUiFullscreenTest {
         assertTrue(FullscreenOrientationPolicy.shouldAlignFullscreenToKnownContent(
                 true, UNKNOWN, SQUARE));
     }
+    @Test
+    public void tvRetainsFullscreenButtonWithTabletModeOffAndRotationUnlocked() {
+        for (final PlayerRotationMode mode : PlayerRotationMode.values()) {
+            assertTrue(FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                    true, false, false, mode, LANDSCAPE));
+            assertTrue(FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                    true, false, false, mode, PORTRAIT));
+        }
+    }
+
+    @Test
+    public void phoneAndTabletKeepTheirExistingFullscreenButtonBehavior() {
+        for (final PlayerRotationMode mode : PlayerRotationMode.values()) {
+            assertTrue(FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                    false, true, false, mode, LANDSCAPE));
+            assertTrue(FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                    false, false, true, mode, LANDSCAPE));
+            assertTrue(FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                    false, false, false, mode, UNKNOWN));
+            assertEquals(mode == PlayerRotationMode.FIXED,
+                    FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                            false, false, false, mode, LANDSCAPE));
+        }
+    }
+
 }
