@@ -127,6 +127,7 @@ class Player(
     private val audioController = PlayerAudioController(this)
     private val historyController = PlayerHistoryController(this)
     private val sponsorBlockController = SponsorBlockPlaybackController(this)
+    internal val channelSkipController = ChannelSkipPlaybackController(this)
     private val playbackParametersController = PlaybackParametersController(this)
     private val sleepTimerController = SleepTimerPlaybackController(this)
     private val queueModeController = PlayerQueueModeController(this, sleepTimerController)

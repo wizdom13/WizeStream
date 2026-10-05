@@ -103,6 +103,7 @@ internal class PlayerMedia3ListenerController(
             errorController.resetRecovery()
         }
         if (reason == Media3Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
+            player.channelSkipController.automaticTransition()
             sleepTimerController.onItemEnded(queue.getItem(oldPosition.mediaItemIndex), true)
         }
 

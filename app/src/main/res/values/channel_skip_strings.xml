@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_skip_settings">Skip this channel’s intro/outro</string>
+    <string name="channel_skip_title">Intro/outro: %1$s</string>
+    <string name="channel_skip_summary">Apply to this channel’s recorded videos in the current profile. Use 0 to disable. Videos shorter than the combined skip durations are played normally. Changes apply on the next video; manual seeking overrides skipping for the current playback.</string>
+    <string name="channel_skip_start">Skip from start (seconds)</string>
+    <string name="channel_skip_end">Skip before end (seconds)</string>
+    <string name="channel_skip_invalid">Enter a whole number from 0 to 3600</string>
+</resources>
