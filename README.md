@@ -20,24 +20,6 @@
 
 <hr>
 
-<div align="center">
-  <h3>📁 WizeFiles — free and open source</h3>
-  <p>
-    <strong>WizeFiles</strong> is an open-source Android file manager from the developer of
-    WizeStream, licensed under GNU GPL-3.0-only with no Free/Pro feature split or paid tier.
-  </p>
-  <p>
-    Its source code is maintained in the <strong>WizeFiles-Pro</strong> repository.
-  </p>
-  <p>
-    <a href="https://github.com/wizdom13/WizeFiles-Pro">
-      <strong>View WizeFiles on GitHub →</strong>
-    </a>
-  </p>
-</div>
-
-<hr>
-
 <p align="center">
   <a href="#important-project-notice">Project notice</a> •
   <a href="#what-is-wizestream">About</a> •
