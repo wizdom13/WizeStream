@@ -428,7 +428,7 @@ class FeedLoadManager(private val context: Context) {
                     when {
                         notification.isOnNext -> {
                             val info = notification.value!!
-                            val updateModeMask = feedScope?.youtubeModeMask
+                            val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
                                 ?: info.youtubeModeMask
 
                             notification.value!!.newStreams = filterNewStreams(info.streams)
@@ -464,7 +464,7 @@ class FeedLoadManager(private val context: Context) {
                                     subscriptionManager.getSubscriptionById(
                                         error.subscriptionId
                                     ) ?: continue
-                                val updateModeMask = feedScope?.youtubeModeMask
+                                val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
                                     ?: subscription.youtubeModeMask
                                 feedDatabaseManager.markAsOutdated(
                                     error.subscriptionId,

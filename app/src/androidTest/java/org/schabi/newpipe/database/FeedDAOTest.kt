@@ -72,6 +72,52 @@ class FeedDAOTest {
     }
 
     @Test
+    fun allPlatformFeedsRefreshAndCountOnlySubscriptionsInTheRequestedProfileAndGroup() {
+        clearAndFillTables()
+        val profile = SubscriptionEntity.DEFAULT_PROFILE_ID
+        val extra = SubscriptionEntity.from(channelInfo("extra", "https://example.com/channel", "Other platform"))
+            .apply {
+                uid = 10
+                serviceId = 1
+            }
+        val otherProfile = SubscriptionEntity.from(channelInfo("private", "https://example.com/private", "Private"))
+            .apply {
+                uid = 11
+                serviceId = 1
+                profileId = "11111111-1111-1111-1111-111111111111"
+            }
+        subscriptionDAO.insertAll(listOf(extra, otherProfile))
+        streamDAO.insertAll(listOf(stream1.copy(uid = 10, serviceId = 1, url = "https://example.com/video"), stream1.copy(uid = 11, serviceId = 1, url = "https://example.com/private-video")))
+        feedDAO.insertAll(listOf(FeedEntity(10, 10), FeedEntity(11, 11)))
+        val all = -1
+        val modes = SubscriptionEntity.YOUTUBE_MODE_REGULAR or SubscriptionEntity.YOUTUBE_MODE_MUSIC
+        fun ids(service: Int, group: Long = FeedGroupEntity.GROUP_ALL_ID) = feedDAO.getStreams(
+            profile,
+            group,
+            true,
+            true,
+            null,
+            service,
+            modes
+        ).blockingGet()!!.map { it.stream.uid }.toSet()
+        assertEquals((1L..7L).toSet(), ids(serviceId))
+        assertEquals((1L..7L).toSet() + 10L, ids(all))
+        assertEquals(5L, feedDAO.notLoadedCount(profile, all, modes).blockingFirst())
+        val now = OffsetDateTime.parse("2026-10-04T12:00:00Z")
+        assertEquals(setOf(1L, 2L, 3L, 4L, 10L), feedDAO.getAllOutdatedForScope(profile, all, modes, now).blockingFirst().map { it.uid }.toSet())
+        feedDAO.setLastUpdatedForSubscription(FeedLastUpdatedEntity(10, 1, now))
+        assertEquals(4L, feedDAO.notLoadedCount(profile, all, modes).blockingFirst())
+        val group = db.feedGroupDAO().insert(
+            FeedGroupEntity(0, "Mixed", org.schabi.newpipe.local.subscription.FeedGroupIcon.WHATS_NEW)
+        )
+        db.feedGroupDAO().updateSubscriptionsForGroupForProfile(profile, group, listOf(1L, 10L))
+        assertEquals(setOf(1L, 2L, 3L, 10L), ids(all, group))
+        assertEquals(1L, feedDAO.notLoadedCountForGroup(profile, group, all, modes).blockingFirst())
+        assertEquals(listOf(now), feedDAO.oldestSubscriptionUpdate(profile, group, all, modes).blockingFirst())
+        assertEquals(setOf(1L), feedDAO.getAllOutdatedForGroupAndScope(profile, group, all, modes, now.minusSeconds(1)).blockingFirst().map { it.uid }.toSet())
+    }
+
+    @Test
     fun thresholdSkipsRecentSubscriptionsButImmediateRefreshIncludesThem() {
         clearAndFillTables()
         val now = OffsetDateTime.parse("2026-10-04T12:00:00Z")

@@ -25,6 +25,7 @@ data class FeedScope(
     val youtubeModeMask: Int
 ) {
     fun includes(subscription: SubscriptionEntity): Boolean {
+        if (serviceId == ALL_SERVICES) return true
         if (subscription.serviceId != serviceId) {
             return false
         }
@@ -33,6 +34,22 @@ data class FeedScope(
     }
 
     companion object {
+        const val ALL_SERVICES = -1
+        const val ALL_PLATFORMS_KEY = "feed_all_platforms"
+
+        @JvmStatic
+        fun forFeeds(context: Context): FeedScope = if (
+            PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(ALL_PLATFORMS_KEY, false)
+        ) {
+            FeedScope(ALL_SERVICES, SubscriptionEntity.YOUTUBE_MODE_REGULAR or SubscriptionEntity.YOUTUBE_MODE_MUSIC)
+        } else {
+            from(context)
+        }
+
+        @JvmStatic
+        fun feedChanges(context: Context): Flowable<FeedScope> = observeChanges(context, true)
+
         @JvmStatic
         fun from(context: Context): FeedScope {
             return FeedScope(
@@ -53,7 +70,9 @@ data class FeedScope(
          * rebuilding service-scoped database subscriptions.
          */
         @JvmStatic
-        fun changes(context: Context): Flowable<FeedScope> {
+        fun changes(context: Context): Flowable<FeedScope> = observeChanges(context, false)
+
+        private fun observeChanges(context: Context, allPlatformsOption: Boolean): Flowable<FeedScope> {
             val applicationContext = context.applicationContext
             val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
             val servicePreferenceKey = applicationContext.getString(R.string.current_service_key)
@@ -62,8 +81,8 @@ data class FeedScope(
                 .create(
                     { emitter ->
                         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                            if (key == servicePreferenceKey) {
-                                emitter.onNext(from(applicationContext))
+                            if (key == servicePreferenceKey || allPlatformsOption && key == ALL_PLATFORMS_KEY) {
+                                emitter.onNext(if (allPlatformsOption) forFeeds(applicationContext) else from(applicationContext))
                             }
                         }
 
@@ -71,7 +90,7 @@ data class FeedScope(
                         emitter.setCancellable {
                             preferences.unregisterOnSharedPreferenceChangeListener(listener)
                         }
-                        emitter.onNext(from(applicationContext))
+                        emitter.onNext(if (allPlatformsOption) forFeeds(applicationContext) else from(applicationContext))
                     },
                     BackpressureStrategy.LATEST
                 )

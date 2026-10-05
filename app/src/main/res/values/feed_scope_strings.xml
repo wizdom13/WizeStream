@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feed_all_platforms_title">Show feeds from all platforms</string>
+    <string name="feed_all_platforms_summary">Include subscriptions from every platform in What’s New and channel groups for the current profile, including YouTube and YouTube Music.</string>
+</resources>

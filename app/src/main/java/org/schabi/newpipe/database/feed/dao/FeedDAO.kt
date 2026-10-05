@@ -87,7 +87,7 @@ abstract class FeedDAO {
             OR fgs.group_id = :groupId
         )
         AND sub.profile_id = :profileId
-        AND sub.service_id = :serviceId
+        AND (:serviceId = -1 OR sub.service_id = :serviceId)
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (sub.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -253,7 +253,7 @@ abstract class FeedDAO {
         ON s.uid = lu.subscription_id
 
         WHERE s.profile_id = :profileId
-        AND s.service_id = :serviceId
+        AND (:serviceId = -1 OR s.service_id = :serviceId)
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -277,7 +277,7 @@ abstract class FeedDAO {
         FROM feed_last_updated lu
         INNER JOIN subscriptions s ON s.uid = lu.subscription_id
         WHERE s.profile_id = :profileId
-        AND s.service_id = :serviceId
+        AND (:serviceId = -1 OR s.service_id = :serviceId)
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -296,7 +296,7 @@ abstract class FeedDAO {
 
     @Query(
         """
-        SELECT COUNT(*)
+        SELECT COUNT(DISTINCT s.uid)
         FROM subscriptions s
         LEFT JOIN feed_last_updated lu
         ON s.uid = lu.subscription_id
@@ -305,7 +305,7 @@ abstract class FeedDAO {
             OR (lu.youtube_mode_mask & :youtubeModeMask) <> 0
         )
         WHERE s.profile_id = :profileId
-        AND s.service_id = :serviceId
+        AND (:serviceId = -1 OR s.service_id = :serviceId)
         AND lu.last_updated IS NULL
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
@@ -321,7 +321,7 @@ abstract class FeedDAO {
 
     @Query(
         """
-        SELECT COUNT(*) FROM subscriptions s
+        SELECT COUNT(DISTINCT s.uid) FROM subscriptions s
         
         INNER JOIN feed_group_subscription_join fgs
         ON s.uid = fgs.subscription_id AND fgs.group_id = :groupId
@@ -335,7 +335,7 @@ abstract class FeedDAO {
 
         WHERE lu.last_updated IS NULL
         AND s.profile_id = :profileId
-        AND s.service_id = :serviceId
+        AND (:serviceId = -1 OR s.service_id = :serviceId)
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -378,7 +378,7 @@ abstract class FeedDAO {
 
         WHERE s.profile_id = :profileId
         AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
-        AND s.service_id = :serviceId
+        AND (:serviceId = -1 OR s.service_id = :serviceId)
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0
@@ -428,7 +428,7 @@ abstract class FeedDAO {
 
         WHERE s.profile_id = :profileId
         AND (lu.last_updated IS NULL OR lu.last_updated < :outdatedThreshold)
-        AND s.service_id = :serviceId
+        AND (:serviceId = -1 OR s.service_id = :serviceId)
         AND (
             :serviceId <> ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
             OR (s.youtube_mode_mask & :youtubeModeMask) <> 0

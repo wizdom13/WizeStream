@@ -13,6 +13,7 @@ import io.reactivex.rxjava3.processors.BehaviorProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.local.subscription.item.PickerSubscriptionItem
@@ -32,12 +33,13 @@ class FeedGroupDialogViewModel(
 
     private var subscriptionsFlowable = Flowable
         .combineLatest(
+            FeedScope.feedChanges(applicationContext),
             filterSubscriptions.startWithItem(initialQuery),
             toggleShowOnlyUngrouped.startWithItem(initialShowOnlyUngrouped)
-        ) { t1: String, t2: Boolean -> Filter(t1, t2) }
+        ) { scope, query, ungrouped -> Triple(scope, query, ungrouped) }
         .distinctUntilChanged()
-        .switchMap { (query, showOnlyUngrouped) ->
-            subscriptionManager.getSubscriptions(groupId, query, showOnlyUngrouped)
+        .switchMap { (scope, query, showOnlyUngrouped) ->
+            subscriptionManager.getSubscriptionsForScope(scope, groupId, query, showOnlyUngrouped)
         }.map { list -> list.map { PickerSubscriptionItem(it) } }
 
     private val mutableGroupLiveData = MutableLiveData<FeedGroupEntity>()

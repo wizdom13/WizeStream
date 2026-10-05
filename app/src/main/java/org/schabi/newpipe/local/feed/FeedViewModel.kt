@@ -58,7 +58,7 @@ class FeedViewModel(
     private val sortByDiscovery = BehaviorProcessor.createDefault(getSortByDiscovery())
 
     private var combineDisposable = Flowable.combineLatest(
-        FeedScope.changes(application),
+        FeedScope.feedChanges(application),
         sortByDiscovery.distinctUntilChanged()
     ) { scope, sort -> scope to sort }
         .switchMap { (feedScope, discoveryOrder) ->

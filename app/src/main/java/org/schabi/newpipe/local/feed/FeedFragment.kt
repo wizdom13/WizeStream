@@ -1090,7 +1090,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             FeedLoadService.createLoadIntent(
                 requireContext(),
                 groupId,
-                FeedScope.from(requireContext()),
+                FeedScope.forFeeds(requireContext()),
                 ignoreOutdatedThreshold
             )
         )
