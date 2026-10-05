@@ -290,6 +290,9 @@ internal class PlayerErrorController(
             cancelPendingMediaUrlRecovery()
             invalidateYouTubeMediaCaches(item)
             recoveryGuard.reset()
+            if (tryRecoverFromLiveDashHttpFailure(error, item)) {
+                return true
+            }
             if (!player.exoPlayerIsNull()) {
                 player.exoPlayer.pause()
             }
@@ -338,6 +341,28 @@ internal class PlayerErrorController(
         }
         pendingMediaUrlRecovery = recovery
         recoveryHandler.postDelayed(recovery, attempt.delayMillis)
+        return true
+    }
+
+    internal fun tryRecoverFromLiveDashHttpFailure(
+        error: PlaybackException,
+        item: PlayQueueItem
+    ): Boolean {
+        if (PlayerHttpErrorRecovery.findInvalidResponseCode(error) != 403 ||
+            !canFallBackToLiveHls(item) ||
+            !liveStallRecoveryGuard.acquire("${item.serviceId}:${item.url}")
+        ) {
+            return false
+        }
+
+        val info = player.currentStreamInfo.orElse(null) ?: return false
+        val queue = player.playQueue ?: return false
+        Log.w(Player.TAG, "Live DASH HTTP 403 recovery exhausted; retrying with HLS")
+        videoResolver.preferHlsForLiveStream(info.url)
+        lastPlayingLiveKey = null
+        queue.unsetRecovery(queue.index)
+        player.onBuffering()
+        player.reloadPlayQueueManager()
         return true
     }
 
