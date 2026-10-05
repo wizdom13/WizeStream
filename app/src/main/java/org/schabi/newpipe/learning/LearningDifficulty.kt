@@ -15,13 +15,45 @@ import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.profiles.ProfileManager
 
 object LearningDifficulty {
+    const val MODE_KEY = "learning_difficulty_mode"
+    const val PREFIX = "learning_difficulty_rating.v1."
+    private const val MIGRATED_KEY = "learning_difficulty_migrated"
+
+    @JvmStatic
+    fun migrate(context: Context) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val legacy = context.getSharedPreferences("learning_difficulty", Context.MODE_PRIVATE)
+        migrate(legacy, preferences)
+    }
+
+    internal fun migrate(legacy: SharedPreferences, preferences: SharedPreferences) {
+        if (preferences.getBoolean(MIGRATED_KEY, false)) return
+        val editor = preferences.edit()
+        legacy.all.forEach { (key, value) ->
+            if (value is Int && value in 0..3 && !preferences.contains(PREFIX + key)) {
+                editor.putInt(PREFIX + key, value)
+            }
+        }
+        if (!preferences.contains(MODE_KEY)) {
+            editor.putString(MODE_KEY, if (preferences.getBoolean("learning_difficulty_enabled", false)) "local" else "off")
+        }
+        // Keep legacy data until the new preferences have been committed successfully.
+        if (editor.putBoolean(MIGRATED_KEY, true).commit()) legacy.edit().clear().commit()
+    }
+
+    fun isSyncEnabled(context: Context): Boolean = isEnabled(context) &&
+        preferences(context).getString(MODE_KEY, "off") == "sync"
+
     @JvmStatic
     fun isEnabled(context: Context): Boolean = LearningMode.isEnabled(context) &&
-        PreferenceManager.getDefaultSharedPreferences(context).getBoolean("learning_difficulty_enabled", false)
+        preferences(context).getString(MODE_KEY, "off") in setOf("local", "sync")
 
-    private fun preferences(context: Context) = context.applicationContext.getSharedPreferences("learning_difficulty", Context.MODE_PRIVATE)
+    private fun preferences(context: Context): SharedPreferences {
+        migrate(context.applicationContext)
+        return PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+    }
 
-    internal fun key(profile: String, service: Int, url: String): String = "$profile:$service:" +
+    internal fun key(profile: String, service: Int, url: String): String = PREFIX + "$profile:$service:" +
         MessageDigest.getInstance("SHA-256").digest(url.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 
     fun rating(context: Context, profile: String, service: Int, url: String): Int = preferences(context).getInt(key(profile, service, url), 0).coerceIn(0, 3)
@@ -59,7 +91,9 @@ object LearningDifficulty {
 
     private fun changes(context: Context): Flowable<Int> = Flowable.create({ emitter ->
         val prefs = preferences(context)
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> emitter.onNext(0) }
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == null || key.startsWith(PREFIX) || key == MODE_KEY) emitter.onNext(0)
+        }
         prefs.registerOnSharedPreferenceChangeListener(listener)
         emitter.setCancellable { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
         emitter.onNext(0)

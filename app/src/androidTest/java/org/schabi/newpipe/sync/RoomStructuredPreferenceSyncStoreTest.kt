@@ -61,6 +61,55 @@ class RoomStructuredPreferenceSyncStoreTest {
     }
 
     @Test
+    fun lessonDifficultyChangesAndClearsSynchronizeWithoutMixingProfiles() {
+        val peerPhone = newPeerId()
+        val peerTablet = newPeerId()
+        val key = org.schabi.newpipe.learning.LearningDifficulty.key(
+            ProfileManager.DEFAULT_PROFILE_ID,
+            0,
+            "https://example.com/lesson"
+        )
+        val workKey = org.schabi.newpipe.learning.LearningDifficulty.key(
+            "11111111-1111-1111-1111-111111111111",
+            0,
+            "https://example.com/lesson"
+        )
+        phonePreferences.edit().putInt(key, 3).putInt(workKey, 1).commit()
+        val phoneStore = RoomStructuredPreferenceSyncStore(
+            context,
+            phoneDatabase,
+            peerPhone,
+            phonePreferences,
+            canMaterializeProfile = { true }
+        )
+        val tabletStore = RoomStructuredPreferenceSyncStore(
+            context,
+            tabletDatabase,
+            peerTablet,
+            tabletPreferences,
+            canMaterializeProfile = { true }
+        )
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+        synchronize(StructuredPreferenceCategory.LESSON_DIFFICULTY, phone, phoneStore, tablet, tabletStore)
+        assertEquals(3, tabletPreferences.getInt(key, 0))
+        assertEquals(1, tabletPreferences.getInt(workKey, 0))
+        tabletPreferences.edit().putInt(key, 0).commit()
+        synchronize(StructuredPreferenceCategory.LESSON_DIFFICULTY, tablet, tabletStore, phone, phoneStore)
+        assertEquals(0, phonePreferences.getInt(key, -1))
+        assertEquals(1, phonePreferences.getInt(workKey, 0))
+        phonePreferences.edit().remove(workKey).commit()
+        synchronize(StructuredPreferenceCategory.LESSON_DIFFICULTY, phone, phoneStore, tablet, tabletStore)
+        assertTrue(!tabletPreferences.contains(workKey))
+        val disabled = StructuredPreferenceSyncEngine(tabletStore) { false }
+        val response = disabled.handleRequest(
+            peerPhone,
+            phone.createRequest(peerTablet, StructuredPreferenceCategory.LESSON_DIFFICULTY)
+        )
+        assertTrue(!response.accepted)
+    }
+
+    @Test
     fun feedGroupsWithSameIdentityStayIsolatedAcrossProfiles() {
         val workProfile = "11111111-1111-1111-1111-111111111111"
         seedProfileFeedGroup(

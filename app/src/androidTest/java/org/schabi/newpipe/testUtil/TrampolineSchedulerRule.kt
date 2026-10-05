@@ -19,6 +19,11 @@ class TrampolineSchedulerRule : TestRule {
 
     override fun apply(base: Statement, description: Description): Statement = object : Statement() {
         override fun evaluate() {
+            val computationHandler = RxJavaPlugins.getComputationSchedulerHandler()
+            val ioHandler = RxJavaPlugins.getIoSchedulerHandler()
+            val newThreadHandler = RxJavaPlugins.getNewThreadSchedulerHandler()
+            val singleHandler = RxJavaPlugins.getSingleSchedulerHandler()
+            val mainHandler = RxAndroidPlugins.getInitMainThreadSchedulerHandler()
             try {
                 RxJavaPlugins.setComputationSchedulerHandler { scheduler }
                 RxJavaPlugins.setIoSchedulerHandler { scheduler }
@@ -28,8 +33,13 @@ class TrampolineSchedulerRule : TestRule {
 
                 base.evaluate()
             } finally {
-                RxJavaPlugins.reset()
-                RxAndroidPlugins.reset()
+                // Restore only the hooks this rule changes. A global reset removes the app's
+                // error handler while asynchronous requests from UI tests are being cancelled.
+                RxJavaPlugins.setComputationSchedulerHandler(computationHandler)
+                RxJavaPlugins.setIoSchedulerHandler(ioHandler)
+                RxJavaPlugins.setNewThreadSchedulerHandler(newThreadHandler)
+                RxJavaPlugins.setSingleSchedulerHandler(singleHandler)
+                RxAndroidPlugins.setInitMainThreadSchedulerHandler(mainHandler)
             }
         }
     }

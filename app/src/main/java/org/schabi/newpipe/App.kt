@@ -106,6 +106,7 @@ open class App :
         isFirstRun = lastUsedPrefVersion == -1
 
         // Initialize settings first because other initializations can use its values
+        org.schabi.newpipe.learning.LearningDifficulty.migrate(this)
         NewPipeSettings.initSettings(this)
         // Apply the saved mode before AppCompat attaches the first activity's base context.
         // Waiting until MainActivity.onCreate can initially resolve light resources for a

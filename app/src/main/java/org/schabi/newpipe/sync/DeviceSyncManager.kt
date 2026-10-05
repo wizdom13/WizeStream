@@ -462,6 +462,9 @@ class DeviceSyncManager private constructor(context: Context) {
 
     private fun StructuredPreferenceCategory.toLogCategory(): DeviceSyncLogCategory {
         return when (this) {
+            StructuredPreferenceCategory.LESSON_DIFFICULTY ->
+                DeviceSyncLogCategory.LESSON_DIFFICULTY
+
             StructuredPreferenceCategory.FEED_GROUPS -> DeviceSyncLogCategory.FEED_GROUPS
 
             StructuredPreferenceCategory.HOME_TABS -> DeviceSyncLogCategory.HOME_TABS
@@ -532,7 +535,12 @@ class DeviceSyncManager private constructor(context: Context) {
     private fun isStructuredPreferenceCategoryEnabled(
         category: StructuredPreferenceCategory
     ): Boolean {
+        if (category == StructuredPreferenceCategory.LESSON_DIFFICULTY) {
+            return org.schabi.newpipe.learning.LearningDifficulty.isSyncEnabled(applicationContext)
+        }
         val key = when (category) {
+            StructuredPreferenceCategory.LESSON_DIFFICULTY -> error("Handled above")
+
             StructuredPreferenceCategory.FEED_GROUPS -> R.string.device_sync_feed_groups_key
 
             StructuredPreferenceCategory.HOME_TABS -> R.string.device_sync_home_tabs_key

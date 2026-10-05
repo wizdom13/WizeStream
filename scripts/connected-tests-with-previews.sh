@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 collect_previews() {
+    mkdir -p "$ROOT_DIR/app/build/reports/androidTests/connected"
+    adb logcat -d -b main -b system -b crash \
+        > "$ROOT_DIR/app/build/reports/androidTests/connected/device-logcat.txt" || true
     adb pull /sdcard/Download/wizestream-player-layout-previews \
         "${RUNNER_TEMP:-$ROOT_DIR/app/build/outputs}/player-layout-previews" || true
 }

@@ -13,4 +13,16 @@
     <string name="learning_review_watch">Watch lesson</string>
     <string name="learning_review_count">Review hard lessons (%1$d!)</string>
     <string name="learning_review_error">Could not load lessons</string>
+    <string name="learning_difficulty_storage_summary">Ratings are included in app backups. Choose whether to share them with trusted devices; both devices must enable synchronization.</string>
+    <string name="device_sync_category_lesson_difficulty">Lesson difficulty</string>
+    <string-array name="learning_difficulty_modes">
+        <item>Off</item>
+        <item>Local only</item>
+        <item>Synchronize with trusted devices</item>
+    </string-array>
+    <string-array name="learning_difficulty_mode_values" translatable="false">
+        <item>off</item>
+        <item>local</item>
+        <item>sync</item>
+    </string-array>
 </resources>

@@ -37,7 +37,8 @@ enum class StructuredPreferenceCategory {
     FILTERS,
     CONTENT_BLOCKING,
     SETTINGS,
-    COMPLETED_DOWNLOADS
+    COMPLETED_DOWNLOADS,
+    LESSON_DIFFICULTY
 }
 
 @Serializable
@@ -52,7 +53,8 @@ internal enum class StructuredPreferenceRecordType {
     CONTENT_BLOCKING_STATE,
     CONTENT_BLOCK_ENTRY,
     PORTABLE_SETTING,
-    COMPLETED_DOWNLOAD
+    COMPLETED_DOWNLOAD,
+    LESSON_DIFFICULTY
 }
 
 @Serializable
@@ -288,6 +290,9 @@ internal data class SyncedCompletedDownload(
 )
 
 @Serializable
+internal data class SyncedLessonDifficulty(val key: String, val rating: Int)
+
+@Serializable
 internal data class SyncedStructuredPreferenceRecord(
     val feedGroup: SyncedFeedGroup? = null,
     val feedGroupMembership: SyncedFeedGroupMembership? = null,
@@ -299,7 +304,8 @@ internal data class SyncedStructuredPreferenceRecord(
     val contentBlockingState: SyncedContentBlockingState? = null,
     val contentBlockEntry: SyncedContentBlockEntry? = null,
     val portableSetting: SyncedPortableSetting? = null,
-    val completedDownload: SyncedCompletedDownload? = null
+    val completedDownload: SyncedCompletedDownload? = null,
+    val lessonDifficulty: SyncedLessonDifficulty? = null
 )
 
 @Serializable
@@ -480,7 +486,8 @@ internal object StructuredPreferenceSyncValidation {
             record.contentBlockingState,
             record.contentBlockEntry,
             record.portableSetting,
-            record.completedDownload
+            record.completedDownload,
+            record.lessonDifficulty
         )
         if (populatedRecords.size != 1) {
             throw StructuredPreferenceSyncException(
@@ -655,6 +662,20 @@ internal object StructuredPreferenceSyncValidation {
                     StructuredPreferenceRecordId.portableSetting(setting.settingId)
                 ) {
                     invalidRecord("The portable setting identity is invalid")
+                }
+            }
+
+            StructuredPreferenceRecordType.LESSON_DIFFICULTY -> {
+                requireCategory(change, StructuredPreferenceCategory.LESSON_DIFFICULTY)
+                requireNoParent(change)
+                val difficulty = record.lessonDifficulty
+                    ?: invalidRecord("Lesson difficulty data is missing")
+                if (
+                    !org.schabi.newpipe.learning.LearningDifficultyIdentity.isValid(difficulty.key) ||
+                    difficulty.rating !in 0..3 ||
+                    change.recordId != structuredPreferenceDigest(difficulty.key)
+                ) {
+                    invalidRecord("Lesson difficulty data is invalid")
                 }
             }
 
