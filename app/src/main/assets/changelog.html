@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1029000">WizeStream 1.29.0</a></li>
 <li><a href="#release-1028000">WizeStream 1.28.0</a></li>
 <li><a href="#release-1027000">WizeStream 1.27.0</a></li>
 <li><a href="#release-1026001">WizeStream 1.26.1</a></li>
@@ -85,6 +86,24 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1029000" data-version="1.29.0" data-version-code="1029000">
+<h2>WizeStream 1.29.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added an optional all-platform scope for What&#x27;s New and channel groups; the current-platform scope remains the default.</li>
+<li>Added per-channel intro and outro skip durations, disabled by default.</li>
+<li>Included lesson difficulty settings in backups and added optional synchronization of ratings between matching profiles.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Validated profile synchronization identities consistently across Android versions.</li>
+<li>Added a dark branded starting window on Android versions before Android 12.</li>
+<li>Preserved muxed video selection during temporary background playback, including Odysee streams.</li>
+<li>Kept the fullscreen button visible on Android TV when tablet mode is disabled.</li>
+</ul>
+</div>
+</section>
 <section id="release-1028000" data-version="1.28.0" data-version-code="1028000">
 <h2>WizeStream 1.28.0</h2>
 <div class="release-notes">

@@ -4,6 +4,21 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.29.0 (`1029000`)
+
+### New features
+
+- Added an optional all-platform scope for What's New and channel groups; the current-platform scope remains the default.
+- Added per-channel intro and outro skip durations, disabled by default.
+- Included lesson difficulty settings in backups and added optional synchronization of ratings between matching profiles.
+
+### Fixes
+
+- Validated profile synchronization identities consistently across Android versions.
+- Added a dark branded starting window on Android versions before Android 12.
+- Preserved muxed video selection during temporary background playback, including Odysee streams.
+- Kept the fullscreen button visible on Android TV when tablet mode is disabled.
+
 ## WizeStream 1.28.0 (`1028000`)
 
 ### Improvements

@@ -1,0 +1,7 @@
+• Add optional all-platform feeds and channel groups.
+• Add per-channel intro and outro skipping.
+• Back up lesson difficulty settings and optionally sync ratings.
+• Improve profile sync identity validation.
+• Add a branded startup window before Android 12.
+• Preserve video when returning from temporary background playback.
+• Keep the TV fullscreen button visible with tablet mode off.
