@@ -5,7 +5,6 @@
 
 package org.schabi.newpipe.sync
 
-import java.util.UUID
 import kotlinx.serialization.Serializable
 import org.schabi.newpipe.profiles.ProfileIcon
 import org.schabi.newpipe.profiles.ProfileManager
@@ -85,7 +84,7 @@ internal object ProfileSyncValidation {
         }
         val ids = hashSetOf<String>()
         profiles.forEachIndexed { index, profile ->
-            if (!isCanonicalUuid(profile.id)) {
+            if (!ProfileManager.isCanonicalProfileId(profile.id)) {
                 throw ProfileSyncException(
                     "Profile catalog entry ${index + 1} has a non-canonical UUID"
                 )
@@ -117,11 +116,6 @@ internal object ProfileSyncValidation {
         if (profiles.none { it.id == ProfileManager.DEFAULT_PROFILE_ID }) {
             throw ProfileSyncException("The profile catalog is missing Default")
         }
-    }
-
-    private fun isCanonicalUuid(value: String): Boolean {
-        return runCatching { UUID.fromString(value).toString() == value }
-            .getOrDefault(false)
     }
 
     private const val MAX_SYNC_ERROR_LENGTH = 512

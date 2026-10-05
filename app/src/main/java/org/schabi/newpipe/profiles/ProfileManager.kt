@@ -21,6 +21,8 @@ object ProfileManager {
     private const val SYNC_TOMBSTONES_KEY = "wizestream_profile_sync_tombstones"
 
     private val lock = Any()
+    private val canonicalProfileIdPattern =
+        Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
     @JvmStatic
     fun getProfiles(context: Context): List<ProfileRecord> = synchronized(lock) {
@@ -348,9 +350,8 @@ object ProfileManager {
         return prefs.getStringSet(SYNC_TOMBSTONES_KEY, emptySet()).orEmpty().toSet()
     }
 
-    private fun isCanonicalProfileId(profileId: String): Boolean {
-        return runCatching { UUID.fromString(profileId).toString() == profileId }
-            .getOrDefault(false)
+    internal fun isCanonicalProfileId(profileId: String): Boolean {
+        return canonicalProfileIdPattern.matches(profileId)
     }
 
     private fun uniqueSyncedName(

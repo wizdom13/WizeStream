@@ -58,6 +58,20 @@ class ProfileSyncEngineTest {
         }
         assertEquals("Profile catalog entry 2 has a non-canonical UUID", invalidError.message)
 
+        listOf(
+            "1-1-1-1-1",
+            "11111111-1111-1111-1111-AAAAAAAAAAAA"
+        ).forEach { nonCanonicalId ->
+            assertThrows(ProfileSyncException::class.java) {
+                ProfileSyncValidation.validateProfiles(
+                    listOf(
+                        profile(ProfileManager.DEFAULT_PROFILE_ID, "", 0, 0),
+                        profile(nonCanonicalId, "Work", 10, 20)
+                    )
+                )
+            }
+        }
+
         val duplicate = profile(
             "11111111-1111-1111-1111-111111111111",
             "Work",
