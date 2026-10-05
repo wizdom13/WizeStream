@@ -5,7 +5,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Build
 import android.os.Bundle
 import androidx.preference.Preference
-import androidx.preference.SwitchPreference
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.Disposable
@@ -22,7 +22,7 @@ import org.schabi.newpipe.local.subscription.SubscriptionManager
 
 class NotificationsSettingsFragment : BasePreferenceFragment(), OnSharedPreferenceChangeListener {
 
-    private var streamsNotificationsPreference: SwitchPreference? = null
+    private var streamsNotificationsPreference: SwitchPreferenceCompat? = null
     private var notificationWarningSnackbar: Snackbar? = null
     private var loader: Disposable? = null
 
