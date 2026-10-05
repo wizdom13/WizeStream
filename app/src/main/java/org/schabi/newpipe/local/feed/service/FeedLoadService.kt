@@ -116,7 +116,7 @@ class FeedLoadService : Service() {
         setupBroadcastReceiver()
 
         val groupId = intent.getLongExtra(EXTRA_GROUP_ID, FeedGroupEntity.GROUP_ALL_ID)
-        val selectedScope = FeedScope.from(this)
+        val selectedScope = FeedScope.forFeeds(this)
         feedScope = FeedScope(
             intent.getIntExtra(EXTRA_SERVICE_ID, selectedScope.serviceId),
             intent.getIntExtra(
