@@ -130,10 +130,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     boolean surfaceIsSetup = false;
 
 
-    /*//////////////////////////////////////////////////////////////////////////
-    // Popup menus ("popup" means that they pop up, not that they belong to the popup player)
-    //////////////////////////////////////////////////////////////////////////*/
-
     private static final int POPUP_MENU_ID_QUALITY = 69;
     private static final int AUTO_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE;
     private static final int BEST_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE - 1;
@@ -892,6 +888,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onPrepared() {
         super.onPrepared();
         setVideoDurationToControls((int) player.getExoPlayer().getDuration());
+        addPlaybackSpeedMenuItems(playbackSpeedPopupMenu.getMenu());
         binding.playbackSpeed.setText(formatSpeed(player.getPlaybackSpeed()));
     }
 
@@ -1376,6 +1373,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playbackSpeed.setText(formatSpeed(player.getPlaybackSpeed()));
         playbackSpeedPopupMenu.setOnMenuItemClickListener(this);
         playbackSpeedPopupMenu.setOnDismissListener(this);
+    }
+
+    protected void addPlaybackSpeedMenuItems(final Menu menu) {
     }
 
     private void buildCaptionMenu(@NonNull final List<String> availableLanguages) {

@@ -132,6 +132,7 @@ internal class PlayerIntentController(
             newQueue.item!!.recoveryPosition != PlayQueueItem.RECOVERY_UNSET
         ) {
             prepareIfIdle()
+            player.channelSkipController.manualSeek()
             player.exoPlayer.seekTo(currentQueue.index, newQueue.item!!.recoveryPosition)
             player.exoPlayer.playWhenReady = playWhenReady
         } else if (!player.exoPlayerIsNull() &&
@@ -225,6 +226,7 @@ internal class PlayerIntentController(
         val item = PlayQueueItem(info)
         if (oldQueue != null && item.isSameItem(oldQueue.item)) {
             prepareIfIdle()
+            player.channelSkipController.manualSeek()
             player.exoPlayer.seekTo(oldQueue.index, data.seconds * 1000L)
             player.exoPlayer.playWhenReady = playWhenReady
             return
