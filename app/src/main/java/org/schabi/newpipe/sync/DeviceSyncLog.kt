@@ -24,7 +24,8 @@ enum class DeviceSyncLogCategory {
     FILTERS,
     CONTENT_BLOCKING,
     SETTINGS,
-    COMPLETED_DOWNLOADS
+    COMPLETED_DOWNLOADS,
+    LESSON_DIFFICULTY
 }
 
 @Serializable
@@ -239,6 +240,9 @@ class DeviceSyncLogRepository(context: Context) {
 
     private fun StructuredPreferenceCategory.toLogCategory(): DeviceSyncLogCategory {
         return when (this) {
+            StructuredPreferenceCategory.LESSON_DIFFICULTY ->
+                DeviceSyncLogCategory.LESSON_DIFFICULTY
+
             StructuredPreferenceCategory.FEED_GROUPS -> DeviceSyncLogCategory.FEED_GROUPS
 
             StructuredPreferenceCategory.HOME_TABS -> DeviceSyncLogCategory.HOME_TABS
