@@ -669,6 +669,8 @@ class Player(
 
     fun useVideoAndSubtitles(videoAndSubtitlesEnabled: Boolean) = presentationController.useVideoAndSubtitles(videoAndSubtitlesEnabled)
 
+    fun useVideoAndSubtitlesForTemporaryBackground() = presentationController.useVideoAndSubtitles(false, temporaryBackground = true)
+
     fun setPlaybackPresentationMode(newMode: PlaybackPresentationMode) = presentationController.setMode(newMode)
 
     val currentStreamInfo: Optional<StreamInfo>
