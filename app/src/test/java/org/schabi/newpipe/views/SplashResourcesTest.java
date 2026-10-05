@@ -19,11 +19,11 @@ public class SplashResourcesTest {
             ? Path.of("src/main/res") : Path.of("app/src/main/res");
 
     @Test
-    public void api27DisablesTheLegacyStartingWindow() throws Exception {
+    public void api27ShowsTheBrandedStartingWindow() throws Exception {
         final Element openingTheme = findStyle(
                 parse("values/styles.xml"), "Base.V21.OpeningTheme");
 
-        assertEquals("true", findItemValue(openingTheme,
+        assertEquals("false", findItemValue(openingTheme,
                 "android:windowDisablePreview"));
     }
 
@@ -43,7 +43,7 @@ public class SplashResourcesTest {
         final NodeList items = parse(relativePath).getElementsByTagName("item");
 
         assertEquals(2, items.getLength());
-        assertEquals("?attr/colorSurface",
+        assertEquals("@color/dark_background_color",
                 ((Element) items.item(0)).getAttributeNS(ANDROID_NAMESPACE, "drawable"));
         assertEquals("@drawable/ic_wizestream_splash_system",
                 ((Element) items.item(1)).getAttributeNS(ANDROID_NAMESPACE, "drawable"));

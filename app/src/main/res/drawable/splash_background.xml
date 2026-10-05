@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- The platform starting window is created before the app can read the
-         runtime theme-color preference. Show the static brand icon first; the
-         app-owned themed splash takes over immediately afterwards. -->
-    <item android:drawable="?attr/colorSurface" />
+    <!-- Before Android 12 the starting window cannot read the saved app theme.
+         Use a dark brand frame so dark-mode users never see a white cold start;
+         the app-owned splash then takes over with the selected theme. -->
+    <item android:drawable="@color/dark_background_color" />
 
     <item
         android:drawable="@drawable/ic_wizestream_splash_system"
