@@ -184,4 +184,16 @@ public final class FullscreenOrientationPolicy {
         return wideLandscapeLayout
                 != shouldUseWideLandscapeDetailLayout(orientation, screenWidthDp);
     }
+    public static boolean shouldShowFullscreenButton(
+            final boolean television,
+            final boolean tablet,
+            final boolean orientationLocked,
+            final PlayerRotationMode rotationMode,
+            final VideoContentOrientation contentOrientation) {
+        // TVs never enter fullscreen through the phone's orientation-change path.
+        return television || tablet || orientationLocked
+                || rotationMode == PlayerRotationMode.FIXED
+                || !supportsAutomaticFullscreen(contentOrientation);
+    }
+
 }

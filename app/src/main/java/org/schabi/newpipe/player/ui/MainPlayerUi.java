@@ -1186,11 +1186,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     }
 
     private void setupScreenRotationButton() {
-        binding.screenRotationButton.setVisibility(globalScreenOrientationLocked(context)
-                || PlayerRotationMode.get(context) == PlayerRotationMode.FIXED
-                || !FullscreenOrientationPolicy.supportsAutomaticFullscreen(
+        binding.screenRotationButton.setVisibility(
+                FullscreenOrientationPolicy.shouldShowFullscreenButton(
+                        DeviceUtils.isTv(context),
+                        DeviceUtils.isTablet(context),
+                        globalScreenOrientationLocked(context),
+                        PlayerRotationMode.get(context),
                         videoContentOrientation)
-                || DeviceUtils.isTablet(context)
                 ? View.VISIBLE : View.GONE);
         binding.screenRotationButton.setImageDrawable(AppCompatResources.getDrawable(context,
                 isFullscreen ? R.drawable.ic_fullscreen_exit
