@@ -4,9 +4,17 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.28.0 (`1028000`)
+
 ### Improvements
 
 - Added a Video metadata text size setting for views, upload dates, and duration badges.
+- Restored D-pad focus movement between fullscreen player controls and options on Android TV.
+
+### Fixes
+
+- Displayed video controls for manifest-only YouTube live streams instead of an audio-only icon.
+- Added a one-time HLS retry when a manifest-only YouTube live stays buffering after playback begins.
 
 ## WizeStream 1.27.0 (`1027000`)
 
