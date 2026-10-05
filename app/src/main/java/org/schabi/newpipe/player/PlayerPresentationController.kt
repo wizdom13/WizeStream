@@ -44,7 +44,7 @@ internal class PlayerPresentationController(
         }
     }
 
-    fun useVideoAndSubtitles(enabled: Boolean) {
+    fun useVideoAndSubtitles(enabled: Boolean, temporaryBackground: Boolean = false) {
         val playQueue = player.playQueue ?: return
         isAudioOnly = !enabled
         val item = playQueue.item
@@ -54,10 +54,24 @@ internal class PlayerPresentationController(
             !player.exoPlayer.currentTimeline.isEmpty
 
         val streamInfo = player.currentStreamInfo.orElse(null)
+        // A muxed progressive source cannot stop downloading video independently of audio.
+        // Keeping its video selection during a temporary UI absence avoids the progressive
+        // sample-queue seek that can interrupt audio when video is selected again.
+        val retainVideo = shouldRetainVideoSelection(
+            enabled,
+            temporaryBackground,
+            mode,
+            hasTimeline,
+            videoRendererIndex() != Player.RENDERER_UNAVAILABLE &&
+                trackSelectorProvider()?.parameters?.disabledTrackTypes?.contains(C.TRACK_TYPE_VIDEO) == false,
+            streamInfo?.streamType,
+            videoResolver.streamSourceType.orElse(null),
+            streamInfo?.audioStreams.isNullOrEmpty()
+        )
         if (hasTimeline || !hasPendingRecovery) {
             player.setRecovery()
         }
-        if (streamInfo == null || needsQueueManagerReload(streamInfo)) {
+        if (!retainVideo && (streamInfo == null || needsQueueManagerReload(streamInfo))) {
             player.reloadPlayQueueManager()
         }
 
@@ -65,7 +79,7 @@ internal class PlayerPresentationController(
         trackSelector.setParameters(
             trackSelector.buildUponParameters()
                 .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
-                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, !enabled)
+                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, !enabled && !retainVideo)
         )
     }
 
@@ -76,6 +90,21 @@ internal class PlayerPresentationController(
         useVideoAndSubtitles(newMode.rendersVideo())
         player.updateAudioTunneling()
         player.UIs().call { ui -> ui.onPlaybackPresentationModeChanged(newMode) }
+    }
+
+    companion object {
+        internal fun shouldRetainVideoSelection(
+            enabled: Boolean,
+            temporaryBackground: Boolean,
+            mode: PlaybackPresentationMode,
+            hasTimeline: Boolean,
+            hasEnabledVideoRenderer: Boolean,
+            streamType: StreamType?,
+            sourceType: SourceType?,
+            audioStreamsEmpty: Boolean
+        ): Boolean = !enabled && temporaryBackground && mode.rendersVideo() &&
+            hasTimeline && hasEnabledVideoRenderer && streamType == StreamType.VIDEO_STREAM &&
+            sourceType == SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY && audioStreamsEmpty
     }
 
     private fun needsQueueManagerReload(streamInfo: StreamInfo): Boolean {
