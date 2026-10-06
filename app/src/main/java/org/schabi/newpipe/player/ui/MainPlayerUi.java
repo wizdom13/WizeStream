@@ -164,6 +164,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         super.setupAfterIntent();
 
         initVideoPlayer();
+        // Replaying the current item can reuse the engine and its retained SurfaceView.
+        restoreVideoSurfaceAfterLayoutTransition();
         if (shouldRequestPlaybackButtonFocus()) {
             binding.playPauseButton.requestFocus();
         }
@@ -1098,8 +1100,14 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 return true;
             }
         }
-        if (keyCode == KeyEvent.KEYCODE_BACK && isFullscreen && !DeviceUtils.isTv(context)) {
-            toggleFullscreenWithOrientation();
+        if (keyCode == KeyEvent.KEYCODE_BACK && isFullscreen) {
+            if (DeviceUtils.isTv(context) && isAnyListViewOpen()) {
+                closeItemsList();
+            } else if (DeviceUtils.isTv(context) && isControlsVisible()) {
+                hideControls(0, 0);
+            } else {
+                toggleFullscreenWithOrientation();
+            }
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_SPACE && isFullscreen) {

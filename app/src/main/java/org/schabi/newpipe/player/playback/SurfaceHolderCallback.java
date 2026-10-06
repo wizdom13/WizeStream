@@ -28,6 +28,7 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
     private final Context context;
     private final Player player;
     private PlaceholderSurface placeholderSurface;
+    private boolean released;
 
     public SurfaceHolderCallback(final Context context, final Player player) {
         this.context = context;
@@ -58,7 +59,9 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
     }
 
     private void bindVideoSurface(final SurfaceHolder holder) {
-        player.setVideoSurface(holder.getSurface());
+        if (!released) {
+            player.setVideoSurface(holder.getSurface());
+        }
     }
 
     /**
@@ -69,7 +72,7 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
      * @return whether a valid surface was rebound
      */
     public boolean rebindVideoSurfaceIfValid(final SurfaceHolder holder) {
-        if (!holder.getSurface().isValid()) {
+        if (released || !holder.getSurface().isValid()) {
             return false;
         }
         bindVideoSurface(holder);
@@ -78,6 +81,9 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(final SurfaceHolder holder) {
+        if (released) {
+            return;
+        }
         if (placeholderSurface == null) {
             placeholderSurface = PlaceholderSurface.newInstanceV17(context, false);
         }
@@ -85,9 +91,18 @@ public final class SurfaceHolderCallback implements SurfaceHolder.Callback {
     }
 
     public void release() {
-        if (placeholderSurface != null) {
-            placeholderSurface.release();
-            placeholderSurface = null;
+        if (released) {
+            return;
+        }
+        released = true;
+        // Disconnect decoder output before releasing the surface it may still be using.
+        try {
+            player.clearVideoSurface();
+        } finally {
+            if (placeholderSurface != null) {
+                placeholderSurface.release();
+                placeholderSurface = null;
+            }
         }
     }
 }
