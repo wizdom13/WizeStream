@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1031000">WizeStream 1.31.0</a></li>
 <li><a href="#release-1030000">WizeStream 1.30.0</a></li>
 <li><a href="#release-1029000">WizeStream 1.29.0</a></li>
 <li><a href="#release-1028000">WizeStream 1.28.0</a></li>
@@ -87,6 +88,29 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1031000" data-version="1.31.0" data-version-code="1031000">
+<h2>WizeStream 1.31.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added an Arrange subscriptions editor with drag-and-drop ordering and named separators, independent of channel groups.</li>
+<li>Saved subscription layouts separately for each profile and included them in full settings backups.</li>
+<li>Added timestamp playback and text-only copying through long-press gestures in video notes.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Added separate timestamp, text, edit, and delete controls to the per-video notes dialog.</li>
+<li>Kept the fullscreen button visible on phones and desktop displays.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Prevented player popup menus from opening on detached views or invalid windows and dismissed them during player teardown.</li>
+<li>Applied fullscreen entry and exit directly in DeX and multi-window mode, including Back navigation.</li>
+<li>Prevented desktop windows from re-entering fullscreen automatically because of landscape orientation.</li>
+<li>Refreshed YouTube media URLs after CDN connection failures, preserving playback position and limiting recovery attempts.</li>
+</ul>
+</div>
+</section>
 <section id="release-1030000" data-version="1.30.0" data-version-code="1030000">
 <h2>WizeStream 1.30.0</h2>
 <div class="release-notes">

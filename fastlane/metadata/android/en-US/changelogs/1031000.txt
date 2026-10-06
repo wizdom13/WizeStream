@@ -1,0 +1,7 @@
+• Arrange subscriptions with drag-and-drop ordering and named separators.
+• Save layouts per profile and include them in full backups.
+• Hold note timestamps to play; hold note text to copy text only.
+• Add separate timestamp, edit and delete controls to video notes.
+• Keep the fullscreen button visible on phones and desktop displays.
+• Fix player popup crashes and DeX fullscreen/Back navigation.
+• Refresh YouTube media URLs after CDN connection failures.
