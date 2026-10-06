@@ -1,0 +1,8 @@
+• Add optional Invidious support and an external downloader.
+• Add quick profile switching and saved-note badges.
+• Expose channel intro/outro skipping in the speed dialog.
+• Keep scrolling responsive when marking videos watched.
+• Restore replay video output and improve surface cleanup.
+• Improve TV Back navigation and player channel avatars.
+• Fix Odysee publication dates and live DASH 403 recovery.
+• Improve profile sync checks and notification switches.
