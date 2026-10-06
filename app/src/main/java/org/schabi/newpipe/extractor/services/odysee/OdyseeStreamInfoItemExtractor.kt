@@ -1,7 +1,6 @@
 package org.schabi.newpipe.extractor.services.odysee
 
 import com.grack.nanojson.JsonObject
-import java.time.OffsetDateTime
 import org.schabi.newpipe.extractor.Image
 import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.StreamInfoItemExtractor
@@ -51,26 +50,7 @@ class OdyseeStreamInfoItemExtractor(private val claim: JsonObject) : StreamInfoI
         return if (uri.isBlank()) "" else OdyseeApi.webUrl(uri)
     }
 
-    override fun getTextualUploadDate(): String? {
-        val timestamp = claim.getLong("timestamp", 0L)
-        return if (timestamp <= 0) {
-            null
-        } else {
-            java.time.Instant.ofEpochSecond(timestamp).toString()
-        }
-    }
+    override fun getTextualUploadDate(): String? = odyseeUploadDate(claim)?.toInstant()?.toString()
 
-    override fun getUploadDate(): DateWrapper? {
-        val timestamp = claim.getLong("timestamp", 0L)
-        return if (timestamp <= 0) {
-            null
-        } else {
-            DateWrapper(
-                OffsetDateTime.ofInstant(
-                    java.time.Instant.ofEpochSecond(timestamp),
-                    java.time.ZoneOffset.UTC
-                )
-            )
-        }
-    }
+    override fun getUploadDate(): DateWrapper? = odyseeUploadDate(claim)?.let(::DateWrapper)
 }

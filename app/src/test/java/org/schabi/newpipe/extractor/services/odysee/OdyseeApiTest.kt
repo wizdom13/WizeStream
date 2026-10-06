@@ -98,6 +98,21 @@ class OdyseeApiTest {
     }
 
     @Test
+    fun fullStreamInfoUsesPublicationDateInsteadOfClaimUpdateDate() {
+        streamFixture(
+            JsonObject().apply {
+                put("claim_id", "abc")
+                put("name", "video")
+                put("timestamp", 1_790_000_000L)
+                put("value", JsonObject().apply { put("release_time", 1_600_000_000L) })
+            }
+        )
+        val info = StreamInfo.getInfo(ServiceList.Odysee, REPORTED_URL)
+        assertEquals("2020-09-13T12:26:40Z", info.textualUploadDate)
+        assertEquals(1_600_000_000L, info.uploadDate?.offsetDateTime()?.toEpochSecond())
+    }
+
+    @Test
     fun rejectsNullOrWrongTypeClaimValueBeforeReadingTheTitle() {
         for (value in listOf(null, "invalid", 42)) {
             streamFixture(
