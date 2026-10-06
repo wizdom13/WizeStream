@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1030000">WizeStream 1.30.0</a></li>
 <li><a href="#release-1029000">WizeStream 1.29.0</a></li>
 <li><a href="#release-1028000">WizeStream 1.28.0</a></li>
 <li><a href="#release-1027000">WizeStream 1.27.0</a></li>
@@ -86,6 +87,33 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1030000" data-version="1.30.0" data-version-code="1030000">
+<h2>WizeStream 1.30.0</h2>
+<div class="release-notes">
+<h3>New features</h3>
+<ul>
+<li>Added an optional Invidious backend for YouTube.</li>
+<li>Added an optional external downloader.</li>
+<li>Added a quick profile switcher to the navigation drawer.</li>
+<li>Added saved-note indicators to video thumbnails.</li>
+</ul>
+<h3>Improvements</h3>
+<ul>
+<li>Made per-channel intro and outro skip durations available from the playback speed dialog.</li>
+<li>Used a Material switch for new-stream notifications.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Kept scrolling responsive while marking videos as watched.</li>
+<li>Restored video output when replaying the current item and improved video-surface cleanup.</li>
+<li>Made TV Back dismiss player lists and controls before exiting fullscreen, without a timed double press.</li>
+<li>Restored the player channel name and removed tinting from uploader avatars.</li>
+<li>Used Odysee publication dates before claim-update timestamps.</li>
+<li>Added an HLS fallback for live DASH HTTP 403 failures after refresh retries.</li>
+<li>Validated profile identities consistently across device synchronization categories.</li>
+</ul>
+</div>
+</section>
 <section id="release-1029000" data-version="1.29.0" data-version-code="1029000">
 <h2>WizeStream 1.29.0</h2>
 <div class="release-notes">
