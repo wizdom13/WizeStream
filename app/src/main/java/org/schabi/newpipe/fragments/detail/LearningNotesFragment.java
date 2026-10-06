@@ -27,6 +27,7 @@ import org.schabi.newpipe.learning.LearningNoteManager;
 import org.schabi.newpipe.learning.LearningNoteTime;
 import org.schabi.newpipe.player.TimestampChangeData;
 import org.schabi.newpipe.util.NavigationHelper;
+import org.schabi.newpipe.util.external_communication.ShareUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -159,7 +160,16 @@ public class LearningNotesFragment extends Fragment {
             holder.text.setText(note.getNoteText());
             holder.itemView.setOnClickListener(view -> seekTo(note));
             holder.itemView.setOnLongClickListener(view -> {
-                edit(note);
+                ShareUtils.copyToClipboard(requireContext(), note.getNoteText());
+                return true;
+            });
+            holder.timestamp.setOnClickListener(view -> seekTo(note));
+            holder.timestamp.setOnLongClickListener(view -> {
+                seekTo(note);
+                return true;
+            });
+            holder.text.setOnLongClickListener(view -> {
+                ShareUtils.copyToClipboard(requireContext(), note.getNoteText());
                 return true;
             });
             holder.edit.setOnClickListener(view -> edit(note));
