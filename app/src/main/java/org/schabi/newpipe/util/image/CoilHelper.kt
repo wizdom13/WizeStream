@@ -47,10 +47,9 @@ object CoilHelper {
         images: List<Image?>?
     ) {
         val candidates = avatarCandidateUrls(images)
+        clearAvatar(target)
         val requestToken = Any()
         avatarRequestTokens[target] = requestToken
-        CoilUtils.dispose(target)
-        target.setImageResource(R.drawable.placeholder_person)
         loadAvatarCandidate(target, candidates, 0, requestToken)
     }
 
@@ -72,6 +71,8 @@ object CoilHelper {
     }
 
     fun clearAvatar(target: ImageView) {
+        ImageViewCompat.setImageTintList(target, null)
+        target.clearColorFilter()
         avatarRequestTokens[target] = Any()
         CoilUtils.dispose(target)
         target.setImageResource(R.drawable.placeholder_person)
