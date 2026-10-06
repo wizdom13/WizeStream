@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player.helper
 
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ActivityScenario
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -19,10 +20,33 @@ class LivePlaybackParameterDialogTest {
                 fragment.showNow(activity.supportFragmentManager, "live-parameters")
                 val dialog = fragment.requireDialog() as AlertDialog
                 val checkbox = requireNotNull(dialog.findViewById<MaterialCheckBox>(R.id.skipSilenceCheckbox))
+                assertEquals(View.GONE, dialog.findViewById<View>(R.id.channelSkipButton)!!.visibility)
                 assertFalse(checkbox.isEnabled)
                 assertFalse(checkbox.isChecked)
                 assertEquals(activity.getString(R.string.skip_silence_unavailable_live), checkbox.text.toString())
                 fragment.dismissNow()
+            }
+        }
+    }
+
+    @Test
+    fun channelSkippingIsAccessibleFromTheSpeedDialog() {
+        ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                var opened = false
+                var parametersApplied = false
+                val fragment = PlaybackParameterDialog.newInstance(1.0, 1.0, false, true) { _, _, _ ->
+                    parametersApplied = true
+                }.withChannelSkippingAction { opened = true }
+                fragment.showNow(activity.supportFragmentManager, "channel-skip-parameters")
+                val dialog = fragment.requireDialog() as AlertDialog
+                val button = requireNotNull(dialog.findViewById<View>(R.id.channelSkipButton))
+                assertEquals(View.VISIBLE, button.visibility)
+                assertTrue(button.performClick())
+                assertTrue(opened)
+                assertTrue(parametersApplied)
+                assertFalse(dialog.isShowing)
+                activity.supportFragmentManager.executePendingTransactions()
             }
         }
     }
