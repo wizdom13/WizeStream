@@ -15,6 +15,7 @@ import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
+import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -144,6 +145,7 @@ final class PlayerHttpErrorRecovery {
 
     static boolean isRecoverableMediaUrlFailure(@NonNull final Throwable error) {
         return isRecoverableStatusCode(findInvalidResponseCode(error))
+                || hasYouTubeCdnConnectionFailure(error)
                 || hasUnknownHostCause(error)
                 || hasPlaylistStuckCause(error)
                 || hasStaleDashManifestCause(error);
@@ -170,6 +172,32 @@ final class PlayerHttpErrorRecovery {
             current = current.getCause();
         }
         return null;
+    }
+
+    static boolean hasYouTubeCdnConnectionFailure(@NonNull final Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof HttpDataSource.HttpDataSourceException) {
+                final HttpDataSource.HttpDataSourceException httpError =
+                        (HttpDataSource.HttpDataSourceException) current;
+                final String host = httpError.dataSpec == null
+                        ? null : httpError.dataSpec.uri.getHost();
+                final String normalizedHost = host == null ? "" : host.toLowerCase(Locale.ROOT);
+                if (httpError.type == HttpDataSource.HttpDataSourceException.TYPE_OPEN
+                        && (normalizedHost.equals("googlevideo.com")
+                        || normalizedHost.endsWith(".googlevideo.com"))) {
+                    Throwable cause = httpError.getCause();
+                    while (cause != null) {
+                        if (cause instanceof ConnectException) {
+                            return true;
+                        }
+                        cause = cause.getCause();
+                    }
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     static boolean hasUnknownHostCause(@NonNull final Throwable error) {
