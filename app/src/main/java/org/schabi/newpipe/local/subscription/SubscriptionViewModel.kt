@@ -20,6 +20,7 @@ import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.subscription.item.ChannelItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardGridItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardItem
+import org.schabi.newpipe.local.subscription.item.SubscriptionSeparatorItem
 import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.util.DEFAULT_THROTTLE_TIMEOUT
 import org.schabi.newpipe.util.ThemeHelper.getItemViewMode
@@ -94,7 +95,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     private fun observeSubscriptions(profileId: String): Disposable {
         val subscriptionManager = SubscriptionManager(getApplication(), profileId)
-        return Flowable.combineLatest(
+        val subscriptions = Flowable.combineLatest(
             FeedScope.changes(getApplication()),
             filterQuery.distinctUntilChanged(),
             ::Pair
@@ -107,7 +108,24 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     .subscribeOn(Schedulers.io())
                     .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
             }
-            .map { it.map { entity -> ChannelItem(entity.toChannelInfoItem(), entity.uid, ChannelItem.ItemVersion.MINI) } }
+        return Flowable.combineLatest(
+            subscriptions,
+            SubscriptionLayout(getApplication(), profileId).observe(),
+            filterQuery.distinctUntilChanged()
+        ) { entities, saved, query ->
+            val byKey = entities.associateBy(SubscriptionLayout::key)
+            val arranged = SubscriptionLayout.reconcile(saved, entities.map(SubscriptionLayout::key))
+            // Search shows matching channels only; the stored layout remains untouched.
+            arranged.mapNotNull { entry ->
+                if (entry.separator != null) {
+                    if (ContextualSearchHelper.isActive(query) || entities.isEmpty()) null else SubscriptionSeparatorItem(entry)
+                } else {
+                    byKey[entry.key]?.let { entity ->
+                        ChannelItem(entity.toChannelInfoItem(), entity.uid, ChannelItem.ItemVersion.MINI)
+                    }
+                }
+            }
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(

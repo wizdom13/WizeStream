@@ -1795,4 +1795,11 @@
     <string name="learning_for_learning">For learning</string>
     <string name="learning_choose_course">Choose a course</string>
     <string name="learning_all_lessons">All lessons</string>
+    <string name="subscription_arrange">Arrange subscriptions</string>
+    <string name="subscription_arrange_help">Drag channels and separators to change their order. Tap a separator to rename or remove it.</string>
+    <string name="subscription_separator_add">Add separator</string>
+    <string name="subscription_separator_name">Separator name</string>
+    <string name="subscription_order_reset">Reset to alphabetical order</string>
+    <string name="subscription_order_load_failed">Could not load subscriptions</string>
+    <string name="subscription_order_drag">Drag to reorder</string>
 </resources>

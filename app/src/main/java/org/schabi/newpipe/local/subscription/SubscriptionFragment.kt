@@ -43,6 +43,7 @@ import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionViewModel.SubscriptionState
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupDialog
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupReorderDialog
+import org.schabi.newpipe.local.subscription.dialog.SubscriptionLayoutDialog
 import org.schabi.newpipe.local.subscription.item.ChannelItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupAddNewGridItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupAddNewItem
@@ -140,6 +141,9 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         setClickListenerToMenuItem(menu.add(R.string.saved_search_feeds)) {
             showSavedSearchFeedsDialog()
         }.setIcon(R.drawable.ic_search)
+        setClickListenerToMenuItem(menu.add(R.string.subscription_arrange)) {
+            SubscriptionLayoutDialog.newInstance(activeProfileId).show(parentFragmentManager, "subscription_layout")
+        }
         buildGridColumnsMenu(menu)
         buildImportExportMenu(menu)
     }
