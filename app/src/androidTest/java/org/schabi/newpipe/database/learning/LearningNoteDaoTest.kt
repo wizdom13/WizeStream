@@ -76,6 +76,34 @@ class LearningNoteDaoTest {
         assertEquals(emptyList<Any>(), dao.playlistNotes("missing", "profile").blockingFirst())
     }
 
+    @Test
+    fun noteIndexIsDistinctAndKeepsServiceIdentityUntilLastNoteIsDeleted() {
+        val stream = StreamEntity(
+            serviceId = 0,
+            url = "https://example.com/shared",
+            title = "Lesson",
+            streamType = StreamType.VIDEO_STREAM,
+            duration = 600,
+            uploader = "Teacher"
+        )
+        val first = database.streamDAO().upsert(stream)
+        val otherService = database.streamDAO().upsert(stream.copy(uid = 0, serviceId = 1))
+        val dao = database.learningNoteDAO()
+        dao.upsert(note("first", first, 0, "One"))
+        dao.upsert(note("second", first, 0, "Two"))
+        dao.upsert(note("other", otherService, 0, "Three"))
+        val rows = dao.streamsWithNotes().blockingFirst()
+        assertEquals(2, rows.size)
+        assertEquals(setOf(0, 1), rows.map { it.serviceId }.toSet())
+        assertEquals(setOf(first, otherService), rows.map { it.streamId }.toSet())
+        dao.delete("first")
+        assertEquals(2, dao.streamsWithNotes().blockingFirst().size)
+        dao.delete("second")
+        assertEquals(listOf(otherService), dao.streamsWithNotes().blockingFirst().map { it.streamId })
+        dao.delete("other")
+        assertEquals(emptyList<Any>(), dao.streamsWithNotes().blockingFirst())
+    }
+
     private fun note(
         noteId: String,
         streamId: Long,

@@ -11,6 +11,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import io.reactivex.rxjava3.core.Flowable
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
+import org.schabi.newpipe.database.learning.model.VideoNoteStream
 import org.schabi.newpipe.learning.LearningPlaylistNote
 
 @Dao
@@ -54,6 +55,15 @@ interface LearningNoteDAO {
         """
     )
     fun playlistNotes(sourceId: String, profileId: String): Flowable<List<LearningPlaylistNote>>
+
+    @Query(
+        """
+        SELECT DISTINCT s.uid AS streamId, s.service_id AS serviceId, s.url AS url
+        FROM streams s INNER JOIN learning_notes n ON n.stream_id = s.uid
+        ORDER BY s.uid
+        """
+    )
+    fun streamsWithNotes(): Flowable<List<VideoNoteStream>>
 
     @Query("DELETE FROM learning_notes WHERE note_id = :noteId")
     fun delete(noteId: String): Int

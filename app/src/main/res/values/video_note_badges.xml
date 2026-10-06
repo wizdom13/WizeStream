@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="itemVideoNoteBadge" type="id" />
+    <string name="video_note_badge_description">Has notes. Long press to edit.</string>
+</resources>

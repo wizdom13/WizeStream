@@ -79,6 +79,7 @@ import org.schabi.newpipe.info_list.dialog.StreamDialogEntry
 import org.schabi.newpipe.ktx.animate
 import org.schabi.newpipe.ktx.animateHideRecyclerViewAllowingScrolling
 import org.schabi.newpipe.ktx.slideUp
+import org.schabi.newpipe.learning.VideoNoteBadges
 import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedLoadService
 import org.schabi.newpipe.local.search.ContextualSearchHelper
@@ -123,6 +124,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     @JvmField
     var feedHeaderExpanded = true
 
+    private var noteBadges: VideoNoteBadges? = null
     private lateinit var groupAdapter: GroupieAdapter
     private var streamSelection: StreamSelectionController? = null
 
@@ -218,6 +220,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         })
 
         feedBinding.itemsList.adapter = groupAdapter
+        noteBadges = VideoNoteBadges(requireContext(), Runnable { groupAdapter.notifyDataSetChanged() })
+        noteBadges?.watch(feedBinding.itemsList)
         setupListViewMode()
         if (selectedStreamFilter != StreamListFilter.NONE) {
             feedBinding.streamFilterChips.streamFilterChipGroup
@@ -469,6 +473,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         tryGetNewItemsLoadedButton()?.clearAnimation()
 
         feedBinding.feedHeader.removeOnOffsetChangedListener(feedHeaderOffsetListener)
+        noteBadges?.unwatch(feedBinding.itemsList)
+        noteBadges = null
         feedBinding.itemsList.adapter = null
         _feedBinding = null
         super.onDestroyView()
@@ -821,6 +827,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         }.map { item ->
             item.copy(itemVersion = itemVersion).also { displayItem ->
                 displayItem.execBindEnd = item.execBindEnd
+                displayItem.noteBadges = noteBadges
                 displayItem.onUploaderSelected = ::openUploaderChannel
             }
         }
