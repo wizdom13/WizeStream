@@ -45,6 +45,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -62,6 +63,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationBarView;
 
 import org.schabi.newpipe.about.changelog.ChangelogActivity;
@@ -589,8 +591,7 @@ public class MainActivity extends AppCompatActivity {
     private void optionsAboutSelected(final MenuItem item) {
         switch (item.getItemId()) {
             case ITEM_ID_PROFILES:
-                nativePipController.prepareForInternalActivityNavigation();
-                NavigationHelper.openProfilesSettings(this);
+                showProfileSwitcher();
                 break;
             case ITEM_ID_SETTINGS:
                 nativePipController.prepareForInternalActivityNavigation();
@@ -605,6 +606,43 @@ public class MainActivity extends AppCompatActivity {
                 NavigationHelper.openAbout(this);
                 break;
         }
+    }
+
+    private void showProfileSwitcher() {
+        final List<ProfileRecord> profiles = ProfileManager.getProfiles(this);
+        final String currentProfileId = ProfileManager.getActiveProfileId(this);
+        final CharSequence[] names = new CharSequence[profiles.size()];
+        int selectedIndex = -1;
+        for (int i = 0; i < profiles.size(); i++) {
+            final ProfileRecord profile = profiles.get(i);
+            names[i] = ProfileManager.getDisplayName(this, profile);
+            if (profile.getId().equals(currentProfileId)) {
+                selectedIndex = i;
+            }
+        }
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.profiles_title)
+                .setSingleChoiceItems(names, selectedIndex, (dialog, which) -> {
+                    dialog.dismiss();
+                    final ProfileRecord profile = profiles.get(which);
+                    if (profile.getId().equals(ProfileManager.getActiveProfileId(this))
+                            || !ProfileManager.setActiveProfile(this, profile.getId())) {
+                        return;
+                    }
+                    Toast.makeText(this, getString(R.string.profile_switched,
+                            ProfileManager.getDisplayName(this, profile)), Toast.LENGTH_SHORT)
+                            .show();
+                    activeProfileId = profile.getId();
+                    mainBinding.getRoot().closeDrawer(GravityCompat.START, false);
+                    ActivityCompat.recreate(this);
+                })
+                .setNeutralButton(R.string.profile_manage_title, (dialog, which) -> {
+                    nativePipController.prepareForInternalActivityNavigation();
+                    NavigationHelper.openProfilesSettings(this);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void setupDrawerHeader() {

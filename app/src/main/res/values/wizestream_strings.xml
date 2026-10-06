@@ -18,6 +18,7 @@
     <string name="comment_translation_unavailable">On-device translation isn’t available for this language on this device.</string>
     <string name="comment_translation_failed">Couldn’t translate this comment on device.</string>
     <string name="profiles_title">Profiles</string>
+    <string name="profile_manage_title">Manage profiles</string>
     <string name="profiles_summary">Keep subscriptions, history, playlists, and other local content separate</string>
     <string name="profile_default_name">Default</string>
     <string name="profile_active_title">Active profile</string>
