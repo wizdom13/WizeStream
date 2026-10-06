@@ -2,7 +2,11 @@ package org.schabi.newpipe.learning
 
 import android.app.Dialog
 import android.os.Bundle
-import android.widget.ArrayAdapter
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.BaseAdapter
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
@@ -15,15 +19,17 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
+import org.schabi.newpipe.player.TimestampChangeData
+import org.schabi.newpipe.util.NavigationHelper
+import org.schabi.newpipe.util.external_communication.ShareUtils
 
 /** Per-video notes are the same notes used by Learning, backup, and device synchronization. */
 class VideoNotesDialog : DialogFragment() {
     private val disposables = CompositeDisposable()
     private var notes = emptyList<LearningNoteEntity>()
-    private lateinit var rows: ArrayAdapter<String>
+    private val rows = NotesAdapter()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        rows = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, mutableListOf())
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle(requireArguments().getString("title"))
             .setAdapter(rows) { _, index -> notes.getOrNull(index)?.let(::actions) }
@@ -50,10 +56,76 @@ class VideoNotesDialog : DialogFragment() {
                 .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ updated ->
                     notes = updated
-                    rows.clear()
-                    rows.addAll(updated.map { "${LearningNoteTime.format(it.timestampMillis)} — ${it.noteText}" })
+                    rows.notifyDataSetChanged()
                 }, { error() })
         )
+    }
+
+    private fun play(note: LearningNoteEntity) {
+        val appContext = requireContext().applicationContext
+        disposables.add(
+            io.reactivex.rxjava3.core.Maybe.fromCallable {
+                NewPipeDatabase.getInstance(appContext).streamDAO().getStreamDirect(note.streamId)
+            }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ stream ->
+                    appContext.startService(
+                        NavigationHelper.getPlayerTimestampIntent(
+                            appContext,
+                            TimestampChangeData(
+                                stream.serviceId,
+                                stream.url,
+                                (note.timestampMillis / 1000).coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
+                            )
+                        )
+                    )
+                }, { error() })
+        )
+    }
+
+    private inner class NotesAdapter : BaseAdapter() {
+        override fun getCount(): Int = notes.size
+        override fun getItem(position: Int): LearningNoteEntity = notes[position]
+        override fun getItemId(position: Int): Long = notes[position].noteId.hashCode().toLong()
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val row = convertView ?: LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_learning_note, parent, false)
+            val note = getItem(position)
+            row.findViewById<TextView>(R.id.learning_note_timestamp).apply {
+                text = LearningNoteTime.format(note.timestampMillis)
+                setOnClickListener { play(note) }
+                setOnLongClickListener {
+                    play(note)
+                    true
+                }
+            }
+            row.findViewById<TextView>(R.id.learning_note_text).apply {
+                text = note.noteText
+                setOnLongClickListener {
+                    ShareUtils.copyToClipboard(context, note.noteText)
+                    true
+                }
+            }
+            row.setOnClickListener { actions(note) }
+            row.setOnLongClickListener {
+                ShareUtils.copyToClipboard(row.context, note.noteText)
+                true
+            }
+            row.findViewById<View>(R.id.learning_note_edit).setOnClickListener { edit(note) }
+            row.findViewById<View>(R.id.learning_note_delete).setOnClickListener { confirmDelete(note) }
+            return row
+        }
+    }
+
+    private fun confirmDelete(note: LearningNoteEntity) {
+        MaterialAlertDialogBuilder(requireContext()).setMessage(note.noteText)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                disposables.add(
+                    LearningNoteManager(requireContext()).delete(note.noteId)
+                        .observeOn(AndroidSchedulers.mainThread()).subscribe({}, { error() })
+                )
+            }.show()
     }
 
     private fun actions(note: LearningNoteEntity) {
@@ -62,14 +134,7 @@ class VideoNotesDialog : DialogFragment() {
                 if (action == 0) {
                     edit(note)
                 } else {
-                    MaterialAlertDialogBuilder(requireContext()).setMessage(note.noteText)
-                        .setNegativeButton(R.string.cancel, null)
-                        .setPositiveButton(R.string.delete) { _, _ ->
-                            disposables.add(
-                                LearningNoteManager(requireContext()).delete(note.noteId)
-                                    .observeOn(AndroidSchedulers.mainThread()).subscribe({}, { error() })
-                            )
-                        }.show()
+                    confirmDelete(note)
                 }
             }.show()
     }
