@@ -112,7 +112,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private enum PlayButtonAction {
         PLAY, PAUSE, REPLAY
     }
-
     /*//////////////////////////////////////////////////////////////////////////
     // Views
     //////////////////////////////////////////////////////////////////////////*/
@@ -129,7 +128,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private Bitmap scaledEndScreenThumbnail;
     boolean surfaceIsSetup = false;
 
-
     private static final int POPUP_MENU_ID_QUALITY = 69;
     private static final int AUTO_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE;
     private static final int BEST_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE - 1;
@@ -138,12 +136,13 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private static final int POPUP_MENU_ID_CAPTION = 89;
 
     protected boolean isSomePopupMenuVisible = false;
+    private boolean dismissingPopupMenus;
+    private final View.OnAttachStateChangeListener popupAnchorListener =
+            PlayerPopupMenu.detachListener(this::dismissPopupMenus);
     private PopupMenu qualityPopupMenu;
     private PopupMenu audioTrackPopupMenu;
     protected PopupMenu playbackSpeedPopupMenu;
     private PopupMenu captionPopupMenu;
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Gestures
     //////////////////////////////////////////////////////////////////////////*/
@@ -158,8 +157,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @NonNull
     private final SeekbarPreviewThumbnailHolder seekbarPreviewThumbnailHolder =
             new SeekbarPreviewThumbnailHolder();
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Constructor, setup, destroy
     //////////////////////////////////////////////////////////////////////////*/
@@ -215,6 +212,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     abstract BasePlayerGestureListener buildGestureListener();
 
     protected void initListeners() {
+        binding.getRoot().addOnAttachStateChangeListener(popupAnchorListener);
         binding.qualityTextView.setOnClickListener(makeOnClickListener(this::onQualityClicked));
         binding.audioTrackTextView.setOnClickListener(
                 makeOnClickListener(this::onAudioTracksClicked));
@@ -296,6 +294,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     protected void deinitListeners() {
+        binding.getRoot().removeOnAttachStateChangeListener(popupAnchorListener);
         binding.qualityTextView.setOnClickListener(null);
         binding.audioTrackTextView.setOnClickListener(null);
         binding.playbackSpeed.setOnClickListener(null);
@@ -433,12 +432,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     @Override
     public void destroyPlayer() {
+        dismissPopupMenus();
         super.destroyPlayer();
         clearVideoSurface();
     }
 
     @Override
     public void destroy() {
+        dismissPopupMenus();
         playerUiTheme.close();
         danmakuController.destroy();
         super.destroy();
@@ -502,8 +503,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         return safeBasePadding + Math.max(Math.max(systemBarInset, displayCutoutInset), 0);
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Broadcast receiver
     //////////////////////////////////////////////////////////////////////////*/
@@ -520,8 +519,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Thumbnail
     //////////////////////////////////////////////////////////////////////////*/
@@ -595,8 +592,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     protected abstract float calculateMaxEndScreenThumbnailHeight(@NonNull Bitmap bitmap);
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Progress loop and updates
     //////////////////////////////////////////////////////////////////////////*/
@@ -679,7 +674,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         adjustSeekbarPreviewContainer();
     }
 
-
     private void adjustSeekbarPreviewContainer() {
         try {
             // Should only be required when an error occurred before
@@ -756,8 +750,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         showControlsThenHide();
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Controls showing / hiding
     //////////////////////////////////////////////////////////////////////////*/
@@ -877,8 +869,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Playback states
     //////////////////////////////////////////////////////////////////////////*/
@@ -1058,8 +1048,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Repeat, shuffle, mute
     //////////////////////////////////////////////////////////////////////////*/
@@ -1126,10 +1114,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         };
         binding.repeatButton.setImageResource(resId);
     }
-
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Other player listeners
     //////////////////////////////////////////////////////////////////////////*/
@@ -1149,8 +1134,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         animate(binding.surfaceForeground, false, DEFAULT_CONTROLS_DURATION);
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Metadata & stream related views
     //////////////////////////////////////////////////////////////////////////*/
@@ -1264,8 +1247,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         });
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Popup menus ("popup" means that they pop up, not that they belong to the popup player)
     //////////////////////////////////////////////////////////////////////////*/
@@ -1437,14 +1418,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         if (player.isLiveQualityPlayback()) {
             buildQualityMenu();
         }
-        qualityPopupMenu.show();
-        isSomePopupMenuVisible = true;
+        showPopupMenu(qualityPopupMenu, binding.qualityTextView);
         updateQualityLabel(null);
     }
 
     private void onAudioTracksClicked() {
-        audioTrackPopupMenu.show();
-        isSomePopupMenuVisible = true;
+        showPopupMenu(audioTrackPopupMenu, binding.audioTrackTextView);
     }
 
     /**
@@ -1546,6 +1525,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
      */
     @Override
     public void onDismiss(@Nullable final PopupMenu menu) {
+        if (dismissingPopupMenus) {
+            return;
+        }
         if (DEBUG) {
             Log.d(TAG, "onDismiss() called with: menu = [" + menu + "]");
         }
@@ -1562,15 +1544,34 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         if (DEBUG) {
             Log.d(TAG, "onCaptionClicked() called");
         }
-        captionPopupMenu.show();
-        isSomePopupMenuVisible = true;
+        showPopupMenu(captionPopupMenu, binding.captionTextView);
+    }
+
+    protected void showPopupMenu(final PopupMenu menu, final View anchor) {
+        isSomePopupMenuVisible = PlayerPopupMenu.show(menu, anchor);
+    }
+
+    protected void dismissPopupMenus() {
+        dismissingPopupMenus = true;
+        try {
+            PlayerPopupMenu.dismissAll(qualityPopupMenu, audioTrackPopupMenu,
+                    playbackSpeedPopupMenu, captionPopupMenu);
+        } finally {
+            isSomePopupMenuVisible = false;
+            dismissingPopupMenus = false;
+        }
+    }
+
+    @Override
+    public void smoothStopForImmediateReusing() {
+        dismissPopupMenus();
+        super.smoothStopForImmediateReusing();
     }
 
     public boolean isSomePopupMenuVisible() {
         return isSomePopupMenuVisible;
     }
     //endregion
-
 
     private void updateQualityLabel(@Nullable final Tracks currentTracks) {
         if (player.isLiveQualityPlayback()) {
@@ -1626,7 +1627,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
         return null;
     }
-
     /*//////////////////////////////////////////////////////////////////////////
     // Captions (text tracks)
     //////////////////////////////////////////////////////////////////////////*/
@@ -1695,8 +1695,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
      */
     protected abstract void setupSubtitleView(float captionScale);
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Click listeners
     //////////////////////////////////////////////////////////////////////////*/
@@ -1837,8 +1835,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 ShareUtils.openUrlInBrowser(player.getContext(), streamInfo.getOriginalUrl()));
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Video size
     //////////////////////////////////////////////////////////////////////////*/
@@ -1896,8 +1892,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 ? displayAspectRatio : 0.0f;
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // SurfaceHolderCallback helpers
     //////////////////////////////////////////////////////////////////////////*/
@@ -1974,8 +1968,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         surfaceIsSetup = false;
     }
     //endregion
-
-
     /*//////////////////////////////////////////////////////////////////////////
     // Getters
     //////////////////////////////////////////////////////////////////////////*/

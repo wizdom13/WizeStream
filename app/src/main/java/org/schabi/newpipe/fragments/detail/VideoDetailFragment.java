@@ -642,6 +642,7 @@ public final class VideoDetailFragment
                 && !DeviceUtils.isTablet(activity)
                 && !DeviceUtils.isTv(activity)
                 && !DeviceUtils.isDesktopMode(activity)
+                && !DeviceUtils.isInMultiWindow(activity)
                 && !player.isAudioOnly();
     }
 
@@ -3078,7 +3079,8 @@ public final class VideoDetailFragment
 
         // TV never rotates. Tablets keep their current orientation in the same cases as before,
         // but apply the requested fullscreen state explicitly instead of toggling blindly.
-        if (DeviceUtils.isTv(activity) || DeviceUtils.isTablet(activity)
+        if (DeviceUtils.isTv(activity) || DeviceUtils.isDesktopMode(activity)
+                || DeviceUtils.isInMultiWindow(activity) || DeviceUtils.isTablet(activity)
                 && (!globalScreenOrientationLocked(activity) || landscape)) {
             clearPendingFullscreenTransition();
             if (ui != null) {
