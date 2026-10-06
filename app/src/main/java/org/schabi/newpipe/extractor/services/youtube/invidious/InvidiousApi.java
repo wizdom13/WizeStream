@@ -45,9 +45,29 @@ final class InvidiousApi {
         }
         final Response response = NewPipe.getDownloader().get(url);
         if (response.responseCode() < 200 || response.responseCode() >= 300) {
-            throw new ExtractionException("Invidious returned HTTP " + response.responseCode());
+            throw new ExtractionException("Invidious returned HTTP " + response.responseCode()
+                    + errorDetail(response.responseBody()));
+        }
+        final String mime = response.getHeader("Content-Type");
+        if (mime != null && mime.toLowerCase(java.util.Locale.ROOT).contains("text/html")) {
+            throw new ExtractionException("The Invidious instance returned an HTML page instead"
+                    + " of API data. Check that this instance is available and supports the API.");
         }
         return response.responseBody();
+    }
+
+    private static String errorDetail(final String body) {
+        try {
+            final String error = JsonParser.object().from(body).getString("error", "")
+                    .replaceAll("https?://[^\\s\"]+", "[URL]")
+                    .replaceAll("[\\r\\n\\t]+", " ");
+            if (!error.isEmpty()) {
+                return ": " + error.substring(0, Math.min(error.length(), 240));
+            }
+        } catch (final JsonParserException ignored) {
+            // Error pages can be HTML or plain text; do not include their bodies in reports.
+        }
+        return "";
     }
 
     JsonObject object(final String url) throws IOException, ExtractionException {

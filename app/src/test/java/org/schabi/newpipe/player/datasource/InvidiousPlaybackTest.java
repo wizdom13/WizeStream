@@ -130,4 +130,77 @@ public class InvidiousPlaybackTest {
         verify(transport, times(2)).open(any());
     }
 
+    @Test
+    public void rejectsHtmlAndJsonMediaResponsesBeforeDecoding() throws Exception {
+        for (final String mime : new String[]{"text/html; charset=UTF-8", "application/json",
+                "application/problem+json"}) {
+            assertRejectedResponse(mime, "<html>Site unavailable</html>");
+        }
+    }
+
+    @Test
+    public void rejectsErrorBodiesWithMissingOrMisleadingContentTypes() throws Exception {
+        assertRejectedResponse(null, "\uFEFF  <!DOCTYPE HTML><html>Site unavailable</html>");
+        assertRejectedResponse("video/mp4", "<html>Companion error</html>");
+        assertRejectedResponse("application/octet-stream", "{\"error\":\"Companion unavailable\"}");
+    }
+
+    private static void assertRejectedResponse(final String mime, final String body)
+            throws Exception {
+        final URL url = new URL("https://example.org/videoplayback?token=private");
+        final HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getContentType()).thenReturn(mime);
+        when(connection.getInputStream()).thenReturn(new ByteArrayInputStream(
+                body.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        try (MockedStatic<AppProxySelector> connections = mockStatic(AppProxySelector.class)) {
+            connections.when(() -> AppProxySelector.openConnection(url)).thenReturn(connection);
+            final var source = new YoutubeHttpDataSource.Factory().createDataSource();
+            final var error = assertThrows(InvidiousMediaResponse.InvalidResponseException.class,
+                    () -> source.open(new DataSpec(Uri.parse(url.toString()))));
+            org.junit.Assert.assertTrue(error.getMessage().contains("Invidious"));
+            org.junit.Assert.assertFalse(error.getMessage().contains("private"));
+            verify(connection).disconnect();
+            source.close();
+            connections.verify(() -> AppProxySelector.openConnection(url));
+        }
+    }
+
+    @Test
+    public void preservesMediaManifestAndCaptionBytesAndAllowsMidStreamRanges() throws Exception {
+        for (final String body : new String[]{"\u0000\u0000\u0000\u0018ftypmp42",
+                "#EXTM3U\n#EXT-X-VERSION:3", "<?xml version='1.0'?><MPD/>",
+                "WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nCaption"}) {
+            final byte[] expected = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            final DataSpec spec = new DataSpec(Uri.parse("https://example.org/stream"));
+            final var input = InvidiousMediaResponse.checkBody(
+                    new ByteArrayInputStream(expected), spec);
+            org.junit.Assert.assertArrayEquals(expected, input.readAllBytes());
+        }
+        final DataSpec range = new DataSpec.Builder().setUri("https://example.org/stream")
+                .setPosition(100).build();
+        final byte[] middle = "<html>arbitrary middle-of-media bytes".getBytes(
+                java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.Assert.assertArrayEquals(middle, InvidiousMediaResponse.checkBody(
+                new ByteArrayInputStream(middle), range).readAllBytes());
+    }
+
+    @Test
+    public void directBackendDoesNotApplyInvidiousResponsePolicy() throws Exception {
+        InvidiousBackend.configure(false, "");
+        final URL url = new URL("https://example.org/stream");
+        final HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getContentType()).thenReturn("text/html");
+        when(connection.getOutputStream()).thenReturn(new java.io.ByteArrayOutputStream());
+        when(connection.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[]{1, 2, 3}));
+        try (MockedStatic<AppProxySelector> connections = mockStatic(AppProxySelector.class)) {
+            connections.when(() -> AppProxySelector.openConnection(url)).thenReturn(connection);
+            final var source = new YoutubeHttpDataSource.Factory().createDataSource();
+            source.open(new DataSpec(Uri.parse(url.toString())));
+            assertEquals(3, source.read(new byte[3], 0, 3));
+            source.close();
+        }
+    }
+
 }

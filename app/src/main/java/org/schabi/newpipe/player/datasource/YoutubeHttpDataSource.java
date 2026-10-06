@@ -435,6 +435,16 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
 
         // Check for a valid content type.
         final String contentType = httpURLConnection.getContentType();
+        final boolean invidiousResponse = InvidiousBackend.isEnabled()
+                && InvidiousBackend.isInstanceOrigin(java.net.URI.create(dataSpec.uri.toString()));
+        if (invidiousResponse) {
+            try {
+                InvidiousMediaResponse.checkContentType(contentType, dataSpecParameter);
+            } catch (final InvidiousMediaResponse.InvalidResponseException e) {
+                closeConnectionQuietly();
+                throw e;
+            }
+        }
         if (contentTypePredicate != null && !contentTypePredicate.apply(contentType)) {
             closeConnectionQuietly();
             throw new InvalidContentTypeException(contentType, dataSpecParameter);
@@ -485,6 +495,10 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
                     HttpDataSourceException.TYPE_OPEN);
         }
 
+        if (invidiousResponse) {
+            checkInvidiousResponseBody(dataSpecParameter);
+        }
+
         opened = true;
         transferStarted(dataSpecParameter);
 
@@ -501,6 +515,24 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         }
 
         return bytesToRead;
+    }
+
+    private void checkInvidiousResponseBody(final DataSpec requestedSpec)
+            throws HttpDataSourceException {
+        try {
+            inputStream = InvidiousMediaResponse.checkBody(inputStream, requestedSpec);
+        } catch (final InvidiousMediaResponse.InvalidResponseException e) {
+            Util.closeQuietly(inputStream);
+            inputStream = null;
+            closeConnectionQuietly();
+            throw e;
+        } catch (final IOException e) {
+            Util.closeQuietly(inputStream);
+            inputStream = null;
+            closeConnectionQuietly();
+            throw HttpDataSourceException.createForIOException(e, requestedSpec,
+                    HttpDataSourceException.TYPE_OPEN);
+        }
     }
 
     @Override
