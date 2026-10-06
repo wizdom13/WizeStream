@@ -7,4 +7,5 @@
     <string name="invidious_instance_title">Invidious instance</string>
     <string name="invidious_instance_summary">HTTPS root URL of an instance you trust. Its operator can see your requests. Changing the instance while enabled restarts the app.</string>
     <string name="invidious_invalid_instance">Enter the HTTPS root URL of an Invidious instance, without a path, credentials, query, or fragment.</string>
+    <string name="invidious_media_error">The Invidious instance returned an error page instead of playable media. Try again later or choose another trusted instance that supports video proxying.</string>
 </resources>

@@ -33,6 +33,7 @@ public class InvidiousExtractionTest {
     private final List<String> requests = new ArrayList<>();
     private String responseBody;
     private int status = 200;
+    private java.util.Map<String, List<String>> responseHeaders = Collections.emptyMap();
     private java.util.function.Function<String, String> responseForUrl;
     private static final String VIDEO = "BaW_jenozKc";
     private static final String CHANNEL = "UCAAAAAAAAAAAAAAAAAAAAAA";
@@ -64,7 +65,7 @@ public class InvidiousExtractionTest {
                 requests.add(request.url());
                 final String body = responseForUrl == null ? responseBody : responseForUrl
                         .apply(request.url());
-                return new Response(status, "fixture", Collections.emptyMap(), body,
+                return new Response(status, "fixture", responseHeaders, body,
                         body.getBytes(java.nio.charset.StandardCharsets.UTF_8), request.url());
             }
         });
@@ -250,4 +251,42 @@ public class InvidiousExtractionTest {
                 + VIDEO)
                 instanceof InvidiousStreamExtractor);
     }
+    @Test
+    public void reportsCompanionErrorsFromNonSuccessfulApiResponses() {
+        status = 500;
+        responseBody = "{\"error\":\"Error while communicating with Invidious companion:"
+                + " Unexpected char '<' at line 1, column 1\"}";
+        final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
+                        + VIDEO).fetchPage());
+        assertTrue(error.getMessage().contains("HTTP 500"));
+        assertTrue(error.getMessage().contains("Unexpected char '<'"));
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    public void explainsUnavailableHtmlApiPagesWithoutIncludingTheirBody() {
+        responseHeaders = java.util.Map.of("Content-Type", List.of("text/html; charset=UTF-8"));
+        responseBody = "<html><h1>Site Unavailable</h1><p>private body</p></html>";
+        final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
+                        + VIDEO).fetchPage());
+        assertTrue(error.getMessage().contains("HTML page instead of API data"));
+        assertFalse(error.getMessage().contains("private body"));
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    public void apiErrorDiagnosticsRedactUrlsAndBoundResponseDetails() {
+        status = 500;
+        responseBody = "{\"error\":\"Cannot fetch https://example.org/stream?token=private "
+                + "x".repeat(400) + "\"}";
+        final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
+                        + VIDEO).fetchPage());
+        assertFalse(error.getMessage().contains("private"));
+        assertTrue(error.getMessage().contains("[URL]"));
+        assertTrue(error.getMessage().length() < 300);
+    }
+
 }

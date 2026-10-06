@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.PendingIntentCompat
@@ -115,7 +116,12 @@ class ErrorUtil {
          *                  description
          */
         @JvmStatic
-        fun createNotification(context: Context, errorInfo: ErrorInfo) {
+        @JvmOverloads
+        fun createNotification(
+            context: Context,
+            errorInfo: ErrorInfo,
+            @StringRes toastMessageRes: Int = R.string.error_report_notification_toast
+        ) {
             if (shouldSuppressReleaseOptionalStreamInfoError(errorInfo)) {
                 return
             }
@@ -147,8 +153,8 @@ class ErrorUtil {
 
             ContextCompat.getMainExecutor(context).execute {
                 // since the notification is silent, also show a toast, otherwise the user is confused
-                Toast.makeText(context, R.string.error_report_notification_toast, Toast.LENGTH_SHORT)
-                    .show()
+                val duration = if (toastMessageRes == R.string.error_report_notification_toast) Toast.LENGTH_SHORT else Toast.LENGTH_LONG
+                Toast.makeText(context, toastMessageRes, duration).show()
             }
         }
 

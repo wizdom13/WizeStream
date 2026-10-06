@@ -27,9 +27,11 @@ import androidx.media3.common.PlaybackException.ERROR_CODE_TIMEOUT
 import androidx.media3.common.PlaybackException.ERROR_CODE_UNSPECIFIED
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.exoplayer.ExoPlaybackException
+import org.schabi.newpipe.R
 import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
+import org.schabi.newpipe.player.datasource.InvidiousMediaResponse
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.resolver.PlaybackResolver
@@ -85,7 +87,19 @@ internal class PlayerErrorController(
                 player.onBuffering()
             }
 
-            ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE,
+            ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE -> {
+                if (generateSequence(error as Throwable) { it.cause }.any { it is InvidiousMediaResponse.InvalidResponseException }) {
+                    isCatchableException = true
+                    if (!player.exoPlayerIsNull()) {
+                        player.exoPlayer.pause()
+                    }
+                    player.changeState(Player.STATE_PAUSED)
+                    createErrorNotification(error, toastMessageRes = R.string.invidious_media_error)
+                } else if (!player.exoPlayerIsNull()) {
+                    player.playQueue?.error()
+                }
+            }
+
             ERROR_CODE_IO_BAD_HTTP_STATUS,
             ERROR_CODE_IO_FILE_NOT_FOUND,
             ERROR_CODE_IO_NO_PERMISSION,
@@ -378,7 +392,8 @@ internal class PlayerErrorController(
 
     private fun createErrorNotification(
         error: PlaybackException,
-        recoveryDiagnostic: String? = null
+        recoveryDiagnostic: String? = null,
+        toastMessageRes: Int = R.string.error_report_notification_toast
     ) {
         val diagnosticSuffix = buildString {
             PlayerHttpErrorRecovery.buildSafeErrorContext(error)?.let { safeErrorContext ->
@@ -407,7 +422,7 @@ internal class PlayerErrorController(
                 metadata.streamUrl
             )
         }
-        ErrorUtil.createNotification(player.context, errorInfo)
+        ErrorUtil.createNotification(player.context, errorInfo, toastMessageRes)
     }
 
     private companion object {
