@@ -4,6 +4,26 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.0 (`1031000`)
+
+### New features
+
+- Added an Arrange subscriptions editor with drag-and-drop ordering and named separators, independent of channel groups.
+- Saved subscription layouts separately for each profile and included them in full settings backups.
+- Added timestamp playback and text-only copying through long-press gestures in video notes.
+
+### Improvements
+
+- Added separate timestamp, text, edit, and delete controls to the per-video notes dialog.
+- Kept the fullscreen button visible on phones and desktop displays.
+
+### Fixes
+
+- Prevented player popup menus from opening on detached views or invalid windows and dismissed them during player teardown.
+- Applied fullscreen entry and exit directly in DeX and multi-window mode, including Back navigation.
+- Prevented desktop windows from re-entering fullscreen automatically because of landscape orientation.
+- Refreshed YouTube media URLs after CDN connection failures, preserving playback position and limiting recovery attempts.
+
 ## WizeStream 1.30.0 (`1030000`)
 
 ### New features
