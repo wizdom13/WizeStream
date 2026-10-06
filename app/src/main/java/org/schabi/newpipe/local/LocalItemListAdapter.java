@@ -14,6 +14,7 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.info_list.ItemViewMode;
+import org.schabi.newpipe.learning.VideoNoteBadges;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.holder.LocalBookmarkPlaylistItemHolder;
 import org.schabi.newpipe.local.holder.LocalItemHolder;
@@ -92,6 +93,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private final LocalItemBuilder localItemBuilder;
     private final ArrayList<LocalItem> localItems;
     private final HistoryRecordManager recordManager;
+    private final VideoNoteBadges noteBadges;
     private final DateTimeFormatter dateTimeFormatter;
 
     private boolean showFooter = false;
@@ -103,6 +105,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     public LocalItemListAdapter(final Context context) {
         recordManager = new HistoryRecordManager(context);
+        noteBadges = new VideoNoteBadges(context, this::notifyDataSetChanged);
         localItemBuilder = new LocalItemBuilder(context);
         localItems = new ArrayList<>();
 
@@ -479,6 +482,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
             ((LocalItemHolder) holder)
                     .updateFromItem(localItems.get(position), recordManager, dateTimeFormatter);
+            noteBadges.bindLocal(holder.itemView, localItems.get(position));
             if (holder instanceof LocalBookmarkPlaylistItemHolder
                     || holder instanceof RemoteBookmarkPlaylistItemHolder) {
                 final View handle = holder.itemView.findViewById(R.id.itemHandle);
@@ -509,6 +513,24 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         } else {
             onBindViewHolder(holder, position);
         }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull final RecyclerView.ViewHolder holder) {
+        noteBadges.clear(holder.itemView);
+        super.onViewRecycled(holder);
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull final RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        noteBadges.watch(recyclerView);
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull final RecyclerView recyclerView) {
+        noteBadges.unwatch(recyclerView);
+        super.onDetachedFromRecyclerView(recyclerView);
     }
 
     public GridLayoutManager.SpanSizeLookup getSpanSizeLookup(final int spanCount) {

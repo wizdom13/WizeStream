@@ -34,6 +34,7 @@ import org.schabi.newpipe.info_list.holder.StreamGridInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamMiniInfoItemHolder;
 import org.schabi.newpipe.info_list.holder.StreamWideRelatedInfoItemHolder;
+import org.schabi.newpipe.learning.VideoNoteBadges;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.FallbackViewHolder;
@@ -93,6 +94,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private final InfoItemBuilder infoItemBuilder;
     private final List<InfoItem> infoItemList;
     private final HistoryRecordManager recordManager;
+    private final VideoNoteBadges noteBadges;
     private final ContentBlockingHelper.Target contentBlockingTarget;
 
     private boolean useMiniVariant = false;
@@ -107,6 +109,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                            @NonNull final ContentBlockingHelper.Target contentBlockingTarget) {
         layoutInflater = LayoutInflater.from(context);
         recordManager = new HistoryRecordManager(context);
+        noteBadges = new VideoNoteBadges(context, this::notifyDataSetChanged);
         infoItemBuilder = new InfoItemBuilder(context);
         infoItemList = new ArrayList<>();
         this.contentBlockingTarget = contentBlockingTarget;
@@ -409,6 +412,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             ((InfoItemHolder) holder).updateFromItem(
                     // If header is present, offset the items by -1
                     infoItemList.get(hasHeader() ? position - 1 : position), recordManager);
+            noteBadges.bindOnline(holder.itemView,
+                    infoItemList.get(hasHeader() ? position - 1 : position));
         }
     }
 
@@ -417,7 +422,20 @@ public class InfoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         if (holder instanceof InfoItemHolder) {
             ((InfoItemHolder) holder).recycle();
         }
+        noteBadges.clear(holder.itemView);
         super.onViewRecycled(holder);
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull final RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        noteBadges.watch(recyclerView);
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull final RecyclerView recyclerView) {
+        noteBadges.unwatch(recyclerView);
+        super.onDetachedFromRecyclerView(recyclerView);
     }
 
     public GridLayoutManager.SpanSizeLookup getSpanSizeLookup(final int spanCount) {
