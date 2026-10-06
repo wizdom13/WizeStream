@@ -1921,13 +1921,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             surfaceHolderCallback = new SurfaceHolderCallback(context, player.getExoPlayer());
             binding.surfaceView.getHolder().addCallback(surfaceHolderCallback);
 
-            // ensure player is using an unreleased surface, which the surfaceView might not be
-            // when starting playback on background or during player switching
-            if (binding.surfaceView.getHolder().getSurface().isValid()) {
-                // initially set the surface manually otherwise
-                // onRenderedFirstFrame() will not be called
-                player.getExoPlayer().setVideoSurfaceHolder(binding.surfaceView.getHolder());
-            }
+            // Use the same owner for initial binding and later surface callbacks.
+            surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder());
 
             surfaceIsSetup = true;
         }
@@ -1973,8 +1968,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             binding.surfaceView.getHolder().removeCallback(surfaceHolderCallback);
             surfaceHolderCallback.release();
             surfaceHolderCallback = null;
+        } else {
+            Optional.ofNullable(player.getExoPlayer()).ifPresent(ExoPlayer::clearVideoSurface);
         }
-        Optional.ofNullable(player.getExoPlayer()).ifPresent(ExoPlayer::clearVideoSurface);
         surfaceIsSetup = false;
     }
     //endregion

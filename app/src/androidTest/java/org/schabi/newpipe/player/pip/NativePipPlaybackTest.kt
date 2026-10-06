@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -84,6 +85,25 @@ class NativePipPlaybackTest {
                 PlayerHolder.getInstance().player.get().exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
             }
             assertVisibleFrame("native-pip-before")
+            // Replaying the current item retains the engine. Simulate lost decoder output
+            // while Android retains a valid SurfaceView, then require visible frames again.
+            val retainedEngine = AtomicReference<androidx.media3.exoplayer.ExoPlayer>()
+            onActivity(scenario) { activity ->
+                val engine = PlayerHolder.getInstance().player.get().exoPlayer
+                retainedEngine.set(engine)
+                engine.clearVideoSurface()
+                val item = PlayQueueItem.localMedia("Vertical PiP test", video.toURI().toString(), 8, "", "", "", "video/mp4", -1, true, null)
+                NavigationHelper.playOnMainPlayer(activity, LocalMediaPlayQueue(listOf(item), 0))
+            }
+            waitFor(scenario, "replay playback") {
+                PlayerHolder.getInstance().player.get().exoPlayer.playbackState == Player.STATE_READY
+            }
+            assertVisibleFrame("native-pip-after-replay") {
+                onActivity(scenario) { playerUi().hideControls(0, 0) }
+            }
+            onActivity(scenario) {
+                assertSame(retainedEngine.get(), PlayerHolder.getInstance().player.get().exoPlayer)
+            }
             for (fullscreen in listOf(false, true)) {
                 var expandedSize = 0
                 onActivity(scenario) { activity ->
