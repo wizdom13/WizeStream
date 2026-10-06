@@ -96,6 +96,10 @@ configure<ApplicationExtension> {
         }
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
