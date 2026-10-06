@@ -1,0 +1,253 @@
+package org.schabi.newpipe.extractor.services.youtube.invidious;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.downloader.CancellableCall;
+import org.schabi.newpipe.extractor.downloader.Downloader;
+import org.schabi.newpipe.extractor.downloader.Request;
+import org.schabi.newpipe.extractor.downloader.Response;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.extractor.linkhandler.ChannelTabs;
+import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
+import org.schabi.newpipe.extractor.localization.ContentCountry;
+import org.schabi.newpipe.extractor.localization.Localization;
+import org.schabi.newpipe.extractor.search.filter.FilterItem;
+import org.schabi.newpipe.extractor.stream.StreamInfo;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+
+public class InvidiousExtractionTest {
+    private final Downloader oldDownloader = NewPipe.getDownloader();
+    private final Localization oldLocalization = NewPipe.getPreferredLocalization();
+    private final ContentCountry oldCountry = NewPipe.getPreferredContentCountry();
+    private final List<String> requests = new ArrayList<>();
+    private String responseBody;
+    private int status = 200;
+    private java.util.function.Function<String, String> responseForUrl;
+    private static final String VIDEO = "BaW_jenozKc";
+    private static final String CHANNEL = "UCAAAAAAAAAAAAAAAAAAAAAA";
+    private static final String ITEM = fixture("/invidious/video-item.json");
+
+    private static String fixture(final String path) {
+        try (var stream = java.util.Objects.requireNonNull(
+                InvidiousExtractionTest.class.getResourceAsStream(path))) {
+            return new String(stream.readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8).trim();
+        } catch (final java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Before
+    public void setUp() {
+        InvidiousBackend.configure(true, "https://example.org");
+        NewPipe.init(new Downloader() {
+            @Override
+            public CancellableCall executeAsync(final Request request,
+                    final AsyncCallback callback) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public Response execute(final Request request) {
+                assertTrue("Unexpected direct request: " + request.url(), request.url()
+                        .startsWith("https://example.org/api/v1/"));
+                requests.add(request.url());
+                final String body = responseForUrl == null ? responseBody : responseForUrl
+                        .apply(request.url());
+                return new Response(status, "fixture", Collections.emptyMap(), body,
+                        body.getBytes(java.nio.charset.StandardCharsets.UTF_8), request.url());
+            }
+        });
+    }
+
+    @After
+    public void tearDown() {
+        InvidiousBackend.configure(false, "");
+        NewPipe.init(oldDownloader, oldLocalization, oldCountry);
+    }
+
+    @Test
+    public void loadsProxiedStreamMetadataAndMedia() throws Exception {
+        responseBody = fixture("/invidious/video.json");
+        final StreamInfo info = StreamInfo.getInfo(ServiceList.YouTube,
+                "https://www.youtube.com/watch?v=" + VIDEO);
+        assertEquals("Video", info.getName());
+        assertEquals(120, info.getDuration());
+        assertEquals("https://example.org/videoplayback?itag=18", info.getVideoStreams().get(0)
+                .getContent());
+        assertEquals("1080p", info.getVideoOnlyStreams().get(0).getResolution());
+        assertEquals(128, info.getAudioStreams().get(0).getAverageBitrate());
+        assertEquals("https://example.org/api/v1/captions/" + VIDEO + "?label=English", info
+                .getSubtitles().get(0).getContent());
+        assertTrue(info.getThumbnails().get(0).getUrl().startsWith("https://example.org/vi/"));
+        assertEquals("https://example.org/ggpht/avatar=s88", info.getUploaderAvatarUrl());
+        assertEquals(1, info.getRelatedItems().size());
+        assertEquals(Collections.singletonList("https://example.org/api/v1/videos/" + VIDEO
+                + "?local=true"), requests);
+    }
+
+    @Test
+    public void loadsLiveHlsOnlyThroughTheInstance() throws Exception {
+        responseBody = ITEM.substring(0, ITEM.length() - 1)
+                + ",\"liveNow\":true,\"hlsUrl\":\"https://example.org/api/manifest/hls/id/"
+                        + VIDEO + "\"}";
+        final StreamInfo info = StreamInfo.getInfo(ServiceList.YouTube,
+                "https://www.youtube.com/watch?v=" + VIDEO);
+        assertEquals(org.schabi.newpipe.extractor.stream.StreamType.LIVE_STREAM, info
+                .getStreamType());
+        assertEquals("https://example.org/api/manifest/hls/id/" + VIDEO + "?local=true", info
+                .getHlsUrl());
+        assertTrue(info.getVideoStreams().isEmpty());
+        assertTrue(info.getAudioStreams().isEmpty());
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    public void resolvesChannelHandlesOnTheInstance() throws Exception {
+        responseForUrl = url -> url.contains("resolveurl?")
+                ? "{\"browseId\":\"" + CHANNEL + "\"}"
+                : "{\"author\":\"Channel\",\"authorId\":\"" + CHANNEL + "\"}";
+        final var channel = ServiceList.YouTube
+                .getChannelExtractor("https://www.youtube.com/@Channel");
+        channel.fetchPage();
+        assertEquals("https://www.youtube.com/channel/" + CHANNEL, channel.getUrl());
+        assertEquals(2, requests.size());
+        assertTrue(requests.get(0)
+                .contains("resolveurl?url=https%3A%2F%2Fwww.youtube.com%2F%40Channel"));
+        assertEquals("https://example.org/api/v1/channels/" + CHANNEL, requests.get(1));
+    }
+
+    @Test
+    public void mapsSearchFiltersToInvidiousParameters() throws Exception {
+        responseBody = "[" + ITEM + "]";
+        final var handler = new org.schabi.newpipe.extractor.linkhandler.SearchQueryHandler(
+                "https://www.youtube.com/results", "https://www.youtube.com/results", "video",
+                Collections.singletonList(new FilterItem(-1, "videos")),
+                java.util.Arrays.asList(new FilterItem(-1, "sort_view"),
+                        new FilterItem(-1, "past_week"), new FilterItem(-1, "short_video"),
+                        new FilterItem(-1, "Ccommons")));
+        ServiceList.YouTube.getSearchExtractor(handler).fetchPage();
+        final String request = requests.get(0);
+        assertTrue(request.contains("type=video"));
+        assertTrue(request.contains("sort=views"));
+        assertTrue(request.contains("date=week"));
+        assertTrue(request.contains("duration=short"));
+        assertTrue(request.contains("features=creative_commons"));
+    }
+
+    @Test
+    public void refusesDirectMediaAndBackendFailuresWithoutFallback() throws Exception {
+        responseBody = ITEM.substring(0, ITEM.length() - 1)
+                + ",\"formatStreams\":[{\"itag\":\"18\",\"type\":\"video/mp4\",\"url\":\"https:"
+                        + "//rr1.googlevideo.com/videoplayback\"}]}";
+        final var extractor = ServiceList.YouTube
+                .getStreamExtractor("https://www.youtube.com/watch?v=" + VIDEO);
+        extractor.fetchPage();
+        assertThrows(ExtractionException.class, extractor::getVideoStreams);
+        status = 503;
+        assertThrows(ExtractionException.class, () -> new InvidiousApi()
+                .object("https://example.org/api/v1/videos/" + VIDEO));
+        assertEquals(2, requests.size());
+        assertThrows(ExtractionException.class, () -> new InvidiousApi()
+                .object("https://youtube.com/api/v1/videos/" + VIDEO));
+        assertEquals(2, requests.size());
+        status = 200;
+        for (final String invalid : new String[]{"not JSON", "{\"error\":\"Unavailable\"}"}) {
+            responseBody = invalid;
+            assertThrows(ExtractionException.class,
+                    () -> new InvidiousApi().object("https://example.org/api/v1/videos/" + VIDEO));
+        }
+        assertEquals(4, requests.size());
+    }
+
+    @Test
+    public void searchesAndPaginatesOnTheCapturedInstance() throws Exception {
+        responseBody = "[" + ITEM + "]";
+        final var search = ServiceList.YouTube.getSearchExtractor("quoted & video");
+        search.fetchPage();
+        final var first = search.getInitialPage();
+        assertEquals(1, first.getItems().size());
+        assertTrue(requests.get(0).contains("q=quoted+%26+video"));
+        assertTrue(first.getNextPage().getUrl().endsWith("page=2"));
+        assertEquals(1, search.getPage(first.getNextPage()).getItems().size());
+        InvidiousBackend.configure(true, "https://changed.example.org");
+        assertThrows(ExtractionException.class, () -> search.getPage(first.getNextPage()));
+        assertEquals(2, requests.size());
+    }
+
+    @Test
+    public void preservesChannelIdentityAndUsesProxiedChannelTabsAndFeeds() throws Exception {
+        responseBody = "{\"author\":\"Channel\",\"authorId\":\"" + CHANNEL
+                + "\",\"subCount\":42,\"tabs\":[\"videos\",\"streams\"],\"authorThumbnails\":["
+                        + "{\"url\":\"https://yt3.ggpht.com/avatar\"}]}";
+        final var channel = ServiceList.YouTube
+                .getChannelExtractor("https://www.youtube.com/channel/" + CHANNEL);
+        channel.fetchPage();
+        assertEquals("channel/" + CHANNEL, channel.getId());
+        assertEquals(42, channel.getSubscriberCount());
+        assertEquals(2, channel.getTabs().size());
+        responseBody = "{\"videos\":[" + ITEM + "],\"continuation\":\"next & token\"}";
+        final var tab = ServiceList.YouTube.getChannelTabExtractor(channel.getTabs().get(0));
+        tab.fetchPage();
+        final var first = tab.getInitialPage();
+        assertEquals(1, first.getItems().size());
+        assertTrue(first.getNextPage().getUrl().contains("continuation=next+%26+token"));
+        assertEquals(1, tab.getPage(first.getNextPage()).getItems().size());
+        final var feed = ServiceList.YouTube.getFeedExtractor(channel.getUrl());
+        feed.fetchPage();
+        assertEquals(1, feed.getInitialPage().getItems().size());
+    }
+
+    @Test
+    public void returnsPlaylistPagesCommentRepliesAndSuggestionsFromTheApi() throws Exception {
+        responseBody = "{\"title\":\"Playlist\",\"videoCount\":2,\"videos\":[" + ITEM + "]}";
+        final var playlist = ServiceList.YouTube
+                .getPlaylistExtractor("https://www.youtube.com/playlist?list=PL1234567890123456");
+        playlist.fetchPage();
+        assertEquals("Playlist", playlist.getName());
+        assertEquals(1, playlist.getPage(playlist.getInitialPage().getNextPage()).getItems()
+                .size());
+        responseBody = "{\"comments\":[{\"author\":\"Commenter\",\"commentId\":\"comment\",\"co"
+                + "ntent\":\"Hello\","
+                + "\"replies\":{\"replyCount\":1,\"continuation\":\"reply token\"}}],\"continua"
+                        + "tion\":\"next\"}";
+        final var comments = ServiceList.YouTube
+                .getCommentsExtractor("https://www.youtube.com/watch?v=" + VIDEO);
+        comments.setSortOrder(org.schabi.newpipe.extractor.comments.CommentSortOrder.NEWEST);
+        comments.fetchPage();
+        assertTrue(requests.get(requests.size() - 1).contains("sort_by=new"));
+        final var comment = comments.getInitialPage().getItems().get(0);
+        assertEquals("Hello", comment.getCommentText());
+        assertEquals(1, comment.getReplyCount());
+        assertEquals(1, comments.getPage(comment.getReplies()).getItems().size());
+        responseBody = "{\"suggestions\":[\"video one\",\"video two\"]}";
+        assertEquals(2, ServiceList.YouTube.getSuggestionExtractor().suggestionList("video")
+                .size());
+    }
+
+    @Test
+    public void unsupportedTabsAndKiosksDoNotContactYoutube() throws Exception {
+        final ListLinkHandler handler = ServiceList.YouTube.getChannelTabLHFactory()
+                .fromQuery("channel/" + CHANNEL,
+                Collections.singletonList(new FilterItem(-1, ChannelTabs.POSTS)), null);
+        assertThrows(ExtractionException.class, () -> ServiceList.YouTube
+                .getChannelTabExtractor(handler).fetchPage());
+        assertThrows(ExtractionException.class, () -> ServiceList.YouTube.getKioskList()
+                .getExtractorById("youtube_shorts", null).fetchPage());
+        assertTrue(requests.isEmpty());
+        InvidiousBackend.configure(false, "");
+        assertFalse(ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
+                + VIDEO)
+                instanceof InvidiousStreamExtractor);
+    }
+}

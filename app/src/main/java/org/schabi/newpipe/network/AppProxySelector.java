@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
@@ -115,6 +116,11 @@ public final class AppProxySelector extends ProxySelector {
     @NonNull
     @Override
     public List<Proxy> select(@NonNull final URI uri) {
+        if (InvidiousBackend.isEnabled()
+                && InvidiousBackend.isYoutubeHost(uri.getHost())) {
+            throw new IllegalArgumentException("Direct YouTube connections are disabled while u"
+                    + "sing Invidious");
+        }
         final ProxyConfiguration current = configuration;
         if (!current.isEnabled()) {
             return selectFallback(uri);
@@ -137,6 +143,11 @@ public final class AppProxySelector extends ProxySelector {
 
     @NonNull
     public static HttpURLConnection openConnection(@NonNull final URL url) throws IOException {
+        try {
+            InvidiousBackend.checkRequest(url.toURI());
+        } catch (final URISyntaxException e) {
+            throw new IOException("Invalid request URL", e);
+        }
         final AppProxySelector current = instance;
         if (current == null) {
             return (HttpURLConnection) url.openConnection();

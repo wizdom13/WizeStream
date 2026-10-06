@@ -8,6 +8,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
+import org.schabi.newpipe.network.InvidiousInterceptor;
 import org.schabi.newpipe.error.ReCaptchaActivity;
 import org.schabi.newpipe.extractor.downloader.CancellableCall;
 import org.schabi.newpipe.extractor.downloader.Downloader;
@@ -73,6 +75,9 @@ public final class DownloaderImpl extends Downloader {
             parseUrl(url);
         }
         this.client = builder
+                .followRedirects(!InvidiousBackend.isEnabled())
+                .followSslRedirects(!InvidiousBackend.isEnabled())
+                .addInterceptor(new InvidiousInterceptor())
                 .addInterceptor(chain -> {
                     final okhttp3.Request originalRequest = chain.request();
                     if (originalRequest.header("User-Agent") != null) {
@@ -87,6 +92,7 @@ public final class DownloaderImpl extends Downloader {
                 // using the actual destination, without carrying them onto another host.
                 .addNetworkInterceptor(chain -> {
                     final okhttp3.Request request = chain.request();
+                    InvidiousBackend.checkRequest(request.url().uri());
                     final String cookies = getCookies(request.url().toString());
                     if (request.header("Cookie") != null || cookies.isEmpty()) {
                         return chain.proceed(request);

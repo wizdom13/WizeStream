@@ -1,0 +1,16 @@
+{
+  "type": "video",
+  "videoId": "BaW_jenozKc",
+  "title": "Video",
+  "author": "Channel",
+  "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+  "lengthSeconds": 120,
+  "viewCount": 99,
+  "published": 1700000000,
+  "videoThumbnails": [
+    {
+      "url": "https://i.ytimg.com/vi/BaW_jenozKc/hqdefault.jpg",
+      "height": 360
+    }
+  ]
+}

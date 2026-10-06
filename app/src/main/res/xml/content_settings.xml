@@ -82,6 +82,22 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <EditTextPreference
+        android:key="@string/invidious_instance_key"
+        android:title="@string/invidious_instance_title"
+        android:summary="@string/invidious_instance_summary"
+        android:defaultValue=""
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <SwitchPreferenceCompat
+        android:key="@string/invidious_enabled_key"
+        android:title="@string/invidious_enabled_title"
+        android:summary="@string/invidious_enabled_summary"
+        android:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="@string/youtube_restricted_mode_enabled"

@@ -19,10 +19,12 @@ import androidx.media3.exoplayer.smoothstreaming.SsMediaSource;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.datasource.TransferListener;
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
 import androidx.media3.datasource.cache.SimpleCache;
 
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.extractor.services.bilibili.BilibiliService;
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeAdaptiveDashManifestCreator;
@@ -31,6 +33,7 @@ import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.Youtub
 import org.schabi.newpipe.extractor.services.youtube.dashmanifestcreators.YoutubeProgressiveDashManifestCreator;
 import org.schabi.newpipe.player.datasource.NonUriHlsDataSourceFactory;
 import org.schabi.newpipe.player.datasource.YoutubeHttpDataSource;
+import org.schabi.newpipe.player.datasource.InvidiousDataSource;
 
 import java.io.File;
 import java.util.Map;
@@ -99,13 +102,12 @@ public class PlayerDataSource {
 
         // generic data source factories use DefaultHttpDataSource.Factory
         cachelessDataSourceFactory = new DefaultDataSource.Factory(context,
-                new DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT))
+                getGenericHttpDataSourceFactory())
                 .setTransferListener(transferListener);
         cacheDataSourceFactory = new CacheFactory(context, transferListener, cache,
-                new DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT));
+                getGenericHttpDataSourceFactory());
         bilibiliCacheDataSourceFactory = new CacheFactory(context, transferListener, cache,
-                new DefaultHttpDataSource.Factory()
-                        .setUserAgent(DownloaderImpl.USER_AGENT)
+                getGenericHttpDataSourceFactory()
                         .setDefaultRequestProperties(getBilibiliPlaybackHeaders()));
 
         // YouTube-specific data source factories use getYoutubeHttpDataSourceFactory()
@@ -131,7 +133,13 @@ public class PlayerDataSource {
     }
 
     public HlsMediaSource.Factory getLiveHlsMediaSourceFactory() {
-        return new HlsMediaSource.Factory(cachelessDataSourceFactory)
+        return getLiveHlsMediaSourceFactory(false);
+    }
+
+    public HlsMediaSource.Factory getLiveHlsMediaSourceFactory(final boolean restrictInstance) {
+        return new HlsMediaSource.Factory(restrictInstance
+                ? InvidiousDataSource.restrict(cachelessDataSourceFactory)
+                        : cachelessDataSourceFactory)
                 .setAllowChunklessPreparation(true)
                 .setPlaylistTrackerFactory((dataSourceFactory, loadErrorHandlingPolicy,
                                             playlistParserFactory, cmcdConfiguration,
@@ -143,9 +151,14 @@ public class PlayerDataSource {
     }
 
     public DashMediaSource.Factory getLiveDashMediaSourceFactory() {
-        return new DashMediaSource.Factory(
-                getDefaultDashChunkSourceFactory(cachelessDataSourceFactory),
-                cachelessDataSourceFactory);
+        return getLiveDashMediaSourceFactory(false);
+    }
+
+    public DashMediaSource.Factory getLiveDashMediaSourceFactory(final boolean restrictInstance) {
+        final DataSource.Factory factory = restrictInstance
+                ? InvidiousDataSource.restrict(cachelessDataSourceFactory)
+                        : cachelessDataSourceFactory;
+        return new DashMediaSource.Factory(getDefaultDashChunkSourceFactory(factory), factory);
     }
 
     public DashMediaSource.Factory getLiveYoutubeDashMediaSourceFactory() {
@@ -160,25 +173,36 @@ public class PlayerDataSource {
     //region Generic media source factories
     public HlsMediaSource.Factory getHlsMediaSourceFactory(
             @Nullable final NonUriHlsDataSourceFactory.Builder hlsDataSourceFactoryBuilder) {
+        return getHlsMediaSourceFactory(hlsDataSourceFactoryBuilder, false);
+    }
+
+    public HlsMediaSource.Factory getHlsMediaSourceFactory(
+            @Nullable final NonUriHlsDataSourceFactory.Builder hlsDataSourceFactoryBuilder,
+            final boolean restrictInstance) {
+        final DataSource.Factory factory = restrictInstance
+                ? InvidiousDataSource.restrict(cacheDataSourceFactory) : cacheDataSourceFactory;
         if (hlsDataSourceFactoryBuilder != null) {
-            hlsDataSourceFactoryBuilder.setDataSourceFactory(cacheDataSourceFactory);
+            hlsDataSourceFactoryBuilder.setDataSourceFactory(factory);
             return new HlsMediaSource.Factory(hlsDataSourceFactoryBuilder.build());
         }
 
-        return new HlsMediaSource.Factory(cacheDataSourceFactory);
+        return new HlsMediaSource.Factory(factory);
     }
 
     public DashMediaSource.Factory getDashMediaSourceFactory() {
-        return new DashMediaSource.Factory(
-                getDefaultDashChunkSourceFactory(cacheDataSourceFactory),
-                cacheDataSourceFactory);
+        return getDashMediaSourceFactory(false);
+    }
+
+    public DashMediaSource.Factory getDashMediaSourceFactory(final boolean restrictInstance) {
+        final DataSource.Factory factory = restrictInstance
+                ? InvidiousDataSource.restrict(cacheDataSourceFactory) : cacheDataSourceFactory;
+        return new DashMediaSource.Factory(getDefaultDashChunkSourceFactory(factory), factory);
     }
 
     public HlsMediaSource.Factory getNiconicoHlsMediaSourceFactory(final String cookie) {
         // Each media source owns its cookie, including playlist, segment and AES key requests.
         // Do not mutate a shared HTTP factory: another queued video may have a different session.
-        final DefaultHttpDataSource.Factory httpFactory = new DefaultHttpDataSource.Factory()
-                .setUserAgent(DownloaderImpl.USER_AGENT)
+        final HttpDataSource.Factory httpFactory = getGenericHttpDataSourceFactory()
                 .setDefaultRequestProperties(Map.of(
                         "Cookie", cookie,
                         "Referer", "https://www.nicovideo.jp/",
@@ -188,7 +212,13 @@ public class PlayerDataSource {
     }
 
     public ProgressiveMediaSource.Factory getProgressiveMediaSourceFactory() {
-        return new ProgressiveMediaSource.Factory(cacheDataSourceFactory)
+        return getProgressiveMediaSourceFactory(false);
+    }
+
+    public ProgressiveMediaSource.Factory getProgressiveMediaSourceFactory(
+            final boolean restrictInstance) {
+        return new ProgressiveMediaSource.Factory(restrictInstance
+                ? InvidiousDataSource.restrict(cacheDataSourceFactory) : cacheDataSourceFactory)
                 .setContinueLoadingCheckIntervalBytes(progressiveLoadIntervalBytes);
     }
 
@@ -204,7 +234,13 @@ public class PlayerDataSource {
     }
 
     public SingleSampleMediaSource.Factory getSingleSampleMediaSourceFactory() {
-        return new SingleSampleMediaSource.Factory(cacheDataSourceFactory);
+        return getSingleSampleMediaSourceFactory(false);
+    }
+
+    public SingleSampleMediaSource.Factory getSingleSampleMediaSourceFactory(
+            final boolean restrictInstance) {
+        return new SingleSampleMediaSource.Factory(restrictInstance
+                ? InvidiousDataSource.restrict(cacheDataSourceFactory) : cacheDataSourceFactory);
     }
     //endregion
 
@@ -252,6 +288,15 @@ public class PlayerDataSource {
         return Map.of(
                 "Referer", BilibiliService.WWW_REFERER,
                 "Accept-Language", "zh-CN,zh;q=0.9");
+    }
+
+    private static HttpDataSource.Factory getGenericHttpDataSourceFactory() {
+        if (InvidiousBackend.isEnabled()) {
+            return new YoutubeHttpDataSource.Factory()
+                    .setRangeParameterEnabled(false)
+                    .setRnParameterEnabled(false);
+        }
+        return new DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT);
     }
 
     private static YoutubeHttpDataSource.Factory getYoutubeHttpDataSourceFactory(
