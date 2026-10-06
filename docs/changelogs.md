@@ -4,6 +4,30 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.30.0 (`1030000`)
+
+### New features
+
+- Added an optional Invidious backend for YouTube.
+- Added an optional external downloader.
+- Added a quick profile switcher to the navigation drawer.
+- Added saved-note indicators to video thumbnails.
+
+### Improvements
+
+- Made per-channel intro and outro skip durations available from the playback speed dialog.
+- Used a Material switch for new-stream notifications.
+
+### Fixes
+
+- Kept scrolling responsive while marking videos as watched.
+- Restored video output when replaying the current item and improved video-surface cleanup.
+- Made TV Back dismiss player lists and controls before exiting fullscreen, without a timed double press.
+- Restored the player channel name and removed tinting from uploader avatars.
+- Used Odysee publication dates before claim-update timestamps.
+- Added an HLS fallback for live DASH HTTP 403 failures after refresh retries.
+- Validated profile identities consistently across device synchronization categories.
+
 ## WizeStream 1.29.0 (`1029000`)
 
 ### New features
