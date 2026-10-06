@@ -8,6 +8,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.network.AppProxySelector;
 
@@ -221,25 +222,55 @@ public class DownloadMission extends Mission {
     }
 
     HttpURLConnection openConnection(String url, boolean headRequest, long rangeStart, long rangeEnd) throws IOException {
-        HttpURLConnection conn = AppProxySelector.openConnection(new URL(url));
-        conn.setInstanceFollowRedirects(true);
-        conn.setRequestProperty("User-Agent", DownloaderImpl.USER_AGENT);
-        conn.setRequestProperty("Accept", "*/*");
-        conn.setRequestProperty("Accept-Encoding", "*");
+        final URL source = new URL(url);
+        URL target = source;
+        final boolean invidiousDownload = InvidiousBackend.isEnabled() && this.source != null
+                && InvidiousBackend.isYoutubeHost(java.net.URI.create(this.source).getHost());
+        for (int redirects = 0; redirects <= 20; redirects++) {
+            if (invidiousDownload) {
+                try {
+                    InvidiousBackend.checkInstanceRequest(target.toURI());
+                } catch (java.net.URISyntaxException e) {
+                    throw new IOException("Invalid Invidious download URL", e);
+                }
+            }
+            HttpURLConnection conn = AppProxySelector.openConnection(target);
+            conn.setInstanceFollowRedirects(!InvidiousBackend.isEnabled());
+            conn.setRequestProperty("User-Agent", DownloaderImpl.USER_AGENT);
+            conn.setRequestProperty("Accept", "*/*");
+            conn.setRequestProperty("Accept-Encoding", "*");
 
-        if (headRequest) conn.setRequestMethod("HEAD");
+            if (headRequest) conn.setRequestMethod("HEAD");
 
-        // BUG workaround: switching between networks can freeze the download forever
-        conn.setConnectTimeout(30000);
+            // BUG workaround: switching between networks can freeze the download forever
+            conn.setConnectTimeout(30000);
+            if (InvidiousBackend.isEnabled()) conn.setReadTimeout(30000);
 
-        if (rangeStart >= 0) {
-            String req = "bytes=" + rangeStart + "-";
-            if (rangeEnd > 0) req += rangeEnd;
+            if (rangeStart >= 0) {
+                String req = "bytes=" + rangeStart + "-";
+                if (rangeEnd > 0) req += rangeEnd;
 
-            conn.setRequestProperty("Range", req);
+                conn.setRequestProperty("Range", req);
+            }
+
+            if (!InvidiousBackend.isEnabled()) {
+                return conn;
+            }
+            final int code = conn.getResponseCode();
+            final String location = conn.getHeaderField("Location");
+            if (location == null || !(code == 301 || code == 302 || code == 303 || code == 307 || code == 308)) {
+                return conn;
+            }
+            conn.disconnect();
+            target = new URL(target, location);
+            try {
+                InvidiousBackend.checkRedirect(
+                        source.toURI(), target.toURI());
+            } catch (java.net.URISyntaxException e) {
+                throw new IOException("Invalid download redirect", e);
+            }
         }
-
-        return conn;
+        throw new IOException("Too many download redirects");
     }
 
     /**

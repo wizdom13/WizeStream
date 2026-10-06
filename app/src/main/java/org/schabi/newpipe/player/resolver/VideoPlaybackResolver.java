@@ -10,6 +10,7 @@ import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.MergingMediaSource;
 
 import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeCaptionTranslationHelper;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
@@ -222,7 +223,10 @@ public class VideoPlaybackResolver implements PlaybackResolver {
             for (final SubtitlesStream subtitle : subtitlesStreams) {
                 final MediaSource textSource = SubtitlePlaybackSource.create(
                         subtitle, PlayerHelper.captionLanguageOf(context, subtitle),
-                        dataSource.getSingleSampleMediaSourceFactory());
+                        info.getServiceId() == ServiceList.YouTube.getServiceId()
+                                && InvidiousBackend.isEnabled()
+                                ? dataSource.getSingleSampleMediaSourceFactory(true)
+                                : dataSource.getSingleSampleMediaSourceFactory());
                 if (textSource != null) {
                     mediaSources.add(textSource);
                 }

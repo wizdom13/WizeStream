@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="invidious_enabled_key" translatable="false">invidious_enabled</string>
+    <string name="invidious_instance_key" translatable="false">invidious_instance</string>
+    <string name="invidious_enabled_title">Use Invidious for YouTube</string>
+    <string name="invidious_enabled_summary">Send YouTube requests through your instance, including video and images. Direct YouTube requests are blocked. The instance must support the API and proxy media locally. Some YouTube features are unavailable. Changing this setting restarts the app.</string>
+    <string name="invidious_instance_title">Invidious instance</string>
+    <string name="invidious_instance_summary">HTTPS root URL of an instance you trust. Its operator can see your requests. Changing the instance while enabled restarts the app.</string>
+    <string name="invidious_invalid_instance">Enter the HTTPS root URL of an Invidious instance, without a path, credentials, query, or fragment.</string>
+</resources>

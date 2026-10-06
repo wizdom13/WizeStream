@@ -48,6 +48,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.network.AppProxySelector;
 
@@ -551,7 +552,8 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         final long length = dataSpecToUse.length;
         final boolean allowGzip = dataSpecToUse.isFlagSet(DataSpec.FLAG_ALLOW_GZIP);
 
-        if (!allowCrossProtocolRedirects && !keepPostFor302Redirects) {
+        if (!InvidiousBackend.isEnabled()
+                && !allowCrossProtocolRedirects && !keepPostFor302Redirects) {
             // HttpURLConnection disallows cross-protocol redirects, but otherwise performs
             // redirection automatically. This is the behavior we want, so use it.
             return makeConnection(url, httpMethod, httpBody, position, length, allowGzip, true,
@@ -574,7 +576,14 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
                     || httpURLConnectionResponseCode == HTTP_STATUS_TEMPORARY_REDIRECT
                     || httpURLConnectionResponseCode == HTTP_STATUS_PERMANENT_REDIRECT)) {
                 httpURLConnection.disconnect();
-                url = handleRedirect(url, location, dataSpecToUse);
+                final URL target = handleRedirect(url, location, dataSpecToUse);
+                try {
+                    InvidiousBackend.checkRedirect(
+                            url.toURI(), target.toURI());
+                } catch (final java.net.URISyntaxException e) {
+                    throw new IOException("Invalid redirect URL", e);
+                }
+                url = target;
             } else if (httpMethod == DataSpec.HTTP_METHOD_POST
                     && (httpURLConnectionResponseCode == HttpURLConnection.HTTP_MULT_CHOICE
                     || httpURLConnectionResponseCode == HttpURLConnection.HTTP_MOVED_PERM
@@ -588,7 +597,14 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
                     httpMethod = DataSpec.HTTP_METHOD_GET;
                     httpBody = null;
                 }
-                url = handleRedirect(url, location, dataSpecToUse);
+                final URL target = handleRedirect(url, location, dataSpecToUse);
+                try {
+                    InvidiousBackend.checkRedirect(
+                            url.toURI(), target.toURI());
+                } catch (final java.net.URISyntaxException e) {
+                    throw new IOException("Invalid redirect URL", e);
+                }
+                url = target;
             } else {
                 return httpURLConnection;
             }
@@ -667,8 +683,9 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
             }
         }
 
-        if (isWebStreamingUrl(requestUrl)
-                || isTvHtml5SimplyEmbeddedPlayerStreamingUrl(requestUrl)) {
+        if (!InvidiousBackend.isEnabled()
+                && (isWebStreamingUrl(requestUrl)
+                || isTvHtml5SimplyEmbeddedPlayerStreamingUrl(requestUrl))) {
             httpURLConnection.setRequestProperty(HttpHeaders.ORIGIN, YOUTUBE_BASE_URL);
             httpURLConnection.setRequestProperty(HttpHeaders.REFERER, YOUTUBE_BASE_URL);
             httpURLConnection.setRequestProperty(HttpHeaders.SEC_FETCH_DEST, "empty");
@@ -684,6 +701,20 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         httpURLConnection.setRequestProperty(HttpHeaders.ACCEPT_ENCODING,
                 allowGzip ? "gzip" : "identity");
         httpURLConnection.setInstanceFollowRedirects(followRedirects);
+        if (InvidiousBackend.isEnabled()) {
+            httpURLConnection.setRequestMethod(DataSpec.getStringForHttpMethod(httpMethod));
+            if (httpBody != null) {
+                httpURLConnection.setDoOutput(true);
+                httpURLConnection.setFixedLengthStreamingMode(httpBody.length);
+            }
+            httpURLConnection.connect();
+            if (httpBody != null) {
+                try (OutputStream body = httpURLConnection.getOutputStream()) {
+                    body.write(httpBody);
+                }
+            }
+            return httpURLConnection;
+        }
         // Most clients use POST requests to fetch contents
         httpURLConnection.setRequestMethod("POST");
         httpURLConnection.setDoOutput(true);

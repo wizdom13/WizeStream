@@ -22,6 +22,7 @@ import androidx.media3.exoplayer.smoothstreaming.SsMediaSource;
 import androidx.media3.exoplayer.smoothstreaming.manifest.SsManifest;
 import androidx.media3.exoplayer.smoothstreaming.manifest.SsManifestParser;
 
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.services.youtube.ItagItem;
@@ -274,14 +275,18 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                 factory = dataSource.getLiveSsMediaSourceFactory();
                 break;
             case C.CONTENT_TYPE_DASH:
-                if (metadata.getServiceId() == ServiceList.YouTube.getServiceId()) {
+                if (usesInvidious(metadata)) {
+                    factory = dataSource.getLiveDashMediaSourceFactory(true);
+                } else if (metadata.getServiceId() == ServiceList.YouTube.getServiceId()) {
                     factory = dataSource.getLiveYoutubeDashMediaSourceFactory();
                 } else {
                     factory = dataSource.getLiveDashMediaSourceFactory();
                 }
                 break;
             case C.CONTENT_TYPE_HLS:
-                factory = dataSource.getLiveHlsMediaSourceFactory();
+                factory = usesInvidious(metadata)
+                        ? dataSource.getLiveHlsMediaSourceFactory(true)
+                        : dataSource.getLiveHlsMediaSourceFactory();
                 break;
             case C.CONTENT_TYPE_OTHER:
             case C.CONTENT_TYPE_RTSP:
@@ -301,13 +306,19 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
     //endregion
 
 
+    private static boolean usesInvidious(final MediaItemTag metadata) {
+        return metadata.getServiceId() == ServiceList.YouTube.getServiceId()
+                && InvidiousBackend.isEnabled();
+    }
+
     //region Generic media sources
     static MediaSource buildMediaSource(final PlayerDataSource dataSource,
                                         final Stream stream,
                                         final StreamInfo streamInfo,
                                         final String cacheKey,
                                         final MediaItemTag metadata) throws ResolverException {
-        if (streamInfo.getService() == ServiceList.YouTube) {
+        if (streamInfo.getService() == ServiceList.YouTube
+                && !InvidiousBackend.isEnabled()) {
             return createYoutubeMediaSource(stream, streamInfo, dataSource, cacheKey, metadata);
         }
 
@@ -336,10 +347,14 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             throw new ResolverException("Non URI progressive contents are not supported");
         }
         throwResolverExceptionIfUrlNullOrEmpty(stream.getContent());
-        final ProgressiveMediaSource.Factory factory =
-                metadata.getServiceId() == ServiceList.BiliBili.getServiceId()
-                        ? dataSource.getBilibiliProgressiveMediaSourceFactory()
-                        : dataSource.getProgressiveMediaSourceFactory();
+        final ProgressiveMediaSource.Factory factory;
+        if (metadata.getServiceId() == ServiceList.BiliBili.getServiceId()) {
+            factory = dataSource.getBilibiliProgressiveMediaSourceFactory();
+        } else if (usesInvidious(metadata)) {
+            factory = dataSource.getProgressiveMediaSourceFactory(true);
+        } else {
+            factory = dataSource.getProgressiveMediaSourceFactory();
+        }
         return factory.createMediaSource(
                 metadata.asMediaItem().buildUpon()
                         .setUri(Uri.parse(stream.getContent()))
@@ -353,9 +368,12 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                                                         final MediaItemTag metadata)
             throws ResolverException {
 
+        final DashMediaSource.Factory factory = usesInvidious(metadata)
+                ? dataSource.getDashMediaSourceFactory(true)
+                        : dataSource.getDashMediaSourceFactory();
         if (stream.isUrl()) {
             throwResolverExceptionIfUrlNullOrEmpty(stream.getContent());
-            return dataSource.getDashMediaSourceFactory().createMediaSource(
+            return factory.createMediaSource(
                     metadata.asMediaItem().buildUpon()
                             .setUri(Uri.parse(stream.getContent()))
                             .setCustomCacheKey(cacheKey)
@@ -363,7 +381,7 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
         }
 
         try {
-            return dataSource.getDashMediaSourceFactory().createMediaSource(
+            return factory.createMediaSource(
                     createDashManifest(stream.getContent(), stream),
                     metadata.asMediaItem().buildUpon()
                             .setUri(manifestUrlToUri(stream.getManifestUrl()))
@@ -407,7 +425,9 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                 factory = dataSource.getNiconicoHlsMediaSourceFactory(cookie);
                 uri = uri.buildUpon().fragment(null).build();
             } else {
-                factory = dataSource.getHlsMediaSourceFactory(null);
+                factory = usesInvidious(metadata)
+                        ? dataSource.getHlsMediaSourceFactory(null, true)
+                        : dataSource.getHlsMediaSourceFactory(null);
             }
             return factory.createMediaSource(
                     metadata.asMediaItem().buildUpon()
@@ -420,8 +440,10 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                 new NonUriHlsDataSourceFactory.Builder();
         hlsDataSourceFactoryBuilder.setPlaylistString(stream.getContent());
 
-        return dataSource.getHlsMediaSourceFactory(hlsDataSourceFactoryBuilder)
-                .createMediaSource(metadata.asMediaItem().buildUpon()
+        final HlsMediaSource.Factory factory = usesInvidious(metadata)
+                ? dataSource.getHlsMediaSourceFactory(hlsDataSourceFactoryBuilder, true)
+                : dataSource.getHlsMediaSourceFactory(hlsDataSourceFactoryBuilder);
+        return factory.createMediaSource(metadata.asMediaItem().buildUpon()
                         .setUri(manifestUrlToUri(stream.getManifestUrl()))
                         .setCustomCacheKey(cacheKey)
                         .build());

@@ -114,6 +114,12 @@ open class App :
         ThemeHelper.setDayNightMode(this)
         applyDynamicColorsIfAvailable()
 
+        val backendPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend.configure(
+            backendPreferences.getBoolean(getString(R.string.invidious_enabled_key), false),
+            backendPreferences.getString(getString(R.string.invidious_instance_key), "")
+        )
+
         NewPipe.init(
             getDownloader(),
             Localization.getPreferredLocalization(this),

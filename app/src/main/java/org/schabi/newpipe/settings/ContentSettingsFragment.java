@@ -12,6 +12,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.os.LocaleListCompat;
 import androidx.preference.Preference;
+import androidx.preference.EditTextPreference;
+import androidx.preference.PreferenceManager;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
+import org.schabi.newpipe.util.NavigationHelper;
 
 import org.schabi.newpipe.DownloaderImpl;
 import org.schabi.newpipe.R;
@@ -36,6 +40,55 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
 
         setupAppLanguagePreferences();
         setupImageQualityPref();
+        setupInvidiousPreferences();
+    }
+
+    private void setupInvidiousPreferences() {
+        final var preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        final String enabledKey = getString(R.string.invidious_enabled_key);
+        final String instanceKey = getString(R.string.invidious_instance_key);
+        final EditTextPreference instancePref = (EditTextPreference) requirePreference(
+                R.string.invidious_instance_key);
+        instancePref.setOnBindEditTextListener(editText -> editText.setInputType(
+                android.text.InputType.TYPE_CLASS_TEXT
+                        | android.text.InputType.TYPE_TEXT_VARIATION_URI));
+        instancePref.setOnPreferenceChangeListener((preference, newValue) -> {
+            final String normalized;
+            try {
+                normalized = InvidiousBackend.normalizeInstance((String) newValue);
+            } catch (final IllegalArgumentException e) {
+                Toast.makeText(requireContext(), R.string.invidious_invalid_instance,
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
+            if (normalized.equals(preferences.getString(instanceKey, ""))) {
+                return false;
+            }
+            if (preferences.edit().putString(instanceKey, normalized).commit()) {
+                instancePref.setText(normalized);
+                if (preferences.getBoolean(enabledKey, false)) {
+                    NavigationHelper.restartApp(requireActivity());
+                }
+            }
+            return false;
+        });
+        requirePreference(R.string.invidious_enabled_key)
+                .setOnPreferenceChangeListener((preference, newValue) -> {
+            final boolean enabled = (Boolean) newValue;
+            if (enabled) {
+                try {
+                    InvidiousBackend.normalizeInstance(preferences.getString(instanceKey, ""));
+                } catch (final IllegalArgumentException e) {
+                    Toast.makeText(requireContext(), R.string.invidious_invalid_instance,
+                            Toast.LENGTH_LONG).show();
+                    return false;
+                }
+            }
+            if (preferences.edit().putBoolean(enabledKey, enabled).commit()) {
+                NavigationHelper.restartApp(requireActivity());
+            }
+            return false;
+        });
     }
 
     private void setupAppLanguagePreferences() {

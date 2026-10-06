@@ -6,6 +6,10 @@ import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeBulletCommentsExtractor;
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeBulletCommentsLinkHandlerFactory;
 import org.schabi.newpipe.extractor.services.youtube.search.filter.YoutubeFilters;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousExtractors;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousStreamExtractor;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousCommentsExtractor;
 
 import static java.util.Arrays.asList;
 import static org.schabi.newpipe.extractor.StreamingService.ServiceInfo.MediaCapability.*;
@@ -125,21 +129,33 @@ public class YoutubeService extends StreamingService {
 
     @Override
     public StreamExtractor getStreamExtractor(final LinkHandler linkHandler) {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousStreamExtractor(this, linkHandler);
+        }
         return new YoutubeDiagnosticStreamExtractor(this, linkHandler, watchDataCache);
     }
 
     @Override
     public ChannelExtractor getChannelExtractor(final ListLinkHandler linkHandler) {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousExtractors.Channel(this, linkHandler);
+        }
         return new YoutubeChannelExtractor(this, linkHandler);
     }
 
     @Override
     public ChannelTabExtractor getChannelTabExtractor(final ListLinkHandler linkHandler) {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousExtractors.ChannelTab(this, linkHandler);
+        }
         return new YoutubeChannelTabExtractor(this, linkHandler);
     }
 
     @Override
     public PlaylistExtractor getPlaylistExtractor(final ListLinkHandler linkHandler) {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousExtractors.Playlist(this, linkHandler);
+        }
         if (YoutubeParsingHelper.isYoutubeMixId(linkHandler.getId())) {
             return new YoutubeMixPlaylistExtractor(this, linkHandler);
         } else {
@@ -149,6 +165,9 @@ public class YoutubeService extends StreamingService {
 
     @Override
     public SearchExtractor getSearchExtractor(final SearchQueryHandler query) {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousExtractors.Search(this, query);
+        }
         final List<FilterItem> contentFilters = query.getContentFilters();
 
         if (contentFilters.isEmpty()) {
@@ -166,6 +185,9 @@ public class YoutubeService extends StreamingService {
 
     @Override
     public SuggestionExtractor getSuggestionExtractor() {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousExtractors.Suggestions(this);
+        }
         return new YoutubeSuggestionExtractor(this);
     }
 
@@ -186,7 +208,9 @@ public class YoutubeService extends StreamingService {
 
         try {
             list.addKioskEntry(
-                    (streamingService, url, id) -> new YoutubeLiveExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, liveLHF.fromUrl(url), id)
+                            : new YoutubeLiveExtractor(
                             YoutubeService.this,
                             liveLHF.fromUrl(url),
                             id),
@@ -194,7 +218,9 @@ public class YoutubeService extends StreamingService {
                     YoutubeLiveLinkHandlerFactory.KIOSK_ID
             );
             list.addKioskEntry(
-                    (streamingService, url, id) -> new YoutubeShortsExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, shortsLHF.fromUrl(url), id)
+                            : new YoutubeShortsExtractor(
                             YoutubeService.this,
                             shortsLHF.fromUrl(url),
                             id),
@@ -202,7 +228,9 @@ public class YoutubeService extends StreamingService {
                     YoutubeShortsLinkHandlerFactory.KIOSK_ID
             );
             list.addKioskEntry(
-                    (streamingService, url, id) -> new YoutubeTrendingPodcastsEpisodesExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, podcastsLHF.fromUrl(url), id)
+                            : new YoutubeTrendingPodcastsEpisodesExtractor(
                             YoutubeService.this,
                             podcastsLHF.fromUrl(url),
                             id),
@@ -210,7 +238,9 @@ public class YoutubeService extends StreamingService {
                     YoutubeTrendingPodcastsEpisodesLinkHandlerFactory.KIOSK_ID
             );
             list.addKioskEntry(
-                    (streamingService, url, id) -> new YoutubeTrendingGamingVideosExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, gamingLHF.fromUrl(url), id)
+                            : new YoutubeTrendingGamingVideosExtractor(
                             YoutubeService.this,
                             gamingLHF.fromUrl(url),
                             id),
@@ -218,8 +248,9 @@ public class YoutubeService extends StreamingService {
                     YoutubeTrendingGamingVideosLinkHandlerFactory.KIOSK_ID
             );
             list.addKioskEntry(
-                    (streamingService, url, id) ->
-                            new YoutubeTrendingMoviesAndShowsTrailersExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, moviesAndShowsLHF.fromUrl(url), id)
+                            : new YoutubeTrendingMoviesAndShowsTrailersExtractor(
                                     YoutubeService.this,
                                     moviesAndShowsLHF.fromUrl(url),
                                     id),
@@ -227,7 +258,9 @@ public class YoutubeService extends StreamingService {
                     YoutubeTrendingMoviesAndShowsTrailersLinkHandlerFactory.KIOSK_ID
             );
             list.addKioskEntry(
-                    (streamingService, url, id) -> new YoutubeTrendingMusicExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, musicLHF.fromUrl(url), id)
+                            : new YoutubeTrendingMusicExtractor(
                             YoutubeService.this,
                             musicLHF.fromUrl(url),
                             id),
@@ -235,7 +268,9 @@ public class YoutubeService extends StreamingService {
                     YoutubeTrendingMusicLinkHandlerFactory.KIOSK_ID
             );
             list.addKioskEntry(
-                    (streamingService, url, id) -> new YoutubeTrendingExtractor(
+                    (streamingService, url, id) -> InvidiousBackend.isEnabled()
+                            ? new InvidiousExtractors.Kiosk(this, trendingLHF.fromUrl(url), id)
+                            : new YoutubeTrendingExtractor(
                             YoutubeService.this,
                             trendingLHF.fromUrl(url),
                             id
@@ -259,6 +294,9 @@ public class YoutubeService extends StreamingService {
     @Nonnull
     @Override
     public FeedExtractor getFeedExtractor(final String channelUrl) throws ExtractionException {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousExtractors.Feed(this, getChannelLHFactory().fromUrl(channelUrl));
+        }
         return new YoutubeFeedExtractor(this, getChannelLHFactory().fromUrl(channelUrl));
     }
 
@@ -270,6 +308,9 @@ public class YoutubeService extends StreamingService {
     @Override
     public CommentsExtractor getCommentsExtractor(final ListLinkHandler urlIdHandler)
             throws ExtractionException {
+        if (InvidiousBackend.isEnabled()) {
+            return new InvidiousCommentsExtractor(this, urlIdHandler);
+        }
         return new YoutubeCommentsExtractor(this, urlIdHandler);
     }
 
@@ -312,6 +353,9 @@ public class YoutubeService extends StreamingService {
 
     @Override
     public BulletCommentsExtractor getBulletCommentsExtractor(ListLinkHandler linkHandler) throws ExtractionException {
+        if (InvidiousBackend.isEnabled()) {
+            throw new ExtractionException("YouTube bullet comments are unavailable through Invidious");
+        }
         return new YoutubeBulletCommentsExtractor(this, linkHandler, watchDataCache);
     }
 
