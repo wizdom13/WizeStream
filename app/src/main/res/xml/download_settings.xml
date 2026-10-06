@@ -103,4 +103,23 @@
             android:title="@string/automatic_download_status_title"
             android:selectable="false" app:iconSpaceReserved="false" />
     </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/external_downloader_title">
+        <SwitchPreferenceCompat
+            android:key="external_downloader_enabled"
+            android:defaultValue="false"
+            android:title="@string/external_downloader_title"
+            android:summary="@string/external_downloader_summary"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+        <EditTextPreference
+            android:key="external_downloader_package"
+            android:defaultValue=""
+            android:dependency="external_downloader_enabled"
+            android:title="@string/external_downloader_package_title"
+            android:dialogMessage="@string/external_downloader_package_help"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+    </PreferenceCategory>
 </PreferenceScreen>

@@ -154,6 +154,11 @@ public enum StreamDialogDefaultEntry {
                     })
     ),
 
+    DOWNLOAD_EXTERNALLY(R.string.download_externally, (fragment, item) ->
+            org.schabi.newpipe.download.ExternalDownloader.open(
+                    fragment.requireContext(), item.getUrl())
+    ),
+
     BLOCK_VIDEO(R.string.block_video, (fragment, item) -> {
         ContentBlockingHelper.blockVideo(fragment.requireContext(), item);
         Toast.makeText(fragment.requireContext(), R.string.video_blocked,

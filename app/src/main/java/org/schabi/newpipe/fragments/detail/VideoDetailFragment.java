@@ -881,7 +881,20 @@ public final class VideoDetailFragment
             }
         });
         binding.detailControlsDownload.setOnClickListener(v -> {
-            if (PermissionHelper.checkStoragePermissions(activity,
+            if (org.schabi.newpipe.download.ExternalDownloader.isEnabled(requireContext())
+                    && currentInfo != null) {
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setItems(new String[]{getString(R.string.download),
+                                getString(R.string.download_externally)}, (dialog, index) -> {
+                            if (index == 1) {
+                                org.schabi.newpipe.download.ExternalDownloader.open(
+                                        requireContext(), currentInfo.getUrl());
+                            } else if (PermissionHelper.checkStoragePermissions(activity,
+                                    PermissionHelper.DOWNLOAD_DIALOG_REQUEST_CODE)) {
+                                openDownloadDialog();
+                            }
+                        }).show();
+            } else if (PermissionHelper.checkStoragePermissions(activity,
                     PermissionHelper.DOWNLOAD_DIALOG_REQUEST_CODE)) {
                 openDownloadDialog();
             }
