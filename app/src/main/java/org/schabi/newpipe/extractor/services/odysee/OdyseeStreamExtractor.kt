@@ -6,6 +6,7 @@ import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.linkhandler.LinkHandler
+import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamExtractor
 import org.schabi.newpipe.extractor.stream.StreamType
@@ -59,6 +60,10 @@ class OdyseeStreamExtractor(
     override fun getLength(): Long = (value["video"] as? JsonObject)?.getLong("duration", 0L) ?: 0L
 
     override fun getViewCount(): Long = (claim["meta"] as? JsonObject)?.getLong("views", -1L) ?: -1L
+
+    override fun getTextualUploadDate(): String? = odyseeUploadDate(claim)?.toInstant()?.toString()
+
+    override fun getUploadDate(): DateWrapper? = odyseeUploadDate(claim)?.let(::DateWrapper)
 
     override fun getStreamType(): StreamType = StreamType.VIDEO_STREAM
 
