@@ -451,12 +451,8 @@ internal object PlaylistSyncValidation {
     }
 
     private fun validateProfileId(profileId: String) {
-        try {
-            if (UUID.fromString(profileId).toString() != profileId) {
-                throw IllegalArgumentException("Noncanonical UUID")
-            }
-        } catch (error: IllegalArgumentException) {
-            throw PlaylistSyncException("A playlist profile UUID is invalid", error)
+        if (!ProfileManager.isCanonicalProfileId(profileId)) {
+            throw PlaylistSyncException("A playlist profile UUID is invalid")
         }
     }
 

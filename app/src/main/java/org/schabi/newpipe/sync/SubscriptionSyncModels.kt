@@ -7,7 +7,6 @@ package org.schabi.newpipe.sync
 
 import io.libp2p.core.PeerId
 import java.security.MessageDigest
-import java.util.UUID
 import kotlinx.serialization.Serializable
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
@@ -277,7 +276,7 @@ internal object SubscriptionSyncValidation {
             if (!revisions.add(change.originPeerId to change.originRevision)) {
                 throw SubscriptionSyncException("A subscription change was sent more than once")
             }
-            if (!isCanonicalProfileId(change.profileId)) {
+            if (!ProfileManager.isCanonicalProfileId(change.profileId)) {
                 throw SubscriptionSyncException(
                     "A subscription change has an invalid profile identity"
                 )
@@ -355,11 +354,6 @@ internal object SubscriptionSyncValidation {
         ) {
             throw SubscriptionSyncException("Subscription metadata is invalid")
         }
-    }
-
-    private fun isCanonicalProfileId(profileId: String): Boolean {
-        return runCatching { UUID.fromString(profileId).toString() == profileId }
-            .getOrDefault(false)
     }
 
     private fun validatePeerId(peerId: String) {

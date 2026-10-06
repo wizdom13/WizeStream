@@ -505,7 +505,7 @@ internal object StructuredPreferenceSyncValidation {
                     group.name != group.name.trim() ||
                     group.name.length > MAX_STRUCTURED_NAME_LENGTH ||
                     group.iconId !in 0..MAX_FEED_GROUP_ICON_ID ||
-                    !isCanonicalProfileId(group.profileId)
+                    !ProfileManager.isCanonicalProfileId(group.profileId)
                 ) {
                     invalidRecord("Feed group data is invalid")
                 }
@@ -524,7 +524,7 @@ internal object StructuredPreferenceSyncValidation {
                     membership.subscriptionUrl.isBlank() ||
                     membership.subscriptionUrl != membership.subscriptionUrl.trim() ||
                     membership.subscriptionUrl.length > MAX_STRUCTURED_URL_LENGTH ||
-                    !isCanonicalProfileId(membership.profileId) ||
+                    !ProfileManager.isCanonicalProfileId(membership.profileId) ||
                     change.recordId != StructuredPreferenceRecordId.feedGroupMembership(
                         parent,
                         membership.serviceId,
@@ -542,7 +542,7 @@ internal object StructuredPreferenceSyncValidation {
                 val order = record.feedGroupOrder
                     ?: invalidRecord("Feed group order data is missing")
                 if (
-                    !isCanonicalProfileId(order.profileId) ||
+                    !ProfileManager.isCanonicalProfileId(order.profileId) ||
                     change.recordId != StructuredPreferenceRecordId.feedGroupOrder(
                         order.profileId
                     )
@@ -921,11 +921,6 @@ internal object StructuredPreferenceSyncValidation {
         if (change.type != StructuredPreferenceChangeType.UPSERT) {
             invalidRecord("This structured preference record cannot be deleted")
         }
-    }
-
-    private fun isCanonicalProfileId(profileId: String): Boolean {
-        return runCatching { UUID.fromString(profileId).toString() == profileId }
-            .getOrDefault(false)
     }
 
     private fun validatePeerId(peerId: String) {
