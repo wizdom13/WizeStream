@@ -367,8 +367,12 @@ public final class InfoItemDialog {
          * @return the current {@link Builder} instance
          */
         public Builder addDefaultEndEntries() {
+            addEntry(StreamDialogDefaultEntry.DOWNLOAD);
+            if (org.schabi.newpipe.download.ExternalDownloader.isEnabled(context)
+                    && infoItem.getServiceId() >= 0) {
+                addEntry(StreamDialogDefaultEntry.DOWNLOAD_EXTERNALLY);
+            }
             addAllEntries(
-                    StreamDialogDefaultEntry.DOWNLOAD,
                     StreamDialogDefaultEntry.APPEND_PLAYLIST,
                     StreamDialogDefaultEntry.COPY_TITLE,
                     StreamDialogDefaultEntry.SHARE,

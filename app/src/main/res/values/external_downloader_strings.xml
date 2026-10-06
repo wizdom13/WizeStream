@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="download_externally">Download externally</string>
+    <string name="external_downloader_title">External downloader</string>
+    <string name="external_downloader_summary">Offer another app when downloading a video or audio stream</string>
+    <string name="external_downloader_package_title">Downloader app package</string>
+    <string name="external_downloader_package_help">Enter the package name of an app that accepts shared video links, or leave empty to choose an app each time.</string>
+    <string name="external_downloader_invalid_package">Enter a valid downloader package name.</string>
+    <string name="external_downloader_missing_app">The configured downloader is unavailable. Choose another app.</string>
+    <string name="external_downloader_unavailable">No compatible app could open this download link.</string>
+</resources>

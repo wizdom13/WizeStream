@@ -60,6 +60,18 @@ public class DownloadSettingsFragment extends BasePreferenceFragment {
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
         addPreferencesFromResourceRegistry();
 
+        findPreference(org.schabi.newpipe.download.ExternalDownloader.PACKAGE)
+                .setOnPreferenceChangeListener((preference, value) -> {
+                    final boolean valid = org.schabi.newpipe.download.ExternalDownloader
+                            .isValidPackage(value.toString().trim());
+                    if (!valid) {
+                        android.widget.Toast.makeText(requireContext(),
+                                R.string.external_downloader_invalid_package,
+                                android.widget.Toast.LENGTH_LONG).show();
+                    }
+                    return valid;
+                });
+
         downloadPathVideoPreference = getString(R.string.download_path_video_key);
         downloadPathAudioPreference = getString(R.string.download_path_audio_key);
         storageUseSafPreference = getString(R.string.storage_use_saf);
