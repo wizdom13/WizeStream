@@ -107,8 +107,8 @@ public class HistoryRecordManager {
         }
 
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
-        return Maybe.fromCallable(() -> database.runInTransaction(() -> {
-            final long streamId;
+        return Maybe.fromCallable(() -> {
+            final StreamEntity stream;
             final long duration;
             // Duration will not exist if the item was loaded with fast mode, so fetch it if empty
             if (info.getDuration() < 0) {
@@ -120,41 +120,45 @@ public class HistoryRecordManager {
                         .subscribeOn(Schedulers.io())
                         .blockingGet();
                 duration = completeInfo.getDuration();
-                streamId = streamTable.upsert(new StreamEntity(completeInfo));
+                stream = new StreamEntity(completeInfo);
             } else {
                 duration = info.getDuration();
-                streamId = streamTable.upsert(new StreamEntity(info));
+                stream = new StreamEntity(info);
             }
 
-            // Update the stream progress to the full duration of the video
-            final StreamStateEntity entity = new StreamStateEntity(
-                    streamId,
-                    duration * 1000,
-                    profileId
-            );
-            recordProgress(
-                    streamId,
-                    entity.getProgressMillis(),
-                    currentTime.toInstant().toEpochMilli()
-            );
-            streamStateTable.upsert(entity);
-
-            // Add a history entry
-            final StreamHistoryEntity latestEntry =
-                    streamHistoryTable.getLatestEntryForProfile(profileId, streamId);
-            if (latestEntry == null) {
-                // never actually viewed: add history entry but with 0 views
-                recordWatchEvent(
+            // Resolve metadata before taking the database write lock.
+            return database.runInTransaction(() -> {
+                final long streamId = streamTable.upsert(stream);
+                // Update the stream progress to the full duration of the video
+                final StreamStateEntity entity = new StreamStateEntity(
                         streamId,
-                        currentTime.toInstant().toEpochMilli(),
-                        0
+                        duration * 1000,
+                        profileId
                 );
-                return streamHistoryTable.insert(
-                        new StreamHistoryEntity(streamId, currentTime, 0, profileId));
-            } else {
-                return 0L;
-            }
-        })).subscribeOn(Schedulers.io());
+                recordProgress(
+                        streamId,
+                        entity.getProgressMillis(),
+                        currentTime.toInstant().toEpochMilli()
+                );
+                streamStateTable.upsert(entity);
+
+                // Add a history entry
+                final StreamHistoryEntity latestEntry =
+                        streamHistoryTable.getLatestEntryForProfile(profileId, streamId);
+                if (latestEntry == null) {
+                    // never actually viewed: add history entry but with 0 views
+                    recordWatchEvent(
+                            streamId,
+                            currentTime.toInstant().toEpochMilli(),
+                            0
+                    );
+                    return streamHistoryTable.insert(
+                            new StreamHistoryEntity(streamId, currentTime, 0, profileId));
+                } else {
+                    return 0L;
+                }
+            });
+        }).subscribeOn(Schedulers.io());
     }
 
     /**
@@ -410,17 +414,10 @@ public class HistoryRecordManager {
 
     public Single<StreamStateEntity[]> loadStreamState(final InfoItem info) {
         return Single.fromCallable(() -> {
-            final List<StreamEntity> entities = streamTable
-                    .getStream(info.getServiceId(), info.getUrl()).blockingFirst();
-            if (entities.isEmpty()) {
-                return new StreamStateEntity[]{null};
-            }
-            final List<StreamStateEntity> states = streamStateTable
-                    .getStateForProfile(profileId, entities.get(0).getUid()).blockingFirst();
-            if (states.isEmpty()) {
-                return new StreamStateEntity[]{null};
-            }
-            return new StreamStateEntity[]{states.get(0)};
+            final StreamEntity stream = streamTable.getStreamDirect(
+                    info.getServiceId(), info.getUrl());
+            return new StreamStateEntity[]{stream == null ? null
+                    : streamStateTable.getStateDirectForProfile(profileId, stream.getUid())};
         }).subscribeOn(Schedulers.io());
     }
 

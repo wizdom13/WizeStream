@@ -66,6 +66,13 @@ interface StreamStateDAO : BasicDAO<StreamStateEntity> {
     ): Flowable<MutableList<StreamStateEntity>>
 
     @Query(
+        "SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE +
+            " WHERE " + StreamStateEntity.PROFILE_ID + " = :profileId" +
+            " AND " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId"
+    )
+    fun getStateDirectForProfile(profileId: String, streamId: Long): StreamStateEntity?
+
+    @Query(
         "DELETE FROM " + StreamStateEntity.STREAM_STATE_TABLE +
             " WHERE " + StreamStateEntity.JOIN_STREAM_ID + " = :streamId"
     )
