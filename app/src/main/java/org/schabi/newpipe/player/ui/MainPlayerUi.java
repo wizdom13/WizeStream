@@ -67,6 +67,8 @@ import org.schabi.newpipe.player.video.VideoAdjustmentDialog;
 import org.schabi.newpipe.player.event.PlayerServiceEventListener;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.MainPlayerGestureListener;
+import org.schabi.newpipe.player.helper.ChannelSkipDialog;
+import org.schabi.newpipe.player.helper.ChannelSkipPreferences;
 import org.schabi.newpipe.player.helper.PlaybackParameterDialog;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.helper.PlayerRotationMode;
@@ -103,8 +105,6 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private static final int DETAIL_ROOT_MINIMUM_HEIGHT = 85; // dp
     private static final int DETAIL_TITLE_TEXT_SIZE_TV = 16; // sp
     private static final int DETAIL_TITLE_TEXT_SIZE_TABLET = 15; // sp
-
-    private static final int CHANNEL_SKIP_MENU_GROUP = 90;
 
     private boolean isFullscreen = false;
     private boolean touchLocked;
@@ -1048,6 +1048,11 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                                 player.getPlaybackPitch(), player.getPlaybackSkipSilence(),
                                 player.getPlaybackSkipSilenceAvailable(),
                                 player::setPlaybackParameters)
+                        .withChannelSkippingAction(player.getCurrentStreamInfo()
+                                .filter(info -> info.getStreamType() == StreamType.VIDEO_STREAM
+                                        && ChannelSkipPreferences.isAvailable(info))
+                                .<Runnable>map(info -> () -> ChannelSkipDialog.show(activity, info))
+                                .orElse(null))
                         .show(activity.getSupportFragmentManager(), null));
     }
 
@@ -1388,32 +1393,6 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         return Optional.ofNullable(binding.getRoot().getParent())
                 .filter(ViewGroup.class::isInstance)
                 .map(parent -> ((ViewGroup) parent).getContext());
-    }
-
-    @Override
-    protected void addPlaybackSpeedMenuItems(final android.view.Menu menu) {
-        menu.removeGroup(CHANNEL_SKIP_MENU_GROUP);
-        if (getParentActivity().isPresent()) {
-            player.getCurrentStreamInfo().filter(info ->
-                    info.getStreamType() == StreamType.VIDEO_STREAM
-                    && org.schabi.newpipe.player.helper.ChannelSkipPreferences.isAvailable(info))
-                    .ifPresent(info -> menu.add(CHANNEL_SKIP_MENU_GROUP, 0,
-                            android.view.Menu.NONE, R.string.channel_skip_settings));
-        }
-    }
-
-    @Override
-    public boolean onMenuItemClick(final android.view.MenuItem menuItem) {
-        if (menuItem.getGroupId() == CHANNEL_SKIP_MENU_GROUP) {
-            configureChannelSkipping();
-            return true;
-        }
-        return super.onMenuItemClick(menuItem);
-    }
-
-    private void configureChannelSkipping() {
-        player.getCurrentStreamInfo().ifPresent(info -> getParentActivity().ifPresent(activity ->
-                org.schabi.newpipe.player.helper.ChannelSkipDialog.show(activity, info)));
     }
 
     public Optional<AppCompatActivity> getParentActivity() {

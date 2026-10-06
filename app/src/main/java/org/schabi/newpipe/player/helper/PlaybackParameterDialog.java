@@ -74,6 +74,9 @@ public class PlaybackParameterDialog extends DialogFragment {
     @Nullable
     private Callback callback;
 
+    @Nullable
+    private Runnable channelSkippingAction;
+
     @State
     double initialTempo = DEFAULT_TEMPO;
     @State
@@ -113,6 +116,12 @@ public class PlaybackParameterDialog extends DialogFragment {
         dialog.skipSilence = dialog.initialSkipSilence;
 
         return dialog;
+    }
+
+    public PlaybackParameterDialog withChannelSkippingAction(
+            @Nullable final Runnable action) {
+        channelSkippingAction = action;
+        return this;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -172,6 +181,16 @@ public class PlaybackParameterDialog extends DialogFragment {
     //////////////////////////////////////////////////////////////////////////*/
 
     private void initUI() {
+        binding.channelSkipButton.setVisibility(channelSkippingAction == null
+                ? View.GONE : View.VISIBLE);
+        binding.channelSkipButton.setOnClickListener(view -> {
+            if (channelSkippingAction != null) {
+                updateCallback();
+                dismiss();
+                channelSkippingAction.run();
+            }
+        });
+
         // Tempo
         setText(binding.tempoMinimumText, PlayerHelper::formatSpeed, MIN_PITCH_OR_SPEED);
         setText(binding.tempoMaximumText, PlayerHelper::formatSpeed, MAX_PITCH_OR_SPEED);

@@ -888,7 +888,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onPrepared() {
         super.onPrepared();
         setVideoDurationToControls((int) player.getExoPlayer().getDuration());
-        addPlaybackSpeedMenuItems(playbackSpeedPopupMenu.getMenu());
         binding.playbackSpeed.setText(formatSpeed(player.getPlaybackSpeed()));
     }
 
@@ -1373,9 +1372,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playbackSpeed.setText(formatSpeed(player.getPlaybackSpeed()));
         playbackSpeedPopupMenu.setOnMenuItemClickListener(this);
         playbackSpeedPopupMenu.setOnDismissListener(this);
-    }
-
-    protected void addPlaybackSpeedMenuItems(final Menu menu) {
     }
 
     private void buildCaptionMenu(@NonNull final List<String> availableLanguages) {

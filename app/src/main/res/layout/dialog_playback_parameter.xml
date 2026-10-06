@@ -523,6 +523,14 @@
                 android:text="@string/skip_silence_checkbox"
                 android:textColor="?attr/colorOnSurface" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/channelSkipButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/channel_skip_settings"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <!-- END HERE -->
