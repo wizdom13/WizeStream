@@ -128,8 +128,18 @@ public final class InvidiousExtractors {
         @Override
         public List<String> suggestionList(final String query)
                 throws IOException, ExtractionException {
-            final JsonArray suggestions = api.object(api.url("search/suggestions?q="
-                    + InvidiousApi.encode(query))).getArray("suggestions");
+            final JsonArray suggestions;
+            try {
+                suggestions = api.object(api.url("search/suggestions?q="
+                        + InvidiousApi.encode(query))).getArray("suggestions");
+            } catch (final InvidiousApiException error) {
+                if (!error.optionalEndpointUnavailable()) {
+                    throw error;
+                }
+                // Suggestions are optional. Keep typed search and local history usable if
+                // the selected instance blocks or rate limits this endpoint.
+                return new ArrayList<>();
+            }
             final List<String> result = new ArrayList<>();
             if (suggestions != null) {
                 for (final Object suggestion : suggestions) {

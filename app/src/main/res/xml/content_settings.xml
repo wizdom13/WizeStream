@@ -90,6 +90,22 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <EditTextPreference
+        android:key="@string/invidious_instances_key"
+        android:title="@string/invidious_instances_title"
+        android:summary="@string/invidious_instances_summary"
+        android:defaultValue=""
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
+    <ListPreference
+        android:key="@string/invidious_switch_instance_key"
+        android:title="@string/invidious_switch_instance_title"
+        android:summary="@string/invidious_switch_instance_summary"
+        android:persistent="false"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <SwitchPreferenceCompat
         android:key="@string/invidious_enabled_key"
         android:title="@string/invidious_enabled_title"

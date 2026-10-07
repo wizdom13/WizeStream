@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.os.LocaleListCompat;
 import androidx.preference.Preference;
 import androidx.preference.EditTextPreference;
+import androidx.preference.ListPreference;
 import androidx.preference.PreferenceManager;
 import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -52,26 +53,33 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
         instancePref.setOnBindEditTextListener(editText -> editText.setInputType(
                 android.text.InputType.TYPE_CLASS_TEXT
                         | android.text.InputType.TYPE_TEXT_VARIATION_URI));
-        instancePref.setOnPreferenceChangeListener((preference, newValue) -> {
-            final String normalized;
+        instancePref.setOnPreferenceChangeListener((preference, newValue) ->
+                selectInvidiousInstance((String) newValue));
+        final EditTextPreference savedPref = (EditTextPreference) requirePreference(
+                R.string.invidious_instances_key);
+        savedPref.setOnBindEditTextListener(editText -> {
+            editText.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                    | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                    | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+            editText.setSingleLine(false);
+            editText.setMinLines(3);
+        });
+        savedPref.setOnPreferenceChangeListener((preference, newValue) -> {
             try {
-                normalized = InvidiousBackend.normalizeInstance((String) newValue);
-            } catch (final IllegalArgumentException e) {
+                final String normalized = String.join("\n",
+                        InvidiousInstances.parse((String) newValue));
+                savedPref.setText(normalized);
+                refreshInvidiousChoices();
+            } catch (final IllegalArgumentException error) {
                 Toast.makeText(requireContext(), R.string.invidious_invalid_instance,
                         Toast.LENGTH_LONG).show();
-                return false;
-            }
-            if (normalized.equals(preferences.getString(instanceKey, ""))) {
-                return false;
-            }
-            if (preferences.edit().putString(instanceKey, normalized).commit()) {
-                instancePref.setText(normalized);
-                if (preferences.getBoolean(enabledKey, false)) {
-                    NavigationHelper.restartApp(requireActivity());
-                }
             }
             return false;
         });
+        requirePreference(R.string.invidious_switch_instance_key)
+                .setOnPreferenceChangeListener((preference, newValue) ->
+                        selectInvidiousInstance((String) newValue));
+        refreshInvidiousChoices();
         requirePreference(R.string.invidious_enabled_key)
                 .setOnPreferenceChangeListener((preference, newValue) -> {
             final boolean enabled = (Boolean) newValue;
@@ -89,6 +97,56 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
             }
             return false;
         });
+    }
+
+    private boolean selectInvidiousInstance(final String value) {
+        final var preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        final String instanceKey = getString(R.string.invidious_instance_key);
+        final String savedKey = getString(R.string.invidious_instances_key);
+        final String normalized;
+        try {
+            normalized = InvidiousBackend.normalizeInstance(value);
+        } catch (final IllegalArgumentException error) {
+            Toast.makeText(requireContext(), R.string.invidious_invalid_instance,
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+        final String active = preferences.getString(instanceKey, "");
+        final var instances = InvidiousInstances.choices(preferences.getString(savedKey, ""),
+                active);
+        if (!instances.contains(normalized)) {
+            instances.add(normalized);
+        }
+        final String saved = String.join("\n", instances);
+        if (preferences.edit().putString(instanceKey, normalized).putString(savedKey, saved)
+                .commit()) {
+            ((EditTextPreference) requirePreference(R.string.invidious_instance_key))
+                    .setText(normalized);
+            ((EditTextPreference) requirePreference(R.string.invidious_instances_key))
+                    .setText(saved);
+            refreshInvidiousChoices();
+            if (!normalized.equals(active)
+                    && preferences.getBoolean(getString(R.string.invidious_enabled_key), false)) {
+                NavigationHelper.restartApp(requireActivity());
+            }
+        }
+        return false;
+    }
+
+    private void refreshInvidiousChoices() {
+        final var preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        final String active = preferences.getString(getString(R.string.invidious_instance_key), "");
+        final var instances = InvidiousInstances.choices(preferences.getString(
+                getString(R.string.invidious_instances_key), ""), active);
+        final ListPreference switchPref = (ListPreference) requirePreference(
+                R.string.invidious_switch_instance_key);
+        final String[] choices = instances.toArray(new String[0]);
+        switchPref.setEntries(choices);
+        switchPref.setEntryValues(choices);
+        switchPref.setValue(active);
+        switchPref.setEnabled(!instances.isEmpty());
+        switchPref.setSummary(active.isEmpty()
+                ? getString(R.string.invidious_switch_instance_summary) : active);
     }
 
     private void setupAppLanguagePreferences() {
