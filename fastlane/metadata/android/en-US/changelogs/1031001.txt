@@ -1,0 +1,7 @@
+• Sort subscriptions inline with drag handles and multi-selection.
+• Move selected channels under existing or new separators; save layouts per profile.
+• Search blocked channels, videos and keywords.
+• Save and switch Invidious instances.
+• Fix Android TV replay fullscreen and Back navigation.
+• Correct video effect output dimensions.
+• Handle rejected Invidious suggestions and improve feed loading.

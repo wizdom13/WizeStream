@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1031001">WizeStream 1.31.1</a></li>
 <li><a href="#release-1031000">WizeStream 1.31.0</a></li>
 <li><a href="#release-1030000">WizeStream 1.30.0</a></li>
 <li><a href="#release-1029000">WizeStream 1.29.0</a></li>
@@ -88,6 +89,25 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1031001" data-version="1.31.1" data-version-code="1031001">
+<h2>WizeStream 1.31.1</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added inline subscription sorting with drag handles, multi-selection, and bulk moves under existing or new separators.</li>
+<li>Preserved selected channels and their relative order across search and service filters while saving layouts automatically per profile.</li>
+<li>Added search to blocked channels, videos, and keywords.</li>
+<li>Added saved Invidious instances and a quick instance selector.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Restored fullscreen when replaying videos on Android TV and made Back close embedded playback.</li>
+<li>Reported video output surface dimensions to video effects.</li>
+<li>Prevented rejected Invidious suggestion requests from interrupting search and clarified API failures.</li>
+<li>Loaded Invidious feeds through paginated channel tabs, including enabled video, Shorts, and live-stream tabs within existing feed limits.</li>
+</ul>
+</div>
+</section>
 <section id="release-1031000" data-version="1.31.0" data-version-code="1031000">
 <h2>WizeStream 1.31.0</h2>
 <div class="release-notes">
