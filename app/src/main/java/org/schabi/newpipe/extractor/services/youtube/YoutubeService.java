@@ -67,7 +67,7 @@ import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.subscription.SubscriptionExtractor;
 import org.schabi.newpipe.extractor.suggestion.SuggestionExtractor;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 /*
@@ -291,11 +291,13 @@ public class YoutubeService extends StreamingService {
         return new YoutubeSubscriptionExtractor(this);
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public FeedExtractor getFeedExtractor(final String channelUrl) throws ExtractionException {
         if (InvidiousBackend.isEnabled()) {
-            return new InvidiousExtractors.Feed(this, getChannelLHFactory().fromUrl(channelUrl));
+            // The lightweight videos endpoint omits continuations, Shorts and live streams.
+            // Returning no dedicated feed selects the paginated channel-tab feed loader.
+            return null;
         }
         return new YoutubeFeedExtractor(this, getChannelLHFactory().fromUrl(channelUrl));
     }

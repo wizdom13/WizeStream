@@ -13,7 +13,6 @@ import org.schabi.newpipe.extractor.channel.ChannelTabExtractor;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
-import org.schabi.newpipe.extractor.feed.FeedExtractor;
 import org.schabi.newpipe.extractor.kiosk.KioskExtractor;
 import org.schabi.newpipe.extractor.linkhandler.ChannelTabs;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
@@ -265,33 +264,6 @@ public final class InvidiousExtractors {
             final String url = pageUrl(page);
             path = url.substring((api.base + "/api/v1/").length()).split("[?&]continuation=")[0];
             return result(api.object(url));
-        }
-    }
-
-    public static final class Feed extends FeedExtractor {
-        private final InvidiousApi api = new InvidiousApi();
-        private JsonObject first;
-        public Feed(final StreamingService service, final ListLinkHandler handler) {
-            super(service, handler);
-        }
-        @Override
-        public void onFetchPage(final Downloader downloader) throws IOException,
-                ExtractionException {
-            first = api.object(api.url("channels/" + InvidiousApi.encode(api.channelId(getUrl()))
-                    + "/videos"));
-        }
-        @Override
-        public String getName() {
-            return "Invidious feed";
-        }
-        @Override
-        public InfoItemsPage<StreamInfoItem> getInitialPage() {
-            return new InfoItemsPage<>(InvidiousItems.videos(first.getArray("videos"),
-                    getServiceId(), api), null);
-        }
-        @Override
-        public InfoItemsPage<StreamInfoItem> getPage(final Page page) {
-            return InfoItemsPage.emptyPage();
         }
     }
 
