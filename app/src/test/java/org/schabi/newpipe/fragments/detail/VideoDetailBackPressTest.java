@@ -33,6 +33,8 @@ import org.schabi.newpipe.player.ui.PlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUiList;
 import org.schabi.newpipe.util.DeviceUtils;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -147,6 +149,22 @@ public class VideoDetailBackPressTest {
         verify(activity, never()).setRequestedOrientation(anyInt());
         verify(player, never()).pause();
         verify(player, never()).getPlayQueue();
+    }
+
+    @Test
+    public void tvBackFromEmbeddedPlayerHidesTheSheetForCleanup() throws Exception {
+        fullscreen.set(false);
+        when(player.videoPlayerSelected()).thenReturn(true);
+        deviceUtils.when(() -> DeviceUtils.isTv(activity)).thenReturn(true);
+        final BottomSheetBehavior<?> sheet = mock(BottomSheetBehavior.class);
+        setField(VideoDetailFragment.class, fragment, "bottomSheetBehavior", sheet);
+
+        assertTrue(fragment.onBackPressed());
+
+        verify(sheet).setState(BottomSheetBehavior.STATE_HIDDEN);
+        verify(fragment).setAutoPlay(false);
+        verify(player, never()).getPlayQueue();
+        verify(activity, never()).setRequestedOrientation(anyInt());
     }
 
     private void syncFullscreenWithOrientation() throws Exception {
