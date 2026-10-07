@@ -4,6 +4,22 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.1 (`1031001`)
+
+### Improvements
+
+- Added inline subscription sorting with drag handles, multi-selection, and bulk moves under existing or new separators.
+- Preserved selected channels and their relative order across search and service filters while saving layouts automatically per profile.
+- Added search to blocked channels, videos, and keywords.
+- Added saved Invidious instances and a quick instance selector.
+
+### Fixes
+
+- Restored fullscreen when replaying videos on Android TV and made Back close embedded playback.
+- Reported video output surface dimensions to video effects.
+- Prevented rejected Invidious suggestion requests from interrupting search and clarified API failures.
+- Loaded Invidious feeds through paginated channel tabs, including enabled video, Shorts, and live-stream tabs within existing feed limits.
+
 ## WizeStream 1.31.0 (`1031000`)
 
 ### New features
