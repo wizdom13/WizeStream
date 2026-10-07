@@ -83,6 +83,8 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private lateinit var feedGroupsSortMenuItem: GroupsHeader
     private val subscriptionsSection = Section()
     private var contextualSearchQuery = ""
+    private var sortingEnabled = false
+    private var sortController: SubscriptionSortController? = null
 
     @State
     @JvmField
@@ -119,8 +121,17 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     }
 
     override fun onDestroyView() {
+        sortController?.close()
+        sortController = null
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("subscription_sort_enabled", sortingEnabled)
+        outState.putString("subscription_sort_profile", activeProfileId)
+        sortController?.saveState(outState)
     }
 
     override fun onDestroy() {
@@ -144,7 +155,22 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         setClickListenerToMenuItem(menu.add(R.string.subscription_arrange)) {
             SubscriptionLayoutDialog.newInstance(activeProfileId).show(parentFragmentManager, "subscription_layout")
         }
-        buildGridColumnsMenu(menu)
+        menu.add(R.string.subscription_sort_enable).apply {
+            isCheckable = true
+            isChecked = sortingEnabled
+            setOnMenuItemClickListener {
+                sortingEnabled = !sortingEnabled
+                isChecked = sortingEnabled
+                sortController?.setEnabled(sortingEnabled)
+                updateSortingVisibility()
+                activity.invalidateOptionsMenu()
+                true
+            }
+        }
+        setClickListenerToMenuItem(menu.add(R.string.subscription_separator_add)) {
+            sortController?.editSeparator()
+        }.isVisible = sortingEnabled
+        if (!sortingEnabled) buildGridColumnsMenu(menu)
         buildImportExportMenu(menu)
     }
 
@@ -280,6 +306,8 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     override fun initViews(rootView: View, savedInstanceState: Bundle?) {
         super.initViews(rootView, savedInstanceState)
         _binding = FragmentSubscriptionBinding.bind(rootView)
+        sortingEnabled = savedInstanceState?.getString("subscription_sort_profile") == activeProfileId &&
+            savedInstanceState?.getBoolean("subscription_sort_enabled") == true
 
         applySubscriptionLayout()
         binding.itemsList.adapter = groupAdapter
@@ -296,6 +324,18 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         }
 
         setupInitialLayout()
+        sortController = SubscriptionSortController(requireContext(), activeProfileId, binding, savedInstanceState).apply {
+            setQuery(contextualSearchQuery)
+            setEnabled(sortingEnabled)
+            restoreScroll(savedInstanceState)
+        }
+        if (sortingEnabled) updateSortingVisibility()
+    }
+
+    private fun updateSortingVisibility() {
+        binding.itemsList.animate().cancel()
+        binding.itemsList.alpha = 1f
+        binding.itemsList.visibility = if (sortingEnabled) View.GONE else View.VISIBLE
     }
 
     private fun applySubscriptionLayout() {
@@ -399,6 +439,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         if (::viewModel.isInitialized) {
             viewModel.setFilterQuery(contextualSearchQuery)
         }
+        sortController?.setQuery(contextualSearchQuery)
     }
 
     private fun toggleListViewMode() {
@@ -607,7 +648,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
     override fun hideLoading() {
         super.hideLoading()
-        binding.itemsList.animate(true, 200)
+        if (sortingEnabled) updateSortingVisibility() else binding.itemsList.animate(true, 200)
     }
 
     companion object {
