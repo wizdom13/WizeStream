@@ -324,6 +324,11 @@ public final class ContentBlockingHelper {
         }
 
         @NonNull
+        public String getKey() {
+            return key;
+        }
+
+        @NonNull
         public String getLabel() {
             return label;
         }

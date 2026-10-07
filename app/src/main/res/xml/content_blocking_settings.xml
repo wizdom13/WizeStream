@@ -75,8 +75,7 @@
 
     </PreferenceCategory>
 
-    <EditTextPreference
-        android:dialogTitle="@string/blocked_keywords_title"
+    <Preference
         android:key="@string/blocked_keywords_key"
         android:title="@string/blocked_keywords_title"
         app:iconSpaceReserved="false"

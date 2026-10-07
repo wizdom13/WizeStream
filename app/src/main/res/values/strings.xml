@@ -1802,4 +1802,8 @@
     <string name="subscription_order_reset">Reset to alphabetical order</string>
     <string name="subscription_order_load_failed">Could not load subscriptions</string>
     <string name="subscription_order_drag">Drag to reorder</string>
+    <string name="blocked_content_search_hint">Search this blocklist</string>
+    <string name="blocked_content_search_help">Uncheck entries to unblock them. Search filters the list without changing your blocks.</string>
+    <string name="blocked_content_clear_all">Clear entire list</string>
+    <string name="blocked_keywords_edit">Add or edit keywords</string>
 </resources>
