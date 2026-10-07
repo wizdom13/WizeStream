@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertNull;
 
 public class InvidiousExtractionTest {
     private final Downloader oldDownloader = NewPipe.getDownloader();
@@ -204,9 +205,53 @@ public class InvidiousExtractionTest {
         assertEquals(1, first.getItems().size());
         assertTrue(first.getNextPage().getUrl().contains("continuation=next+%26+token"));
         assertEquals(1, tab.getPage(first.getNextPage()).getItems().size());
-        final var feed = ServiceList.YouTube.getFeedExtractor(channel.getUrl());
-        feed.fetchPage();
-        assertEquals(1, feed.getInitialPage().getItems().size());
+        assertNull(ServiceList.YouTube.getFeedExtractor(channel.getUrl()));
+    }
+
+    @Test
+    public void fullFeedCanLoadVideosShortsLiveStreamsAndVideoContinuations() throws Exception {
+        responseForUrl = url -> {
+            if (url.endsWith("/" + CHANNEL)) {
+                return "{\"author\":\"Channel\",\"authorId\":\"" + CHANNEL
+                        + "\",\"tabs\":[\"videos\",\"shorts\",\"streams\"]}";
+            }
+            if (url.contains("continuation=")) {
+                return "{\"videos\":[" + ITEM.replace(VIDEO, "olderVideo1") + "]}";
+            }
+            if (url.endsWith("/videos")) {
+                return "{\"videos\":[" + ITEM + "],\"continuation\":\"next\"}";
+            }
+            if (url.endsWith("/shorts")) {
+                return "{\"videos\":[" + ITEM.replace(VIDEO, "shortVideo1") + "]}";
+            }
+            if (url.endsWith("/streams")) {
+                return "{\"videos\":[" + ITEM.replace(VIDEO, "liveVideo01") + "]}";
+            }
+            throw new AssertionError("Unexpected feed request: " + url);
+        };
+        final String channelUrl = "https://www.youtube.com/channel/" + CHANNEL;
+        assertNull(ServiceList.YouTube.getFeedExtractor(channelUrl));
+        final var channel = ServiceList.YouTube.getChannelExtractor(channelUrl);
+        channel.fetchPage();
+        final List<String> videos = new ArrayList<>();
+        for (final var handler : channel.getTabs()) {
+            final var tab = ServiceList.YouTube.getChannelTabExtractor(handler);
+            tab.fetchPage();
+            final var first = tab.getInitialPage();
+            first.getItems().forEach(item -> videos.add(item.getUrl()));
+            if (first.hasNextPage()) {
+                tab.getPage(first.getNextPage()).getItems()
+                        .forEach(item -> videos.add(item.getUrl()));
+            }
+        }
+        assertEquals(4, videos.size());
+        assertTrue(videos.stream().anyMatch(url -> url.endsWith("olderVideo1")));
+        assertTrue(videos.stream().anyMatch(url -> url.endsWith("shortVideo1")));
+        assertTrue(videos.stream().anyMatch(url -> url.endsWith("liveVideo01")));
+        InvidiousBackend.configure(false, "");
+        assertTrue(ServiceList.YouTube.getFeedExtractor(channelUrl)
+                instanceof org.schabi.newpipe.extractor.services.youtube.extractors
+                        .YoutubeFeedExtractor);
     }
 
     @Test
