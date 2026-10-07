@@ -2,6 +2,12 @@
 <resources>
     <string name="invidious_enabled_key" translatable="false">invidious_enabled</string>
     <string name="invidious_instance_key" translatable="false">invidious_instance</string>
+    <string name="invidious_instances_key" translatable="false">invidious_instances</string>
+    <string name="invidious_switch_instance_key" translatable="false">invidious_switch_instance</string>
+    <string name="invidious_instances_title">Saved Invidious instances</string>
+    <string name="invidious_instances_summary">Add or remove trusted HTTPS instance URLs, one per line.</string>
+    <string name="invidious_switch_instance_title">Switch Invidious instance</string>
+    <string name="invidious_switch_instance_summary">Choose a saved instance. Switching while Invidious is enabled restarts the app.</string>
     <string name="invidious_enabled_title">Use Invidious for YouTube</string>
     <string name="invidious_enabled_summary">Send YouTube requests through your instance, including video and images. Direct YouTube requests are blocked. The instance must support the API and proxy media locally. Some YouTube features are unavailable. Changing this setting restarts the app.</string>
     <string name="invidious_instance_title">Invidious instance</string>

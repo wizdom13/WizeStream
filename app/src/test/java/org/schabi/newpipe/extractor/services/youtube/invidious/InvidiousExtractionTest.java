@@ -265,6 +265,32 @@ public class InvidiousExtractionTest {
     }
 
     @Test
+    public void deniedSuggestionsStayOptionalButSearchAndPlaybackErrorsRemainVisible()
+            throws Exception {
+        status = 403;
+        responseBody = "<html>private firewall page</html>";
+        assertTrue(ServiceList.YouTube.getSuggestionExtractor().suggestionList("games")
+                .isEmpty());
+        final ExtractionException playbackError = assertThrows(ExtractionException.class,
+                () -> ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
+                        + VIDEO).fetchPage());
+        assertTrue(playbackError.getMessage().contains("denied API access"));
+        assertTrue(playbackError.getMessage().contains("saved Invidious instance"));
+        assertFalse(playbackError.getMessage().contains("private firewall"));
+        final var search = ServiceList.YouTube.getSearchExtractor("games");
+        assertThrows(ExtractionException.class, search::fetchPage);
+        assertEquals(3, requests.size());
+    }
+
+    @Test
+    public void malformedSuccessfulSuggestionsStillReportAnExtractionError() {
+        responseBody = "not JSON";
+        assertThrows(ExtractionException.class,
+                () -> ServiceList.YouTube.getSuggestionExtractor().suggestionList("games"));
+        assertEquals(1, requests.size());
+    }
+
+    @Test
     public void explainsUnavailableHtmlApiPagesWithoutIncludingTheirBody() {
         responseHeaders = java.util.Map.of("Content-Type", List.of("text/html; charset=UTF-8"));
         responseBody = "<html><h1>Site Unavailable</h1><p>private body</p></html>";
@@ -278,15 +304,17 @@ public class InvidiousExtractionTest {
 
     @Test
     public void apiErrorDiagnosticsRedactUrlsAndBoundResponseDetails() {
-        status = 500;
         responseBody = "{\"error\":\"Cannot fetch https://example.org/stream?token=private "
                 + "x".repeat(400) + "\"}";
-        final ExtractionException error = assertThrows(ExtractionException.class, () ->
-                ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
-                        + VIDEO).fetchPage());
-        assertFalse(error.getMessage().contains("private"));
-        assertTrue(error.getMessage().contains("[URL]"));
-        assertTrue(error.getMessage().length() < 300);
+        for (final int code : new int[]{401, 403, 429, 500, 503}) {
+            status = code;
+            final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                    ServiceList.YouTube.getStreamExtractor("https://www.youtube.com/watch?v="
+                            + VIDEO).fetchPage());
+            assertFalse(error.getMessage().contains("private"));
+            assertTrue(error.getMessage().contains("[URL]"));
+            assertTrue(error.getMessage().length() < 300);
+        }
     }
 
 }

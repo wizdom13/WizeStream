@@ -45,8 +45,8 @@ final class InvidiousApi {
         }
         final Response response = NewPipe.getDownloader().get(url);
         if (response.responseCode() < 200 || response.responseCode() >= 300) {
-            throw new ExtractionException("Invidious returned HTTP " + response.responseCode()
-                    + errorDetail(response.responseBody()));
+            throw new InvidiousApiException(response.responseCode(),
+                    errorDetail(response.responseBody()));
         }
         final String mime = response.getHeader("Content-Type");
         if (mime != null && mime.toLowerCase(java.util.Locale.ROOT).contains("text/html")) {
