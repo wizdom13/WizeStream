@@ -3,13 +3,10 @@ package org.schabi.newpipe.settings;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.InputType;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.SwitchPreferenceCompat;
 import androidx.work.WorkInfo;
@@ -25,7 +22,6 @@ import org.schabi.newpipe.util.ContentBlockingHelper.Entry;
 import org.schabi.newpipe.util.ServiceHelper;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +29,7 @@ import java.util.UUID;
 public final class ContentBlockingSettingsFragment extends BasePreferenceFragment {
     private Preference blockedChannelsPreference;
     private Preference blockedVideosPreference;
-    private EditTextPreference blockedKeywordsPreference;
+    private Preference blockedKeywordsPreference;
     private SwitchPreferenceCompat aiSListEnabledPreference;
     private Preference aiSListUpdatePreference;
     private Preference aiSListStatusPreference;
@@ -56,19 +52,12 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
                     ServiceHelper.setHideMembersOnlyVideos((Boolean) newValue);
                     return true;
                 });
-        blockedKeywordsPreference.setOnBindEditTextListener(editText -> {
-            editText.setInputType(InputType.TYPE_CLASS_TEXT
-                    | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-            editText.setMinLines(4);
-        });
-        blockedKeywordsPreference.setOnPreferenceChangeListener((preference, value) -> {
-            final String proposed = value == null ? "" : value.toString();
-            final String sanitized = ContentBlockingHelper.sanitizeKeywords(proposed);
-            preference.setSummary(keywordSummary(sanitized));
-            if (!sanitized.equals(proposed)) {
-                blockedKeywordsPreference.setText(sanitized);
-                return false;
-            }
+        blockedKeywordsPreference.setOnPreferenceClickListener(preference -> {
+            BlockedContentDialog.showKeywords(requireContext(), readKeywords(), keywords -> {
+                defaultPreferences.edit().putString(getString(R.string.blocked_keywords_key),
+                        keywords).apply();
+                updateSummaries();
+            });
             return true;
         });
         blockedChannelsPreference.setOnPreferenceClickListener(preference -> {
@@ -124,33 +113,12 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
             return;
         }
 
-        final String[] labels = entries.stream().map(Entry::getLabel).toArray(String[]::new);
-        final boolean[] checked = new boolean[entries.size()];
-        java.util.Arrays.fill(checked, true);
+        BlockedContentDialog.showEntries(requireContext(), videos, entries,
+                kept -> saveEntries(videos, kept));
+    }
 
-        final AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(videos ? R.string.manage_blocked_videos_title
-                        : R.string.manage_blocked_channels_title)
-                .setMultiChoiceItems(labels, checked,
-                        (ignored, which, isChecked) -> checked[which] = isChecked)
-                .setNegativeButton(R.string.cancel, null)
-                .setNeutralButton(R.string.clear, null)
-                .setPositiveButton(R.string.ok, (ignored, which) -> {
-                    final List<Entry> kept = new ArrayList<>();
-                    for (int index = 0; index < entries.size(); index++) {
-                        if (checked[index]) {
-                            kept.add(entries.get(index));
-                        }
-                    }
-                    saveEntries(videos, kept);
-                })
-                .create();
-        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-                .setOnClickListener(view -> {
-                    saveEntries(videos, List.of());
-                    dialog.dismiss();
-                }));
-        dialog.show();
+    private String readKeywords() {
+        return defaultPreferences.getString(getString(R.string.blocked_keywords_key), "");
     }
 
     private void observeAiSListUpdate(@NonNull final UUID workId) {
@@ -231,7 +199,6 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.clear, (dialog, which) -> {
                     ContentBlockingHelper.clearAll(requireContext());
-                    blockedKeywordsPreference.setText("");
                     updateSummaries();
                 })
                 .show();
@@ -248,7 +215,7 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
         blockedVideosPreference.setSummary(getResources().getQuantityString(
                 R.plurals.blocked_videos_count, videoCount, videoCount));
         blockedKeywordsPreference.setSummary(keywordSummary(
-                blockedKeywordsPreference.getText()));
+                readKeywords()));
         updateAiSListSummary();
     }
 
