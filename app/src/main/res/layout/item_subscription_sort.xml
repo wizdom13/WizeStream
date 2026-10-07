@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="64dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:background="?attr/selectableItemBackground">
+
+    <CheckBox
+        android:id="@+id/sort_selected"
+        android:layout_width="48dp"
+        android:layout_height="48dp" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/sort_avatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:importantForAccessibility="no"
+        app:shapeAppearance="@style/CircularImageView" />
+
+    <TextView
+        android:id="@+id/sort_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="4dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/sort_drag"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/subscription_order_drag"
+        android:src="@drawable/ic_drag_handle"
+        app:tint="?attr/colorOnSurface" />
+</LinearLayout>

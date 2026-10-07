@@ -1796,6 +1796,14 @@
     <string name="learning_choose_course">Choose a course</string>
     <string name="learning_all_lessons">All lessons</string>
     <string name="subscription_arrange">Arrange subscriptions</string>
+    <string name="subscription_sort_enable">Enable subscription sorting</string>
+    <string name="subscription_sort_help">Drag handles to reorder. Tap or hold channels to select them, then move them under a separator. Changes save automatically; hidden channels stay in your list.</string>
+    <string name="subscription_sort_selected">%1$d selected · Tap to clear selection</string>
+    <string name="subscription_sort_select_visible">Select/deselect visible</string>
+    <string name="subscription_sort_select_channel">Select %1$s</string>
+    <string name="subscription_sort_move">Move selected</string>
+    <string name="subscription_sort_up">Move up</string>
+    <string name="subscription_sort_down">Move down</string>
     <string name="subscription_arrange_help">Drag channels and separators to change their order. Tap a separator to rename or remove it.</string>
     <string name="subscription_separator_add">Add separator</string>
     <string name="subscription_separator_name">Separator name</string>
