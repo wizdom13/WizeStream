@@ -1215,6 +1215,13 @@ public final class VideoDetailFragment
         // Back leaves the expanded video without changing the current queue item. Let
         // MainActivity collapse the sheet; previous/next remain playback-control actions.
         if (isPlayerAvailable() && player.videoPlayerSelected()) {
+            if (DeviceUtils.isTv(activity)) {
+                // Hiding the sheet runs the same cleanup as the player's close button.
+                // A TV Back press should not leave a still-playing mini player behind.
+                setAutoPlay(false);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                return true;
+            }
             return false;
         }
 

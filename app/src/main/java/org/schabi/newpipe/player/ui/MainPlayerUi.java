@@ -148,6 +148,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
      * enough for phones, but not for tablets since the mini player can be also shown in landscape.
      */
     private void directlyOpenFullscreenIfNeeded() {
+        if (DeviceUtils.isTv(context)
+                && player.getPlaybackPresentationMode().rendersVideo()) {
+            // TV cannot rotate, and replay can reuse an already-expanded bottom sheet.
+            // Apply fullscreen for each video intent rather than relying on a sheet callback.
+            setFullscreen(true);
+            return;
+        }
         if (PlayerHelper.isStartMainPlayerFullscreenEnabled(player.getService())
                 && DeviceUtils.isTablet(player.getService())
                 && PlayerHelper.globalScreenOrientationLocked(player.getService())) {
@@ -158,12 +165,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void setupAfterIntent() {
-        // needed for tablets, check the function for a better explanation
-        directlyOpenFullscreenIfNeeded();
-
         super.setupAfterIntent();
 
         initVideoPlayer();
+        directlyOpenFullscreenIfNeeded();
         // Replaying the current item can reuse the engine and its retained SurfaceView.
         restoreVideoSurfaceAfterLayoutTransition();
         if (shouldRequestPlaybackButtonFocus()) {
@@ -315,6 +320,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         // Make sure video and text tracks are enabled if the user is in the app, in the case user
         // switched from background player to main player
         player.useVideoAndSubtitles(fragmentIsVisible);
+        if (DeviceUtils.isTv(context)) {
+            directlyOpenFullscreenIfNeeded();
+        }
     }
 
     @Override
