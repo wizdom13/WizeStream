@@ -41,7 +41,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_gravity="bottom"
-            android:background="?attr/colorSurfaceContainer"
+            android:background="?attr/main_navigation_background_color"
             android:importantForAccessibility="no" />
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -49,7 +49,7 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/main_bottom_navigation_height"
             android:layout_gravity="bottom"
-            android:background="?attr/colorSurfaceContainer"
+            android:background="?attr/main_navigation_background_color"
             android:elevation="0dp"
             android:visibility="gone"
             app:itemActiveIndicatorStyle="@style/wizestreamBottomNavigationActiveIndicator"
@@ -65,7 +65,7 @@
             android:layout_width="@dimen/main_navigation_rail_width"
             android:layout_height="match_parent"
             android:layout_gravity="start"
-            android:background="?attr/colorSurfaceContainer"
+            android:background="?attr/main_navigation_background_color"
             android:elevation="0dp"
             android:paddingVertical="8dp"
             android:visibility="gone"
