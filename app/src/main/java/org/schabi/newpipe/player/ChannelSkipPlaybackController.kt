@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player
 
 import androidx.media3.common.Player as Media3Player
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.helper.ChannelSkipPreferences
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
@@ -9,7 +10,8 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem
 internal class ChannelSkipPlaybackController(private val player: Player) {
     private var item: PlayQueueItem? = null
     private var introPending = false
-    private var manualOverride = false
+    private var introAllowed = false
+    private var manualSeekPosition: Long? = null
     private var endProcessed = false
     private var configured = false
     private var startMillis = 0L
@@ -17,24 +19,40 @@ internal class ChannelSkipPlaybackController(private val player: Player) {
 
     fun begin(newItem: PlayQueueItem, restoringPosition: Boolean) {
         item = newItem
-        introPending = !restoringPosition
-        manualOverride = false
+        introAllowed = !restoringPosition
+        introPending = introAllowed
+        manualSeekPosition = null
         endProcessed = false
         configured = false
     }
 
-    fun manualSeek() {
+    fun manualSeek(positionMillis: Long) {
         if (item === player.currentItem) {
             introPending = false
-            manualOverride = true
+            introAllowed = false
+            manualSeekPosition = positionMillis
         }
     }
 
     fun automaticTransition() {
+        introAllowed = true
         introPending = true
-        manualOverride = false
+        manualSeekPosition = null
         endProcessed = false
         configured = false
+    }
+
+    fun settingsChanged(info: StreamInfo) {
+        val currentInfo = player.currentStreamInfo.orElse(null) ?: return
+        if (
+            item !== player.currentItem || info.serviceId != currentInfo.serviceId ||
+            info.uploaderUrl != currentInfo.uploaderUrl
+        ) {
+            return
+        }
+        configured = false
+        introPending = introAllowed
+        onProgress()
     }
 
     fun onProgress() {
@@ -63,7 +81,9 @@ internal class ChannelSkipPlaybackController(private val player: Player) {
             startMillis,
             endMillis,
             introPending,
-            manualOverride
+            // Only a deliberate seek into the outro overrides its automatic skip. Seeking
+            // elsewhere preserves the user's position without disabling the later outro skip.
+            manualSeekPosition?.let { endMillis > 0 && it >= engine.duration - endMillis } == true
         )
         introPending = false
         when (action) {

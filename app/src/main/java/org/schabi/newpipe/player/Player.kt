@@ -680,6 +680,10 @@ class Player(
     val currentState: Int
         get() = stateController.currentState
 
+    fun onChannelSkipSettingsChanged(info: StreamInfo) {
+        channelSkipController.settingsChanged(info)
+    }
+
     fun exoPlayerIsNull(): Boolean = media3Player == null
 
     @get:JvmName("requireExoPlayer")
