@@ -10,6 +10,19 @@
     <string name="search_before_date">Before: date or relative time</string>
     <string name="search_date_help">Enter YYYY-MM-DD or a relative time such as 1 day, 2 weeks, or 6 months. Relative dates update when you search. YouTube receives after: and before: query terms.</string>
     <string name="search_date_invalid">Enter valid dates or relative times, with After earlier than Before.</string>
+    <string name="search_duration_order">Duration and result order</string>
+    <string name="search_duration_help">Order the results collected so far by duration. Unknown durations and live streams appear last and are excluded by duration ranges. Fetch more pages to find additional matches.</string>
+    <string name="search_service_order">Service order</string>
+    <string name="search_longest_first">Longest first</string>
+    <string name="search_shortest_first">Shortest first</string>
+    <string name="search_minimum_hours">Minimum hours (optional)</string>
+    <string name="search_maximum_hours">Maximum hours (optional)</string>
+    <string name="search_duration_invalid">Enter valid hours, with Minimum no greater than Maximum.</string>
+    <string name="search_fetch_more">Fetch more results</string>
+    <string name="search_deep_help">Collect additional search pages and keep updating the results. You can cancel at any time and keep collected results. The service may not return every matching video. Collection stops at the selected page limit, 5,000 results, or when no new pages remain.</string>
+    <string name="search_deep_choose">Additional pages</string>
+    <string name="search_deep_progress">%1$d/%2$d pages · %3$d collected · %4$d shown</string>
+    <string name="search_collected_count">%1$d collected · %2$d shown</string>
     <string name="search_after_label">After (%1$s)</string>
     <string name="search_before_label">Before (%1$s)</string>
 </resources>

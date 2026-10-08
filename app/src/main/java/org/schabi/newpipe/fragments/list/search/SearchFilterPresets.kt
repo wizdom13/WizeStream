@@ -12,7 +12,7 @@ class SearchFilterPresets(context: Context, serviceId: Int, musicOnly: Boolean) 
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val key = "search_filter_presets_${ProfileManager.getActiveProfileId(context)}_${serviceId}_$musicOnly"
 
-    data class Preset(val name: String, val content: String, val filters: List<String>, val after: String, val before: String)
+    data class Preset @JvmOverloads constructor(val name: String, val content: String, val filters: List<String>, val after: String, val before: String, val order: Int = 0, val minimum: Long = 0, val maximum: Long = 0)
 
     fun read(): List<Preset> = try {
         val entries = JSONArray(preferences.getString(key, "[]"))
@@ -21,7 +21,7 @@ class SearchFilterPresets(context: Context, serviceId: Int, musicOnly: Boolean) 
             val name = entry.optString("name").trim()
             if (name.isEmpty()) return@mapNotNull null
             val filters = entry.optJSONArray("filters") ?: JSONArray()
-            Preset(name, entry.optString("content"), (0 until filters.length()).map { filters.getString(it) }, entry.optString("after"), entry.optString("before"))
+            Preset(name, entry.optString("content"), (0 until filters.length()).map { filters.getString(it) }, entry.optString("after"), entry.optString("before"), entry.optInt("order"), entry.optLong("minimum"), entry.optLong("maximum"))
         }
     } catch (_: JSONException) {
         emptyList()
@@ -37,7 +37,7 @@ class SearchFilterPresets(context: Context, serviceId: Int, musicOnly: Boolean) 
     private fun write(presets: List<Preset>) {
         val entries = JSONArray()
         presets.forEach { preset ->
-            entries.put(JSONObject().put("name", preset.name).put("content", preset.content).put("filters", JSONArray(preset.filters)).put("after", preset.after).put("before", preset.before))
+            entries.put(JSONObject().put("name", preset.name).put("content", preset.content).put("filters", JSONArray(preset.filters)).put("after", preset.after).put("before", preset.before).put("order", preset.order).put("minimum", preset.minimum).put("maximum", preset.maximum))
         }
         preferences.edit().putString(key, entries.toString()).apply()
     }

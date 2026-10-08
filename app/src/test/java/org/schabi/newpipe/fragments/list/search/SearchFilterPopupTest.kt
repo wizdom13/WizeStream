@@ -65,6 +65,23 @@ class SearchFilterPopupTest {
         assertFalse(dialog.isShowing)
     }
 
+    @Test
+    fun durationRangeAndOrderApplyTogether() {
+        val context = ContextThemeWrapper(RuntimeEnvironment.getApplication(), R.style.LightTheme)
+        var applied = Triple(0, 0L, 0L)
+        SearchFilterDialog.showExtended(context, ServiceList.YouTube, arrayOf("videos"), intArrayOf(), false, "", "", 0, 0, 0) { _, _, _, _, order, minimum, maximum ->
+            applied = Triple(order, minimum, maximum)
+        }
+        shadowOf(Looper.getMainLooper()).idle()
+        val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+        val views = descendants(dialog.window!!.decorView)
+        views.filterIsInstance<Chip>().single { it.text == context.getString(R.string.search_longest_first) }.isChecked = true
+        views.filterIsInstance<EditText>().single { it.hint == context.getString(R.string.search_minimum_hours) }.setText("15")
+        views.filterIsInstance<EditText>().single { it.hint == context.getString(R.string.search_maximum_hours) }.setText("50")
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+        assertEquals(Triple(1, 54_000L, 180_000L), applied)
+    }
+
     private fun descendants(view: View): List<View> = listOf(view) + if (view is ViewGroup) {
         (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) }
     } else {
