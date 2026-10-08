@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_filter_presets">Saved filters</string>
+    <string name="search_preset_add">+ Save current filters</string>
+    <string name="search_preset_name">Preset name</string>
+    <string name="search_preset_load">Use these filters</string>
+    <string name="search_preset_update">Replace with current filters</string>
+    <string name="search_custom_dates">Custom upload dates</string>
+    <string name="search_after_date">After: date or relative time</string>
+    <string name="search_before_date">Before: date or relative time</string>
+    <string name="search_date_help">Enter YYYY-MM-DD or a relative time such as 1 day, 2 weeks, or 6 months. Relative dates update when you search. YouTube receives after: and before: query terms.</string>
+    <string name="search_date_invalid">Enter valid dates or relative times, with After earlier than Before.</string>
+    <string name="search_after_label">After (%1$s)</string>
+    <string name="search_before_label">Before (%1$s)</string>
+</resources>

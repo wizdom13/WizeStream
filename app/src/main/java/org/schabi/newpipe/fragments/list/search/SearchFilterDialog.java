@@ -3,9 +3,13 @@ package org.schabi.newpipe.fragments.list.search;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Typeface;
+import android.view.LayoutInflater;
+import android.widget.EditText;
+import android.widget.Button;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -13,23 +17,27 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
-import com.google.android.material.checkbox.MaterialCheckBox;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.radiobutton.MaterialRadioButton;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.search.filter.Filter;
 import org.schabi.newpipe.extractor.search.filter.FilterGroup;
 import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.util.ServiceHelper;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:ParameterNumber")
 final class SearchFilterDialog {
     interface Listener {
         void onSearchFiltersApplied(@NonNull String contentFilter,
@@ -38,23 +46,44 @@ final class SearchFilterDialog {
 
     private final Context context;
     private final StreamingService service;
-    private final Listener listener;
     private final LinearLayout content;
     private final LinearLayout sortContent;
     private final List<FilterItem> contentFilters;
     private final Set<Integer> selectedSortFilters;
     private FilterItem selectedContentFilter;
-    private RadioGroup contentFilterGroup;
+    private ChipGroup contentFilterGroup;
+    private final SearchFilterPresets presets;
+    private final boolean datesSupported;
+    private EditText afterInput;
+    private EditText beforeInput;
+    private TextView datePreview;
+    private Button dateHeading;
+    private String after;
+    private String before;
+    private LinearLayout presetsContent;
+
+    interface AdvancedListener {
+        void onSearchFiltersApplied(String contentFilter, List<Integer> sortFilters,
+                                    String after, String before);
+    }
+
+    private final AdvancedListener advancedListener;
 
     private SearchFilterDialog(@NonNull final Context context,
                                @NonNull final StreamingService service,
                                @NonNull final String[] currentContentFilters,
                                @NonNull final int[] currentSortFilters,
                                final boolean musicOnly,
-                               @NonNull final Listener listener) {
+                               final String after, final String before,
+                               @NonNull final AdvancedListener listener) {
         this.context = context;
         this.service = service;
-        this.listener = listener;
+        this.advancedListener = listener;
+        this.after = after;
+        this.before = before;
+        presets = new SearchFilterPresets(context, service.getServiceId(), musicOnly);
+        datesSupported = service.getServiceId() == ServiceList.YouTube.getServiceId()
+                && !musicOnly;
         contentFilters = getContentFilters(service, musicOnly);
         selectedContentFilter = findByName(contentFilters,
                 currentContentFilters.length == 0 ? null : currentContentFilters[0]);
@@ -79,9 +108,19 @@ final class SearchFilterDialog {
                      @NonNull final int[] currentSortFilters,
                      final boolean musicOnly,
                      @NonNull final Listener listener) {
-        final SearchFilterDialog controller = new SearchFilterDialog(
-                context, service, currentContentFilters, currentSortFilters, musicOnly, listener);
-        controller.show();
+        showAdvanced(context, service, currentContentFilters, currentSortFilters, musicOnly,
+                "", "", (selectedContent, selectedSort, after, before) ->
+                        listener.onSearchFiltersApplied(selectedContent, selectedSort));
+    }
+
+    static void showAdvanced(@NonNull final Context context,
+                             @NonNull final StreamingService service,
+                             @NonNull final String[] currentContentFilters,
+                             @NonNull final int[] currentSortFilters,
+                             final boolean musicOnly, final String after, final String before,
+                             @NonNull final AdvancedListener listener) {
+        new SearchFilterDialog(context, service, currentContentFilters, currentSortFilters,
+                musicOnly, after, before, listener).show();
     }
 
     static boolean hasFilters(@Nullable final StreamingService service) {
@@ -101,7 +140,11 @@ final class SearchFilterDialog {
     }
 
     private void show() {
+        buildPresets();
         buildContentFilters();
+        if (datesSupported) {
+            buildDates();
+        }
         rebuildSortFilters(false);
 
         final ScrollView scrollView = new ScrollView(context);
@@ -117,9 +160,12 @@ final class SearchFilterDialog {
         dialog.setOnShowListener(ignored -> {
             dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(view -> reset());
             dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(view -> {
-                listener.onSearchFiltersApplied(selectedContentFilter == null
+                if (!validateDates()) {
+                    return;
+                }
+                advancedListener.onSearchFiltersApplied(selectedContentFilter == null
                                 ? "" : selectedContentFilter.getName(),
-                        new ArrayList<>(selectedSortFilters));
+                        new ArrayList<>(selectedSortFilters), after, before);
                 dialog.dismiss();
             });
         });
@@ -131,25 +177,24 @@ final class SearchFilterDialog {
             content.addView(sortContent);
             return;
         }
-        addHeading(content, context.getString(R.string.search_filter_content_type));
-        contentFilterGroup = new RadioGroup(context);
-        contentFilterGroup.setOrientation(LinearLayout.VERTICAL);
+        contentFilterGroup = new ChipGroup(context);
+        contentFilterGroup.setSingleSelection(true);
+        contentFilterGroup.setSelectionRequired(true);
         for (final FilterItem filter : contentFilters) {
-            final MaterialRadioButton radioButton = new MaterialRadioButton(context);
-            radioButton.setId(View.generateViewId());
-            radioButton.setText(translated(filter.getName()));
-            radioButton.setTag(filter);
-            radioButton.setChecked(filter == selectedContentFilter);
-            contentFilterGroup.addView(radioButton);
+            final Chip chip = filterChip(filter);
+            chip.setChecked(filter == selectedContentFilter);
+            contentFilterGroup.addView(chip);
         }
-        contentFilterGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            final View checked = group.findViewById(checkedId);
-            if (checked != null && checked.getTag() instanceof FilterItem) {
-                selectedContentFilter = (FilterItem) checked.getTag();
-                rebuildSortFilters(false);
+        contentFilterGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty()) {
+                return;
             }
+            final View checked = group.findViewById(checkedIds.get(0));
+            selectedContentFilter = (FilterItem) checked.getTag();
+            rebuildSortFilters(false);
         });
-        content.addView(contentFilterGroup);
+        addSection(content, context.getString(R.string.search_filter_content_type),
+                contentFilterGroup, "", true);
         content.addView(sortContent);
     }
 
@@ -166,7 +211,6 @@ final class SearchFilterDialog {
             if (group.filterItems.length == 0) {
                 continue;
             }
-            addHeading(sortContent, translated(group.groupName));
             if (group.onlyOneCheckable) {
                 addExclusiveGroup(group);
             } else {
@@ -175,42 +219,225 @@ final class SearchFilterDialog {
         }
     }
 
+    private Chip filterChip(final FilterItem filter) {
+        final Chip chip = (Chip) LayoutInflater.from(context).inflate(
+                R.layout.item_search_music_filter_chip, content, false);
+        chip.setId(View.generateViewId());
+        chip.setText(translated(filter.getName()));
+        chip.setTag(filter);
+        return chip;
+    }
+
     private void addExclusiveGroup(@NonNull final FilterGroup group) {
-        final RadioGroup radioGroup = new RadioGroup(context);
-        radioGroup.setOrientation(LinearLayout.VERTICAL);
-        for (final FilterItem filter : group.filterItems) {
-            final MaterialRadioButton radioButton = new MaterialRadioButton(context);
-            radioButton.setId(View.generateViewId());
-            radioButton.setText(translated(filter.getName()));
-            radioButton.setTag(filter);
-            radioButton.setChecked(selectedSortFilters.contains(filter.getIdentifier()));
-            radioGroup.addView(radioButton);
-        }
-        radioGroup.setOnCheckedChangeListener((view, checkedId) -> {
-            for (final FilterItem filter : group.filterItems) {
-                selectedSortFilters.remove(filter.getIdentifier());
-            }
-            final View checked = view.findViewById(checkedId);
-            if (checked != null && checked.getTag() instanceof FilterItem) {
-                selectedSortFilters.add(((FilterItem) checked.getTag()).getIdentifier());
-            }
-        });
-        sortContent.addView(radioGroup);
+        addChipGroup(group, true);
     }
 
     private void addMultiChoiceGroup(@NonNull final FilterGroup group) {
+        addChipGroup(group, false);
+    }
+
+    private void addChipGroup(final FilterGroup group, final boolean exclusive) {
+        final ChipGroup chips = new ChipGroup(context);
+        chips.setSingleSelection(exclusive);
+        chips.setSelectionRequired(exclusive);
         for (final FilterItem filter : group.filterItems) {
-            final MaterialCheckBox checkBox = new MaterialCheckBox(context);
-            checkBox.setText(translated(filter.getName()));
-            checkBox.setChecked(selectedSortFilters.contains(filter.getIdentifier()));
-            checkBox.setOnCheckedChangeListener((button, checked) -> {
-                if (checked) {
-                    selectedSortFilters.add(filter.getIdentifier());
-                } else {
-                    selectedSortFilters.remove(filter.getIdentifier());
+            final Chip chip = filterChip(filter);
+            chip.setChecked(selectedSortFilters.contains(filter.getIdentifier()));
+            chips.addView(chip);
+        }
+        final Button heading = addSection(sortContent, translated(group.groupName), chips,
+                selectedChipNames(chips), false);
+        chips.setOnCheckedStateChangeListener((view, checkedIds) -> {
+            for (final FilterItem filter : group.filterItems) {
+                selectedSortFilters.remove(filter.getIdentifier());
+            }
+            for (final int id : checkedIds) {
+                selectedSortFilters.add(((FilterItem) view.findViewById(id).getTag())
+                        .getIdentifier());
+            }
+            heading.setText(sectionTitle(translated(group.groupName), selectedChipNames(chips)));
+        });
+    }
+
+    private String selectedChipNames(final ChipGroup chips) {
+        final List<String> selected = new ArrayList<>();
+        for (final int id : chips.getCheckedChipIds()) {
+            selected.add(((Chip) chips.findViewById(id)).getText().toString());
+        }
+        return String.join(", ", selected);
+    }
+
+    private void buildPresets() {
+        presetsContent = new LinearLayout(context);
+        presetsContent.setOrientation(LinearLayout.VERTICAL);
+        addSection(content, context.getString(R.string.search_filter_presets),
+                presetsContent, "", false);
+        refreshPresets();
+    }
+
+    private void refreshPresets() {
+        presetsContent.removeAllViews();
+        final ChipGroup chips = new ChipGroup(context);
+        for (final SearchFilterPresets.Preset preset : presets.read()) {
+            final Chip chip = filterChip(new FilterItem(0, preset.getName()));
+            chip.setText(preset.getName());
+            chip.setCheckable(false);
+            chip.setOnClickListener(view -> new MaterialAlertDialogBuilder(context)
+                    .setTitle(preset.getName())
+                    .setItems(new CharSequence[]{context.getString(R.string.search_preset_load),
+                            context.getString(R.string.search_preset_update),
+                            context.getString(R.string.delete)}, (dialog, which) -> {
+                        if (which == 0) {
+                            loadPreset(preset);
+                        } else if (which == 1 && validateDates()) {
+                            savePreset(preset.getName());
+                        } else if (which == 2) {
+                            presets.delete(preset.getName());
+                            refreshPresets();
+                        }
+                    }).show());
+            chips.addView(chip);
+        }
+        final Button add = new Button(context);
+        add.setText(R.string.search_preset_add);
+        add.setOnClickListener(view -> {
+            if (!validateDates()) {
+                return;
+            }
+            final EditText name = new EditText(context);
+            name.setSingleLine(true);
+            name.setHint(R.string.search_preset_name);
+            final AlertDialog dialog = new MaterialAlertDialogBuilder(context)
+                    .setTitle(R.string.search_preset_add).setView(name)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.save, null).create();
+            dialog.setOnShowListener(ignored -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
+                    .setOnClickListener(button -> {
+                        final String value = name.getText().toString().trim();
+                        if (value.isEmpty()) {
+                            name.setError(context.getString(R.string.search_preset_name));
+                        } else {
+                            savePreset(value);
+                            dialog.dismiss();
+                        }
+                    }));
+            dialog.show();
+        });
+        presetsContent.addView(chips);
+        presetsContent.addView(add);
+    }
+
+    private void savePreset(final String name) {
+        final List<String> filters = flatten(service.getSearchQHFactory().getAvailableSortFilter())
+                .stream().filter(item -> selectedSortFilters.contains(item.getIdentifier()))
+                .map(FilterItem::getName).collect(Collectors.toList());
+        presets.save(new SearchFilterPresets.Preset(name,
+                selectedContentFilter == null ? "" : selectedContentFilter.getName(),
+                filters, after, before));
+        refreshPresets();
+    }
+
+    private void loadPreset(final SearchFilterPresets.Preset preset) {
+        final FilterItem selected = findByName(contentFilters, preset.getContent());
+        if (selected != null && contentFilterGroup != null) {
+            selectedContentFilter = selected;
+            for (int index = 0; index < contentFilterGroup.getChildCount(); index++) {
+                final Chip chip = (Chip) contentFilterGroup.getChildAt(index);
+                if (chip.getTag() == selected) {
+                    chip.setChecked(true);
                 }
-            });
-            sortContent.addView(checkBox);
+            }
+        }
+        selectedSortFilters.clear();
+        for (final FilterItem filter : flatten(
+                service.getSearchQHFactory().getAvailableSortFilter())) {
+            if (preset.getFilters().contains(filter.getName())) {
+                selectedSortFilters.add(filter.getIdentifier());
+            }
+        }
+        rebuildSortFilters(false);
+        if (datesSupported) {
+            afterInput.setText(preset.getAfter());
+            beforeInput.setText(preset.getBefore());
+        }
+    }
+
+    private void buildDates() {
+        final LinearLayout dateContent = new LinearLayout(context);
+        dateContent.setOrientation(LinearLayout.VERTICAL);
+        dateHeading = addSection(content, context.getString(R.string.search_custom_dates),
+                dateContent, "", !after.isEmpty() || !before.isEmpty());
+        final TextView help = new TextView(context);
+        help.setText(R.string.search_date_help);
+        dateContent.addView(help);
+        afterInput = dateInput(dateContent, R.string.search_after_date, after);
+        beforeInput = dateInput(dateContent, R.string.search_before_date, before);
+        datePreview = new TextView(context);
+        dateContent.addView(datePreview);
+        final TextWatcher watcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(final CharSequence s, final int start,
+                                          final int count, final int extra) { }
+            @Override
+            public void onTextChanged(final CharSequence s, final int start,
+                                      final int beforeCount, final int count) {
+                updateDatePreview();
+            }
+            @Override
+            public void afterTextChanged(final Editable editable) { }
+        };
+        afterInput.addTextChangedListener(watcher);
+        beforeInput.addTextChangedListener(watcher);
+        updateDatePreview();
+    }
+
+    private EditText dateInput(final LinearLayout parent, final int hint, final String value) {
+        final EditText input = new EditText(context);
+        input.setSingleLine(true);
+        input.setHint(hint);
+        input.setText(value);
+        parent.addView(input);
+        return input;
+    }
+
+    private void updateDatePreview() {
+        final List<String> labels = new ArrayList<>();
+        if (!afterInput.getText().toString().trim().isEmpty()) {
+            labels.add(context.getString(R.string.search_after_label,
+                    afterInput.getText().toString().trim()));
+        }
+        if (!beforeInput.getText().toString().trim().isEmpty()) {
+            labels.add(context.getString(R.string.search_before_label,
+                    beforeInput.getText().toString().trim()));
+        }
+        dateHeading.setText(sectionTitle(context.getString(R.string.search_custom_dates),
+                String.join(" / ", labels)));
+        try {
+            datePreview.setText(SearchDateRange.query("", afterInput.getText().toString(),
+                    beforeInput.getText().toString(), LocalDate.now()));
+        } catch (final IllegalArgumentException exception) {
+            datePreview.setText(R.string.search_date_invalid);
+        } catch (final java.time.DateTimeException exception) {
+            datePreview.setText(R.string.search_date_invalid);
+        }
+    }
+
+    private boolean validateDates() {
+        if (!datesSupported) {
+            after = "";
+            before = "";
+            return true;
+        }
+        after = afterInput.getText().toString().trim();
+        before = beforeInput.getText().toString().trim();
+        try {
+            SearchDateRange.query("", after, before, LocalDate.now());
+            return true;
+        } catch (final IllegalArgumentException | java.time.DateTimeException exception) {
+            ((View) afterInput.getParent()).setVisibility(View.VISIBLE);
+            afterInput.setError(context.getString(R.string.search_date_invalid));
+            afterInput.requestFocus();
+            return false;
         }
     }
 
@@ -218,9 +445,13 @@ final class SearchFilterDialog {
         selectedContentFilter = contentFilters.isEmpty() ? null : contentFilters.get(0);
         selectedSortFilters.clear();
         if (contentFilterGroup != null && contentFilterGroup.getChildCount() > 0) {
-            ((MaterialRadioButton) contentFilterGroup.getChildAt(0)).setChecked(true);
+            ((Chip) contentFilterGroup.getChildAt(0)).setChecked(true);
         }
         rebuildSortFilters(true);
+        if (datesSupported) {
+            afterInput.setText("");
+            beforeInput.setText("");
+        }
     }
 
     static void normalizeSortFilters(@NonNull final List<FilterGroup> groups,
@@ -253,17 +484,25 @@ final class SearchFilterDialog {
         selected.addAll(normalized);
     }
 
-    private void addHeading(@NonNull final LinearLayout parent, @NonNull final String text) {
-        final TextView heading = new TextView(context);
-        heading.setText(text);
-        heading.setTextAppearance(
-                com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
-        heading.setTypeface(heading.getTypeface(), Typeface.BOLD);
-        heading.setPadding(0, dp(16), 0, dp(4));
+    private Button addSection(final LinearLayout parent, final String title, final View body,
+                            final String summary, final boolean expanded) {
+        final Button heading = new Button(context);
+        heading.setText(sectionTitle(title, summary));
+        heading.setAllCaps(false);
+        heading.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+        heading.setTypeface(null, Typeface.BOLD);
+        body.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        heading.setOnClickListener(view -> body.setVisibility(
+                body.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE));
         parent.addView(heading);
+        parent.addView(body);
+        return heading;
     }
 
-    @NonNull
+    private String sectionTitle(final String title, final String summary) {
+        return summary.isEmpty() ? title : title + ": " + summary;
+    }
+
     private String translated(@Nullable final String name) {
         return name == null ? "" : ServiceHelper.getTranslatedFilterString(name, context);
     }
