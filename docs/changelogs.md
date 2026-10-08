@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.2 (`1031002`)
+
+### Improvements
+
+- Replaced the long search filter popup with compact chips in expandable sections.
+- Added saved filter presets with load, update, and delete actions, separated by profile, service, and YouTube Music mode.
+- Added custom YouTube upload-date ranges and relative days, weeks, months, and years, resolved once per search and retained across pagination.
+- Added longest-first and shortest-first search result ordering with optional minimum and maximum durations in hours.
+- Added cancellable deeper search with progress, retained partial results, duplicate removal, and bounded collection of additional pages.
+- Added a Last lesson watched card to Learning progress, with course context and progress, resuming unfinished lessons and replaying completed lessons.
+- Updated the Subscribe button with theme-aware outlined and filled states for light, dark, AMOLED, and Material You palettes.
+- Added support for proxied Invidious DASH-only livestream manifests while retaining instance-only media requests.
+
+### Fixes
+
+- Prevented native player hover tooltips from crashing in DeX and other desktop windows.
+- Kept navigation surfaces and their system-bar backing pure black in AMOLED mode.
+- Applied updated per-channel intro and outro skip settings during playback, including after pause and resume.
+- Parsed Odysee publication timestamps supplied as SDK strings.
+- Recovered safely from unreadable main-tab saved state.
+- Explained Invidious API access failures and unusable media or manifest responses with instance-switching guidance.
+- Prevented truncated DASH XML from stalling manifest parsing and retained network-error handling.
+
 ## WizeStream 1.31.1 (`1031001`)
 
 ### Improvements

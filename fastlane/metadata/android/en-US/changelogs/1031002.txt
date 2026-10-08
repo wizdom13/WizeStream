@@ -1,0 +1,7 @@
+• Compact search filters, saved presets and custom/relative dates.
+• Sort results by duration, filter by hours and fetch more pages with cancellation.
+• Show the last watched lesson in Learning progress.
+• Theme-aware Subscribe button and pure black AMOLED navigation.
+• Support proxied Invidious DASH livestreams; clarify API and manifest errors.
+• Fix DeX hover crashes, Odysee dates and unreadable tab state.
+• Apply updated channel skip settings during playback.
