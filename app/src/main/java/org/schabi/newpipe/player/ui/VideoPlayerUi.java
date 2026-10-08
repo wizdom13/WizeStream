@@ -176,6 +176,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void setupFromView() {
         initViews();
         initListeners();
+        PlayerTooltips.disable(binding.getRoot());
         setupPlayerSeekOverlay();
     }
 
