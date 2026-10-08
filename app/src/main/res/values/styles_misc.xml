@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <style name="Widget.WizeStream.SubscribeButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/channel_subscribe_text</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/channel_subscribe_background</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
     <!-- Follows service's primary color -->
     <style name="ServiceColoredButton" parent="Widget.AppCompat.Button.Colored">
         <item name="colorButtonNormal">?attr/colorPrimary</item>
