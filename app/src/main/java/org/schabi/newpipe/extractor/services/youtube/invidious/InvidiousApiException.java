@@ -3,12 +3,16 @@ package org.schabi.newpipe.extractor.services.youtube.invidious;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 
 /** An HTTP rejection from the selected instance, distinct from malformed successful API data. */
-final class InvidiousApiException extends ExtractionException {
+public final class InvidiousApiException extends ExtractionException {
     private final int status;
 
-    InvidiousApiException(final int status, final String detail) {
+    public InvidiousApiException(final int status, final String detail) {
         super(message(status, detail));
         this.status = status;
+    }
+
+    public int getStatus() {
+        return status;
     }
 
     boolean optionalEndpointUnavailable() {

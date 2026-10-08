@@ -8,6 +8,8 @@ import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.upstream.Loader
 import java.net.UnknownHostException
+import java.util.Collections
+import java.util.IdentityHashMap
 import kotlinx.parcelize.Parcelize
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.Info
@@ -26,6 +28,7 @@ import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import org.schabi.newpipe.extractor.exceptions.ServiceTemporaryBlockedException
 import org.schabi.newpipe.extractor.exceptions.SoundCloudGoPlusContentException
 import org.schabi.newpipe.extractor.exceptions.YoutubeMusicPremiumContentException
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousApiException
 import org.schabi.newpipe.ktx.isNetworkRelated
 import org.schabi.newpipe.player.mediasource.FailedMediaSource
 import org.schabi.newpipe.player.resolver.PlaybackResolver
@@ -178,6 +181,15 @@ class ErrorInfo private constructor(
             action: UserAction?,
             serviceId: Int?
         ): ErrorMessage {
+            findInvidiousApiFailure(throwable)?.let { error ->
+                val resource = when (error.status) {
+                    401, 403 -> R.string.invidious_api_access_denied
+                    429 -> R.string.invidious_api_rate_limited
+                    in 500..599 -> R.string.invidious_api_unavailable
+                    else -> R.string.invidious_api_rejected
+                }
+                return ErrorMessage(resource, error.status.toString())
+            }
             return when {
                 // player exceptions
                 // some may be IOException, so do these checks before isNetworkRelated!
@@ -311,6 +323,7 @@ class ErrorInfo private constructor(
         }
 
         fun isReportable(throwable: Throwable?): Boolean {
+            if (findInvidiousApiFailure(throwable) != null) return false
             return when (throwable) {
                 // we don't have an exception, so this is a manually built error, which likely
                 // indicates that it's important and is thus reportable
@@ -337,6 +350,9 @@ class ErrorInfo private constructor(
         }
 
         fun isRetryable(throwable: Throwable?): Boolean {
+            findInvidiousApiFailure(throwable)?.let { error ->
+                return error.status == 408 || error.status == 429 || error.status in 500..599
+            }
             return when (throwable) {
                 // if we know the content is surely not available, retrying won't help
                 is ContentNotAvailableException -> !isContentSurelyNotAvailable(throwable)
@@ -370,6 +386,16 @@ class ErrorInfo private constructor(
 
                 else -> isUnsupportedCountryException(e)
             }
+        }
+
+        private fun findInvidiousApiFailure(throwable: Throwable?): InvidiousApiException? {
+            val visited = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())
+            var current = throwable
+            while (current != null && visited.add(current)) {
+                if (current is InvidiousApiException) return current
+                current = current.cause
+            }
+            return null
         }
 
         private fun isSignInBotCheckException(throwable: Throwable?): Boolean {
