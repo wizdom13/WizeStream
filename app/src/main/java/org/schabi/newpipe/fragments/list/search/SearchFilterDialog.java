@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.widget.EditText;
 import android.widget.Button;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -67,7 +68,19 @@ final class SearchFilterDialog {
                                     String after, String before);
     }
 
-    private final AdvancedListener advancedListener;
+    interface DurationListener {
+        void onSearchFiltersApplied(String contentFilter, List<Integer> sortFilters,
+                                    String after, String before, int order,
+                                    long minimum, long maximum);
+    }
+
+    private final DurationListener advancedListener;
+    private int durationOrder;
+    private long minimumDuration;
+    private long maximumDuration;
+    private EditText minimumInput;
+    private EditText maximumInput;
+    private ChipGroup durationChips;
 
     private SearchFilterDialog(@NonNull final Context context,
                                @NonNull final StreamingService service,
@@ -75,12 +88,16 @@ final class SearchFilterDialog {
                                @NonNull final int[] currentSortFilters,
                                final boolean musicOnly,
                                final String after, final String before,
-                               @NonNull final AdvancedListener listener) {
+                               final int order, final long minimum, final long maximum,
+                               @NonNull final DurationListener listener) {
         this.context = context;
         this.service = service;
         this.advancedListener = listener;
         this.after = after;
         this.before = before;
+        durationOrder = order;
+        minimumDuration = minimum;
+        maximumDuration = maximum;
         presets = new SearchFilterPresets(context, service.getServiceId(), musicOnly);
         datesSupported = service.getServiceId() == ServiceList.YouTube.getServiceId()
                 && !musicOnly;
@@ -119,8 +136,20 @@ final class SearchFilterDialog {
                              @NonNull final int[] currentSortFilters,
                              final boolean musicOnly, final String after, final String before,
                              @NonNull final AdvancedListener listener) {
+        showExtended(context, service, currentContentFilters, currentSortFilters, musicOnly,
+                after, before, 0, 0, 0, (selected, sort, start, end, order, minimum, maximum) ->
+                        listener.onSearchFiltersApplied(selected, sort, start, end));
+    }
+
+    static void showExtended(@NonNull final Context context,
+                             @NonNull final StreamingService service,
+                             @NonNull final String[] currentContentFilters,
+                             @NonNull final int[] currentSortFilters,
+                             final boolean musicOnly, final String after, final String before,
+                             final int order, final long minimum, final long maximum,
+                             @NonNull final DurationListener listener) {
         new SearchFilterDialog(context, service, currentContentFilters, currentSortFilters,
-                musicOnly, after, before, listener).show();
+                musicOnly, after, before, order, minimum, maximum, listener).show();
     }
 
     static boolean hasFilters(@Nullable final StreamingService service) {
@@ -146,6 +175,7 @@ final class SearchFilterDialog {
             buildDates();
         }
         rebuildSortFilters(false);
+        buildDuration();
 
         final ScrollView scrollView = new ScrollView(context);
         scrollView.addView(content);
@@ -160,12 +190,13 @@ final class SearchFilterDialog {
         dialog.setOnShowListener(ignored -> {
             dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(view -> reset());
             dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(view -> {
-                if (!validateDates()) {
+                if (!validateOptions()) {
                     return;
                 }
                 advancedListener.onSearchFiltersApplied(selectedContentFilter == null
                                 ? "" : selectedContentFilter.getName(),
-                        new ArrayList<>(selectedSortFilters), after, before);
+                        new ArrayList<>(selectedSortFilters), after, before,
+                        durationOrder, minimumDuration, maximumDuration);
                 dialog.dismiss();
             });
         });
@@ -289,7 +320,7 @@ final class SearchFilterDialog {
                             context.getString(R.string.delete)}, (dialog, which) -> {
                         if (which == 0) {
                             loadPreset(preset);
-                        } else if (which == 1 && validateDates()) {
+                        } else if (which == 1 && validateOptions()) {
                             savePreset(preset.getName());
                         } else if (which == 2) {
                             presets.delete(preset.getName());
@@ -301,7 +332,7 @@ final class SearchFilterDialog {
         final Button add = new Button(context);
         add.setText(R.string.search_preset_add);
         add.setOnClickListener(view -> {
-            if (!validateDates()) {
+            if (!validateOptions()) {
                 return;
             }
             final EditText name = new EditText(context);
@@ -333,7 +364,7 @@ final class SearchFilterDialog {
                 .map(FilterItem::getName).collect(Collectors.toList());
         presets.save(new SearchFilterPresets.Preset(name,
                 selectedContentFilter == null ? "" : selectedContentFilter.getName(),
-                filters, after, before));
+                filters, after, before, durationOrder, minimumDuration, maximumDuration));
         refreshPresets();
     }
 
@@ -356,9 +387,69 @@ final class SearchFilterDialog {
             }
         }
         rebuildSortFilters(false);
+        durationOrder = preset.getOrder();
+        if (durationOrder < 0 || durationOrder > 2) {
+            durationOrder = 0;
+        }
+        ((Chip) durationChips.getChildAt(durationOrder)).setChecked(true);
+        minimumInput.setText(SearchResultOrdering.secondsToHours(preset.getMinimum()));
+        maximumInput.setText(SearchResultOrdering.secondsToHours(preset.getMaximum()));
         if (datesSupported) {
             afterInput.setText(preset.getAfter());
             beforeInput.setText(preset.getBefore());
+        }
+    }
+
+    private void buildDuration() {
+        final LinearLayout body = new LinearLayout(context);
+        body.setOrientation(LinearLayout.VERTICAL);
+        addSection(content, context.getString(R.string.search_duration_order), body, "",
+                durationOrder != 0 || minimumDuration > 0 || maximumDuration > 0);
+        final TextView help = new TextView(context);
+        help.setText(R.string.search_duration_help);
+        body.addView(help);
+        durationChips = new ChipGroup(context);
+        durationChips.setSingleSelection(true);
+        durationChips.setSelectionRequired(true);
+        final int[] labels = {R.string.search_service_order, R.string.search_longest_first,
+                R.string.search_shortest_first};
+        for (int index = 0; index < labels.length; index++) {
+            final Chip chip = filterChip(new FilterItem(index, ""));
+            chip.setText(labels[index]);
+            chip.setChecked(index == durationOrder);
+            durationChips.addView(chip);
+        }
+        durationChips.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (!checkedIds.isEmpty()) {
+                durationOrder = ((FilterItem) group.findViewById(checkedIds.get(0)).getTag())
+                        .getIdentifier();
+            }
+        });
+        body.addView(durationChips);
+        minimumInput = dateInput(body, R.string.search_minimum_hours,
+                SearchResultOrdering.secondsToHours(minimumDuration));
+        maximumInput = dateInput(body, R.string.search_maximum_hours,
+                SearchResultOrdering.secondsToHours(maximumDuration));
+        minimumInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        maximumInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    }
+
+    private boolean validateOptions() {
+        if (!validateDates()) {
+            return false;
+        }
+        try {
+            minimumDuration = SearchResultOrdering.hoursToSeconds(
+                    minimumInput.getText().toString());
+            maximumDuration = SearchResultOrdering.hoursToSeconds(
+                    maximumInput.getText().toString());
+            SearchResultOrdering.validate(durationOrder, minimumDuration, maximumDuration);
+            return true;
+        } catch (final IllegalArgumentException exception) {
+            ((View) minimumInput.getParent()).setVisibility(View.VISIBLE);
+            minimumInput.setError(context.getString(R.string.search_duration_invalid));
+            minimumInput.requestFocus();
+            return false;
         }
     }
 
@@ -448,6 +539,9 @@ final class SearchFilterDialog {
             ((Chip) contentFilterGroup.getChildAt(0)).setChecked(true);
         }
         rebuildSortFilters(true);
+        ((Chip) durationChips.getChildAt(0)).setChecked(true);
+        minimumInput.setText("");
+        maximumInput.setText("");
         if (datesSupported) {
             afterInput.setText("");
             beforeInput.setText("");

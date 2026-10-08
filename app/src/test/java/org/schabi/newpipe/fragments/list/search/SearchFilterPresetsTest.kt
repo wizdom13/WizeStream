@@ -35,6 +35,14 @@ class SearchFilterPresetsTest {
     }
 
     @Test
+    fun durationSettingsRoundTripWithRelativeDates() {
+        val store = SearchFilterPresets(context, 0, false)
+        val preset = SearchFilterPresets.Preset("Long lectures", "videos", emptyList(), "2 months", "", 1, 54_000, 180_000)
+        store.save(preset)
+        assertEquals(listOf(preset), store.read())
+    }
+
+    @Test
     fun separatesServicesAndMusicMode() {
         SearchFilterPresets(context, 0, false).save(SearchFilterPresets.Preset("Videos", "videos", emptyList(), "", ""))
         assertTrue(SearchFilterPresets(context, 1, false).read().isEmpty())

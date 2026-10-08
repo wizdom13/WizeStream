@@ -29,6 +29,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -105,6 +106,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private static final int MENU_SAVE_SEARCH_FEED = 0x534601;
     private static final int MENU_REFRESH_SEARCH_FEED = 0x534602;
     private static final int MENU_DELETE_SEARCH_FEED = 0x534603;
+    private static final int MENU_DEEP_SEARCH = 0x534605;
     private static final int MENU_CLEAR_SEARCH_HISTORY = 0x534604;
 
     @NonNull
@@ -181,6 +183,18 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private boolean showLocalSuggestions = true;
     private boolean showRemoteSuggestions = true;
 
+    @State
+    int durationOrder = 0;
+
+    @State
+    long minimumDuration = 0;
+
+    @State
+    long maximumDuration = 0;
+
+    private final List<InfoItem> collectedSearchItems = new ArrayList<>();
+    private SearchPageBudget deepSearchBudget;
+    private boolean deepSearchRunning;
     private Disposable searchDisposable;
     private Disposable suggestionDisposable;
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -400,6 +414,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (activity instanceof MainActivity) {
             ((MainActivity) activity).hideMainNavigationForSearch();
         }
+        stopDeepSearch();
         super.onPause();
 
         wasSearchFocused = searchEditText.hasFocus();
@@ -464,6 +479,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (DEBUG) {
             Log.d(TAG, "onDestroyView() called");
         }
+        stopDeepSearch();
         unsetSearchListeners();
 
         if (searchMusicFilterChipGroup != null) {
@@ -545,6 +561,14 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         searchMusicFilterChipGroup = searchMusicFilters.findViewById(
                 R.id.toolbar_search_music_filter_chip_group);
         updateSearchFilterVisibility();
+        searchBinding.deepSearchButton.setOnClickListener(view -> {
+            if (deepSearchRunning) {
+                stopDeepSearch();
+            } else {
+                showDeepSearchDialog();
+            }
+        });
+        updateDeepSearchStatus();
         loadSavedSearchCache();
     }
 
@@ -556,12 +580,19 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     public void writeTo(final Queue<Object> objectsToSave) {
         super.writeTo(objectsToSave);
         objectsToSave.add(nextPage);
+        objectsToSave.add(new ArrayList<>(collectedSearchItems));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void readFrom(@NonNull final Queue<Object> savedObjects) throws Exception {
         super.readFrom(savedObjects);
         nextPage = (Page) savedObjects.poll();
+        collectedSearchItems.clear();
+        final Object collected = savedObjects.poll();
+        if (collected instanceof List<?>) {
+            collectedSearchItems.addAll((List<InfoItem>) collected);
+        }
     }
 
     @Override
@@ -612,8 +643,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
 
         if (!TextUtils.isEmpty(searchString)) {
+            menu.add(Menu.NONE, MENU_DEEP_SEARCH, Menu.NONE, R.string.search_fetch_more)
+                    .setEnabled(!isLoading.get() && Page.isValid(nextPage)
+                            && collectedSearchItems.size() < 5000)
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
             if (savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
-                if (searchAfter.isEmpty() && searchBefore.isEmpty()) {
+                if (searchAfter.isEmpty() && searchBefore.isEmpty() && !hasDurationOptions()) {
                     menu.add(Menu.NONE, MENU_SAVE_SEARCH_FEED, Menu.NONE,
                                     R.string.save_search_as_feed)
                             .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
@@ -631,7 +666,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
-        if (item.getItemId() == MENU_CLEAR_SEARCH_HISTORY) {
+        if (item.getItemId() == MENU_DEEP_SEARCH) {
+            showDeepSearchDialog();
+            return true;
+        } else if (item.getItemId() == MENU_CLEAR_SEARCH_HISTORY) {
             HistorySettingsFragment.openDeleteSearchHistoryDialog(requireContext(),
                     historyRecordManager, disposables, () -> {
                         if (searchEditText != null) {
@@ -966,6 +1004,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public boolean onBackPressed() {
+        if (deepSearchRunning) {
+            stopDeepSearch();
+            return true;
+        }
         if (suggestionsPanelVisible
                 && !infoListAdapter.getItemsList().isEmpty()
                 && !isLoading.get()) {
@@ -1146,7 +1188,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public void startLoading(final boolean forceLoad) {
+        stopDeepSearch();
+        collectedSearchItems.clear();
+        infoListAdapter.clearStreamItemList();
+        nextPage = null;
         super.startLoading(forceLoad);
+        updateDeepSearchStatus();
         disposables.clear();
         if (searchDisposable != null) {
             searchDisposable.dispose();
@@ -1164,7 +1211,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     protected void loadMoreItems() {
-        if (!Page.isValid(nextPage)) {
+        if (deepSearchRunning || !Page.isValid(nextPage)) {
             return;
         }
         isLoading.set(true);
@@ -1196,10 +1243,16 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     }
 
     private void onItemError(final Throwable exception) {
-        if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED
-                && !infoListAdapter.getItemsList().isEmpty()) {
+        updateDeepSearchStatus();
+        if (!collectedSearchItems.isEmpty()
+                || (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED
+                && !infoListAdapter.getItemsList().isEmpty())) {
             hideLoading();
             showListFooter(false);
+            if (infoListAdapter.getItemsList().isEmpty()) {
+                showEmptyState();
+            }
+            updateDeepSearchStatus();
             showSnackBarError(new ErrorInfo(exception, UserAction.SEARCHED,
                     searchString, serviceId, getOpenInBrowserUrlForErrors()));
             return;
@@ -1236,6 +1289,129 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     // Utils
     //////////////////////////////////////////////////////////////////////////*/
 
+    private boolean hasDurationOptions() {
+        return durationOrder != 0 || minimumDuration > 0 || maximumDuration > 0;
+    }
+
+    private List<InfoItem> collectSearchItems(final List<? extends InfoItem> items) {
+        final int previousSize = collectedSearchItems.size();
+        collectedSearchItems.addAll(items);
+        final List<InfoItem> unique = SearchResultOrdering.arrange(
+                collectedSearchItems, 0, 0, 0);
+        collectedSearchItems.clear();
+        final int retained = deepSearchRunning ? Math.min(unique.size(), 5000) : unique.size();
+        collectedSearchItems.addAll(unique.subList(0, retained));
+        return new ArrayList<>(unique.subList(previousSize, retained));
+    }
+
+    private void renderSearchItems() {
+        infoListAdapter.clearStreamItemList();
+        infoListAdapter.addInfoItemList(SearchResultOrdering.arrange(collectedSearchItems,
+                durationOrder, minimumDuration, maximumDuration));
+    }
+
+    private void updateDeepSearchStatus() {
+        if (searchBinding == null) {
+            return;
+        }
+        final Context context = searchBinding.getRoot().getContext();
+        searchBinding.deepSearchControls.setVisibility(
+                hasDurationOptions() || deepSearchRunning ? View.VISIBLE : View.GONE);
+        searchBinding.deepSearchButton.setText(deepSearchRunning
+                ? R.string.cancel : R.string.search_fetch_more);
+        searchBinding.deepSearchButton.setEnabled(deepSearchRunning
+                || (!isLoading.get() && Page.isValid(nextPage)
+                && collectedSearchItems.size() < 5000));
+        searchBinding.deepSearchStatus.setText(deepSearchRunning
+                ? context.getString(R.string.search_deep_progress,
+                        deepSearchBudget.getCompletedPages(),
+                        deepSearchBudget.getMaximumPages(), collectedSearchItems.size(),
+                        infoListAdapter.getItemsList().size())
+                : context.getString(R.string.search_collected_count, collectedSearchItems.size(),
+                        infoListAdapter.getItemsList().size()));
+        if (activity != null) {
+            activity.invalidateOptionsMenu();
+        }
+    }
+
+    private void showDeepSearchDialog() {
+        if (isLoading.get() || !Page.isValid(nextPage) || searchBinding == null
+                || collectedSearchItems.size() >= 5000) {
+            return;
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.search_fetch_more)
+                .setMessage(R.string.search_deep_help)
+                .setPositiveButton(R.string.search_deep_choose, (dialog, which) ->
+                        new MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(R.string.search_deep_choose)
+                                .setItems(new CharSequence[]{"25", "100", "250"},
+                                        (choice, index) -> startDeepSearch(
+                                                new int[]{25, 100, 250}[index])).show())
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void startDeepSearch(final int pages) {
+        if (isLoading.get() || !Page.isValid(nextPage) || searchBinding == null
+                || collectedSearchItems.size() >= 5000) {
+            return;
+        }
+        deepSearchBudget = new SearchPageBudget(pages);
+        deepSearchRunning = true;
+        loadDeepSearchPage();
+    }
+
+    private void loadDeepSearchPage() {
+        if (!deepSearchRunning || searchBinding == null) {
+            return;
+        }
+        if (!deepSearchBudget.request(nextPage, collectedSearchItems.size())) {
+            if (deepSearchBudget.getCompletedPages() < deepSearchBudget.getMaximumPages()
+                    && collectedSearchItems.size() < 5000) {
+                nextPage = null;
+            }
+            stopDeepSearch();
+            return;
+        }
+        isLoading.set(true);
+        updateDeepSearchStatus();
+        if (searchDisposable != null) {
+            searchDisposable.dispose();
+        }
+        searchDisposable = ExtractorHelper.getMoreSearchItems(serviceId,
+                getEffectiveSearchString(), asList(contentFilter), getSelectedSortFilterIds(),
+                nextPage)
+                .subscribeOn(Schedulers.io())
+                .delay(300, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(result -> {
+                    if (!deepSearchRunning || searchBinding == null) {
+                        return;
+                    }
+                    handleNextItems(result);
+                    deepSearchBudget.completed();
+                    loadDeepSearchPage();
+                }, throwable -> {
+                    stopDeepSearch();
+                    showSnackBarError(new ErrorInfo(throwable, UserAction.SEARCHED,
+                            searchString, serviceId, getOpenInBrowserUrlForErrors()));
+                });
+    }
+
+    private void stopDeepSearch() {
+        if (!deepSearchRunning) {
+            return;
+        }
+        deepSearchRunning = false;
+        if (searchDisposable != null) {
+            searchDisposable.dispose();
+        }
+        isLoading.set(false);
+        showListFooter(false);
+        updateDeepSearchStatus();
+    }
+
     private String getEffectiveSearchString() {
         return effectiveSearchString.isEmpty() ? searchString : effectiveSearchString;
     }
@@ -1247,16 +1423,22 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (service == null || !SearchFilterDialog.hasFilters(service)) {
             return;
         }
-        SearchFilterDialog.showAdvanced(requireContext(), service, contentFilter, sortFilter,
+        SearchFilterDialog.showExtended(requireContext(), service, contentFilter, sortFilter,
                 serviceId == ServiceList.YouTube.getServiceId()
                         && ServiceHelper.isYoutubeMusicMode(requireContext()),
-                searchAfter, searchBefore,
-                (selectedContent, selectedSort, after, before) -> {
+                searchAfter, searchBefore, durationOrder, minimumDuration, maximumDuration,
+                (selectedContent, selectedSort, after, before, order, minimum, maximum) -> {
+                    final boolean durationChanged = durationOrder != order
+                            || minimumDuration != minimum || maximumDuration != maximum;
+                    durationOrder = order;
+                    minimumDuration = minimum;
+                    maximumDuration = maximum;
                     final boolean datesChanged = !searchAfter.equals(after)
                             || !searchBefore.equals(before);
                     searchAfter = after;
                     searchBefore = before;
-                    applySearchFilters(selectedContent, selectedSort, datesChanged);
+                    applySearchFilters(selectedContent, selectedSort,
+                            datesChanged || durationChanged);
                 });
     }
 
@@ -1381,6 +1563,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public void handleResult(@NonNull final SearchInfo result) {
+        collectSearchItems(result.getRelatedItems());
         cacheSavedSearchResults(result.getRelatedItems(), true);
         final List<Throwable> exceptions = result.getErrors();
         if (!exceptions.isEmpty()
@@ -1407,17 +1590,17 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         nextPage = result.getNextPage();
 
         if (infoListAdapter.getItemsList().isEmpty()) {
-            if (!result.getRelatedItems().isEmpty()) {
-                infoListAdapter.addInfoItemList(result.getRelatedItems());
-            }
+            renderSearchItems();
             if (infoListAdapter.getItemsList().isEmpty()) {
                 infoListAdapter.clearStreamItemList();
                 showEmptyState();
+                updateDeepSearchStatus();
                 return;
             }
         }
 
         super.handleResult(result);
+        updateDeepSearchStatus();
     }
 
     private void handleSearchSuggestion() {
@@ -1455,7 +1638,17 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     public void handleNextItems(final ListExtractor.InfoItemsPage<?> result) {
         cacheSavedSearchResults(result.getItems(), false);
         showListFooter(false);
-        infoListAdapter.addInfoItemList(result.getItems());
+        final List<InfoItem> added = collectSearchItems(result.getItems());
+        if (hasDurationOptions()) {
+            renderSearchItems();
+        } else {
+            infoListAdapter.addInfoItemList(added);
+        }
+        if (infoListAdapter.getItemsList().isEmpty()) {
+            showEmptyState();
+        } else {
+            hideLoading();
+        }
 
         if (!result.getErrors().isEmpty()) {
             // nextPage should be non-null at this point, because it refers to the page
@@ -1477,6 +1670,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         // still holds the correct value during the error handling
         nextPage = result.getNextPage();
         super.handleNextItems(result);
+        updateDeepSearchStatus();
     }
 
     @Override
