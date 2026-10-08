@@ -11,6 +11,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 import org.schabi.newpipe.database.stream.model.StreamEntity
+import org.schabi.newpipe.database.stream.model.StreamStateEntity
 
 data class LearningPlaylistSummary(
     @ColumnInfo(name = "playlist_id")
@@ -50,6 +51,20 @@ data class LearningDashboardStream(
             0
         } else {
             (progressMillis * 100 / (stream.duration * 1_000)).toInt().coerceIn(0, 100)
+        }
+}
+
+data class LearningLastLesson(
+    @Embedded
+    val lesson: LearningDashboardStream,
+    @ColumnInfo(name = "course_title")
+    val courseTitle: String?
+) {
+    val resumePositionMillis: Long
+        get() = if (StreamStateEntity(lesson.stream.uid, lesson.progressMillis).isFinished(lesson.stream.duration)) {
+            0
+        } else {
+            lesson.progressMillis.coerceAtLeast(0)
         }
 }
 
@@ -122,7 +137,8 @@ data class LearningDashboardSnapshot(
     val learningContent: List<LearningDashboardStream>,
     val continueLearning: List<LearningDashboardStream>,
     val recentlyAnnotated: List<LearningDashboardStream>,
-    val studyStatistics: LearningStudyStatistics = LearningStudyStatistics.from(emptyList())
+    val studyStatistics: LearningStudyStatistics = LearningStudyStatistics.from(emptyList()),
+    val lastLesson: LearningLastLesson? = null
 ) {
     val activePlaylists: List<LearningPlaylistSummary>
         get() = playlists.filter { it.eligibleCount > 0 && !it.isCompleted }
@@ -142,6 +158,6 @@ data class LearningDashboardSnapshot(
     val isEmpty: Boolean
         get() = playlists.none { it.eligibleCount > 0 } &&
             learningContent.isEmpty() && continueLearning.isEmpty() &&
-            recentlyAnnotated.isEmpty() &&
+            recentlyAnnotated.isEmpty() && lastLesson == null &&
             studyStatistics.allTimeMillis == 0L
 }
