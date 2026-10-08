@@ -105,7 +105,16 @@ public final class InvidiousStreamExtractor extends StreamExtractor {
 
     @Override
     public String getHlsUrl() throws ParsingException {
-        final String value = video.getString("hlsUrl", "");
+        return manifestUrl("hlsUrl");
+    }
+
+    @Override
+    public String getDashMpdUrl() throws ParsingException {
+        return manifestUrl("dashUrl");
+    }
+
+    private String manifestUrl(final String key) throws ParsingException {
+        final String value = video.getString(key, "");
         if (value.isEmpty()) {
             return "";
         }

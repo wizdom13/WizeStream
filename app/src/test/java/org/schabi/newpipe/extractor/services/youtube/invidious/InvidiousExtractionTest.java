@@ -115,6 +115,34 @@ public class InvidiousExtractionTest {
     }
 
     @Test
+    public void loadsLiveDashOnlyThroughTheInstance() throws Exception {
+        responseBody = ITEM.substring(0, ITEM.length() - 1)
+                + ",\"liveNow\":true,\"dashUrl\":\"/api/manifest/dash/id/"
+                + VIDEO + "?quality=hd\"}";
+        final StreamInfo info = StreamInfo.getInfo(ServiceList.YouTube,
+                "https://www.youtube.com/watch?v=" + VIDEO);
+        assertEquals(org.schabi.newpipe.extractor.stream.StreamType.LIVE_STREAM,
+                info.getStreamType());
+        assertEquals("https://example.org/api/manifest/dash/id/" + VIDEO
+                + "?quality=hd&local=true", info.getDashMpdUrl());
+        assertTrue(info.getHlsUrl().isEmpty());
+        assertTrue(info.getVideoStreams().isEmpty());
+        assertTrue(info.getAudioStreams().isEmpty());
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    public void rejectsDirectDashManifests() throws Exception {
+        responseBody = ITEM.substring(0, ITEM.length() - 1)
+                + ",\"liveNow\":true,\"dashUrl\":\"https://manifest.googlevideo.com/live.mpd\"}";
+        final var extractor = ServiceList.YouTube.getStreamExtractor(
+                "https://www.youtube.com/watch?v=" + VIDEO);
+        extractor.fetchPage();
+        assertThrows(ExtractionException.class, extractor::getDashMpdUrl);
+        assertEquals(1, requests.size());
+    }
+
+    @Test
     public void resolvesChannelHandlesOnTheInstance() throws Exception {
         responseForUrl = url -> url.contains("resolveurl?")
                 ? "{\"browseId\":\"" + CHANNEL + "\"}"

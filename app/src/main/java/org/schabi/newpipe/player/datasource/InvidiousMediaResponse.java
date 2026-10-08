@@ -18,7 +18,11 @@ public final class InvidiousMediaResponse {
 
     public static final class InvalidResponseException extends HttpDataSourceException {
         public InvalidResponseException(final String message, final DataSpec dataSpec) {
-            super(new IOException(message), dataSpec,
+            this(new IOException(message), dataSpec);
+        }
+
+        public InvalidResponseException(final IOException cause, final DataSpec dataSpec) {
+            super(cause, dataSpec,
                     PlaybackException.ERROR_CODE_IO_INVALID_HTTP_CONTENT_TYPE, TYPE_OPEN);
         }
     }
