@@ -1,0 +1,6 @@
+• Use pure black navigation backgrounds in AMOLED mode.
+• Apply channel intro/outro settings during playback and respect manual seeks.
+• Prevent player hover-tooltip crashes in DeX and desktop windows.
+• Correct Odysee publication dates from SDK metadata.
+• Recover unreadable main-tab saved state.
+• Explain Invidious access denials, rate limits and outages, with guidance to switch instances.

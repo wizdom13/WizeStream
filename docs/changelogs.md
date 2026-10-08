@@ -4,6 +4,17 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.2 (`1031002`)
+
+### Fixes
+
+- Used pure black navigation backgrounds in AMOLED mode, including with Material You dynamic colors.
+- Applied saved channel intro/outro durations during playback and preserved deliberate manual seeks.
+- Prevented unsafe native player hover tooltips in DeX and desktop windows.
+- Parsed Odysee publication timestamps supplied as SDK strings, with publication metadata as a fallback.
+- Recovered unreadable main-tab saved state instead of crashing during restoration.
+- Explained Invidious API access denials, rate limits, and instance outages, with guidance for switching saved instances.
+
 ## WizeStream 1.31.1 (`1031001`)
 
 ### Improvements
