@@ -8,6 +8,8 @@ package org.schabi.newpipe.learning
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.schabi.newpipe.database.stream.model.StreamEntity
+import org.schabi.newpipe.extractor.stream.StreamType
 
 class LearningDashboardSnapshotTest {
     @Test
@@ -30,6 +32,40 @@ class LearningDashboardSnapshotTest {
         assertEquals(71, snapshot.overallPercentage)
         assertFalse(snapshot.isEmpty)
     }
+
+    @Test
+    fun lastLessonKeepsDashboardVisibleAndResumesPartialProgress() {
+        val lesson = lastLesson(120_000)
+        val snapshot = LearningDashboardSnapshot(
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            lastLesson = lesson
+        )
+        assertFalse(snapshot.isEmpty)
+        assertEquals(120_000L, lesson.resumePositionMillis)
+    }
+
+    @Test
+    fun completedLastLessonReplaysFromTheStart() {
+        assertEquals(0L, lastLesson(600_000).resumePositionMillis)
+    }
+
+    private fun lastLesson(progress: Long) = LearningLastLesson(
+        LearningDashboardStream(
+            StreamEntity(
+                serviceId = 0,
+                url = "https://example.com/lesson",
+                title = "Lesson",
+                streamType = StreamType.VIDEO_STREAM,
+                duration = 600,
+                uploader = "Teacher"
+            ),
+            progress
+        ),
+        "Course"
+    )
 
     private fun playlist(id: Long, completed: Int, eligible: Int) = LearningPlaylistSummary(id, "Playlist $id", null, eligible, completed)
 }

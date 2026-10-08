@@ -45,6 +45,18 @@
                 tools:text="Android fundamentals" />
 
             <org.schabi.newpipe.views.NewPipeTextView
+                android:id="@+id/learning_dashboard_item_course"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="Android fundamentals course" />
+
+            <org.schabi.newpipe.views.NewPipeTextView
                 android:id="@+id/learning_dashboard_item_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

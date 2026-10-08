@@ -20,14 +20,16 @@ class LearningDashboardRepository(
             dao.observeLearningContent(profileId, limit),
             dao.observeContinueLearning(profileId, limit),
             dao.observeRecentlyAnnotated(profileId, limit),
-            dao.observeDailyStudyActivity(profileId)
-        ) { playlists, learningContent, continueLearning, recentlyAnnotated, dailyActivity ->
+            dao.observeDailyStudyActivity(profileId),
+            dao.observeLastLesson(profileId)
+        ) { playlists, learningContent, continueLearning, recentlyAnnotated, dailyActivity, lastLessons ->
             LearningDashboardSnapshot(
                 playlists,
                 learningContent,
                 continueLearning,
                 recentlyAnnotated,
-                LearningStudyStatistics.from(dailyActivity)
+                LearningStudyStatistics.from(dailyActivity),
+                lastLessons.firstOrNull()
             )
         }
     }

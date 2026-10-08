@@ -37,10 +37,12 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
     private var _binding: FragmentLearningDashboardBinding? = null
     private val binding get() = _binding!!
     private val disposables = CompositeDisposable()
+    private var loadedProfileId: String? = null
     private lateinit var repository: LearningDashboardRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        loadedProfileId = ProfileManager.getActiveProfileId(requireContext())
         repository = LearningDashboardRepository(
             NewPipeDatabase.getInstance(requireContext()).learningDashboardDAO(),
             ProfileManager.getActiveProfileId(requireContext())
@@ -57,6 +59,14 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
 
     override fun onResume() {
         super.onResume()
+        if (loadedProfileId != ProfileManager.getActiveProfileId(requireContext())) {
+            loadedProfileId = ProfileManager.getActiveProfileId(requireContext())
+            repository = LearningDashboardRepository(
+                NewPipeDatabase.getInstance(requireContext()).learningDashboardDAO(),
+                requireNotNull(loadedProfileId)
+            )
+            startLoading(false)
+        }
         if (parentFragment !is org.schabi.newpipe.fragments.MainFragment) {
             setTitle(getString(R.string.learning_dashboard_title))
             if (!LearningMode.isEnabled(requireContext())) {
@@ -86,11 +96,17 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
     }
 
     override fun handleResult(result: LearningDashboardSnapshot) {
+        if (loadedProfileId != ProfileManager.getActiveProfileId(requireContext())) return
         val visibleResult = result.copy(
             playlists = if (LearningMode.isPlaylistProgressEnabled(requireContext())) {
                 result.playlists
             } else {
                 emptyList()
+            },
+            lastLesson = if (LearningMode.isPlaylistProgressEnabled(requireContext())) {
+                result.lastLesson
+            } else {
+                null
             },
             learningContent = result.learningContent,
             continueLearning = if (LearningMode.isPlaylistProgressEnabled(requireContext())) {
@@ -124,6 +140,15 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
             R.string.learning_dashboard_playlists_format,
             visibleResult.activePlaylists.size,
             visibleResult.completedPlaylists.size
+        )
+
+        renderStreamSection(
+            binding.learningDashboardLastLessonTitle,
+            binding.learningDashboardLastLessonList,
+            listOfNotNull(visibleResult.lastLesson?.lesson),
+            false,
+            visibleResult.lastLesson?.courseTitle,
+            visibleResult.lastLesson?.resumePositionMillis
         )
 
         renderStreamSection(
@@ -281,7 +306,9 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
         title: View,
         container: LinearLayout,
         streams: List<LearningDashboardStream>,
-        showNoteCount: Boolean
+        showNoteCount: Boolean,
+        courseTitle: String? = null,
+        resumePositionMillis: Long? = null
     ) {
         val visibleStreams = if (arguments?.getBoolean("all_playlists") == true) emptyList() else streams
         title.isVisible = visibleStreams.isNotEmpty()
@@ -291,6 +318,8 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
             val stream = dashboardStream.stream
             val item = ItemLearningDashboardBinding.inflate(layoutInflater, container, false)
             item.learningDashboardItemTitle.text = stream.title
+            item.learningDashboardItemCourse.isVisible = !courseTitle.isNullOrBlank()
+            item.learningDashboardItemCourse.text = courseTitle
             item.learningDashboardItemSubtitle.text = if (showNoteCount) {
                 resources.getQuantityString(
                     R.plurals.learning_dashboard_note_count,
@@ -313,18 +342,20 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
             CoilHelper.loadThumbnail(item.learningDashboardThumbnail, stream.thumbnailUrl)
             item.root.setOnClickListener {
                 val profileId = ProfileManager.getActiveProfileId(requireContext())
+                if (loadedProfileId != profileId) return@setOnClickListener
                 disposables.add(
                     LearningCourseLauncher.sources(requireContext(), stream.uid, profileId)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe({ sources ->
+                            if (ProfileManager.getActiveProfileId(requireContext()) != profileId) return@subscribe
                             if (sources.size > 1) {
                                 MaterialAlertDialogBuilder(requireContext())
                                     .setTitle(R.string.learning_choose_course)
                                     .setItems(sources.map { it.title.orEmpty() }.toTypedArray()) { _, index ->
-                                        openLesson(stream, profileId, sources[index])
+                                        openLesson(stream, profileId, sources[index], resumePositionMillis)
                                     }.show()
                             } else {
-                                openLesson(stream, profileId, sources.firstOrNull())
+                                openLesson(stream, profileId, sources.firstOrNull(), resumePositionMillis)
                             }
                         }, { error -> showError(ErrorInfo(error, UserAction.SOMETHING_ELSE, "Loading lesson course")) })
                 )
@@ -336,13 +367,15 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
     private fun openLesson(
         stream: org.schabi.newpipe.database.stream.model.StreamEntity,
         profileId: String,
-        source: org.schabi.newpipe.database.learning.model.LearningContentSourceEntity?
+        source: org.schabi.newpipe.database.learning.model.LearningContentSourceEntity?,
+        resumePositionMillis: Long?
     ) {
         disposables.add(
             LearningCourseLauncher.queue(requireContext(), stream, profileId, source)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ queue ->
                     if (ProfileManager.getActiveProfileId(requireContext()) != profileId) return@subscribe
+                    resumePositionMillis?.let { queue.setRecovery(queue.index, it) }
                     if (stream.isLocalMedia) {
                         NavigationHelper.playOnMainPlayer(requireContext(), queue, false)
                     } else {
