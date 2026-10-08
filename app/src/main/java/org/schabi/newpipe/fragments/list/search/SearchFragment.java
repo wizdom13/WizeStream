@@ -80,6 +80,7 @@ import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.ServiceHelper;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -145,6 +146,15 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @State
     int[] sortFilter = new int[0];
+
+    @State
+    String searchAfter = "";
+
+    @State
+    String searchBefore = "";
+
+    @State
+    String effectiveSearchString = "";
 
     @State
     long savedSearchFeedId = SavedSearchFeedManager.NO_SAVED_SEARCH_FEED;
@@ -603,9 +613,11 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
         if (!TextUtils.isEmpty(searchString)) {
             if (savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
-                menu.add(Menu.NONE, MENU_SAVE_SEARCH_FEED, Menu.NONE,
-                                R.string.save_search_as_feed)
-                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                if (searchAfter.isEmpty() && searchBefore.isEmpty()) {
+                    menu.add(Menu.NONE, MENU_SAVE_SEARCH_FEED, Menu.NONE,
+                                    R.string.save_search_as_feed)
+                            .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                }
             } else {
                 menu.add(Menu.NONE, MENU_REFRESH_SEARCH_FEED, Menu.NONE,
                                 R.string.refresh_saved_search_feed)
@@ -1117,6 +1129,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                                 theSearchString, serviceId))
                 ));
 
+        effectiveSearchString = SearchDateRange.query(searchString,
+                searchAfter, searchBefore, LocalDate.now());
+        nextPage = null;
+
         // load search results
         suggestionPublisher.onNext(theSearchString);
         startLoading(false);
@@ -1136,7 +1152,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             searchDisposable.dispose();
         }
         searchDisposable = ExtractorHelper.searchForFilters(serviceId,
-                searchString,
+                getEffectiveSearchString(),
                 Arrays.asList(contentFilter),
                 getSelectedSortFilterIds())
                 .subscribeOn(Schedulers.io())
@@ -1158,7 +1174,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
         searchDisposable = ExtractorHelper.getMoreSearchItems(
                 serviceId,
-                searchString,
+                getEffectiveSearchString(),
                 asList(contentFilter),
                 getSelectedSortFilterIds(),
                 nextPage)
@@ -1204,7 +1220,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             return null;
         }
         try {
-            return service.getSearchQHFactory().getUrl(searchString,
+            return service.getSearchQHFactory().getUrl(getEffectiveSearchString(),
                     ExtractorHelper.resolveFilterItems(
                             service.getSearchQHFactory().getAvailableContentFilter(),
                             Arrays.asList(contentFilter)),
@@ -1220,6 +1236,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     // Utils
     //////////////////////////////////////////////////////////////////////////*/
 
+    private String getEffectiveSearchString() {
+        return effectiveSearchString.isEmpty() ? searchString : effectiveSearchString;
+    }
+
     private void showSearchFilterDialog() {
         if (service == null) {
             updateService();
@@ -1227,20 +1247,33 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (service == null || !SearchFilterDialog.hasFilters(service)) {
             return;
         }
-        SearchFilterDialog.show(requireContext(), service, contentFilter, sortFilter,
+        SearchFilterDialog.showAdvanced(requireContext(), service, contentFilter, sortFilter,
                 serviceId == ServiceList.YouTube.getServiceId()
                         && ServiceHelper.isYoutubeMusicMode(requireContext()),
-                this::applySearchFilters);
+                searchAfter, searchBefore,
+                (selectedContent, selectedSort, after, before) -> {
+                    final boolean datesChanged = !searchAfter.equals(after)
+                            || !searchBefore.equals(before);
+                    searchAfter = after;
+                    searchBefore = before;
+                    applySearchFilters(selectedContent, selectedSort, datesChanged);
+                });
     }
 
     private void applySearchFilters(@NonNull final String selectedContentFilter,
                                     @NonNull final List<Integer> selectedSortFilters) {
+        applySearchFilters(selectedContentFilter, selectedSortFilters, false);
+    }
+
+    private void applySearchFilters(@NonNull final String selectedContentFilter,
+                                    @NonNull final List<Integer> selectedSortFilters,
+                                    final boolean datesChanged) {
         final boolean contentFilterUnchanged = contentFilter.length == 1
                 && selectedContentFilter.equals(contentFilter[0]);
         final int[] newSortFilters = selectedSortFilters.stream()
                 .mapToInt(Integer::intValue)
                 .toArray();
-        if (contentFilterUnchanged && Arrays.equals(sortFilter, newSortFilters)) {
+        if (!datesChanged && contentFilterUnchanged && Arrays.equals(sortFilter, newSortFilters)) {
             return;
         }
         if (savedSearchFeedId != SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {

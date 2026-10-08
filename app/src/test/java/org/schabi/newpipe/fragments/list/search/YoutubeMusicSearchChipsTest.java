@@ -67,7 +67,6 @@ public class YoutubeMusicSearchChipsTest {
                 "SearchFilterDialog.getContentFilters(service, true)"));
         assertTrue(searchFragment.contains(
                 "applySearchFilters((String) selectedChip.getTag(), Collections.emptyList())"));
-        assertTrue(searchFragment.contains("this::applySearchFilters"));
         assertTrue(searchFragment.contains(
                 "searchFilter.setVisibility(hasFilters && !showMusicFilterChips"));
     }
