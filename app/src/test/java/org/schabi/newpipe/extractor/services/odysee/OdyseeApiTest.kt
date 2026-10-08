@@ -104,7 +104,7 @@ class OdyseeApiTest {
                 put("claim_id", "abc")
                 put("name", "video")
                 put("timestamp", 1_790_000_000L)
-                put("value", JsonObject().apply { put("release_time", 1_600_000_000L) })
+                put("value", JsonObject().apply { put("release_time", "1600000000") })
             }
         )
         val info = StreamInfo.getInfo(ServiceList.Odysee, REPORTED_URL)
