@@ -42,7 +42,7 @@ internal class PlayerSeekController(private val player: Player) {
     }
 
     fun seekTo(positionMillis: Long) {
-        player.channelSkipController.manualSeek()
+        player.channelSkipController.manualSeek(positionMillis)
         if (Player.DEBUG) {
             Log.d(Player.TAG, "seekBy() called with: position = [$positionMillis]")
         }
@@ -53,7 +53,7 @@ internal class PlayerSeekController(private val player: Player) {
     }
 
     fun seekToDefault() {
-        player.channelSkipController.manualSeek()
+        player.channelSkipController.manualSeek(0)
         if (!player.exoPlayerIsNull()) {
             player.exoPlayer.seekToDefaultPosition()
         }

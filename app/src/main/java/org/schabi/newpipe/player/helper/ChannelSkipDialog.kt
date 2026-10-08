@@ -12,7 +12,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo
 
 object ChannelSkipDialog {
     @JvmStatic
-    fun show(context: Context, info: StreamInfo) {
+    fun show(context: Context, info: StreamInfo, onSaved: Runnable) {
         if (!ChannelSkipPreferences.isAvailable(info)) return
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -45,6 +45,7 @@ object ChannelSkipDialog {
                 end.error = if (endValue == null || endValue !in 0..ChannelSkipPreferences.MAX_SECONDS) error else null
                 if (start.error == null && end.error == null) {
                     ChannelSkipPreferences.save(context, info, startValue!!, endValue!!)
+                    onSaved.run()
                     dialog.dismiss()
                 }
             }

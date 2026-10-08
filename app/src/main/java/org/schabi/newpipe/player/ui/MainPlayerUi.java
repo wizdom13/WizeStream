@@ -1061,7 +1061,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                         .withChannelSkippingAction(player.getCurrentStreamInfo()
                                 .filter(info -> info.getStreamType() == StreamType.VIDEO_STREAM
                                         && ChannelSkipPreferences.isAvailable(info))
-                                .<Runnable>map(info -> () -> ChannelSkipDialog.show(activity, info))
+                                .<Runnable>map(info -> () -> ChannelSkipDialog.show(activity, info,
+                                        () -> player.onChannelSkipSettingsChanged(info)))
                                 .orElse(null))
                         .show(activity.getSupportFragmentManager(), null));
     }
