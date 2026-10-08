@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1031002">WizeStream 1.31.2</a></li>
 <li><a href="#release-1031001">WizeStream 1.31.1</a></li>
 <li><a href="#release-1031000">WizeStream 1.31.0</a></li>
 <li><a href="#release-1030000">WizeStream 1.30.0</a></li>
@@ -89,6 +90,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1031002" data-version="1.31.2" data-version-code="1031002">
+<h2>WizeStream 1.31.2</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Replaced the long search filter popup with compact chips in expandable sections.</li>
+<li>Added saved filter presets with load, update, and delete actions, separated by profile, service, and YouTube Music mode.</li>
+<li>Added custom YouTube upload-date ranges and relative days, weeks, months, and years, resolved once per search and retained across pagination.</li>
+<li>Added longest-first and shortest-first search result ordering with optional minimum and maximum durations in hours.</li>
+<li>Added cancellable deeper search with progress, retained partial results, duplicate removal, and bounded collection of additional pages.</li>
+<li>Added a Last lesson watched card to Learning progress, with course context and progress, resuming unfinished lessons and replaying completed lessons.</li>
+<li>Updated the Subscribe button with theme-aware outlined and filled states for light, dark, AMOLED, and Material You palettes.</li>
+<li>Added support for proxied Invidious DASH-only livestream manifests while retaining instance-only media requests.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Prevented native player hover tooltips from crashing in DeX and other desktop windows.</li>
+<li>Kept navigation surfaces and their system-bar backing pure black in AMOLED mode.</li>
+<li>Applied updated per-channel intro and outro skip settings during playback, including after pause and resume.</li>
+<li>Parsed Odysee publication timestamps supplied as SDK strings.</li>
+<li>Recovered safely from unreadable main-tab saved state.</li>
+<li>Explained Invidious API access failures and unusable media or manifest responses with instance-switching guidance.</li>
+<li>Prevented truncated DASH XML from stalling manifest parsing and retained network-error handling.</li>
+</ul>
+</div>
+</section>
 <section id="release-1031001" data-version="1.31.1" data-version-code="1031001">
 <h2>WizeStream 1.31.1</h2>
 <div class="release-notes">
