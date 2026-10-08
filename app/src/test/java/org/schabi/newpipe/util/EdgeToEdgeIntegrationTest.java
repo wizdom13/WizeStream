@@ -164,7 +164,8 @@ public class EdgeToEdgeIntegrationTest {
             assertTrue(layoutPath, navigationStart > scrimStart);
             assertTrue(layoutPath, navigationRailStart > scrimStart);
             assertTrue(layoutPath,
-                    layout.contains("android:background=\"?attr/colorSurfaceContainer\""));
+                    layout.contains(
+                            "android:background=\"?attr/main_navigation_background_color\""));
         }
     }
 

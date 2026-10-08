@@ -52,7 +52,8 @@ public class MainBottomNavigationLayoutTest {
         assertTrue(layout.contains("android:id=\"@+id/main_bottom_navigation\""));
         assertFalse(layout.contains(
                 "android:layout_marginStart=\"@dimen/main_navigation_rail_width\""));
-        assertTrue(layout.contains("android:background=\"?attr/colorSurfaceContainer\""));
+        assertTrue(layout.contains(
+                "android:background=\"?attr/main_navigation_background_color\""));
         assertTrue(layout.contains("android:elevation=\"0dp\""));
         assertTrue(layout.contains("app:labelVisibilityMode=\"labeled\""));
         assertTrue(settings.contains(

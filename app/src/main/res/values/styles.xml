@@ -16,6 +16,7 @@
 
     <!-- Base Theme -->
     <style name="Base.V21" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="main_navigation_background_color">?attr/colorSurfaceContainer</item>
         <item name="actionColor">?attr/colorOnSurface</item>
         <item name="floatingActionButtonStyle">@style/FloatingActionButtonTheme</item>
         <item name="snackbarStyle">@style/Widget.wizestream.Snackbar</item>
@@ -129,6 +130,7 @@
 
     <!-- Black Theme -->
     <style name="Base.V21.BlackTheme" parent="DarkTheme">
+        <item name="main_navigation_background_color">@color/black_background_color</item>
         <item name="android:windowBackground">@color/black_background_color</item>
         <item name="windowBackground">@color/black_background_color</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
@@ -166,6 +168,7 @@
 
     <!-- Preserve AMOLED-black surfaces after Material You supplies the accent palette. -->
     <style name="ThemeOverlay_wizestream_BlackSurfaces">
+        <item name="main_navigation_background_color">@color/black_background_color</item>
         <item name="android:windowBackground">@color/black_background_color</item>
         <item name="windowBackground">@color/black_background_color</item>
         <item name="android:statusBarColor">@color/black_background_color</item>

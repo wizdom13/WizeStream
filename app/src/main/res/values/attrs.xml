@@ -12,6 +12,7 @@
     <attr name="separator_color" format="color" />
     <attr name="contrast_background_color" format="color" />
     <attr name="windowBackground" format="color" />
+    <attr name="main_navigation_background_color" format="reference|color" />
     <attr name="colorPrimary" format="color" />
     <attr name="colorPrimaryFixedDim" format="color" />
     <attr name="toolbarSearchColor" format="reference|color" />
