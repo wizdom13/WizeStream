@@ -139,8 +139,9 @@
                         app:tint="?attr/colorOnSurface"
                         tools:visibility="visible" />
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/channel_subscribe_button"
+                        style="@style/Widget.WizeStream.SubscribeButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/subscribe_button_title"

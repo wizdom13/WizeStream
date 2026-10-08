@@ -1,8 +1,6 @@
 package org.schabi.newpipe.fragments.list.channel;
 
-import static org.schabi.newpipe.ktx.TextViewUtils.animateTextColor;
 import static org.schabi.newpipe.ktx.ViewUtils.animate;
-import static org.schabi.newpipe.ktx.ViewUtils.animateBackgroundColor;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -21,8 +19,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.core.graphics.ColorUtils;
 import androidx.core.view.MenuProvider;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
@@ -66,7 +62,6 @@ import org.schabi.newpipe.util.ExpandableSearchViewHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.StateSaver;
-import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
@@ -520,31 +515,9 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     + "isSubscribed = [" + isSubscribed + "]");
         }
 
-        final boolean isButtonVisible = binding.channelSubscribeButton.getVisibility()
-                == View.VISIBLE;
-        final int backgroundDuration = isButtonVisible ? 300 : 0;
-        final int textDuration = isButtonVisible ? 200 : 0;
-
-        final int subscribedBackground = ContextCompat
-                .getColor(activity, R.color.subscribed_background_color);
-        final int subscribedText = ContextCompat.getColor(activity, R.color.subscribed_text_color);
-        final int subscribeBackground = ColorUtils.blendARGB(ThemeHelper
-                .resolveColorFromAttr(activity, R.attr.colorPrimary), subscribedBackground, 0.35f);
-        final int subscribeText = ContextCompat.getColor(activity, R.color.subscribe_text_color);
-
-        if (isSubscribed) {
-            binding.channelSubscribeButton.setText(R.string.subscribed_button_title);
-            animateBackgroundColor(binding.channelSubscribeButton, backgroundDuration,
-                    subscribeBackground, subscribedBackground);
-            animateTextColor(binding.channelSubscribeButton, textDuration, subscribeText,
-                    subscribedText);
-        } else {
-            binding.channelSubscribeButton.setText(R.string.subscribe_button_title);
-            animateBackgroundColor(binding.channelSubscribeButton, backgroundDuration,
-                    subscribedBackground, subscribeBackground);
-            animateTextColor(binding.channelSubscribeButton, textDuration, subscribedText,
-                    subscribeText);
-        }
+        binding.channelSubscribeButton.setActivated(isSubscribed);
+        binding.channelSubscribeButton.setText(isSubscribed
+                ? R.string.subscribed_button_title : R.string.subscribe_button_title);
 
         animate(binding.channelSubscribeButton, true, 100, AnimationType.LIGHT_SCALE_AND_ALPHA);
     }
