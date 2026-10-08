@@ -1,12 +1,15 @@
 package org.schabi.newpipe.player
 
 import android.app.Application
+import android.net.Uri
 import android.os.Looper
 import androidx.media3.common.PlaybackException
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import java.io.ByteArrayInputStream
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
@@ -20,6 +23,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 import org.schabi.newpipe.R
 import org.schabi.newpipe.player.datasource.InvidiousMediaResponse
+import org.schabi.newpipe.player.helper.InvidiousDashManifestParser
 import org.schabi.newpipe.player.playqueue.PlayQueue
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
 import org.schabi.newpipe.player.video.VideoAdjustmentController
@@ -29,6 +33,26 @@ import org.schabi.newpipe.player.video.VideoAdjustmentController
 class InvidiousMediaErrorTest {
     @Test
     fun instanceErrorPausesWithoutSkippingOrRetryingAndExplainsTheFailure() {
+        assertInstanceErrorHandling(
+            InvidiousMediaResponse.InvalidResponseException(
+                "Invidious returned HTML instead of media",
+                DataSpec.Builder().setUri("https://example.org/stream").build()
+            )
+        )
+    }
+
+    @Test
+    fun unusableDashManifestPausesAndExplainsTheInstanceFailure() {
+        val response = assertThrows(InvidiousMediaResponse.InvalidResponseException::class.java) {
+            InvidiousDashManifestParser().parse(
+                Uri.parse("https://example.org/live.mpd"),
+                ByteArrayInputStream("<MPD><Period>".toByteArray())
+            )
+        }
+        assertInstanceErrorHandling(response)
+    }
+
+    private fun assertInstanceErrorHandling(response: InvidiousMediaResponse.InvalidResponseException) {
         val context = RuntimeEnvironment.getApplication()
         val player = mock(Player::class.java)
         val engine = mock(ExoPlayer::class.java)
@@ -38,10 +62,6 @@ class InvidiousMediaErrorTest {
         `when`(player.exoPlayer).thenReturn(engine)
         `when`(player.playQueue).thenReturn(queue)
         `when`(player.videoAdjustments).thenReturn(mock(VideoAdjustmentController::class.java))
-        val response = InvidiousMediaResponse.InvalidResponseException(
-            "Invidious returned HTML instead of media",
-            DataSpec.Builder().setUri("https://example.org/stream").build()
-        )
         val error = PlaybackException("Source error", response, response.reason)
         PlayerErrorController(player, dispatcher, mock(VideoPlaybackResolver::class.java)).onPlayerError(error)
         shadowOf(Looper.getMainLooper()).idle()

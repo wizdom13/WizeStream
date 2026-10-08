@@ -158,7 +158,12 @@ public class PlayerDataSource {
         final DataSource.Factory factory = restrictInstance
                 ? InvidiousDataSource.restrict(cachelessDataSourceFactory)
                         : cachelessDataSourceFactory;
-        return new DashMediaSource.Factory(getDefaultDashChunkSourceFactory(factory), factory);
+        final DashMediaSource.Factory mediaSourceFactory = new DashMediaSource.Factory(
+                getDefaultDashChunkSourceFactory(factory), factory);
+        if (restrictInstance) {
+            mediaSourceFactory.setManifestParser(new InvidiousDashManifestParser());
+        }
+        return mediaSourceFactory;
     }
 
     public DashMediaSource.Factory getLiveYoutubeDashMediaSourceFactory() {
@@ -196,7 +201,12 @@ public class PlayerDataSource {
     public DashMediaSource.Factory getDashMediaSourceFactory(final boolean restrictInstance) {
         final DataSource.Factory factory = restrictInstance
                 ? InvidiousDataSource.restrict(cacheDataSourceFactory) : cacheDataSourceFactory;
-        return new DashMediaSource.Factory(getDefaultDashChunkSourceFactory(factory), factory);
+        final DashMediaSource.Factory mediaSourceFactory = new DashMediaSource.Factory(
+                getDefaultDashChunkSourceFactory(factory), factory);
+        if (restrictInstance) {
+            mediaSourceFactory.setManifestParser(new InvidiousDashManifestParser());
+        }
+        return mediaSourceFactory;
     }
 
     public HlsMediaSource.Factory getNiconicoHlsMediaSourceFactory(final String cookie) {

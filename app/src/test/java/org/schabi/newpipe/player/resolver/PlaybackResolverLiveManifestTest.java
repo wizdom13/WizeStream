@@ -10,11 +10,13 @@ import static org.mockito.Mockito.when;
 
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
+import androidx.media3.exoplayer.dash.DashMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.schabi.newpipe.extractor.ServiceList;
+import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -86,6 +88,25 @@ public class PlaybackResolverLiveManifestTest {
         assertNotNull(source);
         assertTrue(source instanceof HlsMediaSource);
         verify(dataSource, never()).getLiveYoutubeDashMediaSourceFactory();
+    }
+
+    @Test
+    public void invidiousDashOnlyLiveUsesRestrictedInstanceFactory() {
+        InvidiousBackend.configure(true, "https://example.com");
+        try {
+            final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+            info.setHlsUrl("");
+            final PlayerDataSource dataSource = mock(PlayerDataSource.class);
+            when(dataSource.getLiveDashMediaSourceFactory(true)).thenReturn(
+                    new DashMediaSource.Factory(new DefaultHttpDataSource.Factory()));
+            final MediaSource source = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info);
+            assertTrue(source instanceof DashMediaSource);
+            verify(dataSource).getLiveDashMediaSourceFactory(true);
+            verify(dataSource, never()).getLiveYoutubeDashMediaSourceFactory();
+            verify(dataSource, never()).getLiveHlsMediaSourceFactory(true);
+        } finally {
+            InvidiousBackend.configure(false, "");
+        }
     }
 
     private static StreamInfo createLiveInfo(final int serviceId) {
