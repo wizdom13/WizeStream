@@ -10,6 +10,7 @@ import static com.google.android.material.tabs.TabLayout.INDICATOR_GRAVITY_TOP;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.BadParcelableException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -1152,31 +1153,43 @@ public class MainFragment extends BaseFragment
             }
 
             final Bundle saved = (Bundle) state;
-            if (!matchesTabState(saved, profileId, internalTabsList)) {
-                // FragmentStatePagerAdapter keys its fragments and saved states by position.
-                // A hidden Learning tab shifts those positions; a profile switch also changes
-                // which data the fragments may display. Never restore either stale catalog.
-                final var transaction = fragmentManager.beginTransaction();
-                for (final String key : saved.keySet()) {
-                    if (key.matches("f[0-9]+")) {
-                        try {
-                            final Fragment fragment = fragmentManager.getFragment(saved, key);
-                            if (fragment != null) {
-                                transaction.remove(fragment);
+            final ClassLoader stateLoader = resolveStateClassLoader(loader);
+            saved.setClassLoader(stateLoader);
+            try {
+                if (!matchesTabState(saved, profileId, internalTabsList)) {
+                    // FragmentStatePagerAdapter keys its fragments and saved states by position.
+                    // A hidden Learning tab shifts those positions; a profile switch also changes
+                    // which data the fragments may display. Never restore either stale catalog.
+                    final var transaction = fragmentManager.beginTransaction();
+                    for (final String key : saved.keySet()) {
+                        if (key.matches("f[0-9]+")) {
+                            try {
+                                final Fragment fragment = fragmentManager.getFragment(saved, key);
+                                if (fragment != null) {
+                                    transaction.remove(fragment);
+                                }
+                            } catch (final IllegalStateException ignored) {
+                                // The fragment was already discarded by FragmentManager.
                             }
-                        } catch (final IllegalStateException ignored) {
-                            // The fragment was already discarded by FragmentManager.
                         }
                     }
+                    transaction.commitAllowingStateLoss();
+                    return;
                 }
-                transaction.commitAllowingStateLoss();
-                return;
+                super.restoreState(removeMissingFragmentEntries(
+                        saved,
+                        stateLoader,
+                        (bundle, key) -> fragmentManager.getFragment(bundle, key)
+                ), stateLoader);
+            } catch (final BadParcelableException e) {
+                Log.w("MainFragment", "Discarding unreadable main-tab pager state", e);
             }
-            super.restoreState(removeMissingFragmentEntries(
-                    saved,
-                    loader,
-                    (bundle, key) -> fragmentManager.getFragment(bundle, key)
-            ), loader);
+        }
+
+        @NonNull
+        @VisibleForTesting
+        static ClassLoader resolveStateClassLoader(@Nullable final ClassLoader loader) {
+            return loader != null ? loader : Fragment.class.getClassLoader();
         }
 
         @VisibleForTesting
@@ -1185,7 +1198,7 @@ public class MainFragment extends BaseFragment
                 @Nullable final ClassLoader loader,
                 @NonNull final FragmentStateValidator validator) {
             final Bundle cleanedState = new Bundle(state);
-            cleanedState.setClassLoader(loader);
+            cleanedState.setClassLoader(resolveStateClassLoader(loader));
             for (final String key : new ArrayList<>(cleanedState.keySet())) {
                 if (!key.startsWith("f")) {
                     continue;
