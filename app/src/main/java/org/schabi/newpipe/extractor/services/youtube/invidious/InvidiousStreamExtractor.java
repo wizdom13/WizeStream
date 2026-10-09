@@ -35,6 +35,15 @@ public final class InvidiousStreamExtractor extends StreamExtractor {
     @Override
     public void onFetchPage(final Downloader downloader) throws IOException, ExtractionException {
         video = api.object(api.url("videos/" + InvidiousApi.encode(getId()) + "?local=true"));
+        final JsonArray formats = video.getArray("formatStreams");
+        final JsonArray adaptive = video.getArray("adaptiveFormats");
+        if ((formats == null || formats.isEmpty())
+                && (adaptive == null || adaptive.isEmpty())
+                && video.getString("hlsUrl", "").isEmpty()
+                && video.getString("dashUrl", "").isEmpty()) {
+            throw new ExtractionException("Invidious returned video metadata without any media"
+                    + " formats or HLS/DASH manifests. Try another saved Invidious instance.");
+        }
     }
 
     @Override

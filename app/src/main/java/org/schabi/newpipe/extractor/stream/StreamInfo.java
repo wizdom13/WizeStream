@@ -226,8 +226,14 @@ public class StreamInfo extends Info {
         // available for livestreams.
         if (streamInfo.videoStreams.isEmpty() && streamInfo.audioStreams.isEmpty()
                 && isNullOrEmpty(streamInfo.dashMpdUrl) && isNullOrEmpty(streamInfo.hlsUrl)) {
-            throw new StreamExtractException(
-                    "Could not get any stream. See error variable to get further details.");
+            final StreamExtractException failure = new StreamExtractException(
+                    "Could not get any playable stream or manifest.");
+            // The StreamInfo object cannot reach the caller after extraction fails. Carry its
+            // individual stream/manifest errors into the exception and copied crash report.
+            for (final Throwable error : streamInfo.getErrors()) {
+                failure.addSuppressed(error);
+            }
+            throw failure;
         }
     }
 

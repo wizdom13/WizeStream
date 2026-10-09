@@ -58,23 +58,29 @@ final class InvidiousApi {
 
     private static String errorDetail(final String body) {
         try {
-            final String error = JsonParser.object().from(body).getString("error", "")
-                    .replaceAll("https?://[^\\s\"]+", "[URL]")
-                    .replaceAll("[\\r\\n\\t]+", " ");
-            if (!error.isEmpty()) {
-                return ": " + error.substring(0, Math.min(error.length(), 240));
-            }
+            return sanitizedError(JsonParser.object().from(body).get("error"));
         } catch (final JsonParserException ignored) {
             // Error pages can be HTML or plain text; do not include their bodies in reports.
         }
         return "";
     }
 
+    private static String sanitizedError(final Object value) {
+        if (value == null) {
+            return "";
+        }
+        final String error = value.toString()
+                .replaceAll("(?i)https?://[^\\s\"]+", "[URL]")
+                .replaceAll("[\\r\\n\\t]+", " ");
+        return error.isEmpty() ? "" : ": " + error.substring(0, Math.min(error.length(), 240));
+    }
+
     JsonObject object(final String url) throws IOException, ExtractionException {
         try {
             final JsonObject result = JsonParser.object().from(body(url));
-            if (result.get("error") != null && !result.get("error").toString().isEmpty()) {
-                throw new ExtractionException("Invidious: " + result.get("error"));
+            final String error = sanitizedError(result.get("error"));
+            if (!error.isEmpty()) {
+                throw new ExtractionException("Invidious" + error);
             }
             return result;
         } catch (final JsonParserException e) {
