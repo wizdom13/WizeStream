@@ -4,12 +4,16 @@ import org.schabi.newpipe.extractor.Page
 
 /** Bounds background collection and rejects repeated continuation tokens. */
 class SearchPageBudget(val maximumPages: Int) {
+    companion object {
+        const val MAX_PAGES = 250
+    }
+
     var completedPages = 0
         private set
     private val requested = mutableSetOf<String>()
 
     init {
-        require(maximumPages in 1..250)
+        require(maximumPages in 1..MAX_PAGES)
     }
 
     fun request(page: Page?, collectedItems: Int): Boolean {

@@ -195,6 +195,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private final List<InfoItem> collectedSearchItems = new ArrayList<>();
     private SearchPageBudget deepSearchBudget;
     private boolean deepSearchRunning;
+    private long deepSearchDelayMillis = DeepSearchOptions.DEFAULT_DELAY_MILLIS;
     private Disposable searchDisposable;
     private Disposable suggestionDisposable;
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -1345,18 +1346,31 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 .setPositiveButton(R.string.search_deep_choose, (dialog, which) ->
                         new MaterialAlertDialogBuilder(requireContext())
                                 .setTitle(R.string.search_deep_choose)
-                                .setItems(new CharSequence[]{"25", "100", "250"},
-                                        (choice, index) -> startDeepSearch(
-                                                new int[]{25, 100, 250}[index])).show())
+                                .setItems(new CharSequence[]{"25", "100", "250",
+                                        getString(R.string.search_deep_custom)},
+                                        (choice, index) -> {
+                                            if (index == 3) {
+                                                DeepSearchDialog.show(requireContext(),
+                                                        this::startDeepSearch);
+                                            } else {
+                                                startDeepSearch(new int[]{25, 100, 250}[index],
+                                                        DeepSearchOptions.DEFAULT_DELAY_MILLIS);
+                                            }
+                                        }).show())
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
-    private void startDeepSearch(final int pages) {
+    private void startDeepSearch(final int pages, final long delayMillis) {
         if (isLoading.get() || !Page.isValid(nextPage) || searchBinding == null
                 || collectedSearchItems.size() >= 5000) {
             return;
         }
+        if (delayMillis < DeepSearchOptions.MIN_DELAY_MILLIS
+                || delayMillis > DeepSearchOptions.MAX_DELAY_MILLIS) {
+            return;
+        }
+        deepSearchDelayMillis = delayMillis;
         deepSearchBudget = new SearchPageBudget(pages);
         deepSearchRunning = true;
         loadDeepSearchPage();
@@ -1379,11 +1393,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (searchDisposable != null) {
             searchDisposable.dispose();
         }
-        searchDisposable = ExtractorHelper.getMoreSearchItems(serviceId,
-                getEffectiveSearchString(), asList(contentFilter), getSelectedSortFilterIds(),
-                nextPage)
-                .subscribeOn(Schedulers.io())
-                .delay(300, TimeUnit.MILLISECONDS)
+        final long delay = deepSearchBudget.getCompletedPages() == 0
+                ? 0 : deepSearchDelayMillis;
+        searchDisposable = Single.timer(delay, TimeUnit.MILLISECONDS, Schedulers.io())
+                .flatMap(ignored -> ExtractorHelper.getMoreSearchItems(serviceId,
+                        getEffectiveSearchString(), asList(contentFilter),
+                        getSelectedSortFilterIds(), nextPage))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     if (!deepSearchRunning || searchBinding == null) {
