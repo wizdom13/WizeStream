@@ -19,7 +19,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.preference.PreferenceManager;
 
 import com.evernote.android.state.State;
-import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.slider.Slider;
 import com.livefront.bridge.Bridge;
@@ -366,7 +366,7 @@ public class PlaybackParameterDialog extends DialogFragment {
         final Map<Boolean, TextView> pitchCtrlModeComponentMapping =
                 getPitchControlModeComponentMappings();
         pitchCtrlModeComponentMapping.forEach((value, view) ->
-                ((MaterialButton) view).setChecked(value == semitones));
+                ((Chip) view).setChecked(value == semitones));
 
         // Show or hide component
         binding.pitchPercentControl.setVisibility(semitones ? View.GONE : View.VISIBLE);
@@ -435,7 +435,7 @@ public class PlaybackParameterDialog extends DialogFragment {
         // Bring all textviews into a normal state
         final Map<Float, TextView> stepSiteComponentMapping = getStepSizeComponentMappings();
         stepSiteComponentMapping.forEach((value, view) ->
-                ((MaterialButton) view).setChecked(value == newStepSize));
+                ((Chip) view).setChecked(value == newStepSize));
 
         // Bind to the corresponding control components
         binding.tempoStepUp.setText(getStepUpPercentString(newStepSize));
