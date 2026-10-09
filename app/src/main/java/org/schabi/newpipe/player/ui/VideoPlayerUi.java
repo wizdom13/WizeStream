@@ -143,6 +143,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private PopupMenu audioTrackPopupMenu;
     protected PopupMenu playbackSpeedPopupMenu;
     private PopupMenu captionPopupMenu;
+    private final PlayerPopupMenu playerPopupMenu = new PlayerPopupMenu();
     /*//////////////////////////////////////////////////////////////////////////
     // Gestures
     //////////////////////////////////////////////////////////////////////////*/
@@ -1549,14 +1550,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     protected void showPopupMenu(final PopupMenu menu, final View anchor) {
-        isSomePopupMenuVisible = PlayerPopupMenu.show(menu, anchor);
+        dismissPopupMenus();
+        isSomePopupMenuVisible = playerPopupMenu.show(menu, anchor, () -> onDismiss(menu));
     }
 
     protected void dismissPopupMenus() {
         dismissingPopupMenus = true;
         try {
-            PlayerPopupMenu.dismissAll(qualityPopupMenu, audioTrackPopupMenu,
-                    playbackSpeedPopupMenu, captionPopupMenu);
+            playerPopupMenu.dismiss();
         } finally {
             isSomePopupMenuVisible = false;
             dismissingPopupMenus = false;
