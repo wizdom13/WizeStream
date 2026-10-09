@@ -390,4 +390,44 @@ public class InvidiousExtractionTest {
         }
     }
 
+    @Test
+    public void missingMediaResponseExplainsTheInstanceFailureWithoutFallback() {
+        responseBody = ITEM;
+        final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                StreamInfo.getInfo(ServiceList.YouTube,
+                        "https://www.youtube.com/watch?v=" + VIDEO));
+        assertTrue(error.getMessage().contains("without any media formats"));
+        assertTrue(error.getMessage().contains("another saved Invidious instance"));
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    public void copiedStreamReportIncludesTheRejectedProxyUrlCauseWithoutItsUrl() {
+        responseBody = ITEM.substring(0, ITEM.length() - 1)
+                + ",\"formatStreams\":[{\"itag\":\"18\",\"type\":\"video/mp4\","
+                + "\"url\":\"https://rr1.googlevideo.com/videoplayback?token=private\"}]}";
+        final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                StreamInfo.getInfo(ServiceList.YouTube,
+                        "https://www.youtube.com/watch?v=" + VIDEO));
+        assertTrue(error instanceof StreamInfo.StreamExtractException);
+        final var report = new java.io.StringWriter();
+        error.printStackTrace(new java.io.PrintWriter(report));
+        assertTrue(report.toString().contains("must proxy media locally"));
+        assertFalse(report.toString().contains("token=private"));
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    public void successfulHttpApiErrorsAlsoRedactAndBoundDiagnosticDetails() {
+        responseBody = "{\"error\":\"Cannot fetch HTTPS://example.org/stream?token=private "
+                + "x".repeat(400) + "\"}";
+        final ExtractionException error = assertThrows(ExtractionException.class, () ->
+                StreamInfo.getInfo(ServiceList.YouTube,
+                        "https://www.youtube.com/watch?v=" + VIDEO));
+        assertTrue(error.getMessage().contains("Invidious: Cannot fetch [URL]"));
+        assertFalse(error.getMessage().contains("private"));
+        assertTrue(error.getMessage().length() < 300);
+        assertEquals(1, requests.size());
+    }
+
 }

@@ -2,11 +2,14 @@ package org.schabi.newpipe.extractor.stream;
 
 import org.junit.jupiter.api.Test;
 import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.extractor.exceptions.ParsingException;
 
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +54,29 @@ class StreamInfoTest {
 
         assertThrows(StreamInfo.StreamExtractException.class,
                 () -> StreamInfo.getInfo(extractor));
+    }
+
+    @Test
+    void failedStreamReportRetainsAllManifestAndFormatCauses() throws Exception {
+        final StreamExtractor extractor = createExtractor();
+        final ParsingException dash = new ParsingException("DASH proxy refused");
+        final ExtractionException audio = new ExtractionException("Audio format malformed");
+        final ExtractionException video = new ExtractionException("Media URL is not proxied");
+        when(extractor.getDashMpdUrl()).thenThrow(dash);
+        when(extractor.getAudioStreams()).thenThrow(audio);
+        when(extractor.getVideoStreams()).thenThrow(video);
+
+        final var failure = assertThrows(StreamInfo.StreamExtractException.class,
+                () -> StreamInfo.getInfo(extractor));
+
+        assertEquals(3, failure.getSuppressed().length);
+        assertSame(dash, failure.getSuppressed()[0].getCause());
+        assertSame(audio, failure.getSuppressed()[1].getCause());
+        assertSame(video, failure.getSuppressed()[2].getCause());
+        final var report = new java.io.StringWriter();
+        failure.printStackTrace(new java.io.PrintWriter(report));
+        org.junit.jupiter.api.Assertions.assertTrue(report.toString()
+                .contains("Media URL is not proxied"));
     }
 
     private static StreamExtractor createExtractor() throws Exception {
