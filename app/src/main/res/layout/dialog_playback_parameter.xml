@@ -4,11 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
     android:clickable="false"
-    android:paddingStart="6dp"
-    android:paddingTop="4dp"
-    android:paddingEnd="6dp">
+    android:paddingStart="24dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="8dp"
+    android:paddingEnd="24dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -25,7 +25,7 @@
             android:layout_centerHorizontal="true"
             android:gravity="center"
             android:text="@string/playback_tempo"
-            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             android:textColor="?attr/colorOnSurface" />
 
         <RelativeLayout
@@ -97,14 +97,18 @@
                     tools:ignore="HardcodedText"
                     tools:text="300%" />
 
-                <androidx.appcompat.widget.AppCompatSeekBar
+                <com.google.android.material.slider.Slider
                     android:id="@+id/tempoSeekbar"
-                    style="@style/PlaybackParameterSeekBar"
+                    style="@style/Widget.Material3.Slider"
+                        android:valueFrom="0"
+                        android:valueTo="10000"
+                        android:stepSize="1"
+                        app:labelBehavior="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_below="@id/tempoCurrentText"
                     android:paddingBottom="2dp"
-                    tools:progress="50" />
+                     />
             </RelativeLayout>
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -144,13 +148,13 @@
             android:layout_centerHorizontal="true"
             android:gravity="center"
             android:text="@string/playback_pitch"
-            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             android:textColor="?attr/colorOnSurface" />
 
         <ImageView
             android:id="@+id/pitchToogleControlModes"
             android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_height="48dp"
             android:layout_below="@id/separatorPitch"
             android:layout_alignParentEnd="true"
             android:clickable="true"
@@ -162,7 +166,7 @@
         <LinearLayout
             android:id="@+id/pitchControlModeTabs"
             android:layout_width="match_parent"
-            android:layout_height="22dp"
+            android:layout_height="48dp"
             android:layout_below="@id/pitchControlText"
             android:layout_marginStart="22dp"
             android:layout_marginEnd="22dp"
@@ -170,29 +174,39 @@
             android:visibility="gone"
             tools:visibility="visible">
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/pitchControlModePercent"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="@string/percent"
-                android:textColor="?attr/colorPrimary" />
+                android:text="@string/percent" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/pitchControlModeSemitone"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="@string/semitone"
-                android:textColor="?attr/colorPrimary" />
+                android:text="@string/semitone" />
 
         </LinearLayout>
 
@@ -271,14 +285,18 @@
                         tools:ignore="HardcodedText"
                         tools:text="300%" />
 
-                    <androidx.appcompat.widget.AppCompatSeekBar
+                    <com.google.android.material.slider.Slider
                         android:id="@+id/pitchPercentSeekbar"
-                        style="@style/PlaybackParameterSeekBar"
+                        style="@style/Widget.Material3.Slider"
+                        android:valueFrom="0"
+                        android:valueTo="10000"
+                        android:stepSize="1"
+                        app:labelBehavior="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_below="@+id/pitchPercentCurrentText"
                         android:paddingBottom="2dp"
-                        tools:progress="50" />
+                         />
                 </RelativeLayout>
 
                 <org.schabi.newpipe.views.NewPipeTextView
@@ -365,15 +383,19 @@
                         android:textColor="?attr/colorOnSurfaceVariant"
                         tools:ignore="HardcodedText" />
 
-                    <androidx.appcompat.widget.AppCompatSeekBar
+                    <com.google.android.material.slider.Slider
                         android:id="@+id/pitchSemitoneSeekbar"
-                        style="@style/PlaybackParameterSeekBar"
+                        style="@style/Widget.Material3.Slider"
+                        android:valueFrom="0"
+                        android:valueTo="24"
+                        android:stepSize="1"
+                        app:labelBehavior="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_below="@+id/pitchSemitoneCurrentText"
-                        android:max="24"
+
                         android:paddingBottom="2dp"
-                        android:progress="12" />
+                        android:value="12" />
                 </RelativeLayout>
 
                 <org.schabi.newpipe.views.NewPipeTextView
@@ -409,7 +431,7 @@
         <LinearLayout
             android:id="@+id/stepSizeSelector"
             android:layout_width="match_parent"
-            android:layout_height="30dp"
+            android:layout_height="48dp"
             android:layout_below="@id/separatorStepSizeSelector"
             android:orientation="horizontal">
 
@@ -424,64 +446,89 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/stepSizeOnePercent"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
                 tools:text="1%" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/stepSizeFivePercent"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
                 tools:text="5%" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/stepSizeTenPercent"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
                 tools:text="10%" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/stepSizeTwentyFivePercent"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
                 tools:text="25%" />
 
-            <org.schabi.newpipe.views.NewPipeTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/stepSizeOneHundredPercent"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackground"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:minWidth="0dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:checkable="true"
+                app:backgroundTint="@color/playback_choice_background"
+                android:textColor="@color/playback_choice_text"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
                 tools:text="100%" />
         </LinearLayout>
 
