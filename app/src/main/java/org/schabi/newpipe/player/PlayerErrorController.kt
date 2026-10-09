@@ -135,6 +135,9 @@ internal class PlayerErrorController(
     fun onPlayWhenReadyChanged(playWhenReady: Boolean) {
         if (!playWhenReady) {
             cancelPendingLiveStallRecovery()
+        } else if (!player.exoPlayerIsNull()) {
+            // Resuming during an existing buffering state does not emit a new state event.
+            onPlaybackStateChanged(player.exoPlayer.playbackState)
         }
     }
 
@@ -210,7 +213,9 @@ internal class PlayerErrorController(
             PlaybackResolver.isManifestOnlyYoutubeLive(info) &&
             info.dashMpdUrl.isNotEmpty() &&
             !videoResolver.isHlsPreferredForLiveStream(info.url) &&
-            player.videoPlayerSelected() && !player.isAudioOnly
+            // The video resolver still owns the live source while its video renderer is
+            // temporarily disabled in the background. True audio-player sources are excluded.
+            player.videoPlayerSelected()
     }
 
     private fun cancelPendingLiveStallRecovery() {
