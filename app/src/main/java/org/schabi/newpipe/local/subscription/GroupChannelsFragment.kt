@@ -25,6 +25,7 @@ class GroupChannelsFragment : Fragment() {
     private var _binding: FragmentGroupChannelsBinding? = null
     private val binding get() = _binding!!
     private val adapter = GroupAdapter<GroupieViewHolder<FeedItemCarouselBinding>>()
+    private lateinit var channelActions: SubscriptionChannelActions
     private lateinit var viewModel: GroupChannelsViewModel
 
     override fun onCreateView(
@@ -35,6 +36,7 @@ class GroupChannelsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentGroupChannelsBinding.bind(view)
+        channelActions = SubscriptionChannelActions(this, SubscriptionManager(requireContext()))
         val groupId = arguments?.getLong(KEY_GROUP_ID) ?: FeedGroupEntity.GROUP_ALL_ID
         val groupName = arguments?.getString(KEY_GROUP_NAME).orEmpty()
 
@@ -88,6 +90,8 @@ class GroupChannelsFragment : Fragment() {
                                 selectedItem.url,
                                 selectedItem.name
                             )
+
+                            override fun held(selectedItem: ChannelInfoItem) = channelActions.show(selectedItem)
                         }
                     }
                 }
@@ -97,6 +101,7 @@ class GroupChannelsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        channelActions.close()
         binding.itemsList.adapter = null
         _binding = null
         super.onDestroyView()
