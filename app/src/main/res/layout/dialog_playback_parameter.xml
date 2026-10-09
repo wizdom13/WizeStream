@@ -559,28 +559,6 @@
                 android:focusable="true"
                 android:gravity="center"
                 tools:text="25%" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/stepSizeOneHundredPercent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:ensureMinTouchTargetSize="true"
-                app:checkedIconVisible="false"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:minWidth="0dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:checkable="true"
-                android:singleLine="true"
-                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                android:paddingTop="0dp"
-                android:paddingBottom="0dp"
-                app:chipBackgroundColor="@color/playback_choice_background"
-                android:textColor="@color/playback_choice_text"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                tools:text="100%" />
             </com.google.android.material.chip.ChipGroup>
         </LinearLayout>
 
