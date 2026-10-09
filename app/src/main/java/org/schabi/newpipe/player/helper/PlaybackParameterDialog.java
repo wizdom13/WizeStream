@@ -2,34 +2,31 @@ package org.schabi.newpipe.player.helper;
 
 import static org.schabi.newpipe.ktx.ViewUtils.animateRotation;
 import static org.schabi.newpipe.player.Player.DEBUG;
-import static org.schabi.newpipe.util.ThemeHelper.resolveDrawable;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.math.MathUtils;
 import androidx.fragment.app.DialogFragment;
 import androidx.preference.PreferenceManager;
 
 import com.evernote.android.state.State;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.slider.Slider;
 import com.livefront.bridge.Bridge;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.DialogPlaybackParameterBinding;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
-import org.schabi.newpipe.util.SimpleOnSeekBarChangeListener;
 import org.schabi.newpipe.util.SliderStrategy;
 
 import java.util.Map;
@@ -153,11 +150,13 @@ public class PlaybackParameterDialog extends DialogFragment {
     public Dialog onCreateDialog(@Nullable final Bundle savedInstanceState) {
         Bridge.restoreInstanceState(this, savedInstanceState);
 
-        binding = DialogPlaybackParameterBinding.inflate(getLayoutInflater());
+        final MaterialAlertDialogBuilder dialogBuilder =
+                new MaterialAlertDialogBuilder(requireActivity());
+        binding = DialogPlaybackParameterBinding.inflate(
+                android.view.LayoutInflater.from(dialogBuilder.getContext()));
         initUI();
 
-        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireActivity())
-                .setView(binding.getRoot())
+        dialogBuilder.setView(binding.getRoot())
                 .setCancelable(true)
                 .setNegativeButton(R.string.cancel, (dialogInterface, i) -> {
                     setAndUpdateTempo(initialTempo);
@@ -195,9 +194,11 @@ public class PlaybackParameterDialog extends DialogFragment {
         setText(binding.tempoMinimumText, PlayerHelper::formatSpeed, MIN_PITCH_OR_SPEED);
         setText(binding.tempoMaximumText, PlayerHelper::formatSpeed, MAX_PITCH_OR_SPEED);
 
-        binding.tempoSeekbar.setMax(QUADRATIC_STRATEGY.progressOf(MAX_PITCH_OR_SPEED));
+        binding.tempoSeekbar.setValueTo(QUADRATIC_STRATEGY.progressOf(MAX_PITCH_OR_SPEED));
+        binding.tempoSeekbar.setLabelFormatter(value ->
+                PlayerHelper.formatSpeed(QUADRATIC_STRATEGY.valueOf(Math.round(value))));
         setAndUpdateTempo(tempo);
-        binding.tempoSeekbar.setOnSeekBarChangeListener(
+        binding.tempoSeekbar.addOnChangeListener(
                 getTempoOrPitchSeekbarChangeListener(
                         QUADRATIC_STRATEGY,
                         this::onTempoSliderUpdated));
@@ -233,9 +234,14 @@ public class PlaybackParameterDialog extends DialogFragment {
         setText(binding.pitchPercentMinimumText, PlayerHelper::formatPitch, MIN_PITCH_OR_SPEED);
         setText(binding.pitchPercentMaximumText, PlayerHelper::formatPitch, MAX_PITCH_OR_SPEED);
 
-        binding.pitchPercentSeekbar.setMax(QUADRATIC_STRATEGY.progressOf(MAX_PITCH_OR_SPEED));
+        binding.pitchPercentSeekbar.setValueTo(QUADRATIC_STRATEGY.progressOf(MAX_PITCH_OR_SPEED));
+        binding.pitchPercentSeekbar.setLabelFormatter(value ->
+                PlayerHelper.formatPitch(QUADRATIC_STRATEGY.valueOf(Math.round(value))));
+        binding.pitchSemitoneSeekbar.setLabelFormatter(value ->
+                PlayerSemitoneHelper.formatPitchSemitones(
+                        SEMITONE_STRATEGY.valueOf(Math.round(value))));
         setAndUpdatePitch(pitchPercent);
-        binding.pitchPercentSeekbar.setOnSeekBarChangeListener(
+        binding.pitchPercentSeekbar.addOnChangeListener(
                 getTempoOrPitchSeekbarChangeListener(
                         QUADRATIC_STRATEGY,
                         this::onPitchPercentSliderUpdated));
@@ -252,7 +258,7 @@ public class PlaybackParameterDialog extends DialogFragment {
                 this::onPitchPercentSliderUpdated);
 
         // Pitch - Semitone
-        binding.pitchSemitoneSeekbar.setOnSeekBarChangeListener(
+        binding.pitchSemitoneSeekbar.addOnChangeListener(
                 getTempoOrPitchSeekbarChangeListener(
                         SEMITONE_STRATEGY,
                         this::onPitchPercentSliderUpdated));
@@ -359,17 +365,8 @@ public class PlaybackParameterDialog extends DialogFragment {
         // Bring all textviews into a normal state
         final Map<Boolean, TextView> pitchCtrlModeComponentMapping =
                 getPitchControlModeComponentMappings();
-        pitchCtrlModeComponentMapping.forEach((v, textView) -> textView.setBackground(
-                resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)));
-
-        // Mark the selected textview
-        final TextView textView = pitchCtrlModeComponentMapping.get(semitones);
-        if (textView != null) {
-            textView.setBackground(new LayerDrawable(new Drawable[]{
-                    resolveDrawable(requireContext(), R.attr.dashed_border),
-                    resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)
-            }));
-        }
+        pitchCtrlModeComponentMapping.forEach((value, view) ->
+                ((Chip) view).setChecked(value == semitones));
 
         // Show or hide component
         binding.pitchPercentControl.setVisibility(semitones ? View.GONE : View.VISIBLE);
@@ -429,25 +426,14 @@ public class PlaybackParameterDialog extends DialogFragment {
                 PlaybackParameterPreferences.STEP_10_PERCENT,
                 binding.stepSizeTenPercent,
                 PlaybackParameterPreferences.STEP_25_PERCENT,
-                binding.stepSizeTwentyFivePercent,
-                PlaybackParameterPreferences.STEP_100_PERCENT,
-                binding.stepSizeOneHundredPercent);
+                binding.stepSizeTwentyFivePercent);
     }
 
     private void setStepSizeToUI(final float newStepSize) {
         // Bring all textviews into a normal state
         final Map<Float, TextView> stepSiteComponentMapping = getStepSizeComponentMappings();
-        stepSiteComponentMapping.forEach((v, textView) -> textView.setBackground(
-                resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)));
-
-        // Mark the selected textview
-        final TextView textView = stepSiteComponentMapping.get(newStepSize);
-        if (textView != null) {
-            textView.setBackground(new LayerDrawable(new Drawable[]{
-                    resolveDrawable(requireContext(), R.attr.dashed_border),
-                    resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)
-            }));
-        }
+        stepSiteComponentMapping.forEach((value, view) ->
+                ((Chip) view).setChecked(value == newStepSize));
 
         // Bind to the corresponding control components
         binding.tempoStepUp.setText(getStepUpPercentString(newStepSize));
@@ -510,19 +496,14 @@ public class PlaybackParameterDialog extends DialogFragment {
     // Sliders
     //////////////////////////////////////////////////////////////////////////*/
 
-    private SeekBar.OnSeekBarChangeListener getTempoOrPitchSeekbarChangeListener(
+    private Slider.OnChangeListener getTempoOrPitchSeekbarChangeListener(
             final SliderStrategy sliderStrategy,
             final DoubleConsumer newValueConsumer
     ) {
-        return new SimpleOnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(@NonNull final SeekBar seekBar,
-                                          final int progress,
-                                          final boolean fromUser) {
-                if (fromUser) { // ensure that the user triggered the change
-                    newValueConsumer.accept(sliderStrategy.valueOf(progress));
-                    updateCallback();
-                }
+        return (slider, value, fromUser) -> {
+            if (fromUser) {
+                newValueConsumer.accept(sliderStrategy.valueOf(Math.round(value)));
+                updateCallback();
             }
         };
     }
@@ -551,15 +532,16 @@ public class PlaybackParameterDialog extends DialogFragment {
     private void setAndUpdateTempo(final double newTempo) {
         this.tempo = MathUtils.clamp(newTempo, MIN_PITCH_OR_SPEED, MAX_PITCH_OR_SPEED);
 
-        binding.tempoSeekbar.setProgress(QUADRATIC_STRATEGY.progressOf(tempo));
+        binding.tempoSeekbar.setValue(QUADRATIC_STRATEGY.progressOf(tempo));
         setText(binding.tempoCurrentText, PlayerHelper::formatSpeed, tempo);
     }
 
     private void setAndUpdatePitch(final double newPitch) {
         this.pitchPercent = calcValidPitch(newPitch);
 
-        binding.pitchPercentSeekbar.setProgress(QUADRATIC_STRATEGY.progressOf(pitchPercent));
-        binding.pitchSemitoneSeekbar.setProgress(SEMITONE_STRATEGY.progressOf(pitchPercent));
+        binding.pitchPercentSeekbar.setValue(QUADRATIC_STRATEGY.progressOf(pitchPercent));
+        binding.pitchSemitoneSeekbar.setValue(
+                MathUtils.clamp(SEMITONE_STRATEGY.progressOf(pitchPercent), 0, 24));
         setText(binding.pitchPercentCurrentText,
                 PlayerHelper::formatPitch,
                 pitchPercent);
