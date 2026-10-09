@@ -17,6 +17,7 @@ import org.schabi.newpipe.databinding.PlayerBinding
 /** Reuses the bound controls, so playback actions and accessibility labels stay identical. */
 class BottomPlayerControls(private val binding: PlayerBinding) {
     private val context = binding.root.context
+    private val narrowMetadata = NarrowPlayerMetadata(binding)
     private var panel: LinearLayout? = null
     private var positions = emptyList<Position>()
     private var buttonStates = emptyList<ButtonState>()
@@ -53,9 +54,13 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
     fun update(fullscreen: Boolean, left: Int, top: Int, right: Int, bottom: Int): Boolean {
         val wanted = fullscreen && PreferenceManager.getDefaultSharedPreferences(context)
             .getBoolean(context.getString(R.string.bottom_player_controls_key), false)
+        if (wanted) narrowMetadata.restore()
         if (wanted && panel == null) attach()
         if (!wanted && panel != null) restore()
-        val active = panel ?: return false
+        val active = panel ?: run {
+            narrowMetadata.update(fullscreen)
+            return false
+        }
         active.setPadding(maxOf(left, dp(16)), dp(12), maxOf(right, dp(16)), bottom + dp(8))
         // Keep the whole panel below a cutout even on a short landscape screen.
         val params = active.layoutParams as RelativeLayout.LayoutParams
@@ -153,6 +158,7 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
     }
 
     fun restore() {
+        narrowMetadata.restore()
         val active = panel ?: return
         val focused = binding.root.findFocus()
         positions.forEach { position ->

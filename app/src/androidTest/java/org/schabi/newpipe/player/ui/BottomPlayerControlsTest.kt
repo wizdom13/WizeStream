@@ -46,7 +46,7 @@ class BottomPlayerControlsTest {
                     binding.qualityTextView.text = "1080p"
                     binding.playbackSpeed.text = "1×"
                     binding.resizeTextView.text = "FIT"
-                    binding.captionTextView.text = "CC"
+                    binding.captionTextView.contentDescription = "Captions"
                     binding.playbackCurrentTime.text = "3:24"
                     binding.playbackEndTime.text = "12:48"
                     binding.playbackSeekBar.progress = 27
@@ -110,6 +110,59 @@ class BottomPlayerControlsTest {
         } finally {
             prefs.edit().apply { previous?.let { putBoolean(key, it) } ?: remove(key) }.commit()
         }
+    }
+
+    @Test
+    fun narrowFullscreenMetadataUsesFullWidthAndRestoresAfterResize() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            listOf(false, true).forEach { rtl ->
+                val themed = ContextThemeWrapper(context, R.style.DarkTheme)
+                val binding = PlayerBinding.inflate(LayoutInflater.from(themed))
+                binding.root.layoutDirection = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+                binding.playbackControlRoot.visibility = View.VISIBLE
+                binding.loadingPanel.visibility = View.GONE
+                binding.metadataView.visibility = View.VISIBLE
+                binding.titleTextView.text = "A long vertical video title that must remain identifiable"
+                binding.channelTextView.text = "Example channel"
+                binding.qualityTextView.text = "1080p"
+                binding.playbackSpeed.text = "1×"
+                val metadataParent = binding.metadataView.parent
+                val controlsParent = binding.primaryControls.parent
+                val metadataParams = binding.metadataView.layoutParams
+                val controlsParams = binding.primaryControls.layoutParams
+                val controller = NarrowPlayerMetadata(binding)
+                measure(binding.root, dp(360), dp(800))
+                repeat(3) {
+                    controller.update(true)
+                    measure(binding.root, dp(360), dp(800))
+                    assertSame(binding.topControls, binding.metadataView.parent)
+                    assertTrue(binding.primaryControls.parent is HorizontalScrollView)
+                    assertTrue("Title must keep most of the portrait width", binding.titleTextView.width >= dp(240))
+                    assertTrue("Channel must remain readable", binding.channelTextView.width >= dp(180))
+                    val metadata = bounds(binding, binding.metadataView)
+                    val controls = bounds(binding, binding.primaryControls)
+                    val quality = bounds(binding, binding.qualityTextView)
+                    assertTrue("Quality control must remain in the initial viewport", quality.left >= 0 && quality.right <= binding.root.width)
+                    assertTrue("Metadata must not overlap action controls", metadata.bottom <= controls.top)
+                    assertNotNull(binding.captionTextView.drawable)
+                    assertTrue(binding.captionTextView.isFocusable)
+                    assertTrue(binding.captionTextView.contentDescription.isNotBlank())
+                    if (it == 0) savePreview(binding, "portrait-metadata${if (rtl) "-rtl" else ""}")
+                    measure(binding.root, dp(800), dp(450))
+                    controller.update(true)
+                    assertSame(metadataParent, binding.metadataView.parent)
+                    assertSame(controlsParent, binding.primaryControls.parent)
+                    assertSame(metadataParams, binding.metadataView.layoutParams)
+                    assertSame(controlsParams, binding.primaryControls.layoutParams)
+                    measure(binding.root, dp(360), dp(800))
+                }
+                controller.update(true)
+                controller.update(false)
+                assertSame(metadataParent, binding.metadataView.parent)
+                assertSame(controlsParent, binding.primaryControls.parent)
+            }
+        }
+        preservePreviews()
     }
 
     private fun measure(view: View, width: Int, height: Int) {

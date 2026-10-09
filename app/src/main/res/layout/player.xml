@@ -405,24 +405,18 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content">
 
-                                <org.schabi.newpipe.views.NewPipeTextView
+                                <androidx.appcompat.widget.AppCompatImageButton
                                     android:id="@+id/captionTextView"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
+                                    android:layout_width="48dp"
+                                    android:layout_height="48dp"
                                     android:layout_marginEnd="8dp"
-                                    android:background="?attr/selectableItemBackground"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:contentDescription="@string/caption_setting_title"
+                                    android:clickable="true"
                                     android:focusable="true"
-                                    android:ellipsize="end"
-                                    android:gravity="center|left"
-                                    android:lines="1"
-                                    android:minWidth="50dp"
-                                    android:minHeight="48dp"
-                                    android:padding="@dimen/player_main_buttons_padding"
-                                    android:textColor="@android:color/white"
-                                    android:textSize="@dimen/player_main_controls_text_size"
-                                    android:textStyle="bold"
-                                    tools:ignore="RelativeOverlap,RtlHardcoded"
-                                    tools:text="English" />
+                                    android:padding="12dp"
+                                    android:src="@drawable/ic_closed_caption"
+                                    app:tint="@color/white" />
 
                             </FrameLayout>
 
