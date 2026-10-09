@@ -1669,9 +1669,17 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         buildCaptionMenu(availableLanguages);
         if (player.getTrackSelector().getParameters().getRendererDisabled(
                 player.getCaptionRendererIndex()) || selectedTracks.isEmpty()) {
-            binding.captionTextView.setText(R.string.caption_none);
+            binding.captionTextView.setContentDescription(
+                    context.getString(R.string.caption_setting_title) + ": "
+                            + context.getString(R.string.caption_none));
+            binding.captionTextView.setActivated(false);
+            binding.captionTextView.setAlpha(0.7f);
         } else {
-            binding.captionTextView.setText(selectedTracks.get().language);
+            binding.captionTextView.setContentDescription(
+                    context.getString(R.string.caption_setting_title) + ": "
+                            + selectedTracks.get().language);
+            binding.captionTextView.setActivated(true);
+            binding.captionTextView.setAlpha(1.0f);
         }
         binding.captionTextView.setVisibility(
                 availableLanguages.isEmpty() ? View.GONE : View.VISIBLE);

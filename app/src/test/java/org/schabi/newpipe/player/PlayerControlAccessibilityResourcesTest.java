@@ -70,7 +70,7 @@ public class PlayerControlAccessibilityResourcesTest {
         assertAttribute(player, "queueButton", "paddingTop", "11dp");
 
         for (final String id : new String[]{
-                "qualityTextView", "playbackSpeed", "resizeTextView", "captionTextView",
+                "qualityTextView", "playbackSpeed", "resizeTextView",
                 "sleepTimerCountdown", "playbackCurrentTime", "playbackEndTime"
         }) {
             assertAttribute(player, id, "textSize",

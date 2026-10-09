@@ -88,7 +88,8 @@ class PlayerSecondaryControlsLayoutTest {
             val captionRightInContent = captionContainer.left + caption.right
 
             assertEquals(0, secondaryControls.scrollX)
-            assertTrue(caption.width >= dp(context, 50))
+            assertTrue(caption.width >= dp(context, 48))
+            assertTrue(caption.height >= dp(context, 48))
             assertTrue(captionRightInContent <= secondaryControls.width)
             assertTrue(content.width > secondaryControls.width)
         }
