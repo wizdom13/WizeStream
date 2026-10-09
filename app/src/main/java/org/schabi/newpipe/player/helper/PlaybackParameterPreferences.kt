@@ -10,15 +10,13 @@ object PlaybackParameterPreferences {
     const val STEP_5_PERCENT = 0.05f
     const val STEP_10_PERCENT = 0.10f
     const val STEP_25_PERCENT = 0.25f
-    const val STEP_100_PERCENT = 1.00f
     const val DEFAULT_ADJUSTMENT_STEP = STEP_25_PERCENT
 
     private val supportedAdjustmentSteps = floatArrayOf(
         STEP_1_PERCENT,
         STEP_5_PERCENT,
         STEP_10_PERCENT,
-        STEP_25_PERCENT,
-        STEP_100_PERCENT
+        STEP_25_PERCENT
     )
 
     /** Returns the selected adjustment step, falling back when stored data is unsupported. */
@@ -33,7 +31,11 @@ object PlaybackParameterPreferences {
 
     /** Restricts an adjustment step to the values exposed by the playback-parameter dialog. */
     @JvmStatic
-    fun sanitizeAdjustmentStep(adjustmentStep: Float): Float = supportedAdjustmentSteps.firstOrNull {
-        java.lang.Float.compare(adjustmentStep, it) == 0
-    } ?: DEFAULT_ADJUSTMENT_STEP
+    fun sanitizeAdjustmentStep(adjustmentStep: Float): Float {
+        // Older builds offered a 100% step; use a smaller visible choice for that selection.
+        if (java.lang.Float.compare(adjustmentStep, 1.00f) == 0) return STEP_10_PERCENT
+        return supportedAdjustmentSteps.firstOrNull {
+            java.lang.Float.compare(adjustmentStep, it) == 0
+        } ?: DEFAULT_ADJUSTMENT_STEP
+    }
 }

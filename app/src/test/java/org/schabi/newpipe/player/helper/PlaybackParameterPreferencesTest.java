@@ -13,8 +13,7 @@ public class PlaybackParameterPreferencesTest {
                 PlaybackParameterPreferences.STEP_1_PERCENT,
                 PlaybackParameterPreferences.STEP_5_PERCENT,
                 PlaybackParameterPreferences.STEP_10_PERCENT,
-                PlaybackParameterPreferences.STEP_25_PERCENT,
-                PlaybackParameterPreferences.STEP_100_PERCENT
+                PlaybackParameterPreferences.STEP_25_PERCENT
         };
 
         for (final float adjustmentStep : adjustmentSteps) {
@@ -26,6 +25,8 @@ public class PlaybackParameterPreferencesTest {
 
     @Test
     public void unsupportedAdjustmentStepUsesSharedDefault() {
+        assertEquals(PlaybackParameterPreferences.STEP_10_PERCENT,
+                PlaybackParameterPreferences.sanitizeAdjustmentStep(1.00f), FLOAT_TOLERANCE);
         assertEquals(PlaybackParameterPreferences.DEFAULT_ADJUSTMENT_STEP,
                 PlaybackParameterPreferences.sanitizeAdjustmentStep(0.50f),
                 FLOAT_TOLERANCE);

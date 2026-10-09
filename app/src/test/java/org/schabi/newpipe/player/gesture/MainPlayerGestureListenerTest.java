@@ -117,8 +117,7 @@ public class MainPlayerGestureListenerTest {
                 PlaybackParameterPreferences.STEP_1_PERCENT,
                 PlaybackParameterPreferences.STEP_5_PERCENT,
                 PlaybackParameterPreferences.STEP_10_PERCENT,
-                PlaybackParameterPreferences.STEP_25_PERCENT,
-                PlaybackParameterPreferences.STEP_100_PERCENT
+                PlaybackParameterPreferences.STEP_25_PERCENT
         };
 
         for (final float adjustmentStep : adjustmentSteps) {

@@ -426,9 +426,7 @@ public class PlaybackParameterDialog extends DialogFragment {
                 PlaybackParameterPreferences.STEP_10_PERCENT,
                 binding.stepSizeTenPercent,
                 PlaybackParameterPreferences.STEP_25_PERCENT,
-                binding.stepSizeTwentyFivePercent,
-                PlaybackParameterPreferences.STEP_100_PERCENT,
-                binding.stepSizeOneHundredPercent);
+                binding.stepSizeTwentyFivePercent);
     }
 
     private void setStepSizeToUI(final float newStepSize) {
