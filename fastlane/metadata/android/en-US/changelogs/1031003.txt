@@ -1,7 +1,10 @@
-• Independent player volume for quieter earbuds playback.
-• Material 3 speed/pitch dialog with readable selection chips; removed the 100% adjustment step.
-• Compact CC subtitle control and clearer portrait metadata.
-• Custom search batches (1–250 pages) and delays (0.3–10 seconds).
-• Subscribe/unsubscribe actions inside channel groups.
-• Fix DeX player quality-menu crashes.
-• Preserve underlying Invidious errors and explain responses containing no media.
+• Independent player volume.
+• Material 3 speed/pitch dialog; removed the 100% step.
+• Compact CC control and clearer portrait metadata.
+• Custom search batches and request delays.
+• Subscribe/unsubscribe inside channel groups.
+• Fix DeX quality-menu crashes.
+• Improve Invidious error reports.
+• Continue YouTube playback after metadata timeouts.
+• Recover live DASH stalls in the background; add debug diagnostics.
+• Update BiliBili metadata requests to reduce risk-control failures.

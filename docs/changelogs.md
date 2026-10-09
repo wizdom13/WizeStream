@@ -22,6 +22,10 @@ Release history is listed newest first. The number beside each release is its An
 - Kept speed/pitch selection labels visible on narrow dialog layouts.
 - Preserved underlying stream and manifest extraction errors in copied reports and explained Invidious responses containing no media formats or manifests.
 - Redacted URLs and bounded Invidious API error details consistently, including errors returned with successful HTTP status codes.
+- Kept usable YouTube streams playable when watch-next metadata requests time out, with one metadata retry before continuing without optional details.
+- Enabled the existing one-shot DASH-to-HLS recovery for sustained live playback stalls in the background and rearmed recovery when resuming while already buffering.
+- Added rate-limited debug diagnostics for live media loading and buffer state without logging signed media URLs or request headers.
+- Updated BiliBili video metadata requests to the public WBI endpoint to reduce legacy-endpoint risk-control failures while preserving playback authentication and multipart selection.
 
 ## WizeStream 1.31.2 (`1031002`)
 
