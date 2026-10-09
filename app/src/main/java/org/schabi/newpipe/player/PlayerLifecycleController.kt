@@ -226,7 +226,7 @@ internal class PlayerLifecycleController(
         exoPlayer.setWakeMode(C.WAKE_MODE_NETWORK)
         exoPlayer.setHandleAudioBecomingNoisy(true)
         audioController.attachAudioSession(exoPlayer.audioSessionId)
-        player.setAudioReactorForLifecycle(AudioReactor(context, exoPlayer))
+        player.setAudioReactorForLifecycle(AudioReactor(context, exoPlayer, audioController.volume::setFocusMultiplier))
         broadcastController.register()
         player.UIs().call(PlayerUi::initPlayer)
         player.updateAudioTunneling()

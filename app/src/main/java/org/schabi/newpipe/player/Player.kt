@@ -472,7 +472,7 @@ class Player(
         val tunnelingEnabled = !preferences.getBoolean(
             appContext.getString(R.string.disable_media_tunneling_key),
             false
-        ) && !audioController.equalizerState.isEnabled &&
+        ) && !audioController.volume.isEnabled && !audioController.equalizerState.isEnabled &&
             !playbackPresentationMode.allowsVisualizer() &&
             !videoAdjustments.effectsPipelinePrepared
         trackSelector.parameters = trackSelector.buildUponParameters()
@@ -480,14 +480,23 @@ class Player(
             .build()
     }
 
+    val isIndependentPlayerVolumeEnabled: Boolean
+        get() = audioController.volume.isEnabled
+
+    var independentPlayerVolume: Float
+        get() = audioController.volume.level
+        set(value) {
+            audioController.volume.level = value
+        }
+
     fun applyPlayerVolume() {
         val exoPlayer = media3Player ?: return
         val equalizerHeadroom = audioController.equalizerHeadroomMultiplier
-        exoPlayer.volume = if (audioController.isMuted) {
-            0.0f
-        } else {
-            sleepTimerController.volumeMultiplier * equalizerHeadroom
-        }
+        exoPlayer.volume = audioController.volume.effectiveVolume(
+            audioController.isMuted,
+            sleepTimerController.volumeMultiplier,
+            equalizerHeadroom
+        )
     }
 
     fun startSleepTimer(durationMillis: Long, fadeOut: Boolean) = sleepTimerController.startDuration(durationMillis, fadeOut)

@@ -1849,4 +1849,5 @@
         <item>@string/tv_related_sidebar_wide</item>
     </string-array>
 
+    <string name="independent_player_volume_key">independent_player_volume</string>
 </resources>

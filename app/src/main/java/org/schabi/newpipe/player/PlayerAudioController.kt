@@ -11,6 +11,11 @@ import org.schabi.newpipe.player.equalizer.EqualizerState
 /** Owns mute, equalizer, audio-focus, and effective-volume coordination. */
 internal class PlayerAudioController(private val player: Player) {
     private val equalizer = EqualizerController(player.context)
+    val volume = PlaybackVolumeController(
+        player.context,
+        player::applyPlayerVolume,
+        player::updateAudioTunneling
+    )
 
     var isMuted = false
         private set
@@ -28,10 +33,12 @@ internal class PlayerAudioController(private val player: Player) {
         get() = equalizer.headroomMultiplier
 
     fun attachAudioSession(audioSessionId: Int) {
+        volume.attach()
         equalizer.attachAudioSession(audioSessionId)
     }
 
     fun releaseAudioSession() {
+        volume.detach()
         equalizer.releaseAudioSession()
     }
 
