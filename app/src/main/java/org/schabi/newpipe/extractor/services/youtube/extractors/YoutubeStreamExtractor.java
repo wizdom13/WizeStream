@@ -1470,7 +1470,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                 selectPrimaryErrorResponse(videoId);
             }
 
-            if (playerResponse == null || nextResponse == null) {
+            // Watch-next metadata can be recovered separately. An earlier client timeout must
+            // not discard a usable player response just because that metadata request failed.
+            if (playerResponse == null) {
                 for (Throwable e: errors) {
                     if (e instanceof AntiBotException) {
                         throw (AntiBotException) e;
