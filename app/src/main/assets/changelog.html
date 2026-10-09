@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1031003">WizeStream 1.31.3</a></li>
 <li><a href="#release-1031002">WizeStream 1.31.2</a></li>
 <li><a href="#release-1031001">WizeStream 1.31.1</a></li>
 <li><a href="#release-1031000">WizeStream 1.31.0</a></li>
@@ -90,6 +91,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1031003" data-version="1.31.3" data-version-code="1031003">
+<h2>WizeStream 1.31.3</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added optional independent player volume for quieter playback on earbuds, with a saved level that works with mute, audio focus, equalizer headroom, and sleep timer fades.</li>
+<li>Updated the speed and pitch dialog to Material 3 with themed sliders and wrapping selection chips.</li>
+<li>Removed the 100% speed/pitch adjustment step; retained the 1%, 5%, 10%, and 25% choices.</li>
+<li>Added a compact, focusable CC control for subtitle selection when captions are available.</li>
+<li>Improved portrait player metadata spacing and readability.</li>
+<li>Added custom search batches of 1–250 additional pages and configurable request delays of 0.3–10 seconds, defaulting to 2 seconds.</li>
+<li>Added subscribe and unsubscribe actions for channels inside subscription groups.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Replaced cascading player choice menus with flat anchored lists to address the DeX quality-menu crash.</li>
+<li>Kept speed/pitch selection labels visible on narrow dialog layouts.</li>
+<li>Preserved underlying stream and manifest extraction errors in copied reports and explained Invidious responses containing no media formats or manifests.</li>
+<li>Redacted URLs and bounded Invidious API error details consistently, including errors returned with successful HTTP status codes.</li>
+<li>Kept usable YouTube streams playable when watch-next metadata requests time out, with one metadata retry before continuing without optional details.</li>
+<li>Enabled the existing one-shot DASH-to-HLS recovery for sustained live playback stalls in the background and rearmed recovery when resuming while already buffering.</li>
+<li>Added rate-limited debug diagnostics for live media loading and buffer state without logging signed media URLs or request headers.</li>
+<li>Updated BiliBili video metadata requests to the public WBI endpoint to reduce legacy-endpoint risk-control failures while preserving playback authentication and multipart selection.</li>
+</ul>
+</div>
+</section>
 <section id="release-1031002" data-version="1.31.2" data-version-code="1031002">
 <h2>WizeStream 1.31.2</h2>
 <div class="release-notes">

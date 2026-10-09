@@ -1,0 +1,10 @@
+• Independent player volume.
+• Material 3 speed/pitch dialog; removed the 100% step.
+• Compact CC control and clearer portrait metadata.
+• Custom search batches and request delays.
+• Subscribe/unsubscribe inside channel groups.
+• Fix DeX quality-menu crashes.
+• Improve Invidious error reports.
+• Continue YouTube playback after metadata timeouts.
+• Recover live DASH stalls in the background; add debug diagnostics.
+• Update BiliBili metadata requests to reduce risk-control failures.
