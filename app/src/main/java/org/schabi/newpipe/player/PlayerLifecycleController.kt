@@ -22,6 +22,7 @@ import org.schabi.newpipe.player.helper.LoadController
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.playback.MediaSourceManager
 import org.schabi.newpipe.player.playqueue.PlayQueue
+import org.schabi.newpipe.player.resolver.PlaybackResolver
 import org.schabi.newpipe.player.ui.PlayerUi
 
 /** Owns player-engine lifecycle, queue-manager lifetime, and recovery positions. */
@@ -221,6 +222,15 @@ internal class PlayerLifecycleController(
         player.setExoPlayerForLifecycle(exoPlayer)
         player.videoAdjustments.attach(exoPlayer)
         exoPlayer.addListener(player)
+        if (Player.DEBUG) {
+            exoPlayer.addAnalyticsListener(
+                LiveLoadDiagnostics(exoPlayer) {
+                    player.currentStreamInfo.orElse(null)?.let {
+                        PlaybackResolver.isManifestOnlyYoutubeLive(it)
+                    } == true
+                }
+            )
+        }
         exoPlayer.playWhenReady = playOnReady
         exoPlayer.setSeekParameters(PlayerHelper.getSeekParameters(context))
         exoPlayer.setWakeMode(C.WAKE_MODE_NETWORK)
