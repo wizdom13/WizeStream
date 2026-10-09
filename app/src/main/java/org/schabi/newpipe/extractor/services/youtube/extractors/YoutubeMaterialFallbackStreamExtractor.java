@@ -51,17 +51,26 @@ public class YoutubeMaterialFallbackStreamExtractor extends YoutubeRelatedFallba
         super.onFetchPage(downloader);
 
         if (getPrivateJsonObject("nextResponse") == null) {
-            final Localization localization = new Localization("en");
-            final ContentCountry contentCountry = getExtractorContentCountry();
-            final byte[] body = JsonWriter.string(
-                            prepareDesktopJsonBuilder(localization, contentCountry)
-                                    .value("videoId", getId())
-                                    .value("contentCheckOk", true)
-                                    .value("racyCheckOk", true)
-                                    .done())
-                    .getBytes(StandardCharsets.UTF_8);
-            final JsonObject recoveredNextResponse = getJsonPostResponse(
-                    "next", body, localization);
+            JsonObject recoveredNextResponse;
+            try {
+                final Localization localization = new Localization("en");
+                final ContentCountry contentCountry = getExtractorContentCountry();
+                final byte[] body = JsonWriter.string(
+                                prepareDesktopJsonBuilder(localization, contentCountry)
+                                        .value("videoId", getId())
+                                        .value("contentCheckOk", true)
+                                        .value("racyCheckOk", true)
+                                        .done())
+                        .getBytes(StandardCharsets.UTF_8);
+                recoveredNextResponse = getJsonPostResponse(
+                        "next", body, localization);
+            } catch (final IOException | ExtractionException error) {
+                // Metadata and recommendations are optional once a player response is usable.
+                // Retry once, then leave a safe empty object for the optional field getters.
+                errors.add(new ExtractionException(
+                        "Skipping optional YouTube watch-next metadata recovery", error));
+                recoveredNextResponse = new JsonObject();
+            }
             setPrivateJsonObject("nextResponse", recoveredNextResponse);
         }
     }
