@@ -17,6 +17,8 @@ import androidx.media.AudioManagerCompat;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.analytics.AnalyticsListener;
 
+import java.util.function.Consumer;
+
 public class AudioReactor implements AudioManager.OnAudioFocusChangeListener, AnalyticsListener {
 
     private static final String TAG = "AudioFocusReactor";
@@ -32,10 +34,14 @@ public class AudioReactor implements AudioManager.OnAudioFocusChangeListener, An
     private final AudioManager audioManager;
 
     private final AudioFocusRequestCompat request;
+    private final Consumer<Float> volumeMultiplierConsumer;
+    private ValueAnimator audioAnimator;
 
     public AudioReactor(@NonNull final Context context,
-                        @NonNull final ExoPlayer player) {
+                        @NonNull final ExoPlayer player,
+                        @NonNull final Consumer<Float> volumeMultiplierConsumer) {
         this.player = player;
+        this.volumeMultiplierConsumer = volumeMultiplierConsumer;
         this.context = context;
         this.audioManager = ContextCompat.getSystemService(context, AudioManager.class);
         player.addAnalyticsListener(this);
@@ -48,6 +54,7 @@ public class AudioReactor implements AudioManager.OnAudioFocusChangeListener, An
     }
 
     public void dispose() {
+        cancelAudioAnimation();
         abandonAudioFocus();
         player.removeAnalyticsListener(this);
         notifyAudioSessionUpdate(false, player.getAudioSessionId());
@@ -100,7 +107,8 @@ public class AudioReactor implements AudioManager.OnAudioFocusChangeListener, An
 
     private void onAudioFocusGain() {
         Log.d(TAG, "onAudioFocusGain() called");
-        player.setVolume(DUCK_AUDIO_TO);
+        cancelAudioAnimation();
+        volumeMultiplierConsumer.accept(DUCK_AUDIO_TO);
         animateAudio(DUCK_AUDIO_TO, 1.0f);
 
         if (PlayerHelper.isResumeAfterAudioFocusGain(context)) {
@@ -110,38 +118,52 @@ public class AudioReactor implements AudioManager.OnAudioFocusChangeListener, An
 
     private void onAudioFocusLoss() {
         Log.d(TAG, "onAudioFocusLoss() called");
+        cancelAudioAnimation();
         player.pause();
     }
 
     private void onAudioFocusLossCanDuck() {
         Log.d(TAG, "onAudioFocusLossCanDuck() called");
-        // Set the volume to 1/10 on ducking
-        player.setVolume(DUCK_AUDIO_TO);
+        cancelAudioAnimation();
+        // Reduce the current effective volume while another app has audio focus.
+        volumeMultiplierConsumer.accept(DUCK_AUDIO_TO);
     }
 
     private void animateAudio(final float from, final float to) {
         final ValueAnimator valueAnimator = new ValueAnimator();
+        audioAnimator = valueAnimator;
         valueAnimator.setFloatValues(from, to);
         valueAnimator.setDuration(AudioReactor.DUCK_DURATION);
         valueAnimator.addListener(new AnimatorListenerAdapter() {
+            private boolean cancelled;
+
             @Override
             public void onAnimationStart(final Animator animation) {
-                player.setVolume(from);
+                volumeMultiplierConsumer.accept(from);
             }
 
             @Override
             public void onAnimationCancel(final Animator animation) {
-                player.setVolume(to);
+                cancelled = true;
             }
 
             @Override
             public void onAnimationEnd(final Animator animation) {
-                player.setVolume(to);
+                if (!cancelled) {
+                    volumeMultiplierConsumer.accept(to);
+                }
             }
         });
         valueAnimator.addUpdateListener(animation ->
-                player.setVolume(((float) animation.getAnimatedValue())));
+                volumeMultiplierConsumer.accept(((float) animation.getAnimatedValue())));
         valueAnimator.start();
+    }
+
+    private void cancelAudioAnimation() {
+        if (audioAnimator != null) {
+            audioAnimator.cancel();
+            audioAnimator = null;
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////

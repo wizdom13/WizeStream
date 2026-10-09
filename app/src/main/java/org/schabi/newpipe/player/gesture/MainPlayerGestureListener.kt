@@ -335,9 +335,14 @@ class MainPlayerGestureListener(
         val bar: ProgressBar = binding.volumeProgressBar
         val audioReactor: AudioReactor = player.audioReactor ?: return
 
-        // If we just started sliding, change the progress bar to match the system volume
+        val independentVolume = player.isIndependentPlayerVolumeEnabled
+        // Initialize from the selected volume mode at the start of each gesture.
         if (!binding.volumeRelativeLayout.isVisible) {
-            val volumePercent: Float = audioReactor.volume / audioReactor.maxVolume.toFloat()
+            val volumePercent: Float = if (independentVolume) {
+                player.independentPlayerVolume
+            } else {
+                audioReactor.volume / audioReactor.maxVolume.toFloat()
+            }
             bar.progress = (volumePercent * bar.max).toInt()
         }
 
@@ -347,7 +352,11 @@ class MainPlayerGestureListener(
         // Update volume
         val currentProgressPercent: Float = bar.progress / bar.max.toFloat()
         val currentVolume = (audioReactor.maxVolume * currentProgressPercent).toInt()
-        audioReactor.volume = currentVolume
+        if (independentVolume) {
+            player.independentPlayerVolume = currentProgressPercent
+        } else {
+            audioReactor.volume = currentVolume
+        }
         if (DEBUG) {
             Log.d(TAG, "onScroll().volumeControl, currentVolume = $currentVolume")
         }

@@ -747,8 +747,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private void setInitialGestureValues() {
         if (player.getAudioReactor() != null) {
-            final float currentVolumeNormalized = (float) player.getAudioReactor().getVolume()
-                    / player.getAudioReactor().getMaxVolume();
+            final float currentVolumeNormalized = player.isIndependentPlayerVolumeEnabled()
+                    ? player.getIndependentPlayerVolume()
+                    : (float) player.getAudioReactor().getVolume()
+                            / player.getAudioReactor().getMaxVolume();
             binding.volumeProgressBar.setProgress(
                     (int) (binding.volumeProgressBar.getMax() * currentVolumeNormalized));
         }
