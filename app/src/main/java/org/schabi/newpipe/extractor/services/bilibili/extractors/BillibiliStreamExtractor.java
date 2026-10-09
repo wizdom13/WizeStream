@@ -392,17 +392,17 @@ public class BillibiliStreamExtractor extends StreamExtractor {
                 e.printStackTrace();
             }
         } else {
-            String url = getLinkHandler().getOriginalUrl();
             bvid = utils.getPureBV(getId());
-            url = utils.getUrl(url, bvid);
-            final Map<String, List<String>> metadataHeaders =
-                    getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle") != null
-                            ? getLoggedHeadersOrNull(getOriginalUrl(), "ai_subtitle")
-                            : getHeaders(getOriginalUrl());
+            // Match PipePipe's public metadata request: the legacy view endpoint and
+            // session cookies can trigger risk control before playback URLs are fetched.
+            final String metadataUrl =
+                    "https://api.bilibili.com/x/web-interface/wbi/view?bvid=" + bvid;
+            final Map<String, List<String>> metadataHeaders = new LinkedHashMap<>();
+            metadataHeaders.put("Cookie", Collections.singletonList(""));
             final JsonObject metadataResponse = parseBilibiliResponse(
-                    downloader.get(url, metadataHeaders));
+                    downloader.get(metadataUrl, metadataHeaders));
             watch = metadataResponse.getObject("data");
-            if (watch == null) {
+            if (metadataResponse.getInt("code") != 0 || watch == null || watch.isEmpty()) {
                 final String message = metadataResponse.getString("message");
                 throw new ContentNotAvailableException(
                         message == null || message.isBlank()
