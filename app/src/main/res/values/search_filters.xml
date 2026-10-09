@@ -19,10 +19,15 @@
     <string name="search_maximum_hours">Maximum hours (optional)</string>
     <string name="search_duration_invalid">Enter valid hours, with Minimum no greater than Maximum.</string>
     <string name="search_fetch_more">Fetch more results</string>
-    <string name="search_deep_help">Collect additional search pages and keep updating the results. You can cancel at any time and keep collected results. The service may not return every matching video. Collection stops at the selected page limit, 5,000 results, or when no new pages remain.</string>
+    <string name="search_deep_help">Collect additional search pages and keep updating the results. You can cancel at any time and keep collected results. The service may not return every matching video. Collection stops at the selected page limit, 5,000 results, or when no new pages remain. Fetching again continues with new pages. Requests wait 2 seconds between pages by default; Custom lets you change the page count and delay.</string>
     <string name="search_deep_choose">Additional pages</string>
     <string name="search_deep_progress">%1$d/%2$d pages · %3$d collected · %4$d shown</string>
     <string name="search_collected_count">%1$d collected · %2$d shown</string>
     <string name="search_after_label">After (%1$s)</string>
     <string name="search_before_label">Before (%1$s)</string>
+    <string name="search_deep_custom">Custom…</string>
+    <string name="search_deep_custom_pages">Additional pages (1–250)</string>
+    <string name="search_deep_delay_seconds">Delay between pages in seconds (0.3–10)</string>
+    <string name="search_deep_pages_invalid">Enter a whole number from 1 to 250</string>
+    <string name="search_deep_delay_invalid">Enter a delay from 0.3 to 10 seconds</string>
 </resources>

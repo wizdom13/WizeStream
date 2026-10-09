@@ -4,7 +4,9 @@ import android.app.Application
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import androidx.recyclerview.widget.RecyclerView
-import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.schedulers.TestScheduler
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,7 +44,9 @@ class SearchDeepCancellationTest {
         set(fragment, "deepSearchBudget", SearchPageBudget(25))
         set(fragment, "deepSearchRunning", true)
         set(fragment, "durationOrder", 1)
-        val request = Disposable.empty()
+        val scheduler = TestScheduler()
+        var requests = 0
+        val request = Single.timer(2, TimeUnit.SECONDS, scheduler).subscribe { requests++ }
         set(fragment, "searchDisposable", request)
         val loading = get(fragment, "isLoading") as AtomicBoolean
         loading.set(true)
@@ -52,7 +56,9 @@ class SearchDeepCancellationTest {
 
         assertTrue(fragment.onBackPressed())
 
+        scheduler.advanceTimeBy(10, TimeUnit.SECONDS)
         assertTrue(request.isDisposed)
+        assertEquals(0, requests)
         assertFalse(loading.get())
         assertFalse(get(fragment, "deepSearchRunning") as Boolean)
         assertEquals(listOf(item), collected)
