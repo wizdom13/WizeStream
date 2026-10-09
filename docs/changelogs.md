@@ -4,6 +4,25 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.3 (`1031003`)
+
+### Improvements
+
+- Added optional independent player volume for quieter playback on earbuds, with a saved level that works with mute, audio focus, equalizer headroom, and sleep timer fades.
+- Updated the speed and pitch dialog to Material 3 with themed sliders and wrapping selection chips.
+- Removed the 100% speed/pitch adjustment step; retained the 1%, 5%, 10%, and 25% choices.
+- Added a compact, focusable CC control for subtitle selection when captions are available.
+- Improved portrait player metadata spacing and readability.
+- Added custom search batches of 1–250 additional pages and configurable request delays of 0.3–10 seconds, defaulting to 2 seconds.
+- Added subscribe and unsubscribe actions for channels inside subscription groups.
+
+### Fixes
+
+- Replaced cascading player choice menus with flat anchored lists to address the DeX quality-menu crash.
+- Kept speed/pitch selection labels visible on narrow dialog layouts.
+- Preserved underlying stream and manifest extraction errors in copied reports and explained Invidious responses containing no media formats or manifests.
+- Redacted URLs and bounded Invidious API error details consistently, including errors returned with successful HTTP status codes.
+
 ## WizeStream 1.31.2 (`1031002`)
 
 ### Improvements
