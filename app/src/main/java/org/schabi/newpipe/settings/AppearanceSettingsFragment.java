@@ -70,7 +70,6 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
                 || DeviceUtils.isTv(requireContext());
         setPreferenceVisible(R.string.tv_related_sidebar_width_key,
                 DeviceUtils.isTv(requireContext()));
-        setPreferenceVisible(R.string.grid_columns_key, showLargeScreenPreferences);
         setPreferenceVisible(R.string.compact_large_screen_navigation_key,
                 showLargeScreenPreferences);
         setPreferenceVisible(R.string.tablet_navigation_portrait_position_key,

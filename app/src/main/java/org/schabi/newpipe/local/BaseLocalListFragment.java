@@ -1,6 +1,7 @@
 package org.schabi.newpipe.local;
 
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -72,6 +73,14 @@ public abstract class BaseLocalListFragment<I, N> extends BaseStateFragment<I>
         super.onDestroy();
         PreferenceManager.getDefaultSharedPreferences(activity)
                 .unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull final Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        if (itemsList != null) {
+            GridLayoutManagerHelper.preserveScrollPosition(itemsList, this::refreshItemViewMode);
+        }
     }
 
     @Override
@@ -254,8 +263,7 @@ public abstract class BaseLocalListFragment<I, N> extends BaseStateFragment<I>
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences,
                                           final String key) {
-        if (getString(R.string.list_view_mode_key).equals(key)
-                || getString(R.string.grid_columns_key).equals(key)) {
+        if (org.schabi.newpipe.util.ThemeHelper.isListLayoutPreference(requireContext(), key)) {
             updateFlags |= LIST_MODE_UPDATE_FLAG;
         }
     }

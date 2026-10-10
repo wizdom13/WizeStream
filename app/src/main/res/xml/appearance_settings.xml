@@ -80,6 +80,46 @@
         app:iconSpaceReserved="false"
         app:useSimpleSummaryProvider="true" />
 
+    <ListPreference
+        android:defaultValue="@string/orientation_default_key"
+        android:entries="@array/orientation_list_view_mode_description"
+        android:entryValues="@array/orientation_list_view_mode_values"
+        android:key="@string/list_view_mode_portrait_key"
+        android:title="@string/portrait_video_layout"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:defaultValue="@string/orientation_default_key"
+        android:entries="@array/orientation_list_view_mode_description"
+        android:entryValues="@array/orientation_list_view_mode_values"
+        android:key="@string/list_view_mode_landscape_key"
+        android:title="@string/landscape_video_layout"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:defaultValue="@string/orientation_default_key"
+        android:entries="@array/orientation_grid_columns_description"
+        android:entryValues="@array/orientation_grid_columns_values"
+        android:key="@string/grid_columns_portrait_key"
+        android:title="@string/portrait_grid_columns"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:defaultValue="@string/orientation_default_key"
+        android:entries="@array/orientation_grid_columns_description"
+        android:entryValues="@array/orientation_grid_columns_values"
+        android:key="@string/grid_columns_landscape_key"
+        android:title="@string/landscape_grid_columns"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false"
+        app:useSimpleSummaryProvider="true" />
+
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="@string/show_full_grid_titles_key"

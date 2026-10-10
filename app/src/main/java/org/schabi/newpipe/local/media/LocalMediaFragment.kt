@@ -241,6 +241,13 @@ class LocalMediaFragment : Fragment() {
         loadOrExplainPermission()
     }
 
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (view != null && ::adapter.isInitialized) {
+            GridLayoutManagerHelper.preserveScrollPosition(list) { applyItemViewMode() }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         ThemeHelper.setTitleToAppCompatActivity(activity, getString(R.string.local_media))
@@ -696,7 +703,12 @@ class LocalMediaFragment : Fragment() {
             val minimumItemWidth = resources.getDimensionPixelSize(
                 R.dimen.video_item_grid_thumbnail_image_width
             ) + resources.getDimensionPixelSize(R.dimen.video_item_search_padding) * 2
-            GridLayoutManagerHelper.create(list, minimumItemWidth)
+            GridLayoutManagerHelper.create(
+                list,
+                minimumItemWidth,
+                GridLayoutManagerHelper.getPreferredSpanCount(requireContext()),
+                null
+            )
         } else {
             LinearLayoutManager(requireContext())
         }

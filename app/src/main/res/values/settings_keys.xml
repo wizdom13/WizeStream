@@ -1569,6 +1569,45 @@
         <item>1440p</item>
     </string-array>
 
+    <string name="orientation_default_key">default</string>
+    <string name="list_view_mode_portrait_key">list_view_mode_portrait</string>
+    <string name="list_view_mode_landscape_key">list_view_mode_landscape</string>
+    <string name="grid_columns_portrait_key">grid_columns_portrait</string>
+    <string name="grid_columns_landscape_key">grid_columns_landscape</string>
+    <string-array name="orientation_list_view_mode_values">
+        <item>@string/orientation_default_key</item>
+        <item>@string/list_view_mode_auto_key</item>
+        <item>@string/list_view_mode_list_key</item>
+        <item>@string/list_view_mode_grid_key</item>
+        <item>@string/list_view_mode_card_key</item>
+        </string-array>
+    <string-array name="orientation_list_view_mode_description">
+        <item>@string/orientation_default</item>
+        <item>@string/auto</item>
+        <item>@string/list</item>
+        <item>@string/grid</item>
+        <item>@string/card</item>
+        </string-array>
+    <string-array name="orientation_grid_columns_values">
+        <item>@string/orientation_default_key</item>
+        <item>@string/grid_columns_auto_key</item>
+        <item>@string/grid_columns_two_key</item>
+        <item>@string/grid_columns_three_key</item>
+        <item>@string/grid_columns_four_key</item>
+        <item>@string/grid_columns_five_key</item>
+        <item>@string/grid_columns_six_key</item>
+        <item>@string/grid_columns_seven_key</item>
+        </string-array>
+    <string-array name="orientation_grid_columns_description">
+        <item>@string/orientation_default</item>
+        <item>@string/auto</item>
+        <item>@string/grid_columns_two</item>
+        <item>@string/grid_columns_three</item>
+        <item>@string/grid_columns_four</item>
+        <item>@string/grid_columns_five</item>
+        <item>@string/grid_columns_six</item>
+        <item>@string/grid_columns_seven</item>
+        </string-array>
     <string name="list_view_mode_key">list_view_mode</string>
     <string name="grid_columns_key">grid_columns</string>
     <string name="grid_columns_auto_key">auto</string>

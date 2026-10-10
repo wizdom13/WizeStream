@@ -152,9 +152,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         selectedStreamFilter = restoreStreamFilter(storedFilter)
 
         onSettingsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (getString(R.string.list_view_mode_key).equals(key) ||
-                getString(R.string.grid_columns_key).equals(key)
-            ) {
+            if (org.schabi.newpipe.util.ThemeHelper.isListLayoutPreference(requireContext(), key)) {
                 updateListViewModeOnResume = true
             } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
@@ -232,6 +230,16 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     override fun onPause() {
         super.onPause()
         listState = feedBinding.itemsList.layoutManager?.onSaveInstanceState()
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (view != null) {
+            GridLayoutManagerHelper.preserveScrollPosition(feedBinding.itemsList) {
+                setupListViewMode()
+                viewModel.stateLiveData.value?.let { handleResult(it) }
+            }
+        }
     }
 
     override fun onResume() {

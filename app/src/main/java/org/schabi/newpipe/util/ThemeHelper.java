@@ -302,10 +302,32 @@ public final class ThemeHelper {
                 context.getResources().getDimensionPixelSize(R.dimen.channel_item_grid_min_width));
     }
 
+    public static String getOrientationPreference(final Context context, final int defaultKey,
+                                                   final int portraitKey, final int landscapeKey,
+                                                   final String fallback) {
+        final var preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        final boolean landscape = context.getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
+        final String value = preferences.getString(context.getString(
+                landscape ? landscapeKey : portraitKey),
+                context.getString(R.string.orientation_default_key));
+        return context.getString(R.string.orientation_default_key).equals(value)
+                ? preferences.getString(context.getString(defaultKey), fallback) : value;
+    }
+
+    public static boolean isListLayoutPreference(final Context context, final String key) {
+        return java.util.Arrays.stream(new int[]{R.string.list_view_mode_key,
+                R.string.grid_columns_key, R.string.list_view_mode_portrait_key,
+                R.string.list_view_mode_landscape_key, R.string.grid_columns_portrait_key,
+                R.string.grid_columns_landscape_key})
+                .anyMatch(resource -> context.getString(resource).equals(key));
+    }
+
     public static ItemViewMode getItemViewMode(final Context context) {
-        final String listMode = PreferenceManager.getDefaultSharedPreferences(context)
-                .getString(context.getString(R.string.list_view_mode_key),
-                        context.getString(R.string.list_view_mode_value));
+        final String listMode = getOrientationPreference(context,
+                R.string.list_view_mode_key, R.string.list_view_mode_portrait_key,
+                R.string.list_view_mode_landscape_key,
+                context.getString(R.string.list_view_mode_value));
         final ItemViewMode result;
         if (listMode.equals(context.getString(R.string.list_view_mode_list_key))) {
             result = ItemViewMode.LIST;

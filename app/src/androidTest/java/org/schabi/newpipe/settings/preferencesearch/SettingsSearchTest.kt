@@ -27,7 +27,6 @@ import org.schabi.newpipe.settings.NotificationsSettingsFragment
 import org.schabi.newpipe.settings.SettingsActivity
 import org.schabi.newpipe.settings.SettingsResourceRegistry
 import org.schabi.newpipe.settings.sponsorblock.SponsorBlockCategoryConfig
-import org.schabi.newpipe.util.DeviceUtils
 
 class SettingsSearchTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -81,7 +80,15 @@ class SettingsSearchTest {
         assertTrue(languageResults.any { it.key == localized.getString(expected) })
         assertFalse(languageResults.any { it.key == localized.getString(excluded) })
         val grid = searcher.searchFor(localized.getString(R.string.grid_columns_title))
-        assertEquals(DeviceUtils.isTablet(localized), grid.any { it.key == localized.getString(R.string.grid_columns_key) })
+        assertTrue(grid.any { it.key == localized.getString(R.string.grid_columns_key) })
+        for ((key, title) in listOf(
+            R.string.list_view_mode_portrait_key to R.string.portrait_video_layout,
+            R.string.list_view_mode_landscape_key to R.string.landscape_video_layout,
+            R.string.grid_columns_portrait_key to R.string.portrait_grid_columns,
+            R.string.grid_columns_landscape_key to R.string.landscape_grid_columns
+        )) {
+            assertTrue(searcher.searchFor(localized.getString(title)).any { it.key == localized.getString(key) })
+        }
         val parsed = PreferenceParser(localized, PreferenceSearchConfiguration()).parse(R.xml.appearance_settings)
         assertEquals(
             localized.getString(R.string.list_view_mode),
@@ -157,6 +164,16 @@ class SettingsSearchTest {
                 }
                 activity.onPreferenceStartFragment(main, destination)
                 activity.supportFragmentManager.executePendingTransactions()
+                val appearance = current(activity) as AppearanceSettingsFragment
+                for (key in listOf(
+                    R.string.grid_columns_key,
+                    R.string.list_view_mode_portrait_key,
+                    R.string.list_view_mode_landscape_key,
+                    R.string.grid_columns_portrait_key,
+                    R.string.grid_columns_landscape_key
+                )) {
+                    assertTrue(appearance.findPreference<Preference>(activity.getString(key))!!.isVisible)
+                }
             }
             idle()
             scenario.onActivity { activity ->

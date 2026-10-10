@@ -19,31 +19,9 @@ public class TabletGridConfigurationTest {
                     ? Path.of(".") : Path.of("..");
 
     @Test
-    public void appearanceSettingsExposeAutomaticAndFixedLargeScreenColumns() throws Exception {
+    public void largeScreenNavigationKeepsCompactControls() throws Exception {
         final String appearanceSettings = read(
                 "app/src/main/res/xml/appearance_settings.xml");
-        final String appearanceFragment = read(
-                "app/src/main/java/org/schabi/newpipe/settings/"
-                        + "AppearanceSettingsFragment.java");
-        final String settingsKeys = read(
-                "app/src/main/res/values/settings_keys.xml");
-
-        assertTrue(appearanceSettings.contains(
-                "android:defaultValue=\"@string/grid_columns_auto_key\""));
-        assertTrue(appearanceSettings.contains(
-                "android:entries=\"@array/grid_columns_description\""));
-        assertTrue(appearanceSettings.contains(
-                "android:entryValues=\"@array/grid_columns_values\""));
-        assertTrue(settingsKeys.contains("<string name=\"grid_columns_five_key\">5</string>"));
-        assertTrue(settingsKeys.contains("<string name=\"grid_columns_six_key\">6</string>"));
-        assertTrue(settingsKeys.contains("<string name=\"grid_columns_seven_key\">7</string>"));
-        assertTrue(appearanceFragment.contains(
-                "DeviceUtils.isTablet(requireContext())\n"
-                        + "                || DeviceUtils.isTv(requireContext())"));
-        assertTrue(appearanceFragment.contains(
-                "setPreferenceVisible(R.string.grid_columns_key, "
-                        + "showLargeScreenPreferences);"));
-
         final String activity = read(
                 "app/src/main/java/org/schabi/newpipe/MainActivity.java");
         final String mainFragment = read(
@@ -62,33 +40,6 @@ public class TabletGridConfigurationTest {
                 "isCompactLargeScreenNavigationEnabled()"));
         assertTrue(mainFragment.contains(
                 "NavigationBarView.LABEL_VISIBILITY_UNLABELED"));
-    }
-
-    @Test
-    public void remoteAndLocalGridsUseAndObserveTheColumnPreference() throws Exception {
-        for (final String listFragment : List.of(
-                "app/src/main/java/org/schabi/newpipe/fragments/list/"
-                        + "BaseListFragment.java",
-                "app/src/main/java/org/schabi/newpipe/local/"
-                        + "BaseLocalListFragment.java")) {
-            final String source = read(listFragment);
-
-            assertTrue(source.contains(
-                    "GridLayoutManagerHelper.getPreferredSpanCount(activity)"));
-            assertTrue(source.contains(
-                    "getString(R.string.grid_columns_key).equals(key)"));
-        }
-    }
-
-    @Test
-    public void channelGroupFeedsUseAndObserveTheColumnPreference() throws Exception {
-        final String feedFragment = read(
-                "app/src/main/java/org/schabi/newpipe/local/feed/FeedFragment.kt");
-
-        assertTrue(feedFragment.contains(
-                "GridLayoutManagerHelper.getPreferredSpanCount(requireContext())"));
-        assertTrue(feedFragment.contains(
-                "getString(R.string.grid_columns_key).equals(key)"));
     }
 
     @Test

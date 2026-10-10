@@ -94,6 +94,11 @@ internal fun portableSettingSpecs(context: Context): List<PortableSettingSpec> =
     portableSetting(context, PortableSettingId.SHOW_THUMBNAILS, R.string.show_thumbnail_key),
     portableSetting(context, PortableSettingId.IMAGE_QUALITY, R.string.image_quality_key),
     portableSetting(context, PortableSettingId.LIST_VIEW_MODE, R.string.list_view_mode_key),
+    portableSetting(context, PortableSettingId.LIST_VIEW_MODE_PORTRAIT, R.string.list_view_mode_portrait_key),
+    portableSetting(context, PortableSettingId.LIST_VIEW_MODE_LANDSCAPE, R.string.list_view_mode_landscape_key),
+    portableSetting(context, PortableSettingId.GRID_COLUMNS, R.string.grid_columns_key),
+    portableSetting(context, PortableSettingId.GRID_COLUMNS_PORTRAIT, R.string.grid_columns_portrait_key),
+    portableSetting(context, PortableSettingId.GRID_COLUMNS_LANDSCAPE, R.string.grid_columns_landscape_key),
     portableSetting(
         context,
         PortableSettingId.PREFERRED_OPEN_ACTION,

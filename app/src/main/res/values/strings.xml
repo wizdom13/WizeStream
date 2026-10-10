@@ -1816,4 +1816,9 @@
     <string name="blocked_keywords_edit">Add or edit keywords</string>
     <string name="independent_player_volume_title">Independent player volume</string>
     <string name="independent_player_volume_summary">Volume gestures adjust WizeStream independently of device volume, allowing quieter playback on earbuds</string>
+    <string name="orientation_default">Use default</string>
+    <string name="portrait_video_layout">Portrait layout</string>
+    <string name="landscape_video_layout">Landscape layout</string>
+    <string name="portrait_grid_columns">Portrait grid columns</string>
+    <string name="landscape_grid_columns">Landscape grid columns</string>
 </resources>

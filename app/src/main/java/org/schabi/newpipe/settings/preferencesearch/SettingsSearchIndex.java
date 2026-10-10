@@ -101,8 +101,7 @@ public final class SettingsSearchIndex {
         if (key.equals(context.getString(R.string.tv_related_sidebar_width_key))) {
             return DeviceUtils.isTv(context);
         }
-        if (key.equals(context.getString(R.string.grid_columns_key))
-                || key.equals(context.getString(R.string.tablet_navigation_portrait_position_key))
+        if (key.equals(context.getString(R.string.tablet_navigation_portrait_position_key))
                 || key.equals(context.getString(
                         R.string.tablet_navigation_landscape_position_key))) {
             return DeviceUtils.isTablet(context);
