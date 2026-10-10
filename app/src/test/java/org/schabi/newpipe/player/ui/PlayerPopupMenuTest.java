@@ -8,9 +8,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import android.app.Activity;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.PopupMenu;
 
@@ -20,6 +22,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.schabi.newpipe.R;
@@ -86,6 +89,28 @@ public class PlayerPopupMenuTest {
         assertTrue(controller.show(menu, anchor, () -> dismissed[0]++));
         assertFalse(old.isShowing());
         assertEquals(1, dismissed[0]);
+    }
+
+    @Test
+    public void desktopDialogShowsChoicesAndInvokesTheOriginalAction() throws Exception {
+        final int[] selected = {0};
+        final int[] dismissed = {0};
+        menu.setOnMenuItemClickListener(item -> {
+            selected[0] = item.getItemId();
+            return true;
+        });
+        assertTrue(controller.show(menu, anchor, () -> dismissed[0]++, true));
+        final java.lang.reflect.Field field = PlayerPopupMenu.class.getDeclaredField("dialog");
+        field.setAccessible(true);
+        final AlertDialog dialog = (AlertDialog) field.get(controller);
+        assertTrue(dialog.isShowing());
+        assertEquals(2, dialog.getListView().getAdapter().getCount());
+        dialog.getListView().performItemClick(null, 1, 1);
+        assertEquals(2, selected[0]);
+        controller.dismiss();
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(1, dismissed[0]);
+        assertTrue(controller.show(menu, anchor, () -> dismissed[0]++, true));
     }
 
     private ListPopupWindow popup() throws Exception {

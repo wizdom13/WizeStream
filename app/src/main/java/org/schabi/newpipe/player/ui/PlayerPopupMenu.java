@@ -11,10 +11,13 @@ import android.widget.ArrayAdapter;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.PopupMenu;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.util.DeviceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.List;
 /** Flat player choices avoid AppCompat's cascading-menu anchor cleanup in desktop windows. */
 final class PlayerPopupMenu {
     private ListPopupWindow popup;
+    private AlertDialog dialog;
 
     static View.OnAttachStateChangeListener detachListener(final Runnable onDetach) {
         return new View.OnAttachStateChangeListener() {
@@ -37,6 +41,11 @@ final class PlayerPopupMenu {
     }
 
     void dismiss() {
+        if (dialog != null) {
+            final AlertDialog previous = dialog;
+            dialog = null;
+            previous.dismiss();
+        }
         if (popup != null) {
             final ListPopupWindow previous = popup;
             popup = null;
@@ -45,6 +54,17 @@ final class PlayerPopupMenu {
     }
 
     boolean show(final PopupMenu menu, final View anchor, final Runnable onDismiss) {
+        if (menu == null || !anchor.isAttachedToWindow() || !anchor.isShown()
+                || anchor.getWindowToken() == null) {
+            dismiss();
+            return false;
+        }
+        return show(menu, anchor, onDismiss,
+                DeviceUtils.isDesktopMode(anchor.getContext()));
+    }
+
+    boolean show(final PopupMenu menu, final View anchor, final Runnable onDismiss,
+                 final boolean useDialog) {
         dismiss();
         if (menu == null || !anchor.isAttachedToWindow() || !anchor.isShown()
                 || anchor.getWindowToken() == null) {
@@ -60,8 +80,10 @@ final class PlayerPopupMenu {
         if (items.isEmpty()) {
             return false;
         }
-        final Context context = new ContextThemeWrapper(anchor.getContext(),
-                R.style.PlayerOverlayPopupMenu);
+        final MaterialAlertDialogBuilder dialogBuilder = useDialog
+                ? new MaterialAlertDialogBuilder(anchor.getContext()) : null;
+        final Context context = useDialog ? dialogBuilder.getContext()
+                : new ContextThemeWrapper(anchor.getContext(), R.style.PlayerOverlayPopupMenu);
         final ArrayAdapter<MenuItem> adapter = new ArrayAdapter<>(context,
                 android.R.layout.simple_list_item_1, items) {
             @Override
@@ -82,6 +104,31 @@ final class PlayerPopupMenu {
                 return row;
             }
         };
+        if (useDialog) {
+            final AlertDialog choices = dialogBuilder
+                    .setAdapter(adapter, (selectedDialog, position) -> {
+                        final MenuItem selected = items.get(position);
+                        if (selected.isEnabled()) {
+                            menu.getMenu().performIdentifierAction(selected.getItemId(),
+                                    Menu.FLAG_PERFORM_NO_CLOSE);
+                        }
+                    })
+                    .create();
+            choices.setOnDismissListener(ignored -> {
+                if (dialog == choices) {
+                    dialog = null;
+                }
+                onDismiss.run();
+            });
+            dialog = choices;
+            try {
+                choices.show();
+                return true;
+            } catch (final WindowManager.BadTokenException exception) {
+                dismiss();
+                return false;
+            }
+        }
         final ListPopupWindow choices = new ListPopupWindow(context);
         choices.setAnchorView(anchor);
         choices.setModal(true);
