@@ -15,6 +15,8 @@ import android.view.KeyEvent;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.databinding.PlayerBinding;
+import org.schabi.newpipe.views.PlaybackDimmingLayout;
 
 import java.lang.reflect.Field;
 
@@ -34,10 +36,27 @@ public class MainPlayerUiTvBackTest {
         verifyBack(true, true);
     }
 
+    @Test
+    public void backWakesADimmedScreenBeforeLeavingFullscreen() throws Exception {
+        verifyBack(false, false, true);
+    }
+
     private static void verifyBack(final boolean listOpen, final boolean controlsVisible)
             throws Exception {
+        verifyBack(listOpen, controlsVisible, false);
+    }
+
+    private static void verifyBack(final boolean listOpen, final boolean controlsVisible,
+                                   final boolean screenDimmed) throws Exception {
         final Context context = mock(Context.class);
         final MainPlayerUi ui = mock(MainPlayerUi.class, CALLS_REAL_METHODS);
+        final PlayerBinding binding = mock(PlayerBinding.class);
+        final PlaybackDimmingLayout root = mock(PlaybackDimmingLayout.class);
+        doReturn(root).when(binding).getRoot();
+        doReturn(screenDimmed).when(root).wakeOnInteraction();
+        final Field bindingField = VideoPlayerUi.class.getDeclaredField("binding");
+        bindingField.setAccessible(true);
+        bindingField.set(ui, binding);
         final Field contextField = PlayerUi.class.getDeclaredField("context");
         contextField.setAccessible(true);
         contextField.set(ui, context);
@@ -52,7 +71,12 @@ public class MainPlayerUiTvBackTest {
         try (MockedStatic<DeviceUtils> devices = mockStatic(DeviceUtils.class)) {
             devices.when(() -> DeviceUtils.isTv(context)).thenReturn(true);
             assertTrue(ui.onKeyDown(KeyEvent.KEYCODE_BACK));
-            if (listOpen) {
+            if (screenDimmed) {
+                verify(root).wakeOnInteraction();
+                verify(ui, never()).toggleFullscreenWithOrientation();
+                verify(ui, never()).hideControls(0, 0);
+                verify(ui, never()).closeItemsList();
+            } else if (listOpen) {
                 verify(ui).closeItemsList();
                 verify(ui, never()).hideControls(0, 0);
             } else if (controlsVisible) {

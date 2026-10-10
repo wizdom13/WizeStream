@@ -336,6 +336,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void destroy() {
+        binding.getRoot().configure(false, 60_000);
         getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         if (videoAdjustmentDialog != null) {
             videoAdjustmentDialog.dismiss();
@@ -354,6 +355,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void destroyPlayer() {
+        binding.getRoot().configure(false, 60_000);
         super.destroyPlayer();
 
         learningNoteDisposables.clear();
@@ -366,6 +368,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public void smoothStopForImmediateReusing() {
+        binding.getRoot().configure(false, 60_000);
         getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         setTouchLocked(false);
         super.smoothStopForImmediateReusing();
@@ -478,6 +481,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             }
         } else if (VideoDetailFragment.ACTION_VIDEO_FRAGMENT_STOPPED.equals(intent.getAction())) {
             fragmentIsVisible = false;
+            binding.getRoot().configure(false, 60_000);
             onFragmentStopped();
         } else if (VideoDetailFragment.ACTION_VIDEO_FRAGMENT_RESUMED.equals(intent.getAction())) {
             // Restore video source when user returns to the fragment
@@ -556,6 +560,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                                  final int duration,
                                  final int bufferPercent) {
         super.onUpdateProgress(currentProgress, duration, bufferPercent);
+        updateScreenDimming();
 
         if (areSegmentsVisible) {
             segmentAdapter.selectSegmentAt(getNearestStreamSegmentPosition(currentProgress));
@@ -599,10 +604,42 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     public void onPlaying() {
         super.onPlaying();
         checkLandscape();
+        updateScreenDimming();
+    }
+
+    private void updateScreenDimming() {
+        final var preferences = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(context);
+        long delaySeconds = 60;
+        try {
+            delaySeconds = Long.parseLong(preferences.getString(
+                    context.getString(R.string.playback_dimming_delay_key), "60"));
+        } catch (final NumberFormatException ignored) {
+            // Retain the default if a restored preference is invalid.
+        }
+        final boolean enabled = preferences.getBoolean(
+                context.getString(R.string.playback_dimming_key), false);
+        binding.getRoot().configure(enabled && isFullscreen && fragmentIsVisible
+                && player.isPlaying() && player.getPlaybackPresentationMode().rendersVideo()
+                && !isAnyListViewOpen() && !isControlsVisible(),
+                Math.min(600, Math.max(60, delaySeconds)) * 1000);
+    }
+
+    @Override
+    public void onPaused() {
+        binding.getRoot().configure(false, 60_000);
+        super.onPaused();
+    }
+
+    @Override
+    public void onBlocked() {
+        binding.getRoot().configure(false, 60_000);
+        super.onBlocked();
     }
 
     @Override
     public void onCompleted() {
+        binding.getRoot().configure(false, 60_000);
         super.onCompleted();
         if (isFullscreen) {
             toggleFullscreen();
@@ -1071,6 +1108,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public boolean onKeyDown(final int keyCode) {
+        if (binding.getRoot().wakeOnInteraction()) {
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP && isFullscreen && DeviceUtils.isTv(context)
                 && binding.getRoot().isShown() && !binding.getRoot().hasFocus()
                 && getParentActivity().map(activity -> activity.hasWindowFocus()).orElse(false)) {
@@ -1317,6 +1357,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
 
         isFullscreen = fullscreen;
+        updateScreenDimming();
         if (!fullscreen) {
             setTouchLocked(false);
         }

@@ -1850,4 +1850,14 @@
     </string-array>
 
     <string name="independent_player_volume_key">independent_player_volume</string>
+    <string name="playback_dimming_key">playback_dimming</string>
+    <string name="playback_dimming_delay_key">playback_dimming_delay</string>
+    <string-array name="playback_dimming_delay_values">
+        <item>60</item><item>300</item><item>600</item>
+    </string-array>
+    <string-array name="playback_dimming_delay_description">
+        <item>@string/playback_dimming_one_minute</item>
+        <item>@string/playback_dimming_five_minutes</item>
+        <item>@string/playback_dimming_ten_minutes</item>
+    </string-array>
 </resources>

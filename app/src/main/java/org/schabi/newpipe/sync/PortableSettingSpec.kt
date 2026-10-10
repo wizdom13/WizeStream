@@ -114,6 +114,8 @@ internal fun portableSettingSpecs(context: Context): List<PortableSettingSpec> =
         PortableSettingId.START_FULLSCREEN,
         R.string.start_main_player_fullscreen_key
     ),
+    portableSetting(context, PortableSettingId.PLAYBACK_DIMMING, R.string.playback_dimming_key),
+    portableSetting(context, PortableSettingId.PLAYBACK_DIMMING_DELAY, R.string.playback_dimming_delay_key),
     portableSetting(context, PortableSettingId.AUTO_QUEUE, R.string.auto_queue_key),
     portableSetting(context, PortableSettingId.INEXACT_SEEK, R.string.use_inexact_seek_key),
     portableSetting(
