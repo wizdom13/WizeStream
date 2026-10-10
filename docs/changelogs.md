@@ -4,6 +4,21 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.4 (`1031004`)
+
+### Improvements
+
+- Added optional fullscreen playback dimming after 1, 5, or 10 minutes of inactivity, with continued audio and wake-up by touch, remote key, or accessibility action; disabled by default.
+- Added separate portrait and landscape video layouts and grid column counts under Appearance, available on phones without enabling Tablet mode.
+- Preserved the visible list position when changing layouts on rotation and included the orientation-specific preferences in device sync.
+- Updated the play queue with Material 3 surfaces, rounded thumbnails, two-line titles, a clearer playback icon, and accessible drag handles.
+- Replaced the decorative empty-list face and message with a simple "No items to show" message.
+
+### Fixes
+
+- Applied saved channel intro skips when resuming inside the intro, while respecting explicit timestamp links, manual seeks, and positions beyond the intro.
+- Opened player choices in themed Material dialogs in DeX and desktop mode to address menus that did not open, with safe dismissal during player teardown.
+
 ## WizeStream 1.31.3 (`1031003`)
 
 ### Improvements

@@ -1,0 +1,7 @@
+• Optional fullscreen dimming with continued audio; touch or remote key to wake.
+• Separate portrait/landscape video layouts and grid columns, including on phones.
+• Preserve list position on rotation and sync layout preferences.
+• Material 3 play queue with clearer icon and two-line titles.
+• Simpler empty-list message.
+• Apply channel intro skips when resuming near the beginning.
+• Use Material dialogs for player choices in DeX/desktop mode.

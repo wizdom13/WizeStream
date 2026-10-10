@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1031004">WizeStream 1.31.4</a></li>
 <li><a href="#release-1031003">WizeStream 1.31.3</a></li>
 <li><a href="#release-1031002">WizeStream 1.31.2</a></li>
 <li><a href="#release-1031001">WizeStream 1.31.1</a></li>
@@ -91,6 +92,24 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1031004" data-version="1.31.4" data-version-code="1031004">
+<h2>WizeStream 1.31.4</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added optional fullscreen playback dimming after 1, 5, or 10 minutes of inactivity, with continued audio and wake-up by touch, remote key, or accessibility action; disabled by default.</li>
+<li>Added separate portrait and landscape video layouts and grid column counts under Appearance, available on phones without enabling Tablet mode.</li>
+<li>Preserved the visible list position when changing layouts on rotation and included the orientation-specific preferences in device sync.</li>
+<li>Updated the play queue with Material 3 surfaces, rounded thumbnails, two-line titles, a clearer playback icon, and accessible drag handles.</li>
+<li>Replaced the decorative empty-list face and message with a simple &quot;No items to show&quot; message.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Applied saved channel intro skips when resuming inside the intro, while respecting explicit timestamp links, manual seeks, and positions beyond the intro.</li>
+<li>Opened player choices in themed Material dialogs in DeX and desktop mode to address menus that did not open, with safe dismissal during player teardown.</li>
+</ul>
+</div>
+</section>
 <section id="release-1031003" data-version="1.31.3" data-version-code="1031003">
 <h2>WizeStream 1.31.3</h2>
 <div class="release-notes">
