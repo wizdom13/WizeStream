@@ -39,7 +39,7 @@ internal class PlayerQueueSynchronizer(
 
         historyController.stopLearningSession()
         player.setCurrentItemForPlaybackSynchronization(item)
-        player.channelSkipController.begin(item, item.recoveryPosition != PlayQueueItem.RECOVERY_UNSET)
+        player.channelSkipController.begin(item)
         historyController.updateLearningSession()
         playbackParametersController.applySpeedProfile(item)
 

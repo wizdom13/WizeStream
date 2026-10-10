@@ -17,9 +17,11 @@ internal class ChannelSkipPlaybackController(private val player: Player) {
     private var startMillis = 0L
     private var endMillis = 0L
 
-    fun begin(newItem: PlayQueueItem, restoringPosition: Boolean) {
+    fun begin(newItem: PlayQueueItem) {
         item = newItem
-        introAllowed = !restoringPosition
+        // Restored playback inside the configured intro should still reach its boundary.
+        // Explicit timestamp links and deliberate seeks are handled separately.
+        introAllowed = true
         introPending = introAllowed
         manualSeekPosition = null
         endProcessed = false

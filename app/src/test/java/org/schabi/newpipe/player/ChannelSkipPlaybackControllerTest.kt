@@ -159,7 +159,8 @@ class ChannelSkipPlaybackControllerTest {
 
     @Test
     fun savingSettingsDoesNotSkipAnIntroOnRestoredPlayback() {
-        begin(info, restoring = true)
+        position = 40_000L
+        begin(info)
         controller.onProgress()
         save(10, 20)
         controller.settingsChanged(info)
@@ -182,13 +183,39 @@ class ChannelSkipPlaybackControllerTest {
         verify(engine, never()).seekTo(15_000L)
     }
 
+    @Test
+    fun anotherVideoFromTheSameChannelUsesSavedIntroAtRestoredNearStart() {
+        save(20, 10)
+        val next = stream("second", "channel")
+        position = 1_000L
+        begin(next)
+        controller.onProgress()
+        verify(engine).seekTo(20_000L)
+    }
+
+    @Test
+    fun explicitTimestampAndManualIntroSeekRemainUnchanged() {
+        save(20, 10)
+        info.startPosition = 9
+        position = 9_000L
+        begin(info)
+        controller.onProgress()
+        verify(engine, never()).seekTo(20_000L)
+        info.startPosition = 0
+        begin(info)
+        controller.manualSeek(1_000L)
+        position = 1_000L
+        controller.onProgress()
+        verify(engine, never()).seekTo(20_000L)
+    }
+
     private fun save(start: Int, end: Int) = ChannelSkipPreferences.save(context, info, start, end)
 
-    private fun begin(stream: StreamInfo, restoring: Boolean = false) {
+    private fun begin(stream: StreamInfo) {
         val item = PlayQueueItem(stream)
         `when`(player.currentItem).thenReturn(item)
         `when`(player.currentStreamInfo).thenReturn(Optional.of(stream))
-        controller.begin(item, restoring)
+        controller.begin(item)
     }
 
     private fun stream(video: String, channel: String): StreamInfo = StreamInfo(0, video, "https://example.test/$video", video).apply {
