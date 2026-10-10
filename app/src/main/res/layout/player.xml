@@ -288,7 +288,7 @@
                             android:paddingEnd="9dp"
                             android:paddingBottom="9dp"
                             android:scaleType="fitCenter"
-                            android:src="@drawable/ic_list"
+                            android:src="@drawable/ic_play_queue"
                             android:visibility="gone"
                             app:tint="@color/white"
                             tools:ignore="RtlHardcoded" />
@@ -803,7 +803,10 @@
             android:id="@+id/itemsListPanel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/queue_background_color"
+            android:background="@drawable/play_queue_panel_background"
+            android:layout_margin="8dp"
+            android:clipToOutline="true"
+            android:theme="@style/PlayQueueItemTextTheme"
             android:visibility="gone"
             tools:visibility="visible">
 
@@ -825,7 +828,7 @@
                     android:ellipsize="end"
                     android:maxLines="2"
                     android:text="@string/chapters"
-                    android:textColor="@android:color/white"
+                    android:textColor="?attr/colorOnSurface"
                     android:visibility="gone" />
 
                 <androidx.appcompat.widget.AppCompatImageButton
@@ -835,8 +838,8 @@
                     android:layout_alignParentStart="true"
                     android:layout_alignParentLeft="true"
                     android:layout_centerVertical="true"
-                    android:layout_marginStart="40dp"
-                    android:layout_marginLeft="40dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginLeft="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
                     android:contentDescription="@string/notification_action_repeat"
@@ -844,7 +847,7 @@
                     android:padding="10dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/exo_legacy_controls_repeat_off"
-                    android:tint="?attr/colorAccent"
+                    android:tint="?attr/colorPrimary"
                     tools:ignore="RtlHardcoded" />
 
                 <androidx.appcompat.widget.AppCompatImageButton
@@ -860,7 +863,7 @@
                     android:padding="10dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/ic_shuffle"
-                    android:tint="?attr/colorAccent"
+                    android:tint="?attr/colorPrimary"
                     tools:ignore="RtlHardcoded" />
 
                 <androidx.appcompat.widget.AppCompatTextView
@@ -872,7 +875,7 @@
                     android:layout_toStartOf="@id/addToPlaylistButton"
                     android:layout_toEndOf="@id/shuffleButton"
                     android:gravity="center"
-                    android:textColor="@android:color/white" />
+                    android:textColor="?attr/colorOnSurface" />
 
                 <androidx.appcompat.widget.AppCompatImageButton
                     android:id="@+id/addToPlaylistButton"
@@ -887,7 +890,7 @@
                     android:padding="10dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/ic_playlist_add"
-                    android:tint="?attr/colorAccent"
+                    android:tint="?attr/colorPrimary"
                     tools:ignore="RtlHardcoded" />
 
                 <androidx.appcompat.widget.AppCompatImageButton
@@ -896,7 +899,7 @@
                     android:layout_height="50dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:layout_marginEnd="40dp"
+                    android:layout_marginEnd="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
                     android:contentDescription="@string/close"
@@ -904,7 +907,7 @@
                     android:padding="10dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/ic_close"
-                    app:tint="@color/white" />
+                    app:tint="?attr/colorOnSurface" />
 
             </RelativeLayout>
 
@@ -913,6 +916,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_below="@id/itemsListControl"
+                android:clipToPadding="false"
+                android:paddingBottom="8dp"
                 android:scrollbars="vertical"
                 android:theme="@style/PlayQueueItemTextTheme"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"

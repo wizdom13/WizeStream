@@ -128,16 +128,24 @@
         <item name="colorControlNormal">@color/white</item>
     </style>
 
+    <style name="ShapeAppearanceOverlay.WizeStream.QueueThumbnail" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
     <style name="PlayQueueItemTextTheme">
+        <item name="tint">?attr/colorOnSurfaceVariant</item>
+        <item name="iconTint">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
         <item name="android:textAppearanceLarge">@style/PlayQueueItemTitle</item>
         <item name="android:textAppearanceSmall">@style/PlayQueueItemSubtitle</item>
     </style>
 
     <style name="PlayQueueItemTitle" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:textColor">@color/white</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
     <style name="PlayQueueItemSubtitle" parent="TextAppearance.Material3.BodySmall">
-        <item name="android:textColor">@color/white_secondary</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="FloatingActionButtonTheme" parent="Widget.Design.FloatingActionButton">
