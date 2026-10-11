@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -31,6 +32,7 @@ import org.schabi.newpipe.extractor.stream.VideoStream
 import org.schabi.newpipe.player.playqueue.PlayQueue
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
+import org.schabi.newpipe.util.InfoCache
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [35])
@@ -208,6 +210,135 @@ class PlayerLiveHttpRecoveryTest {
         fixture.state(Media3Player.STATE_BUFFERING)
         `when`(fixture.player.exoPlayerIsNull()).thenReturn(true)
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+    }
+
+    @Test
+    fun sustainedHlsStallRefreshesCachedUrlsAndPreservesPositionOnlyOnce() {
+        val fixture = Fixture()
+        fixture.hlsPreferred = true
+        val cache = mock(InfoCache::class.java)
+        mockStatic(InfoCache::class.java).use { cacheClass ->
+            cacheClass.`when`<InfoCache> { InfoCache.getInstance() }.thenReturn(cache)
+            fixture.state(Media3Player.STATE_READY)
+            fixture.state(Media3Player.STATE_BUFFERING)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(9_999))
+            verify(fixture.player, never()).reloadPlayQueueManager()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1))
+            verify(cache).removeInfo(fixture.item.serviceId, fixture.item.url, InfoCache.Type.STREAM)
+            verify(fixture.player).setRecovery()
+            verify(fixture.queue, never()).unsetRecovery(0)
+            verify(fixture.player).reloadPlayQueueManager()
+            verify(fixture.engine, never()).play()
+            verify(fixture.resolver, never()).clearLiveHlsFallback()
+
+            fixture.state(Media3Player.STATE_IDLE)
+            fixture.state(Media3Player.STATE_BUFFERING)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
+            fixture.state(Media3Player.STATE_READY)
+            fixture.state(Media3Player.STATE_BUFFERING)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
+            verify(fixture.player, times(1)).reloadPlayQueueManager()
+        }
+    }
+
+    @Test
+    fun stalledHlsFallbackCanRefreshWithoutFirstReachingReady() {
+        val fixture = Fixture()
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player).reloadPlayQueueManager()
+        assertTrue(fixture.hlsPreferred)
+
+        fixture.state(Media3Player.STATE_IDLE)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player, times(2)).reloadPlayQueueManager()
+        verify(fixture.player).setRecovery()
+    }
+
+    @Test
+    fun fallbackRefreshRearmsWhenMetadataArrivesAfterBufferingEvent() {
+        val fixture = Fixture()
+        assertTrue(fixture.recover())
+        fixture.state(Media3Player.STATE_IDLE)
+        `when`(fixture.player.currentStreamInfo).thenReturn(Optional.empty())
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player, times(1)).reloadPlayQueueManager()
+
+        `when`(fixture.player.currentStreamInfo).thenReturn(Optional.of(fixture.info))
+        val listener = PlayerMedia3ListenerController(
+            fixture.player,
+            mock(PlayerAudioController::class.java),
+            mock(PlayerMetadataController::class.java),
+            mock(PlaybackParametersController::class.java),
+            mock(SponsorBlockPlaybackController::class.java),
+            fixture.controller,
+            mock(SleepTimerPlaybackController::class.java)
+        )
+        listener.onEvents(fixture.engine)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+        listener.onEvents(fixture.engine)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+        verify(fixture.player, times(2)).reloadPlayQueueManager()
+    }
+
+    @Test
+    fun httpFallbackCanAlsoRefreshIfHlsNeverBecomesReady() {
+        val fixture = Fixture()
+        assertTrue(fixture.recover())
+        fixture.state(Media3Player.STATE_IDLE)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player, times(2)).reloadPlayQueueManager()
+        verify(fixture.player).setRecovery()
+    }
+
+    @Test
+    fun hlsOnlyLiveStreamCanRecoverButShortHlsStallsDoNotRefresh() {
+        val fixture = Fixture()
+        fixture.info.dashMpdUrl = ""
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+        fixture.state(Media3Player.STATE_READY)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player).reloadPlayQueueManager()
+        verify(fixture.resolver).preferHlsForLiveStream(fixture.info.url)
+    }
+
+    @Test
+    fun pausedOrReplacedHlsStreamCannotRunPendingRefresh() {
+        val fixture = Fixture()
+        fixture.hlsPreferred = true
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        `when`(fixture.player.playWhenReady).thenReturn(false)
+        fixture.controller.onPlayWhenReadyChanged(false)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+
+        `when`(fixture.player.playWhenReady).thenReturn(true)
+        fixture.controller.onPlayWhenReadyChanged(true)
+        `when`(fixture.item.url).thenReturn("https://www.youtube.com/watch?v=other")
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+    }
+
+    @Test
+    fun archivedManifestDoesNotUseLiveHlsStallRecovery() {
+        val fixture = Fixture()
+        fixture.hlsPreferred = true
+        fixture.info.streamType = StreamType.VIDEO_STREAM
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
         verify(fixture.player, never()).reloadPlayQueueManager()
     }
 

@@ -31,6 +31,7 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.datasource.InvidiousMediaResponse
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
@@ -48,10 +49,12 @@ internal class PlayerErrorController(
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
     private var pendingLiveStallRecovery: Runnable? = null
     private var lastPlayingLiveKey: String? = null
+    private var recoveringLiveKey: String? = null
 
     fun onPlayerError(error: PlaybackException) {
         cancelPendingLiveStallRecovery()
@@ -147,8 +150,9 @@ internal class PlayerErrorController(
         when (playbackState) {
             Media3Player.STATE_READY -> {
                 cancelPendingLiveStallRecovery()
+                recoveringLiveKey = null
                 lastPlayingLiveKey = if (item != null && player.playWhenReady &&
-                    canFallBackToLiveHls(item)
+                    isRecoverableLiveManifest(item)
                 ) {
                     key
                 } else {
@@ -157,8 +161,8 @@ internal class PlayerErrorController(
             }
 
             Media3Player.STATE_BUFFERING -> {
-                if (key == null || key != lastPlayingLiveKey || !player.playWhenReady ||
-                    item == null || !canFallBackToLiveHls(item) ||
+                if (key == null || (key != lastPlayingLiveKey && key != recoveringLiveKey) ||
+                    !player.playWhenReady || item == null || !isRecoverableLiveManifest(item) ||
                     pendingLiveStallRecovery != null
                 ) {
                     return
@@ -172,16 +176,26 @@ internal class PlayerErrorController(
                     val info = player.currentStreamInfo.orElse(null) ?: return@Runnable
                     if (currentKey != key || !player.playWhenReady || player.exoPlayerIsNull() ||
                         player.exoPlayer.playbackState != Media3Player.STATE_BUFFERING ||
-                        !canFallBackToLiveHls(currentItem) ||
-                        !liveStallRecoveryGuard.acquire(key)
+                        !isRecoverableLiveManifest(currentItem)
                     ) {
                         return@Runnable
                     }
 
-                    Log.w(Player.TAG, "Live DASH stalled while buffering; retrying with HLS")
-                    videoResolver.preferHlsForLiveStream(info.url)
-                    lastPlayingLiveKey = null
-                    queue.unsetRecovery(queue.index)
+                    if (canFallBackToLiveHls(currentItem)) {
+                        if (!liveStallRecoveryGuard.acquire(key)) return@Runnable
+                        Log.w(Player.TAG, "Live DASH stalled while buffering; retrying with HLS")
+                        videoResolver.preferHlsForLiveStream(info.url)
+                        queue.unsetRecovery(queue.index)
+                    } else {
+                        if (!liveHlsRefreshGuard.acquire(key)) return@Runnable
+                        Log.w(Player.TAG, "Live HLS stalled while buffering; refreshing stream URLs once")
+                        player.setRecovery()
+                        videoResolver.preferHlsForLiveStream(info.url)
+                        invalidateYouTubeMediaCaches(currentItem)
+                    }
+                    // Reloading may emit IDLE then BUFFERING without ever reaching READY.
+                    // Keep this key so a stalled HLS fallback can still be recovered.
+                    recoveringLiveKey = key
                     player.reloadPlayQueueManager()
                 }
                 pendingLiveStallRecovery = recovery
@@ -199,12 +213,22 @@ internal class PlayerErrorController(
         cancelPendingMediaUrlRecovery()
         cancelPendingLiveStallRecovery()
         lastPlayingLiveKey = null
+        recoveringLiveKey = null
         recoveryGuard.reset()
         decoderRecoveryGuard.reset()
         audioTrackRecoveryGuard.reset()
         liveStallRecoveryGuard.reset()
+        liveHlsRefreshGuard.reset()
         videoResolver.clearRejectedVideoCodecFamily()
         videoResolver.clearLiveHlsFallback()
+    }
+
+    private fun isRecoverableLiveManifest(item: PlayQueueItem): Boolean {
+        val info = player.currentStreamInfo.orElse(null) ?: return false
+        return info.streamType == StreamType.LIVE_STREAM &&
+            PlayerHttpErrorRecovery.isYouTubeService(item.serviceId) &&
+            PlaybackResolver.isManifestOnlyYoutubeLive(info) &&
+            player.videoPlayerSelected()
     }
 
     private fun canFallBackToLiveHls(item: PlayQueueItem): Boolean {
@@ -378,6 +402,7 @@ internal class PlayerErrorController(
         val queue = player.playQueue ?: return false
         Log.w(Player.TAG, "Live DASH HTTP 403 recovery exhausted; retrying with HLS")
         videoResolver.preferHlsForLiveStream(info.url)
+        recoveringLiveKey = "${item.serviceId}:${item.url}"
         lastPlayingLiveKey = null
         queue.unsetRecovery(queue.index)
         player.onBuffering()

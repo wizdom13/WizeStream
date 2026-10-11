@@ -31,6 +31,11 @@ internal class PlayerMedia3ListenerController(
 
     fun onEvents(media3Player: Media3Player) {
         metadataController.onEvents(media3Player)
+        // StreamInfo may arrive in onEvents after the BUFFERING callback. Recheck the
+        // watchdog once metadata is available, including a fallback that never reaches READY.
+        if (media3Player.playbackState == Media3Player.STATE_BUFFERING) {
+            errorController.onPlaybackStateChanged(Media3Player.STATE_BUFFERING)
+        }
     }
 
     fun onTimelineChanged(timeline: Timeline, reason: Int) {
