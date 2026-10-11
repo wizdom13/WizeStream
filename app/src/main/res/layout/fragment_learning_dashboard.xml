@@ -24,6 +24,13 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
+            <LinearLayout
+                android:id="@+id/learning_dashboard_overview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="vertical">
+
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/learning_statistics_card"
                 android:layout_width="match_parent"
@@ -177,6 +184,8 @@
                         android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
 
             <org.schabi.newpipe.views.NewPipeTextView
                 android:id="@+id/learning_dashboard_content_title"

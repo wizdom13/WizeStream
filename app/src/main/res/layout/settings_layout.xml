@@ -10,10 +10,23 @@
         android:id="@+id/settings_toolbar_layout"
         layout="@layout/toolbar_layout" />
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/settings_fragment_holder"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize" />
+        android:layout_marginTop="?attr/actionBarSize"
+        android:orientation="horizontal">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/settings_navigation_holder"
+            android:layout_width="300dp"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/settings_fragment_holder"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
 
 </RelativeLayout>

@@ -5,6 +5,7 @@
 
 package org.schabi.newpipe.learning
 
+import android.content.res.Configuration
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
@@ -56,6 +57,21 @@ class LearningDashboardFragment : BaseStateFragment<LearningDashboardSnapshot>()
     ): View = FragmentLearningDashboardBinding.inflate(inflater, container, false).also {
         _binding = it
     }.root
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        updateOverviewLayout()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateOverviewLayout()
+    }
+
+    private fun updateOverviewLayout() {
+        val current = _binding ?: return
+        LearningOverviewLayout.apply(current.learningDashboardOverview, resources.configuration.screenWidthDp)
+    }
 
     override fun onResume() {
         super.onResume()
