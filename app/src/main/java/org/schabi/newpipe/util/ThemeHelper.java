@@ -339,7 +339,7 @@ public final class ThemeHelper {
             final Configuration configuration = context.getResources().getConfiguration();
             final boolean useGrid = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
                     && configuration.isLayoutSizeAtLeast(Configuration.SCREENLAYOUT_SIZE_LARGE);
-            result = useGrid ? ItemViewMode.GRID : ItemViewMode.LIST;
+            result = useGrid ? ItemViewMode.GRID : ItemViewMode.CARD;
         }
         return result;
     }
