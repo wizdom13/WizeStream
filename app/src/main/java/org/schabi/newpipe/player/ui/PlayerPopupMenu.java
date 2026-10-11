@@ -6,6 +6,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.PopupWindow;
@@ -81,7 +82,7 @@ final class PlayerPopupMenu {
             return false;
         }
         final MaterialAlertDialogBuilder dialogBuilder = useDialog
-                ? new MaterialAlertDialogBuilder(anchor.getContext()) : null;
+                ? new MaterialAlertDialogBuilder(dialogContext(anchor)) : null;
         final Context context = useDialog ? dialogBuilder.getContext()
                 : new ContextThemeWrapper(anchor.getContext(), R.style.PlayerOverlayPopupMenu);
         final ArrayAdapter<MenuItem> adapter = new ArrayAdapter<>(context,
@@ -121,6 +122,15 @@ final class PlayerPopupMenu {
                 onDismiss.run();
             });
             dialog = choices;
+            // Player views are inflated from the application context, including in DeX.
+            // Attach the dialog to their actual window rather than requiring an Activity context.
+            final Window window = choices.getWindow();
+            if (window != null) {
+                final WindowManager.LayoutParams attributes = window.getAttributes();
+                attributes.type = WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
+                attributes.token = anchor.getWindowToken();
+                window.setAttributes(attributes);
+            }
             try {
                 choices.show();
                 return true;
@@ -166,5 +176,15 @@ final class PlayerPopupMenu {
             dismiss();
             return false;
         }
+    }
+
+    private static Context dialogContext(final View anchor) {
+        if (anchor.getDisplay() == null) {
+            return anchor.getContext();
+        }
+        final ContextThemeWrapper context = new ContextThemeWrapper(
+                anchor.getContext().createDisplayContext(anchor.getDisplay()), 0);
+        context.getTheme().setTo(anchor.getContext().getTheme());
+        return context;
     }
 }

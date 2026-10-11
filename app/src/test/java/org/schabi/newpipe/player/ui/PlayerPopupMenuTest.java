@@ -2,6 +2,7 @@ package org.schabi.newpipe.player.ui;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,8 @@ import static org.mockito.Mockito.verify;
 import android.app.Activity;
 import android.os.Looper;
 import android.view.View;
+import android.view.ContextThemeWrapper;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import androidx.appcompat.app.AlertDialog;
@@ -111,6 +114,34 @@ public class PlayerPopupMenuTest {
         Shadows.shadowOf(Looper.getMainLooper()).idle();
         assertEquals(1, dismissed[0]);
         assertTrue(controller.show(menu, anchor, () -> dismissed[0]++, true));
+    }
+
+    @Test
+    public void desktopDialogUsesPlayerWindowTokenWithApplicationContext() throws Exception {
+        final ContextThemeWrapper context = new ContextThemeWrapper(
+                activity.get().getApplicationContext(), R.style.LightTheme);
+        anchor = new Button(context);
+        activity.get().setContentView(anchor);
+        anchor.layout(0, 0, 120, 48);
+        menu = new PopupMenu(context, anchor);
+        menu.getMenu().add(0, 1, 0, "Auto");
+        menu.getMenu().add(0, 2, 1, "1080p");
+        final int[] selected = {0};
+        menu.setOnMenuItemClickListener(item -> {
+            selected[0] = item.getItemId();
+            return true;
+        });
+
+        assertTrue(controller.show(menu, anchor, () -> { }, true));
+        final java.lang.reflect.Field field = PlayerPopupMenu.class.getDeclaredField("dialog");
+        field.setAccessible(true);
+        final AlertDialog dialog = (AlertDialog) field.get(controller);
+        assertTrue(dialog.isShowing());
+        assertEquals(WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG,
+                dialog.getWindow().getAttributes().type);
+        assertSame(anchor.getWindowToken(), dialog.getWindow().getAttributes().token);
+        dialog.getListView().performItemClick(null, 1, 1);
+        assertEquals(2, selected[0]);
     }
 
     private ListPopupWindow popup() throws Exception {
