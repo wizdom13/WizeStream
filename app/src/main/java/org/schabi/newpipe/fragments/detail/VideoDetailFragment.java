@@ -249,6 +249,8 @@ public final class VideoDetailFragment
     protected String url = null;
     @Nullable
     protected PlayQueue playQueue = null;
+    @Nullable
+    private PlayQueue pendingLearningQueue;
     private final PublishSubject<Optional<PlayQueue>> learningQueueChanges =
             PublishSubject.create();
 
@@ -1300,6 +1302,8 @@ public final class VideoDetailFragment
 
         hideMainPlayerOnLoadingNewStream();
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
+        pendingLearningQueue = newQueue != null
+                && newQueue.getLearningPlaylistContext() != null ? newQueue : null;
         if (currentLocalItem != null) {
             prepareAndHandleLocalMedia(currentLocalItem, true);
             if (stack.isEmpty() || !stack.peek().getPlayQueue().equalStreams(newQueue)) {
@@ -2401,6 +2405,13 @@ public final class VideoDetailFragment
         }
     }
 
+    boolean isStaleLearningQueue(final PlayQueue queue) {
+        if (pendingLearningQueue == null) {
+            return false;
+        }
+        return !queue.equalStreamsAndIndex(pendingLearningQueue);
+    }
+
     protected void setInitialData(final int newServiceId,
                                   @Nullable final String newUrl,
                                   @NonNull final String newTitle,
@@ -2855,6 +2866,10 @@ public final class VideoDetailFragment
 
     @Override
     public void onQueueUpdate(final PlayQueue queue) {
+        if (isStaleLearningQueue(queue)) {
+            return;
+        }
+        pendingLearningQueue = null;
         playQueue = queue;
         learningQueueChanges.onNext(Optional.of(queue));
         final PlayQueueItem queueItem = queue.getItem();
@@ -2938,6 +2953,9 @@ public final class VideoDetailFragment
 
     @Override
     public void onMetadataUpdate(final StreamInfo info, final PlayQueue queue) {
+        if (isStaleLearningQueue(queue)) {
+            return;
+        }
         final StackItem item = findQueueInStack(queue);
         if (item != null) {
             // When PlayQueue can have multiple streams (PlaylistPlayQueue or ChannelPlayQueue)
@@ -2970,6 +2988,9 @@ public final class VideoDetailFragment
 
     @Override
     public void onMetadataUpdate(final MediaItemTag tag, final PlayQueue queue) {
+        if (isStaleLearningQueue(queue)) {
+            return;
+        }
         final PlayQueueItem item = queue.getItem();
         if (item == null || !item.isLocalMedia()
                 || (playQueue != null && !queue.equalStreams(playQueue))) {
