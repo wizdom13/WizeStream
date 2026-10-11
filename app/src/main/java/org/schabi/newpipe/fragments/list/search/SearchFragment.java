@@ -29,7 +29,6 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -62,6 +61,7 @@ import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
+import org.schabi.newpipe.extractor.search.SearchExtractor.NothingFoundException;
 import org.schabi.newpipe.extractor.search.SearchInfo;
 import org.schabi.newpipe.extractor.search.filter.FilterItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
@@ -195,6 +195,14 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private final List<InfoItem> collectedSearchItems = new ArrayList<>();
     private SearchPageBudget deepSearchBudget;
     private boolean deepSearchRunning;
+    private int deepSearchResultLimit = 5000;
+    private boolean collectionLimitReached;
+    @State
+    boolean monthlySearchResults;
+    private List<String> deepSearchQueries = Collections.emptyList();
+    private int deepSearchMonth;
+    private boolean deepSearchFirstPage;
+    private List<Integer> deepSearchFilters;
     private long deepSearchDelayMillis = DeepSearchOptions.DEFAULT_DELAY_MILLIS;
     private Disposable searchDisposable;
     private Disposable suggestionDisposable;
@@ -645,11 +653,12 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
         if (!TextUtils.isEmpty(searchString)) {
             menu.add(Menu.NONE, MENU_DEEP_SEARCH, Menu.NONE, R.string.search_fetch_more)
-                    .setEnabled(!isLoading.get() && Page.isValid(nextPage)
-                            && collectedSearchItems.size() < 5000)
+                    .setEnabled(!isLoading.get() && (supportsMonthlySearch()
+                            || (Page.isValid(nextPage) && collectedSearchItems.size() < 20000)))
                     .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
             if (savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED) {
-                if (searchAfter.isEmpty() && searchBefore.isEmpty() && !hasDurationOptions()) {
+                if (!monthlySearchResults && searchAfter.isEmpty()
+                        && searchBefore.isEmpty() && !hasDurationOptions()) {
                     menu.add(Menu.NONE, MENU_SAVE_SEARCH_FEED, Menu.NONE,
                                     R.string.save_search_as_feed)
                             .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
@@ -1190,6 +1199,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     @Override
     public void startLoading(final boolean forceLoad) {
         stopDeepSearch();
+        collectionLimitReached = false;
+        monthlySearchResults = false;
         collectedSearchItems.clear();
         infoListAdapter.clearStreamItemList();
         nextPage = null;
@@ -1212,7 +1223,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     protected void loadMoreItems() {
-        if (deepSearchRunning || !Page.isValid(nextPage)) {
+        if (deepSearchRunning || collectionLimitReached || !Page.isValid(nextPage)) {
             return;
         }
         isLoading.set(true);
@@ -1234,7 +1245,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     protected boolean hasMoreItems() {
-        return Page.isValid(nextPage);
+        return !collectionLimitReached && Page.isValid(nextPage);
     }
 
     @Override
@@ -1300,9 +1311,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         final List<InfoItem> unique = SearchResultOrdering.arrange(
                 collectedSearchItems, 0, 0, 0);
         collectedSearchItems.clear();
-        final int retained = deepSearchRunning ? Math.min(unique.size(), 5000) : unique.size();
+        final int retained = deepSearchRunning
+                ? Math.min(unique.size(), deepSearchResultLimit) : unique.size();
         collectedSearchItems.addAll(unique.subList(0, retained));
-        return new ArrayList<>(unique.subList(previousSize, retained));
+        return new ArrayList<>(unique.subList(Math.min(previousSize, retained), retained));
     }
 
     private void renderSearchItems() {
@@ -1321,8 +1333,8 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         searchBinding.deepSearchButton.setText(deepSearchRunning
                 ? R.string.cancel : R.string.search_fetch_more);
         searchBinding.deepSearchButton.setEnabled(deepSearchRunning
-                || (!isLoading.get() && Page.isValid(nextPage)
-                && collectedSearchItems.size() < 5000));
+                || (!isLoading.get() && (supportsMonthlySearch()
+                || (Page.isValid(nextPage) && collectedSearchItems.size() < 20000))));
         searchBinding.deepSearchStatus.setText(deepSearchRunning
                 ? context.getString(R.string.search_deep_progress,
                         deepSearchBudget.getCompletedPages(),
@@ -1335,43 +1347,51 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         }
     }
 
-    private void showDeepSearchDialog() {
-        if (isLoading.get() || !Page.isValid(nextPage) || searchBinding == null
-                || collectedSearchItems.size() >= 5000) {
-            return;
-        }
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.search_fetch_more)
-                .setMessage(R.string.search_deep_help)
-                .setPositiveButton(R.string.search_deep_choose, (dialog, which) ->
-                        new MaterialAlertDialogBuilder(requireContext())
-                                .setTitle(R.string.search_deep_choose)
-                                .setItems(new CharSequence[]{"25", "100", "250",
-                                        getString(R.string.search_deep_custom)},
-                                        (choice, index) -> {
-                                            if (index == 3) {
-                                                DeepSearchDialog.show(requireContext(),
-                                                        this::startDeepSearch);
-                                            } else {
-                                                startDeepSearch(new int[]{25, 100, 250}[index],
-                                                        DeepSearchOptions.DEFAULT_DELAY_MILLIS);
-                                            }
-                                        }).show())
-                .setNegativeButton(R.string.cancel, null)
-                .show();
+    private boolean supportsMonthlySearch() {
+        return serviceId == ServiceList.YouTube.getServiceId()
+                && savedSearchFeedId == SavedSearchFeedManager.NO_SAVED_SEARCH_FEED
+                && Arrays.stream(contentFilter).noneMatch(value -> value.startsWith("music_"));
     }
 
-    private void startDeepSearch(final int pages, final long delayMillis) {
-        if (isLoading.get() || !Page.isValid(nextPage) || searchBinding == null
-                || collectedSearchItems.size() >= 5000) {
+    private void showDeepSearchDialog() {
+        if (isLoading.get() || searchBinding == null || deepSearchRunning) {
             return;
         }
-        if (delayMillis < DeepSearchOptions.MIN_DELAY_MILLIS
-                || delayMillis > DeepSearchOptions.MAX_DELAY_MILLIS) {
+        DeepSearchDialog.show(requireContext(), supportsMonthlySearch(), this::startDeepSearch);
+    }
+
+    private void startDeepSearch(final DeepSearchOptions.Request options) {
+        if (isLoading.get() || searchBinding == null || deepSearchRunning
+                || options.getDelayMillis() < DeepSearchOptions.MIN_DELAY_MILLIS
+                || options.getDelayMillis() > DeepSearchOptions.MAX_DELAY_MILLIS) {
             return;
         }
-        deepSearchDelayMillis = delayMillis;
-        deepSearchBudget = new SearchPageBudget(pages);
+        final Integer year = options.getYear();
+        if (year == null && (!Page.isValid(nextPage)
+                || collectedSearchItems.size() >= options.getResults())) {
+            return;
+        }
+        deepSearchFilters = getSelectedSortFilterIds();
+        if (year != null) {
+            if (!supportsMonthlySearch()) {
+                return;
+            }
+            monthlySearchResults = true;
+            deepSearchQueries = MonthlySearchQueries.forYear(searchString, year);
+            deepSearchFilters = deepSearchFilters.stream().filter(id -> {
+                final var filter = service.getSearchQHFactory().getFilterItem(id);
+                return filter == null || !MonthlySearchQueries.isUploadDateFilter(filter.getName());
+            }).collect(Collectors.toList());
+            collectedSearchItems.clear();
+            infoListAdapter.clearStreamItemList();
+            nextPage = null;
+            deepSearchMonth = 0;
+            deepSearchFirstPage = true;
+        }
+        collectionLimitReached = false;
+        deepSearchDelayMillis = options.getDelayMillis();
+        deepSearchResultLimit = options.getResults();
+        deepSearchBudget = new SearchPageBudget(options.getPages(), deepSearchResultLimit);
         deepSearchRunning = true;
         loadDeepSearchPage();
     }
@@ -1380,9 +1400,25 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (!deepSearchRunning || searchBinding == null) {
             return;
         }
-        if (!deepSearchBudget.request(nextPage, collectedSearchItems.size())) {
-            if (deepSearchBudget.getCompletedPages() < deepSearchBudget.getMaximumPages()
-                    && collectedSearchItems.size() < 5000) {
+        final boolean monthly = !deepSearchQueries.isEmpty();
+        final String query = monthly ? deepSearchQueries.get(deepSearchMonth)
+                : getEffectiveSearchString();
+        final boolean first = monthly && deepSearchFirstPage;
+        final boolean allowed = first
+                ? deepSearchBudget.requestFirst(query, collectedSearchItems.size())
+                : deepSearchBudget.requestForQuery(query, nextPage, collectedSearchItems.size());
+        if (!allowed) {
+            if (monthly && deepSearchBudget.getCompletedPages() < deepSearchBudget.getMaximumPages()
+                    && collectedSearchItems.size() < deepSearchResultLimit
+                    && ++deepSearchMonth < deepSearchQueries.size()) {
+                nextPage = null;
+                deepSearchFirstPage = true;
+                loadDeepSearchPage();
+                return;
+            }
+            if (!monthly
+                    && deepSearchBudget.getCompletedPages() < deepSearchBudget.getMaximumPages()
+                    && collectedSearchItems.size() < deepSearchResultLimit) {
                 nextPage = null;
             }
             stopDeepSearch();
@@ -1393,21 +1429,39 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (searchDisposable != null) {
             searchDisposable.dispose();
         }
-        final long delay = deepSearchBudget.getCompletedPages() == 0
-                ? 0 : deepSearchDelayMillis;
+        final Page continuation = nextPage;
+        final long delay = deepSearchBudget.getCompletedPages() == 0 ? 0 : deepSearchDelayMillis;
         searchDisposable = Single.timer(delay, TimeUnit.MILLISECONDS, Schedulers.io())
-                .flatMap(ignored -> ExtractorHelper.getMoreSearchItems(serviceId,
-                        getEffectiveSearchString(), asList(contentFilter),
-                        getSelectedSortFilterIds(), nextPage))
+                .flatMap(ignored -> first
+                        ? ExtractorHelper.searchForFilters(serviceId, query,
+                                asList(contentFilter), deepSearchFilters)
+                                .<ListExtractor.InfoItemsPage<?>>map(info -> {
+                                    final List<Throwable> errors = info.getErrors().stream()
+                                            .filter(error ->
+                                                    !(error instanceof NothingFoundException))
+                                            .collect(Collectors.toList());
+                                    return new ListExtractor.InfoItemsPage<>(info.getRelatedItems(),
+                                            info.getNextPage(), errors);
+                                })
+                        : ExtractorHelper.getMoreSearchItems(serviceId, query,
+                                asList(contentFilter), deepSearchFilters, continuation))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
                     if (!deepSearchRunning || searchBinding == null) {
                         return;
                     }
+                    deepSearchFirstPage = false;
                     handleNextItems(result);
                     deepSearchBudget.completed();
                     loadDeepSearchPage();
                 }, throwable -> {
+                    if (monthly && throwable instanceof SearchExtractor.NothingFoundException) {
+                        nextPage = null;
+                        deepSearchFirstPage = false;
+                        deepSearchBudget.completed();
+                        loadDeepSearchPage();
+                        return;
+                    }
                     stopDeepSearch();
                     showSnackBarError(new ErrorInfo(throwable, UserAction.SEARCHED,
                             searchString, serviceId, getOpenInBrowserUrlForErrors()));
@@ -1419,6 +1473,11 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             return;
         }
         deepSearchRunning = false;
+        collectionLimitReached = collectedSearchItems.size() >= deepSearchResultLimit;
+        if (!deepSearchQueries.isEmpty()) {
+            nextPage = null;
+            deepSearchQueries = Collections.emptyList();
+        }
         if (searchDisposable != null) {
             searchDisposable.dispose();
         }

@@ -7,10 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.checkbox.MaterialCheckBox
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -23,38 +23,58 @@ import org.schabi.newpipe.R
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], application = Application::class)
 class DeepSearchDialogTest {
+    private fun descendants(view: View): List<View> = listOf(view) +
+        if (view is ViewGroup) (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) } else emptyList()
+
     @Test
-    fun customFormRejectsInvalidLimitsAndStartsWithValidatedValues() {
-        val activity = Robolectric.buildActivity(Activity::class.java)
-        activity.get().setTheme(R.style.LightTheme)
-        activity.setup()
-        var selected: Pair<Int, Long>? = null
-        try {
-            DeepSearchDialog.show(activity.get()) { pages, delay -> selected = pages to delay }
+    fun customFormRejectsInvalidPageAndDelayLimits() {
+        Robolectric.buildActivity(Activity::class.java).use { controller ->
+            val activity = controller.get()
+            activity.setTheme(R.style.LightTheme)
+            controller.setup().visible()
+            var selected: DeepSearchOptions.Request? = null
+            DeepSearchDialog.show(activity, false) { selected = it }
             shadowOf(Looper.getMainLooper()).idle()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
-            val inputs = inputs(dialog.window!!.decorView)
-            assertEquals(2, inputs.size)
+            val inputs = descendants(dialog.window!!.decorView).filterIsInstance<EditText>()
             inputs[0].setText("251")
             inputs[1].setText("0")
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            assertTrue(dialog.isShowing)
+            assertNull(selected)
             assertNotNull(inputs[0].error)
             assertNotNull(inputs[1].error)
             inputs[0].setText("42")
             inputs[1].setText("2.5")
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            assertEquals(42 to 2500L, selected)
-            assertFalse(dialog.isShowing)
-        } finally {
-            (ShadowDialog.getLatestDialog() as? AlertDialog)?.dismiss()
-            activity.pause().stop().destroy()
+            assertEquals(42, selected!!.pages)
+            assertEquals(2500L, selected!!.delayMillis)
+            assertNull(selected!!.year)
         }
     }
 
-    private fun inputs(view: View): List<EditText> {
-        if (view is EditText) return listOf(view)
-        if (view !is ViewGroup) return emptyList()
-        return (0 until view.childCount).flatMap { inputs(view.getChildAt(it)) }
+    @Test
+    fun rejectsInvalidLimitAndSubmitsMonthlySettings() {
+        Robolectric.buildActivity(Activity::class.java).use { controller ->
+            val activity = controller.get()
+            activity.setTheme(R.style.LightTheme)
+            controller.setup().visible()
+            var request: DeepSearchOptions.Request? = null
+            DeepSearchDialog.show(activity, true) { request = it }
+            shadowOf(Looper.getMainLooper()).idle()
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val views = descendants(dialog.window!!.decorView)
+            val inputs = views.filterIsInstance<EditText>()
+            val results = inputs.single { it.contentDescription == activity.getString(R.string.search_deep_result_limit) }
+            results.setText("20001")
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            assertNull(request)
+            assertNotNull(results.error)
+            results.setText("10000")
+            views.filterIsInstance<MaterialCheckBox>().single().isChecked = true
+            inputs.single { it.contentDescription == activity.getString(R.string.search_deep_year) }.setText("2024")
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            assertEquals(10000, request!!.results)
+            assertEquals(2024, request!!.year)
+        }
     }
 }

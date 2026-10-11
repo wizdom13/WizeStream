@@ -4,6 +4,8 @@ import kotlin.math.roundToLong
 
 /** User-selected collection limits; result and continuation safeguards remain independent. */
 object DeepSearchOptions {
+    data class Request(val pages: Int, val delayMillis: Long, val results: Int, val year: Int?)
+
     const val DEFAULT_PAGES = 100
     const val DEFAULT_DELAY_MILLIS = 2000L
     const val MIN_DELAY_MILLIS = 300L
@@ -11,6 +13,9 @@ object DeepSearchOptions {
 
     @JvmStatic
     fun parsePages(value: String): Int? = value.trim().toIntOrNull()?.takeIf { it in 1..SearchPageBudget.MAX_PAGES }
+
+    @JvmStatic
+    fun parseResults(value: String): Int? = value.trim().toIntOrNull()?.takeIf { it in 1..20000 }
 
     @JvmStatic
     fun parseDelaySeconds(value: String): Long? {
