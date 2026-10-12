@@ -30,6 +30,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_item_delete_playlist"
+        android:title="@string/delete_playlist"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_item_rename_playlist"
         android:title="@string/rename_playlist"
         app:showAsAction="never" />

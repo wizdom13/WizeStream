@@ -132,6 +132,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private DebounceSaver debounceSaver;
     /** Flag to prevent simultaneous rewrites of the playlist. */
     private boolean isRewritingPlaylist = false;
+    private boolean isDeletingPlaylist = false;
     private final List<PlaylistStreamEntry> unfilteredItems = new ArrayList<>();
 
     /**
@@ -317,6 +318,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.menu_local_playlist, menu);
 
+        menu.findItem(R.id.menu_item_delete_playlist).setVisible(!useAsFrontPage);
+
         final MenuItem searchItem = menu.findItem(R.id.menu_item_search_content);
         searchItem.setVisible(!useAsFrontPage);
         if (!useAsFrontPage) {
@@ -461,6 +464,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             final PlayQueue playQueue = getCompletePlaylistPlayQueue();
             playQueue.shuffleFromStart();
             NavigationHelper.playOnMainPlayer(requireContext(), playQueue, false);
+        } else if (item.getItemId() == R.id.menu_item_delete_playlist) {
+            createDeleteDialog();
         } else if (item.getItemId() == R.id.menu_item_rename_playlist) {
             createRenameDialog();
         } else if (item.getItemId() == R.id.menu_item_remove_watched) {
@@ -727,6 +732,49 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     // Playlist Metadata/Streams Manipulation
     //////////////////////////////////////////////////////////////////////////*/
 
+    private void createDeleteDialog() {
+        if (playlistId == null || playlistManager == null || getContext() == null
+                || isDeletingPlaylist) {
+            return;
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(name)
+                .setMessage(R.string.delete_playlist_prompt)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) -> deletePlaylist())
+                .show();
+    }
+
+    private void deletePlaylist() {
+        if (playlistId == null || playlistManager == null || disposables == null
+                || isDeletingPlaylist) {
+            return;
+        }
+
+        isDeletingPlaylist = true;
+        disposables.add(playlistManager.updatePlaylists(Collections.emptyList(),
+                        Collections.singletonList(playlistId))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(() -> {
+                    if (debounceSaver != null) {
+                        debounceSaver.setNoChangesToSave();
+                    }
+                    if (isAdded()) {
+                        final var fragmentManager = getFM();
+                        if (fragmentManager != null && !fragmentManager.isStateSaved()) {
+                            if (!fragmentManager.popBackStackImmediate()) {
+                                NavigationHelper.gotoMainFragment(fragmentManager);
+                            }
+                        }
+                    }
+                }, throwable -> {
+                    isDeletingPlaylist = false;
+                    showError(new ErrorInfo(throwable, UserAction.REQUESTED_BOOKMARK,
+                            "Deleting local playlist"));
+                }));
+    }
+
     private void createRenameDialog() {
         if (playlistId == null || name == null || getContext() == null) {
             return;
@@ -877,7 +925,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
      */
     @Override
     public void saveImmediate() {
-        if (playlistManager == null || itemListAdapter == null) {
+        if (playlistManager == null || itemListAdapter == null || isDeletingPlaylist) {
             return;
         }
 

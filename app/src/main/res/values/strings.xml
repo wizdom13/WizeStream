@@ -950,6 +950,7 @@
     <string name="unset_playlist_thumbnail">Unset permanent thumbnail</string>
     <string name="bookmark_playlist">Bookmark Playlist</string>
     <string name="unbookmark_playlist">Remove Bookmark</string>
+    <string name="delete_playlist">Delete playlist</string>
     <string name="delete_playlist_prompt">Delete this playlist\?</string>
     <string name="playlist_creation_success">Playlist created</string>
     <string name="playlist_add_stream_success">Playlisted</string>
