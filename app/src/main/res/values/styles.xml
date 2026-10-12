@@ -243,6 +243,21 @@
         <item name="colorOnSecondaryContainer">#101C2B</item>
     </style>
 
+    <style name="ThemeOverlay_wizestream_ThemeColor_Cyan">
+        <item name="colorPrimary">#006874</item>
+        <item name="colorPrimaryFixedDim">#4FD8EB</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryDark">#97F0FF</item>
+        <item name="colorPrimaryContainer">#97F0FF</item>
+        <item name="colorOnPrimaryContainer">#001F24</item>
+        <item name="colorSecondary">#4A6267</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorAccent">#4A6267</item>
+        <item name="colorControlActivated">#006874</item>
+        <item name="colorSecondaryContainer">#CDE7EC</item>
+        <item name="colorOnSecondaryContainer">#051F23</item>
+    </style>
+
     <style name="ThemeOverlay_wizestream_ThemeColor_Purple">
         <item name="colorPrimary">#6750A4</item>
         <item name="colorPrimaryFixedDim">#D0BCFF</item>

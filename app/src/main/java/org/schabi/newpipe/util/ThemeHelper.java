@@ -88,6 +88,8 @@ public final class ThemeHelper {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Green;
         } else if (isThemeColor(context, R.string.theme_color_blue_value, "blue")) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Blue;
+        } else if (isThemeColor(context, R.string.theme_color_cyan_value, "cyan")) {
+            return R.style.ThemeOverlay_wizestream_ThemeColor_Cyan;
         } else if (isThemeColor(context, R.string.theme_color_purple_value, "purple")) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Purple;
         } else if (isThemeColor(context, R.string.theme_color_orange_value, "orange")) {
