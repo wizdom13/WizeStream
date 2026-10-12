@@ -18,6 +18,8 @@ import org.schabi.newpipe.extractor.stream.StreamType;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -29,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /** Runs the real client-selection and app metadata-recovery paths with fixture HTTP responses. */
 public class YoutubeMetadataTimeoutRecoveryTest {
@@ -50,6 +53,8 @@ public class YoutubeMetadataTimeoutRecoveryTest {
     private int metadataRetries;
     private int asyncMetadataRequests;
     private boolean retryFails;
+    private boolean metadataStartedBeforePrimary;
+    private String playerBody = PLAYER;
 
     @Before
     public void setUp() throws Exception {
@@ -64,6 +69,9 @@ public class YoutubeMetadataTimeoutRecoveryTest {
             public Response execute(final Request request) throws IOException {
                 if (request.url().contains("/visitor_id?")) {
                     visitorRequests++;
+                    if (visitorRequests == 1) {
+                        metadataStartedBeforePrimary = asyncMetadataRequests > 0;
+                    }
                     if (visitorRequests <= 2) {
                         throw new SocketTimeoutException("fixture visitor timeout");
                     }
@@ -89,7 +97,7 @@ public class YoutubeMetadataTimeoutRecoveryTest {
                         asyncMetadataRequests++;
                         callback.onError(new SocketTimeoutException("fixture metadata timeout"));
                     } else if (request.url().contains("/player?")) {
-                        callback.onSuccess(response(request, PLAYER));
+                        callback.onSuccess(response(request, playerBody));
                     } else {
                         throw new AssertionError("Unexpected async request: " + request.url());
                     }
@@ -117,12 +125,17 @@ public class YoutubeMetadataTimeoutRecoveryTest {
         final YoutubeDiagnosticStreamExtractor extractor = extractor();
         extractor.fetchPage();
         assertPlayback(extractor);
+        assertTrue(metadataStartedBeforePrimary);
         assertEquals(3, visitorRequests);
         assertEquals(1, asyncMetadataRequests);
         assertEquals(1, metadataRetries);
         assertFalse(extractor.errors.isEmpty());
         // Earlier failed client requests remain available for diagnostics rather than fatal.
-        assertTrue(extractor.errors.get(0).getCause() instanceof SocketTimeoutException);
+        assertTrue(extractor.errors.stream().anyMatch(error ->
+                error.getCause() instanceof SocketTimeoutException));
+        assertTrue(extractor.watchDataCache.shouldBeLive);
+        assertEquals(0, extractor.watchDataCache.startAt);
+        assertEquals(0, extractor.getStartAt());
     }
 
     @Test
@@ -138,6 +151,45 @@ public class YoutubeMetadataTimeoutRecoveryTest {
         assertTrue(extractor.errors.stream().anyMatch(error -> error.getMessage()
                 .contains("watch-next metadata recovery")
                 && error.getCause() instanceof SocketTimeoutException));
+    }
+
+    @Test
+    public void earlyLiveMetadataRetainsBroadcastStartTime() throws Exception {
+        final String start = "2026-10-11T20:00:00Z";
+        playerBody = PLAYER.replace("\"streamingData\":", "\"microformat\":{"
+                + "\"playerMicroformatRenderer\":{\"liveBroadcastDetails\":{"
+                + "\"startTimestamp\":\"" + start + "\"}}},\"streamingData\":");
+        final YoutubeDiagnosticStreamExtractor extractor = extractor();
+        extractor.fetchPage();
+        assertPlayback(extractor);
+        assertTrue(metadataStartedBeforePrimary);
+        assertTrue(extractor.watchDataCache.shouldBeLive);
+        assertEquals(java.time.Instant.parse(start).toEpochMilli(),
+                extractor.watchDataCache.startAt);
+    }
+
+    @Test
+    public void interruptionCancelsTheEntirePendingBatch() throws Exception {
+        final YoutubeDiagnosticStreamExtractor extractor = extractor();
+        final Call first = mock(Call.class);
+        final Call second = mock(Call.class);
+        final Method wait = YoutubeStreamExtractor.class.getDeclaredMethod(
+                "waitForCallsToFinish", CancellableCall[].class);
+        wait.setAccessible(true);
+        Thread.currentThread().interrupt();
+        try {
+            wait.invoke(extractor, (Object) new CancellableCall[]{
+                    new CancellableCall(first), new CancellableCall(second)});
+            throw new AssertionError("Expected extraction interruption");
+        } catch (final InvocationTargetException expected) {
+            assertTrue(expected.getCause() instanceof ExtractionException);
+            assertTrue(expected.getCause().getCause() instanceof InterruptedException);
+            assertTrue(Thread.currentThread().isInterrupted());
+            verify(first).cancel();
+            verify(second).cancel();
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     private void assertPlayback(final YoutubeDiagnosticStreamExtractor extractor)

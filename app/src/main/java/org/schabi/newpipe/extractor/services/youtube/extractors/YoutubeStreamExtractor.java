@@ -51,6 +51,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
@@ -101,7 +102,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     private JsonObject videoSecondaryInfoRenderer;
     public JsonObject playerMicroFormatRenderer;
     private int ageLimit = -1;
-    private StreamType streamType;
+    private volatile StreamType streamType;
 
     // We need to store the contentPlaybackNonces because we need to append them to videoplayback
     // URLs (with the cpn parameter).
@@ -116,7 +117,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
     public WatchDataCache watchDataCache;
 
-    public final ArrayList<Throwable> errors = new ArrayList<>();
+    public final List<Throwable> errors = new CopyOnWriteArrayList<>();
 
     public YoutubeStreamExtractor(final StreamingService service, final LinkHandler linkHandler, WatchDataCache watchDataCache) {
         super(service, linkHandler);
@@ -153,7 +154,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
     @Override
     public long getStartAt() throws ParsingException {
-        return getUploadDate().offsetDateTime().toEpochSecond() * 1000;
+        final DateWrapper uploadDate = getUploadDate();
+        return uploadDate == null ? 0 : uploadDate.offsetDateTime().toEpochSecond() * 1000;
     }
 
     @Nullable
@@ -1382,29 +1384,10 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         playerCaptionsTracklistRenderer = null;
         streamType = null;
 
-        // NewPipeExtractor 0.26.5 uses the standard ANDROID reel endpoint as its primary
-        // anonymous playback request. Keep the direct ANDROID_VR request only as a fallback.
-        if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
-            tryFetchAndroidReelJsonPlayer(contentCountry, localization, videoId);
-        }
-        boolean playableResponseSelected = selectPlayablePlayerResponse(videoId);
-
-        if (!playableResponseSelected || needsDirectStreamFallback()) {
-            tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId);
-            playableResponseSelected = selectPlayablePlayerResponse(videoId);
-        }
-
+        // Metadata does not depend on playback-client selection. Start it early so its
+        // network round trips overlap the primary player request and any client fallback.
         CancellableCall webPageCall = YoutubeParsingHelper.getWebPlayerResponse(
                 localization, contentCountry, videoId, this);
-
-        CancellableCall primaryCall = null;
-        if (!playableResponseSelected || needsDirectStreamFallback()) {
-            if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
-                primaryCall = fetchAndroidVRJsonPlayer(contentCountry, localization, videoId);
-            } else {
-                primaryCall = tryFetchSafariJsonPlayer(contentCountry, localization, videoId);
-            }
-        }
 
         final byte[] body = JsonWriter.string(
                 prepareDesktopJsonBuilder(localization, contentCountry)
@@ -1440,6 +1423,28 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     }
                 });
             }
+
+        // NewPipeExtractor 0.26.5 uses the standard ANDROID reel endpoint as its primary
+        // anonymous playback request. Keep the direct ANDROID_VR request only as a fallback.
+        if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
+            tryFetchAndroidReelJsonPlayer(contentCountry, localization, videoId);
+        }
+        boolean playableResponseSelected = selectPlayablePlayerResponse(videoId);
+
+        if (!playableResponseSelected || needsDirectStreamFallback()) {
+            tryFetchVisionOsJsonPlayer(contentCountry, localization, videoId);
+            playableResponseSelected = selectPlayablePlayerResponse(videoId);
+        }
+
+        CancellableCall primaryCall = null;
+        if (!playableResponseSelected || needsDirectStreamFallback()) {
+            if (StringUtils.isBlank(ServiceList.YouTube.getTokens())) {
+                primaryCall = fetchAndroidVRJsonPlayer(contentCountry, localization, videoId);
+            } else {
+                primaryCall = tryFetchSafariJsonPlayer(contentCountry, localization, videoId);
+            }
+        }
+
             waitForCallsToFinish(webPageCall, nextDataCall, primaryCall);
 
             playableResponseSelected = selectPlayablePlayerResponse(videoId);
@@ -1491,6 +1496,12 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
         checkPlayabilityStatus(playerResponse.getObject("playabilityStatus"), videoId);
         setStreamType();
+        try {
+            watchDataCache.startAt = getStartAt();
+        } catch (final Exception error) {
+            // Missing optional timing metadata must not discard playable stream data.
+            errors.add(error);
+        }
 
         if (streamType != StreamType.LIVE_STREAM && isSabrOnlyResponse()
                 && getHlsManifestUrlFromStreamingData().isEmpty()) {
@@ -1500,14 +1511,27 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
     }
 
-    private void waitForCallsToFinish(@Nonnull final CancellableCall... calls) {
+    private void waitForCallsToFinish(@Nonnull final CancellableCall... calls)
+            throws ExtractionException {
         final long startTime = System.nanoTime();
-        do {
-            if (Arrays.stream(calls).allMatch(call -> call == null || call.isFinished())) {
-                return;
+        final long budgetNanos = TimeUnit.SECONDS.toNanos(ServiceList.YouTube.getLoadingTimeout());
+        try {
+            for (final CancellableCall call : calls) {
+                if (call != null && !call.awaitFinished(
+                        Math.max(0, budgetNanos - (System.nanoTime() - startTime)),
+                        TimeUnit.NANOSECONDS)) {
+                    return;
+                }
             }
-        } while (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime)
-                <= ServiceList.YouTube.getLoadingTimeout());
+        } catch (final InterruptedException error) {
+            for (final CancellableCall call : calls) {
+                if (call != null) {
+                    call.cancel();
+                }
+            }
+            Thread.currentThread().interrupt();
+            throw new ExtractionException("Interrupted while waiting for YouTube responses", error);
+        }
     }
 
     private boolean selectPlayablePlayerResponse(@Nonnull final String videoId) {

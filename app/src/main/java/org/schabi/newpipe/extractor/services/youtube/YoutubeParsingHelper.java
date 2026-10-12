@@ -1703,7 +1703,12 @@ YoutubeParsingHelper {
                             streamExtractor.playerMicroFormatRenderer = webPlayerResponse.getObject("microformat")
                                     .getObject("playerMicroformatRenderer");
 
-                           streamExtractor.watchDataCache.startAt = streamExtractor.getStartAt();
+                            // Early metadata requests can finish before playback selects a
+                            // stream type. The extractor initializes timing after selection;
+                            // retain updates here for responses arriving after its wait budget.
+                            if (streamExtractor.getStreamType() != null) {
+                                streamExtractor.watchDataCache.startAt = streamExtractor.getStartAt();
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                             streamExtractor.errors.add(e);
