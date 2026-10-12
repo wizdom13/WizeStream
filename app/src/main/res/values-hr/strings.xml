@@ -876,8 +876,6 @@
     <string name="import_subscriptions_summary">Uvezi pretplate iz jednog prijašnjeg .json izvoza</string>
     <string name="export_subscriptions_summary">Izvezi svoje pretplate u .json datoteku</string>
     <string name="import_from_previous_export">Uvezi iz prethodnog izvoza</string>
-    <string name="kao_dialog_more_info">Detalji</string>
-    <string name="kao_solution">Rješenje</string>
     <string name="api23_requirement_dialog_title">WizeStream ukida podršku za Android 5</string>
     <string name="api23_requirement_dialog_message">Nažalost WizeStream ovisi o nekoliko biblioteka koje su ukinule podršku za Android 5.0 i 5.1. Sljedeće WizeStream izdanje će stoga nažalost raditi samo na uređajima s Androidom 6 ili novije. Pročitaj više u objavi na blogu.</string>
     <string name="api23_requirement_dialog_blogpost">Objava na blogu</string>

@@ -824,9 +824,6 @@
     <string name="short_thousand">%sK</string>
     <string name="short_million">%s mil.</string>
     <string name="short_billion">%s mld.</string>
-    <string name="kao_dialog_warning">În august 2025, Google a anunțat că, începând din septembrie 2026, instalarea aplicațiilor va necesita verificarea dezvoltatorului pentru toate aplicațiile Android de pe dispozitivele certificate, inclusiv pentru cele instalate din afara Play Store. Deoarece dezvoltatorii WizeStream nu sunt de acord cu această cerință, WizeStream nu va mai funcționa pe dispozitivele Android certificate după acea dată.</string>
-    <string name="kao_solution">Soluție</string>
-    <string name="kao_dialog_more_info">Detalii</string>
     <string name="unsupported_content_in_country">Acest conținut nu este disponibil pentru țara de conținut selectată în prezent.\n\nModificați selecția din „Setări &gt; Conținut &gt; Țara implicită pentru conținut”.</string>
     <string name="sign_in_confirm_not_bot_error">%1$s a refuzat să furnizeze datele, cerând autentificarea pentru a confirma că solicitantul nu este un bot.\n\nEste posibil ca adresa dvs. IP să fi fost blocată temporar de %1$s; puteți aștepta puțin sau puteți trece la o altă adresă IP (de exemplu, activând/dezactivând un VPN sau trecând de la Wi-Fi la date mobile).\n\nVă rugăm să consultați <a href="%2$s">această intrare din secțiunea de întrebări frecvente</a> pentru mai multe informații.</string>
     <string name="youtube_player_http_403">S-a primit eroarea HTTP 403 de la server în timpul redării, probabil din cauza unei restricții de IP sau a unor probleme legate de dezobfuscarea adresei URL de flux</string>

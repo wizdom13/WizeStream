@@ -243,8 +243,6 @@
     <string name="unknown_audio_track">Անհայտ</string>
     <string name="did_you_mean">Նկատի ունե՞ս «%1$s»</string>
     <string name="volume">Բարձրություն</string>
-    <string name="kao_solution">Լուծում</string>
-    <string name="kao_dialog_more_info">Մանրամասներ</string>
     <plurals name="replies">
         <item quantity="one">%s պատասխան</item>
         <item quantity="other">%s պատասխաններ</item>

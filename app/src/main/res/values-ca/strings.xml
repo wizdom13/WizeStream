@@ -821,8 +821,6 @@
     <string name="search_with_service_name_and_filter">Cercar %1$s (%2$s)</string>
     <string name="short_billion">%sB</string>
     <string name="channel_tab_likes">M\'agrada</string>
-    <string name="kao_dialog_more_info">Detalls</string>
-    <string name="kao_solution">Solució</string>
     <string name="api23_requirement_dialog_blogpost">Article</string>
     <string name="trending_gaming">Tendències de videojocs</string>
     <string name="trending_podcasts">Tendències de podcasts</string>

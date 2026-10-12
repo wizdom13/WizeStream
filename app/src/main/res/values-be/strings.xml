@@ -829,9 +829,6 @@
     <string name="migration_info_7_8_title">Аб\'яднаныя трэнды YouTube выдалены</string>
     <string name="import_subscriptions_title">Імпартаваць падпіскі</string>
     <string name="export_subscriptions_title">Экспартаваць падпіскі</string>
-    <string name="kao_dialog_warning">У жніўні 2025 года Google абвясціў, што з верасня 2026 года для ўсталявання праграм для Android на сертыфікаваныя прылады будзе патрабавацца праверка распрацоўшчыка. Гэта тычыцца і тых праграм, што ўсталёўваюцца па-за Play Store. Паколькі распрацоўшчыкі WizeStream не згодныя з гэтым патрабаваннем, пасля гэтага часу WizeStream больш не будзе працаваць на сертыфікаваных прыладах Android.</string>
-    <string name="kao_dialog_more_info">Падрабязнасці</string>
-    <string name="kao_solution">Рашэнне</string>
     <string name="permission_display_over_apps_message">Каб выкарыстоўваць аконны прайгравальнік, у наступным меню налад Android выберыце %1$s і ўключыце %2$s.</string>
     <plurals name="export_subscriptions">
         <item quantity="one">Экспартаванне %d падпіскі…</item>

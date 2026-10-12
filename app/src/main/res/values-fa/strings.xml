@@ -814,8 +814,6 @@
     <string name="short_million">%sم</string>
     <string name="short_billion">%sمیلیارد</string>
     <string name="channel_tab_likes">پسندها</string>
-    <string name="kao_dialog_more_info">جزییات</string>
-    <string name="kao_solution">راهکار</string>
     <string name="search_with_service_name">جست‌وجوی %1$s</string>
     <string name="api23_requirement_dialog_blogpost">فرستهٔ وبلاگ</string>
     <string name="trending_gaming">داغ‌های بازی</string>
