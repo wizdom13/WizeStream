@@ -66,6 +66,7 @@ import org.schabi.newpipe.local.LocalUploaderNavigation;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
+import org.schabi.newpipe.local.search.NoteSearch;
 import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.learning.LearningPlaylistNotesDialog;
@@ -111,6 +112,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     Parcelable itemsListState;
     @State
     protected String contextualSearchQuery = "";
+    private java.util.Map<Long, String> noteSearchText = Collections.emptyMap();
     @State
     protected boolean standaloneSearchExpanded;
 
@@ -288,6 +290,17 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
 
         isLoadingComplete.set(false);
+
+        disposables.add(NewPipeDatabase.getInstance(requireContext()).learningNoteDAO()
+                .localPlaylistNotes(playlistId, ProfileManager.getActiveProfileId(requireContext()))
+                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(notes -> {
+                    noteSearchText = NoteSearch.textByStream(notes);
+                    if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                        applyPlaylistSearch();
+                    }
+                }, error -> showError(new ErrorInfo(error,
+                        UserAction.REQUESTED_BOOKMARK, "Loading playlist notes"))));
 
         playlistManager.getPlaylistStreams(playlistId)
                 .onBackpressureLatest()
@@ -698,7 +711,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                 item -> new String[]{item.getStreamEntity().getTitle(),
                         item.getStreamEntity().getUploader(),
                         item.getStreamEntity().getLocalAlbum(),
-                        item.getStreamEntity().getLocalFolder()});
+                        item.getStreamEntity().getLocalFolder(),
+                        noteSearchText.get(item.getStreamId())});
         itemListAdapter.clearStreamItemList();
         itemListAdapter.addItems(displayedItems);
 

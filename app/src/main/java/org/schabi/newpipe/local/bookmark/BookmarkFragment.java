@@ -32,6 +32,8 @@ import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.AppDatabase;
 import org.schabi.newpipe.database.LocalItem;
+import org.schabi.newpipe.database.learning.model.BookmarkNote;
+import org.schabi.newpipe.database.playlist.PlaylistStreamEntry;
 import org.schabi.newpipe.database.playlist.PlaylistLocalItem;
 import org.schabi.newpipe.database.playlist.PlaylistMetadataEntry;
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity;
@@ -48,6 +50,7 @@ import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
 import org.schabi.newpipe.local.search.ContextualSearchable;
+import org.schabi.newpipe.local.search.NoteSearch;
 import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
@@ -88,6 +91,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private List<Pair<Long, LocalItem.LocalItemType>> deletedItems;
     private List<PlaylistLocalItem> completePlaylists = Collections.emptyList();
     private String contextualSearchQuery = "";
+    private List<BookmarkNote> bookmarkNotes = Collections.emptyList();
     private java.util.Set<String> learningSources = Collections.emptySet();
     private static final String LEARNING_CATEGORY = "builtin:learning";
     private PlaylistCategories categories = new PlaylistCategories();
@@ -199,6 +203,10 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                             entry.getServiceId(),
                             entry.getUrl(),
                             entry.getOrderingName());
+                } else if (selectedItem instanceof PlaylistStreamEntry entry) {
+                    final var stream = entry.getStreamEntity();
+                    NavigationHelper.openVideoDetailFragment(requireContext(), getFM(),
+                            stream.getServiceId(), stream.getUrl(), stream.getTitle(), null, false);
                 }
             }
 
@@ -208,6 +216,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                     showLocalDialog((PlaylistMetadataEntry) selectedItem);
                 } else if (selectedItem instanceof PlaylistRemoteEntity) {
                     showRemoteDeleteDialog((PlaylistRemoteEntity) selectedItem);
+                } else if (selectedItem instanceof PlaylistStreamEntry entry) {
+                    org.schabi.newpipe.learning.VideoNotesDialog.show(getParentFragmentManager(),
+                            entry.getStreamId(), entry.getStreamEntity().getTitle());
                 }
             }
 
@@ -241,6 +252,17 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                     showFilteredPlaylists();
                 }, error -> showError(new ErrorInfo(error,
                         UserAction.REQUESTED_BOOKMARK, "Loading learning playlists"))));
+
+        disposables.add(NewPipeDatabase.getInstance(requireContext()).learningNoteDAO()
+                .bookmarkNotes(ProfileManager.getActiveProfileId(requireContext()))
+                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(notes -> {
+                    bookmarkNotes = notes;
+                    if (isContextualSearchActive()) {
+                        showFilteredPlaylists();
+                    }
+                }, error -> showError(new ErrorInfo(error,
+                        UserAction.REQUESTED_BOOKMARK, "Loading bookmark notes"))));
 
         getMergedOrderedPlaylists(localPlaylistManager, remotePlaylistManager)
                 .onBackpressureLatest()
@@ -355,21 +377,24 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         setEmptyStateMessage(isPlaylistListFiltered()
                 ? R.string.search_no_results : R.string.empty_list_subtitle);
 
-        final List<PlaylistLocalItem> filteredPlaylists = ContextualSearchHelper.filter(
-                completePlaylists.stream()
-                        .filter(playlist -> LEARNING_CATEGORY.equals(selectedCategory)
-                                ? isLearningPlaylist(playlist)
-                                : categories.matches(categoryKey(playlist), selectedCategory))
-                        .collect(java.util.stream.Collectors.toList()),
-                contextualSearchQuery,
-                playlist -> new String[]{playlist.getOrderingName()});
+        final List<PlaylistLocalItem> categoryPlaylists = completePlaylists.stream()
+                .filter(playlist -> LEARNING_CATEGORY.equals(selectedCategory)
+                        ? isLearningPlaylist(playlist)
+                        : categories.matches(categoryKey(playlist), selectedCategory))
+                .collect(java.util.stream.Collectors.toList());
+        final List<LocalItem> results = new ArrayList<>(ContextualSearchHelper.filter(
+                categoryPlaylists, contextualSearchQuery,
+                playlist -> new String[]{playlist.getOrderingName()}));
+        results.addAll(NoteSearch.bookmarkStreams(bookmarkNotes, contextualSearchQuery,
+                categoryPlaylists.stream().map(BookmarkFragment::categoryKey)
+                        .collect(java.util.stream.Collectors.toSet())));
 
-        if (filteredPlaylists.isEmpty()) {
+        if (results.isEmpty()) {
             showEmptyState();
             return;
         }
 
-        itemListAdapter.addItems(filteredPlaylists);
+        itemListAdapter.addItems(results);
         if (itemsListState != null) {
             itemsList.getLayoutManager().onRestoreInstanceState(itemsListState);
             itemsListState = null;
