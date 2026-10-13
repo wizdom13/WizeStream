@@ -1914,4 +1914,5 @@
         <item>@string/live_mode_normal</item>
         <item>@string/live_mode_full</item>
     </string-array>
+    <string name="feed_floating_refresh_key" translatable="false">feed_floating_refresh</string>
 </resources>

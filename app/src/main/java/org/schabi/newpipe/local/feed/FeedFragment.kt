@@ -152,7 +152,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         selectedStreamFilter = restoreStreamFilter(storedFilter)
 
         onSettingsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (org.schabi.newpipe.util.ThemeHelper.isListLayoutPreference(requireContext(), key)) {
+            if (key == getString(R.string.feed_floating_refresh_key)) {
+                updateRefreshControls()
+            } else if (org.schabi.newpipe.util.ThemeHelper.isListLayoutPreference(requireContext(), key)) {
                 updateListViewModeOnResume = true
             } else if (ContentBlockingHelper.isPreferenceKey(requireContext(), key)) {
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
@@ -282,9 +284,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     override fun initListeners() {
         super.initListeners()
         feedBinding.refreshRootView.setOnClickListener { reloadContent() }
+        updateRefreshControls()
         feedBinding.refreshIcon.setOnClickListener { reloadContent() }
         feedBinding.feedFloatingRefresh.setOnClickListener {
-            if (feedBinding.cancelRefreshButton.isVisible) {
+            if (feedBinding.refreshProgressContainer.isVisible) {
                 feedBinding.cancelRefreshButton.performClick()
             } else {
                 reloadContent()
@@ -583,6 +586,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         binding.cancelRefreshButton.isVisible = true
         binding.refreshRootView.isEnabled = false
         binding.cancelRefreshButton.isEnabled = true
+        updateRefreshControls()
     }
 
     private fun hideRefreshProgress(binding: FragmentFeedBinding) {
@@ -594,6 +598,27 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         binding.refreshProgressContainer.isVisible = false
         binding.cancelRefreshButton.isVisible = false
         binding.streamFilterChips.root.isVisible = true
+        updateRefreshControls()
+    }
+
+    private fun updateRefreshControls() {
+        val binding = _feedBinding ?: return
+        val floating = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getBoolean(getString(R.string.feed_floating_refresh_key), false)
+        val refreshing = binding.refreshProgressContainer.isVisible
+        binding.feedFloatingRefresh.isVisible = floating
+        binding.swipeRefreshLayout.isEnabled = !floating
+        if (floating) binding.swipeRefreshLayout.isRefreshing = false
+        binding.refreshIcon.isVisible = !floating
+        binding.refreshRootView.isClickable = !floating && !refreshing
+        binding.refreshRootView.isFocusable = !floating
+        binding.cancelRefreshButton.isVisible = refreshing && !floating
+        binding.itemsList.setPadding(
+            binding.itemsList.paddingLeft,
+            binding.itemsList.paddingTop,
+            binding.itemsList.paddingRight,
+            if (floating) resources.getDimensionPixelSize(R.dimen.feed_floating_refresh_bottom_padding) else 0
+        )
     }
 
     private fun showInfoItemDialog(item: StreamInfoItem) {

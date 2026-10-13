@@ -30,7 +30,12 @@ class FeedFocusLayout @JvmOverloads constructor(
                 }
                 if (firstRow) {
                     findViewById<AppBarLayout>(R.id.feed_header)?.setExpanded(true, false)
-                    val refresh = findViewById<View>(R.id.feed_floating_refresh)
+                    val refresh = listOf(
+                        R.id.feed_floating_refresh,
+                        R.id.cancel_refresh_button,
+                        R.id.refreshIcon
+                    ).mapNotNull { findViewById<View>(it) }
+                        .firstOrNull { it.isShown && it.isEnabled }
                     if (refresh?.isShown == true && refresh.isEnabled && refresh.requestFocus()) {
                         return true
                     }

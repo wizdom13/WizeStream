@@ -208,7 +208,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
-                android:paddingBottom="80dp"
+                android:paddingBottom="0dp"
                 android:scrollbars="vertical"
                 android:visibility="gone"
                 tools:listitem="@layout/list_stream_item"
@@ -227,6 +227,9 @@
         android:nextFocusDown="@id/items_list"
         android:nextFocusLeft="@id/items_list"
         android:src="@drawable/ic_refresh"
+        android:visibility="gone"
+        app:backgroundTint="?attr/colorPrimary"
+        app:tint="?attr/colorOnPrimary"
         app:fabSize="normal" />
 
     <Button

@@ -1834,4 +1834,6 @@
     <string name="default_live_mode_title">Live playback mode</string>
     <string name="live_mode_normal">Normal live (10 sec, no rewind)</string>
     <string name="live_mode_full">Full live (rewind when available)</string>
+    <string name="feed_floating_refresh_title">Floating feed refresh button</string>
+    <string name="feed_floating_refresh_summary">Show a floating Refresh/Cancel button instead of pull-to-refresh and the upper refresh controls.</string>
 </resources>

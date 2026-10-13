@@ -167,4 +167,5 @@
     <dimen name="video_detail_navigation_height">64dp</dimen>
     <dimen name="video_detail_navigation_item_padding">6dp</dimen>
 
+    <dimen name="feed_floating_refresh_bottom_padding">80dp</dimen>
 </resources>
