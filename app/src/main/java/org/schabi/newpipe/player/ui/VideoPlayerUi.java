@@ -229,21 +229,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.resizeTextView.setOnClickListener(makeOnClickListener(this::onResizeClicked));
         binding.danmakuToggle.setOnClickListener(makeOnClickListener(danmakuController::toggle));
         binding.playbackLiveSync.setOnClickListener(makeOnClickListener(player::seekToDefault));
-        binding.playbackLiveSync.setOnLongClickListener(view -> {
-            if (!player.isLive()) {
-                return false;
-            }
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
-                    .setTitle(R.string.default_live_mode_title)
-                    .setSingleChoiceItems(R.array.live_mode_descriptions,
-                            player.isNormalLive() ? 0 : 1, (dialog, which) -> {
-                                player.setNormalLive(which == 0);
-                                dialog.dismiss();
-                            })
-                    .setNegativeButton(R.string.cancel, null)
-                    .show();
-            return true;
-        });
+        binding.playbackLiveSync.setOnLongClickListener(
+                view -> PlayerLiveModeDialog.show(player, context));
 
         playerGestureListener = buildGestureListener();
         gestureDetector = new GestureDetector(context, playerGestureListener);
@@ -1894,13 +1881,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void applyVideoAspectRatio(@NonNull final VideoSize videoSize) {
-        final float displayAspectRatio = calculateDisplayAspectRatio(
-                videoSize.width, videoSize.height, videoSize.unappliedRotationDegrees,
-                videoSize.pixelWidthHeightRatio);
-        if (displayAspectRatio == 0.0f) {
-            return;
+        if (videoSize.width > 0 && videoSize.height > 0) {
+            PlayerVideoGeometry.apply(binding.surfaceView, videoSize);
         }
-        binding.surfaceView.setAspectRatio(displayAspectRatio);
     }
 
     private void restoreVideoAspectRatioFromPlayer() {
@@ -1914,19 +1897,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                                              final int height,
                                              final int unappliedRotationDegrees,
                                              final float pixelWidthHeightRatio) {
-        if (width <= 0 || height <= 0) {
-            return 0.0f;
-        }
-
-        final float safePixelRatio = Float.isFinite(pixelWidthHeightRatio)
-                && pixelWidthHeightRatio > 0.0f ? pixelWidthHeightRatio : 1.0f;
-        float displayAspectRatio = width * safePixelRatio / height;
-        final int normalizedRotation = Math.floorMod(unappliedRotationDegrees, 360);
-        if (normalizedRotation == 90 || normalizedRotation == 270) {
-            displayAspectRatio = 1.0f / displayAspectRatio;
-        }
-        return Float.isFinite(displayAspectRatio) && displayAspectRatio > 0.0f
-                ? displayAspectRatio : 0.0f;
+        return PlayerVideoGeometry.calculate(width, height, unappliedRotationDegrees,
+                pixelWidthHeightRatio);
     }
     //endregion
     /*//////////////////////////////////////////////////////////////////////////

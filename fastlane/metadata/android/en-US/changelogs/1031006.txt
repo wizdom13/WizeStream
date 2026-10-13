@@ -1,0 +1,8 @@
+• Normal/Full live modes and Auto resolution with quality-change alerts.
+• Delete local playlists, including empty ones.
+• Copy all video notes with timestamps; add/edit notes during playback.
+• Search notes in Bookmarks and local playlists.
+• Named separators in Bookmarks and local playlists.
+• Floating feed refresh with TV remote access.
+• 50% text sizes and timestamped browser links on long press.
+• Fix selected Learning lesson restoration, TV video tint and repeated directional seeking.

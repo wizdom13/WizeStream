@@ -4,6 +4,27 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.6 (`1031006`)
+
+### Improvements
+
+- Added Normal and Full live playback modes, with a saved default and a mode selector on long press of LIVE; Full live can rewind through the history supplied by the stream.
+- Displayed the current resolution beside Auto and added live automatic quality-change notifications at the top in portrait and bottom in landscape.
+- Added Delete playlist to the local playlist menu, with confirmation and support for empty playlists.
+- Added Copy all notes to the Notes tab and per-video notes dialog, preserving timestamps, Unicode, and line breaks.
+- Enabled adding and editing video notes during playback, with long press of the note button starting a note at the current position.
+- Added note-text search from Bookmarks and local playlists, with matching videos shown once and notes accessible on long press.
+- Added named separators to Bookmarks and local playlists, with rename/delete on long press, per-profile storage, and headings excluded from playback queues and video counts.
+- Added a floating feed refresh action, including Cancel during refresh and remote access by pressing Up from the first video row.
+- Added 50% size options for video titles, channel names, video metadata, and comment text.
+- Added long press of Open in browser to open on-demand YouTube videos at the current playback timestamp.
+
+### Fixes
+
+- Protected the selected Learning lesson when reopening a new detail screen and ignored late player callbacks after dismissal.
+- Removed the TV focus effect that could tint the video or add white edges while retaining focus outlines on controls.
+- Preserved repeated directional seeking on TV after seek feedback appears, while retaining navigation when controls are explicitly opened.
+
 ## WizeStream 1.31.5 (`1031005`)
 
 ### Improvements
