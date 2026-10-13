@@ -28,10 +28,23 @@ class VideoNotesDialog : DialogFragment() {
     private val disposables = CompositeDisposable()
     private var notes = emptyList<LearningNoteEntity>()
     private val rows = NotesAdapter()
+    private var copyAllButton: View? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val header = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_video_notes_title, null)
+        header.findViewById<TextView>(R.id.learning_notes_title).text =
+            requireArguments().getString("title")
+        copyAllButton = header.findViewById<View>(R.id.learning_notes_copy_all).apply {
+            isEnabled = false
+            setOnClickListener {
+                if (notes.isNotEmpty()) {
+                    ShareUtils.copyToClipboard(requireContext(), LearningVideoNotesCopy.text(notes))
+                }
+            }
+        }
         return MaterialAlertDialogBuilder(requireContext())
-            .setTitle(requireArguments().getString("title"))
+            .setCustomTitle(header)
             .setAdapter(rows) { _, index -> notes.getOrNull(index)?.let(::actions) }
             .setPositiveButton(R.string.learning_note_add, null)
             .setNeutralButton(R.string.playlist_video_notes_about, null)
@@ -56,6 +69,7 @@ class VideoNotesDialog : DialogFragment() {
                 .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ updated ->
                     notes = updated
+                    copyAllButton?.isEnabled = notes.isNotEmpty()
                     rows.notifyDataSetChanged()
                 }, { error() })
         )
@@ -150,6 +164,11 @@ class VideoNotesDialog : DialogFragment() {
 
     private fun error() {
         context?.let { Toast.makeText(it, R.string.learning_note_save_error, Toast.LENGTH_SHORT).show() }
+    }
+
+    override fun onDestroyView() {
+        copyAllButton = null
+        super.onDestroyView()
     }
 
     override fun onStop() {

@@ -1,22 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/learning_notes_list"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingBottom="16dp" />
-
-    <org.schabi.newpipe.views.NewPipeTextView
-        android:id="@+id/learning_notes_empty"
-        android:layout_width="match_parent"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/learning_notes_copy_all"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:padding="24dp"
-        android:text="@string/learning_notes_empty"
-        android:textColor="?attr/colorOnSurfaceVariant" />
-</FrameLayout>
+        android:layout_gravity="end"
+        android:layout_marginEnd="12dp"
+        android:text="@string/learning_notes_copy_all" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/learning_notes_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+        <org.schabi.newpipe.views.NewPipeTextView
+            android:id="@+id/learning_notes_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="@string/learning_notes_empty"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+    </FrameLayout>
+</LinearLayout>
