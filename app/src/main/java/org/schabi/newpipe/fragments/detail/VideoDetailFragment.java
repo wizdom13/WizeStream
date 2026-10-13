@@ -251,6 +251,7 @@ public final class VideoDetailFragment
     protected PlayQueue playQueue = null;
     @Nullable
     private PlayQueue pendingLearningQueue;
+    private boolean playerDismissed;
     private final PublishSubject<Optional<PlayQueue>> learningQueueChanges =
             PublishSubject.create();
 
@@ -322,6 +323,9 @@ public final class VideoDetailFragment
     @Override
     public void onPlayerConnected(@NonNull final Player connectedPlayer,
                                   final boolean playAfterConnect) {
+        if (playerDismissed) {
+            return;
+        }
         player = connectedPlayer;
 
         // It will do nothing if the player is not in fullscreen mode
@@ -1302,8 +1306,6 @@ public final class VideoDetailFragment
 
         hideMainPlayerOnLoadingNewStream();
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
-        pendingLearningQueue = newQueue != null
-                && newQueue.getLearningPlaylistContext() != null ? newQueue : null;
         if (currentLocalItem != null) {
             prepareAndHandleLocalMedia(currentLocalItem, true);
             if (stack.isEmpty() || !stack.peek().getPlayQueue().equalStreams(newQueue)) {
@@ -2406,6 +2408,9 @@ public final class VideoDetailFragment
     }
 
     boolean isStaleLearningQueue(final PlayQueue queue) {
+        if (playerDismissed) {
+            return true;
+        }
         if (pendingLearningQueue == null) {
             return false;
         }
@@ -2420,6 +2425,11 @@ public final class VideoDetailFragment
         this.url = newUrl;
         this.title = newTitle;
         this.playQueue = newPlayQueue;
+        pendingLearningQueue = newPlayQueue != null
+                && newPlayQueue.getLearningPlaylistContext() != null ? newPlayQueue : null;
+        if (newUrl != null) {
+            playerDismissed = false;
+        }
         learningQueueChanges.onNext(Optional.ofNullable(newPlayQueue));
         final PlayQueueItem queueItem = newPlayQueue == null ? null : newPlayQueue.getItem();
         currentLocalItem = queueItem != null && queueItem.isLocalMedia() ? queueItem : null;
@@ -3547,14 +3557,15 @@ public final class VideoDetailFragment
      * Remove unneeded information while waiting for a next task
      * */
     private void cleanUp() {
+        playerDismissed = true;
         // New beginning
         stack.clear();
         if (currentWorker != null) {
             currentWorker.dispose();
         }
-        playerHolder.stopService();
         setInitialData(0, null, "", null);
         currentInfo = null;
+        playerHolder.stopService();
         updateOverlayData(null, null, List.of());
     }
 
