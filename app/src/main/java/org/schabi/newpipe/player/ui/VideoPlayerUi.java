@@ -452,6 +452,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void destroyPlayer() {
         dismissPopupMenus();
+        seekbarPreviewThumbnailHolder.cancelRequest();
         super.destroyPlayer();
         clearVideoSurface();
     }
@@ -461,6 +462,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         dismissPopupMenus();
         playerUiTheme.close();
         danmakuController.destroy();
+        seekbarPreviewThumbnailHolder.clear();
         super.destroy();
         clearScaledEndScreenThumbnail();
         deinitPlayerSeekOverlay();
@@ -683,15 +685,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
         binding.currentDisplaySeek.setText(getTimeString(progress));
 
-        // Seekbar Preview Thumbnail
-        SeekbarPreviewThumbnailHelper
-                .tryResizeAndSetSeekbarPreviewThumbnail(
-                        player.getContext(),
-                        seekbarPreviewThumbnailHolder.getBitmapAt(progress).orElse(null),
-                        binding.currentSeekbarPreviewThumbnail,
-                        binding.subtitleView::getWidth);
-
-        adjustSeekbarPreviewContainer();
+        seekbarPreviewThumbnailHolder.requestBitmapAt(progress, bitmap -> {
+            SeekbarPreviewThumbnailHelper.tryResizeAndSetSeekbarPreviewThumbnail(
+                    player.getContext(), bitmap, binding.currentSeekbarPreviewThumbnail,
+                    binding.subtitleView::getWidth);
+            adjustSeekbarPreviewContainer();
+        });
     }
 
     private void adjustSeekbarPreviewContainer() {
@@ -751,6 +750,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             Log.d(TAG, "onStopTrackingTouch() called with: seekBar = [" + seekBar + "]");
         }
 
+        seekbarPreviewThumbnailHolder.cancelRequest();
         player.seekTo(seekBar.getProgress());
         if (player.getExoPlayer().getDuration() == seekBar.getProgress()) {
             player.getExoPlayer().play();
@@ -929,6 +929,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMediaItemTransition() {
         super.onMediaItemTransition();
+        seekbarPreviewThumbnailHolder.cancelRequest();
         binding.surfaceView.clearAspectRatio();
         danmakuController.reset();
         qualityFeedback.reset();

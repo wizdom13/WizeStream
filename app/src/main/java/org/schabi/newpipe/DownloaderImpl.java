@@ -78,6 +78,7 @@ public final class DownloaderImpl extends Downloader {
                 .followRedirects(!InvidiousBackend.isEnabled())
                 .followSslRedirects(!InvidiousBackend.isEnabled())
                 .addInterceptor(new InvidiousInterceptor())
+                .addInterceptor(new YoutubeRequestTimingInterceptor())
                 .addInterceptor(chain -> {
                     final okhttp3.Request originalRequest = chain.request();
                     if (originalRequest.header("User-Agent") != null) {

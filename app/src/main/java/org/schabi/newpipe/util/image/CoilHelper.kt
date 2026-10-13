@@ -9,8 +9,10 @@ import androidx.annotation.DrawableRes
 import androidx.core.widget.ImageViewCompat
 import coil3.executeBlocking
 import coil3.imageLoader
+import coil3.request.CachePolicy
 import coil3.request.Disposable
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import coil3.request.target
@@ -22,6 +24,7 @@ import coil3.transform.Transformation
 import coil3.util.CoilUtils
 import java.util.Collections
 import java.util.WeakHashMap
+import java.util.function.Consumer
 import kotlin.math.min
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
@@ -41,6 +44,25 @@ object CoilHelper {
         .executeBlocking(getImageRequest(context, url, placeholderResId).build())
         .image
         ?.toBitmap()
+
+    /** Cancellable storyboard request; its target receives results on the main thread. */
+    fun loadSeekbarPreview(
+        context: Context,
+        url: String,
+        callback: Consumer<Bitmap?>
+    ): Disposable {
+        val request =
+            getImageRequest(context, url, 0, false)
+                .allowHardware(false)
+                // The seek-preview holder owns a bounded page cache. Avoid retaining all pages
+                // a second time in the shared image loader's memory cache.
+                .memoryCachePolicy(CachePolicy.DISABLED)
+                .target(
+                    onSuccess = { callback.accept(it.toBitmap()) },
+                    onError = { callback.accept(null) }
+                ).build()
+        return context.imageLoader.enqueue(request)
+    }
 
     fun loadAvatar(
         target: ImageView,

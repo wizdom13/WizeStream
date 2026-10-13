@@ -107,7 +107,7 @@ public final class Frameset implements Serializable {
         final int relativeFrameNumber = absoluteFrameNumber % framesPerStoryboard;
 
         final int rowIndex = Math.floorDiv(relativeFrameNumber, framesPerPageX);
-        final int columnIndex = relativeFrameNumber % framesPerPageY;
+        final int columnIndex = relativeFrameNumber % framesPerPageX;
 
         return new int[] {
                 /* storyboardIndex */ Math.floorDiv(absoluteFrameNumber, framesPerStoryboard),

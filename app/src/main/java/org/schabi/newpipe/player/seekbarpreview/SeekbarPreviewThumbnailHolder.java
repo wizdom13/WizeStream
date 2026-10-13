@@ -5,243 +5,162 @@ import static org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHe
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
+import android.util.LruCache;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.collection.SparseArrayCompat;
 
-import com.google.common.base.Stopwatch;
-
-import org.schabi.newpipe.App;
 import org.schabi.newpipe.extractor.stream.Frameset;
 import org.schabi.newpipe.util.image.CoilHelper;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
+import coil3.request.Disposable;
+
+/** Coordinates asynchronous storyboard requests from the main thread. */
 public class SeekbarPreviewThumbnailHolder {
+    private static final int CACHE_BYTES = 8 * 1024 * 1024;
+    private final LruCache<Integer, Bitmap> pages = new LruCache<>(CACHE_BYTES) {
+        @Override
+        protected int sizeOf(final Integer key, final Bitmap bitmap) {
+            // Bound both memory (8 MiB) and the number of retained pages (at most three).
+            return Math.max(CACHE_BYTES / 3, bitmap.getAllocationByteCount());
+        }
+    };
+    private final BitmapLoader loader;
+    private Context context;
+    private Frameset frameset;
+    private Disposable request;
+    private long generation;
+    private int pendingPage = -1;
+    private int positionMs;
+    private Consumer<Bitmap> consumer;
 
-    // This has to be <= 23 chars on devices running Android 7 or lower (API <= 25)
-    // or it fails with an IllegalArgumentException
-    // https://stackoverflow.com/a/54744028
-    public static final String TAG = "SeekbarPrevThumbHolder";
+    public SeekbarPreviewThumbnailHolder() {
+        this((ctx, url, callback) ->
+                CoilHelper.INSTANCE.loadSeekbarPreview(ctx, url, callback));
+    }
 
-    // Key = Position of the picture in milliseconds
-    // Supplier = Supplies the bitmap for that position
-    private final SparseArrayCompat<Supplier<Bitmap>> seekbarPreviewData =
-            new SparseArrayCompat<>();
+    SeekbarPreviewThumbnailHolder(final BitmapLoader loader) {
+        this.loader = loader;
+    }
 
-    // This ensures that if the reset is still undergoing
-    // and another reset starts, only the last reset is processed
-    private UUID currentUpdateRequestIdentifier = UUID.randomUUID();
+    public void resetFrom(@NonNull final Context newContext, final List<Frameset> framesets) {
+        resetFrom(newContext, framesets, getSeekbarPreviewThumbnailType(newContext));
+    }
 
-    public void resetFrom(@NonNull final Context context, final List<Frameset> framesets) {
-        final int seekbarPreviewType = getSeekbarPreviewThumbnailType(context);
+    void resetFrom(final Context newContext, final List<Frameset> framesets, final int type) {
+        clear();
+        context = newContext.getApplicationContext();
+        if (type != SeekbarPreviewThumbnailType.NONE) {
+            final Comparator<Frameset> quality = Comparator.comparingLong(
+                    fs -> (long) fs.getFrameHeight() * fs.getFrameWidth());
+            frameset = framesets.stream().filter(SeekbarPreviewThumbnailHolder::isValid)
+                    .min(type == SeekbarPreviewThumbnailType.HIGH_QUALITY
+                            ? quality.reversed() : quality).orElse(null);
+        }
+    }
 
-        final UUID updateRequestIdentifier = UUID.randomUUID();
-        this.currentUpdateRequestIdentifier = updateRequestIdentifier;
+    private static boolean isValid(final Frameset value) {
+        return value.getDurationPerFrame() > 0 && value.getTotalCount() > 0
+                && value.getFrameWidth() > 0 && value.getFrameHeight() > 0
+                && value.getFramesPerPageX() > 0 && value.getFramesPerPageY() > 0
+                && !value.getUrls().isEmpty();
+    }
 
-        final ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(() -> {
-            try {
-                resetFromAsync(seekbarPreviewType, framesets, updateRequestIdentifier);
-            } catch (final Exception ex) {
-                Log.e(TAG, "Failed to execute async", ex);
+    /**
+     * Supplies a fresh cropped bitmap; the receiver owns and may recycle it.
+     * @param positionInMs the requested seek position
+     * @param callback receives the crop, or null while unavailable, on the main thread
+     */
+    public void requestBitmapAt(final int positionInMs, final Consumer<Bitmap> callback) {
+        if (frameset == null) {
+            callback.accept(null);
+            return;
+        }
+        positionMs = Math.max(0, positionInMs);
+        final int page = boundsAt(positionMs)[0];
+        if (page >= frameset.getUrls().size()) {
+            cancelRequest();
+            callback.accept(null);
+            return;
+        }
+        final Bitmap cached = pages.get(page);
+        if (cached != null) {
+            cancelRequest();
+            callback.accept(crop(cached, positionMs));
+            return;
+        }
+        consumer = callback;
+        if (page == pendingPage) {
+            return; // Keep one in-flight request, delivering the latest position on this page.
+        }
+        cancelRequest();
+        consumer = callback;
+        pendingPage = page;
+        final long token = generation;
+        callback.accept(null);
+        request = loader.load(context, frameset.getUrls().get(page), bitmap -> {
+            if (token != generation) {
+                return;
+            }
+            pendingPage = -1;
+            request = null;
+            if (bitmap != null && !bitmap.isRecycled()) {
+                pages.put(page, bitmap);
+            }
+            final Consumer<Bitmap> receiver = consumer;
+            consumer = null;
+            if (receiver != null) {
+                receiver.accept(crop(bitmap, positionMs));
             }
         });
-        // ensure that the executorService stops/destroys it's threads
-        // after the task is finished
-        executorService.shutdown();
     }
 
-    private void resetFromAsync(final int seekbarPreviewType, final List<Frameset> framesets,
-                                final UUID updateRequestIdentifier) {
-        Log.d(TAG, "Clearing seekbarPreviewData");
-        synchronized (seekbarPreviewData) {
-            seekbarPreviewData.clear();
-        }
-
-        if (seekbarPreviewType == SeekbarPreviewThumbnailType.NONE) {
-            Log.d(TAG, "Not processing seekbarPreviewData due to settings");
-            return;
-        }
-
-        final Frameset frameset = getFrameSetForType(framesets, seekbarPreviewType);
-        if (frameset == null) {
-            Log.d(TAG, "No frameset was found to fill seekbarPreviewData");
-            return;
-        }
-
-        Log.d(TAG, "Frameset quality info: "
-                + "[width=" + frameset.getFrameWidth()
-                + ", heigh=" + frameset.getFrameHeight() + "]");
-
-        // Abort method execution if we are not the latest request
-        if (!isRequestIdentifierCurrent(updateRequestIdentifier)) {
-            return;
-        }
-
-        generateDataFrom(frameset, updateRequestIdentifier);
-    }
-
-    private Frameset getFrameSetForType(final List<Frameset> framesets,
-                                        final int seekbarPreviewType) {
-        if (seekbarPreviewType == SeekbarPreviewThumbnailType.HIGH_QUALITY) {
-            Log.d(TAG, "Strategy for seekbarPreviewData: high quality");
-            return framesets.stream()
-                    .max(Comparator.comparingInt(fs -> fs.getFrameHeight() * fs.getFrameWidth()))
-                    .orElse(null);
-        } else {
-            Log.d(TAG, "Strategy for seekbarPreviewData: low quality");
-            return framesets.stream()
-                    .min(Comparator.comparingInt(fs -> fs.getFrameHeight() * fs.getFrameWidth()))
-                    .orElse(null);
-        }
-    }
-
-    private void generateDataFrom(final Frameset frameset, final UUID updateRequestIdentifier) {
-        Log.d(TAG, "Starting generation of seekbarPreviewData");
-        final Stopwatch sw = Log.isLoggable(TAG, Log.DEBUG) ? Stopwatch.createStarted() : null;
-
-        int currentPosMs = 0;
-        int pos = 1;
-
-        final int urlFrameCount = frameset.getFramesPerPageX() * frameset.getFramesPerPageY();
-
-        // Process each url in the frameset
-        for (final String url : frameset.getUrls()) {
-            // get the bitmap
-            final Bitmap srcBitMap = getBitMapFrom(url);
-
-            // The data is not added directly to "seekbarPreviewData" due to
-            // concurrency and checks for "updateRequestIdentifier"
-            final var generatedDataForUrl = new SparseArrayCompat<Supplier<Bitmap>>(urlFrameCount);
-
-            // The bitmap consists of several images, which we process here
-            // foreach frame in the returned bitmap
-            for (int i = 0; i < urlFrameCount; i++) {
-                // Frames outside the video length are skipped
-                if (pos > frameset.getTotalCount()) {
-                    break;
-                }
-
-                // Get the bounds where the frame is found
-                final int[] bounds = frameset.getFrameBoundsAt(currentPosMs);
-                generatedDataForUrl.put(currentPosMs,
-                        createBitmapSupplier(srcBitMap, bounds, frameset));
-
-                currentPosMs += frameset.getDurationPerFrame();
-                pos++;
-            }
-
-            // Check if we are still the latest request
-            // If not abort method execution
-            if (isRequestIdentifierCurrent(updateRequestIdentifier)) {
-                synchronized (seekbarPreviewData) {
-                    seekbarPreviewData.putAll(generatedDataForUrl);
-                }
-            } else {
-                Log.d(TAG, "Aborted of generation of seekbarPreviewData");
-                break;
-            }
-        }
-
-        if (sw != null) {
-            Log.d(TAG, "Generation of seekbarPreviewData took " + sw.stop());
-        }
-    }
-
-    private Supplier<Bitmap> createBitmapSupplier(final Bitmap srcBitMap,
-                                                  final int[] bounds,
-                                                  final Frameset frameset) {
-        return () -> {
-            // It can happen, that the original bitmap could not be downloaded
-            // (or it was recycled though that should not happen)
-            // In such a case - we don't want a NullPointer/
-            // "cannot use a recycled source in createBitmap" Exception -> simply return null
-            if (srcBitMap == null || srcBitMap.isRecycled()) {
-                return null;
-            }
-
-            // Under some rare circumstances the YouTube API returns slightly too small storyboards,
-            // (or not the matching frame width/height)
-            // This would lead to createBitmap cutting out a bitmap that is out of bounds,
-            // so we need to adjust the bounds accordingly
-            if (srcBitMap.getWidth() < bounds[1] + frameset.getFrameWidth()) {
-                bounds[1] = srcBitMap.getWidth() - frameset.getFrameWidth();
-            }
-
-            if (srcBitMap.getHeight() < bounds[2] + frameset.getFrameHeight()) {
-                bounds[2] = srcBitMap.getHeight() - frameset.getFrameHeight();
-            }
-
-            // Cut out the corresponding bitmap form the "srcBitMap"
-            final Bitmap cutOutBitmap = Bitmap.createBitmap(srcBitMap, bounds[1], bounds[2],
-                    frameset.getFrameWidth(), frameset.getFrameHeight());
-
-            // If the cut out bitmap is identical to its source,
-            // we need to copy the bitmap to create a new instance.
-            // createBitmap allows itself to return the original object that is was created with
-            // this leads to recycled bitmaps being returned (if they are identical)
-            // Reference: https://stackoverflow.com/a/23683075 + first comment
-            // Fixes: https://github.com/TeamNewPipe/NewPipe/issues/11461
-            return cutOutBitmap == srcBitMap
-                    ? cutOutBitmap.copy(Bitmap.Config.ARGB_8888, true) : cutOutBitmap;
-        };
+    private int[] boundsAt(final int position) {
+        // Frameset's endpoint is inclusive; clamp to the last actual frame instead.
+        final long lastFrameMs = (long) (frameset.getTotalCount() - 1)
+                * frameset.getDurationPerFrame();
+        return frameset.getFrameBoundsAt(Math.min(position, lastFrameMs));
     }
 
     @Nullable
-    private Bitmap getBitMapFrom(final String url) {
-        if (url == null) {
-            Log.w(TAG, "url is null; This should never happen");
+    private Bitmap crop(@Nullable final Bitmap bitmap, final int position) {
+        if (bitmap == null || bitmap.isRecycled()
+                || bitmap.getWidth() < frameset.getFrameWidth()
+                || bitmap.getHeight() < frameset.getFrameHeight()) {
             return null;
         }
+        final int[] bounds = boundsAt(position);
+        final int left = Math.min(bounds[1], bitmap.getWidth() - frameset.getFrameWidth());
+        final int top = Math.min(bounds[2], bitmap.getHeight() - frameset.getFrameHeight());
+        final Bitmap result = Bitmap.createBitmap(bitmap, left, top,
+                frameset.getFrameWidth(), frameset.getFrameHeight());
+        // The UI recycles its crop. Never give it a bitmap owned by Coil or this cache.
+        return result == bitmap ? result.copy(Bitmap.Config.ARGB_8888, false) : result;
+    }
 
-        final Stopwatch sw = Log.isLoggable(TAG, Log.DEBUG) ? Stopwatch.createStarted() : null;
-        try {
-            Log.d(TAG, "Downloading bitmap for seekbarPreview from '" + url + "'");
-
-            // Gets the bitmap within the timeout of 15 seconds imposed by default by OkHttpClient
-            // Ensure that you are not running on the main thread, otherwise this will hang
-            final var bitmap = CoilHelper.INSTANCE.loadBitmapBlocking(App.getInstance(), url);
-
-            if (sw != null) {
-                Log.d(TAG, "Download of bitmap for seekbarPreview from '" + url + "' took "
-                        + sw.stop());
-            }
-
-            return bitmap;
-        } catch (final Exception ex) {
-            Log.w(TAG, "Failed to get bitmap for seekbarPreview from url='" + url
-                    + "' in time", ex);
-            return null;
+    public void cancelRequest() {
+        generation++;
+        pendingPage = -1;
+        consumer = null;
+        if (request != null) {
+            request.dispose();
+            request = null;
         }
     }
 
-    private boolean isRequestIdentifierCurrent(final UUID requestIdentifier) {
-        return this.currentUpdateRequestIdentifier.equals(requestIdentifier);
+    public void clear() {
+        cancelRequest();
+        frameset = null;
+        context = null;
+        // Coil owns the page bitmaps. Drop references without recycling shared images.
+        pages.evictAll();
     }
 
-    public Optional<Bitmap> getBitmapAt(final int positionInMs) {
-        // Get the frame supplier closest to the requested position
-        Supplier<Bitmap> closestFrame = () -> null;
-        synchronized (seekbarPreviewData) {
-            int min = Integer.MAX_VALUE;
-            for (int i = 0; i < seekbarPreviewData.size(); i++) {
-                final int pos = Math.abs(seekbarPreviewData.keyAt(i) - positionInMs);
-                if (pos < min) {
-                    closestFrame = seekbarPreviewData.valueAt(i);
-                    min = pos;
-                }
-            }
-        }
-
-        return Optional.ofNullable(closestFrame.get());
+    interface BitmapLoader {
+        Disposable load(Context context, String url, Consumer<Bitmap> callback);
     }
 }
