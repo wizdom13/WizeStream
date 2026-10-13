@@ -32,7 +32,7 @@ public final class CommentTextSizeHelper {
 
         try {
             final int size = Integer.parseInt(value);
-            if (size == 12 || size == 14 || size == 16 || size == 18) {
+            if (size == 7 || size == 12 || size == 14 || size == 16 || size == 18) {
                 return size;
             }
         } catch (final NumberFormatException ignored) {

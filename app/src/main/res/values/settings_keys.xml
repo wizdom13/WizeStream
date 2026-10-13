@@ -1645,12 +1645,14 @@
     <string name="comment_text_size_large_key">16</string>
     <string name="comment_text_size_extra_large_key">18</string>
     <string-array name="comment_text_size_values">
+        <item>7</item>
         <item>@string/comment_text_size_small_key</item>
         <item>@string/comment_text_size_medium_key</item>
         <item>@string/comment_text_size_large_key</item>
         <item>@string/comment_text_size_extra_large_key</item>
     </string-array>
     <string-array name="comment_text_size_description">
+        <item>50%</item>
         <item>@string/comment_text_size_small</item>
         <item>@string/comment_text_size_medium</item>
         <item>@string/comment_text_size_large</item>
@@ -1861,6 +1863,7 @@
     <string name="video_title_text_size_key">video_title_text_size</string>
     <string name="channel_name_text_size_key">channel_name_text_size</string>
     <string-array name="media_text_size_values">
+        <item>50</item>
         <item>70</item>
         <item>80</item>
         <item>90</item>
@@ -1870,6 +1873,7 @@
         <item>150</item>
     </string-array>
     <string-array name="media_text_size_description">
+        <item>50%</item>
         <item>70%</item>
         <item>80%</item>
         <item>90%</item>

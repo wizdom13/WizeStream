@@ -12,6 +12,8 @@ public final class MediaTextSize {
     public static float scale(final String value) {
         if (value != null) {
             switch (value) {
+                case "50":
+                    return 0.5f;
                 case "70":
                     return 0.7f;
                 case "80":
