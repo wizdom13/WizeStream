@@ -230,7 +230,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.danmakuToggle.setOnClickListener(makeOnClickListener(danmakuController::toggle));
         binding.playbackLiveSync.setOnClickListener(makeOnClickListener(player::seekToDefault));
         binding.playbackLiveSync.setOnLongClickListener(
-                view -> PlayerLiveModeDialog.show(player, context));
+                view -> PlayerLiveModeDialog.show(player, view));
 
         playerGestureListener = buildGestureListener();
         gestureDetector = new GestureDetector(context, playerGestureListener);

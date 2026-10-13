@@ -1,6 +1,10 @@
 package org.schabi.newpipe.player.ui;
 
-import android.content.Context;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+
+import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -11,11 +15,13 @@ import org.schabi.newpipe.player.Player;
 final class PlayerLiveModeDialog {
     private PlayerLiveModeDialog() { }
 
-    static boolean show(final Player player, final Context context) {
-        if (!player.isLive()) {
+    static boolean show(final Player player, final View anchor) {
+        if (!player.isLive() || !anchor.isAttachedToWindow() || !anchor.isShown()
+                || anchor.getWindowToken() == null) {
             return false;
         }
-        new MaterialAlertDialogBuilder(context)
+        final AlertDialog choices = new MaterialAlertDialogBuilder(
+                PlayerPopupMenu.dialogContext(anchor))
                 .setTitle(R.string.default_live_mode_title)
                 .setSingleChoiceItems(R.array.live_mode_descriptions,
                         player.isNormalLive() ? 0 : 1, (dialog, which) -> {
@@ -23,7 +29,26 @@ final class PlayerLiveModeDialog {
                             dialog.dismiss();
                         })
                 .setNegativeButton(R.string.cancel, null)
-                .show();
-        return true;
+                .create();
+        final Window window = choices.getWindow();
+        if (window == null) {
+            return false;
+        }
+        final WindowManager.LayoutParams attributes = window.getAttributes();
+        attributes.type = WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
+        attributes.token = anchor.getWindowToken();
+        window.setAttributes(attributes);
+        final View.OnAttachStateChangeListener listener =
+                PlayerPopupMenu.detachListener(choices::dismiss);
+        anchor.addOnAttachStateChangeListener(listener);
+        choices.setOnDismissListener(ignored -> anchor.removeOnAttachStateChangeListener(listener));
+        try {
+            choices.show();
+            return true;
+        } catch (final WindowManager.BadTokenException exception) {
+            anchor.removeOnAttachStateChangeListener(listener);
+            choices.dismiss();
+            return false;
+        }
     }
 }

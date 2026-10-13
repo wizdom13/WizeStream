@@ -178,7 +178,7 @@ final class PlayerPopupMenu {
         }
     }
 
-    private static Context dialogContext(final View anchor) {
+    static Context dialogContext(final View anchor) {
         if (anchor.getDisplay() == null) {
             return anchor.getContext();
         }
