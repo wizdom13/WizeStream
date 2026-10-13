@@ -1830,4 +1830,7 @@
     <string name="landscape_grid_columns">Landscape grid columns</string>
     <string name="live_auto_quality_changed">Auto quality changed from %1$s to %2$s</string>
     <string name="learning_notes_copy_all">Copy all notes</string>
+    <string name="default_live_mode_title">Live playback mode</string>
+    <string name="live_mode_normal">Normal live (10 sec, no rewind)</string>
+    <string name="live_mode_full">Full live (rewind when available)</string>
 </resources>

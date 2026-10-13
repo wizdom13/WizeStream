@@ -109,6 +109,31 @@ public class PlaybackResolverLiveManifestTest {
         }
     }
 
+    @Test
+    public void normalLiveUsesHlsEvenWhenDirectFormatsAndDashExist() {
+        final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+        info.setVideoStreams(Collections.singletonList(mock(VideoStream.class)));
+        final PlayerDataSource dataSource = mock(PlayerDataSource.class);
+        when(dataSource.isNormalLive(info.getUrl())).thenReturn(true);
+        when(dataSource.getLiveHlsMediaSourceFactory())
+                .thenReturn(new HlsMediaSource.Factory(new DefaultHttpDataSource.Factory()));
+        assertTrue(PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info)
+                instanceof HlsMediaSource);
+        verify(dataSource, never()).getLiveYoutubeDashMediaSourceFactory();
+    }
+
+    @Test
+    public void fullLiveWithDirectFormatsSelectsDash() {
+        final StreamInfo info = createLiveInfo(ServiceList.YouTube.getServiceId());
+        info.setVideoStreams(Collections.singletonList(mock(VideoStream.class)));
+        final PlayerDataSource dataSource = mock(PlayerDataSource.class);
+        when(dataSource.getLiveYoutubeDashMediaSourceFactory())
+                .thenReturn(new DashMediaSource.Factory(new DefaultHttpDataSource.Factory()));
+        assertTrue(PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info)
+                instanceof DashMediaSource);
+        verify(dataSource, never()).getLiveHlsMediaSourceFactory();
+    }
+
     private static StreamInfo createLiveInfo(final int serviceId) {
         final StreamInfo info = new StreamInfo(serviceId, "live", "https://example.com/live",
                 "Live stream");

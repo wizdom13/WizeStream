@@ -550,6 +550,18 @@ class Player(
 
     fun seekTo(positionMillis: Long) = seekController.seekTo(positionMillis)
 
+    fun isNormalLive(): Boolean = isLive && dataSource.isNormalLive(videoUrl)
+
+    fun setNormalLive(normal: Boolean) {
+        if (!isLive) return
+        val queue = playQueue ?: return
+        dataSource.setNormalLive(videoUrl, normal)
+        videoResolver.clearLiveHlsFallback()
+        // DASH and HLS have different window origins. Start the new source at its live edge.
+        queue.setRecovery(queue.index, PlayQueueItem.RECOVERY_UNSET)
+        reloadPlayQueueManager()
+    }
+
     fun seekToDefault() = seekController.seekToDefault()
 
     fun play() = transportController.play()

@@ -72,6 +72,16 @@ class LiveDvrPlaybackTest {
     }
 
     @Test
+    fun normalModeSelectsHlsWithoutPreparingDash() {
+        val fixture = Fixture(normal = true)
+        withPlayer(fixture) { player ->
+            awaitPlayer(player) { it.playbackState == Media3Player.STATE_READY }
+            assertTrue(fixture.hlsLoads.get() > 0)
+            assertEquals(0, fixture.dashLoads.get())
+        }
+    }
+
+    @Test
     fun staticDashSnapshotFallsBackToHlsInsteadOfEndingTheLiveBroadcast() {
         val fixture = Fixture(dynamic = false)
         withPlayer(fixture) { player ->
@@ -154,7 +164,7 @@ class LiveDvrPlaybackTest {
         }
     }
 
-    private inner class Fixture(private val dynamic: Boolean = true, private val broken: Boolean = false) {
+    private inner class Fixture(private val dynamic: Boolean = true, private val broken: Boolean = false, private val normal: Boolean = false) {
         val segmentCount = AtomicInteger(8)
         val dashLoads = AtomicInteger()
         val hlsLoads = AtomicInteger()
@@ -236,6 +246,7 @@ class LiveDvrPlaybackTest {
             info.streamType = StreamType.LIVE_STREAM
             info.dashMpdUrl = DASH_URL
             info.hlsUrl = "https://example.test/live.m3u8"
+            dataSource.setNormalLive(info.url, normal)
             val source = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info)
             assertNotNull(source)
             return requireNotNull(source)

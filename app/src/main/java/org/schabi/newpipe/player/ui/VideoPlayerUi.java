@@ -227,6 +227,21 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.resizeTextView.setOnClickListener(makeOnClickListener(this::onResizeClicked));
         binding.danmakuToggle.setOnClickListener(makeOnClickListener(danmakuController::toggle));
         binding.playbackLiveSync.setOnClickListener(makeOnClickListener(player::seekToDefault));
+        binding.playbackLiveSync.setOnLongClickListener(view -> {
+            if (!player.isLive()) {
+                return false;
+            }
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                    .setTitle(R.string.default_live_mode_title)
+                    .setSingleChoiceItems(R.array.live_mode_descriptions,
+                            player.isNormalLive() ? 0 : 1, (dialog, which) -> {
+                                player.setNormalLive(which == 0);
+                                dialog.dismiss();
+                            })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+            return true;
+        });
 
         playerGestureListener = buildGestureListener();
         gestureDetector = new GestureDetector(context, playerGestureListener);
@@ -308,6 +323,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.resizeTextView.setOnClickListener(null);
         binding.danmakuToggle.setOnClickListener(null);
         binding.playbackLiveSync.setOnClickListener(null);
+        binding.playbackLiveSync.setOnLongClickListener(null);
 
         binding.getRoot().setOnTouchListener(null);
         playerGestureListener = null;
@@ -624,6 +640,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     + "duration = [" + duration + "], bufferPercent = [" + bufferPercent + "]");
         }
         binding.playbackLiveSync.setClickable(!player.isLiveEdge());
+        binding.playbackSeekBar.setEnabled(!player.isNormalLive());
     }
 
     /**
@@ -924,7 +941,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         updateStreamRelatedViews();
         danmakuController.start();
 
-        binding.playbackSeekBar.setEnabled(true);
+        binding.playbackSeekBar.setEnabled(!player.isNormalLive());
         applyPlayerSeekBarColor();
 
         binding.loadingPanel.setVisibility(View.GONE);

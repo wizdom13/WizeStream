@@ -4,6 +4,16 @@
     android:title="@string/settings_category_video_audio_title">
 
     <ListPreference
+        android:defaultValue="normal"
+        android:entries="@array/live_mode_descriptions"
+        android:entryValues="@array/live_mode_values"
+        android:key="@string/default_live_mode_key"
+        android:title="@string/default_live_mode_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
         android:defaultValue="@string/default_resolution_value"
         android:entries="@array/resolution_list_description"
         android:entryValues="@array/resolution_list_values"

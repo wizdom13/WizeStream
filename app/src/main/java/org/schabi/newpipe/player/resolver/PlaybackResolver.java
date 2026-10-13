@@ -216,6 +216,9 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
 
         try {
             final StreamInfoTag tag = StreamInfoTag.of(info);
+            if (dataSource.isNormalLive(info.getUrl()) && !info.getHlsUrl().isEmpty()) {
+                return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
+            }
             // HLS can expose only a few seconds of history. Prefer a refreshable DASH DVR window,
             // while retaining HLS recovery for finite snapshots and failed DASH preparation.
             if (isManifestOnlyYoutubeLive) {

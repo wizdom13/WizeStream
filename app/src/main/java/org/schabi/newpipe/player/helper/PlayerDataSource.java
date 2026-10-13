@@ -76,6 +76,7 @@ public class PlayerDataSource {
 
     private final int progressiveLoadIntervalBytes;
     private final Context context;
+    private final org.schabi.newpipe.player.LivePlaybackMode livePlaybackMode;
     @Nullable
     private final TransferListener transferListener;
 
@@ -91,9 +92,18 @@ public class PlayerDataSource {
     private final CacheFactory ytProgressiveDashCacheDataSourceFactory;
 
 
+    public boolean isNormalLive(final String streamUrl) {
+        return livePlaybackMode.isNormal(streamUrl);
+    }
+
+    public void setNormalLive(final String streamUrl, final boolean normal) {
+        livePlaybackMode.setNormal(streamUrl, normal);
+    }
+
     public PlayerDataSource(final Context context,
                             final TransferListener transferListener) {
         this.context = context.getApplicationContext();
+        livePlaybackMode = new org.schabi.newpipe.player.LivePlaybackMode(context);
         this.transferListener = transferListener;
         progressiveLoadIntervalBytes = PlayerHelper.getProgressiveLoadIntervalBytes(context);
 

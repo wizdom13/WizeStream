@@ -1901,4 +1901,13 @@
         <item>@string/playback_dimming_five_minutes</item>
         <item>@string/playback_dimming_ten_minutes</item>
     </string-array>
+    <string name="default_live_mode_key" translatable="false">default_live_mode</string>
+    <string-array name="live_mode_values" translatable="false">
+        <item>normal</item>
+        <item>full</item>
+    </string-array>
+    <string-array name="live_mode_descriptions">
+        <item>@string/live_mode_normal</item>
+        <item>@string/live_mode_full</item>
+    </string-array>
 </resources>

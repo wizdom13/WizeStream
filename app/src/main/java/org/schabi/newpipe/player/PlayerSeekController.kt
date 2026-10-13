@@ -42,6 +42,7 @@ internal class PlayerSeekController(private val player: Player) {
     }
 
     fun seekTo(positionMillis: Long) {
+        if (player.isNormalLive()) return
         player.channelSkipController.manualSeek(positionMillis)
         if (Player.DEBUG) {
             Log.d(Player.TAG, "seekBy() called with: position = [$positionMillis]")
