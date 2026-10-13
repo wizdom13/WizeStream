@@ -23,6 +23,7 @@ class FeedFocusLayoutTest {
             lateinit var root: FeedFocusLayout
             lateinit var header: Button
             lateinit var videos: RecyclerView
+            lateinit var refresh: Button
             var wasInTouchMode = true
             scenario.onActivity { activity ->
                 wasInTouchMode = activity.window.decorView.isInTouchMode
@@ -50,6 +51,12 @@ class FeedFocusLayoutTest {
                     }
                 }
                 root.addView(videos, CoordinatorLayout.LayoutParams(300, 300).apply { topMargin = 100 })
+                refresh = Button(activity).apply {
+                    id = R.id.feed_floating_refresh
+                    text = "Refresh"
+                    isFocusable = true
+                }
+                root.addView(refresh, CoordinatorLayout.LayoutParams(120, 80).apply { topMargin = 400 })
                 activity.setContentView(root)
             }
             try {
@@ -62,6 +69,8 @@ class FeedFocusLayoutTest {
                     assertTrue("Header must accept focus before entering the feed", header.requestFocus())
                     assertTrue("Feed must accept keyboard focus", root.requestFocus(View.FOCUS_FORWARD))
                     assertTrue("Focus must land on a video row", videos.getChildAt(0).hasFocus())
+                    assertTrue(root.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP)))
+                    assertTrue("Up from the first video reaches refresh", refresh.hasFocus())
                     assertTrue(header.requestFocus())
                     assertTrue(header.hasFocus())
                     videos.visibility = View.GONE

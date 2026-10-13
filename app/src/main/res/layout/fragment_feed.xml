@@ -207,12 +207,27 @@
                 android:id="@+id/items_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="80dp"
                 android:scrollbars="vertical"
                 android:visibility="gone"
                 tools:listitem="@layout/list_stream_item"
                 tools:visibility="visible" />
         </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/feed_floating_refresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/local_media_refresh"
+        android:focusable="true"
+        android:nextFocusDown="@id/items_list"
+        android:nextFocusLeft="@id/items_list"
+        android:src="@drawable/ic_refresh"
+        app:fabSize="normal" />
 
     <Button
         android:id="@+id/new_items_loaded_button"

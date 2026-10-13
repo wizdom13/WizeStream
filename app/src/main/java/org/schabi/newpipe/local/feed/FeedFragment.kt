@@ -283,10 +283,18 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         super.initListeners()
         feedBinding.refreshRootView.setOnClickListener { reloadContent() }
         feedBinding.refreshIcon.setOnClickListener { reloadContent() }
+        feedBinding.feedFloatingRefresh.setOnClickListener {
+            if (feedBinding.cancelRefreshButton.isVisible) {
+                feedBinding.cancelRefreshButton.performClick()
+            } else {
+                reloadContent()
+            }
+        }
         feedBinding.refreshSubtitleText.setOnClickListener { showNotLoadedSubscriptions() }
         feedBinding.swipeRefreshLayout.setOnRefreshListener { reloadContent() }
         feedBinding.cancelRefreshButton.setOnClickListener {
             it.isEnabled = false
+            feedBinding.feedFloatingRefresh.isEnabled = false
             FeedLoadService.cancel(requireContext())
         }
         feedBinding.swipeRefreshLayout.setOnChildScrollUpCallback { _, _ ->
@@ -568,6 +576,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun showRefreshProgress(binding: FragmentFeedBinding) {
+        binding.feedFloatingRefresh.setImageResource(R.drawable.ic_close)
+        binding.feedFloatingRefresh.contentDescription = getString(R.string.cancel_refresh)
         binding.streamFilterChips.root.isVisible = false
         binding.refreshProgressContainer.isVisible = true
         binding.cancelRefreshButton.isVisible = true
@@ -576,6 +586,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun hideRefreshProgress(binding: FragmentFeedBinding) {
+        binding.feedFloatingRefresh.isEnabled = true
+        binding.feedFloatingRefresh.setImageResource(R.drawable.ic_refresh)
+        binding.feedFloatingRefresh.contentDescription = getString(R.string.local_media_refresh)
         binding.cancelRefreshButton.isEnabled = false
         binding.refreshRootView.isEnabled = true
         binding.refreshProgressContainer.isVisible = false
