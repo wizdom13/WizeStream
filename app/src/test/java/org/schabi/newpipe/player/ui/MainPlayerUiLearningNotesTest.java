@@ -10,31 +10,31 @@ import org.schabi.newpipe.extractor.stream.StreamType;
 public class MainPlayerUiLearningNotesTest {
     @Test
     public void hidesButtonBeforeMetadataArrives() {
-        assertFalse(MainPlayerUi.shouldShowLearningNoteButton(true, true, null));
+        assertFalse(MainPlayerUi.shouldShowLearningNoteButton(true, null));
     }
 
     @Test
     public void showsButtonForOnDemandMetadataWhenNotesAreEnabled() {
         assertTrue(MainPlayerUi.shouldShowLearningNoteButton(
-                true, true, streamInfo(StreamType.VIDEO_STREAM)));
+                true, streamInfo(StreamType.VIDEO_STREAM)));
     }
 
     @Test
     public void hidesButtonWhenNotesAreDisabled() {
         assertFalse(MainPlayerUi.shouldShowLearningNoteButton(
-                false, true, streamInfo(StreamType.VIDEO_STREAM)));
+                false, streamInfo(StreamType.VIDEO_STREAM)));
     }
 
     @Test
     public void hidesButtonForLiveMetadata() {
         assertFalse(MainPlayerUi.shouldShowLearningNoteButton(
-                true, true, streamInfo(StreamType.LIVE_STREAM)));
+                true, streamInfo(StreamType.LIVE_STREAM)));
     }
 
     @Test
-    public void hidesButtonForUnmarkedContent() {
-        assertFalse(MainPlayerUi.shouldShowLearningNoteButton(
-                true, false, streamInfo(StreamType.VIDEO_STREAM)));
+    public void allowsNotesForUnmarkedOnDemandContent() {
+        assertTrue(MainPlayerUi.shouldShowLearningNoteButton(
+                true, streamInfo(StreamType.VIDEO_STREAM)));
     }
 
     private static StreamInfo streamInfo(final StreamType streamType) {

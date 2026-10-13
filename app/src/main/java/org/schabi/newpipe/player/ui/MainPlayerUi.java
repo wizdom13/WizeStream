@@ -55,7 +55,6 @@ import org.schabi.newpipe.info_list.StreamSegmentAdapter;
 import org.schabi.newpipe.info_list.StreamSegmentItem;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.learning.LearningMode;
-import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningNoteDialog;
 import org.schabi.newpipe.learning.LearningNoteManager;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
@@ -218,7 +217,11 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                     ? PlaybackPresentationMode.VIDEO
                     : PlaybackPresentationMode.LISTEN_VISUALIZER);
         });
-        binding.learningNoteButton.setOnClickListener(v -> showLearningNoteDialog());
+        binding.learningNoteButton.setOnClickListener(v -> showVideoNotes());
+        binding.learningNoteButton.setOnLongClickListener(v -> {
+            showLearningNoteDialog();
+            return true;
+        });
 
         binding.addToPlaylistButton.setOnClickListener(v ->
                 getParentActivity().map(FragmentActivity::getSupportFragmentManager)
@@ -298,6 +301,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.videoAdjustmentsButton.setOnClickListener(null);
         binding.listenModeButton.setOnClickListener(null);
         binding.addToPlaylistButton.setOnClickListener(null);
+        binding.learningNoteButton.setOnClickListener(null);
+        binding.learningNoteButton.setOnLongClickListener(null);
         hideSponsorBlockSkipButton();
         clearSponsorBlockSeekBarMarkers();
 
@@ -1470,10 +1475,14 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             }
             final long timestampMillis = player.getExoPlayer() == null
                     ? 0L : player.getExoPlayer().getCurrentPosition();
-            getParentActivity().ifPresent(activity -> LearningNoteDialog.show(
+            getParentActivity().ifPresent(activity -> LearningNoteDialog.showWithSeek(
                     activity,
                     timestampMillis,
                     null,
+                    position -> player.getCurrentStreamInfo()
+                            .filter(current -> current.getServiceId() == info.getServiceId()
+                                    && current.getUrl().equals(info.getUrl()))
+                            .ifPresent(current -> player.seekTo(position)),
                     (timestamp, text) -> learningNoteDisposables.add(
                             new LearningNoteManager(context).create(info, timestamp, text)
                                     .observeOn(AndroidSchedulers.mainThread())
@@ -1494,18 +1503,33 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         });
     }
 
+    private void showVideoNotes() {
+        player.getCurrentStreamInfo().ifPresent(info -> {
+            final long timestamp = player.exoPlayerIsNull()
+                    ? 0L : player.getExoPlayer().getCurrentPosition();
+            learningNoteDisposables.add(new LearningNoteManager(context).ensureStream(info)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(streamId -> player.getCurrentStreamInfo()
+                                    .filter(current -> current.getServiceId() == info.getServiceId()
+                                            && current.getUrl().equals(info.getUrl()))
+                                    .ifPresent(current -> getParentActivity().ifPresent(activity ->
+                                            org.schabi.newpipe.learning.VideoNotesDialog.show(
+                                                    activity.getSupportFragmentManager(), streamId,
+                                                    info.getName(), timestamp))),
+                            error -> Toast.makeText(context, R.string.learning_note_save_error,
+                                    Toast.LENGTH_SHORT).show()));
+        });
+    }
+
     private void updateLearningNoteButtonVisibility(@Nullable final StreamInfo info) {
         binding.learningNoteButton.setVisibility(shouldShowLearningNoteButton(
                 LearningMode.areNotesEnabled(context),
-                info != null && LearningContentManager.getInstance(context)
-                        .isStreamLearning(info.getServiceId(), info.getUrl()),
                 info) ? View.VISIBLE : View.GONE);
     }
 
     static boolean shouldShowLearningNoteButton(final boolean notesEnabled,
-                                                final boolean learningContent,
                                                 @Nullable final StreamInfo info) {
-        return notesEnabled && learningContent && info != null
+        return notesEnabled && info != null
                 && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(info.getStreamType());
     }
     //endregion

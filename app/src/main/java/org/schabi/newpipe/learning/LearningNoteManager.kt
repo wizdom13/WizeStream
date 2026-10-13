@@ -23,6 +23,10 @@ class LearningNoteManager(context: Context) {
     private val streamDao = database.streamDAO()
     private val syncRecorder = HistorySyncRecorder.get(context.applicationContext)
 
+    fun ensureStream(info: StreamInfo): Single<Long> = Single.fromCallable {
+        streamDao.upsert(StreamEntity(info))
+    }.subscribeOn(Schedulers.io())
+
     fun create(info: StreamInfo, timestampMillis: Long, noteText: String): Single<LearningNoteEntity> {
         return Single.fromCallable {
             database.runInTransaction<LearningNoteEntity> {

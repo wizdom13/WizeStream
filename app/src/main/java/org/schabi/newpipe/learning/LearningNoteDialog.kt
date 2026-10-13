@@ -8,6 +8,7 @@ package org.schabi.newpipe.learning
 import android.content.Context
 import android.view.LayoutInflater
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.util.function.LongConsumer
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.learning.model.LearningNoteEntity
 import org.schabi.newpipe.databinding.DialogLearningNoteBinding
@@ -19,12 +20,31 @@ object LearningNoteDialog {
         initialTimestampMillis: Long,
         existing: LearningNoteEntity? = null,
         onSave: LearningNoteSaveListener
+    ) = showWithSeek(context, initialTimestampMillis, existing, null, onSave)
+
+    @JvmStatic
+    fun showWithSeek(
+        context: Context,
+        initialTimestampMillis: Long,
+        existing: LearningNoteEntity?,
+        onSeek: LongConsumer?,
+        onSave: LearningNoteSaveListener
     ) {
         val binding = DialogLearningNoteBinding.inflate(LayoutInflater.from(context))
         binding.learningNoteTimestamp.setText(
             LearningNoteTime.format(existing?.timestampMillis ?: initialTimestampMillis)
         )
         binding.learningNoteText.setText(existing?.noteText.orEmpty())
+        NoteTextActions.install(binding.learningNoteText, onSeek, null)
+        binding.learningNoteTimestamp.setOnLongClickListener {
+            val time = LearningNoteTime.parse(binding.learningNoteTimestamp.text.toString())
+            if (time == null || onSeek == null) {
+                false
+            } else {
+                onSeek.accept(time)
+                true
+            }
+        }
         val dialog = MaterialAlertDialogBuilder(context)
             .setTitle(if (existing == null) R.string.learning_note_add else R.string.learning_note_edit)
             .setView(binding.root)

@@ -75,11 +75,11 @@ class VideoNotesDialog : DialogFragment() {
         )
     }
 
-    private fun play(note: LearningNoteEntity) {
+    private fun play(timestampMillis: Long) {
         val appContext = requireContext().applicationContext
         disposables.add(
             io.reactivex.rxjava3.core.Maybe.fromCallable {
-                NewPipeDatabase.getInstance(appContext).streamDAO().getStreamDirect(note.streamId)
+                NewPipeDatabase.getInstance(appContext).streamDAO().getStreamDirect(requireArguments().getLong("streamId"))
             }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ stream ->
                     appContext.startService(
@@ -88,7 +88,7 @@ class VideoNotesDialog : DialogFragment() {
                             TimestampChangeData(
                                 stream.serviceId,
                                 stream.url,
-                                (note.timestampMillis / 1000).coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
+                                (timestampMillis / 1000).coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
                             )
                         )
                     )
@@ -107,17 +107,17 @@ class VideoNotesDialog : DialogFragment() {
             val note = getItem(position)
             row.findViewById<TextView>(R.id.learning_note_timestamp).apply {
                 text = LearningNoteTime.format(note.timestampMillis)
-                setOnClickListener { play(note) }
+                setOnClickListener { actions(note) }
                 setOnLongClickListener {
-                    play(note)
+                    play(note.timestampMillis)
                     true
                 }
             }
             row.findViewById<TextView>(R.id.learning_note_text).apply {
                 text = note.noteText
-                setOnLongClickListener {
+                setOnClickListener { actions(note) }
+                NoteTextActions.install(this, { play(it) }) {
                     ShareUtils.copyToClipboard(context, note.noteText)
-                    true
                 }
             }
             row.setOnClickListener { actions(note) }
@@ -154,8 +154,8 @@ class VideoNotesDialog : DialogFragment() {
     }
 
     private fun edit(note: LearningNoteEntity?) {
-        LearningNoteDialog.show(requireContext(), note?.timestampMillis ?: 0, note) { time, text ->
-            if (!isAdded) return@show
+        LearningNoteDialog.showWithSeek(requireContext(), note?.timestampMillis ?: requireArguments().getLong("timestamp"), note, { play(it) }) { time, text ->
+            if (!isAdded) return@showWithSeek
             val manager = LearningNoteManager(requireContext())
             val save = if (note == null) manager.createForStream(requireArguments().getLong("streamId"), time, text) else manager.update(note, time, text)
             disposables.add(save.observeOn(AndroidSchedulers.mainThread()).subscribe({}, { error() }))
@@ -178,9 +178,10 @@ class VideoNotesDialog : DialogFragment() {
 
     companion object {
         @JvmStatic
-        fun show(manager: FragmentManager, streamId: Long, title: String) {
+        @JvmOverloads
+        fun show(manager: FragmentManager, streamId: Long, title: String, timestampMillis: Long = 0) {
             if (manager.isStateSaved || manager.findFragmentByTag("video_notes") != null) return
-            VideoNotesDialog().apply { arguments = bundleOf("streamId" to streamId, "title" to title) }
+            VideoNotesDialog().apply { arguments = bundleOf("streamId" to streamId, "title" to title, "timestamp" to timestampMillis) }
                 .show(manager, "video_notes")
         }
     }
