@@ -4,6 +4,22 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.7 (`1031007`)
+
+### Improvements
+
+- Load seek-preview images only when needed, with a bounded cache to reduce background downloads and memory use.
+- Added a setting to show the floating feed refresh button, hidden by default; enabling it replaces swipe-to-refresh and the upper refresh button, with theme-colored background and icon.
+- Combined channel subscription and group actions into a split control.
+- Added optional rounded upper corners to the collapsed mini-player, enabled by default under Appearance, with corners flattening as the player expands.
+- Moved the Notes button beside Comments; tap opens video notes and long press adds a note at the current playback position.
+
+### Fixes
+
+- Fixed seek-preview frame selection for rectangular storyboard grids.
+- Recreated feed card holders after orientation changes to prevent mixed portrait and landscape layouts after refresh.
+- Fixed the LIVE mode selector crash on phones and Samsung DeX by attaching its dialog to the player window.
+
 ## WizeStream 1.31.6 (`1031006`)
 
 ### Improvements

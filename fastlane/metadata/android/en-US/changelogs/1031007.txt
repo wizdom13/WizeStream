@@ -1,0 +1,8 @@
+- Seek previews load on demand with a bounded cache.
+- Optional floating feed refresh button, hidden by default, with theme colors.
+- Combined subscription and channel-group controls.
+- Optional rounded mini-player upper corners.
+- Notes button beside Comments.
+- Fixed mixed feed card layouts after rotation and refresh.
+- Fixed LIVE mode selector crash on phones and Samsung DeX.
+- Fixed preview frames in rectangular storyboard grids.
