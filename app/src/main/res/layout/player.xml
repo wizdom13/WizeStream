@@ -298,7 +298,7 @@
                             android:layout_width="48dp"
                             android:nextFocusDown="@id/playPauseButton"
                             android:nextFocusLeft="@id/queueButton"
-                            android:nextFocusRight="@id/segmentsButton"
+                            android:nextFocusRight="@id/learningNoteButton"
                             android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
@@ -312,10 +312,28 @@
                             tools:visibility="visible" />
 
                         <androidx.appcompat.widget.AppCompatImageButton
+                            android:id="@+id/learningNoteButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:nextFocusDown="@id/playPauseButton"
+                            android:nextFocusLeft="@id/commentsButton"
+                            android:nextFocusRight="@id/segmentsButton"
+                            android:layout_marginEnd="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/playlist_video_notes"
+                            android:focusable="true"
+                            android:padding="@dimen/player_main_icon_buttons_padding"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_edit"
+                            android:visibility="gone"
+                            app:tint="@color/white" />
+
+                        <androidx.appcompat.widget.AppCompatImageButton
                             android:id="@+id/segmentsButton"
                             android:layout_width="48dp"
                             android:nextFocusDown="@id/playPauseButton"
-                            android:nextFocusLeft="@id/commentsButton"
+                            android:nextFocusLeft="@id/learningNoteButton"
                             android:nextFocusRight="@id/moreOptionsButton"
                             android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
@@ -467,21 +485,6 @@
                                 android:src="@drawable/ic_share"
                                 app:tint="@color/white"
                                 tools:ignore="RtlHardcoded" />
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/learningNoteButton"
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                android:layout_marginEnd="8dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:clickable="true"
-                                android:contentDescription="@string/learning_note_add"
-                                android:focusable="true"
-                                android:padding="@dimen/player_main_icon_buttons_padding"
-                                android:scaleType="fitCenter"
-                                android:src="@drawable/ic_edit"
-                                android:visibility="gone"
-                                app:tint="@color/white" />
 
                             <androidx.appcompat.widget.AppCompatImageButton
                                 android:id="@+id/sleepTimerButton"
