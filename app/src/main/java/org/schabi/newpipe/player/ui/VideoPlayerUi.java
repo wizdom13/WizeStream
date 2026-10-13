@@ -260,6 +260,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }));
         binding.playWithKodi.setOnClickListener(makeOnClickListener(this::onPlayWithKodiClicked));
         binding.openInBrowser.setOnClickListener(makeOnClickListener(this::onOpenInBrowserClicked));
+        binding.openInBrowser.setOnLongClickListener(v -> {
+            player.getCurrentStreamInfo().ifPresent(info -> ShareUtils.openUrlInBrowser(context,
+                    org.schabi.newpipe.util.TimestampedUrl.atPosition(info.getOriginalUrl(),
+                            info.getServiceId(), player.exoPlayerIsNull() ? -1L
+                                    : player.getExoPlayer().getCurrentPosition(),
+                            player.isLive())));
+            return true;
+        });
         binding.playerCloseButton.setOnClickListener(makeOnClickListener(() ->
                 // set package to this app's package to prevent the intent from being seen outside
                 context.sendBroadcast(new Intent(VideoDetailFragment.ACTION_HIDE_MAIN_PLAYER)
@@ -328,6 +336,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.screenRotationButton.setOnClickListener(null);
         binding.playWithKodi.setOnClickListener(null);
         binding.openInBrowser.setOnClickListener(null);
+        binding.openInBrowser.setOnLongClickListener(null);
         binding.playerCloseButton.setOnClickListener(null);
         binding.switchMute.setOnClickListener(null);
 
