@@ -74,6 +74,7 @@ import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.views.MiniPlayerCorners;
 import org.schabi.newpipe.cast.FCastManager;
 import org.schabi.newpipe.database.stream.model.StreamEntity;
 import org.schabi.newpipe.databinding.FragmentVideoDetailBinding;
@@ -214,10 +215,15 @@ public final class VideoDetailFragment
     private PlayQueueItem currentLocalItem = null;
     private FragmentVideoDetailBinding binding;
     private NavigationBarView detailNavigation;
+    private MiniPlayerCorners miniPlayerCorners;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener =
             (sharedPreferences, key) -> {
-                if (getString(R.string.show_comments_key).equals(key)) {
+                if (getString(R.string.rounded_mini_player_key).equals(key)) {
+                    if (miniPlayerCorners != null) {
+                        miniPlayerCorners.setEnabled(sharedPreferences.getBoolean(key, true));
+                    }
+                } else if (getString(R.string.show_comments_key).equals(key)) {
                     showComments = sharedPreferences.getBoolean(key, true);
                     tabSettingsChanged = true;
                 } else if (getString(R.string.show_next_video_key).equals(key)) {
@@ -793,6 +799,10 @@ public final class VideoDetailFragment
 
     @Override
     public void onDestroyView() {
+        if (miniPlayerCorners != null) {
+            miniPlayerCorners.release();
+            miniPlayerCorners = null;
+        }
         cancelResumeLayoutRestore();
         if (liveNotStartedDialog != null) {
             liveNotStartedDialog.dismiss();
@@ -3038,6 +3048,11 @@ public final class VideoDetailFragment
 
     @Override
     public void onFullscreenStateChanged(final boolean fullscreen) {
+        if (miniPlayerCorners != null) {
+            miniPlayerCorners.setExpansionFraction(
+                    fullscreen || bottomSheetState != BottomSheetBehavior.STATE_COLLAPSED
+                            ? 1f : 0f);
+        }
         setupBrightness();
         if (!isPlayerAndPlayerServiceAvailable()
                 || player.UIs().get(MainPlayerUi.class).isEmpty()
@@ -3640,6 +3655,15 @@ public final class VideoDetailFragment
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
         bottomSheetBehavior.setState(lastStableBottomSheetState);
         updateBottomSheetState(lastStableBottomSheetState);
+        if (miniPlayerCorners != null) {
+            miniPlayerCorners.release();
+        }
+        miniPlayerCorners = new MiniPlayerCorners(bottomSheetLayout,
+                PreferenceManager.getDefaultSharedPreferences(activity)
+                        .getBoolean(getString(R.string.rounded_mini_player_key), true));
+        miniPlayerCorners.setExpansionFraction(
+                isFullscreen() || lastStableBottomSheetState != BottomSheetBehavior.STATE_COLLAPSED
+                        ? 1f : 0f);
 
         final int peekHeight = getResources().getDimensionPixelSize(R.dimen.mini_player_height);
         if (bottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
@@ -3776,6 +3800,9 @@ public final class VideoDetailFragment
     private void setOverlayLook(final AppBarLayout appBar,
                                 final AppBarLayout.Behavior behavior,
                                 final float slideOffset) {
+        if (miniPlayerCorners != null) {
+            miniPlayerCorners.setExpansionFraction(isFullscreen() ? 1f : slideOffset);
+        }
         // SlideOffset < 0 when mini player is about to close via swipe.
         // Stop animation in this case
         if (behavior == null || slideOffset < 0) {

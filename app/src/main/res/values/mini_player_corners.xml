@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="rounded_mini_player_key" translatable="false">rounded_mini_player</string>
+    <string name="rounded_mini_player_title">Rounded mini-player corners</string>
+    <string name="rounded_mini_player_summary">Round the upper corners of the collapsed player.</string>
+    <dimen name="mini_player_corner_radius">20dp</dimen>
+</resources>
