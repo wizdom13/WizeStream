@@ -375,7 +375,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
     private void monitorSubscription(final ChannelInfo info) {
         final Consumer<Throwable> onError = (final Throwable throwable) -> {
-            animate(binding.channelSubscribeButton, false, 100);
+            animate(binding.channelSubscriptionActions, false, 100);
             showSnackBarError(new ErrorInfo(throwable, UserAction.SUBSCRIPTION_GET,
                     "Get subscription status", currentInfo));
         };
@@ -516,10 +516,11 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
 
         binding.channelSubscribeButton.setActivated(isSubscribed);
+        binding.channelGroupButton.setActivated(isSubscribed);
         binding.channelSubscribeButton.setText(isSubscribed
                 ? R.string.subscribed_button_title : R.string.subscribe_button_title);
 
-        animate(binding.channelSubscribeButton, true, 100, AnimationType.LIGHT_SCALE_AND_ALPHA);
+        animate(binding.channelSubscriptionActions, true, 100, AnimationType.LIGHT_SCALE_AND_ALPHA);
     }
 
     private void showChannelGroupsDialog() {
@@ -1006,7 +1007,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         CoilHelper.INSTANCE.clearBanner(binding.channelBannerImage);
         CoilUtils.dispose(binding.subChannelAvatarView);
         binding.channelGroupButton.setVisibility(View.GONE);
-        animate(binding.channelSubscribeButton, false, 100);
+        animate(binding.channelSubscriptionActions, false, 100);
     }
 
     @Override
