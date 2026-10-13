@@ -3402,9 +3402,9 @@ public final class VideoDetailFragment
             binding.detailControlsCast.setBackgroundColor(transparent);
             binding.detailControlsPlayWithKodi.setBackgroundColor(transparent);
         }
-        if (DeviceUtils.isDesktopMode(getContext())) {
-            // Remove the "hover" overlay (since it is visible on all mouse events and interferes
-            // with the video content being played)
+        if (DeviceUtils.isTv(getContext()) || DeviceUtils.isDesktopMode(getContext())) {
+            // The thumbnail container also hosts playback. Its focused/hovered foreground
+            // must not tint the video; individual controls retain their focus indicators.
             binding.detailThumbnailRootLayout.setForeground(null);
         }
     }

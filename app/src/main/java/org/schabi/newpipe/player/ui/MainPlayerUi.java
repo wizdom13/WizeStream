@@ -1108,6 +1108,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     @Override
     public boolean onKeyDown(final int keyCode) {
+        resetTvSeekOnNavigation(keyCode);
         if (binding.getRoot().wakeOnInteraction()) {
             return true;
         }

@@ -179,7 +179,14 @@ public final class FocusOverlayView extends Drawable implements
      * equal to the overlayView bounds
      * */
     private boolean shouldClearFocusRect(@Nullable final View focusedView, final Rect focusedRect) {
-        return focusedView == null || focusedRect.equals(getBounds());
+        if (focusedView == null || !isShown(focusedView) || focusedRect.equals(getBounds())) {
+            return true;
+        }
+        // Playback can return focus to its container when controls disappear. Its bounds
+        // need not exactly match the window (insets, TV overscan, embedded playback).
+        // Keep the outline on actual controls, never around the playing video itself.
+        final View video = focusedView.findViewById(R.id.surfaceView);
+        return video != null && video.isShown();
     }
 
     public static void setupFocusObserver(final Dialog dialog) {

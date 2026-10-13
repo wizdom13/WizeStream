@@ -106,6 +106,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public static final long DPAD_CONTROLS_HIDE_TIME = 7000;  // 7 Seconds
     public static final int SEEK_OVERLAY_DURATION = 450; // 450 millis
 
+    private boolean tvDirectionalSeek;
+
     // other constants (TODO remove playback speeds and use normal menu for popup, too)
     private static final float[] PLAYBACK_SPEEDS = {0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f};
 
@@ -765,6 +767,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public void showControlsThenHide() {
+        tvDirectionalSeek = false;
         updateFullscreenOverlayInsets();
         applyPlayerSeekBarColor();
         if (DEBUG) {
@@ -784,6 +787,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public void showControls(final long duration) {
+        tvDirectionalSeek = false;
         updateFullscreenOverlayInsets();
         applyPlayerSeekBarColor();
         if (DEBUG) {
@@ -806,6 +810,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
         controlsVisibilityHandler.removeCallbacksAndMessages(null);
         controlsVisibilityHandler.postDelayed(() -> {
+            tvDirectionalSeek = false;
             showHideShadow(false, duration);
             animate(binding.playbackControlRoot, false, duration, AnimationType.ALPHA,
                     0, this::hideSystemUIIfNeeded);
@@ -1697,6 +1702,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
      */
     protected View.OnClickListener makeOnClickListener(@NonNull final Runnable runnable) {
         return v -> {
+            tvDirectionalSeek = false;
             if (DEBUG) {
                 Log.d(TAG, "onClick() called with: v = [" + v + "]");
             }
@@ -1725,12 +1731,14 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     public boolean onKeyDown(final int keyCode) {
+        resetTvSeekOnNavigation(keyCode);
         // Embedded playback must not consume navigation intended for the detail page.
         if (DeviceUtils.isTv(context) && !isFullscreen() && !player.popupPlayerSelected()) {
             return false;
         }
         if (DeviceUtils.isTv(context) && TvPlayerKeyPolicy.shouldSeek(
-                keyCode, isControlsVisible(), isAnyListViewOpen()) && player.getCurrentState()
+                keyCode, isControlsVisible() && !tvDirectionalSeek,
+                isAnyListViewOpen() || isSomePopupMenuVisible) && player.getCurrentState()
                 != org.schabi.newpipe.player.Player.STATE_BLOCKED) {
             if (TvPlayerKeyPolicy.isForwardSeek(keyCode)) {
                 player.fastForward();
@@ -1738,6 +1746,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 player.fastRewind();
             }
             showControlsThenHide();
+            // These controls provide seek feedback. Further horizontal presses should
+            // continue seeking until the user explicitly navigates into the controls.
+            tvDirectionalSeek = true;
             return true;
         }
 
@@ -1788,6 +1799,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
 
         return false;
+    }
+
+    protected void resetTvSeekOnNavigation(final int keyCode) {
+        if (!TvPlayerKeyPolicy.isSeekKey(keyCode)) {
+            tvDirectionalSeek = false;
+        }
     }
 
     private void onMoreOptionsClicked() {
