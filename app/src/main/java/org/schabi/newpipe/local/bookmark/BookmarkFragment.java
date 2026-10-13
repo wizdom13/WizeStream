@@ -73,6 +73,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     Parcelable itemsListState;
 
     private Subscription databaseSubscription;
+    private org.schabi.newpipe.local.ListSeparators separators;
     private CompositeDisposable disposables = new CompositeDisposable();
     private LocalPlaylistManager localPlaylistManager;
     private RemotePlaylistManager remotePlaylistManager;
@@ -350,6 +351,12 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             return;
         }
 
+        if (separators == null) {
+            separators = new org.schabi.newpipe.local.ListSeparators(requireContext(),
+                    ProfileManager.getActiveProfileId(requireContext()), "bookmarks");
+        }
+        itemListAdapter.setSeparators(isPlaylistListFiltered() ? null : separators::labels,
+                this::editSeparatorAt);
         itemListAdapter.clearStreamItemList();
         itemListAdapter.setItemHandleEnabled(!isPlaylistListFiltered());
         setEmptyStateMessage(isPlaylistListFiltered()
@@ -635,6 +642,13 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     // Utils
     ///////////////////////////////////////////////////////////////////////////
 
+    private void editSeparatorAt(final int index) {
+        if (separators != null && itemListAdapter != null) {
+            separators.edit(requireContext(), itemListAdapter.getItemsList(), index,
+                    () -> itemListAdapter.setSeparators(separators::labels, this::editSeparatorAt));
+        }
+    }
+
     private void showRemoteDeleteDialog(final PlaylistRemoteEntity item) {
         final List<String> actions = new ArrayList<>();
         actions.add(getString(R.string.playlist_move_to_category));
@@ -642,9 +656,14 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         if (LearningMode.isEnabled(requireContext())) {
             actions.add(learningActionLabel(item));
         }
+        if (!isPlaylistListFiltered()) {
+            actions.add(getString(R.string.list_separator_add));
+        }
         new MaterialAlertDialogBuilder(requireContext())
                 .setItems(actions.toArray(new String[0]), (dialog, which) -> {
-                    if (which == 0) {
+                    if (actions.get(which).equals(getString(R.string.list_separator_add))) {
+                        editSeparatorAt(itemListAdapter.getItemsList().indexOf(item));
+                    } else if (which == 0) {
                         chooseCategory(item);
                     } else if (which == 1) {
                         showDeleteDialog(item.getOrderingName(), item);
@@ -675,8 +694,14 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             items.add(learning);
         }
 
+        final String separatorLabel = getString(R.string.list_separator_add);
+        if (!isPlaylistListFiltered()) {
+            items.add(separatorLabel);
+        }
         final DialogInterface.OnClickListener action = (d, index) -> {
-            if (items.get(index).equals(rename)) {
+            if (items.get(index).equals(separatorLabel)) {
+                editSeparatorAt(itemListAdapter.getItemsList().indexOf(selectedItem));
+            } else if (items.get(index).equals(rename)) {
                 showRenameDialog(selectedItem);
             } else if (items.get(index).equals(delete)) {
                 showDeleteDialog(selectedItem.getOrderingName(), selectedItem);

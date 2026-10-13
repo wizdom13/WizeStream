@@ -3,6 +3,9 @@ package org.schabi.newpipe.local;
 import android.content.Context;
 import android.util.Log;
 import android.view.View;
+import android.view.LayoutInflater;
+import android.widget.TextView;
+import androidx.core.view.ViewCompat;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -39,6 +42,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Collections;
+import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -68,6 +75,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private static final int HEADER_TYPE = 0;
     private static final int FOOTER_TYPE = 1;
+    private static final int SEPARATOR_TYPE = 2;
 
     private static final int STREAM_STATISTICS_HOLDER_TYPE = 0x1000;
     private static final int STREAM_PLAYLIST_HOLDER_TYPE = 0x1001;
@@ -95,6 +103,32 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private final HistoryRecordManager recordManager;
     private final VideoNoteBadges noteBadges;
     private final DateTimeFormatter dateTimeFormatter;
+
+    private final ArrayList<Integer> rows = new ArrayList<>();
+    private Map<Integer, String> separators = Collections.emptyMap();
+    private Function<List<LocalItem>, Map<Integer, String>> separatorProvider;
+    private IntConsumer editSeparator;
+
+    public void setSeparators(
+            @Nullable final Function<List<LocalItem>, Map<Integer, String>> provider,
+            @Nullable final IntConsumer editor) {
+        separatorProvider = provider;
+        editSeparator = editor;
+        rebuildRows();
+        notifyDataSetChanged();
+    }
+
+    private void rebuildRows() {
+        separators = separatorProvider == null ? Collections.emptyMap()
+                : separatorProvider.apply(localItems);
+        rows.clear();
+        for (int i = 0; i < localItems.size(); i++) {
+            if (separators.containsKey(i)) {
+                rows.add(-i - 1);
+            }
+            rows.add(i);
+        }
+    }
 
     private boolean showFooter = false;
     private Supplier<View> headerSupplier = null;
@@ -140,6 +174,11 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
         final int offsetStart = sizeConsideringHeader();
         localItems.addAll(data);
+        rebuildRows();
+        if (separatorProvider != null) {
+            notifyDataSetChanged();
+            return;
+        }
 
         if (DEBUG) {
             Log.d(TAG, "addItems() after > offsetStart = " + offsetStart + ", "
@@ -163,8 +202,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     public void removeItem(final LocalItem data) {
         final int index = localItems.indexOf(data);
         if (index != -1) {
-            localItems.remove(index);
-            notifyItemRemoved(index + (hasHeader() ? 1 : 0));
+            removeItemAt(index);
         } else {
             // this happens when
             // 1) removeItem is called on infoItemDuplicate as in showStreamItemDialog of
@@ -184,8 +222,8 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
      * @return the item index, or {@code -1} when the position is a header, footer, or invalid
      */
     public int getItemIndex(final int adapterPosition) {
-        final int itemIndex = adapterOffsetWithoutHeader(adapterPosition);
-        return itemIndex >= 0 && itemIndex < localItems.size() ? itemIndex : -1;
+        final int row = adapterPosition - (hasHeader() ? 1 : 0);
+        return row >= 0 && row < rows.size() && rows.get(row) >= 0 ? rows.get(row) : -1;
     }
 
     /**
@@ -198,7 +236,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         if (itemIndex < 0 || itemIndex >= localItems.size()) {
             return RecyclerView.NO_POSITION;
         }
-        return itemIndex + (hasHeader() ? 1 : 0);
+        return rows.indexOf(itemIndex) + (hasHeader() ? 1 : 0);
     }
 
     /**
@@ -213,8 +251,14 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
             return null;
         }
 
+        final int position = getAdapterPositionForItemIndex(itemIndex);
         final LocalItem removedItem = localItems.remove(itemIndex);
-        notifyItemRemoved(itemIndex + (hasHeader() ? 1 : 0));
+        rebuildRows();
+        if (separatorProvider == null) {
+            notifyItemRemoved(position);
+        } else {
+            notifyDataSetChanged();
+        }
         return removedItem;
     }
 
@@ -227,12 +271,17 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     public void insertItemAt(final int itemIndex, @NonNull final LocalItem item) {
         final int insertionIndex = Math.max(0, Math.min(itemIndex, localItems.size()));
         localItems.add(insertionIndex, item);
-        notifyItemInserted(insertionIndex + (hasHeader() ? 1 : 0));
+        rebuildRows();
+        if (separatorProvider == null) {
+            notifyItemInserted(getAdapterPositionForItemIndex(insertionIndex));
+        } else {
+            notifyDataSetChanged();
+        }
     }
 
     public boolean swapItems(final int fromAdapterPosition, final int toAdapterPosition) {
-        final int actualFrom = adapterOffsetWithoutHeader(fromAdapterPosition);
-        final int actualTo = adapterOffsetWithoutHeader(toAdapterPosition);
+        final int actualFrom = getItemIndex(fromAdapterPosition);
+        final int actualTo = getItemIndex(toAdapterPosition);
 
         if (actualFrom < 0 || actualTo < 0) {
             return false;
@@ -241,8 +290,14 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
             return false;
         }
 
+        final boolean hadSeparators = !separators.isEmpty();
         localItems.add(actualTo, localItems.remove(actualFrom));
-        notifyItemMoved(fromAdapterPosition, toAdapterPosition);
+        rebuildRows();
+        if (hadSeparators || !separators.isEmpty()) {
+            notifyDataSetChanged();
+        } else {
+            notifyItemMoved(fromAdapterPosition, toAdapterPosition);
+        }
         return true;
     }
 
@@ -251,6 +306,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
             return;
         }
         localItems.clear();
+        rebuildRows();
         notifyDataSetChanged();
     }
 
@@ -307,12 +363,8 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
-    private int adapterOffsetWithoutHeader(final int offset) {
-        return offset - (hasHeader() ? 1 : 0);
-    }
-
     private int sizeConsideringHeader() {
-        return localItems.size() + (hasHeader() ? 1 : 0);
+        return rows.size() + (hasHeader() ? 1 : 0);
     }
 
     public ArrayList<LocalItem> getItemsList() {
@@ -321,7 +373,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     @Override
     public int getItemCount() {
-        int count = localItems.size();
+        int count = rows.size();
         if (hasHeader()) {
             count++;
         }
@@ -350,10 +402,13 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         } else if (hasHeader()) {
             position--;
         }
-        if (footer != null && position == localItems.size() && showFooter) {
+        if (footer != null && position == rows.size() && showFooter) {
             return FOOTER_TYPE;
         }
-        final LocalItem item = localItems.get(position);
+        if (rows.get(position) < 0) {
+            return SEPARATOR_TYPE;
+        }
+        final LocalItem item = localItems.get(rows.get(position));
         switch (item.getLocalItemType()) {
             case PLAYLIST_LOCAL_ITEM:
                 if (useItemHandle) {
@@ -415,6 +470,9 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     + "parent = [" + parent + "], type = [" + type + "]");
         }
         switch (type) {
+            case SEPARATOR_TYPE:
+                return new HeaderFooterHolder(LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.list_separator, parent, false));
             case HEADER_TYPE:
                 return new HeaderFooterHolder(headerSupplier.get());
             case FOOTER_TYPE:
@@ -475,10 +533,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
 
         if (holder instanceof LocalItemHolder) {
-            // If header isn't null, offset the items by -1
-            if (hasHeader()) {
-                position--;
-            }
+            position = getItemIndex(position);
 
             ((LocalItemHolder) holder)
                     .updateFromItem(localItems.get(position), recordManager, dateTimeFormatter);
@@ -489,6 +544,20 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                 handle.setEnabled(itemHandleEnabled);
                 handle.setVisibility(itemHandleEnabled ? View.VISIBLE : View.GONE);
             }
+        } else if (getItemViewType(position) == SEPARATOR_TYPE) {
+            final int row = position - (hasHeader() ? 1 : 0);
+            final TextView label = (TextView) holder.itemView;
+            label.setText(separators.get(-rows.get(row) - 1));
+            ViewCompat.setAccessibilityHeading(label, true);
+            label.setOnLongClickListener(view -> {
+                final int current = holder.getBindingAdapterPosition() - (hasHeader() ? 1 : 0);
+                if (editSeparator == null || current < 0 || current >= rows.size()
+                        || rows.get(current) >= 0) {
+                    return false;
+                }
+                editSeparator.accept(-rows.get(current) - 1);
+                return true;
+            });
         } else if (holder instanceof HeaderFooterHolder && position == 0 && hasHeader()) {
             ((HeaderFooterHolder) holder).view = headerSupplier.get();
         } else if (holder instanceof HeaderFooterHolder && position == sizeConsideringHeader()
@@ -504,10 +573,10 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
             for (final Object payload : payloads) {
                 if (payload instanceof StreamStateEntity) {
                     ((LocalItemHolder) holder).updateState(localItems
-                            .get(hasHeader() ? position - 1 : position), recordManager);
+                            .get(getItemIndex(position)), recordManager);
                 } else if (payload instanceof Boolean) {
                     ((LocalItemHolder) holder).updateState(localItems
-                            .get(hasHeader() ? position - 1 : position), recordManager);
+                            .get(getItemIndex(position)), recordManager);
                 }
             }
         } else {
@@ -538,7 +607,8 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
             @Override
             public int getSpanSize(final int position) {
                 final int type = getItemViewType(position);
-                return type == HEADER_TYPE || type == FOOTER_TYPE ? spanCount : 1;
+                return type == HEADER_TYPE || type == FOOTER_TYPE || type == SEPARATOR_TYPE
+                        ? spanCount : 1;
             }
         };
     }

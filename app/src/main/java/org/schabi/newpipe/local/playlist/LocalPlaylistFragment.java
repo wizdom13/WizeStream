@@ -123,6 +123,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private LocalPlaylistManager playlistManager;
     private LearningContentManager learningContentManager;
     private Subscription databaseSubscription;
+    private org.schabi.newpipe.local.ListSeparators separators;
 
     private CompositeDisposable disposables;
 
@@ -693,6 +694,12 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         if (itemListAdapter == null) {
             return;
         }
+        if (separators == null) {
+            separators = new org.schabi.newpipe.local.ListSeparators(requireContext(),
+                    ProfileManager.getActiveProfileId(requireContext()), "playlist:" + playlistId);
+        }
+        itemListAdapter.setSeparators(ContextualSearchHelper.isActive(contextualSearchQuery)
+                ? null : separators::labels, this::editSeparatorAt);
         final List<PlaylistStreamEntry> displayedItems = ContextualSearchHelper.filter(
                 unfilteredItems, contextualSearchQuery,
                 item -> new String[]{item.getStreamEntity().getTitle(),
@@ -1129,10 +1136,16 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                         getString(R.string.delete),
                         getString(R.string.playlist_video_notes)
                     };
+            final List<String> menuActions = new ArrayList<>(java.util.Arrays.asList(actions));
+            if (!ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                menuActions.add(getString(R.string.list_separator_add));
+            }
             new AlertDialog.Builder(requireContext())
                     .setTitle(item.getStreamEntity().getTitle())
-                    .setItems(actions, (dialog, which) -> {
-                        if (which == 0) {
+                    .setItems(menuActions.toArray(new String[0]), (dialog, which) -> {
+                        if (which == actions.length) {
+                            editSeparatorAt(itemListAdapter.getItemsList().indexOf(item));
+                        } else if (which == 0) {
                             NavigationHelper.playOnMainPlayer(requireContext(),
                                     getPlayQueueStartingAt(item), false);
                         } else if (which == 1) {
@@ -1176,6 +1189,12 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             dialogBuilder.addEntry(new org.schabi.newpipe.info_list.dialog.StreamDialogEntry(
                     R.string.playlist_video_notes, (f, i) -> showVideoNotes(item)));
 
+            if (!ContextualSearchHelper.isActive(contextualSearchQuery)) {
+                dialogBuilder.addEntry(new org.schabi.newpipe.info_list.dialog.StreamDialogEntry(
+                        R.string.list_separator_add, (f, i) -> editSeparatorAt(
+                                itemListAdapter.getItemsList().indexOf(item))));
+            }
+
             // set custom actions
             // all entries modified below have already been added within the builder
             dialogBuilder
@@ -1195,6 +1214,13 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                     .show();
         } catch (final IllegalArgumentException e) {
             InfoItemDialog.Builder.reportErrorDuringInitialization(e, infoItem);
+        }
+    }
+
+    private void editSeparatorAt(final int index) {
+        if (separators != null && itemListAdapter != null) {
+            separators.edit(requireContext(), itemListAdapter.getItemsList(), index,
+                    () -> itemListAdapter.setSeparators(separators::labels, this::editSeparatorAt));
         }
     }
 

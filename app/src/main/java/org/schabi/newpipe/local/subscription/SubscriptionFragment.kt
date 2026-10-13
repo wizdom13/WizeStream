@@ -462,6 +462,10 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         when (result) {
             is SubscriptionState.LoadedState -> {
                 result.subscriptions.forEach {
+                    if (it is org.schabi.newpipe.local.subscription.item.SubscriptionSeparatorItem) {
+                        val entry = it.entry
+                        it.onEdit = { sortController?.editSeparator(entry) }
+                    }
                     if (it is ChannelItem) {
                         it.gesturesListener = listenerChannelItem
                         it.itemVersion = if (SubscriptionViewModel.shouldUseGridForSubscription(requireContext())) {

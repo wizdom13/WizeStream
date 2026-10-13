@@ -1812,6 +1812,7 @@
     <string name="subscription_sort_up">Move up</string>
     <string name="subscription_sort_down">Move down</string>
     <string name="subscription_arrange_help">Drag channels and separators to change their order. Tap a separator to rename or remove it.</string>
+    <string name="list_separator_add">Add separator above</string>
     <string name="subscription_separator_add">Add separator</string>
     <string name="subscription_separator_name">Separator name</string>
     <string name="subscription_order_reset">Reset to alphabetical order</string>

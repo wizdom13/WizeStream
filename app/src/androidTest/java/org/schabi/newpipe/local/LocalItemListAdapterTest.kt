@@ -190,6 +190,55 @@ class LocalItemListAdapterTest {
         }
     }
 
+    @Test
+    fun separatorsStayOutOfPlaybackOrderAndSupportReorderRemovalUndoAndSearch() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
+            val adapter = LocalItemListAdapter(context)
+            val first = playlistEntry(0)
+            val second = playlistEntry(1).copy(streamId = 2)
+            val duplicate = playlistEntry(2)
+            val items = listOf(first, second, duplicate)
+            val sections = ListSeparators(context, "separator-test", "playlist")
+            val keys = ListSeparators.keys(items)
+            sections.save(keys[0], "Introduction")
+            sections.save(keys[2], "Review")
+            adapter.setSeparators(sections::labels) { }
+            adapter.addItems(items)
+            adapter.setHeaderSupplier { View(context) }
+            assertEquals(6, adapter.itemCount)
+            assertEquals(items, adapter.itemsList)
+            assertEquals(-1, adapter.getItemIndex(1))
+            assertEquals(0, adapter.getItemIndex(2))
+            assertEquals(1, adapter.getItemIndex(3))
+            assertEquals(-1, adapter.getItemIndex(4))
+            assertEquals(2, adapter.getItemIndex(5))
+            assertEquals(3, adapter.getSpanSizeLookup(3).getSpanSize(1))
+            val heading = adapter.createViewHolder(FrameLayout(context), adapter.getItemViewType(1))
+            adapter.bindViewHolder(heading, 1)
+            assertEquals("Introduction", (heading.itemView as TextView).text.toString())
+            assertTrue(heading.itemView.isLongClickable)
+            assertFalse(adapter.swapItems(1, 3))
+            assertTrue(adapter.swapItems(3, 2))
+            assertEquals(listOf(second, first, duplicate), adapter.itemsList)
+            assertEquals(1, adapter.getItemIndex(3))
+            assertSame(first, adapter.removeItemAt(1))
+            adapter.insertItemAt(1, first)
+            assertEquals(listOf(second, first, duplicate), adapter.itemsList)
+            assertEquals(mapOf(1 to "Introduction", 2 to "Review"), sections.labels(adapter.itemsList))
+            adapter.setSeparators(null, null)
+            assertEquals(4, adapter.itemCount)
+            assertEquals(listOf(second, first, duplicate), adapter.itemsList)
+            adapter.setSeparators(sections::labels) { }
+            assertEquals(6, adapter.itemCount)
+            assertTrue(ListSeparators(context, "other-profile", "playlist").labels(items).isEmpty())
+            assertTrue(ListSeparators(context, "separator-test", "other-list").labels(items).isEmpty())
+            sections.save(keys[0], null)
+            sections.save(keys[2], null)
+        }
+    }
+
     private fun playlistEntry(joinIndex: Int) = PlaylistStreamEntry(
         streamEntity = StreamEntity(
             serviceId = 0,

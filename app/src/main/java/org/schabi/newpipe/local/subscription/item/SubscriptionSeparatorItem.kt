@@ -8,10 +8,17 @@ import org.schabi.newpipe.databinding.SubscriptionHeaderBinding
 import org.schabi.newpipe.local.subscription.SubscriptionLayout
 
 class SubscriptionSeparatorItem(val entry: SubscriptionLayout.Entry) : BindableItem<SubscriptionHeaderBinding>() {
+    var onEdit: (() -> Unit)? = null
+
     override fun getLayout(): Int = R.layout.subscription_header
 
     override fun bind(viewBinding: SubscriptionHeaderBinding, position: Int) {
         viewBinding.root.text = entry.separator
+        viewBinding.root.isFocusable = true
+        viewBinding.root.setOnLongClickListener {
+            onEdit?.invoke()
+            onEdit != null
+        }
         ViewCompat.setAccessibilityHeading(viewBinding.root, true)
     }
 
