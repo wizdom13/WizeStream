@@ -718,8 +718,22 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             separators = new org.schabi.newpipe.local.ListSeparators(requireContext(),
                     ProfileManager.getActiveProfileId(requireContext()), "playlist:" + playlistId);
         }
+        itemListAdapter.setSeparatorGestures(
+                (from, to) -> {
+                    separators.move(itemListAdapter.getItemsList(), from, to);
+                    if (debounceSaver != null) {
+                        debounceSaver.setHasChangesToSave();
+                    }
+                },
+                row -> separators.removeRow(itemListAdapter.getItemsList(), row),
+                row -> separators.insertRow(itemListAdapter.getItemsList(), row),
+                holder -> {
+                    if (editMode && itemTouchHelper != null) {
+                        itemTouchHelper.startDrag(holder);
+                    }
+                });
         itemListAdapter.setSeparators(ContextualSearchHelper.isActive(contextualSearchQuery)
-                ? null : separators::labels, this::editSeparatorAt);
+                ? null : separators::labels, this::editSeparatorRow);
         final List<PlaylistStreamEntry> displayedItems = ContextualSearchHelper.filter(
                 unfilteredItems, contextualSearchQuery,
                 item -> new String[]{item.getStreamEntity().getTitle(),
@@ -1045,8 +1059,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             public boolean onMove(@NonNull final RecyclerView recyclerView,
                                   @NonNull final RecyclerView.ViewHolder source,
                                   @NonNull final RecyclerView.ViewHolder target) {
-                if (!editMode || source.getItemViewType() != target.getItemViewType()
-                        || itemListAdapter == null) {
+                if (!editMode || itemListAdapter == null) {
                     return false;
                 }
 
@@ -1135,7 +1148,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             if (itemListAdapter == null) {
                 return;
             }
-            itemListAdapter.insertItemAt(itemIndex, removedEntry);
+            itemListAdapter.insertItemAt(itemIndex, removedEntry, adapterPosition);
             persistSwipeChange();
         });
         snackbar.addCallback(new Snackbar.Callback() {
@@ -1267,10 +1280,20 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
     }
 
+    private void editSeparatorRow(final int row) {
+        if (separators != null && itemListAdapter != null) {
+            separators.editRow(requireContext(), itemListAdapter.getItemsList(), row,
+                    () -> itemListAdapter.setSeparators(separators::labels,
+                            this::editSeparatorRow),
+                    false);
+        }
+    }
+
     private void editSeparatorAt(final int index) {
         if (separators != null && itemListAdapter != null) {
             separators.edit(requireContext(), itemListAdapter.getItemsList(), index,
-                    () -> itemListAdapter.setSeparators(separators::labels, this::editSeparatorAt));
+                    () -> itemListAdapter.setSeparators(separators::labels,
+                            this::editSeparatorRow));
         }
     }
 

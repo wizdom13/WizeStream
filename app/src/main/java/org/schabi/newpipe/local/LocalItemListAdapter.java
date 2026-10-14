@@ -109,6 +109,21 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     private Function<List<LocalItem>, Map<Integer, String>> separatorProvider;
     private IntConsumer editSeparator;
 
+    private java.util.function.BiConsumer<Integer, Integer> moveSeparatorRows;
+    private IntConsumer removeSeparatorRow;
+    private IntConsumer insertSeparatorRow;
+    private java.util.function.Consumer<RecyclerView.ViewHolder> separatorDrag;
+
+    public void setSeparatorGestures(
+            final java.util.function.BiConsumer<Integer, Integer> move,
+            final IntConsumer remove, final IntConsumer insert,
+            final java.util.function.Consumer<RecyclerView.ViewHolder> drag) {
+        moveSeparatorRows = move;
+        removeSeparatorRow = remove;
+        insertSeparatorRow = insert;
+        separatorDrag = drag;
+    }
+
     public void setSeparators(
             @Nullable final Function<List<LocalItem>, Map<Integer, String>> provider,
             @Nullable final IntConsumer editor) {
@@ -122,11 +137,9 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         separators = separatorProvider == null ? Collections.emptyMap()
                 : separatorProvider.apply(localItems);
         rows.clear();
-        for (int i = 0; i < localItems.size(); i++) {
-            if (separators.containsKey(i)) {
-                rows.add(-i - 1);
-            }
-            rows.add(i);
+        int item = 0;
+        for (int row = 0; row < localItems.size() + separators.size(); row++) {
+            rows.add(separators.containsKey(row) ? -row - 1 : item++);
         }
     }
 
@@ -252,6 +265,9 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
 
         final int position = getAdapterPositionForItemIndex(itemIndex);
+        if (removeSeparatorRow != null && separatorProvider != null) {
+            removeSeparatorRow.accept(position - (hasHeader() ? 1 : 0));
+        }
         final LocalItem removedItem = localItems.remove(itemIndex);
         rebuildRows();
         if (separatorProvider == null) {
@@ -269,7 +285,26 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
      * @param item item to insert
      */
     public void insertItemAt(final int itemIndex, @NonNull final LocalItem item) {
+        final int row = itemIndex < localItems.size() && itemIndex >= 0
+                ? rows.indexOf(itemIndex) : rows.size();
+        insertItemAt(itemIndex, item, row + (hasHeader() ? 1 : 0));
+    }
+
+    /**
+     * Restores both item order and the exact presentation row when undoing removal.
+     *
+     * @param itemIndex index in the playback item list
+     * @param item restored item
+     * @param adapterPosition original row before removal
+     */
+    public void insertItemAt(final int itemIndex, @NonNull final LocalItem item,
+                             final int adapterPosition) {
         final int insertionIndex = Math.max(0, Math.min(itemIndex, localItems.size()));
+        if (insertSeparatorRow != null && separatorProvider != null) {
+            final int row = Math.max(0, Math.min(rows.size(),
+                    adapterPosition - (hasHeader() ? 1 : 0)));
+            insertSeparatorRow.accept(row);
+        }
         localItems.add(insertionIndex, item);
         rebuildRows();
         if (separatorProvider == null) {
@@ -280,24 +315,24 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
     }
 
     public boolean swapItems(final int fromAdapterPosition, final int toAdapterPosition) {
-        final int actualFrom = getItemIndex(fromAdapterPosition);
-        final int actualTo = getItemIndex(toAdapterPosition);
-
-        if (actualFrom < 0 || actualTo < 0) {
+        final int from = fromAdapterPosition - (hasHeader() ? 1 : 0);
+        final int to = toAdapterPosition - (hasHeader() ? 1 : 0);
+        if (from < 0 || to < 0 || from >= rows.size() || to >= rows.size() || from == to) {
             return false;
         }
-        if (actualFrom >= localItems.size() || actualTo >= localItems.size()) {
-            return false;
+        final ArrayList<LocalItem> original = new ArrayList<>(localItems);
+        rows.add(to, rows.remove(from));
+        localItems.clear();
+        for (final int row : rows) {
+            if (row >= 0) {
+                localItems.add(original.get(row));
+            }
         }
-
-        final boolean hadSeparators = !separators.isEmpty();
-        localItems.add(actualTo, localItems.remove(actualFrom));
+        if (moveSeparatorRows != null && separatorProvider != null) {
+            moveSeparatorRows.accept(from, to);
+        }
         rebuildRows();
-        if (hadSeparators || !separators.isEmpty()) {
-            notifyDataSetChanged();
-        } else {
-            notifyItemMoved(fromAdapterPosition, toAdapterPosition);
-        }
+        notifyItemMoved(fromAdapterPosition, toAdapterPosition);
         return true;
     }
 
@@ -547,8 +582,32 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
             }
         } else if (getItemViewType(position) == SEPARATOR_TYPE) {
             final int row = position - (hasHeader() ? 1 : 0);
-            final TextView label = (TextView) holder.itemView;
+            final TextView label = holder.itemView.findViewById(R.id.separator_label);
             label.setText(separators.get(-rows.get(row) - 1));
+            final View handle = holder.itemView.findViewById(R.id.separator_handle);
+            handle.setVisibility(itemHandleEnabled ? View.VISIBLE : View.GONE);
+            handle.setOnTouchListener((view, event) -> {
+                if (event.getActionMasked() == android.view.MotionEvent.ACTION_DOWN
+                        && itemHandleEnabled && separatorDrag != null) {
+                    separatorDrag.accept(holder);
+                    return true;
+                }
+                return false;
+            });
+            handle.setOnClickListener(view -> {
+                if (!itemHandleEnabled) {
+                    return;
+                }
+                final int current = holder.getBindingAdapterPosition();
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(view.getContext())
+                        .setTitle(label.getText())
+                        .setItems(new String[]{view.getContext()
+                                .getString(R.string.subscription_sort_up),
+                                view.getContext().getString(R.string.subscription_sort_down)},
+                                (dialog, which) -> swapItems(current,
+                                        current + (which == 0 ? -1 : 1)))
+                        .show();
+            });
             ViewCompat.setAccessibilityHeading(label, true);
             label.setOnLongClickListener(view -> {
                 final int current = holder.getBindingAdapterPosition() - (hasHeader() ? 1 : 0);

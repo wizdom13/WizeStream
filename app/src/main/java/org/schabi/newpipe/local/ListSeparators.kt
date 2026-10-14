@@ -22,16 +22,80 @@ class ListSeparators(context: Context, profileId: String, listId: String) {
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
     private val preferenceKey = "list_separators_${profileId}_$listId"
 
+    private val positionsKey = "${preferenceKey}_positions"
+
     fun labels(items: List<LocalItem>): Map<Int, String> {
-        val saved = read()
-        return keys(items).mapIndexedNotNull { index, key ->
-            saved.optString(key).takeIf { it.isNotBlank() }?.let { index to it }
-        }.toMap()
+        if (!preferences.contains(positionsKey)) {
+            // Adapters request labels before asynchronous database rows have loaded.
+            if (items.isEmpty()) return emptyMap()
+            val old = read()
+            var preceding = 0
+            val migrated = linkedMapOf<Int, String>()
+            keys(items).forEachIndexed { index, key ->
+                old.optString(key).takeIf { it.isNotBlank() }?.let {
+                    migrated[index + preceding++] = it
+                }
+            }
+            writePositions(migrated)
+        }
+        val data = try {
+            JSONObject(preferences.getString(positionsKey, "{}") ?: "{}")
+        } catch (_: org.json.JSONException) {
+            JSONObject()
+        }
+        val entries = data.keys().asSequence().mapNotNull { key ->
+            key.toIntOrNull()?.let { it to data.optString(key) }
+        }.filter { it.second.isNotBlank() }.sortedBy { it.first }.toList()
+        val result = linkedMapOf<Int, String>()
+        var previous = -1
+        entries.forEachIndexed { index, entry ->
+            val position = entry.first.coerceIn(previous + 1, items.size + index)
+            result[position] = entry.second
+            previous = position
+        }
+        return result
+    }
+
+    fun move(items: List<LocalItem>, from: Int, to: Int) {
+        writePositions(
+            labels(items).mapKeys { (position, _) ->
+                when {
+                    position == from -> to
+                    from < to && position in (from + 1)..to -> position - 1
+                    to < from && position in to until from -> position + 1
+                    else -> position
+                }
+            }
+        )
+    }
+
+    fun removeRow(items: List<LocalItem>, row: Int) {
+        writePositions(
+            labels(items).mapKeys { (position, _) ->
+                if (position > row) position - 1 else position
+            }
+        )
+    }
+
+    fun insertRow(items: List<LocalItem>, row: Int) {
+        writePositions(
+            labels(items).mapKeys { (position, _) ->
+                if (position >= row) position + 1 else position
+            }
+        )
     }
 
     fun edit(context: Context, items: List<LocalItem>, index: Int, changed: Runnable) {
-        val key = keys(items).getOrNull(index) ?: return
-        val previous = read().optString(key)
+        if (index !in items.indices) return
+        val saved = labels(items)
+        var row = index
+        saved.keys.sorted().forEach { if (it <= row) row++ }
+        editRow(context, items, row, changed, true)
+    }
+
+    fun editRow(context: Context, items: List<LocalItem>, row: Int, changed: Runnable, adding: Boolean = false) {
+        val saved = labels(items).toMutableMap()
+        val previous = if (adding) "" else saved[row] ?: return
         val input = EditText(context).apply {
             setSingleLine()
             hint = context.getString(R.string.subscription_separator_name)
@@ -40,9 +104,10 @@ class ListSeparators(context: Context, profileId: String, listId: String) {
         val builder = MaterialAlertDialogBuilder(context)
             .setTitle(R.string.subscription_separator_name).setView(input)
             .setPositiveButton(R.string.save, null).setNegativeButton(R.string.cancel, null)
-        if (previous.isNotBlank()) {
+        if (!adding) {
             builder.setNeutralButton(R.string.delete) { _, _ ->
-                save(key, null)
+                saved.remove(row)
+                writePositions(saved.mapKeys { (position, _) -> if (position > row) position - 1 else position })
                 changed.run()
             }
         }
@@ -52,17 +117,25 @@ class ListSeparators(context: Context, profileId: String, listId: String) {
             if (name.isEmpty()) {
                 input.error = context.getString(R.string.subscription_separator_name)
             } else {
-                save(key, name)
+                val updated = if (adding) {
+                    saved.mapKeys { (position, _) ->
+                        if (position >= row) position + 1 else position
+                    }.toMutableMap()
+                } else {
+                    saved
+                }
+                updated[row] = name
+                writePositions(updated)
                 changed.run()
                 dialog.dismiss()
             }
         }
     }
 
-    internal fun save(key: String, label: String?) {
-        val data = read()
-        if (label == null) data.remove(key) else data.put(key, label)
-        preferences.edit().putString(preferenceKey, data.toString()).apply()
+    private fun writePositions(labels: Map<Int, String>) {
+        val data = JSONObject()
+        labels.forEach { (row, label) -> data.put(row.toString(), label) }
+        preferences.edit().putString(positionsKey, data.toString()).apply()
     }
 
     private fun read(): JSONObject = try {

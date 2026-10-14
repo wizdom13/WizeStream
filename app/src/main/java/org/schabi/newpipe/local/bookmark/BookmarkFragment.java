@@ -44,8 +44,6 @@ import org.schabi.newpipe.learning.LearningContentManager;
 import org.schabi.newpipe.learning.LearningMode;
 import org.schabi.newpipe.learning.LearningPlaylistMarker;
 import org.schabi.newpipe.local.BaseLocalListFragment;
-import org.schabi.newpipe.local.holder.LocalBookmarkPlaylistItemHolder;
-import org.schabi.newpipe.local.holder.RemoteBookmarkPlaylistItemHolder;
 import org.schabi.newpipe.local.playlist.LocalPlaylistManager;
 import org.schabi.newpipe.local.playlist.RemotePlaylistManager;
 import org.schabi.newpipe.local.search.ContextualSearchHelper;
@@ -386,8 +384,22 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             separators = new org.schabi.newpipe.local.ListSeparators(requireContext(),
                     ProfileManager.getActiveProfileId(requireContext()), "bookmarks");
         }
+        itemListAdapter.setSeparatorGestures(
+                (from, to) -> {
+                    separators.move(itemListAdapter.getItemsList(), from, to);
+                    if (debounceSaver != null) {
+                        debounceSaver.setHasChangesToSave();
+                    }
+                },
+                row -> separators.removeRow(itemListAdapter.getItemsList(), row),
+                row -> separators.insertRow(itemListAdapter.getItemsList(), row),
+                holder -> {
+                    if (editMode && itemTouchHelper != null) {
+                        itemTouchHelper.startDrag(holder);
+                    }
+                });
         itemListAdapter.setSeparators(isPlaylistListFiltered() ? null : separators::labels,
-                this::editSeparatorAt);
+                this::editSeparatorRow);
         itemListAdapter.clearStreamItemList();
         itemListAdapter.setItemHandleEnabled(editMode && !isPlaylistListFiltered());
         setEmptyStateMessage(isPlaylistListFiltered()
@@ -641,19 +653,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                                   @NonNull final RecyclerView.ViewHolder source,
                                   @NonNull final RecyclerView.ViewHolder target) {
 
-                // Allow swap LocalBookmarkPlaylistItemHolder and RemoteBookmarkPlaylistItemHolder.
-                if (!editMode || isPlaylistListFiltered() || itemListAdapter == null
-                        || source.getItemViewType() != target.getItemViewType()
-                        && !(
-                        (
-                                (source instanceof LocalBookmarkPlaylistItemHolder)
-                                        || (source instanceof RemoteBookmarkPlaylistItemHolder)
-                        )
-                                && (
-                                (target instanceof LocalBookmarkPlaylistItemHolder)
-                                        || (target instanceof RemoteBookmarkPlaylistItemHolder)
-                        ))
-                ) {
+                if (!editMode || isPlaylistListFiltered() || itemListAdapter == null) {
                     return false;
                 }
 
@@ -688,10 +688,20 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     // Utils
     ///////////////////////////////////////////////////////////////////////////
 
+    private void editSeparatorRow(final int row) {
+        if (separators != null && itemListAdapter != null) {
+            separators.editRow(requireContext(), itemListAdapter.getItemsList(), row,
+                    () -> itemListAdapter.setSeparators(separators::labels,
+                            this::editSeparatorRow),
+                    false);
+        }
+    }
+
     private void editSeparatorAt(final int index) {
         if (separators != null && itemListAdapter != null) {
             separators.edit(requireContext(), itemListAdapter.getItemsList(), index,
-                    () -> itemListAdapter.setSeparators(separators::labels, this::editSeparatorAt));
+                    () -> itemListAdapter.setSeparators(separators::labels,
+                            this::editSeparatorRow));
         }
     }
 
