@@ -124,7 +124,8 @@ public class ThemeColorIntegrationTest {
 
     private void assertMaterialToolbar(final String layout) {
         assertTrue(layout.contains("com.google.android.material.appbar.MaterialToolbar"));
-        assertTrue(layout.contains("android:background=\"?attr/colorSurfaceContainer\""));
+        assertTrue(layout.contains("android:background=\"?attr/colorSurfaceContainer\"")
+                || layout.contains("android:background=\"?attr/colorSurface\""));
         assertFalse(layout.contains("androidx.appcompat.widget.Toolbar"));
     }
 

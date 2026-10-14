@@ -12,7 +12,7 @@
         android:id="@+id/appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceContainer"
+        android:background="?attr/colorSurface"
         android:theme="@style/ToolbarTheme"
         app:popupTheme="@style/ToolbarTheme">
 
@@ -21,7 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_weight="1"
-            android:background="?attr/colorSurfaceContainer"
+            android:background="?attr/colorSurface"
             android:theme="@style/ToolbarTheme"
             app:layout_scrollFlags="scroll|enterAlways"
             app:navigationIconTint="?attr/colorOnSurface"
@@ -128,7 +128,7 @@
             android:gravity="center"
             android:minHeight="40dp"
             android:text="-:--:--"
-            android:textColor="?attr/colorAccent"
+            android:textColor="?attr/colorPrimary"
             tools:ignore="HardcodedText"
             tools:text="1:06:29" />
 
@@ -152,7 +152,7 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:text="-:--:--"
-            android:textColor="?attr/colorAccent"
+            android:textColor="?attr/colorPrimary"
             tools:ignore="HardcodedText"
             tools:text="1:23:49" />
 
@@ -166,7 +166,7 @@
             android:paddingRight="4dp"
             android:text="@string/duration_live"
             android:textAllCaps="true"
-            android:textColor="?attr/colorAccent"
+            android:textColor="?attr/colorPrimary"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -193,7 +193,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/ic_repeat"
             android:contentDescription="@string/notification_action_repeat"
-            app:tint="?attr/colorAccent"
+            app:tint="?attr/colorPrimary"
             />
 
         <androidx.appcompat.widget.AppCompatImageButton
@@ -208,7 +208,7 @@
             android:focusable="true"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_previous"
-            android:tint="?attr/colorAccent"
+            android:tint="?attr/colorPrimary"
             android:contentDescription="@string/previous_stream" />
 
         <ImageButton
@@ -224,7 +224,7 @@
             android:scaleType="fitCenter"
             android:src="@drawable/exo_legacy_controls_rewind"
             android:contentDescription="@string/rewind"
-            app:tint="?attr/colorAccent" />
+            app:tint="?attr/colorPrimary" />
 
         <ImageButton
             android:id="@+id/control_play_pause"
@@ -240,7 +240,7 @@
             android:scaleType="fitCenter"
             android:src="@drawable/ic_pause"
             android:contentDescription="@string/pause"
-            app:tint="?attr/colorAccent"
+            app:tint="?attr/colorPrimary"
             />
 
         <ProgressBar
@@ -258,7 +258,7 @@
             android:indeterminate="true"
             android:padding="2dp"
             android:scaleType="fitCenter"
-            android:tint="?attr/colorAccent"
+            android:tint="?attr/colorPrimary"
             android:visibility="invisible"
             tools:visibility="visible" />
 
@@ -276,7 +276,7 @@
             android:scaleType="fitCenter"
             android:src="@drawable/exo_legacy_controls_fastforward"
             android:contentDescription="@string/forward"
-            app:tint="?attr/colorAccent" />
+            app:tint="?attr/colorPrimary" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/control_forward"
@@ -290,7 +290,7 @@
             android:focusable="true"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_next"
-            android:tint="?attr/colorAccent"
+            android:tint="?attr/colorPrimary"
             android:contentDescription="@string/next_stream" />
 
         <ImageButton
@@ -307,7 +307,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/ic_shuffle"
             android:contentDescription="@string/notification_action_shuffle"
-            app:tint="?attr/colorAccent"
+            app:tint="?attr/colorPrimary"
             />
 
     </RelativeLayout>
