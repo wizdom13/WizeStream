@@ -19,6 +19,7 @@ import androidx.appcompat.widget.PopupMenu;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.DeviceUtils;
+import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -179,12 +180,21 @@ final class PlayerPopupMenu {
     }
 
     static Context dialogContext(final View anchor) {
-        if (anchor.getDisplay() == null) {
-            return anchor.getContext();
-        }
-        final ContextThemeWrapper context = new ContextThemeWrapper(
-                anchor.getContext().createDisplayContext(anchor.getDisplay()), 0);
-        context.getTheme().setTo(anchor.getContext().getTheme());
+        final Context source = anchor.getContext();
+        final WindowManager manager = (WindowManager) source.getSystemService(
+                Context.WINDOW_SERVICE);
+        // Recreating the default display's Resources can discard legacy theme attributes.
+        // Keep the anchor's Resources on that display; rebuild the user palette only when
+        // the player actually belongs to another display.
+        final boolean sameDisplay = anchor.getDisplay() == null || manager == null
+                || manager.getDefaultDisplay().getDisplayId() == anchor.getDisplay().getDisplayId();
+        final Context base = sameDisplay ? source
+                : PlayerUiTheme.createContext(source.createDisplayContext(anchor.getDisplay()));
+        final ContextThemeWrapper context = new ContextThemeWrapper(base, 0);
+        context.getTheme().setTo(base.getTheme());
+        // Display contexts and legacy service/view contexts can lack AppCompat attributes.
+        // Fill missing attributes from a complete Material theme without replacing the palette.
+        context.getTheme().applyStyle(ThemeHelper.getThemeForService(source, -1), false);
         return context;
     }
 }
