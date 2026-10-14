@@ -1,0 +1,8 @@
+- Fixed Eye Comfort startup crash.
+- Added allowed-channel exceptions to content hiding rules.
+- Added 60% text presets and optional bold media/comment text.
+- Made playlist and bookmark separators independently reorderable.
+- Fixed dragging interruptions and removal Undo around separators.
+- Updated play queue theme colors and AMOLED header.
+- Full live refreshes DASH once before falling back to HLS after a sustained stall.
+

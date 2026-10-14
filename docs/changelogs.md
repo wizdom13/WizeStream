@@ -4,6 +4,22 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.9 (`1031009`)
+
+### Improvements
+
+- Added Allowed channels under Content blocking, with subscribed-channel selection and exceptions to keyword, channel, and AiSList hiding rules; explicitly blocked videos remain hidden.
+- Added 60% size presets for video titles, channel names, metadata, and comment bodies.
+- Added optional bold media and comment text under Appearance, preserving each view’s original typeface when disabled.
+- Made Bookmarks and local playlist separators independent, reorderable rows, including consecutive and trailing headings, with migration of existing separators.
+- Updated play queue controls to use the active Material primary color and kept the AMOLED header black in portrait and landscape.
+
+### Fixes
+
+- Fixed the startup crash after selecting Eye Comfort by using resource-backed theme colors.
+- Fixed dragging interruptions in lists with separators and restored the original presentation row when undoing video removal.
+- Added one DASH URL refresh with playback position preserved before Full live falls back to HLS after sustained buffering.
+
 ## WizeStream 1.31.8 (`1031008`)
 
 ### Improvements
@@ -1259,3 +1275,4 @@ Based on NewPipe 0.28.7.
 - Completed Material readiness audit and release QA documentation.
 
 Based on NewPipe 0.28.7.
+
