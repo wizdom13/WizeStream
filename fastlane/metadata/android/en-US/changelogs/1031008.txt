@@ -1,0 +1,7 @@
+- New Eye Comfort warm dark interface theme; video colors unchanged.
+- Reorder home sections with a TV remote using Move up/Move down.
+- Audio-track icon beside the selected track name.
+- Edit/Done controls for Bookmarks and local playlists.
+- Optional swipe-to-remove playlist videos, off by default and active only while editing.
+- Fixed LIVE mode selector row inflation crashes.
+- Fixed home-section ordering when dragging across multiple rows.

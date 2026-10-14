@@ -4,6 +4,21 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.8 (`1031008`)
+
+### Improvements
+
+- Added Eye Comfort (warm dark) under Appearance → Theme, with a fixed warm interface palette across services while leaving video colors unchanged.
+- Added remote-accessible Move up and Move down actions to Customize home, preserving touch dragging and saving reordered sections.
+- Added a headphones icon beside the selected audio-track name in the player.
+- Added Edit/Done controls to Bookmarks and local playlists, with reorder handles available only while editing.
+- Added an optional Content setting for swipe-to-remove playlist videos, disabled by default and active only in Edit mode; home-screen playlists retain horizontal tab navigation.
+
+### Fixes
+
+- Fixed the LIVE mode selector’s single-choice row inflation failure with player themes, including AMOLED styling.
+- Preserved intervening section order when dragging home sections across multiple rows and guarded invalid positions.
+
 ## WizeStream 1.31.7 (`1031007`)
 
 ### Improvements
