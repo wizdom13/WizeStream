@@ -81,6 +81,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private LocalPlaylistManager localPlaylistManager;
     private RemotePlaylistManager remotePlaylistManager;
     private ItemTouchHelper itemTouchHelper;
+    @State
+    public boolean editMode;
 
     /* Have the bookmarked playlists been fully loaded from db */
     private AtomicBoolean isLoadingComplete;
@@ -174,10 +176,17 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                 .setOnClickListener(view -> chooseCategory(null));
         rootView.findViewById(R.id.playlist_category_manage)
                 .setOnClickListener(view -> manageCategories());
+        ((android.widget.TextView) rootView.findViewById(R.id.playlist_edit_toggle))
+                .setText(editMode ? R.string.playlist_edit_done : R.string.playlist_edit_mode);
+        rootView.findViewById(R.id.playlist_edit_toggle).setOnClickListener(view -> {
+            editMode = !editMode;
+            updateEditMode();
+        });
         updateCategoryLabel();
 
         itemListAdapter.setUseItemHandle(true);
-        itemListAdapter.setItemHandleEnabled(!isPlaylistListFiltered());
+        updateEditMode();
+        itemListAdapter.setItemHandleEnabled(editMode && !isPlaylistListFiltered());
     }
 
     @Override
@@ -380,7 +389,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         itemListAdapter.setSeparators(isPlaylistListFiltered() ? null : separators::labels,
                 this::editSeparatorAt);
         itemListAdapter.clearStreamItemList();
-        itemListAdapter.setItemHandleEnabled(!isPlaylistListFiltered());
+        itemListAdapter.setItemHandleEnabled(editMode && !isPlaylistListFiltered());
         setEmptyStateMessage(isPlaylistListFiltered()
                 ? R.string.search_no_results : R.string.empty_list_subtitle);
 
@@ -588,13 +597,25 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
     }
 
+    private void updateEditMode() {
+        final View root = getView();
+        if (root != null) {
+            ((android.widget.TextView) root.findViewById(R.id.playlist_edit_toggle))
+                    .setText(editMode ? R.string.playlist_edit_done : R.string.playlist_edit_mode);
+        }
+        if (itemListAdapter != null) {
+            itemListAdapter.setItemHandleEnabled(editMode && !isPlaylistListFiltered());
+            itemListAdapter.notifyDataSetChanged();
+        }
+    }
+
     private ItemTouchHelper.SimpleCallback getItemTouchCallback() {
         return new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN,
                 ItemTouchHelper.ACTION_STATE_IDLE) {
             @Override
             public int getDragDirs(@NonNull final RecyclerView recyclerView,
                                    @NonNull final RecyclerView.ViewHolder viewHolder) {
-                if (isPlaylistListFiltered()) {
+                if (!editMode || isPlaylistListFiltered()) {
                     return 0;
                 }
                 final int directions = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
@@ -621,7 +642,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                                   @NonNull final RecyclerView.ViewHolder target) {
 
                 // Allow swap LocalBookmarkPlaylistItemHolder and RemoteBookmarkPlaylistItemHolder.
-                if (isPlaylistListFiltered() || itemListAdapter == null
+                if (!editMode || isPlaylistListFiltered() || itemListAdapter == null
                         || source.getItemViewType() != target.getItemViewType()
                         && !(
                         (

@@ -120,6 +120,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private PlaylistControlBinding playlistControlBinding;
 
     private ItemTouchHelper itemTouchHelper;
+    @State
+    public boolean editMode;
     private Snackbar swipeRemovalSnackbar;
 
     private LocalPlaylistManager playlistManager;
@@ -218,6 +220,11 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         });
 
         headerBinding.playlistTitleView.setOnClickListener(view -> createRenameDialog());
+        headerBinding.playlistEditToggle.setOnClickListener(view -> {
+            editMode = !editMode;
+            updateEditMode();
+        });
+        updateEditMode();
 
         itemTouchHelper = new ItemTouchHelper(getItemTouchCallback());
         itemTouchHelper.attachToRecyclerView(itemsList);
@@ -248,7 +255,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             @Override
             public void drag(final LocalItem selectedItem,
                              final RecyclerView.ViewHolder viewHolder) {
-                if (itemTouchHelper != null) {
+                if (editMode && itemTouchHelper != null) {
                     itemTouchHelper.startDrag(viewHolder);
                 }
             }
@@ -721,6 +728,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                         item.getStreamEntity().getLocalFolder(),
                         noteSearchText.get(item.getStreamId())});
         itemListAdapter.clearStreamItemList();
+        itemListAdapter.setItemHandleEnabled(editMode
+                && !ContextualSearchHelper.isActive(contextualSearchQuery));
         itemListAdapter.addItems(displayedItems);
 
         final boolean searchActive = ContextualSearchHelper.isActive(contextualSearchQuery);
@@ -985,6 +994,26 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     }
 
 
+    private void updateEditMode() {
+        if (headerBinding != null) {
+            headerBinding.playlistEditToggle.setText(
+                    editMode ? R.string.playlist_edit_done : R.string.playlist_edit_mode);
+        }
+        if (itemListAdapter != null) {
+            itemListAdapter.setItemHandleEnabled(editMode
+                    && !ContextualSearchHelper.isActive(contextualSearchQuery));
+            itemListAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private boolean isSwipeRemovalEnabled() {
+        final boolean enabled = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(requireContext())
+                .getBoolean(getString(R.string.playlist_swipe_remove_key), false);
+        return LocalPlaylistSwipePolicy.isItemRemovalSwipeEnabled(
+                useAsFrontPage, editMode, enabled);
+    }
+
     private ItemTouchHelper.SimpleCallback getItemTouchCallback() {
         int directions = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
         if (shouldUseGridLayout(requireContext())) {
@@ -992,6 +1021,13 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         }
         return new ItemTouchHelper.SimpleCallback(directions,
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public int getDragDirs(@NonNull final RecyclerView recyclerView,
+                                   @NonNull final RecyclerView.ViewHolder viewHolder) {
+                return editMode && !ContextualSearchHelper.isActive(contextualSearchQuery)
+                        ? super.getDragDirs(recyclerView, viewHolder) : 0;
+            }
+
             @Override
             public int interpolateOutOfBoundsScroll(@NonNull final RecyclerView recyclerView,
                                                     final int viewSize,
@@ -1009,7 +1045,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             public boolean onMove(@NonNull final RecyclerView recyclerView,
                                   @NonNull final RecyclerView.ViewHolder source,
                                   @NonNull final RecyclerView.ViewHolder target) {
-                if (source.getItemViewType() != target.getItemViewType()
+                if (!editMode || source.getItemViewType() != target.getItemViewType()
                         || itemListAdapter == null) {
                     return false;
                 }
@@ -1037,13 +1073,13 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
             @Override
             public boolean isItemViewSwipeEnabled() {
-                return LocalPlaylistSwipePolicy.isItemRemovalSwipeEnabled(useAsFrontPage);
+                return isSwipeRemovalEnabled();
             }
 
             @Override
             public int getSwipeDirs(@NonNull final RecyclerView recyclerView,
                                     @NonNull final RecyclerView.ViewHolder viewHolder) {
-                if (!LocalPlaylistSwipePolicy.isItemRemovalSwipeEnabled(useAsFrontPage)
+                if (!isSwipeRemovalEnabled()
                         || itemListAdapter == null) {
                     return ItemTouchHelper.ACTION_STATE_IDLE;
                 }

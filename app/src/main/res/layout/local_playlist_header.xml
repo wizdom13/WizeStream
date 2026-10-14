@@ -27,7 +27,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/playlist_title_view"
-        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_toStartOf="@id/playlist_edit_toggle"
         android:ellipsize="end"
         android:gravity="right|center_vertical"
         android:maxLines="1"
@@ -37,12 +38,21 @@
         tools:ignore="RtlHardcoded"
         tools:text="234 videos" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/playlist_edit_toggle"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@id/playlist_title_view"
+        android:text="@string/playlist_edit_mode" />
+
     <include
         android:id="@+id/playlist_learning_progress_container"
         layout="@layout/playlist_learning_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/playlist_stream_count"
+        android:layout_below="@id/playlist_edit_toggle"
         android:visibility="gone" />
 
     <include

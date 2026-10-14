@@ -243,4 +243,11 @@
             app:singleLineTitle="false" />
 
     </PreferenceCategory>
+    <SwitchPreferenceCompat
+        android:key="@string/playlist_swipe_remove_key"
+        android:defaultValue="false"
+        android:title="@string/playlist_swipe_remove_title"
+        android:summary="@string/playlist_swipe_remove_summary"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
 </PreferenceScreen>

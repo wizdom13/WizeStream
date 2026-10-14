@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="playlist_edit_mode">Edit</string>
+    <string name="playlist_edit_done">Done</string>
+    <string name="playlist_swipe_remove_key" translatable="false">playlist_swipe_remove</string>
+    <string name="playlist_swipe_remove_title">Swipe to remove playlist videos</string>
+    <string name="playlist_swipe_remove_summary">Allow swipe removal while editing a local playlist. Disabled for playlists on the home screen.</string>
+</resources>

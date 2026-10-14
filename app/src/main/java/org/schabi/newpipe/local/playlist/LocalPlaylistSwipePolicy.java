@@ -7,9 +7,13 @@ public final class LocalPlaylistSwipePolicy {
 
     /**
      * @param useAsFrontPage whether the playlist is hosted inside the main tab pager
+     * @param editing whether Edit mode is active
+     * @param swipeEnabled whether the user enabled swipe removal
      * @return whether horizontal item-removal swipes may consume the pager gesture
      */
-    public static boolean isItemRemovalSwipeEnabled(final boolean useAsFrontPage) {
-        return !useAsFrontPage;
+    public static boolean isItemRemovalSwipeEnabled(final boolean useAsFrontPage,
+                                                    final boolean editing,
+                                                    final boolean swipeEnabled) {
+        return !useAsFrontPage && editing && swipeEnabled;
     }
 }

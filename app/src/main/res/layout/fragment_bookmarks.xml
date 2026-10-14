@@ -35,6 +35,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/playlist_categories" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playlist_edit_toggle"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/playlist_edit_mode" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

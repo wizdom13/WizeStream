@@ -539,7 +539,8 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     .updateFromItem(localItems.get(position), recordManager, dateTimeFormatter);
             noteBadges.bindLocal(holder.itemView, localItems.get(position));
             if (holder instanceof LocalBookmarkPlaylistItemHolder
-                    || holder instanceof RemoteBookmarkPlaylistItemHolder) {
+                    || holder instanceof RemoteBookmarkPlaylistItemHolder
+                    || holder instanceof LocalPlaylistStreamItemHolder) {
                 final View handle = holder.itemView.findViewById(R.id.itemHandle);
                 handle.setEnabled(itemHandleEnabled);
                 handle.setVisibility(itemHandleEnabled ? View.VISIBLE : View.GONE);
