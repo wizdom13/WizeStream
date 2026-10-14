@@ -255,4 +255,11 @@
         app:iconSpaceReserved="false"
         app:useSimpleSummaryProvider="true" />
 
+    <SwitchPreferenceCompat
+        android:key="@string/bold_media_text_key"
+        android:defaultValue="false"
+        android:title="@string/bold_media_text_title"
+        android:summary="@string/bold_media_text_summary"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
 </PreferenceScreen>

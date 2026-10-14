@@ -81,7 +81,10 @@ jobs:
         run: python3 scripts/generate-changelog.py --check
 
       - name: Build debug APK and run JVM tests
-        run: ./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
+        run: >-
+          ./gradlew assembleDebug lintDebug testDebugUnitTest --stacktrace -DskipFormatKtlint
+          --max-workers=2
+          '-Dorg.gradle.jvmargs=-Xmx4096M --add-opens jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED'
 
       - name: Commit generated Room schema
         if: always() && github.event_name == 'pull_request'

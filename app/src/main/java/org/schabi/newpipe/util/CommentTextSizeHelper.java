@@ -16,13 +16,19 @@ public final class CommentTextSizeHelper {
     public static void applyCommentTextSize(final TextView textView) {
         textView.setTextSize(TypedValue.COMPLEX_UNIT_SP,
                 getCommentTextSizeSp(textView.getContext()));
+        MediaTextWeight.apply(textView);
     }
 
-    public static int getCommentTextSizeSp(final Context context) {
+    public static float getCommentTextSizeSp(final Context context) {
         final String value = PreferenceManager.getDefaultSharedPreferences(context).getString(
                 context.getString(R.string.comment_text_size_key),
                 context.getString(R.string.comment_text_size_medium_key));
-        return parseCommentTextSize(value);
+        return resolveCommentTextSize(value);
+    }
+
+    static float resolveCommentTextSize(final String value) {
+        return "60%".equals(value) ? DEFAULT_COMMENT_TEXT_SIZE_SP * 0.6f
+                : parseCommentTextSize(value);
     }
 
     static int parseCommentTextSize(final String value) {

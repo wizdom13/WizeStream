@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="bold_media_text_key" translatable="false">bold_media_text</string>
+    <string name="bold_media_text_title">Bold media and comment text</string>
+    <string name="bold_media_text_summary">Use bold text for video titles, channel names, metadata, and comment bodies.</string>
+    <item name="media_original_typeface" type="id" />
+</resources>

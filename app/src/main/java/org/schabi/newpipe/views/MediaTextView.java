@@ -19,6 +19,7 @@ import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.MediaTextSize;
+import org.schabi.newpipe.util.MediaTextWeight;
 
 /** Opt-in title/channel/metadata sizing that also updates already visible and recycled items. */
 public final class MediaTextView extends NewPipeTextView {
@@ -50,7 +51,8 @@ public final class MediaTextView extends NewPipeTextView {
         });
         preferences = PreferenceManager.getDefaultSharedPreferences(context);
         preferenceListener = (prefs, key) -> {
-            if (key == null || key.equals(preferenceKey)) {
+            if (key == null || key.equals(preferenceKey)
+                    || key.equals(context.getString(R.string.bold_media_text_key))) {
                 applyTextSize();
             }
         };
@@ -94,6 +96,7 @@ public final class MediaTextView extends NewPipeTextView {
     }
 
     private void applyTextSize() {
+        MediaTextWeight.apply(this);
         setTextSize(TypedValue.COMPLEX_UNIT_SP, defaultSizeSp * presentationScale
                 * MediaTextSize.scale(preferences.getString(preferenceKey, "100")));
     }

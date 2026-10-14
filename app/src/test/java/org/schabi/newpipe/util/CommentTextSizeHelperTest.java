@@ -15,6 +15,12 @@ public class CommentTextSizeHelperTest {
     }
 
     @Test
+    public void sixtyPercentKeepsFractionalSpPrecision() {
+        assertEquals(8.4f, CommentTextSizeHelper.resolveCommentTextSize("60%"), 0.001f);
+        assertEquals(0.6f, MediaTextSize.scale("60"), 0.001f);
+    }
+
+    @Test
     public void invalidOrMissingValuesFallBackToMedium() {
         assertEquals(14, CommentTextSizeHelper.parseCommentTextSize(null));
         assertEquals(14, CommentTextSizeHelper.parseCommentTextSize(""));

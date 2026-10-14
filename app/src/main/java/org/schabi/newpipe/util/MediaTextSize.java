@@ -14,6 +14,8 @@ public final class MediaTextSize {
             switch (value) {
                 case "50":
                     return 0.5f;
+                case "60":
+                    return 0.6f;
                 case "70":
                     return 0.7f;
                 case "80":
