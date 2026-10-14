@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player.ui;
 
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -20,10 +21,14 @@ final class PlayerLiveModeDialog {
                 || anchor.getWindowToken() == null) {
             return false;
         }
-        final AlertDialog choices = new MaterialAlertDialogBuilder(
-                PlayerPopupMenu.dialogContext(anchor))
+        final MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(
+                PlayerPopupMenu.dialogContext(anchor));
+        final ArrayAdapter<String> modes = new ArrayAdapter<>(builder.getContext(),
+                R.layout.player_single_choice_row,
+                anchor.getResources().getStringArray(R.array.live_mode_descriptions));
+        final AlertDialog choices = builder
                 .setTitle(R.string.default_live_mode_title)
-                .setSingleChoiceItems(R.array.live_mode_descriptions,
+                .setSingleChoiceItems(modes,
                         player.isNormalLive() ? 0 : 1, (dialog, which) -> {
                             player.setNormalLive(which == 0);
                             dialog.dismiss();

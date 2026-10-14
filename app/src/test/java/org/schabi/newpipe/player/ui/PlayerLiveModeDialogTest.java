@@ -60,6 +60,33 @@ public class PlayerLiveModeDialogTest {
     }
 
     @Test
+    public void blackPlayerTintCanInflateAndMeasureBothLiveChoices() {
+        try (ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class)) {
+            activity.get().setTheme(R.style.BlackTheme);
+            activity.setup().visible();
+            final ContextThemeWrapper context = new ContextThemeWrapper(
+                    activity.get().getApplicationContext(), R.style.BlackTheme);
+            context.getTheme().applyStyle(R.style.WhiteTintTheme, true);
+            final Button anchor = new Button(context);
+            activity.get().setContentView(anchor);
+            anchor.layout(0, 0, 120, 48);
+            final Player player = mock(Player.class);
+            when(player.isLive()).thenReturn(true);
+            assertTrue(PlayerLiveModeDialog.show(player, anchor));
+            final AlertDialog dialog = (AlertDialog) ShadowDialog.getLatestDialog();
+            for (int index = 0; index < 2; index++) {
+                final View row = dialog.getListView().getAdapter().getView(
+                        index, null, dialog.getListView());
+                row.measure(View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                assertTrue(row.getMeasuredHeight() > 0);
+            }
+            assertEquals(1, dialog.getListView().getCheckedItemPosition());
+            dialog.dismiss();
+        }
+    }
+
+    @Test
     public void detachedPlayerDoesNotOpenDialog() {
         final Player player = mock(Player.class);
         when(player.isLive()).thenReturn(true);
