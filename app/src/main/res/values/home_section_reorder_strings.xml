@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="reorder_home_section">Reorder home section</string>
+    <string name="move_home_section_up">Move up</string>
+    <string name="move_home_section_down">Move down</string>
+</resources>

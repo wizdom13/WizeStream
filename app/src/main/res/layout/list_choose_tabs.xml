@@ -70,7 +70,10 @@
             android:paddingTop="12dp"
             android:paddingRight="16dp"
             android:paddingBottom="12dp"
-            android:contentDescription="@string/drag_home_section"
+            android:contentDescription="@string/reorder_home_section"
+            android:focusable="true"
+            android:clickable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_drag_handle"
             tools:ignore="RtlHardcoded" />
     </RelativeLayout>
