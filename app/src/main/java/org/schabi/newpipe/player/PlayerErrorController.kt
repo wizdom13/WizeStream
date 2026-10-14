@@ -51,6 +51,7 @@ internal class PlayerErrorController(
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val liveDashRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
     private var pendingLiveStallRecovery: Runnable? = null
@@ -183,10 +184,16 @@ internal class PlayerErrorController(
                     }
 
                     if (canFallBackToLiveHls(currentItem)) {
-                        if (!liveStallRecoveryGuard.acquire(key)) return@Runnable
-                        Log.w(Player.TAG, "Live DASH stalled while buffering; retrying with HLS")
-                        videoResolver.preferHlsForLiveStream(info.url)
-                        queue.unsetRecovery(queue.index)
+                        if (!player.isNormalLive() && liveDashRefreshGuard.acquire(key)) {
+                            Log.w(Player.TAG, "Full live DASH stalled; refreshing URLs before HLS fallback")
+                            player.setRecovery()
+                            invalidateYouTubeMediaCaches(currentItem)
+                        } else {
+                            if (!liveStallRecoveryGuard.acquire(key)) return@Runnable
+                            Log.w(Player.TAG, "Live DASH stalled after recovery; retrying with HLS")
+                            videoResolver.preferHlsForLiveStream(info.url)
+                            queue.unsetRecovery(queue.index)
+                        }
                     } else {
                         if (!liveHlsRefreshGuard.acquire(key)) return@Runnable
                         Log.w(Player.TAG, "Live HLS stalled while buffering; refreshing stream URLs once")
@@ -222,6 +229,7 @@ internal class PlayerErrorController(
         audioTrackRecoveryGuard.reset()
         liveStallRecoveryGuard.reset()
         liveHlsRefreshGuard.reset()
+        liveDashRefreshGuard.reset()
         videoResolver.clearRejectedVideoCodecFamily()
         videoResolver.clearLiveHlsFallback()
     }

@@ -342,6 +342,40 @@ class PlayerLiveHttpRecoveryTest {
         verify(fixture.player, never()).reloadPlayQueueManager()
     }
 
+    @Test
+    fun fullLiveRefreshesDashBeforeDiscardingRewind() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+
+        verify(fixture.player).setRecovery()
+        verify(fixture.player).reloadPlayQueueManager()
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        verify(fixture.queue, never()).unsetRecovery(0)
+
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.resolver).preferHlsForLiveStream(fixture.info.url)
+        verify(fixture.queue).unsetRecovery(0)
+        verify(fixture.player, times(2)).reloadPlayQueueManager()
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun fullLiveDashRefreshIsCancelledWhenPlaybackRecovers() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
+        fixture.state(Media3Player.STATE_READY)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        fixture.controller.resetRecovery()
+    }
+
     private class Fixture {
         val player = mock(Player::class.java)
         val engine = mock(ExoPlayer::class.java)
@@ -368,6 +402,7 @@ class PlayerLiveHttpRecoveryTest {
         init {
             `when`(player.exoPlayer).thenReturn(engine)
             `when`(player.playWhenReady).thenReturn(true)
+            `when`(player.isNormalLive()).thenReturn(true)
             `when`(player.playQueue).thenReturn(queue)
             `when`(queue.item).thenReturn(item)
             `when`(item.serviceId).thenReturn(ServiceList.YouTube.serviceId)
