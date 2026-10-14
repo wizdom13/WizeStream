@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="allowed_channels_key" translatable="false">allowed_channels</string>
+    <string name="allowed_channels_title">Allowed channels</string>
+    <string name="allowed_channels_summary">Channel exceptions to keyword, channel, and AiSList hiding rules. Explicitly blocked videos remain hidden. This does not unlock restricted or members-only videos.</string>
+    <string name="allowed_channel_add">Add a subscribed channel</string>
+    <string name="allowed_channel_remove_confirmation">Remove this channel exception?</string>
+</resources>

@@ -94,6 +94,11 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
                     confirmClearAll();
                     return true;
                 });
+        requirePreference(R.string.allowed_channels_key)
+                .setOnPreferenceClickListener(preference -> {
+            showAllowedChannels();
+            return true;
+        });
         updateSummaries();
     }
 
@@ -101,6 +106,40 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
     public void onResume() {
         super.onResume();
         updateSummaries();
+    }
+
+    private void showAllowedChannels() {
+        final List<Entry> entries = ContentBlockingHelper.getAllowedChannels(requireContext());
+        final String[] labels = new String[entries.size() + 1];
+        labels[0] = getString(R.string.allowed_channel_add);
+        for (int index = 0; index < entries.size(); index++) {
+            labels[index + 1] = entries.get(index).getLabel();
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.allowed_channels_title)
+                .setItems(labels, (dialog, which) -> {
+                    if (which == 0) {
+                        final var select = new SelectChannelFragment();
+                        select.setOnSelectedListener((serviceId, url, name) -> {
+                            ContentBlockingHelper.allowChannel(requireContext(), serviceId,
+                                    url, name);
+                            updateSummaries();
+                        });
+                        select.show(getParentFragmentManager(), "allow_channel");
+                    } else {
+                        final Entry entry = entries.get(which - 1);
+                        new MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(entry.getLabel())
+                                .setMessage(R.string.allowed_channel_remove_confirmation)
+                                .setNegativeButton(R.string.cancel, null)
+                                .setPositiveButton(R.string.delete, (confirmation, button) -> {
+                                    entries.remove(entry);
+                                    ContentBlockingHelper.saveAllowedChannels(requireContext(),
+                                            entries);
+                                    updateSummaries();
+                                }).show();
+                    }
+                }).setNegativeButton(R.string.cancel, null).show();
     }
 
     private void showEntries(final boolean videos) {

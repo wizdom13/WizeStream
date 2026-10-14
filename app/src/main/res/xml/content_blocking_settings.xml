@@ -108,4 +108,10 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <Preference
+        android:key="@string/allowed_channels_key"
+        android:title="@string/allowed_channels_title"
+        android:summary="@string/allowed_channels_summary"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
 </PreferenceScreen>

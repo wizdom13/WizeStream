@@ -14,6 +14,28 @@ import java.util.Set;
 
 class ContentBlockingHelperTest {
     @Test
+    void allowedChannelOverridesKeywordAndChannelRulesButNotExplicitVideoBlocks() {
+        final var rules = ContentBlockingHelper.Rules.create(true,
+                Set.of("blocked-video"), Set.of("https://example.com/channel\tChannel"),
+                "spoiler", true, Set.of(), Set.of("0|https://example.com/channel\tChannel"));
+        assertFalse(rules.isBlocked(stream("allowed-video", "spoiler", "Channel",
+                "https://example.com/channel")));
+        assertTrue(rules.isBlocked(stream("blocked-video", "spoiler", "Channel",
+                "https://example.com/channel")));
+        assertTrue(rules.isBlocked(stream("other-video", "spoiler", "Channel",
+                "https://example.com/other-channel")));
+        assertTrue(rules.isBlocked(stream("missing-url", "spoiler", "Channel", null)));
+    }
+
+    @Test
+    void allowedChannelIsScopedToServiceAndUrl() {
+        final var rules = ContentBlockingHelper.Rules.create(true, Set.of(), Set.of(),
+                "spoiler", false, Set.of(), Set.of("1|https://example.com/channel\tChannel"));
+        assertTrue(rules.isBlocked(stream("video", "spoiler", "Channel",
+                "https://example.com/channel")));
+    }
+
+    @Test
     void blocksExactVideoUrl() {
         final ContentBlockingHelper.Rules rules = ContentBlockingHelper.Rules.create(
                 true, Set.of("https://example.com/watch/1\tVideo"), Set.of(), "");
