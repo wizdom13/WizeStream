@@ -25,6 +25,15 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
         addPreferencesFromResourceRegistry();
 
         final String themeKey = getString(R.string.theme_key);
+        final ListPreference themes = findPreference(themeKey);
+        final CharSequence[] entries = java.util.Arrays.copyOf(themes.getEntries(),
+                themes.getEntries().length + 1);
+        final CharSequence[] values = java.util.Arrays.copyOf(themes.getEntryValues(),
+                themes.getEntryValues().length + 1);
+        entries[entries.length - 1] = getString(R.string.eye_comfort_theme_title);
+        values[values.length - 1] = getString(R.string.eye_comfort_theme_key);
+        themes.setEntries(entries);
+        themes.setEntryValues(values);
         // the key of the active theme when settings were opened (or recreated after theme change)
         final String startThemeKey = defaultPreferences
                 .getString(themeKey, getString(R.string.default_theme_value));
@@ -59,6 +68,10 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
         }
 
         final String themeColorKey = getString(R.string.theme_color_key);
+        if (ThemeHelper.isEyeComfortSelected(requireContext())) {
+            findPreference(themeColorKey).setEnabled(false);
+            findPreference(themeColorKey).setSummary(R.string.eye_comfort_theme_summary);
+        }
         final String startThemeColorKey = defaultPreferences
                 .getString(themeColorKey, getString(R.string.default_theme_color_value));
         findPreference(themeColorKey).setOnPreferenceChangeListener((preference, newValue) -> {

@@ -41,6 +41,10 @@ public final class ThemeHelper {
     }
 
     public static void applyThemeColor(final Context context) {
+        if (isEyeComfortSelected(context)) {
+            context.getTheme().applyStyle(R.style.EyeComfortTheme, true);
+            return;
+        }
         if (shouldApplyDynamicColors(context)) {
             DynamicColors.applyToActivityIfAvailable((Activity) context);
             applyBlackSurfaceOverlay(context);
@@ -60,7 +64,7 @@ public final class ThemeHelper {
     }
 
     public static boolean shouldApplyDynamicColors(final Context context) {
-        return context instanceof Activity
+        return !isEyeComfortSelected(context) && context instanceof Activity
                 && isFollowSystemThemeColor(context);
     }
 
@@ -71,6 +75,10 @@ public final class ThemeHelper {
     }
 
     public static void applyThemeColorOverlay(final Context context) {
+        if (isEyeComfortSelected(context)) {
+            context.getTheme().applyStyle(R.style.EyeComfortTheme, true);
+            return;
+        }
         final int overlay = getThemeColorOverlay(context);
         if (overlay != 0) {
             context.getTheme().applyStyle(overlay, true);
@@ -100,6 +108,11 @@ public final class ThemeHelper {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Red;
         }
         return 0;
+    }
+
+    public static boolean isEyeComfortSelected(final Context context) {
+        return context.getString(R.string.eye_comfort_theme_key)
+                .equals(getSelectedThemeKey(context));
     }
 
     public static boolean isLightThemeSelected(final Context context) {
@@ -154,6 +167,9 @@ public final class ThemeHelper {
 
     @StyleRes
     public static int getThemeForService(final Context context, final int serviceId) {
+        if (isEyeComfortSelected(context)) {
+            return R.style.EyeComfortTheme;
+        }
         final Resources res = context.getResources();
         final String lightThemeKey = res.getString(R.string.light_theme_key);
         final String blackThemeKey = res.getString(R.string.black_theme_key);
@@ -194,6 +210,9 @@ public final class ThemeHelper {
 
     @StyleRes
     public static int getSettingsThemeStyle(final Context context) {
+        if (isEyeComfortSelected(context)) {
+            return R.style.EyeComfortSettingsTheme;
+        }
         final Resources res = context.getResources();
         final String lightTheme = res.getString(R.string.light_theme_key);
         final String blackTheme = res.getString(R.string.black_theme_key);
@@ -286,7 +305,8 @@ public final class ThemeHelper {
         final Resources res = context.getResources();
         if (selectedThemeKey.equals(res.getString(R.string.light_theme_key))) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        } else if (selectedThemeKey.equals(res.getString(R.string.dark_theme_key))
+        } else if (selectedThemeKey.equals(res.getString(R.string.eye_comfort_theme_key))
+                || selectedThemeKey.equals(res.getString(R.string.dark_theme_key))
                 || selectedThemeKey.equals(res.getString(R.string.black_theme_key))) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         } else {
