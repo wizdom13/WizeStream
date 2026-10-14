@@ -46,6 +46,7 @@ internal class PlayerErrorController(
     private val videoResolver: VideoPlaybackResolver
 ) {
     private val recoveryGuard = PlayerHttpErrorRecovery.RecoveryGuard()
+    private val rejectedFormatRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
@@ -215,6 +216,8 @@ internal class PlayerErrorController(
         lastPlayingLiveKey = null
         recoveringLiveKey = null
         recoveryGuard.reset()
+        rejectedFormatRecoveryGuard.reset()
+        videoResolver.clearRejectedVideoStream()
         decoderRecoveryGuard.reset()
         audioTrackRecoveryGuard.reset()
         liveStallRecoveryGuard.reset()
@@ -333,7 +336,9 @@ internal class PlayerErrorController(
             cancelPendingMediaUrlRecovery()
             invalidateYouTubeMediaCaches(item)
             recoveryGuard.reset()
-            if (tryRecoverFromLiveDashHttpFailure(error, item)) {
+            if (tryRecoverFromLiveDashHttpFailure(error, item) ||
+                tryRecoverFromRejectedYouTubeVideo(error, item)
+            ) {
                 return true
             }
             if (!player.exoPlayerIsNull()) {
@@ -384,6 +389,31 @@ internal class PlayerErrorController(
         }
         pendingMediaUrlRecovery = recovery
         recoveryHandler.postDelayed(recovery, attempt.delayMillis)
+        return true
+    }
+
+    private fun tryRecoverFromRejectedYouTubeVideo(
+        error: PlaybackException,
+        item: PlayQueueItem
+    ): Boolean {
+        val info = player.currentStreamInfo.orElse(null) ?: return false
+        val selected = player.selectedVideoStream.orElse(null) ?: return false
+        if (!PlayerHttpErrorRecovery.isYouTubeService(item.serviceId) ||
+            !player.videoPlayerSelected() || info.streamType != StreamType.VIDEO_STREAM ||
+            !PlayerHttpErrorRecovery.isRejectedVideoFormat(error, selected) ||
+            (info.videoStreams + info.videoOnlyStreams).none {
+                it.itag > 0 && it.itag != selected.itag
+            } ||
+            !rejectedFormatRecoveryGuard.acquire("${item.serviceId}:${item.url}")
+        ) {
+            return false
+        }
+
+        Log.w(Player.TAG, "Fresh YouTube URLs remain rejected; trying another video format once")
+        player.setRecovery()
+        player.onBuffering()
+        videoResolver.rejectVideoStreamForCurrentItem(item.url, selected.itag)
+        player.reloadPlayQueueManager()
         return true
     }
 

@@ -251,6 +251,18 @@ final class PlayerHttpErrorRecovery {
                 && diagnostic.contains("client=ANDROID_VR");
     }
 
+    static boolean isRejectedVideoFormat(@NonNull final Throwable error,
+                                          @Nullable final VideoStream stream) {
+        if (stream == null || stream.getItag() <= 0
+                || !Integer.valueOf(403).equals(findInvalidResponseCode(error))) {
+            return false;
+        }
+        final String diagnostic = findSafeRequestDiagnostic(error);
+        return diagnostic != null && java.util.regex.Pattern.compile(
+                "(?:^|,\\s*)itag=" + stream.getItag() + "(?:,|$)")
+                .matcher(diagnostic).find();
+    }
+
     @Nullable
     static String findSafeRequestDiagnostic(@NonNull final Throwable error) {
         Throwable current = error;

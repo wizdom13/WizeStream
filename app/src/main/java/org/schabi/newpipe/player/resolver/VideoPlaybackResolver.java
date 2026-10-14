@@ -294,7 +294,21 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     public synchronized void rejectVideoStreamOnce(@NonNull final String streamUrl,
                                                     final int itag) {
-        rejectedVideoStream = new RejectedVideoStream(streamUrl, itag);
+        rejectedVideoStream = new RejectedVideoStream(streamUrl, itag, true);
+    }
+
+    /**
+     * Keep a server-rejected format excluded while retrying the current queue item.
+     * @param streamUrl canonical URL identifying the current item
+     * @param itag rejected video format
+     */
+    public synchronized void rejectVideoStreamForCurrentItem(@NonNull final String streamUrl,
+                                                             final int itag) {
+        rejectedVideoStream = new RejectedVideoStream(streamUrl, itag, false);
+    }
+
+    public synchronized void clearRejectedVideoStream() {
+        rejectedVideoStream = null;
     }
 
     /**
@@ -326,7 +340,9 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         }
 
         final int itag = rejectedVideoStream.itag;
-        rejectedVideoStream = null;
+        if (rejectedVideoStream.consumeOnResolve) {
+            rejectedVideoStream = null;
+        }
         return itag;
     }
 
@@ -390,10 +406,13 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         @NonNull
         private final String streamUrl;
         private final int itag;
+        private final boolean consumeOnResolve;
 
-        private RejectedVideoStream(@NonNull final String streamUrl, final int itag) {
+        private RejectedVideoStream(@NonNull final String streamUrl, final int itag,
+                                    final boolean consumeOnResolve) {
             this.streamUrl = streamUrl;
             this.itag = itag;
+            this.consumeOnResolve = consumeOnResolve;
         }
     }
 
