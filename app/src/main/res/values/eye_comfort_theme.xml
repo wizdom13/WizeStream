@@ -4,35 +4,35 @@
     <string name="eye_comfort_theme_title">Eye Comfort (warm dark)</string>
     <string name="eye_comfort_theme_summary">A fixed warm interface palette for all services. Video colors are unchanged.</string>
     <style name="Base.EyeComfortTheme" parent="DarkTheme">
-        <item name="colorPrimary">#E3BC86</item>
-        <item name="colorPrimaryFixedDim">#E3BC86</item>
-        <item name="colorOnPrimary">#3F2D13</item>
-        <item name="colorPrimaryDark">#584329</item>
-        <item name="colorPrimaryContainer">#584329</item>
-        <item name="colorOnPrimaryContainer">#FFDEAC</item>
-        <item name="colorPrimaryInverse">#775A32</item>
-        <item name="colorSecondary">#D6C3A6</item>
-        <item name="colorOnSecondary">#392F20</item>
-        <item name="colorSecondaryContainer">#514636</item>
-        <item name="colorOnSecondaryContainer">#F3DFC1</item>
-        <item name="colorAccent">#E3BC86</item>
-        <item name="colorControlActivated">#E3BC86</item>
-        <item name="colorSurface">#1D1915</item>
-        <item name="colorOnSurface">#ECE0D4</item>
-        <item name="colorSurfaceVariant">#4B433B</item>
-        <item name="colorOnSurfaceVariant">#CFC2B5</item>
-        <item name="colorSurfaceContainerLowest">#15110E</item>
-        <item name="colorSurfaceContainerLow">#251F1A</item>
-        <item name="colorSurfaceContainer">#2B251F</item>
-        <item name="colorSurfaceContainerHigh">#362E27</item>
-        <item name="colorSurfaceContainerHighest">#42382F</item>
-        <item name="colorSurfaceInverse">#ECE0D4</item>
-        <item name="colorOnSurfaceInverse">#352F29</item>
-        <item name="colorOutline">#9B8D7F</item>
-        <item name="colorOutlineVariant">#51473D</item>
-        <item name="android:colorBackground">#1D1915</item>
-        <item name="android:textColorPrimary">#ECE0D4</item>
-        <item name="android:textColorSecondary">#CFC2B5</item>
+        <item name="colorPrimary">@color/eye_comfort_color_e3bc86</item>
+        <item name="colorPrimaryFixedDim">@color/eye_comfort_color_e3bc86</item>
+        <item name="colorOnPrimary">@color/eye_comfort_color_3f2d13</item>
+        <item name="colorPrimaryDark">@color/eye_comfort_color_584329</item>
+        <item name="colorPrimaryContainer">@color/eye_comfort_color_584329</item>
+        <item name="colorOnPrimaryContainer">@color/eye_comfort_color_ffdeac</item>
+        <item name="colorPrimaryInverse">@color/eye_comfort_color_775a32</item>
+        <item name="colorSecondary">@color/eye_comfort_color_d6c3a6</item>
+        <item name="colorOnSecondary">@color/eye_comfort_color_392f20</item>
+        <item name="colorSecondaryContainer">@color/eye_comfort_color_514636</item>
+        <item name="colorOnSecondaryContainer">@color/eye_comfort_color_f3dfc1</item>
+        <item name="colorAccent">@color/eye_comfort_color_e3bc86</item>
+        <item name="colorControlActivated">@color/eye_comfort_color_e3bc86</item>
+        <item name="colorSurface">@color/eye_comfort_color_1d1915</item>
+        <item name="colorOnSurface">@color/eye_comfort_color_ece0d4</item>
+        <item name="colorSurfaceVariant">@color/eye_comfort_color_4b433b</item>
+        <item name="colorOnSurfaceVariant">@color/eye_comfort_color_cfc2b5</item>
+        <item name="colorSurfaceContainerLowest">@color/eye_comfort_color_15110e</item>
+        <item name="colorSurfaceContainerLow">@color/eye_comfort_color_251f1a</item>
+        <item name="colorSurfaceContainer">@color/eye_comfort_color_2b251f</item>
+        <item name="colorSurfaceContainerHigh">@color/eye_comfort_color_362e27</item>
+        <item name="colorSurfaceContainerHighest">@color/eye_comfort_color_42382f</item>
+        <item name="colorSurfaceInverse">@color/eye_comfort_color_ece0d4</item>
+        <item name="colorOnSurfaceInverse">@color/eye_comfort_color_352f29</item>
+        <item name="colorOutline">@color/eye_comfort_color_9b8d7f</item>
+        <item name="colorOutlineVariant">@color/eye_comfort_color_51473d</item>
+        <item name="android:colorBackground">@color/eye_comfort_color_1d1915</item>
+        <item name="android:textColorPrimary">@color/eye_comfort_color_ece0d4</item>
+        <item name="android:textColorSecondary">@color/eye_comfort_color_cfc2b5</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
     <style name="EyeComfortTheme" parent="Base.EyeComfortTheme" />
@@ -44,5 +44,5 @@
         <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
         <item name="editTextPreferenceStyle">@style/Preference.MaterialEditText</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
-        </style>
+    </style>
 </resources>
