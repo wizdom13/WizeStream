@@ -33,7 +33,7 @@ import java.util.ArrayList;
  * </p>
  */
 public final class CustomRenderersFactory extends DefaultRenderersFactory {
-    private final boolean useCustomVideoRenderer;
+    private boolean useCustomVideoRenderer;
     private final VisualizerAudioProcessor visualizerAudioProcessor;
     private final AudioDynamicsProcessor audioDynamicsProcessor;
 
@@ -59,6 +59,11 @@ public final class CustomRenderersFactory extends DefaultRenderersFactory {
         audioDynamicsProcessor = new AudioDynamicsProcessor(
                 () -> preferences.getBoolean(AudioDynamicsProcessor.NORMALIZATION_KEY, false),
                 () -> preferences.getBoolean(AudioDynamicsProcessor.COMPRESSION_KEY, false));
+    }
+
+    /** Use codec recreation instead of setOutputSurface for subsequent playback engines. */
+    public void enableSurfaceWorkaround() {
+        useCustomVideoRenderer = true;
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")

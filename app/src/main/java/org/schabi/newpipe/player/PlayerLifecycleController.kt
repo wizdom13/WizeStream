@@ -105,6 +105,11 @@ internal class PlayerLifecycleController(
         )
     }
 
+    /** Rebuild with safe surface switching without resetting the one-shot error budget. */
+    fun restartForSurfaceRecovery() {
+        restartEnginePreservingPlaybackState(delayMillis = 0, resetErrorRecovery = false)
+    }
+
     private fun restartEnginePreservingPlaybackState(
         delayMillis: Long,
         resetErrorRecovery: Boolean

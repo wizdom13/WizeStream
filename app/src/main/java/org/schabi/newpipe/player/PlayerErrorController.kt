@@ -48,6 +48,7 @@ internal class PlayerErrorController(
     private val recoveryGuard = PlayerHttpErrorRecovery.RecoveryGuard()
     private val rejectedFormatRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val surfaceRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
@@ -65,7 +66,9 @@ internal class PlayerErrorController(
         if (player.videoAdjustments.recover(error)) return
 
         player.saveStreamProgressState()
-        if (tryRecoverFromAudioTrackInitFailure(error)) {
+        if (tryRecoverFromReleasedCodecSurface(error) ||
+            tryRecoverFromAudioTrackInitFailure(error)
+        ) {
             return
         }
 
@@ -227,6 +230,7 @@ internal class PlayerErrorController(
         videoResolver.clearRejectedVideoStream()
         decoderRecoveryGuard.reset()
         audioTrackRecoveryGuard.reset()
+        surfaceRecoveryGuard.reset()
         liveStallRecoveryGuard.reset()
         liveHlsRefreshGuard.reset()
         liveDashRefreshGuard.reset()
@@ -256,6 +260,27 @@ internal class PlayerErrorController(
     private fun cancelPendingLiveStallRecovery() {
         pendingLiveStallRecovery?.let(recoveryHandler::removeCallbacks)
         pendingLiveStallRecovery = null
+    }
+
+    internal fun tryRecoverFromReleasedCodecSurface(error: PlaybackException): Boolean {
+        if (error.errorCode != PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK ||
+            player.exoPlayerIsNull() ||
+            generateSequence(error as Throwable) { it.cause }.none {
+                it is android.media.MediaCodec.CodecException &&
+                    it.message?.contains("setSurface()") == true &&
+                    it.message?.contains("Released state") == true
+            }
+        ) {
+            return false
+        }
+        val item = player.playQueue?.item ?: return false
+        if (!surfaceRecoveryGuard.acquire("${item.serviceId}:${item.url}")) return false
+
+        Log.w(Player.TAG, "Rebuilding playback with safe surface switching after codec release")
+        cancelPendingMediaUrlRecovery()
+        player.onBuffering()
+        player.restartForSurfaceRecovery()
+        return true
     }
 
     private fun tryRecoverFromAudioTrackInitFailure(error: PlaybackException): Boolean {

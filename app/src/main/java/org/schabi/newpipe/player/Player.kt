@@ -18,7 +18,6 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -172,7 +171,7 @@ class Player(
     private val bandwidthMeter = DefaultBandwidthMeter.Builder(appContext).build()
     private val dataSource = PlayerDataSource(appContext, bandwidthMeter)
     private val playerVisualizerAudioProcessor = VisualizerAudioProcessor()
-    private val renderFactory: DefaultRenderersFactory = CustomRenderersFactory(
+    private val renderFactory: CustomRenderersFactory = CustomRenderersFactory(
         appContext,
         preferences.getBoolean(
             appContext.getString(R.string.always_use_exoplayer_set_output_surface_workaround_key),
@@ -466,6 +465,11 @@ class Player(
     private fun restartForVideoAdjustments() = lifecycleController.restartForVideoAdjustments()
 
     fun restartForAudioTrackRecovery() = lifecycleController.restartForAudioTrackRecovery()
+
+    fun restartForSurfaceRecovery() {
+        renderFactory.enableSurfaceWorkaround()
+        lifecycleController.restartForSurfaceRecovery()
+    }
 
     fun updateAudioTunneling() {
         val trackSelector = activeTrackSelector ?: return
