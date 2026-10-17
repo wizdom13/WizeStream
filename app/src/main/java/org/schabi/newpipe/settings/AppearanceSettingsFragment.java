@@ -69,8 +69,11 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
 
         final String themeColorKey = getString(R.string.theme_color_key);
         if (ThemeHelper.isEyeComfortSelected(requireContext())) {
-            findPreference(themeColorKey).setEnabled(false);
-            findPreference(themeColorKey).setSummary(R.string.eye_comfort_theme_summary);
+            final Preference themeColor = findPreference(themeColorKey);
+            themeColor.setEnabled(false);
+            // ListPreference rejects a fixed summary while its simple provider is installed.
+            themeColor.setSummaryProvider(null);
+            themeColor.setSummary(R.string.eye_comfort_theme_summary);
         }
         final String startThemeColorKey = defaultPreferences
                 .getString(themeColorKey, getString(R.string.default_theme_color_value));
