@@ -75,10 +75,10 @@ class GroupChannelsFragment : Fragment() {
             binding.emptyStateView.root.isVisible = !state.loading && state.error == null && state.channels.isEmpty()
             binding.errorPanel.root.isVisible = state.error != null
             adapter.update(
-                state.channels.map { channel ->
+                state.channels.map { subscription ->
                     ChannelItem(
-                        channel,
-                        -1,
+                        subscription.toChannelInfoItem(),
+                        subscription.uid,
                         if (gridMode) ChannelItem.ItemVersion.GRID else ChannelItem.ItemVersion.MINI
                     ).apply {
                         gesturesListener = object : OnClickGesture<ChannelInfoItem> {

@@ -8,7 +8,7 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
-import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.profiles.ProfileManager
 
 class GroupChannelsViewModel(application: Application) : AndroidViewModel(application) {
@@ -16,7 +16,7 @@ class GroupChannelsViewModel(application: Application) : AndroidViewModel(applic
     private val subscriptionManager = SubscriptionManager(application)
     private val profileId = ProfileManager.getActiveProfileId(application)
     data class State(
-        val channels: List<ChannelInfoItem> = emptyList(),
+        val channels: List<SubscriptionEntity> = emptyList(),
         val loading: Boolean = false,
         val error: Throwable? = null
     )
@@ -41,7 +41,7 @@ class GroupChannelsViewModel(application: Application) : AndroidViewModel(applic
         }
         disposable = source
             .subscribeOn(Schedulers.io())
-            .map { subscriptions -> subscriptions.map { it.toChannelInfoItem() } }
+            .distinctUntilChanged()
             .subscribe(
                 { mutableState.postValue(State(channels = it)) },
                 { mutableState.postValue(State(error = it)) }
