@@ -92,30 +92,30 @@ class SubscriptionManager @JvmOverloads constructor(
     }
 
     fun upsertAll(infoList: List<Pair<ChannelInfo, ChannelTabInfo?>>) {
-        val listEntities = infoList.map {
-            val entity = SubscriptionEntity.from(it.first).apply {
-                profileId = this@SubscriptionManager.profileId
-            }
-            if (entity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
-                entity.youtubeModeMask = currentYoutubeModeMask
-            }
-            subscriptionTable.getSubscriptionDirectForProfile(
-                profileId,
-                entity.serviceId,
-                requireNotNull(entity.url)
-            )
-                ?.let { existing ->
-                    entity.notificationMode = existing.notificationMode
-                    entity.notificationKeywords = existing.notificationKeywords
-                    entity.youtubeModeMask = existing.youtubeModeMask or
-                        currentYoutubeModeMask
+        // Keep subscription ids and feed foreign keys under the same write transaction.
+        // Otherwise an unsubscribe can remove a parent after upsert but before its feed rows.
+        val storedEntities = database.runInTransaction<List<SubscriptionEntity>> {
+            val listEntities = infoList.map {
+                val entity = SubscriptionEntity.from(it.first).apply {
+                    profileId = this@SubscriptionManager.profileId
                 }
-            entity
-        }
-        subscriptionTable.upsertAll(listEntities)
-        listEntities.forEach(::recordSubscriptionUpsert)
-
-        database.runInTransaction {
+                if (entity.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                    entity.youtubeModeMask = currentYoutubeModeMask
+                }
+                subscriptionTable.getSubscriptionDirectForProfile(
+                    profileId,
+                    entity.serviceId,
+                    requireNotNull(entity.url)
+                )
+                    ?.let { existing ->
+                        entity.notificationMode = existing.notificationMode
+                        entity.notificationKeywords = existing.notificationKeywords
+                        entity.youtubeModeMask = existing.youtubeModeMask or
+                            currentYoutubeModeMask
+                    }
+                entity
+            }
+            subscriptionTable.upsertAll(listEntities)
             infoList.forEachIndexed { index, info ->
                 val streams = info.second?.relatedItems?.filterIsInstance<StreamInfoItem>()
                     ?: emptyList()
@@ -130,7 +130,10 @@ class SubscriptionManager @JvmOverloads constructor(
                     uploaderAvatarUrl = listEntities[index].avatarUrl
                 )
             }
+            listEntities
         }
+        // Never publish a sync change for subscription/feed data that rolled back.
+        storedEntities.forEach(::recordSubscriptionUpsert)
     }
 
     /**
