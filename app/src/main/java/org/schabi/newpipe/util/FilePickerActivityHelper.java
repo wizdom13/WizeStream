@@ -25,13 +25,13 @@ import org.schabi.newpipe.R;
 import java.io.File;
 
 public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.FilePickerActivity {
+    private static final String PICKER_SCHEME = "wizestream-file";
     private CustomFilePickerFragment currentFragment;
 
     public static boolean isOwnFileUri(@NonNull final Context context, @NonNull final Uri uri) {
-        if (uri.getAuthority() == null) {
-            return false;
-        }
-        return uri.getAuthority().startsWith(context.getPackageName());
+        final String authority = context.getPackageName() + ".provider";
+        return authority.equals(uri.getAuthority())
+                && (PICKER_SCHEME.equals(uri.getScheme()) || "content".equals(uri.getScheme()));
     }
 
     @Override
@@ -75,6 +75,18 @@ public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.File
     //////////////////////////////////////////////////////////////////////////*/
 
     public static class CustomFilePickerFragment extends FilePickerFragment {
+        @Override
+        public Uri toUri(@NonNull final File file) {
+            // This non-exported picker returns a path to our own activity, not a shared file.
+            // Keep the library's root-path encoding for Utils.getFileForUri(), without
+            // exposing arbitrary storage through the APK installation FileProvider.
+            return new Uri.Builder()
+                    .scheme(PICKER_SCHEME)
+                    .authority(requireContext().getPackageName() + ".provider")
+                    .encodedPath("/root" + Uri.encode(file.getAbsolutePath(), "/"))
+                    .build();
+        }
+
         @Override
         public View onCreateView(@NonNull final LayoutInflater inflater, final ViewGroup container,
                                  final Bundle savedInstanceState) {

@@ -190,14 +190,9 @@
 
         <activity
             android:name=".util.FilePickerActivityHelper"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/app_name"
-            android:theme="@style/FilePickerThemeDark">
-            <intent-filter>
-                <action android:name="android.intent.action.GET_CONTENT" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/FilePickerThemeDark" />
 
         <activity
             android:name=".error.ReCaptchaActivity"
