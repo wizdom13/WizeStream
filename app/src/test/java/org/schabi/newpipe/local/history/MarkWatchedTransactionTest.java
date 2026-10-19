@@ -14,6 +14,7 @@ import org.robolectric.annotation.Config;
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.AppDatabase;
+import org.schabi.newpipe.extractor.exceptions.LiveNotStartException;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.sync.HistorySyncRecorder;
@@ -41,6 +42,35 @@ public class MarkWatchedTransactionTest {
     @After
     public void resetSchedulers() {
         RxJavaPlugins.reset();
+    }
+
+    @Test
+    public void scheduledMetadataFailureDoesNotWriteWatchHistory() {
+        RxJavaPlugins.setIoSchedulerHandler(scheduler -> Schedulers.trampoline());
+        final Application context = RuntimeEnvironment.getApplication();
+        PreferenceManager.getDefaultSharedPreferences(context).edit()
+                .putBoolean(context.getString(R.string.enable_watch_history_key), true).commit();
+        final AppDatabase database = mock(AppDatabase.class);
+        final StreamInfoItem item = new StreamInfoItem(0, "https://example.org/scheduled",
+                "Scheduled video", StreamType.VIDEO_STREAM);
+        item.setDuration(-1);
+        try (MockedStatic<NewPipeDatabase> databases = mockStatic(NewPipeDatabase.class);
+             MockedStatic<HistorySyncRecorder> recorders = mockStatic(HistorySyncRecorder.class);
+             MockedStatic<ExtractorHelper> extractors = mockStatic(ExtractorHelper.class)) {
+            databases.when(() -> NewPipeDatabase.getInstance(context)).thenReturn(database);
+            extractors.when(() -> ExtractorHelper.getStreamInfo(0, item.getUrl(), false))
+                    .thenReturn(Single.error(
+                            new LiveNotStartException(
+                                    "This live event will begin in 13 hours.")));
+            new HistoryRecordManager(context, "profile").markAsWatched(item).test()
+                    .awaitDone(5, TimeUnit.SECONDS)
+                    .assertNoValues()
+                    .assertError(error -> error instanceof RuntimeException
+                            && error.getCause()
+                            instanceof LiveNotStartException);
+            org.mockito.Mockito.verify(database, org.mockito.Mockito.never())
+                    .runInTransaction(any(Callable.class));
+        }
     }
 
     @Test

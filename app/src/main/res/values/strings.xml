@@ -1836,4 +1836,5 @@
     <string name="live_mode_full">Full live (rewind when available)</string>
     <string name="feed_floating_refresh_title">Floating feed refresh button</string>
     <string name="feed_floating_refresh_summary">Show a floating Refresh/Cancel button instead of pull-to-refresh and the upper refresh controls.</string>
+    <string name="mark_watched_not_started">This video has not started yet. Try marking it as watched after it becomes available.</string>
 </resources>

@@ -18,6 +18,8 @@ import org.schabi.newpipe.download.DownloadDialog;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
+import org.schabi.newpipe.extractor.exceptions.LiveNotStartException;
+import org.schabi.newpipe.extractor.exceptions.VideoNotReleaseException;
 import org.schabi.newpipe.local.dialog.PlaylistAppendDialog;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
@@ -29,7 +31,10 @@ import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 
@@ -207,18 +212,14 @@ public enum StreamDialogDefaultEntry {
     MARK_AS_WATCHED(R.string.mark_as_watched, (fragment, item) ->
         new HistoryRecordManager(fragment.getContext())
                 .markAsWatched(item)
+                .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(error -> {
-                    ErrorUtil.showSnackbar(
-                            fragment.requireContext(),
-                            new ErrorInfo(
-                                    error,
-                                    UserAction.OPEN_INFO_ITEM_DIALOG,
-                                    "Got an error when trying to mark as watched"
-                            )
-                    );
+                    final Context context = fragment.getContext();
+                    if (context != null) {
+                        handleMarkAsWatchedError(context, error);
+                    }
                 })
                 .onErrorComplete()
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe()
     ),
 
@@ -248,6 +249,33 @@ public enum StreamDialogDefaultEntry {
                              @NonNull final StreamDialogEntry.StreamDialogEntryAction action) {
         this.resource = resource;
         this.action = action;
+    }
+
+    /**
+     * A scheduled stream has no duration yet. Keep its history untouched and explain why
+     * marking it watched cannot complete instead of presenting an unexpected-error report.
+     *
+     * @param context attached fragment context
+     * @param error failure returned by the history operation
+     */
+    static void handleMarkAsWatchedError(final Context context, final Throwable error) {
+        final Set<Throwable> visited =
+                Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+        Throwable cause = error;
+        while (cause != null && visited.add(cause)) {
+            if (cause instanceof LiveNotStartException
+                    || cause instanceof VideoNotReleaseException) {
+                Toast.makeText(context, R.string.mark_watched_not_started,
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+            cause = cause.getCause();
+        }
+        ErrorUtil.showSnackbar(context, new ErrorInfo(
+                error,
+                UserAction.OPEN_INFO_ITEM_DIALOG,
+                "Got an error when trying to mark as watched"
+        ));
     }
 
     @NonNull
