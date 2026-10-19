@@ -66,7 +66,7 @@ internal class PlayerErrorController(
         if (player.videoAdjustments.recover(error)) return
 
         player.saveStreamProgressState()
-        if (tryRecoverFromReleasedCodecSurface(error) ||
+        if (tryRecoverFromVideoSurfaceFailure(error) ||
             tryRecoverFromAudioTrackInitFailure(error)
         ) {
             return
@@ -262,21 +262,26 @@ internal class PlayerErrorController(
         pendingLiveStallRecovery = null
     }
 
-    internal fun tryRecoverFromReleasedCodecSurface(error: PlaybackException): Boolean {
-        if (error.errorCode != PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK ||
-            player.exoPlayerIsNull() ||
-            generateSequence(error as Throwable) { it.cause }.none {
+    internal fun tryRecoverFromVideoSurfaceFailure(error: PlaybackException): Boolean {
+        val releasedCodec = error.errorCode == PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK &&
+            generateSequence(error as Throwable) { it.cause }.any {
                 it is android.media.MediaCodec.CodecException &&
                     it.message?.contains("setSurface()") == true &&
                     it.message?.contains("Released state") == true
             }
-        ) {
+        val detachTimeout = error.errorCode == PlaybackException.ERROR_CODE_TIMEOUT &&
+            generateSequence(error as Throwable) { it.cause }.any {
+                it is androidx.media3.exoplayer.ExoTimeoutException &&
+                    it.timeoutOperation ==
+                    androidx.media3.exoplayer.ExoTimeoutException.TIMEOUT_OPERATION_DETACH_SURFACE
+            }
+        if ((!releasedCodec && !detachTimeout) || player.exoPlayerIsNull()) {
             return false
         }
         val item = player.playQueue?.item ?: return false
         if (!surfaceRecoveryGuard.acquire("${item.serviceId}:${item.url}")) return false
 
-        Log.w(Player.TAG, "Rebuilding playback with safe surface switching after codec release")
+        Log.w(Player.TAG, "Rebuilding playback with safe surface switching after output failure")
         cancelPendingMediaUrlRecovery()
         player.onBuffering()
         player.restartForSurfaceRecovery()

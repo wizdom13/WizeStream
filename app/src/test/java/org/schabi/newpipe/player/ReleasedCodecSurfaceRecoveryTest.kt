@@ -2,6 +2,7 @@ package org.schabi.newpipe.player
 
 import android.media.MediaCodec
 import androidx.media3.common.PlaybackException
+import androidx.media3.exoplayer.ExoTimeoutException
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,14 +27,14 @@ class ReleasedCodecSurfaceRecoveryTest {
         val f = Fixture()
         `when`(f.player.videoAdjustments).thenReturn(mock(VideoAdjustmentController::class.java))
         f.controller.onPlayerError(f.error())
-        assertFalse(f.controller.tryRecoverFromReleasedCodecSurface(f.error()))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(f.error()))
         verify(f.player).restartForSurfaceRecovery()
         verify(f.player).onBuffering()
         verify(f.player, never()).onPlaybackShutdown()
         verify(f.queue, never()).error()
         verify(f.queue, never()).dispose()
         f.controller.resetRecovery()
-        assertTrue(f.controller.tryRecoverFromReleasedCodecSurface(f.error()))
+        assertTrue(f.controller.tryRecoverFromVideoSurfaceFailure(f.error()))
         verify(f.player, times(2)).restartForSurfaceRecovery()
     }
 
@@ -45,10 +46,10 @@ class ReleasedCodecSurfaceRecoveryTest {
             IllegalStateException(Fixture.MESSAGE),
             PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK
         )
-        assertFalse(f.controller.tryRecoverFromReleasedCodecSurface(unrelated))
-        assertFalse(f.controller.tryRecoverFromReleasedCodecSurface(f.error("Executing state")))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(unrelated))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(f.error("Executing state")))
         val decoding = f.error(code = PlaybackException.ERROR_CODE_DECODING_FAILED)
-        assertFalse(f.controller.tryRecoverFromReleasedCodecSurface(decoding))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(decoding))
         verify(f.player, never()).restartForSurfaceRecovery()
     }
 
@@ -56,13 +57,80 @@ class ReleasedCodecSurfaceRecoveryTest {
     fun missingQueueItemAndReleasedEngineDoNotConsumeTheRetry() {
         val f = Fixture()
         `when`(f.queue.item).thenReturn(null)
-        assertFalse(f.controller.tryRecoverFromReleasedCodecSurface(f.error()))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(f.error()))
         `when`(f.queue.item).thenReturn(f.item)
         `when`(f.player.exoPlayerIsNull()).thenReturn(true)
-        assertFalse(f.controller.tryRecoverFromReleasedCodecSurface(f.error()))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(f.error()))
         `when`(f.player.exoPlayerIsNull()).thenReturn(false)
-        assertTrue(f.controller.tryRecoverFromReleasedCodecSurface(f.error()))
+        assertTrue(f.controller.tryRecoverFromVideoSurfaceFailure(f.error()))
     }
+
+    @Test
+    fun surfaceDetachTimeoutRebuildsOnceAndSharesTheCodecRetryBudget() {
+        val f = Fixture()
+        `when`(f.player.videoAdjustments).thenReturn(mock(VideoAdjustmentController::class.java))
+        f.controller.onPlayerError(detachTimeout())
+        verify(f.player).restartForSurfaceRecovery()
+        verify(f.player).saveStreamProgressState()
+        verify(f.player, never()).reloadPlayQueueManager()
+        verify(f.queue, never()).error()
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(detachTimeout()))
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(f.error()))
+        f.controller.resetRecovery()
+        assertTrue(f.controller.tryRecoverFromVideoSurfaceFailure(detachTimeout()))
+        verify(f.player, times(2)).restartForSurfaceRecovery()
+    }
+
+    @Test
+    fun otherTimeoutOperationsAndMisclassifiedErrorsAreNotSurfaceRecovery() {
+        val f = Fixture()
+        for (operation in intArrayOf(
+            ExoTimeoutException.TIMEOUT_OPERATION_RELEASE,
+            ExoTimeoutException.TIMEOUT_OPERATION_SET_FOREGROUND_MODE,
+            ExoTimeoutException.TIMEOUT_OPERATION_UNDEFINED
+        )) {
+            val error = PlaybackException(
+                "timeout",
+                ExoTimeoutException(operation),
+                PlaybackException.ERROR_CODE_TIMEOUT
+            )
+            assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(error))
+        }
+        val network = PlaybackException(
+            "network",
+            java.net.SocketTimeoutException(),
+            PlaybackException.ERROR_CODE_TIMEOUT
+        )
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(network))
+        val wrongCode = PlaybackException(
+            "wrong code",
+            ExoTimeoutException(ExoTimeoutException.TIMEOUT_OPERATION_DETACH_SURFACE),
+            PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK
+        )
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(wrongCode))
+        verify(f.player, never()).restartForSurfaceRecovery()
+    }
+
+    @Test
+    fun timeoutRecoveryRequiresAQueueItemAndAnActiveEngine() {
+        val f = Fixture()
+        `when`(f.queue.item).thenReturn(null)
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(detachTimeout()))
+        `when`(f.queue.item).thenReturn(f.item)
+        `when`(f.player.exoPlayerIsNull()).thenReturn(true)
+        assertFalse(f.controller.tryRecoverFromVideoSurfaceFailure(detachTimeout()))
+        `when`(f.player.exoPlayerIsNull()).thenReturn(false)
+        assertTrue(f.controller.tryRecoverFromVideoSurfaceFailure(detachTimeout()))
+    }
+
+    private fun detachTimeout() = PlaybackException(
+        "Unexpected runtime error",
+        IllegalStateException(
+            "wrapped",
+            ExoTimeoutException(ExoTimeoutException.TIMEOUT_OPERATION_DETACH_SURFACE)
+        ),
+        PlaybackException.ERROR_CODE_TIMEOUT
+    )
 
     private class Fixture {
         val player = mock(Player::class.java)
