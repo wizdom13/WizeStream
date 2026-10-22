@@ -35,6 +35,25 @@ class HistoryRecordManagerTest {
     }
 
     @Test
+    fun searchSuggestionsAndDeletesAreIsolatedByProfile() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val otherProfile = "11111111-1111-4111-8111-111111111111"
+        val other = HistoryRecordManager(context, otherProfile)
+        manager.onSearched(0, "shared").blockingGet()
+        other.onSearched(0, "shared").blockingGet()
+        other.onSearched(0, "private query").blockingGet()
+        assertEquals(listOf("shared"), manager.getRelatedSearches("", 20, 20).blockingFirst())
+        assertEquals(listOf("private query"), other.getRelatedSearches("private", 20, 20).blockingFirst())
+        assertThat(manager.getRelatedSearches("private", 20, 20).blockingFirst()).isEmpty()
+        manager.deleteSearchHistory("shared").blockingGet()
+        assertEquals(2, database.searchHistoryDAO().getAllDirectForProfile(otherProfile).size)
+        manager.onSearched(0, "keep default").blockingGet()
+        other.deleteCompleteSearchHistory().blockingGet()
+        assertThat(database.searchHistoryDAO().getAllDirectForProfile(otherProfile)).isEmpty()
+        assertEquals(listOf("keep default"), manager.getRelatedSearches("", 20, 20).blockingFirst())
+    }
+
+    @Test
     fun onSearched() {
         manager.onSearched(0, "Hello").test().await().assertValue(1)
 

@@ -49,7 +49,8 @@ object Migrations {
     const val DB_VER_27 = 27
     const val DB_VER_28 = 28
     const val DB_VER_29 = 29
-    const val DB_VER_CURRENT = DB_VER_29
+    const val DB_VER_30 = 30
+    const val DB_VER_CURRENT = DB_VER_30
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -1055,6 +1056,18 @@ object Migrations {
         db.execSQL(
             "UPDATE streams SET is_short_form_content = 1 " +
                 "WHERE service_id = 0 AND url LIKE '%/shorts/%'"
+        )
+    }
+
+    val MIGRATION_29_30 = Migration(DB_VER_29, DB_VER_30) { db ->
+        db.execSQL(
+            "ALTER TABLE search_history ADD COLUMN profile_id TEXT NOT NULL " +
+                "DEFAULT '00000000-0000-0000-0000-000000000000'"
+        )
+        db.execSQL("DROP INDEX IF EXISTS index_search_history_search")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_search_history_profile_id_search " +
+                "ON search_history (profile_id, search)"
         )
     }
 }

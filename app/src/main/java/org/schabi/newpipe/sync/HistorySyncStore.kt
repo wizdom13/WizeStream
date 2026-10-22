@@ -85,15 +85,17 @@ internal interface HistorySyncStore {
         ProfileManager.DEFAULT_PROFILE_ID
     )
 
-    fun recordSearch(
-        serviceId: Int,
-        query: String,
-        searchedAtEpochMillis: Long
-    )
+    fun recordSearch(profileId: String, serviceId: Int, query: String, searchedAtEpochMillis: Long)
 
-    fun recordSearchDelete(query: String)
+    fun recordSearch(serviceId: Int, query: String, searchedAtEpochMillis: Long) = recordSearch(ProfileManager.DEFAULT_PROFILE_ID, serviceId, query, searchedAtEpochMillis)
 
-    fun recordSearchAllDelete()
+    fun recordSearchDelete(profileId: String, query: String)
+
+    fun recordSearchDelete(query: String) = recordSearchDelete(ProfileManager.DEFAULT_PROFILE_ID, query)
+
+    fun recordSearchAllDelete(profileId: String)
+
+    fun recordSearchAllDelete() = recordSearchAllDelete(ProfileManager.DEFAULT_PROFILE_ID)
 
     fun recordLearningNoteUpsert(noteId: String)
 
@@ -270,6 +272,7 @@ internal class RoomHistorySyncStore internal constructor(
     }
 
     override fun recordSearch(
+        profileId: String,
         serviceId: Int,
         query: String,
         searchedAtEpochMillis: Long
@@ -278,6 +281,7 @@ internal class RoomHistorySyncStore internal constructor(
             ensureInitialized(HistorySyncCategory.SEARCH)
             saveLocalChange(
                 category = HistorySyncCategory.SEARCH,
+                profileId = profileId,
                 recordId = HistoryRecordId.searchEvent(),
                 recordType = HistoryRecordType.SEARCH_EVENT,
                 type = HistoryChangeType.UPSERT,
@@ -292,13 +296,14 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    override fun recordSearchDelete(query: String) {
+    override fun recordSearchDelete(profileId: String, query: String) {
         database.runInTransaction {
             ensureInitialized(HistorySyncCategory.SEARCH)
             val canonicalQuery = query.trim()
             saveLocalChange(
                 category = HistorySyncCategory.SEARCH,
-                recordId = HistoryRecordId.searchQueryTombstone(canonicalQuery),
+                profileId = profileId,
+                recordId = HistoryRecordId.searchQueryTombstone(profileId, canonicalQuery),
                 recordType = HistoryRecordType.SEARCH_QUERY_TOMBSTONE,
                 type = HistoryChangeType.UPSERT,
                 record = SyncedHistoryRecord(
@@ -308,12 +313,13 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    override fun recordSearchAllDelete() {
+    override fun recordSearchAllDelete(profileId: String) {
         database.runInTransaction {
             ensureInitialized(HistorySyncCategory.SEARCH)
             saveLocalChange(
                 category = HistorySyncCategory.SEARCH,
-                recordId = HistoryRecordId.searchAllTombstone(),
+                profileId = profileId,
+                recordId = HistoryRecordId.searchAllTombstone(profileId),
                 recordType = HistoryRecordType.SEARCH_ALL_TOMBSTONE,
                 type = HistoryChangeType.UPSERT,
                 record = null
@@ -438,7 +444,7 @@ internal class RoomHistorySyncStore internal constructor(
                 var affected = 0
                 val affectedStreams = linkedSetOf<ProfiledHistoryStreamIdentity>()
                 val materializeAllWatchProfiles = linkedSetOf<String>()
-                var materializeSearch = false
+                val materializeSearchProfiles = linkedSetOf<String>()
                 val affectedLearningNotes = linkedSetOf<String>()
 
                 changes.forEach { change ->
@@ -485,7 +491,7 @@ internal class RoomHistorySyncStore internal constructor(
                         HistoryRecordType.SEARCH_EVENT,
                         HistoryRecordType.SEARCH_QUERY_TOMBSTONE,
                         HistoryRecordType.SEARCH_ALL_TOMBSTONE ->
-                            materializeSearch = true
+                            materializeSearchProfiles += change.profileId
 
                         HistoryRecordType.LEARNING_NOTE ->
                             affectedLearningNotes += change.recordId
@@ -500,9 +506,7 @@ internal class RoomHistorySyncStore internal constructor(
                 affectedStreams.forEach { affected ->
                     materializeWatchStream(affected.profileId, affected.identity)
                 }
-                if (materializeSearch) {
-                    materializeSearchHistory()
-                }
+                materializeSearchProfiles.forEach(::materializeSearchHistory)
                 affectedLearningNotes.forEach(::materializeLearningNote)
                 HistoryApplyResult(
                     acceptedChanges = accepted,
@@ -614,6 +618,7 @@ internal class RoomHistorySyncStore internal constructor(
             }
             saveLocalChange(
                 category = HistorySyncCategory.SEARCH,
+                profileId = entry.profileId,
                 recordId = HistoryRecordId.searchEvent(),
                 recordType = HistoryRecordType.SEARCH_EVENT,
                 type = HistoryChangeType.UPSERT,
@@ -771,10 +776,14 @@ internal class RoomHistorySyncStore internal constructor(
         }
     }
 
-    private fun materializeSearchHistory() {
-        val records = syncDao.getRecords(HistorySyncCategory.SEARCH.name)
+    private fun materializeSearchHistory(profileId: String) {
+        if (!canMaterializeProfile(profileId)) {
+            searchHistoryDao.deleteAllForProfile(profileId)
+            return
+        }
+        val records = syncDao.getRecordsForProfile(HistorySyncCategory.SEARCH.name, profileId)
         val globalCutoff = records.firstOrNull {
-            it.recordId == HistoryRecordId.searchAllTombstone()
+            it.recordId == HistoryRecordId.searchAllTombstone(profileId)
         }?.versionStamp
         val queryCutoffs = records
             .filter {
@@ -806,11 +815,12 @@ internal class RoomHistorySyncStore internal constructor(
                         event.searchedAtEpochMillis
                     ),
                     serviceId = event.serviceId,
-                    search = event.query
+                    search = event.query,
+                    profileId = profileId
                 )
             }
             .toList()
-        searchHistoryDao.deleteAll()
+        searchHistoryDao.deleteAllForProfile(profileId)
         if (events.isNotEmpty()) {
             searchHistoryDao.insertAll(events)
         }
@@ -1093,15 +1103,22 @@ class HistorySyncRecorder private constructor(context: Context) {
         profileId
     )
 
-    fun recordSearch(
-        serviceId: Int,
-        query: String,
-        searchedAtEpochMillis: Long
-    ) = store.recordSearch(serviceId, query, searchedAtEpochMillis)
+    fun recordSearch(serviceId: Int, query: String, searchedAtEpochMillis: Long) = recordSearchForProfile(
+        ProfileManager.getActiveProfileId(appContext),
+        serviceId,
+        query,
+        searchedAtEpochMillis
+    )
 
-    fun recordSearchDelete(query: String) = store.recordSearchDelete(query)
+    fun recordSearchForProfile(profileId: String, serviceId: Int, query: String, searchedAtEpochMillis: Long) = store.recordSearch(profileId, serviceId, query, searchedAtEpochMillis)
 
-    fun recordSearchAllDelete() = store.recordSearchAllDelete()
+    fun recordSearchDelete(query: String) = recordSearchDeleteForProfile(ProfileManager.getActiveProfileId(appContext), query)
+
+    fun recordSearchDeleteForProfile(profileId: String, query: String) = store.recordSearchDelete(profileId, query)
+
+    fun recordSearchAllDelete() = recordSearchAllDeleteForProfile(ProfileManager.getActiveProfileId(appContext))
+
+    fun recordSearchAllDeleteForProfile(profileId: String) = store.recordSearchAllDelete(profileId)
 
     fun recordLearningNoteUpsert(noteId: String) = store.recordLearningNoteUpsert(noteId)
 

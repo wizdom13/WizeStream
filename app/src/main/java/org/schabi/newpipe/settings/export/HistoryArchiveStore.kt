@@ -25,7 +25,7 @@ internal class HistoryArchiveStore(
                         event.accessDate.toInstant().toEpochMilli(), event.repeatCount, stream.thumbnailUrl, stream.sourceType, stream.mimeType
                     )
                 },
-                searches = database.searchHistoryDAO().getAllDirect().mapNotNull { event ->
+                searches = database.searchHistoryDAO().getAllDirectForProfile(profileId).mapNotNull { event ->
                     val date = event.creationDate ?: return@mapNotNull null
                     val query = event.search ?: return@mapNotNull null
                     ArchivedSearch(event.serviceId, query, date.toInstant().toEpochMilli())
@@ -60,9 +60,9 @@ internal class HistoryArchiveStore(
                 archive.searches.forEach { event ->
                     check(!Thread.currentThread().isInterrupted) { "Import cancelled" }
                     val date = Instant.ofEpochMilli(event.timestamp).atOffset(ZoneOffset.UTC)
-                    if (!database.searchHistoryDAO().hasTakeoutEvent(event.serviceId, event.query, date)) {
+                    if (!database.searchHistoryDAO().hasTakeoutEventForProfile(profileId, event.serviceId, event.query, date)) {
                         recordSearch(event.serviceId, event.query, event.timestamp)
-                        database.searchHistoryDAO().insert(SearchHistoryEntry(date, event.serviceId, event.query))
+                        database.searchHistoryDAO().insert(SearchHistoryEntry(date, event.serviceId, event.query, profileId = profileId))
                         added++
                     }
                 }

@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -1182,6 +1183,29 @@ class DatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrateDatabaseFrom29to30KeepsSearchHistoryInDefaultProfile() {
+        testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_29).use { database ->
+            database.execSQL(
+                "INSERT INTO search_history (id, service_id, search, creation_date) " +
+                    "VALUES (42, 0, 'kept query', 1000)"
+            )
+        }
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_30,
+            true,
+            Migrations.MIGRATION_29_30
+        )
+        migrated.query("SELECT id, search, profile_id FROM search_history").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(42L, cursor.getLong(0))
+            assertEquals("kept query", cursor.getString(1))
+            assertEquals("00000000-0000-0000-0000-000000000000", cursor.getString(2))
+            assertFalse(cursor.moveToNext())
+        }
+    }
+
     private fun getMigratedDatabase(): AppDatabase {
         val database: AppDatabase = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
@@ -1204,7 +1228,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_25_26,
                 Migrations.MIGRATION_26_27,
                 Migrations.MIGRATION_27_28,
-                Migrations.MIGRATION_28_29
+                Migrations.MIGRATION_28_29,
+                Migrations.MIGRATION_29_30
             )
             .build()
         testHelper.closeWhenFinished(database)

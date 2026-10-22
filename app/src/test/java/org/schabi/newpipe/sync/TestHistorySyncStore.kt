@@ -28,12 +28,16 @@ internal class TestHistorySyncStore(
     private val watchEvents = mutableListOf<Pair<String, SyncedWatchEvent>>()
     private val progress =
         linkedMapOf<Pair<String, HistoryStreamIdentity>, SyncedPlaybackProgress>()
-    private val searchEvents = mutableListOf<SyncedSearchEvent>()
+    private val searchEvents = mutableListOf<Pair<String, SyncedSearchEvent>>()
 
     val searchQueries: List<String>
-        get() = searchEvents
-            .sortedBy(SyncedSearchEvent::searchedAtEpochMillis)
-            .map(SyncedSearchEvent::query)
+        get() = searchQueriesForProfile(ProfileManager.DEFAULT_PROFILE_ID)
+
+    fun searchQueriesForProfile(profileId: String): List<String> = searchEvents
+        .filter { it.first == profileId }
+        .map { it.second }
+        .sortedBy(SyncedSearchEvent::searchedAtEpochMillis)
+        .map(SyncedSearchEvent::query)
 
     fun registerStream(streamId: Long, url: String) {
         streams[streamId] = SyncedHistoryStream.from(
@@ -168,12 +172,14 @@ internal class TestHistorySyncStore(
     }
 
     override fun recordSearch(
+        profileId: String,
         serviceId: Int,
         query: String,
         searchedAtEpochMillis: Long
     ) {
         recordLocalChange(
             category = HistorySyncCategory.SEARCH,
+            profileId = profileId,
             recordId = HistoryRecordId.searchEvent(),
             recordType = HistoryRecordType.SEARCH_EVENT,
             type = HistoryChangeType.UPSERT,
@@ -187,11 +193,12 @@ internal class TestHistorySyncStore(
         )
     }
 
-    override fun recordSearchDelete(query: String) {
+    override fun recordSearchDelete(profileId: String, query: String) {
         val canonicalQuery = query.trim()
         recordLocalChange(
             category = HistorySyncCategory.SEARCH,
-            recordId = HistoryRecordId.searchQueryTombstone(canonicalQuery),
+            profileId = profileId,
+            recordId = HistoryRecordId.searchQueryTombstone(profileId, canonicalQuery),
             recordType = HistoryRecordType.SEARCH_QUERY_TOMBSTONE,
             type = HistoryChangeType.UPSERT,
             record = SyncedHistoryRecord(
@@ -200,10 +207,11 @@ internal class TestHistorySyncStore(
         )
     }
 
-    override fun recordSearchAllDelete() {
+    override fun recordSearchAllDelete(profileId: String) {
         recordLocalChange(
             category = HistorySyncCategory.SEARCH,
-            recordId = HistoryRecordId.searchAllTombstone(),
+            profileId = profileId,
+            recordId = HistoryRecordId.searchAllTombstone(profileId),
             recordType = HistoryRecordType.SEARCH_ALL_TOMBSTONE,
             type = HistoryChangeType.UPSERT,
             record = null
@@ -374,27 +382,28 @@ internal class TestHistorySyncStore(
     }
 
     private fun materializeSearch() {
-        val searchRecords = records[HistorySyncCategory.SEARCH].orEmpty().values
-        val globalCutoff = searchRecords.firstOrNull {
-            it.recordId == HistoryRecordId.searchAllTombstone()
-        }?.versionStamp
-        val queryCutoffs = searchRecords
-            .filter { it.recordType == HistoryRecordType.SEARCH_QUERY_TOMBSTONE }
-            .associate { change ->
-                requireNotNull(change.record?.searchQueryTombstone)
-                    .query to change.versionStamp
-            }
         searchEvents.clear()
-        searchEvents += searchRecords
-            .filter { it.recordType == HistoryRecordType.SEARCH_EVENT }
-            .filter { it.type != HistoryChangeType.DELETE }
-            .filter { globalCutoff == null || it.versionStamp > globalCutoff }
-            .filter { change ->
-                val event = requireNotNull(change.record?.searchEvent)
-                val cutoff = queryCutoffs[event.query]
-                cutoff == null || change.versionStamp > cutoff
-            }
-            .map { requireNotNull(it.record?.searchEvent) }
+        records[HistorySyncCategory.SEARCH].orEmpty().values.groupBy { it.profileId }.forEach { (profileId, searchRecords) ->
+            val globalCutoff = searchRecords.firstOrNull {
+                it.recordId == HistoryRecordId.searchAllTombstone(profileId)
+            }?.versionStamp
+            val queryCutoffs = searchRecords
+                .filter { it.recordType == HistoryRecordType.SEARCH_QUERY_TOMBSTONE }
+                .associate { change ->
+                    requireNotNull(change.record?.searchQueryTombstone)
+                        .query to change.versionStamp
+                }
+            searchEvents += searchRecords
+                .filter { it.recordType == HistoryRecordType.SEARCH_EVENT }
+                .filter { it.type != HistoryChangeType.DELETE }
+                .filter { globalCutoff == null || it.versionStamp > globalCutoff }
+                .filter { change ->
+                    val event = requireNotNull(change.record?.searchEvent)
+                    val cutoff = queryCutoffs[event.query]
+                    cutoff == null || change.versionStamp > cutoff
+                }
+                .map { profileId to requireNotNull(it.record?.searchEvent) }
+        }
     }
 
     private fun advanceKnownRevision(

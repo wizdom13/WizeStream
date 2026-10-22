@@ -309,11 +309,14 @@ public class HistoryRecordManager {
         final SearchHistoryEntry newEntry = new SearchHistoryEntry(
                 currentTime,
                 serviceId,
-                canonicalSearch
+                canonicalSearch,
+                0L,
+                profileId
         );
 
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
-            historySyncRecorder.recordSearch(
+            historySyncRecorder.recordSearchForProfile(
+                    profileId,
                     serviceId,
                     canonicalSearch,
                     currentTime.toInstant().toEpochMilli()
@@ -324,16 +327,16 @@ public class HistoryRecordManager {
 
     public Single<Integer> deleteSearchHistory(final String search) {
         return Single.fromCallable(() -> database.runInTransaction(() -> {
-            historySyncRecorder.recordSearchDelete(search);
-            return searchHistoryTable.deleteAllWhereQuery(search);
+            historySyncRecorder.recordSearchDeleteForProfile(profileId, search);
+            return searchHistoryTable.deleteAllWhereQueryForProfile(profileId, search);
         }))
                 .subscribeOn(Schedulers.io());
     }
 
     public Single<Integer> deleteCompleteSearchHistory() {
         return Single.fromCallable(() -> database.runInTransaction(() -> {
-            historySyncRecorder.recordSearchAllDelete();
-            return searchHistoryTable.deleteAll();
+            historySyncRecorder.recordSearchAllDeleteForProfile(profileId);
+            return searchHistoryTable.deleteAllForProfile(profileId);
         }))
                 .subscribeOn(Schedulers.io());
     }
@@ -342,8 +345,9 @@ public class HistoryRecordManager {
                                                      final int similarQueryLimit,
                                                      final int uniqueQueryLimit) {
         return query.length() > 0
-                ? searchHistoryTable.getSimilarEntries(query, similarQueryLimit)
-                : searchHistoryTable.getUniqueEntries(uniqueQueryLimit);
+                ? searchHistoryTable.getSimilarEntriesForProfile(
+                        profileId, query, similarQueryLimit)
+                : searchHistoryTable.getUniqueEntriesForProfile(profileId, uniqueQueryLimit);
     }
 
     private boolean isSearchHistoryEnabled() {

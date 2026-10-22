@@ -89,6 +89,9 @@ abstract class HistorySyncDAO {
     @Query("SELECT * FROM history_sync_records WHERE category = :category")
     abstract fun getRecords(category: String): List<HistorySyncRecordEntity>
 
+    @Query("SELECT * FROM history_sync_records WHERE category = :category AND profile_id = :profileId")
+    abstract fun getRecordsForProfile(category: String, profileId: String): List<HistorySyncRecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun upsertRecord(record: HistorySyncRecordEntity)
 

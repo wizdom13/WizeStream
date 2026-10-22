@@ -52,7 +52,7 @@ class TakeoutImportWorker(context: Context, params: WorkerParameters) : Worker(c
             val history = HistorySyncRecorder.get(context)
             val result = TakeoutImporter(
                 NewPipeDatabase.getInstance(context),
-                recordSearch = { query, time -> history.recordSearch(0, query, time) },
+                recordSearch = { query, time -> history.recordSearchForProfile(profileId, 0, query, time) },
                 recordSubscription = RoomSubscriptionSyncStore.get(context)::recordLocalUpsert,
                 profileId = profileId,
                 recordWatch = { streamId, watchedAt, repeatCount ->

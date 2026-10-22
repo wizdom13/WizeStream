@@ -4,6 +4,12 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.31.10 (`1031010`)
+
+### Improvements
+
+- Isolated search history, suggestions, deletions, imports, exports, and device synchronization by profile. Existing search history stays in the Default profile.
+
 ## WizeStream 1.31.9 (`1031009`)
 
 ### Improvements

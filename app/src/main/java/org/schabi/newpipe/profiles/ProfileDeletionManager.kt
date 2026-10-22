@@ -25,6 +25,7 @@ object ProfileDeletionManager {
                 val historySyncRecorder = HistorySyncRecorder.get(appContext)
                 historySyncRecorder.recordWatchAllDeleteForProfile(profileId)
                 historySyncRecorder.recordProgressAllDeleteForProfile(profileId)
+                historySyncRecorder.recordSearchAllDeleteForProfile(profileId)
             }
             val database = NewPipeDatabase.getInstance(appContext)
             database.runInTransaction {
@@ -33,6 +34,7 @@ object ProfileDeletionManager {
                 database.playlistDAO().deleteAllForProfile(profileId)
                 database.streamHistoryDAO().deleteAllForProfile(profileId)
                 database.streamStateDAO().deleteAllForProfile(profileId)
+                database.searchHistoryDAO().deleteAllForProfile(profileId)
                 database.learningSessionDAO().deleteAllForProfile(profileId)
                 database.feedGroupDAO().deleteAllForProfile(profileId)
                 database.subscriptionDAO().deleteAllForProfile(profileId)

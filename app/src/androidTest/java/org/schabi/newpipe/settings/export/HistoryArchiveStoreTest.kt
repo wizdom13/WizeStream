@@ -22,15 +22,15 @@ class HistoryArchiveStoreTest {
     fun close() = database.close()
 
     @Test
-    fun mergingTwiceIsIdempotentAndWatchHistoryIsProfileScoped() {
+    fun mergingTwiceIsIdempotentAndAllHistoryIsProfileScoped() {
         val first = HistoryArchiveStore(database, "first")
         assertEquals(2, first.merge(archive))
         assertEquals(0, first.merge(archive))
         assertEquals(archive, first.export())
         val second = HistoryArchiveStore(database, "second")
         assertEquals(0, second.export().watches.size)
-        assertEquals(1, second.export().searches.size)
-        assertEquals(1, second.merge(archive))
+        assertEquals(0, second.export().searches.size)
+        assertEquals(2, second.merge(archive))
         assertEquals(archive, first.export())
         assertEquals(archive, second.export())
     }

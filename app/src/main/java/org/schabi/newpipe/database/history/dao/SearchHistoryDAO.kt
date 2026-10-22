@@ -47,4 +47,22 @@ interface SearchHistoryDAO : BasicDAO<SearchHistoryEntry> {
         """
     )
     fun getSimilarEntries(query: String, limit: Int): Flowable<MutableList<String>>
+
+    @Query("SELECT * FROM search_history WHERE profile_id = :profileId ORDER BY creation_date ASC, id ASC")
+    fun getAllDirectForProfile(profileId: String): List<SearchHistoryEntry>
+
+    @Query("DELETE FROM search_history WHERE profile_id = :profileId")
+    fun deleteAllForProfile(profileId: String): Int
+
+    @Query("DELETE FROM search_history WHERE profile_id = :profileId AND search = :query")
+    fun deleteAllWhereQueryForProfile(profileId: String, query: String): Int
+
+    @Query("SELECT EXISTS(SELECT 1 FROM search_history WHERE profile_id = :profileId AND service_id = :serviceId AND search = :query AND creation_date = :date)")
+    fun hasTakeoutEventForProfile(profileId: String, serviceId: Int, query: String, date: OffsetDateTime): Boolean
+
+    @Query("SELECT search FROM search_history WHERE profile_id = :profileId GROUP BY search ORDER BY MAX(creation_date) DESC LIMIT :limit")
+    fun getUniqueEntriesForProfile(profileId: String, limit: Int): Flowable<MutableList<String>>
+
+    @Query("SELECT search FROM search_history WHERE profile_id = :profileId AND search LIKE :query || '%' GROUP BY search ORDER BY MAX(creation_date) DESC LIMIT :limit")
+    fun getSimilarEntriesForProfile(profileId: String, query: String, limit: Int): Flowable<MutableList<String>>
 }

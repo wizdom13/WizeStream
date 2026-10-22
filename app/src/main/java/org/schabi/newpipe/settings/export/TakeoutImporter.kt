@@ -158,11 +158,11 @@ internal class TakeoutImporter(
             for (search in data.searches) {
                 check(!Thread.currentThread().isInterrupted) { "Import cancelled" }
                 val date = Instant.ofEpochMilli(search.timestamp).atOffset(ZoneOffset.UTC)
-                if (database.searchHistoryDAO().hasTakeoutEvent(0, search.query, date)) {
+                if (database.searchHistoryDAO().hasTakeoutEventForProfile(profileId, 0, search.query, date)) {
                     skipped++
                 } else {
                     recordSearch(search.query, search.timestamp)
-                    database.searchHistoryDAO().insert(SearchHistoryEntry(date, 0, search.query))
+                    database.searchHistoryDAO().insert(SearchHistoryEntry(date, 0, search.query, profileId = profileId))
                     searches++
                 }
             }

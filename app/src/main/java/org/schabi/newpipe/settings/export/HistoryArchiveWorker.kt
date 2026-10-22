@@ -19,7 +19,7 @@ class HistoryArchiveWorker(context: Context, parameters: WorkerParameters) : Wor
             NewPipeDatabase.getInstance(applicationContext),
             profileId,
             { id, time, count -> history.recordWatchEventForProfile(profileId, id, time, count) },
-            history::recordSearch
+            { service, query, time -> history.recordSearchForProfile(profileId, service, query, time) }
         )
         val resolver = applicationContext.contentResolver
         val action = inputData.getString("action")

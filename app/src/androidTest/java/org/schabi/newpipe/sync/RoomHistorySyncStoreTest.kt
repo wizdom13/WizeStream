@@ -270,6 +270,65 @@ class RoomHistorySyncStoreTest {
     }
 
     @Test
+    fun searchSyncAndTombstonesStayWithinTheirProfiles() {
+        val first = "11111111-1111-4111-8111-111111111111"
+        val second = "22222222-2222-4222-8222-222222222222"
+        val phoneStore = RoomHistorySyncStore(phoneDatabase, newPeerId())
+        val tabletStore = RoomHistorySyncStore(tabletDatabase, newPeerId())
+        val phone = HistorySyncEngine(phoneStore)
+        val tablet = HistorySyncEngine(tabletStore)
+        phoneDatabase.searchHistoryDAO().insertAll(
+            listOf(
+                searchEntry("shared", 1000).copy(profileId = first),
+                searchEntry("shared", 2000).copy(profileId = second),
+                searchEntry("other", 3000).copy(profileId = first),
+                searchEntry("legacy default", 4000)
+            )
+        )
+        synchronize(HistorySyncCategory.SEARCH, phone, phoneStore, tablet, tabletStore)
+        assertEquals(
+            listOf("shared", "other"),
+            tabletDatabase.searchHistoryDAO()
+                .getAllDirectForProfile(first).map { it.search }
+        )
+        tabletStore.recordSearchDelete(first, "shared")
+        tabletDatabase.searchHistoryDAO().deleteAllWhereQueryForProfile(first, "shared")
+        synchronize(HistorySyncCategory.SEARCH, tablet, tabletStore, phone, phoneStore)
+        assertEquals(
+            listOf("other"),
+            phoneDatabase.searchHistoryDAO()
+                .getAllDirectForProfile(first).map { it.search }
+        )
+        assertEquals(
+            listOf("shared"),
+            phoneDatabase.searchHistoryDAO()
+                .getAllDirectForProfile(second).map { it.search }
+        )
+        phoneStore.recordSearchAllDelete(first)
+        phoneDatabase.searchHistoryDAO().deleteAllForProfile(first)
+        synchronize(HistorySyncCategory.SEARCH, phone, phoneStore, tablet, tabletStore)
+        assertTrue(tabletDatabase.searchHistoryDAO().getAllDirectForProfile(first).isEmpty())
+        assertEquals(
+            listOf("shared"),
+            tabletDatabase.searchHistoryDAO()
+                .getAllDirectForProfile(second).map { it.search }
+        )
+        assertEquals(
+            listOf("legacy default"),
+            tabletDatabase.searchHistoryDAO()
+                .getAllDirectForProfile(SearchHistoryEntry.DEFAULT_PROFILE_ID).map { it.search }
+        )
+        phoneStore.recordSearch(first, 0, "shared", 5000)
+        phoneDatabase.searchHistoryDAO().insert(searchEntry("shared", 5000).copy(profileId = first))
+        synchronize(HistorySyncCategory.SEARCH, phone, phoneStore, tablet, tabletStore)
+        assertEquals(
+            listOf("shared"),
+            tabletDatabase.searchHistoryDAO()
+                .getAllDirectForProfile(first).map { it.search }
+        )
+    }
+
+    @Test
     fun learningNoteEditsAndDeletionTombstonesConvergeThroughRoomStores() {
         val phoneStore = RoomHistorySyncStore(phoneDatabase, newPeerId())
         val tabletStore = RoomHistorySyncStore(tabletDatabase, newPeerId())

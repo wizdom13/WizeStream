@@ -15,7 +15,7 @@ import java.time.OffsetDateTime
 
 @Entity(
     tableName = SearchHistoryEntry.TABLE_NAME,
-    indices = [Index(value = [SearchHistoryEntry.SEARCH])]
+    indices = [Index(value = [SearchHistoryEntry.PROFILE_ID, SearchHistoryEntry.SEARCH])]
 )
 data class SearchHistoryEntry @JvmOverloads constructor(
     @ColumnInfo(name = CREATION_DATE)
@@ -29,15 +29,20 @@ data class SearchHistoryEntry @JvmOverloads constructor(
 
     @ColumnInfo(name = ID)
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0
+    val id: Long = 0,
+
+    @ColumnInfo(name = PROFILE_ID, defaultValue = "'00000000-0000-0000-0000-000000000000'")
+    val profileId: String = DEFAULT_PROFILE_ID
 ) {
 
     @Ignore
     fun hasEqualValues(otherEntry: SearchHistoryEntry): Boolean {
-        return serviceId == otherEntry.serviceId && search == otherEntry.search
+        return profileId == otherEntry.profileId && serviceId == otherEntry.serviceId && search == otherEntry.search
     }
 
     companion object {
+        const val PROFILE_ID = "profile_id"
+        const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
         const val ID = "id"
         const val TABLE_NAME = "search_history"
         const val SERVICE_ID = "service_id"

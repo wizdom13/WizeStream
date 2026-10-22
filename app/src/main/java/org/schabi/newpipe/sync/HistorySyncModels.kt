@@ -285,11 +285,11 @@ internal object HistorySyncValidation {
             validatePeerId(change.originPeerId)
             validateProfileId(change.profileId)
             if (
-                change.category != HistorySyncCategory.WATCH &&
+                change.category == HistorySyncCategory.LEARNING_NOTES &&
                 change.profileId != ProfileManager.DEFAULT_PROFILE_ID
             ) {
                 throw HistorySyncException(
-                    "Only watch history can be scoped to a non-Default profile"
+                    "Learning notes cannot be scoped to a non-Default profile"
                 )
             }
             if (
@@ -406,7 +406,7 @@ internal object HistorySyncValidation {
                 require(populatedRecords == 1)
                 validateQuery(tombstone.query)
                 if (
-                    change.recordId != HistoryRecordId.searchQueryTombstone(tombstone.query)
+                    change.recordId != HistoryRecordId.searchQueryTombstone(change.profileId, tombstone.query)
                 ) {
                     throw HistorySyncException("A search deletion has an invalid identity")
                 }
@@ -414,7 +414,7 @@ internal object HistorySyncValidation {
 
             HistoryRecordType.SEARCH_ALL_TOMBSTONE -> {
                 requireCategory(change, HistorySyncCategory.SEARCH)
-                requireGlobalTombstone(change, HistoryRecordId.searchAllTombstone())
+                requireGlobalTombstone(change, HistoryRecordId.searchAllTombstone(change.profileId))
             }
 
             HistoryRecordType.LEARNING_NOTE -> {
@@ -570,11 +570,15 @@ internal object HistoryRecordId {
 
     fun searchEvent(): String = UUID.randomUUID().toString()
 
-    fun searchQueryTombstone(query: String): String {
-        return digest("search-delete\u0000${query.trim()}")
+    fun searchQueryTombstone(query: String): String = searchQueryTombstone(ProfileManager.DEFAULT_PROFILE_ID, query)
+
+    fun searchQueryTombstone(profileId: String, query: String): String {
+        return profiledDigest(profileId, "search-delete\u0000${query.trim()}")
     }
 
-    fun searchAllTombstone(): String = digest("search-delete-all")
+    fun searchAllTombstone(): String = searchAllTombstone(ProfileManager.DEFAULT_PROFILE_ID)
+
+    fun searchAllTombstone(profileId: String): String = profiledDigest(profileId, "search-delete-all")
 
     private fun profiledDigest(profileId: String, legacyIdentity: String): String {
         return if (profileId == ProfileManager.DEFAULT_PROFILE_ID) {
