@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="preferred_playback_languages">Preferred playback languages</string>
+    <string name="preferred_playback_languages_summary">Choose languages to show in audio and caption menus. Select none to show all languages. Other languages remain available through Show all languages.</string>
+    <string name="show_all_playback_languages">Show all languages</string>
+</resources>

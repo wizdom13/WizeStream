@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.core.os.ConfigurationCompat;
 import androidx.core.os.LocaleListCompat;
 import androidx.preference.ListPreference;
+import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.SwitchPreferenceCompat;
@@ -43,6 +44,7 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
         updateResolutionOptions();
         setupEqualizerPreference();
         setupCaptionTranslationPreferences();
+        setupPreferredPlaybackLanguages();
         requirePreference(R.string.native_pip_key)
                 .setVisible(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
         requirePreference(R.string.primary_floating_player_action_key)
@@ -74,6 +76,22 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
                 CaptionTranslationPreferences.syncPreferredCaptionLanguage(requireContext());
             }
         };
+    }
+
+    private void setupPreferredPlaybackLanguages() {
+        final MultiSelectListPreference preference =
+                new MultiSelectListPreference(requireContext());
+        preference.setKey(PreferredPlaybackLanguages.KEY);
+        preference.setTitle(R.string.preferred_playback_languages);
+        preference.setSummary(R.string.preferred_playback_languages_summary);
+        preference.setIconSpaceReserved(false);
+        final ListPreference languages = new ListPreference(requireContext());
+        populateCaptionTranslationLanguages(languages);
+        preference.setEntries(java.util.Arrays.copyOfRange(languages.getEntries(),
+                1, languages.getEntries().length));
+        preference.setEntryValues(java.util.Arrays.copyOfRange(languages.getEntryValues(),
+                1, languages.getEntryValues().length));
+        getPreferenceScreen().addPreference(preference);
     }
 
     private void setupCaptionTranslationPreferences() {

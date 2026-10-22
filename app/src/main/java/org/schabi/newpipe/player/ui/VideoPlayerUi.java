@@ -1338,6 +1338,10 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void buildAudioTrackMenu() {
+        buildAudioTrackMenu(false);
+    }
+
+    private void buildAudioTrackMenu(final boolean showAll) {
         if (audioTrackPopupMenu == null) {
             return;
         }
@@ -1351,12 +1355,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             return;
         }
 
-        for (int i = 0; i < availableStreams.size(); i++) {
-            final AudioStream audioStream = availableStreams.get(i);
-            audioTrackPopupMenu.getMenu().add(POPUP_MENU_ID_AUDIO_TRACK, i, Menu.NONE,
-                    Localization.audioTrackName(context, audioStream));
-        }
-
+        org.schabi.newpipe.player.ui.PlaybackLanguageMenu.audio(context,
+                audioTrackPopupMenu.getMenu(), POPUP_MENU_ID_AUDIO_TRACK, availableStreams, showAll,
+                () -> binding.audioTrackTextView.post(() -> {
+                    buildAudioTrackMenu(true);
+                    showPopupMenu(audioTrackPopupMenu, binding.audioTrackTextView);
+                }));
         player.getSelectedAudioStream()
                 .ifPresent(s -> binding.audioTrackTextView.setText(
                         Localization.audioTrackName(context, s)));
@@ -1380,7 +1384,15 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         playbackSpeedPopupMenu.setOnDismissListener(this);
     }
 
+    private List<String> captionMenuLanguages = java.util.Collections.emptyList();
+
     private void buildCaptionMenu(@NonNull final List<String> availableLanguages) {
+        captionMenuLanguages = availableLanguages;
+        buildCaptionMenu(availableLanguages, false);
+    }
+
+    private void buildCaptionMenu(@NonNull final List<String> availableLanguages,
+                                  final boolean showAll) {
         if (captionPopupMenu == null) {
             return;
         }
@@ -1388,25 +1400,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
         captionPopupMenu.setOnDismissListener(this);
 
-        // Add option for turning off caption
-        final MenuItem captionOffItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
-                0, Menu.NONE, R.string.caption_none);
-        captionOffItem.setOnMenuItemClickListener(menuItem -> {
-            player.setCaptionPreference(null);
-            return true;
-        });
-
-        // Add all available captions
-        for (int i = 0; i < availableLanguages.size(); i++) {
-            final String captionLanguage = availableLanguages.get(i);
-            final MenuItem captionItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
-                    i + 1, Menu.NONE, captionLanguage);
-            captionItem.setOnMenuItemClickListener(menuItem -> {
-                player.setCaptionPreference(captionLanguage);
-                return true;
-            });
-        }
-        captionPopupMenu.setOnDismissListener(this);
+        PlaybackLanguageMenu.captions(context, captionPopupMenu.getMenu(), POPUP_MENU_ID_CAPTION,
+                availableLanguages, showAll, player::setCaptionPreference,
+                () -> binding.captionTextView.post(() -> {
+                    buildCaptionMenu(availableLanguages, true);
+                    showPopupMenu(captionPopupMenu, binding.captionTextView);
+                }));
 
         // apply caption language from previous user preference
         final int textRendererIndex = player.getCaptionRendererIndex();
@@ -1448,6 +1447,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     private void onAudioTracksClicked() {
+        buildAudioTrackMenu();
         showPopupMenu(audioTrackPopupMenu, binding.audioTrackTextView);
     }
 
@@ -1570,6 +1570,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         if (DEBUG) {
             Log.d(TAG, "onCaptionClicked() called");
         }
+        buildCaptionMenu(captionMenuLanguages);
         showPopupMenu(captionPopupMenu, binding.captionTextView);
     }
 
