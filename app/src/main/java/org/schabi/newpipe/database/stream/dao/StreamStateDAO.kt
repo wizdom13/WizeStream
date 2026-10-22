@@ -27,6 +27,9 @@ interface StreamStateDAO : BasicDAO<StreamStateEntity> {
     )
     fun getAllForProfile(profileId: String): Flowable<List<StreamStateEntity>>
 
+    @Query("SELECT DISTINCT profile_id FROM stream_state")
+    fun getProfileIds(): List<String>
+
     @Query("SELECT * FROM " + StreamStateEntity.STREAM_STATE_TABLE)
     fun getAllDirect(): List<StreamStateEntity>
 

@@ -9,6 +9,9 @@ import io.libp2p.core.Host
 import io.libp2p.core.crypto.KeyType
 import io.libp2p.core.crypto.generateKeyPair
 import java.net.ServerSocket
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -324,6 +327,64 @@ class Libp2pSyncNodeTest {
     }
 
     @Test
+    fun `slow watch reconciliation does not block another stream on the same connection`() {
+        val tabletState = InMemorySyncStateRepository()
+        val phoneState = InMemorySyncStateRepository()
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val delegate = TestHistorySyncStore(tabletState.loadOrCreateIdentity().peerId.toBase58())
+        val slowStore = object : HistorySyncStore by delegate {
+            override fun reconcileLocal(category: HistorySyncCategory) {
+                if (category == HistorySyncCategory.WATCH) {
+                    entered.countDown()
+                    check(release.await(15, TimeUnit.SECONDS))
+                }
+                delegate.reconcileLocal(category)
+            }
+        }
+        val tablet = Libp2pSyncNode(
+            stateRepository = tabletState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Slow tablet",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            historySyncEngine = HistorySyncEngine(slowStore)
+        )
+        val phone = Libp2pSyncNode(
+            stateRepository = phoneState,
+            pairingSecurity = PairingSecurity(),
+            deviceName = "Test phone",
+            advertisedAddressProvider = ::loopbackAddresses,
+            listenAddress = TEST_LISTEN_ADDRESS,
+            historySyncEngine = HistorySyncEngine(
+                TestHistorySyncStore(phoneState.loadOrCreateIdentity().peerId.toBase58())
+            )
+        )
+        val callers = Executors.newFixedThreadPool(2)
+        try {
+            tablet.start()
+            phone.start()
+            val peer = phone.pair(tablet.createPairingCode())
+            val watch = callers.submit<HistorySyncResult> {
+                phone.syncHistory(peer, HistorySyncCategory.WATCH)
+            }
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
+            val search = callers.submit<HistorySyncResult> {
+                phone.syncHistory(peer, HistorySyncCategory.SEARCH)
+            }
+            assertEquals(HistorySyncCategory.SEARCH, search.get(5, TimeUnit.SECONDS).category)
+            assertFalse(watch.isDone)
+            release.countDown()
+            assertEquals(HistorySyncCategory.WATCH, watch.get(5, TimeUnit.SECONDS).category)
+        } finally {
+            release.countDown()
+            callers.shutdownNow()
+            phone.stop()
+            tablet.stop()
+        }
+    }
+
+    @Test
     fun `paired nodes exchange structured preferences over a Noise stream`() {
         val tabletState = InMemorySyncStateRepository()
         val phoneState = InMemorySyncStateRepository()
@@ -462,7 +523,7 @@ class Libp2pSyncNodeTest {
     }
 
     @Test
-    fun `transport recovery reports unavailable listener after retry`() {
+    fun `transport recovery reports failed retry without assuming listener state`() {
         val peer = TrustedPeer(
             peerId = DeviceIdentity(generateKeyPair(KeyType.ED25519).first).peerId.toBase58(),
             publicKey = "test",
@@ -484,7 +545,7 @@ class Libp2pSyncNodeTest {
         assertFalse(recovery.rediscovered)
         assertTrue(recovery.result.isFailure)
         assertEquals(
-            "Peer listener unavailable after discovery and retry",
+            "Synchronization still timed out or lost its connection after discovery and retry",
             recovery.retryDiagnostic
         )
     }

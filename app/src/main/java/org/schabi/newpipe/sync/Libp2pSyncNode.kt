@@ -33,22 +33,37 @@ class Libp2pSyncNode(
     private val peerAddressResolver: (TrustedPeer) -> List<String> = { emptyList() }
 ) {
     private val identity = stateRepository.loadOrCreateIdentity()
-    private val pairingProtocol = SyncProtocolBinding(::handlePairingRequest)
-    private val profileProtocol = ProfileSyncProtocolBinding(
-        ::handleProfileSyncRequest
-    )
-    private val subscriptionProtocol = SubscriptionSyncProtocolBinding(
-        ::handleSubscriptionSyncRequest
-    )
-    private val playlistProtocol = PlaylistSyncProtocolBinding(
-        ::handlePlaylistSyncRequest
-    )
-    private val historyProtocol = HistorySyncProtocolBinding(
-        ::handleHistorySyncRequest
-    )
-    private val structuredPreferenceProtocol = StructuredPreferenceSyncProtocolBinding(
-        ::handleStructuredPreferenceSyncRequest
-    )
+    private val requestDispatcher = SyncRequestDispatcher()
+    private val pairingProtocol = SyncProtocolBinding { peer, request, controller ->
+        requestDispatcher.execute({ controller.close() }) {
+            handlePairingRequest(peer, request, controller)
+        }
+    }
+    private val profileProtocol = ProfileSyncProtocolBinding { peer, request, controller ->
+        requestDispatcher.execute({ controller.close() }) {
+            handleProfileSyncRequest(peer, request, controller)
+        }
+    }
+    private val subscriptionProtocol = SubscriptionSyncProtocolBinding { peer, request, controller ->
+        requestDispatcher.execute({ controller.close() }) {
+            handleSubscriptionSyncRequest(peer, request, controller)
+        }
+    }
+    private val playlistProtocol = PlaylistSyncProtocolBinding { peer, request, controller ->
+        requestDispatcher.execute({ controller.close() }) {
+            handlePlaylistSyncRequest(peer, request, controller)
+        }
+    }
+    private val historyProtocol = HistorySyncProtocolBinding { peer, request, controller ->
+        requestDispatcher.execute({ controller.close() }) {
+            handleHistorySyncRequest(peer, request, controller)
+        }
+    }
+    private val structuredPreferenceProtocol = StructuredPreferenceSyncProtocolBinding { peer, request, controller ->
+        requestDispatcher.execute({ controller.close() }) {
+            handleStructuredPreferenceSyncRequest(peer, request, controller)
+        }
+    }
     private var preferredListenAddress = listenAddress
 
     @Volatile
@@ -83,6 +98,7 @@ class Libp2pSyncNode(
             return
         }
 
+        requestDispatcher.start()
         val addresses = buildList {
             add(preferredListenAddress)
             if (allowEphemeralFallback) {
@@ -121,6 +137,7 @@ class Libp2pSyncNode(
             }
         }
 
+        requestDispatcher.stop()
         val error = requireNotNull(lastError)
         throw PairingException(startFailureMessage(error), error)
     }
@@ -129,11 +146,13 @@ class Libp2pSyncNode(
     fun stop() {
         val currentHost = activeHost
         if (!started || currentHost == null) {
+            requestDispatcher.stop()
             return
         }
         try {
             currentHost.stop().get(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         } finally {
+            requestDispatcher.stop()
             activeHost = null
             started = false
         }

@@ -20,9 +20,9 @@ internal class DeviceSyncTransportAttempt<T>(
                     result.exceptionOrNull()
                 ) -> {
                 if (rediscovered) {
-                    "Peer rediscovered but listener unavailable after retry"
+                    "Peer rediscovered; synchronization still timed out or lost its connection"
                 } else {
-                    "Peer listener unavailable after discovery and retry"
+                    "Synchronization still timed out or lost its connection after discovery and retry"
                 }
             }
 

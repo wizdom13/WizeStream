@@ -41,6 +41,9 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
     @Query("SELECT * FROM stream_history WHERE profile_id = :profileId")
     abstract fun getAllForProfile(profileId: String): Flowable<List<StreamHistoryEntity>>
 
+    @Query("SELECT DISTINCT profile_id FROM stream_history")
+    abstract fun getProfileIds(): List<String>
+
     @Query("SELECT * FROM stream_history ORDER BY access_date ASC")
     abstract fun getAllDirect(): List<StreamHistoryEntity>
 

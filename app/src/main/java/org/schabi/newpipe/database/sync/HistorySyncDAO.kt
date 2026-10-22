@@ -86,6 +86,9 @@ abstract class HistorySyncDAO {
     )
     abstract fun getRecord(category: String, recordId: String): HistorySyncRecordEntity?
 
+    @Query("SELECT DISTINCT profile_id FROM history_sync_records WHERE category = :category")
+    abstract fun getRecordProfileIds(category: String): List<String>
+
     @Query("SELECT * FROM history_sync_records WHERE category = :category")
     abstract fun getRecords(category: String): List<HistorySyncRecordEntity>
 

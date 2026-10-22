@@ -541,11 +541,11 @@ internal class RoomHistorySyncStore internal constructor(
 
     private fun initializeMissingWatchProfiles() {
         val initializedProfiles = syncDao
-            .getRecords(HistorySyncCategory.WATCH.name)
-            .mapTo(mutableSetOf(), HistorySyncRecordEntity::profileId)
+            .getRecordProfileIds(HistorySyncCategory.WATCH.name)
+            .toSet()
         val localProfiles = buildSet {
-            streamHistoryDao.getAllDirect().forEach { add(it.profileId) }
-            streamStateDao.getAllDirect().forEach { add(it.profileId) }
+            addAll(streamHistoryDao.getProfileIds())
+            addAll(streamStateDao.getProfileIds())
         }
         localProfiles
             .filterNot(initializedProfiles::contains)
