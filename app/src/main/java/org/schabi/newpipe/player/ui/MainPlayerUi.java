@@ -782,8 +782,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
             binding.brightnessProgressBar.setMax(maxGestureLength);
 
             setInitialGestureValues();
-            binding.itemsListPanel.getLayoutParams().height =
-                    height - binding.itemsListPanel.getTop();
+            ChapterPanelLayout.apply(binding.itemsListPanel, width, height, areSegmentsVisible);
         }
     }
 
@@ -841,6 +840,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private void onQueueClicked() {
         isQueueVisible = true;
+        areSegmentsVisible = false;
+        ChapterPanelLayout.apply(binding.itemsListPanel, binding.playerVideoContent.getWidth(),
+                binding.playerVideoContent.getHeight(), false);
 
         hideSystemUIIfNeeded();
         buildQueue();
@@ -882,6 +884,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     private void onSegmentsClicked() {
         areSegmentsVisible = true;
+        isQueueVisible = false;
+        ChapterPanelLayout.apply(binding.itemsListPanel, binding.playerVideoContent.getWidth(),
+                binding.playerVideoContent.getHeight(), true);
 
         hideSystemUIIfNeeded();
         buildSegments();
