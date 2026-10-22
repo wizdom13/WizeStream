@@ -39,7 +39,7 @@ internal class SubscriptionSortController(
     private val disposables = CompositeDisposable()
     private val model = SubscriptionSortModel()
     private var channels = emptyMap<String, SubscriptionEntity>()
-    private var scope = FeedScope.from(context)
+    private var scope = FeedScope(FeedScope.ALL_SERVICES, 0)
     private var query = ""
     private var rows = emptyList<SubscriptionLayout.Entry>()
     private var loaded = false
@@ -113,14 +113,13 @@ internal class SubscriptionSortController(
         disposables.add(
             Flowable.combineLatest(
                 manager.getSubscriptionsForScope(FeedScope(FeedScope.ALL_SERVICES, 0)),
-                store.observe(),
-                FeedScope.changes(context)
-            ) { entities, saved, currentScope -> Triple(entities, saved, currentScope) }
+                store.observe()
+            ) { entities, saved -> Pair(entities, saved) }
                 .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ (entities, _, currentScope) ->
+                .subscribe({ (entities, _) ->
                     // Preference emissions may queue while the user performs another move.
                     // Read the current layout instead of replaying an older queued snapshot.
-                    update(entities, store.read(), currentScope)
+                    update(entities, store.read(), FeedScope(FeedScope.ALL_SERVICES, 0))
                 }, {
                     loaded = false
                     refresh()

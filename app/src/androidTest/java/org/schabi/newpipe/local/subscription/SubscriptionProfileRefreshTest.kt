@@ -123,10 +123,10 @@ class SubscriptionProfileRefreshTest {
         val studyChannel = addChannel(studyProfileId, "Matching study channel")
         val studyGroup = addGroup(studyProfileId, "Matching study group")
         addChannel(studyProfileId, "Unrelated channel")
-        addChannel(studyProfileId, "Matching other service", serviceId = 1)
-        addChannel(studyProfileId, "Matching music channel", youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC)
+        val otherService = addChannel(studyProfileId, "Matching other service", serviceId = 1)
+        val musicChannel = addChannel(studyProfileId, "Matching music channel", youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC)
         addGroup(studyProfileId, "Unrelated group")
-        awaitRows(viewModel, listOf(studyChannel), listOf(studyGroup))
+        awaitRows(viewModel, listOf(studyChannel, otherService, musicChannel), listOf(studyGroup))
         instrumentation.runOnMainSync {
             val groups = requireNotNull(viewModel.feedGroupsLiveData.value)
             assertEquals(false, groups.second)
@@ -138,6 +138,29 @@ class SubscriptionProfileRefreshTest {
             listOf(defaultChannel, newDefaultChannel),
             listOf(defaultGroup, newDefaultGroup)
         )
+    }
+
+    @Test
+    fun subscriptionLibraryKeepsAllServicesWhenBrowsingServiceChanges() {
+        val profile = ProfileManager.DEFAULT_PROFILE_ID
+        val youtube = addChannel(profile, "YouTube")
+        val peertube = addChannel(profile, "PeerTube", serviceId = 3)
+        val music = addChannel(profile, "Music", youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC)
+        addChannel(studyProfileId, "Other profile", serviceId = 3)
+        lateinit var viewModel: SubscriptionViewModel
+        instrumentation.runOnMainSync {
+            viewModel = SubscriptionViewModel(context)
+            viewModelStore.put("subscriptions", viewModel)
+        }
+        val expected = listOf(youtube, peertube, music)
+        awaitRows(viewModel, expected, emptyList())
+        instrumentation.runOnMainSync {
+            ServiceHelper.setSelectedServiceId(context, 3)
+            viewModel.setFilterQuery("PeerTube")
+        }
+        awaitRows(viewModel, listOf(peertube), emptyList())
+        instrumentation.runOnMainSync { viewModel.setFilterQuery("") }
+        awaitRows(viewModel, expected, emptyList())
     }
 
     private fun assertRetainedViewModel(

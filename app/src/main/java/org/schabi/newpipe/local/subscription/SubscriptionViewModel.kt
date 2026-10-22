@@ -95,14 +95,12 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     private fun observeSubscriptions(profileId: String): Disposable {
         val subscriptionManager = SubscriptionManager(getApplication(), profileId)
-        val subscriptions = Flowable.combineLatest(
-            FeedScope.changes(getApplication()),
-            filterQuery.distinctUntilChanged(),
-            ::Pair
-        )
-            .switchMap { (feedScope, query) ->
+        // The subscription library belongs to the profile, not the selected browsing service.
+        // Keep service filtering in feeds; otherwise channels silently disappear from this list.
+        val subscriptions = filterQuery.distinctUntilChanged()
+            .switchMap { query ->
                 subscriptionManager.getSubscriptionsForScope(
-                    scope = feedScope,
+                    scope = FeedScope(FeedScope.ALL_SERVICES, 0),
                     filterQuery = query
                 )
                     .subscribeOn(Schedulers.io())
