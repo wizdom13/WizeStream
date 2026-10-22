@@ -306,6 +306,7 @@
     <string name="theme_color_blue_value">blue</string>
     <string name="theme_color_cyan_value">cyan</string>
     <string name="theme_color_purple_value">purple</string>
+    <string name="theme_color_yellow_value">yellow</string>
     <string name="theme_color_orange_value">orange</string>
     <string name="theme_color_pink_value">pink</string>
     <string name="theme_color_red_value">red</string>
@@ -318,6 +319,7 @@
         <item>@string/theme_color_blue_value</item>
         <item>@string/theme_color_cyan_value</item>
         <item>@string/theme_color_purple_value</item>
+        <item>@string/theme_color_yellow_value</item>
         <item>@string/theme_color_orange_value</item>
         <item>@string/theme_color_pink_value</item>
         <item>@string/theme_color_red_value</item>
@@ -330,6 +332,7 @@
         <item>@string/theme_color_blue_title</item>
         <item>@string/theme_color_cyan_title</item>
         <item>@string/theme_color_purple_title</item>
+        <item>@string/theme_color_yellow_title</item>
         <item>@string/theme_color_orange_title</item>
         <item>@string/theme_color_pink_title</item>
         <item>@string/theme_color_red_title</item>
