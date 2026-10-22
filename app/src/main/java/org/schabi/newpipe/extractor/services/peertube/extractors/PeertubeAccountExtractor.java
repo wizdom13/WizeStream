@@ -48,13 +48,7 @@ public class PeertubeAccountExtractor extends ChannelExtractor {
 
     @Override
     public String getAvatarUrl() {
-        String value;
-        try {
-            value = JsonUtils.getString(json, "avatar.path");
-        } catch (final Exception e) {
-            value = "/client/assets/images/default-avatar.png";
-        }
-        return baseUrl + value;
+        return PeertubeParsingHelper.getAvatarUrl(json, baseUrl);
     }
 
     @Override

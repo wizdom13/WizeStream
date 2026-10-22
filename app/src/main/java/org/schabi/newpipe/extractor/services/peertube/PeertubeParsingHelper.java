@@ -12,6 +12,7 @@ import org.schabi.newpipe.extractor.utils.JsonUtils;
 import org.schabi.newpipe.extractor.utils.Parser;
 import org.schabi.newpipe.extractor.utils.Utils;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -37,6 +38,54 @@ public final class PeertubeParsingHelper {
         if (!Utils.isBlank(error)) {
             throw new ContentNotAvailableException(error);
         }
+    }
+
+    /** Read both current PeerTube actor images and the legacy singular avatar. */
+    public static String getAvatarUrl(final JsonObject actor, final String baseUrl) {
+        if (actor == null) {
+            return "";
+        }
+        String bestUrl = "";
+        int bestWidth = -1;
+        final JsonArray avatars = actor.getArray("avatars");
+        if (avatars != null) {
+            for (final Object value : avatars) {
+                if (value instanceof JsonObject) {
+                    final JsonObject avatar = (JsonObject) value;
+                    final String url = getActorImageUrl(avatar, baseUrl);
+                    final int width = avatar.getInt("width", 0);
+                    if (!url.isEmpty() && (bestUrl.isEmpty() || width > bestWidth)) {
+                        bestUrl = url;
+                        bestWidth = width;
+                    }
+                }
+            }
+        }
+        return bestUrl.isEmpty() ? getActorImageUrl(actor.getObject("avatar"), baseUrl)
+                : bestUrl;
+    }
+
+    private static String getActorImageUrl(final JsonObject image, final String baseUrl) {
+        if (image == null) {
+            return "";
+        }
+        // fileUrl supports remote storage; path is deprecated but needed for older servers.
+        for (final String key : new String[]{"fileUrl", "path"}) {
+            final String value = image.getString(key);
+            if (Utils.isBlank(value)) {
+                continue;
+            }
+            try {
+                final URI url = URI.create(baseUrl + "/").resolve(value);
+                if (("https".equalsIgnoreCase(url.getScheme())
+                        || "http".equalsIgnoreCase(url.getScheme())) && url.getHost() != null) {
+                    return url.toString();
+                }
+            } catch (final IllegalArgumentException ignored) {
+                // Try the legacy path if an optional image URL is malformed.
+            }
+        }
+        return "";
     }
 
     public static OffsetDateTime parseDateFrom(final String textualUploadDate)

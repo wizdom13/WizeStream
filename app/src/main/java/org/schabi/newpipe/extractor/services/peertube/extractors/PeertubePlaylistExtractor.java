@@ -51,8 +51,8 @@ public class PeertubePlaylistExtractor extends PlaylistExtractor {
 
     @Override
     public String getUploaderAvatarUrl() throws ParsingException {
-        return getBaseUrl()
-                + playlistInfo.getObject("ownerAccount").getObject("avatar").getString("path");
+        return PeertubeParsingHelper.getAvatarUrl(
+                playlistInfo.getObject("ownerAccount"), getBaseUrl());
     }
 
     @Override
@@ -80,8 +80,8 @@ public class PeertubePlaylistExtractor extends PlaylistExtractor {
     @Nonnull
     @Override
     public String getSubChannelAvatarUrl() throws ParsingException {
-        return getBaseUrl()
-                + playlistInfo.getObject("videoChannel").getObject("avatar").getString("path");
+        return PeertubeParsingHelper.getAvatarUrl(
+                playlistInfo.getObject("videoChannel"), getBaseUrl());
     }
 
     @Nonnull
