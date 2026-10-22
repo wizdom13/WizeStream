@@ -128,6 +128,9 @@ public class HistoryRecordManager {
 
             // Resolve metadata before taking the database write lock.
             return database.runInTransaction(() -> {
+                if (IncognitoMode.isEnabled(sharedPreferences)) {
+                    return null;
+                }
                 final long streamId = streamTable.upsert(stream);
                 // Update the stream progress to the full duration of the video
                 final StreamStateEntity entity = new StreamStateEntity(
@@ -173,6 +176,9 @@ public class HistoryRecordManager {
         }
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
+                if (IncognitoMode.isEnabled(sharedPreferences)) {
+                    return null;
+                }
             final long streamId = streamTable.upsert(new StreamEntity(item));
             streamStateTable.upsert(
                     new StreamStateEntity(streamId, item.getDuration() * 1000, profileId));
@@ -191,6 +197,9 @@ public class HistoryRecordManager {
 
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
+                if (IncognitoMode.isEnabled(sharedPreferences)) {
+                    return null;
+                }
             final long streamId = streamTable.upsert(new StreamEntity(info));
             recordWatchEvent(
                     streamId,
@@ -225,6 +234,9 @@ public class HistoryRecordManager {
         }
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
+                if (IncognitoMode.isEnabled(sharedPreferences)) {
+                    return null;
+                }
             final long streamId = streamTable.upsert(new StreamEntity(item));
             final StreamHistoryEntity latestEntry =
                     streamHistoryTable.getLatestEntryForProfile(profileId, streamId);
@@ -289,7 +301,8 @@ public class HistoryRecordManager {
     }
 
     private boolean isStreamHistoryEnabled() {
-        return sharedPreferences.getBoolean(streamHistoryKey, false);
+        return !IncognitoMode.isEnabled(sharedPreferences)
+                && sharedPreferences.getBoolean(streamHistoryKey, false);
     }
 
     ///////////////////////////////////////////////////////
@@ -315,6 +328,9 @@ public class HistoryRecordManager {
         );
 
         return Maybe.fromCallable(() -> database.runInTransaction(() -> {
+                if (IncognitoMode.isEnabled(sharedPreferences)) {
+                    return null;
+                }
             historySyncRecorder.recordSearchForProfile(
                     profileId,
                     serviceId,
@@ -351,7 +367,8 @@ public class HistoryRecordManager {
     }
 
     private boolean isSearchHistoryEnabled() {
-        return sharedPreferences.getBoolean(searchHistoryKey, false);
+        return !IncognitoMode.isEnabled(sharedPreferences)
+                && sharedPreferences.getBoolean(searchHistoryKey, false);
     }
 
     ///////////////////////////////////////////////////////
@@ -359,6 +376,9 @@ public class HistoryRecordManager {
     ///////////////////////////////////////////////////////
 
     public Maybe<StreamStateEntity> loadStreamState(final PlayQueueItem queueItem) {
+        if (IncognitoMode.isEnabled(sharedPreferences)) {
+            return Maybe.empty();
+        }
         final Single<Long> streamId = queueItem.isLocalMedia()
                 ? Single.fromCallable(() -> streamTable.upsert(new StreamEntity(queueItem)))
                 : queueItem.getStream().map(info -> streamTable.upsert(new StreamEntity(info)));
@@ -372,6 +392,9 @@ public class HistoryRecordManager {
     }
 
     public Maybe<StreamStateEntity> loadStreamState(final StreamInfo info) {
+        if (IncognitoMode.isEnabled(sharedPreferences)) {
+            return Maybe.empty();
+        }
         return Single.fromCallable(() -> streamTable.upsert(new StreamEntity(info)))
                 .flatMapPublisher(streamId ->
                         streamStateTable.getStateForProfile(profileId, streamId))
@@ -382,7 +405,13 @@ public class HistoryRecordManager {
     }
 
     public Completable saveStreamState(@NonNull final StreamInfo info, final long progressMillis) {
+        if (IncognitoMode.isEnabled(sharedPreferences)) {
+            return Completable.complete();
+        }
         return Completable.fromAction(() -> database.runInTransaction(() -> {
+            if (IncognitoMode.isEnabled(sharedPreferences)) {
+                return;
+            }
             final long streamId = streamTable.upsert(new StreamEntity(info));
             final StreamStateEntity state =
                     new StreamStateEntity(streamId, progressMillis, profileId);
@@ -406,7 +435,13 @@ public class HistoryRecordManager {
      */
     public Completable saveStreamState(@NonNull final PlayQueueItem item,
                                        final long progressMillis) {
+        if (IncognitoMode.isEnabled(sharedPreferences)) {
+            return Completable.complete();
+        }
         return Completable.fromAction(() -> database.runInTransaction(() -> {
+            if (IncognitoMode.isEnabled(sharedPreferences)) {
+                return;
+            }
             final long streamId = streamTable.upsert(new StreamEntity(item));
             final StreamStateEntity state =
                     new StreamStateEntity(streamId, progressMillis, profileId);

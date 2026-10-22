@@ -19,6 +19,7 @@ import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
+import org.schabi.newpipe.local.history.IncognitoMode
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.profiles.ProfileManager
 
@@ -30,7 +31,7 @@ class LearningSessionTracker(context: Context) {
     private val preferences = PreferenceManager.getDefaultSharedPreferences(appContext)
     private val profilePreferenceListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == ProfileManager.ACTIVE_PROFILE_ID_PREFERENCE_KEY ||
+            if (key == IncognitoMode.KEY || key == ProfileManager.ACTIVE_PROFILE_ID_PREFERENCE_KEY ||
                 key == appContext.getString(R.string.learning_mode_key) ||
                 key == LearningMode.profilePreferenceKey(ProfileManager.getActiveProfileId(appContext))
             ) {
@@ -45,6 +46,10 @@ class LearningSessionTracker(context: Context) {
 
     @Synchronized
     fun update(item: PlayQueueItem?, playing: Boolean, backgroundPlayback: Boolean) {
+        if (IncognitoMode.isEnabled(preferences)) {
+            active = null
+            return
+        }
         val nowEpochMillis = System.currentTimeMillis()
         val nowElapsedMillis = SystemClock.elapsedRealtime()
         accrue(nowEpochMillis, nowElapsedMillis)
@@ -91,6 +96,10 @@ class LearningSessionTracker(context: Context) {
 
     @Synchronized
     fun stop() {
+        if (IncognitoMode.isEnabled(preferences)) {
+            active = null
+            return
+        }
         val nowEpochMillis = System.currentTimeMillis()
         accrue(nowEpochMillis, SystemClock.elapsedRealtime())
         finish(nowEpochMillis)
@@ -124,6 +133,7 @@ class LearningSessionTracker(context: Context) {
         val snapshot = session.toEntity()
         val stream = session.stream.copy()
         Completable.fromAction {
+            if (IncognitoMode.isEnabled(preferences)) return@fromAction
             val streamId = database.streamDAO().upsert(stream)
             database.learningSessionDAO().upsert(snapshot.copy(streamId = streamId))
         }.subscribeOn(Schedulers.single()).subscribe(

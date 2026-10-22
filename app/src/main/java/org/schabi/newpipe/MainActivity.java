@@ -1019,11 +1019,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(final Menu menu) {
+        final boolean result = super.onPrepareOptionsMenu(menu);
+        MenuItem incognito = menu.findItem(R.id.action_incognito);
+        if (incognito == null) {
+            incognito = menu.add(Menu.NONE, R.id.action_incognito, Menu.NONE,
+                    R.string.incognito_start);
+        }
+        final boolean enabled = org.schabi.newpipe.local.history.IncognitoMode.isEnabled(this);
+        incognito.setTitle(enabled ? R.string.incognito_active : R.string.incognito_start);
+        incognito.setCheckable(true).setChecked(enabled);
+        incognito.setShowAsAction(enabled ? MenuItem.SHOW_AS_ACTION_ALWAYS
+                : MenuItem.SHOW_AS_ACTION_NEVER);
+        return result;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
         if (DEBUG) {
             Log.d(TAG, "onOptionsItemSelected() called with: item = [" + item + "]");
         }
 
+        if (item.getItemId() == R.id.action_incognito) {
+            final boolean enabled = !org.schabi.newpipe.local.history.IncognitoMode.isEnabled(this);
+            org.schabi.newpipe.local.history.IncognitoMode.setEnabled(this, enabled);
+            invalidateOptionsMenu();
+            android.widget.Toast.makeText(this, enabled ? R.string.incognito_enabled_message
+                    : R.string.incognito_disabled_message, android.widget.Toast.LENGTH_LONG).show();
+            return true;
+        }
         if (item.getItemId() == android.R.id.home) {
             onHomeButtonPressed();
             return true;

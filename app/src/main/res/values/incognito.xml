@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="action_incognito" type="id" />
+    <string name="incognito_start">Turn on incognito</string>
+    <string name="incognito_active">Incognito is on</string>
+    <string name="incognito_enabled_message">Incognito is on. Search history, watch history, playback progress, and learning statistics are paused.</string>
+    <string name="incognito_disabled_message">Incognito is off. Your history settings apply again.</string>
+</resources>
