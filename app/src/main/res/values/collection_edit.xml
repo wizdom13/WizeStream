@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="collection_select_move">Select and move items</string>
+    <string name="collection_move_start">Move to beginning</string>
+    <string name="collection_move_end">Move to end</string>
+    <string name="collection_changed_retry">The list changed. Select the items again.</string>
+    <plurals name="subscription_total_count">
+        <item quantity="one">%d subscription</item>
+        <item quantity="other">%d subscriptions</item>
+    </plurals>
+    <string name="collection_selected">%1$d selected</string>
+    <string name="collection_select_all">Select/deselect all</string>
+</resources>

@@ -79,6 +79,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private var contextualSearchQuery = ""
     private var sortingEnabled = false
     private var sortController: SubscriptionSortController? = null
+    private var countDisposable: io.reactivex.rxjava3.disposables.Disposable? = null
 
     @State
     @JvmField
@@ -119,6 +120,8 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         channelActions.close()
         sortController?.close()
         sortController = null
+        countDisposable?.dispose()
+        countDisposable = null
         super.onDestroyView()
         _binding = null
     }
@@ -155,11 +158,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
             isCheckable = true
             isChecked = sortingEnabled
             setOnMenuItemClickListener {
-                sortingEnabled = !sortingEnabled
-                isChecked = sortingEnabled
-                sortController?.setEnabled(sortingEnabled)
-                updateSortingVisibility()
-                activity.invalidateOptionsMenu()
+                toggleSorting()
                 true
             }
         }
@@ -325,10 +324,32 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
             setEnabled(sortingEnabled)
             restoreScroll(savedInstanceState)
         }
+        binding.subscriptionEditToggle.setOnClickListener { toggleSorting() }
+        binding.subscriptionEditToggle.setText(if (sortingEnabled) R.string.playlist_edit_done else R.string.playlist_edit_mode)
+        countDisposable = subscriptionManager.subscriptions()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ channels ->
+                _binding?.subscriptionTotalCount?.text = resources.getQuantityString(
+                    R.plurals.subscription_total_count,
+                    channels.size,
+                    channels.size
+                )
+            }, { error ->
+                org.schabi.newpipe.error.ErrorUtil.showSnackbar(this, ErrorInfo(error, UserAction.SOMETHING_ELSE, "Counting subscriptions"))
+            })
         if (sortingEnabled) updateSortingVisibility()
     }
 
+    private fun toggleSorting() {
+        sortingEnabled = !sortingEnabled
+        sortController?.setEnabled(sortingEnabled)
+        updateSortingVisibility()
+        activity.invalidateOptionsMenu()
+    }
+
     private fun updateSortingVisibility() {
+        binding.subscriptionEditToggle.setText(if (sortingEnabled) R.string.playlist_edit_done else R.string.playlist_edit_mode)
         binding.itemsList.animate().cancel()
         binding.itemsList.alpha = 1f
         binding.itemsList.visibility = if (sortingEnabled) View.GONE else View.VISIBLE

@@ -63,4 +63,19 @@ class ListSeparatorsTest {
         separators.insertRow(items.drop(1), 2)
         assertEquals(mapOf(6 to "A"), separators.labels(items))
     }
+
+    @Test
+    fun movingSelectedOccurrencesPersistsHeadingsAndPreservesDuplicateVideos() {
+        val duplicate = items.first()
+        val source = listOf(duplicate, items[1], duplicate, items[2])
+        preferences.edit().putString(
+            "${key}_positions",
+            JSONObject().put("0", "A").put("3", "B").toString()
+        ).commit()
+        val separators = ListSeparators(context, "test", "playlist")
+        val result = separators.moveSelected(source, setOf(2), 0)
+        assertEquals(listOf(duplicate, duplicate, items[1], items[2]), result)
+        assertEquals(mapOf(1 to "A", 4 to "B"), separators.labels(result))
+        assertEquals(separators.labels(result), ListSeparators(context, "test", "playlist").labels(result))
+    }
 }

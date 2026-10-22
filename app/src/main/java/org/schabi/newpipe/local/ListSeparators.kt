@@ -69,6 +69,12 @@ class ListSeparators(context: Context, profileId: String, listId: String) {
         )
     }
 
+    fun moveSelected(items: List<LocalItem>, selected: Set<Int>, boundary: Int): List<LocalItem> {
+        val result = ListSelectionOrder.move(items.size, labels(items), selected, boundary)
+        writePositions(result.labels)
+        return result.itemIndices.map(items::get)
+    }
+
     fun removeRow(items: List<LocalItem>, row: Int) {
         writePositions(
             labels(items).mapKeys { (position, _) ->

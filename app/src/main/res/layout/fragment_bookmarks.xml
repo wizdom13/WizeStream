@@ -43,9 +43,18 @@
             android:text="@string/playlist_edit_mode" />
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/collection_select_move"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/playlist_category_controls"
+        android:text="@string/collection_select_move"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/items_list"
-        android:layout_below="@id/playlist_category_controls"
+        android:layout_below="@id/collection_select_move"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="vertical"

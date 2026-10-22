@@ -81,6 +81,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private ItemTouchHelper itemTouchHelper;
     @State
     public boolean editMode;
+    private org.schabi.newpipe.local.CollectionSelectionController selectionController;
 
     /* Have the bookmarked playlists been fully loaded from db */
     private AtomicBoolean isLoadingComplete;
@@ -179,6 +180,25 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         rootView.findViewById(R.id.playlist_edit_toggle).setOnClickListener(view -> {
             editMode = !editMode;
             updateEditMode();
+        });
+        rootView.findViewById(R.id.collection_select_move).setOnClickListener(view -> {
+            if (!editMode || isPlaylistListFiltered() || separators == null) {
+                return;
+            }
+            if (selectionController != null) {
+                selectionController.close();
+            }
+            selectionController = new org.schabi.newpipe.local.CollectionSelectionController(
+                    requireContext(), itemListAdapter, separators, () -> {
+                        completePlaylists = itemListAdapter.getItemsList().stream()
+                                .filter(PlaylistLocalItem.class::isInstance)
+                                .map(PlaylistLocalItem.class::cast)
+                                .collect(java.util.stream.Collectors.toList());
+                        if (debounceSaver != null) {
+                            debounceSaver.setHasChangesToSave();
+                        }
+                    });
+            selectionController.show();
         });
         updateCategoryLabel();
 
@@ -293,6 +313,10 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
     @Override
     public void onDestroyView() {
+        if (selectionController != null) {
+            selectionController.close();
+            selectionController = null;
+        }
         super.onDestroyView();
 
         if (disposables != null) {
@@ -398,6 +422,10 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                         itemTouchHelper.startDrag(holder);
                     }
                 });
+        if (getView() != null) {
+            getView().findViewById(R.id.collection_select_move)
+                    .setEnabled(!isPlaylistListFiltered());
+        }
         itemListAdapter.setSeparators(isPlaylistListFiltered() ? null : separators::labels,
                 this::editSeparatorRow);
         itemListAdapter.clearStreamItemList();
@@ -612,6 +640,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private void updateEditMode() {
         final View root = getView();
         if (root != null) {
+            root.findViewById(R.id.collection_select_move)
+                    .setVisibility(editMode ? View.VISIBLE : View.GONE);
+            root.findViewById(R.id.collection_select_move).setEnabled(!isPlaylistListFiltered());
             ((android.widget.TextView) root.findViewById(R.id.playlist_edit_toggle))
                     .setText(editMode ? R.string.playlist_edit_done : R.string.playlist_edit_mode);
         }

@@ -122,6 +122,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     private ItemTouchHelper itemTouchHelper;
     @State
     public boolean editMode;
+    private org.schabi.newpipe.local.CollectionSelectionController selectionController;
     private Snackbar swipeRemovalSnackbar;
 
     private LocalPlaylistManager playlistManager;
@@ -220,6 +221,23 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         });
 
         headerBinding.playlistTitleView.setOnClickListener(view -> createRenameDialog());
+        headerBinding.collectionSelectMove.setOnClickListener(view -> {
+            if (!editMode || ContextualSearchHelper.isActive(contextualSearchQuery)
+                    || separators == null) {
+                return;
+            }
+            if (selectionController != null) {
+                selectionController.close();
+            }
+            selectionController = new org.schabi.newpipe.local.CollectionSelectionController(
+                    requireContext(), itemListAdapter, separators, () -> {
+                        captureUnfilteredItemsFromAdapter();
+                        if (debounceSaver != null) {
+                            debounceSaver.setHasChangesToSave();
+                        }
+                    });
+            selectionController.show();
+        });
         headerBinding.playlistEditToggle.setOnClickListener(view -> {
             editMode = !editMode;
             updateEditMode();
@@ -376,6 +394,10 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     @Override
     public void onDestroyView() {
+        if (selectionController != null) {
+            selectionController.close();
+            selectionController = null;
+        }
         if (swipeRemovalSnackbar != null) {
             swipeRemovalSnackbar.dismiss();
             swipeRemovalSnackbar = null;
@@ -747,6 +769,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         itemListAdapter.addItems(displayedItems);
 
         final boolean searchActive = ContextualSearchHelper.isActive(contextualSearchQuery);
+        if (headerBinding != null) {
+            headerBinding.collectionSelectMove.setEnabled(!searchActive);
+        }
         if (itemTouchHelper != null) {
             itemTouchHelper.attachToRecyclerView(searchActive ? null : itemsList);
         }
@@ -1010,6 +1035,9 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
     private void updateEditMode() {
         if (headerBinding != null) {
+            headerBinding.collectionSelectMove.setVisibility(editMode ? View.VISIBLE : View.GONE);
+            headerBinding.collectionSelectMove
+                    .setEnabled(!ContextualSearchHelper.isActive(contextualSearchQuery));
             headerBinding.playlistEditToggle.setText(
                     editMode ? R.string.playlist_edit_done : R.string.playlist_edit_mode);
         }
