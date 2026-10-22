@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="background_feed_enabled_key" translatable="false">background_feed_enabled</string>
+    <string name="background_feed_interval_key" translatable="false">background_feed_interval</string>
+    <string name="background_feed_wifi_only_key" translatable="false">background_feed_wifi_only</string>
+    <string name="background_feed_enabled_title">Refresh feeds in the background</string>
+    <string name="background_feed_enabled_summary">Keep subscriptions in all profiles up to date without opening the app. Works independently of new-video notifications. Android may delay refreshes to save battery.</string>
+    <string name="background_feed_interval_title">Background refresh interval</string>
+    <string name="background_feed_wifi_only_title">Use unmetered networks only</string>
+    <string-array name="background_feed_interval_entries">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item>12 hours</item>
+    </string-array>
+    <string-array name="background_feed_interval_values" translatable="false">
+        <item>15</item><item>30</item><item>60</item><item>180</item><item>360</item><item>720</item>
+    </string-array>
+</resources>

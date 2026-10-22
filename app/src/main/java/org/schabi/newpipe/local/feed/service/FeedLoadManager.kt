@@ -34,15 +34,19 @@ import org.schabi.newpipe.ktx.getStringSafe
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.subscription.SubscriptionManager
+import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.util.ChannelTabHelper
 import org.schabi.newpipe.util.ExtractorHelper.getChannelInfo
 import org.schabi.newpipe.util.ExtractorHelper.getChannelTab
 import org.schabi.newpipe.util.ExtractorHelper.getMoreChannelTabItems
 
-class FeedLoadManager(private val context: Context) {
+class FeedLoadManager @JvmOverloads constructor(
+    private val context: Context,
+    profileId: String = ProfileManager.getActiveProfileId(context)
+) {
 
-    private val subscriptionManager = SubscriptionManager(context)
-    private val feedDatabaseManager = FeedDatabaseManager(context)
+    private val subscriptionManager = SubscriptionManager(context, profileId)
+    private val feedDatabaseManager = FeedDatabaseManager(context, profileId)
 
     private val notificationUpdater = PublishProcessor.create<String>()
     private val currentProgress = AtomicInteger(-1)

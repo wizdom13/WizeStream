@@ -199,6 +199,32 @@
         app:iconSpaceReserved="false">
 
         <SwitchPreferenceCompat
+            android:key="@string/background_feed_enabled_key"
+            android:title="@string/background_feed_enabled_title"
+            android:summary="@string/background_feed_enabled_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <ListPreference
+            android:key="@string/background_feed_interval_key"
+            android:title="@string/background_feed_interval_title"
+            android:dependency="@string/background_feed_enabled_key"
+            android:defaultValue="60"
+            android:entries="@array/background_feed_interval_entries"
+            android:entryValues="@array/background_feed_interval_values"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/background_feed_wifi_only_key"
+            android:title="@string/background_feed_wifi_only_title"
+            android:dependency="@string/background_feed_enabled_key"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/feed_floating_refresh_key"
             android:title="@string/feed_floating_refresh_title"

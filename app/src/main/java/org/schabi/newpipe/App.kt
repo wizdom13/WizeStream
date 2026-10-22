@@ -150,6 +150,7 @@ open class App :
 
         configureRxJavaErrorHandler()
         initializeDeviceSyncScheduling()
+        org.schabi.newpipe.local.feed.service.BackgroundFeedRefreshWorker.initialize(this)
         runCatching {
             org.schabi.newpipe.settings.export.ScheduledBackupWorker.schedule(this)
         }.onFailure { error ->
