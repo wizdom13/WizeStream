@@ -37,6 +37,8 @@ import static org.schabi.newpipe.BuildConfig.DEBUG;
 public class DownloadMission extends Mission {
     private static final long serialVersionUID = 6L;// last bump: 07 october 2019
 
+    public org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment[] sponsorBlockSegments;
+
     static final int BUFFER_SIZE = 64 * 1024;
     static final int BLOCK_SIZE = 512 * 1024;
 

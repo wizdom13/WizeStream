@@ -115,7 +115,9 @@ internal class PlayerMetadataController(
         item: org.schabi.newpipe.player.playqueue.PlayQueueItem
     ) {
         player.liveQualityController.onItemLoaded()
-        sponsorBlockController.reset()
+        sponsorBlockController.updateSegments(
+            org.schabi.newpipe.download.OfflineSponsorBlockStore.load(context, item.url)
+        )
         thumbnailController.loadLocal(item)
         localMetadataController.load(item)
         historyController.registerViewed(item)

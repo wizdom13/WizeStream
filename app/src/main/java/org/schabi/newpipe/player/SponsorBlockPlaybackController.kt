@@ -62,7 +62,9 @@ internal class SponsorBlockPlaybackController(private val player: Player) {
         }
     }
 
-    fun updateSegments(info: StreamInfo) {
+    fun updateSegments(info: StreamInfo) = updateSegments(info.sponsorBlockSegments?.toList().orEmpty())
+
+    fun updateSegments(savedSegments: List<SponsorBlockSegment>) {
         skippedSegmentKeys.clear()
         ignoredSegmentKey = null
         hideManualSkipButton()
@@ -72,7 +74,7 @@ internal class SponsorBlockPlaybackController(private val player: Player) {
             clearSeekBarMarkers()
             return
         }
-        segments = info.sponsorBlockSegments?.toList().orEmpty()
+        segments = savedSegments
         updateSeekBarMarkers()
     }
 
@@ -257,7 +259,7 @@ internal class SponsorBlockPlaybackController(private val player: Player) {
         return player.currentStreamInfo
             .map(StreamInfo::getStreamType)
             .map { it == StreamType.VIDEO_STREAM || it == StreamType.POST_LIVE_STREAM }
-            .orElse(false)
+            .orElse(player.currentItem?.let { it.isLocalMedia && it.streamType == StreamType.VIDEO_STREAM } == true)
     }
 
     private fun isValidMarkerSegment(segment: SponsorBlockSegment): Boolean {

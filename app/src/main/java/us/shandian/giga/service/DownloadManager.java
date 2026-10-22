@@ -45,6 +45,7 @@ public class DownloadManager {
     private static final String DOWNLOADS_METADATA_FOLDER = "pending_downloads";
 
     private final FinishedMissionStore mFinishedMissionStore;
+    private final Context appContext;
 
     private final ArrayList<DownloadMission> mMissionsPending = new ArrayList<>();
     private final ArrayList<FinishedMission> mMissionsFinished;
@@ -73,6 +74,7 @@ public class DownloadManager {
             Log.d(TAG, "new DownloadManager instance. 0x" + Integer.toHexString(this.hashCode()));
         }
 
+        appContext = context.getApplicationContext();
         mFinishedMissionStore = new FinishedMissionStore(context);
         mHandler = handler;
         mMainStorageAudio = storageAudio;
@@ -302,6 +304,10 @@ public class DownloadManager {
 
     public void deleteMission(Mission mission, boolean alsoDeleteFile) {
         synchronized (this) {
+            if (alsoDeleteFile && mission.storage != null) {
+                org.schabi.newpipe.download.OfflineSponsorBlockStore.remove(appContext,
+                        mission.storage.getUri().toString());
+            }
             if (mission instanceof DownloadMission) {
                 mMissionsPending.remove(mission);
                 ((DownloadMission) mission).cancel(alsoDeleteFile);

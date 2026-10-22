@@ -70,6 +70,7 @@ object DownloadedCopyRepository {
         info.uploaderUrl = item?.uploaderUrl.orEmpty()
         info.thumbnails = item?.thumbnails.orEmpty()
         info.duration = item?.duration?.takeIf { it > 0 } ?: readDuration(context, storage.uri)
+        info.sponsorBlockSegments = OfflineSponsorBlockStore.load(context, uri).toTypedArray()
         info.description = Description(context.getString(R.string.playing_downloaded_copy), Description.PLAIN_TEXT)
         val format = MediaFormat.getFromMimeType(mission.mimeType.orEmpty()) ?: MediaFormat.getFromSuffix(mission.displayName.orEmpty().substringAfterLast('.'))
         if (mission.kind == 'v') {

@@ -261,6 +261,9 @@ public class DownloadManagerService extends Service {
 
         switch (msg.what) {
             case MESSAGE_FINISHED:
+                org.schabi.newpipe.download.OfflineSponsorBlockStore.save(this,
+                        mission.storage.getUri().toString(), mission.storage.length(),
+                        mission.sponsorBlockSegments);
                 notifyMediaScanner(mission.storage.getUri());
                 notifyFinishedDownload(mission.storage.getName());
                 mManager.setFinished(mission);
@@ -429,6 +432,10 @@ public class DownloadManagerService extends Service {
         mission.requiresUnmeteredNetwork = intent.getBooleanExtra("automatic_wifi_only", false);
         mission.threadCount = threads;
         mission.source = streamInfo.getUrl();
+        org.schabi.newpipe.download.OfflineSponsorBlockStore.remove(this, storage.getUri().toString());
+        if ((kind == 'v' || kind == 'a') && !Postprocessing.ALGORITHM_SEGMENTS.equals(psName)) {
+            mission.sponsorBlockSegments = streamInfo.getSponsorBlockSegments();
+        }
         if (Postprocessing.ALGORITHM_SEGMENTS.equals(psName)) {
             // Keep partial exports distinguishable from complete offline copies.
             mission.source += (mission.source.contains("#") ? "&" : "#")
