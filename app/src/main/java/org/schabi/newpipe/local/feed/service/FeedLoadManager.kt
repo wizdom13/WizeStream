@@ -22,13 +22,10 @@ import org.schabi.newpipe.database.stream.StreamUploadDate
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.Info
-import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.feed.FeedExtractor
 import org.schabi.newpipe.extractor.feed.FeedInfo
-import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.ktx.getStringSafe
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
@@ -293,32 +290,16 @@ class FeedLoadManager @JvmOverloads constructor(
                 errors.addAll(channelInfo.errors)
                 originalInfo = channelInfo
 
-                streams = channelInfo.tabs
-                    .filter { tab ->
-                        ChannelTabHelper.fetchFeedChannelTab(
-                            context,
-                            defaultSharedPreferences,
-                            tab
-                        )
-                    }
-                    .map {
-                        Pair(
-                            getChannelTab(subscriptionEntity.serviceId, it, true)
-                                .onErrorReturn(storeOriginalErrorAndRethrow)
-                                .blockingGet(),
-                            it
-                        )
-                    }
-                    .flatMap { (channelTabInfo, linkHandler) ->
-                        errors.addAll(channelTabInfo.errors)
-                        loadFeedChannelTabItems(
-                            subscriptionEntity.serviceId,
-                            linkHandler,
-                            channelTabInfo,
-                            errors
-                        )
-                    }
-                    .filterIsInstance<StreamInfoItem>()
+                streams = FeedChannelTabLoader.load(
+                    tabs = channelInfo.tabs.filter { tab ->
+                        ChannelTabHelper.fetchFeedChannelTab(context, defaultSharedPreferences, tab)
+                    },
+                    fetchFirst = { getChannelTab(subscriptionEntity.serviceId, it, true).blockingGet() },
+                    fetchMore = { tab, page -> getMoreChannelTabItems(subscriptionEntity.serviceId, tab, page).blockingGet() },
+                    isCancelled = cancelSignal::get,
+                    oldestAllowedDate = FeedDatabaseManager.FEED_OLDEST_ALLOWED_DATE,
+                    errors = errors
+                ).filterIsInstance<StreamInfoItem>()
             }
 
             FeedItemDateResolver.applyApproximateDates(
@@ -344,50 +325,6 @@ class FeedLoadManager @JvmOverloads constructor(
             )
             return Notification.createOnError(wrapper)
         }
-    }
-
-    private fun loadFeedChannelTabItems(
-        serviceId: Int,
-        linkHandler: ListLinkHandler,
-        channelTabInfo: ChannelTabInfo,
-        errors: MutableList<Throwable>
-    ): List<InfoItem> {
-        val collectedItems = channelTabInfo.relatedItems.toMutableList()
-        var pageItems = channelTabInfo.relatedItems
-        var nextPage = channelTabInfo.nextPage
-        var continuationPagesLoaded = 0
-
-        while (!cancelSignal.get()) {
-            val sourceUploadDates = pageItems
-                .filterIsInstance<StreamInfoItem>()
-                .mapNotNull { it.uploadDate?.offsetDateTime() }
-
-            if (!FeedExtractionPlanner.shouldLoadFeedContinuation(
-                    pageItemCount = pageItems.size,
-                    sourceUploadDates = sourceUploadDates,
-                    hasNextPage = nextPage != null,
-                    continuationPagesLoaded = continuationPagesLoaded,
-                    oldestAllowedDate = FeedDatabaseManager.FEED_OLDEST_ALLOWED_DATE
-                )
-            ) {
-                break
-            }
-
-            val page = nextPage ?: break
-            val infoItemsPage = getMoreChannelTabItems(
-                serviceId,
-                linkHandler,
-                page
-            ).blockingGet()
-
-            errors.addAll(infoItemsPage.errors)
-            collectedItems.addAll(infoItemsPage.items)
-            pageItems = infoItemsPage.items
-            nextPage = infoItemsPage.nextPage
-            continuationPagesLoaded++
-        }
-
-        return collectedItems
     }
 
     /**
@@ -441,7 +378,8 @@ class FeedLoadManager @JvmOverloads constructor(
                                 info.uid,
                                 info.streams,
                                 updateModeMask,
-                                uploaderAvatarUrl = info.avatarUrl
+                                uploaderAvatarUrl = info.avatarUrl,
+                                isComplete = info.errors.isEmpty()
                             )
                             subscriptionManager.updateFromInfo(info)
 

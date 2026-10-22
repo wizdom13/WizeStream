@@ -500,26 +500,16 @@ public class YoutubeLockupStreamInfoItemExtractor implements StreamInfoItemExtra
         for (int rowIndex = 0; rowIndex < metadataRows.size(); rowIndex++) {
             final JsonArray metadataParts = metadataRows.getObject(rowIndex).getArray("metadataParts");
             for (int partIndex = 0; partIndex < metadataParts.size(); partIndex++) {
-                final String uploadText = metadataParts.getObject(partIndex)
-                        .getObject("text")
-                        .getString("content");
-
-                if (isNullOrEmpty(uploadText)) {
-                    continue;
-                }
-
-                if (timeAgoParser != null) {
-                    try {
-                        timeAgoParser.parse(uploadText);
-                        return uploadText;
-                    } catch (final ParsingException ignored) {
-                    }
-                }
-
-                try {
-                    YoutubeParsingHelper.parseDateFrom(uploadText);
+                final JsonObject metadataPart = metadataParts.getObject(partIndex);
+                final String uploadText = metadataPart.getObject("text").getString("content");
+                if (isUploadDateText(uploadText)) {
                     return uploadText;
-                } catch (final ParsingException ignored) {
+                }
+                // Compact channel cards use e.g. "9d ago" visually but retain a localized,
+                // parseable "9 days ago" label. Without it regular uploads are dropped by feeds.
+                final String accessibilityLabel = metadataPart.getString("accessibilityLabel");
+                if (isUploadDateText(accessibilityLabel)) {
+                    return accessibilityLabel;
                 }
             }
         }

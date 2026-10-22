@@ -151,7 +151,8 @@ class FeedDatabaseManager @JvmOverloads constructor(
         items: List<StreamInfoItem>,
         youtubeModeMask: Int = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
         oldestAllowedDate: OffsetDateTime = FEED_OLDEST_ALLOWED_DATE,
-        uploaderAvatarUrl: String? = null
+        uploaderAvatarUrl: String? = null,
+        isComplete: Boolean = true
     ) {
         val itemsToInsert = items.mapNotNull { stream ->
             val uploadDate = stream.uploadDate
@@ -169,7 +170,9 @@ class FeedDatabaseManager @JvmOverloads constructor(
             .groupBy { it.streamId }.mapValues { (_, memberships) -> memberships.minOf { it.firstDiscoveredAt } }
         val discoveredAt = System.currentTimeMillis()
         val modeMasks = youtubeModeMasks(youtubeModeMask)
-        modeMasks.forEach { feedTable.unlinkOldLivestreams(subscriptionId, it) }
+        if (isComplete) {
+            modeMasks.forEach { feedTable.unlinkOldLivestreams(subscriptionId, it) }
+        }
 
         if (itemsToInsert.isNotEmpty()) {
             val streamEntities = itemsToInsert.map { item ->
