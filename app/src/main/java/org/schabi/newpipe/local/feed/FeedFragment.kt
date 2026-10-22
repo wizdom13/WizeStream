@@ -383,7 +383,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 else -> R.string.feed_use_dedicated_fetch_method_enable_button
             }
 
-            AlertDialog.Builder(requireContext())
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.feed_use_dedicated_fetch_method_title)
                 .setMessage(R.string.feed_use_dedicated_fetch_method_help_text)
                 .setNeutralButton(enableDisableButtonText) { _, _ ->
                     sharedPreferences.edit {
