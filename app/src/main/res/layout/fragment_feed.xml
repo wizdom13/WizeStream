@@ -36,6 +36,7 @@
                     android:id="@+id/refresh_info_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:minHeight="56dp"
                     android:layout_marginStart="12dp"
                     android:layout_toStartOf="@+id/refreshIcon"
                     android:gravity="center_vertical"
@@ -69,7 +70,7 @@
                 <ImageView
                     android:id="@+id/refreshIcon"
                     android:foreground="@drawable/tv_focus_ring"
-                    android:layout_width="wrap_content"
+                    android:layout_width="56dp"
                     android:layout_height="wrap_content"
                     android:layout_alignTop="@+id/refresh_info_container"
                     android:layout_alignBottom="@+id/refresh_info_container"
@@ -79,12 +80,13 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
                     android:focusable="true"
-                    android:minWidth="48dp"
-                    android:minHeight="48dp"
-                    android:scaleType="center"
+                    android:minWidth="56dp"
+                    android:minHeight="56dp"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_refresh"
                     android:tint="?attr/colorPrimary"
-                    tools:ignore="ContentDescription" />
+                    android:contentDescription="@string/local_media_refresh" />
 
                 <View
                     android:layout_width="match_parent"
