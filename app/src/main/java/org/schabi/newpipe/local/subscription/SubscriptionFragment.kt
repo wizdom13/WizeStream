@@ -66,6 +66,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private lateinit var viewModel: SubscriptionViewModel
     private lateinit var activeProfileId: String
     private lateinit var channelActions: SubscriptionChannelActions
+    private lateinit var groupActions: SubscriptionGroupActions
     private lateinit var subscriptionManager: SubscriptionManager
     private lateinit var importExportHelper: SubscriptionsImportExportHelper
     private lateinit var savedSearchFeedManager: SavedSearchFeedManager
@@ -101,6 +102,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         activeProfileId = ProfileManager.getActiveProfileId(context)
         subscriptionManager = SubscriptionManager(context, activeProfileId)
         channelActions = SubscriptionChannelActions(this, subscriptionManager)
+        groupActions = SubscriptionGroupActions(this, subscriptionManager)
         importExportHelper = SubscriptionsImportExportHelper(this)
         savedSearchFeedManager = SavedSearchFeedManager(context, activeProfileId)
     }
@@ -117,6 +119,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
     override fun onDestroyView() {
         channelActions.close()
+        groupActions.close()
         sortController?.close()
         sortController = null
         super.onDestroyView()
@@ -387,10 +390,10 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
                 when (item) {
                     is FeedGroupCardItem ->
-                        FeedGroupDialog.newInstance(item.groupId).show(fm, null)
+                        groupActions.show(item.groupId, item.name)
 
                     is FeedGroupCardGridItem ->
-                        FeedGroupDialog.newInstance(item.groupId).show(fm, null)
+                        groupActions.show(item.groupId, item.name)
                 }
                 return@setOnItemLongClickListener true
             }

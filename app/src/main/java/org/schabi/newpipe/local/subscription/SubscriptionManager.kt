@@ -8,6 +8,7 @@ import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.feed.model.FeedGroupSubscriptionEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionDAO
@@ -300,6 +301,58 @@ class SubscriptionManager @JvmOverloads constructor(
         }
         recordSubscriptionUpsert(storedEntity)
         return storedEntity
+    }
+
+    /** Copies a group's memberships atomically, retaining existing destination subscriptions. */
+    fun copyGroupToProfile(groupId: Long, targetProfileId: String): Long {
+        require(targetProfileId.isNotBlank() && targetProfileId != profileId)
+        val changedSubscriptions = mutableListOf<SubscriptionEntity>()
+        val copiedGroupId = database.runInTransaction<Long> {
+            val groups = database.feedGroupDAO()
+            val source = requireNotNull(groups.getGroupDirectForProfile(profileId, groupId)) {
+                "The channel group no longer exists in this profile"
+            }
+            val target = groups.getAllDirectForProfile(targetProfileId)
+                .firstOrNull { it.name == source.name && it.icon == source.icon }
+            val targetId = target?.uid ?: groups.insert(
+                source.copy(uid = 0, profileId = targetProfileId)
+            )
+            val memberships = groups.getSubscriptionIdsForDirectForProfile(profileId, groupId)
+                .mapNotNull { subscriptionTable.getSubscriptionForProfile(profileId, it) }
+                .map { sourceSubscription ->
+                    val existing = subscriptionTable.getSubscriptionDirectForProfile(
+                        targetProfileId,
+                        sourceSubscription.serviceId,
+                        requireNotNull(sourceSubscription.url)
+                    )
+                    val subscription = if (existing == null) {
+                        sourceSubscription.copy(
+                            uid = 0,
+                            profileId = targetProfileId,
+                            notificationMode = 0,
+                            notificationKeywords = ""
+                        ).also {
+                            it.uid = subscriptionTable.insert(it)
+                            changedSubscriptions += it
+                        }
+                    } else {
+                        if (existing.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID) {
+                            val combinedModes = existing.youtubeModeMask or sourceSubscription.youtubeModeMask
+                            if (combinedModes != existing.youtubeModeMask) {
+                                existing.youtubeModeMask = combinedModes
+                                subscriptionTable.update(existing)
+                                changedSubscriptions += existing
+                            }
+                        }
+                        existing
+                    }
+                    FeedGroupSubscriptionEntity(targetId, subscription.uid)
+                }
+            groups.insertSubscriptionsToGroup(memberships)
+            targetId
+        }
+        changedSubscriptions.forEach(::recordSubscriptionUpsert)
+        return copiedGroupId
     }
 
     fun deleteSubscription(subscriptionEntity: SubscriptionEntity) {

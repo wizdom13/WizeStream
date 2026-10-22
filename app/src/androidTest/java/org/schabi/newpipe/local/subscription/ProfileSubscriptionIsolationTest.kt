@@ -4,6 +4,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -63,6 +64,82 @@ class ProfileSubscriptionIsolationTest {
         managerA.deleteSubscription(0, url).blockingAwait()
         assertTrue(managerA.subscriptions().blockingFirst().isEmpty())
         assertEquals(1, managerB.subscriptions().blockingFirst().size)
+    }
+
+    @Test
+    fun copyingGroupIsIdempotentAndPreservesDestinationSettingsAndSource() {
+        val subscriptions = database.subscriptionDAO()
+        val groups = database.feedGroupDAO()
+        val first = SubscriptionEntity(
+            serviceId = 0,
+            url = "https://example.com/channel/shared",
+            name = "Source",
+            profileId = "source",
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC
+        )
+        first.uid = subscriptions.insert(first)
+        val second = first.copy(uid = 0, url = "https://example.com/channel/new")
+        second.uid = subscriptions.insert(second)
+        val existing = first.copy(
+            uid = 0,
+            profileId = "target",
+            name = "Destination name",
+            notificationMode = 1,
+            notificationKeywords = "keep",
+            youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR
+        )
+        existing.uid = subscriptions.insert(existing)
+        val sourceGroup = groups.insert(
+            FeedGroupEntity(
+                0,
+                "Music",
+                FeedGroupIcon.MUSIC,
+                profileId = "source"
+            )
+        )
+        groups.updateSubscriptionsForGroupForProfile("source", sourceGroup, listOf(first.uid, second.uid))
+        val manager = SubscriptionManager(context, "source")
+        val targetGroup = manager.copyGroupToProfile(sourceGroup, "target")
+        assertEquals(targetGroup, manager.copyGroupToProfile(sourceGroup, "target"))
+        assertEquals(1, groups.getAllDirectForProfile("target").size)
+        assertEquals(FeedGroupIcon.MUSIC, groups.getGroupDirectForProfile("target", targetGroup)?.icon)
+        val copied = subscriptions.getAllForProfile("target").blockingFirst()
+        assertEquals(2, copied.size)
+        val retained = copied.single { it.uid == existing.uid }
+        assertEquals("Destination name", retained.name)
+        assertEquals(1, retained.notificationMode)
+        assertEquals("keep", retained.notificationKeywords)
+        assertEquals(SubscriptionEntity.YOUTUBE_MODE_ALL, retained.youtubeModeMask)
+        assertEquals(
+            copied.map { it.uid }.toSet(),
+            groups.getSubscriptionIdsForDirectForProfile("target", targetGroup).toSet()
+        )
+        assertEquals(
+            setOf(first.uid, second.uid),
+            groups.getSubscriptionIdsForDirectForProfile("source", sourceGroup).toSet()
+        )
+        assertEquals(
+            SubscriptionEntity.YOUTUBE_MODE_MUSIC,
+            subscriptions.getSubscriptionForProfile("source", first.uid)?.youtubeModeMask
+        )
+    }
+
+    @Test
+    fun copyingGroupRejectsSourceFromAnotherProfileWithoutPartialChanges() {
+        val groups = database.feedGroupDAO()
+        val foreignGroup = groups.insert(
+            FeedGroupEntity(
+                0,
+                "Private",
+                FeedGroupIcon.WORK,
+                profileId = "other"
+            )
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            SubscriptionManager(context, "source").copyGroupToProfile(foreignGroup, "target")
+        }
+        assertTrue(groups.getAllDirectForProfile("target").isEmpty())
+        assertTrue(database.subscriptionDAO().getAllForProfile("target").blockingFirst().isEmpty())
     }
 
     @Test
