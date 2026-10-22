@@ -376,6 +376,39 @@ class PlayerLiveHttpRecoveryTest {
         fixture.controller.resetRecovery()
     }
 
+    @Test
+    fun fullLiveCanRefreshAgainAfterStablePlaybackWithoutLosingRewind() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        fixture.state(Media3Player.STATE_READY)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(30))
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player, times(2)).reloadPlayQueueManager()
+        verify(fixture.player, times(2)).setRecovery()
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun briefReadyFlickerStillFallsBackInsteadOfLoopingDashRefreshes() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        fixture.state(Media3Player.STATE_READY)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.resolver).preferHlsForLiveStream(fixture.info.url)
+        verify(fixture.player, times(2)).reloadPlayQueueManager()
+        fixture.controller.resetRecovery()
+    }
+
     private class Fixture {
         val player = mock(Player::class.java)
         val engine = mock(ExoPlayer::class.java)

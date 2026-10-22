@@ -7,6 +7,7 @@ package org.schabi.newpipe.player
 
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW
@@ -58,8 +59,10 @@ internal class PlayerErrorController(
     private var pendingLiveStallRecovery: Runnable? = null
     private var lastPlayingLiveKey: String? = null
     private var recoveringLiveKey: String? = null
+    private var liveReadySince: Long? = null
 
     fun onPlayerError(error: PlaybackException) {
+        liveReadySince = null
         cancelPendingLiveStallRecovery()
         Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
 
@@ -142,6 +145,7 @@ internal class PlayerErrorController(
 
     fun onPlayWhenReadyChanged(playWhenReady: Boolean) {
         if (!playWhenReady) {
+            liveReadySince = null
             cancelPendingLiveStallRecovery()
         } else if (!player.exoPlayerIsNull()) {
             // Resuming during an existing buffering state does not emit a new state event.
@@ -155,6 +159,10 @@ internal class PlayerErrorController(
         when (playbackState) {
             Media3Player.STATE_READY -> {
                 cancelPendingLiveStallRecovery()
+                if (key != lastPlayingLiveKey) liveReadySince = null
+                if (player.playWhenReady && liveReadySince == null) {
+                    liveReadySince = SystemClock.elapsedRealtime()
+                }
                 recoveringLiveKey = null
                 lastPlayingLiveKey = if (item != null && player.playWhenReady &&
                     isRecoverableLiveManifest(item)
@@ -166,6 +174,15 @@ internal class PlayerErrorController(
             }
 
             Media3Player.STATE_BUFFERING -> {
+                // A successful recovery must not exhaust DASH refresh for the whole broadcast.
+                // Brief READY flickers still count as the same failure and retain the HLS limit.
+                val readySince = liveReadySince
+                liveReadySince = null
+                if (key == lastPlayingLiveKey && readySince != null &&
+                    SystemClock.elapsedRealtime() - readySince >= LIVE_RECOVERY_STABLE_MILLIS
+                ) {
+                    liveDashRefreshGuard.reset()
+                }
                 if (key == null || (key != lastPlayingLiveKey && key != recoveringLiveKey) ||
                     !player.playWhenReady || item == null || !isRecoverableLiveManifest(item) ||
                     pendingLiveStallRecovery != null
@@ -216,6 +233,7 @@ internal class PlayerErrorController(
             else -> {
                 cancelPendingLiveStallRecovery()
                 lastPlayingLiveKey = null
+                liveReadySince = null
             }
         }
     }
@@ -224,6 +242,7 @@ internal class PlayerErrorController(
         cancelPendingMediaUrlRecovery()
         cancelPendingLiveStallRecovery()
         lastPlayingLiveKey = null
+        liveReadySince = null
         recoveringLiveKey = null
         recoveryGuard.reset()
         rejectedFormatRecoveryGuard.reset()
@@ -525,5 +544,6 @@ internal class PlayerErrorController(
 
     private companion object {
         const val LIVE_STALL_TIMEOUT_MILLIS = 10_000L
+        const val LIVE_RECOVERY_STABLE_MILLIS = 30_000L
     }
 }
