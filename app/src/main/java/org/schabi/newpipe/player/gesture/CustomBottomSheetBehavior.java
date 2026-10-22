@@ -159,6 +159,13 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
                 && event.getAction() == MotionEvent.ACTION_DOWN) {
             // Without overriding scrolling will not work when user touches these elements
             for (final int element : skipInterceptionOfElements) {
+                final View loading = child.findViewById(R.id.loading_progress_bar);
+                if (element == R.id.detail_content_root_layout
+                        && loading != null && loading.isShown()) {
+                    // The loading title has no scrollable content. Let the sheet handle it
+                    // so the user can minimize the pending video without cancelling its load.
+                    continue;
+                }
                 final View view = child.findViewById(element);
                 if (view != null) {
                     final boolean visible = view.getGlobalVisibleRect(globalRect);
