@@ -47,6 +47,12 @@ public class PlayQueueItem implements Serializable {
     private final String mimeType;
     @Nullable
     private String album;
+    private String albumUrl;
+
+    public String getAlbumUrl() {
+        return albumUrl;
+    }
+
     @Nullable
     private final String folder;
     private final long localMediaId;
@@ -74,6 +80,7 @@ public class PlayQueueItem implements Serializable {
                 ExtractorImageCompat.thumbnailImages(item), item.getUploaderName(),
                 item.getUploaderUrl(), item.getStreamType(), item.isShortFormContent(),
                 SourceType.REMOTE, null, null, null, -1L, null);
+        albumUrl = item.getAlbumUrl();
     }
 
     @SuppressWarnings("ParameterNumber")

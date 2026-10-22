@@ -34,6 +34,11 @@ public class YoutubeMusicSongOrVideoInfoItemExtractor implements StreamInfoItemE
 
 
     @Override
+    public String getAlbumUrl() {
+        return YoutubeMusicAlbumLink.fromSong(songOrVideoInfoItem, descriptionElements);
+    }
+
+    @Override
     public String getUrl() throws ParsingException {
         final String id = songOrVideoInfoItem.getObject("playlistItemData").getString("videoId");
         if (!isNullOrEmpty(id)) {

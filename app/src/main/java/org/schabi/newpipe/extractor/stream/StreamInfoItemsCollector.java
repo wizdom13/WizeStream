@@ -47,6 +47,11 @@ public class StreamInfoItemsCollector
         final StreamInfoItem resultItem = new StreamInfoItem(
                 getServiceId(), extractor.getUrl(), extractor.getName(), extractor.getStreamType());
 
+        try {
+            resultItem.setAlbumUrl(extractor.getAlbumUrl());
+        } catch (final ParsingException e) {
+            addError(e);
+        }
         // optional information
         try {
             resultItem.setDuration(extractor.getDuration());

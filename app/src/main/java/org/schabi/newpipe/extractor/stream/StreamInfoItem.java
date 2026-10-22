@@ -29,6 +29,16 @@ import javax.annotation.Nullable;
  * Info object for previews of unopened videos, eg search results, related videos
  */
 public class StreamInfoItem extends InfoItem {
+    private String albumUrl;
+
+    public String getAlbumUrl() {
+        return albumUrl;
+    }
+
+    public void setAlbumUrl(final String url) {
+        albumUrl = url;
+    }
+
     private final StreamType streamType;
 
     private String uploaderName;

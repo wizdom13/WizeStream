@@ -8,6 +8,9 @@
         android:id="@+id/menu_item_details"
         android:title="@string/play_queue_stream_detail" />
     <item
+        android:id="@+id/menu_item_album"
+        android:title="@string/open_music_album" />
+    <item
         android:id="@+id/menu_item_append_playlist"
         android:title="@string/add_to_playlist" />
     <item

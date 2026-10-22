@@ -367,6 +367,10 @@ public final class InfoItemDialog {
          * @return the current {@link Builder} instance
          */
         public Builder addDefaultEndEntries() {
+            if (org.schabi.newpipe.util.MusicAlbumNavigation.isAvailable(
+                    infoItem.getServiceId(), infoItem.getAlbumUrl())) {
+                addEntry(StreamDialogDefaultEntry.OPEN_ALBUM);
+            }
             addEntry(StreamDialogDefaultEntry.DOWNLOAD);
             if (org.schabi.newpipe.download.ExternalDownloader.isEnabled(context)
                     && infoItem.getServiceId() >= 0) {

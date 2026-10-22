@@ -55,6 +55,10 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
  * </p>
  */
 public enum StreamDialogDefaultEntry {
+    OPEN_ALBUM(R.string.open_music_album, (fragment, item) ->
+            org.schabi.newpipe.util.MusicAlbumNavigation.open(
+                    fragment.requireContext(), item.getAlbumUrl())),
+
     SHOW_CHANNEL_DETAILS(R.string.show_channel_details, (fragment, item) ->
             fetchUploaderUrlIfSparse(fragment.requireContext(), item.getServiceId(), item.getUrl(),
                     item.getUploaderUrl(), url -> openChannelFragment(fragment, item, url))

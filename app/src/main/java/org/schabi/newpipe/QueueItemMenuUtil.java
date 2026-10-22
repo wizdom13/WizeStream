@@ -36,6 +36,9 @@ public final class QueueItemMenuUtil {
 
         final PopupMenu popupMenu = new PopupMenu(themeWrapper, view);
         popupMenu.inflate(R.menu.menu_play_queue_item);
+        popupMenu.getMenu().findItem(R.id.menu_item_album).setVisible(
+                org.schabi.newpipe.util.MusicAlbumNavigation.isAvailable(
+                        item.getServiceId(), item.getAlbumUrl()));
 
         if (hideDetails || item.isLocalMedia()) {
             popupMenu.getMenu().findItem(R.id.menu_item_details).setVisible(false);
@@ -47,7 +50,10 @@ public final class QueueItemMenuUtil {
 
         popupMenu.setOnMenuItemClickListener(menuItem -> {
             final int itemId = menuItem.getItemId();
-            if (itemId == R.id.menu_item_remove) {
+            if (itemId == R.id.menu_item_album) {
+                org.schabi.newpipe.util.MusicAlbumNavigation.open(context, item.getAlbumUrl());
+                return true;
+            } else if (itemId == R.id.menu_item_remove) {
                 final int index = playQueue.indexOf(item);
                 playQueue.remove(index);
                 return true;

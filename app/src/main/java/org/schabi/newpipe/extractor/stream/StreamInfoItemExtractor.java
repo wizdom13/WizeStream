@@ -27,6 +27,10 @@ import javax.annotation.Nullable;
  */
 
 public interface StreamInfoItemExtractor extends InfoItemExtractor {
+    default String getAlbumUrl() throws ParsingException {
+        return null;
+    }
+
 
 
     /**
