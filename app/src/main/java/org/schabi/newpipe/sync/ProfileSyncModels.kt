@@ -113,9 +113,6 @@ internal object ProfileSyncValidation {
                 throw ProfileSyncException("Synchronized profile metadata is invalid")
             }
         }
-        if (profiles.none { it.id == ProfileManager.DEFAULT_PROFILE_ID }) {
-            throw ProfileSyncException("The profile catalog is missing Default")
-        }
     }
 
     private const val MAX_SYNC_ERROR_LENGTH = 512

@@ -10,6 +10,7 @@ import org.schabi.newpipe.learning.LearningMode
 object ProfileManager {
     const val DEFAULT_PROFILE_ID = "00000000-0000-0000-0000-000000000000"
 
+    private const val DEFAULT_SELECTION_KEY = "wizestream_default_profile_id"
     private const val PROFILE_IDS_KEY = "wizestream_profile_ids"
     const val ACTIVE_PROFILE_ID_PREFERENCE_KEY = "wizestream_active_profile_id"
     private const val PROFILE_PREFIX = "wizestream_profile_"
@@ -23,6 +24,35 @@ object ProfileManager {
     private val lock = Any()
     private val canonicalProfileIdPattern =
         Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+    @JvmStatic
+    fun getDefaultProfileId(context: Context): String = synchronized(lock) {
+        val prefs = preferences(context)
+        ensureInitialized(context, prefs)
+        fallbackId(prefs)
+    }
+
+    @JvmStatic
+    fun setDefaultProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
+        val prefs = preferences(context)
+        ensureInitialized(context, prefs)
+        if (profileId !in profileIds(prefs)) return false
+        prefs.edit().putString(DEFAULT_SELECTION_KEY, profileId).apply()
+        true
+    }
+
+    @JvmStatic
+    fun canDeleteProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
+        val prefs = preferences(context)
+        ensureInitialized(context, prefs)
+        profileIds(prefs).size > 1 && profileId in profileIds(prefs) && profileId != fallbackId(prefs)
+    }
+
+    private fun fallbackId(prefs: SharedPreferences): String {
+        val ids = profileIds(prefs)
+        return prefs.getString(DEFAULT_SELECTION_KEY, DEFAULT_PROFILE_ID)
+            ?.takeIf { it in ids } ?: ids.sorted().first()
+    }
 
     @JvmStatic
     fun getProfiles(context: Context): List<ProfileRecord> = synchronized(lock) {
@@ -53,8 +83,8 @@ object ProfileManager {
         if (profileIds(prefs).contains(active)) {
             active
         } else {
-            prefs.edit().putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID).apply()
-            DEFAULT_PROFILE_ID
+            prefs.edit().putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, fallbackId(prefs)).apply()
+            fallbackId(prefs)
         }
     }
 
@@ -65,7 +95,7 @@ object ProfileManager {
         val activeId = prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
             ?: DEFAULT_PROFILE_ID
         readProfile(prefs, activeId)
-            ?: readProfile(prefs, DEFAULT_PROFILE_ID)
+            ?: readProfile(prefs, fallbackId(prefs))
             ?: defaultProfile()
     }
 
@@ -166,9 +196,7 @@ object ProfileManager {
 
     @JvmStatic
     fun deleteProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
-        if (profileId == DEFAULT_PROFILE_ID) {
-            return false
-        }
+        if (!canDeleteProfile(context, profileId)) return false
 
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
@@ -187,7 +215,7 @@ object ProfileManager {
             .remove(profileKey(profileId, CREATED_AT_SUFFIX))
             .remove(profileKey(profileId, UPDATED_AT_SUFFIX))
         if (prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID) == profileId) {
-            editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
+            editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, fallbackId(prefs))
         }
         editor.apply()
         true
@@ -206,9 +234,6 @@ object ProfileManager {
         context: Context,
         profileId: String
     ): Boolean = synchronized(lock) {
-        if (profileId == DEFAULT_PROFILE_ID) {
-            return false
-        }
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
         syncTombstones(prefs).contains(profileId)
@@ -233,7 +258,7 @@ object ProfileManager {
 
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
-        if (profileId != DEFAULT_PROFILE_ID && syncTombstones(prefs).contains(profileId)) {
+        if (syncTombstones(prefs).contains(profileId)) {
             return ProfileSyncMergeResult.TOMBSTONED
         }
 
@@ -301,10 +326,10 @@ object ProfileManager {
         val editor = prefs.edit()
         var changed = false
 
-        if (ids.add(DEFAULT_PROFILE_ID)) {
+        if ((ids.isEmpty() || DEFAULT_PROFILE_ID !in syncTombstones(prefs)) && ids.add(DEFAULT_PROFILE_ID)) {
             changed = true
         }
-        if (!prefs.contains(profileKey(DEFAULT_PROFILE_ID, CREATED_AT_SUFFIX))) {
+        if (DEFAULT_PROFILE_ID in ids && !prefs.contains(profileKey(DEFAULT_PROFILE_ID, CREATED_AT_SUFFIX))) {
             editor
                 .putString(profileKey(DEFAULT_PROFILE_ID, NAME_SUFFIX), "")
                 .putString(profileKey(DEFAULT_PROFILE_ID, DESCRIPTION_SUFFIX), "")
@@ -329,7 +354,10 @@ object ProfileManager {
 
         val active = prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, null)
         if (active == null || !ids.contains(active)) {
-            editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID)
+            editor.putString(
+                ACTIVE_PROFILE_ID_PREFERENCE_KEY,
+                prefs.getString(DEFAULT_SELECTION_KEY, DEFAULT_PROFILE_ID)?.takeIf { it in ids } ?: ids.sorted().first()
+            )
             changed = true
         }
 

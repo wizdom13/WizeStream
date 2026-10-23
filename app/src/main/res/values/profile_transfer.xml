@@ -1,0 +1,19 @@
+<resources>
+    <string name="profile_transfer_failed">Could not copy profile data</string>
+    <string name="profile_make_default">Use as default profile</string>
+    <string name="profile_default_changed">Default profile updated</string>
+    <string name="profile_delete_choose_default">Choose another default profile before deleting this one. At least one profile must remain.</string>
+    <string name="profile_transfer_action">Copy data to another profile</string>
+    <string name="profile_transfer_destination">Choose destination profile</string>
+    <string name="profile_transfer_title">Copy from %1$s to %2$s</string>
+    <string name="profile_transfer_count">%1$s: %2$d source · %3$d destination</string>
+    <string name="profile_transfer_preview">%1$s\n\nMerge keeps destination settings, existing watch history for matching videos, and playback progress, combines playlists and groups with matching names, and skips duplicate entries. Replace clears the destination first. The source stays unchanged. Shared notes and device settings stay shared.</string>
+    <string name="profile_transfer_merge">Merge</string>
+    <string name="profile_transfer_replace">Replace</string>
+    <string name="profile_transfer_replace_warning">Replace the subscriptions, playlists, groups, saved searches, history, progress and study sessions in %1$s with copies from the source? This cannot be undone.</string>
+    <string name="profile_transfer_working">Copying profile data…</string>
+    <string name="profile_transfer_complete">Profile data copied. The source is unchanged.</string>
+    <string-array name="profile_transfer_types">
+        <item>Subscriptions</item><item>Local playlists</item><item>Bookmarked playlists</item><item>Feed groups</item><item>Saved searches</item><item>Watch history</item><item>Playback progress</item><item>Search history</item><item>Study sessions</item>
+    </string-array>
+</resources>
