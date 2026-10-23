@@ -1,0 +1,5 @@
+- Added profile merge/replacement, default selection, and private search histories.
+- Added Incognito, visible mini-player, preferred languages, album navigation, and adaptive chapters.
+- Added offline SponsorBlock, SDR color inversion, and manual direct YouTube retry.
+- Added background feed refresh, group copying, collection editing, yellow theme, and Basque.
+- Improved feed dates, live rewind, sync, subscriptions, PeerTube avatars, playback recovery, and downloads.

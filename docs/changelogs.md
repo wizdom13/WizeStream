@@ -4,11 +4,35 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
-## WizeStream 1.31.10 (`1031010`)
+## WizeStream 1.32.0 (`1032000`)
 
 ### Improvements
 
+- Added profile merge and replacement with an affected-data preview, duplicate handling, and preservation of the source profile. Another profile can become the default, allowing deletion of the original Default profile.
 - Isolated search history, suggestions, deletions, imports, exports, and device synchronization by profile. Existing search history stays in the Default profile.
+- Added Incognito mode to pause recording searches, watch history, playback progress, and learning activity across profiles and services.
+- Kept video visible in the minimized player and allowed minimizing while video details load.
+- Added preferred audio and caption languages with a Show all languages option.
+- Added Open album for YouTube Music tracks with available album metadata.
+- Kept part of the video visible while browsing chapters using adaptive side and bottom panels.
+- Saved available SponsorBlock segments with newly completed full downloads for offline skipping without modifying the media file.
+- Added SDR video color inversion to playback adjustments, including Remember and Reset.
+- Added an explicit, confirmed switch to direct YouTube playback after Invidious failures.
+- Added optional background feed refresh across profiles, configurable intervals, and an unmetered-network option.
+- Added copying subscription groups to another profile, subscription totals and Edit controls, and multi-item moves in bookmarks and local playlists.
+- Added the yellow accent theme, Basque translation, a Material feed help dialog, and a larger feed header refresh control.
+- Clarified Mark as watched behavior for scheduled videos.
+
+### Fixes
+
+- Show subscriptions from all services in the current profile, including edit mode.
+- Restored missing upload dates for compact YouTube date labels and preserved fetched feed results when another tab or continuation fails.
+- Allowed another DASH refresh after stable Full live playback to improve rewind preservation across separate buffering incidents.
+- Moved synchronization response processing off network event loops to prevent slow history work blocking other categories.
+- Updated channel metadata asynchronously without overwriting subscription settings, saved feed refreshes atomically, and preserved group channel positions.
+- Supported current and legacy PeerTube avatar formats.
+- Improved recovery from released video codecs and surface-detach timeouts, and ignored progress callbacks after player disconnection.
+- Fixed legacy download folder selection, update-download cancellation and install prompts, and the Eye Comfort Appearance summary.
 
 ## WizeStream 1.31.9 (`1031009`)
 

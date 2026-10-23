@@ -19,7 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
-<li><a href="#release-1031010">WizeStream 1.31.10</a></li>
+<li><a href="#release-1032000">WizeStream 1.32.0</a></li>
 <li><a href="#release-1031009">WizeStream 1.31.9</a></li>
 <li><a href="#release-1031008">WizeStream 1.31.8</a></li>
 <li><a href="#release-1031007">WizeStream 1.31.7</a></li>
@@ -98,12 +98,36 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
-<section id="release-1031010" data-version="1.31.10" data-version-code="1031010">
-<h2>WizeStream 1.31.10</h2>
+<section id="release-1032000" data-version="1.32.0" data-version-code="1032000">
+<h2>WizeStream 1.32.0</h2>
 <div class="release-notes">
 <h3>Improvements</h3>
 <ul>
+<li>Added profile merge and replacement with an affected-data preview, duplicate handling, and preservation of the source profile. Another profile can become the default, allowing deletion of the original Default profile.</li>
 <li>Isolated search history, suggestions, deletions, imports, exports, and device synchronization by profile. Existing search history stays in the Default profile.</li>
+<li>Added Incognito mode to pause recording searches, watch history, playback progress, and learning activity across profiles and services.</li>
+<li>Kept video visible in the minimized player and allowed minimizing while video details load.</li>
+<li>Added preferred audio and caption languages with a Show all languages option.</li>
+<li>Added Open album for YouTube Music tracks with available album metadata.</li>
+<li>Kept part of the video visible while browsing chapters using adaptive side and bottom panels.</li>
+<li>Saved available SponsorBlock segments with newly completed full downloads for offline skipping without modifying the media file.</li>
+<li>Added SDR video color inversion to playback adjustments, including Remember and Reset.</li>
+<li>Added an explicit, confirmed switch to direct YouTube playback after Invidious failures.</li>
+<li>Added optional background feed refresh across profiles, configurable intervals, and an unmetered-network option.</li>
+<li>Added copying subscription groups to another profile, subscription totals and Edit controls, and multi-item moves in bookmarks and local playlists.</li>
+<li>Added the yellow accent theme, Basque translation, a Material feed help dialog, and a larger feed header refresh control.</li>
+<li>Clarified Mark as watched behavior for scheduled videos.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Show subscriptions from all services in the current profile, including edit mode.</li>
+<li>Restored missing upload dates for compact YouTube date labels and preserved fetched feed results when another tab or continuation fails.</li>
+<li>Allowed another DASH refresh after stable Full live playback to improve rewind preservation across separate buffering incidents.</li>
+<li>Moved synchronization response processing off network event loops to prevent slow history work blocking other categories.</li>
+<li>Updated channel metadata asynchronously without overwriting subscription settings, saved feed refreshes atomically, and preserved group channel positions.</li>
+<li>Supported current and legacy PeerTube avatar formats.</li>
+<li>Improved recovery from released video codecs and surface-detach timeouts, and ignored progress callbacks after player disconnection.</li>
+<li>Fixed legacy download folder selection, update-download cancellation and install prompts, and the Eye Comfort Appearance summary.</li>
 </ul>
 </div>
 </section>
