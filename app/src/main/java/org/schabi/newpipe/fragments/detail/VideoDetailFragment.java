@@ -2461,6 +2461,7 @@ public final class VideoDetailFragment
         super.handleError();
         setErrorImage(R.drawable.not_available_monkey);
 
+
         if (binding.relatedItemsLayout != null) { // hide related streams for tablets
             binding.relatedItemsLayout.setVisibility(View.INVISIBLE);
         }
@@ -3027,6 +3028,16 @@ public final class VideoDetailFragment
 
     @Override
     public void onPlayerError(final PlaybackException error, final boolean isCatchableException) {
+        if (binding != null && org.schabi.newpipe.error.InvidiousDirectRetry
+                .isAvailable(serviceId, url)) {
+            com.google.android.material.snackbar.Snackbar.make(binding.getRoot(),
+                    R.string.invidious_media_error,
+                    com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.invidious_direct_retry, view ->
+                            org.schabi.newpipe.error.InvidiousDirectRetry.confirm(
+                                    requireActivity(), serviceId, url, title))
+                    .show();
+        }
         if (!isCatchableException) {
             // Properly exit from fullscreen
             toggleFullscreenIfInFullscreenMode();

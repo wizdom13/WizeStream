@@ -1,0 +1,6 @@
+<resources>
+    <string name="invidious_direct_retry">Switch to direct YouTube and retry</string>
+    <string name="invidious_direct_switch">Switch and restart</string>
+    <string name="invidious_direct_retry_warning">WizeStream will restart and reopen this video using direct YouTube access. YouTube will receive requests from your device. This disables Invidious for all YouTube browsing and playback until you enable it again in Settings → Content. Your saved instance will be kept.</string>
+    <string name="invidious_direct_save_failed">Could not save the backend setting. Invidious remains enabled.</string>
+</resources>

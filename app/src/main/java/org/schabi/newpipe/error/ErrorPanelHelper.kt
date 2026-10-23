@@ -56,6 +56,7 @@ class ErrorPanelHelper(
     }
 
     private fun ensureDefaultVisibility() {
+        errorPanelRoot.findViewById<View>(R.id.error_direct_retry).isVisible = false
         errorTextView.isVisible = true
 
         errorServiceInfoTextView.isVisible = false
@@ -91,6 +92,16 @@ class ErrorPanelHelper(
             errorOpenInBrowserButton.isVisible = true
             errorOpenInBrowserButton.setOnClickListener {
                 ShareUtils.openUrlInBrowser(context, errorInfo.openInBrowserUrl)
+            }
+        }
+
+        val directRetry = errorPanelRoot.findViewById<Button>(R.id.error_direct_retry)
+        val serviceId = errorInfo.serviceId ?: -1
+        val videoUrl = errorInfo.openInBrowserUrl ?: errorInfo.request
+        if (errorInfo.userAction == UserAction.REQUESTED_STREAM && InvidiousDirectRetry.isAvailable(serviceId, videoUrl)) {
+            directRetry.isVisible = true
+            directRetry.setOnClickListener {
+                fragment.activity?.let { InvidiousDirectRetry.confirm(it, serviceId, videoUrl, null) }
             }
         }
 
