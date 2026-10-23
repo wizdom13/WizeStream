@@ -23,6 +23,7 @@
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.WizeStream.QueueThumbnail"
         android:src="@drawable/placeholder_thumbnail_video"
+        app:tint="@null"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
