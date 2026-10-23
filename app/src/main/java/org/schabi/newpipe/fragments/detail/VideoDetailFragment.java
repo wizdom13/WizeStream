@@ -125,6 +125,7 @@ import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.player.ui.FullscreenCommentsSidebar;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
+import org.schabi.newpipe.player.ui.TvFullscreenFocusGuard;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.util.AiSListContentHelper;
 import org.schabi.newpipe.util.Constants;
@@ -216,6 +217,7 @@ public final class VideoDetailFragment
     private FragmentVideoDetailBinding binding;
     private NavigationBarView detailNavigation;
     private MiniPlayerCorners miniPlayerCorners;
+    private TvFullscreenFocusGuard tvFullscreenFocusGuard;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener =
             (sharedPreferences, key) -> {
@@ -804,6 +806,10 @@ public final class VideoDetailFragment
     @Override
     public void onDestroyView() {
         minimizedVideoSurface.restore();
+        if (tvFullscreenFocusGuard != null) {
+            tvFullscreenFocusGuard.update(false, false);
+            tvFullscreenFocusGuard = null;
+        }
         if (miniPlayerCorners != null) {
             miniPlayerCorners.release();
             miniPlayerCorners = null;
@@ -2321,8 +2327,14 @@ public final class VideoDetailFragment
         final int playerHeight = usePinnedMode ? thumbnailHeight : 0;
         final int collapseMode = usePinnedMode
                 ? PINNED_PLAYER_COLLAPSE_MODE : LEGACY_PLAYER_COLLAPSE_MODE;
-        final int scrollFlags = usePinnedMode
-                ? PINNED_DETAIL_SCROLL_FLAGS : LEGACY_DETAIL_SCROLL_FLAGS;
+        final int scrollFlags;
+        if (isFullscreen() && DeviceUtils.isTv(requireContext())) {
+            // D-pad focus must not scroll the fullscreen video out of the viewport.
+            scrollFlags = 0;
+        } else {
+            scrollFlags = usePinnedMode
+                    ? PINNED_DETAIL_SCROLL_FLAGS : LEGACY_DETAIL_SCROLL_FLAGS;
+        }
 
         final AppBarLayout.LayoutParams appBarParams =
                 (AppBarLayout.LayoutParams) binding.detailCollapsingToolbarLayout.getLayoutParams();
@@ -3107,6 +3119,13 @@ public final class VideoDetailFragment
     }
 
     void refreshFullscreenLayout(final boolean fullscreen) {
+        if (tvFullscreenFocusGuard == null) {
+            tvFullscreenFocusGuard = new TvFullscreenFocusGuard(binding);
+        }
+        tvFullscreenFocusGuard.update(fullscreen, DeviceUtils.isTv(requireContext()));
+        if (fullscreen && DeviceUtils.isTv(requireContext())) {
+            binding.appBarLayout.setExpanded(true, false);
+        }
         if (fullscreen) {
             hideSystemUiIfNeeded();
         } else {
