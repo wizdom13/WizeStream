@@ -11,7 +11,8 @@ data class VideoAdjustmentState(
     val brightness: Int = 0,
     val contrast: Int = 0,
     val saturation: Int = 100,
-    val remember: Boolean = false
+    val remember: Boolean = false,
+    val inverted: Boolean = false
 ) {
     fun clamped() = copy(
         brightness = brightness.coerceIn(-100, 100),
@@ -19,5 +20,5 @@ data class VideoAdjustmentState(
         saturation = saturation.coerceIn(0, 200)
     )
 
-    fun reset() = copy(brightness = 0, contrast = 0, saturation = 100)
+    fun reset() = copy(brightness = 0, contrast = 0, saturation = 100, inverted = false)
 }

@@ -15,7 +15,8 @@ class VideoAdjustmentPreferences(private val preferences: SharedPreferences) {
                 brightness = preferences.getInt(BRIGHTNESS, 0),
                 contrast = preferences.getInt(CONTRAST, 0),
                 saturation = preferences.getInt(SATURATION, 100),
-                remember = true
+                remember = true,
+                inverted = preferences.getBoolean(INVERTED, false)
             ).clamped()
         } else {
             VideoAdjustmentState()
@@ -33,14 +34,16 @@ class VideoAdjustmentPreferences(private val preferences: SharedPreferences) {
                 .putInt(BRIGHTNESS, state.brightness)
                 .putInt(CONTRAST, state.contrast)
                 .putInt(SATURATION, state.saturation)
+                .putBoolean(INVERTED, state.inverted)
         } else {
             // Turning remembering off must also remove any previously saved adjustments.
-            listOf(REMEMBER, ENABLED, BRIGHTNESS, CONTRAST, SATURATION).forEach(editor::remove)
+            listOf(REMEMBER, ENABLED, BRIGHTNESS, CONTRAST, SATURATION, INVERTED).forEach(editor::remove)
         }
         editor.apply()
     }
 
     private companion object {
+        const val INVERTED = "video_adjustments_inverted_v1"
         const val REMEMBER = "video_adjustments_remember_v1"
         const val ENABLED = "video_adjustments_enabled_v1"
         const val BRIGHTNESS = "video_adjustments_brightness_v1"

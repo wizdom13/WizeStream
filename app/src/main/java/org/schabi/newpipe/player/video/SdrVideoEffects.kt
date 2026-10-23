@@ -21,8 +21,16 @@ internal object SdrVideoEffects {
             SdrMatrix(Brightness(safe.brightness / 100f)),
             SdrMatrix(Contrast(safe.contrast / 100f)),
             SdrEffect(HslAdjustment.Builder().adjustSaturation(safe.saturation - 100f).build())
-        )
+        ) + if (safe.inverted) listOf(SdrMatrix(RgbMatrix { _, _ -> inversion })) else emptyList()
     }
+
+    // Column-major RGB transform: (r, g, b) -> (1-r, 1-g, 1-b).
+    internal val inversion = floatArrayOf(
+        -1f, 0f, 0f, 0f,
+        0f, -1f, 0f, 0f,
+        0f, 0f, -1f, 0f,
+        1f, 1f, 1f, 1f
+    )
 
     private val identity = floatArrayOf(
         1f, 0f, 0f, 0f,

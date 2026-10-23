@@ -29,7 +29,8 @@ object VideoAdjustmentDialog {
             brightness = binding.brightnessSlider.value.toInt(),
             contrast = binding.contrastSlider.value.toInt(),
             saturation = binding.saturationSlider.value.toInt(),
-            remember = binding.adjustmentsRemember.isChecked
+            remember = binding.adjustmentsRemember.isChecked,
+            inverted = binding.adjustmentsInverted.isChecked
         )
 
         fun updateLabels() {
@@ -61,6 +62,7 @@ object VideoAdjustmentDialog {
             val state = controller.state
             binding.adjustmentsEnabled.isChecked = state.enabled
             binding.adjustmentsRemember.isChecked = state.remember
+            binding.adjustmentsInverted.isChecked = state.inverted
             binding.brightnessSlider.value = state.brightness.toFloat()
             binding.contrastSlider.value = state.contrast.toFloat()
             binding.saturationSlider.value = state.saturation.toFloat()
@@ -79,6 +81,13 @@ object VideoAdjustmentDialog {
             rendering = false
         }
         binding.adjustmentsEnabled.setOnCheckedChangeListener { _, _ ->
+            if (!rendering) {
+                pending = false
+                handler.removeCallbacks(apply)
+                apply.run()
+            }
+        }
+        binding.adjustmentsInverted.setOnCheckedChangeListener { _, _ ->
             if (!rendering) {
                 pending = false
                 handler.removeCallbacks(apply)

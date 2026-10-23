@@ -85,6 +85,13 @@
             app:labelBehavior="floating" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/adjustments_inverted"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/video_adjustments_inverted" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/adjustments_remember"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
