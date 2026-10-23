@@ -105,7 +105,7 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
         secondaryAlpha = binding.secondaryControls.alpha
         seekUp = binding.playbackSeekBar.nextFocusUpId
         seekDown = binding.playbackSeekBar.nextFocusDownId
-        focusStates = (descendants(binding.primaryControls) + descendants(binding.secondaryControls)).map {
+        focusStates = (descendants(binding.primaryControls) + descendants(binding.secondaryControls) + binding.screenRotationButton).map {
             FocusState(it, it.nextFocusUpId, it.nextFocusDownId)
         }
         descendants(binding.primaryControls).forEach { it.nextFocusDownId = R.id.playbackSeekBar }
@@ -153,7 +153,10 @@ class BottomPlayerControls(private val binding: PlayerBinding) {
         content.addView(binding.secondaryControls, rowParams())
         content.addView(binding.sleepTimerCountdown, rowParams())
         binding.playbackSeekBar.nextFocusUpId = R.id.playPauseButton
-        binding.playbackSeekBar.nextFocusDownId = R.id.resizeTextView
+        // Left/right on the seek bar seeks, so fullscreen needs a vertical D-pad route.
+        binding.playbackSeekBar.nextFocusDownId = R.id.screenRotationButton
+        binding.screenRotationButton.nextFocusDownId = R.id.resizeTextView
+        binding.resizeTextView.nextFocusUpId = R.id.screenRotationButton
         focused?.requestFocus()
     }
 

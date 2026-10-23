@@ -6,11 +6,13 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.ParcelFileDescriptor
 import android.view.ContextThemeWrapper
+import android.view.FocusFinder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.HorizontalScrollView
 import androidx.preference.PreferenceManager
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
@@ -22,6 +24,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.schabi.newpipe.R
+import org.schabi.newpipe.about.AboutActivity
 import org.schabi.newpipe.databinding.PlayerBinding
 
 class BottomPlayerControlsTest {
@@ -32,82 +35,107 @@ class BottomPlayerControlsTest {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val key = context.getString(R.string.bottom_player_controls_key)
         val previous = prefs.all[key] as? Boolean
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val wasInTouchMode = View(context).isInTouchMode
         try {
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                listOf(Triple(360, 800, false), Triple(640, 360, false), Triple(360, 640, true)).forEach { (width, height, rtl) ->
-                    val themed = ContextThemeWrapper(context, R.style.DarkTheme)
-                    val binding = PlayerBinding.inflate(LayoutInflater.from(themed))
-                    binding.root.layoutDirection = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
-                    binding.playbackControlRoot.visibility = View.VISIBLE
-                    binding.loadingPanel.visibility = View.GONE
-                    binding.metadataView.visibility = View.VISIBLE
-                    binding.titleTextView.text = "A lesson worth coming back to"
-                    binding.channelTextView.text = "WizeStream · Learning and discovery"
-                    binding.qualityTextView.text = "1080p"
-                    binding.playbackSpeed.text = "1×"
-                    binding.resizeTextView.text = "FIT"
-                    binding.captionTextView.contentDescription = "Captions"
-                    binding.playbackCurrentTime.text = "3:24"
-                    binding.playbackEndTime.text = "12:48"
-                    binding.playbackSeekBar.progress = 27
-                    binding.queueButton.visibility = View.VISIBLE
-                    binding.commentsButton.visibility = View.VISIBLE
-                    binding.segmentsButton.visibility = View.VISIBLE
-                    binding.screenRotationButton.visibility = View.VISIBLE
-                    val originalParents = listOf(binding.metadataView, binding.primaryControls, binding.secondaryControls, binding.bottomControls, binding.playPauseButton)
-                        .associateWith { it.parent }
-                    val originalParams = binding.playPauseButton.layoutParams
-                    val originalTitleSize = binding.titleTextView.textSize
-                    val controller = BottomPlayerControls(binding)
-                    var clicks = 0
-                    binding.playPauseButton.setOnClickListener { clicks++ }
-                    prefs.edit().putBoolean(key, false).commit()
-                    assertFalse(controller.update(true, 12, 24, 12, 24))
-                    prefs.edit().putBoolean(key, true).commit()
-                    assertFalse(controller.update(false, 12, 24, 12, 24))
-                    repeat(3) {
-                        assertTrue(controller.update(true, dp(12), dp(24), dp(12), dp(24)))
-                        measure(binding.root, dp(width), dp(height))
-                        val panel = binding.root.findViewById<View>(R.id.bottom_player_controls_panel)
-                        assertNotNull(panel)
-                        val title = bounds(binding, binding.metadataView)
-                        val transport = bounds(binding, binding.playPauseButton)
-                        val timeline = bounds(binding, binding.bottomControls)
-                        val secondary = bounds(binding, binding.secondaryControls)
-                        assertTrue("Metadata must be above the transport row", title.bottom <= transport.top)
-                        assertTrue("Transport must be above the timeline", transport.bottom <= timeline.top)
-                        assertTrue("Timeline must be above secondary actions", timeline.bottom <= secondary.top)
-                        assertTrue("Controls must clear the top inset", title.top >= dp(24))
-                        assertTrue("Actions must clear the bottom inset", secondary.bottom <= dp(height - 24))
-                        assertTrue("Timeline must fit the viewport", timeline.left >= 0 && timeline.right <= dp(width))
-                        assertEquals(R.id.playbackSeekBar, binding.commentsButton.nextFocusDownId)
-                        assertEquals(R.id.resizeTextView, binding.playbackSeekBar.nextFocusDownId)
-                        assertEquals(R.id.playbackSeekBar, binding.resizeTextView.nextFocusUpId)
-                        assertTrue(binding.qualityTextView.isFocusable)
-                        assertTrue(binding.playbackSpeed.isFocusable)
-                        assertTrue(binding.resizeTextView.isFocusable)
-                        assertTrue(binding.captionTextView.isFocusable)
-                        val actionScroll = binding.primaryControls.parent.parent as HorizontalScrollView
-                        if (width <= 360) {
-                            assertTrue("Narrow screens must allow scrolling through all actions", actionScroll.getChildAt(0).width > actionScroll.width)
-                        }
-                        binding.playPauseButton.performClick()
-                        if (it == 0) savePreview(binding, "$width-$height${if (rtl) "-rtl" else ""}")
+            // D-pad navigation runs outside touch mode; touch-only emulators may start in it.
+            instrumentation.setInTouchMode(false)
+            ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
+                instrumentation.waitForIdleSync()
+                instrumentation.setInTouchMode(false)
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    listOf(Triple(360, 800, false), Triple(640, 360, false), Triple(360, 640, true), Triple(960, 540, false), Triple(960, 540, true)).forEach { (width, height, rtl) ->
+                        val themed = ContextThemeWrapper(activity, R.style.DarkTheme)
+                        val binding = PlayerBinding.inflate(LayoutInflater.from(themed))
+                        activity.setContentView(binding.root)
+                        binding.root.layoutDirection = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+                        binding.playbackControlRoot.visibility = View.VISIBLE
+                        binding.loadingPanel.visibility = View.GONE
+                        binding.metadataView.visibility = View.VISIBLE
+                        binding.titleTextView.text = "A lesson worth coming back to"
+                        binding.channelTextView.text = "WizeStream · Learning and discovery"
+                        binding.qualityTextView.text = "1080p"
+                        binding.playbackSpeed.text = "1×"
+                        binding.resizeTextView.text = "FIT"
+                        binding.captionTextView.contentDescription = "Captions"
+                        binding.playbackCurrentTime.text = "3:24"
+                        binding.playbackEndTime.text = "12:48"
+                        binding.playbackSeekBar.progress = 27
+                        binding.queueButton.visibility = View.VISIBLE
+                        binding.commentsButton.visibility = View.VISIBLE
+                        binding.segmentsButton.visibility = View.VISIBLE
+                        binding.screenRotationButton.visibility = View.VISIBLE
+                        val originalParents = listOf(binding.metadataView, binding.primaryControls, binding.secondaryControls, binding.bottomControls, binding.playPauseButton)
+                            .associateWith { it.parent }
+                        val originalParams = binding.playPauseButton.layoutParams
+                        val originalTitleSize = binding.titleTextView.textSize
+                        val originalFullscreenDown = binding.screenRotationButton.nextFocusDownId
+                        val originalResizeUp = binding.resizeTextView.nextFocusUpId
+                        val controller = BottomPlayerControls(binding)
+                        var clicks = 0
+                        binding.playPauseButton.setOnClickListener { clicks++ }
+                        prefs.edit().putBoolean(key, false).commit()
+                        assertFalse(controller.update(true, 12, 24, 12, 24))
+                        prefs.edit().putBoolean(key, true).commit()
                         assertFalse(controller.update(false, 12, 24, 12, 24))
-                        controller.applyInsets(false, 12, 24, 12, 24)
-                        assertEquals(24, binding.topControls.paddingTop)
-                        assertEquals(12, binding.bottomControls.paddingLeft)
-                        assertEquals(24, binding.bottomControls.paddingBottom)
-                        originalParents.forEach { (view, parent) -> assertSame(parent, view.parent) }
-                        assertSame(originalParams, binding.playPauseButton.layoutParams)
-                        assertEquals(originalTitleSize, binding.titleTextView.textSize, 0.01f)
-                        assertNull(binding.root.findViewById<View>(R.id.bottom_player_controls_panel))
+                        repeat(3) {
+                            assertTrue(controller.update(true, dp(12), dp(24), dp(12), dp(24)))
+                            measure(binding.root, dp(width), dp(height))
+                            val panel = binding.root.findViewById<View>(R.id.bottom_player_controls_panel)
+                            assertNotNull(panel)
+                            val title = bounds(binding, binding.metadataView)
+                            val transport = bounds(binding, binding.playPauseButton)
+                            val timeline = bounds(binding, binding.bottomControls)
+                            val secondary = bounds(binding, binding.secondaryControls)
+                            assertTrue("Metadata must be above the transport row", title.bottom <= transport.top)
+                            assertTrue("Transport must be above the timeline", transport.bottom <= timeline.top)
+                            assertTrue("Timeline must be above secondary actions", timeline.bottom <= secondary.top)
+                            assertTrue("Controls must clear the top inset", title.top >= dp(24))
+                            assertTrue("Actions must clear the bottom inset", secondary.bottom <= dp(height - 24))
+                            assertTrue("Timeline must fit the viewport", timeline.left >= 0 && timeline.right <= dp(width))
+                            assertEquals(R.id.playbackSeekBar, binding.commentsButton.nextFocusDownId)
+                            assertEquals(R.id.screenRotationButton, binding.playbackSeekBar.nextFocusDownId)
+                            assertEquals(R.id.resizeTextView, binding.screenRotationButton.nextFocusDownId)
+                            assertEquals(R.id.screenRotationButton, binding.resizeTextView.nextFocusUpId)
+                            assertTrue("Fullscreen target must be attached", binding.screenRotationButton.isAttachedToWindow)
+                            assertTrue("Fullscreen target must be shown", binding.screenRotationButton.isShown)
+                            assertFalse("D-pad focus requires non-touch mode", binding.screenRotationButton.isInTouchMode)
+                            val focusFinder = FocusFinder.getInstance()
+                            assertSame(binding.screenRotationButton, focusFinder.findNextFocus(binding.root, binding.playbackSeekBar, View.FOCUS_DOWN))
+                            assertSame(binding.resizeTextView, focusFinder.findNextFocus(binding.root, binding.screenRotationButton, View.FOCUS_DOWN))
+                            assertSame(binding.screenRotationButton, focusFinder.findNextFocus(binding.root, binding.resizeTextView, View.FOCUS_UP))
+                            assertSame(binding.playbackSeekBar, focusFinder.findNextFocus(binding.root, binding.screenRotationButton, View.FOCUS_UP))
+                            assertTrue(binding.qualityTextView.isFocusable)
+                            assertTrue(binding.playbackSpeed.isFocusable)
+                            assertTrue(binding.resizeTextView.isFocusable)
+                            assertTrue(binding.captionTextView.isFocusable)
+                            val actionScroll = binding.primaryControls.parent.parent as HorizontalScrollView
+                            if (width <= 360) {
+                                assertTrue("Narrow screens must allow scrolling through all actions", actionScroll.getChildAt(0).width > actionScroll.width)
+                            }
+                            binding.playPauseButton.performClick()
+                            if (it == 0) savePreview(binding, "$width-$height${if (rtl) "-rtl" else ""}")
+                            assertFalse(controller.update(false, 12, 24, 12, 24))
+                            controller.applyInsets(false, 12, 24, 12, 24)
+                            assertEquals(24, binding.topControls.paddingTop)
+                            assertEquals(12, binding.bottomControls.paddingLeft)
+                            assertEquals(24, binding.bottomControls.paddingBottom)
+                            originalParents.forEach { (view, parent) -> assertSame(parent, view.parent) }
+                            assertSame(originalParams, binding.playPauseButton.layoutParams)
+                            assertEquals(R.id.screenRotationButton, binding.playbackSeekBar.nextFocusDownId)
+                            assertEquals(originalFullscreenDown, binding.screenRotationButton.nextFocusDownId)
+                            assertEquals(originalResizeUp, binding.resizeTextView.nextFocusUpId)
+                            assertEquals(originalTitleSize, binding.titleTextView.textSize, 0.01f)
+                            assertNull(binding.root.findViewById<View>(R.id.bottom_player_controls_panel))
+                        }
+                        assertEquals(3, clicks)
                     }
-                    assertEquals(3, clicks)
                 }
             }
             preservePreviews()
         } finally {
+            instrumentation.setInTouchMode(wasInTouchMode)
             prefs.edit().apply { previous?.let { putBoolean(key, it) } ?: remove(key) }.commit()
         }
     }
