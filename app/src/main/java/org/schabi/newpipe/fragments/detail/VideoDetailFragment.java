@@ -261,6 +261,9 @@ public final class VideoDetailFragment
     private final PublishSubject<Optional<PlayQueue>> learningQueueChanges =
             PublishSubject.create();
 
+    private final org.schabi.newpipe.player.ui.MinimizedVideoSurface minimizedVideoSurface =
+            new org.schabi.newpipe.player.ui.MinimizedVideoSurface();
+
     @State
     int bottomSheetState = BottomSheetBehavior.STATE_EXPANDED;
     @State
@@ -358,6 +361,7 @@ public final class VideoDetailFragment
     @Override
     public void onPlayerDisconnected() {
         player = null;
+        updateMinimizedVideo();
         updatePinnedPlayerLayout();
         // the binding could be null at this point, if the app is finishing
         if (binding != null) {
@@ -799,6 +803,7 @@ public final class VideoDetailFragment
 
     @Override
     public void onDestroyView() {
+        minimizedVideoSurface.restore();
         if (miniPlayerCorners != null) {
             miniPlayerCorners.release();
             miniPlayerCorners = null;
@@ -2051,6 +2056,7 @@ public final class VideoDetailFragment
                         playerUi.removeViewFromParent();
                         binding.playerPlaceholder.addView(playerView);
                     }
+                    updateMinimizedVideo();
                     playerUi.setupVideoSurfaceIfNeeded();
                     updatePinnedPlayerLayout();
                     // A configuration change can temporarily detach the player UI. Retry the
@@ -2064,6 +2070,7 @@ public final class VideoDetailFragment
     }
 
     private void removeVideoPlayerView() {
+        minimizedVideoSurface.restore();
         makeDefaultHeightForVideoPlaceholder();
 
         if (player != null) {
@@ -2943,6 +2950,7 @@ public final class VideoDetailFragment
                                  final boolean shuffled,
                                  final PlaybackParameters parameters) {
         setOverlayPlayPauseImage(player != null && player.isPlaying());
+        updateMinimizedVideo();
 
         switch (state) {
             case Player.STATE_PLAYING:
@@ -3307,6 +3315,7 @@ public final class VideoDetailFragment
             return;
         }
         nativePipPrepared = true;
+        minimizedVideoSurface.restore();
         binding.getRoot().addOnLayoutChangeListener(nativePipLayoutListener);
         FullscreenCommentsSidebar.hide(activity);
         nativePipPreviousBottomSheetState = bottomSheetBehavior.getState();
@@ -3685,6 +3694,7 @@ public final class VideoDetailFragment
             @Override
             public void onStateChanged(@NonNull final View bottomSheet, final int newState) {
                 updateBottomSheetState(newState);
+                updateMinimizedVideo();
 
                 switch (newState) {
                     case BottomSheetBehavior.STATE_HIDDEN:
@@ -3757,6 +3767,7 @@ public final class VideoDetailFragment
         };
 
         bottomSheetBehavior.addBottomSheetCallback(bottomSheetCallback);
+        updateMinimizedVideo();
 
         // User opened a new page and the player will hide itself
         activity.getSupportFragmentManager().addOnBackStackChangedListener(() -> {
@@ -3764,6 +3775,28 @@ public final class VideoDetailFragment
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
         });
+    }
+
+    private void updateMinimizedVideo() {
+        if (binding == null) {
+            return;
+        }
+        final boolean minimized = bottomSheetState == BottomSheetBehavior.STATE_COLLAPSED
+                && !nativePipPrepared && !isFullscreen()
+                && player != null && player.videoPlayerSelected()
+                && player.getPlaybackPresentationMode().rendersVideo() && !player.isAudioOnly();
+        final Optional<MainPlayerUi> ui = player == null ? Optional.empty()
+                : player.UIs().get(MainPlayerUi.class);
+        if (minimized && ui.isPresent()) {
+            binding.overlayVideo.setVisibility(View.VISIBLE);
+            binding.overlayThumbnail.setAlpha(0f);
+            binding.overlayLayout.setAlpha(1f);
+            minimizedVideoSurface.show(ui.get().getBinding().surfaceView, binding.overlayVideo);
+        } else {
+            minimizedVideoSurface.restore();
+            binding.overlayVideo.setVisibility(View.GONE);
+            binding.overlayThumbnail.setAlpha(1f);
+        }
     }
 
     private void updateOverlayPlayQueueButtonVisibility() {
@@ -3812,7 +3845,8 @@ public final class VideoDetailFragment
         if (behavior == null || slideOffset < 0) {
             return;
         }
-        binding.overlayLayout.setAlpha(Math.min(MAX_OVERLAY_ALPHA, 1 - slideOffset));
+        binding.overlayLayout.setAlpha(slideOffset == 0 ? 1f
+                : Math.min(MAX_OVERLAY_ALPHA, 1 - slideOffset));
         // These numbers are not special. They just do a cool transition
         behavior.setTopAndBottomOffset(
                 (int) (-binding.detailThumbnailImageView.getHeight() * 2 * (1 - slideOffset) / 3));

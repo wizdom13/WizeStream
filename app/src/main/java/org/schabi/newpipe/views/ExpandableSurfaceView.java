@@ -14,6 +14,13 @@ public class ExpandableSurfaceView extends SurfaceView {
     public static final float MIN_USER_ZOOM = 1.0f;
     public static final float MAX_USER_ZOOM = 4.0f;
 
+    private boolean miniPlayerMode;
+
+    public void setMiniPlayerMode(final boolean enabled) {
+        miniPlayerMode = enabled;
+        requestLayout();
+    }
+
     private int resizeMode = RESIZE_MODE_FIT;
     private int baseHeight = 0;
     private int maxHeight = 0;
@@ -36,6 +43,15 @@ public class ExpandableSurfaceView extends SurfaceView {
 
     @Override
     protected void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
+        if (miniPlayerMode) {
+            final int availableWidth = MeasureSpec.getSize(widthMeasureSpec);
+            final int availableHeight = MeasureSpec.getSize(heightMeasureSpec);
+            final float ratio = videoAspectRatio > 0 ? videoAspectRatio : 16f / 9f;
+            final int width = Math.min(availableWidth, (int) (availableHeight * ratio));
+            final int height = Math.min(availableHeight, (int) (availableWidth / ratio));
+            setMeasuredDimension(width, height);
+            return;
+        }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         if (videoAspectRatio == 0.0f) {
             return;
@@ -85,6 +101,13 @@ public class ExpandableSurfaceView extends SurfaceView {
     }
 
     private void applyUserTransform() {
+        if (miniPlayerMode) {
+            setScaleX(1f);
+            setScaleY(1f);
+            setTranslationX(0f);
+            setTranslationY(0f);
+            return;
+        }
         final float effectiveScaleX = scaleX * userZoomScale;
         final float effectiveScaleY = scaleY * userZoomScale;
         setPivotX(getWidth() / 2.0f);

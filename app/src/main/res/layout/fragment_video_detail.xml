@@ -664,9 +664,16 @@
         android:alpha="0.9"
         android:background="?attr/windowBackground">
 
+        <FrameLayout
+            android:id="@+id/overlay_video"
+            android:layout_width="106dp"
+            android:layout_height="60dp"
+            android:layout_alignParentStart="true"
+            android:visibility="gone" />
+
         <ImageButton
             android:id="@+id/overlay_thumbnail"
-            android:layout_width="62dp"
+            android:layout_width="106dp"
             android:layout_height="60dp"
             android:layout_alignParentStart="true"
             android:background="@color/transparent_background_color"
