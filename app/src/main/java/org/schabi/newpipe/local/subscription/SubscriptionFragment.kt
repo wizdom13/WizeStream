@@ -66,6 +66,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private lateinit var viewModel: SubscriptionViewModel
     private lateinit var activeProfileId: String
     private lateinit var channelActions: SubscriptionChannelActions
+    private lateinit var bulkActions: SubscriptionBulkActions
     private lateinit var groupActions: SubscriptionGroupActions
     private lateinit var subscriptionManager: SubscriptionManager
     private lateinit var importExportHelper: SubscriptionsImportExportHelper
@@ -103,6 +104,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         activeProfileId = ProfileManager.getActiveProfileId(context)
         subscriptionManager = SubscriptionManager(context, activeProfileId)
         channelActions = SubscriptionChannelActions(this, subscriptionManager)
+        bulkActions = SubscriptionBulkActions(this, subscriptionManager)
         groupActions = SubscriptionGroupActions(this, subscriptionManager)
         importExportHelper = SubscriptionsImportExportHelper(this)
         savedSearchFeedManager = SavedSearchFeedManager(context, activeProfileId)
@@ -120,6 +122,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
     override fun onDestroyView() {
         channelActions.close()
+        bulkActions.close()
         groupActions.close()
         sortController?.close()
         sortController = null
@@ -150,6 +153,10 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
         activity.supportActionBar?.setDisplayShowTitleEnabled(true)
         activity.supportActionBar?.setTitle(R.string.tab_subscriptions)
+
+        setClickListenerToMenuItem(menu.add(R.string.subscription_bulk_unsubscribe)) {
+            bulkActions.show(contextualSearchQuery)
+        }
 
         setClickListenerToMenuItem(menu.add(R.string.saved_search_feeds)) {
             showSavedSearchFeedsDialog()

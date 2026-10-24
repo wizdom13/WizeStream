@@ -267,6 +267,22 @@ class SubscriptionManager @JvmOverloads constructor(
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    /** Removes selected library entries, including all YouTube modes, in this profile only. */
+    fun deleteSubscriptions(subscriptionIds: Collection<Long>): Completable {
+        val selectedIds = subscriptionIds.toSet()
+        return Completable.fromAction {
+            val deleted = database.runInTransaction<List<SubscriptionEntity>> {
+                selectedIds.mapNotNull { subscriptionTable.getSubscriptionForProfile(profileId, it) }
+                    .also { entities -> entities.forEach(subscriptionTable::delete) }
+            }
+            deleted.forEach { entity ->
+                entity.url?.let { recordSubscriptionDelete(entity.serviceId, it) }
+            }
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     fun insertSubscription(subscriptionEntity: SubscriptionEntity) {
         insertSubscriptionAndReturn(subscriptionEntity)
     }

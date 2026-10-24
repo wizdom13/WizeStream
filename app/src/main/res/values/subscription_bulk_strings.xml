@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subscription_bulk_unsubscribe">Unsubscribe from multiple channels</string>
+    <string name="subscription_bulk_empty">No matching subscriptions</string>
+    <string name="subscription_bulk_channel">%1$s (%2$s)</string>
+    <string name="subscription_bulk_done">Selected channels unsubscribed</string>
+    <plurals name="subscription_bulk_confirm">
+        <item quantity="one">Unsubscribe from %d selected channel in this profile? This removes its subscriptions in both YouTube and YouTube Music, where applicable.</item>
+        <item quantity="other">Unsubscribe from %d selected channels in this profile? This removes their subscriptions in both YouTube and YouTube Music, where applicable.</item>
+    </plurals>
+</resources>
