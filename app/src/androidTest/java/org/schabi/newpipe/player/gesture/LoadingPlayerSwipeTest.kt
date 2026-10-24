@@ -16,16 +16,24 @@ class LoadingPlayerSwipeTest {
     fun loadingContentAllowsDragAndLoadedContentKeepsItsTouchEvents() {
         ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                for (loadingVisible in listOf(false, true)) {
+                for (panelId in listOf(0, R.id.loading_progress_bar, R.id.loading_panel, R.id.error_panel)) {
                     val parent = CoordinatorLayout(activity)
                     val sheet = FrameLayout(activity)
                     val content = FrameLayout(activity).apply { id = R.id.detail_content_root_layout }
                     val loading = View(activity).apply {
-                        id = R.id.loading_progress_bar
-                        visibility = if (loadingVisible) View.VISIBLE else View.GONE
+                        id = panelId
+                        visibility = if (panelId != 0) View.VISIBLE else View.GONE
                     }
                     content.addView(loading, FrameLayout.LayoutParams(100, 100))
                     sheet.addView(content, FrameLayout.LayoutParams(-1, -1))
+                    // Invisible controls retain bounds but must not capture the loading swipe.
+                    sheet.addView(
+                        View(activity).apply {
+                            id = R.id.itemsListPanel
+                            visibility = View.INVISIBLE
+                        },
+                        FrameLayout.LayoutParams(-1, -1)
+                    )
                     val behavior = CustomBottomSheetBehavior(activity, null).apply {
                         state = BottomSheetBehavior.STATE_EXPANDED
                     }
@@ -40,7 +48,7 @@ class LoadingPlayerSwipeTest {
                     behavior.onInterceptTouchEvent(parent, sheet, down)
                     val move = MotionEvent.obtain(0, 100, MotionEvent.ACTION_MOVE, 50f, 250f, 0)
                     move.offsetLocation(location[0].toFloat(), location[1].toFloat())
-                    assertEquals(loadingVisible, behavior.onInterceptTouchEvent(parent, sheet, move))
+                    assertEquals("Panel $panelId", panelId != 0, behavior.onInterceptTouchEvent(parent, sheet, move))
                     down.recycle()
                     move.recycle()
                 }

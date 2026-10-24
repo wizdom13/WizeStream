@@ -159,15 +159,16 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
                 && event.getAction() == MotionEvent.ACTION_DOWN) {
             // Without overriding scrolling will not work when user touches these elements
             for (final int element : skipInterceptionOfElements) {
-                final View loading = child.findViewById(R.id.loading_progress_bar);
                 if (element == R.id.detail_content_root_layout
-                        && loading != null && loading.isShown()) {
-                    // The loading title has no scrollable content. Let the sheet handle it
-                    // so the user can minimize the pending video without cancelling its load.
+                        && (isShown(child, R.id.loading_progress_bar)
+                        || isShown(child, R.id.loading_panel)
+                        || isShown(child, R.id.error_panel))) {
+                    // Details loading, media buffering and extraction errors use different
+                    // panels. Keep their title area draggable in all three states.
                     continue;
                 }
                 final View view = child.findViewById(element);
-                if (view != null) {
+                if (view != null && view.isShown()) {
                     final boolean visible = view.getGlobalVisibleRect(globalRect);
                     if (visible
                             && globalRect.contains((int) event.getRawX(), (int) event.getRawY())) {
@@ -187,6 +188,11 @@ public class CustomBottomSheetBehavior extends BottomSheetBehavior<FrameLayout> 
         }
 
         return super.onInterceptTouchEvent(parent, child, event);
+    }
+
+    private static boolean isShown(@NonNull final View root, final int id) {
+        final View view = root.findViewById(id);
+        return view != null && view.isShown();
     }
 
     private void beginPlayerTransition(@NonNull final View bottomSheet) {
