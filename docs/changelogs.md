@@ -4,6 +4,20 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.32.1 (`1032001`)
+
+### Improvements
+
+- Added bulk unsubscribe to the Subscriptions menu, with channel selection, search filtering, and a confirmation showing the selected count. Removal affects only the current profile.
+
+### Fixes
+
+- Restored SoundCloud playback for tracks requiring authorization and added support for unprotected 160 kbps AAC streams.
+- Restored D-pad access to the fullscreen button when bottom player controls are enabled on Android TV.
+- Kept Android TV fullscreen focus inside the player so navigation cannot scroll the video off-screen into underlying details or comments.
+- Fixed playback queue artwork appearing as solid-colored rectangles due to inherited icon tint.
+- Allowed swipe-down during media buffering and on loading or error details screens, and prevented hidden player controls from blocking the gesture.
+
 ## WizeStream 1.32.0 (`1032000`)
 
 ### Improvements

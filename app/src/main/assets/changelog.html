@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1032001">WizeStream 1.32.1</a></li>
 <li><a href="#release-1032000">WizeStream 1.32.0</a></li>
 <li><a href="#release-1031009">WizeStream 1.31.9</a></li>
 <li><a href="#release-1031008">WizeStream 1.31.8</a></li>
@@ -98,6 +99,23 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1032001" data-version="1.32.1" data-version-code="1032001">
+<h2>WizeStream 1.32.1</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added bulk unsubscribe to the Subscriptions menu, with channel selection, search filtering, and a confirmation showing the selected count. Removal affects only the current profile.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Restored SoundCloud playback for tracks requiring authorization and added support for unprotected 160 kbps AAC streams.</li>
+<li>Restored D-pad access to the fullscreen button when bottom player controls are enabled on Android TV.</li>
+<li>Kept Android TV fullscreen focus inside the player so navigation cannot scroll the video off-screen into underlying details or comments.</li>
+<li>Fixed playback queue artwork appearing as solid-colored rectangles due to inherited icon tint.</li>
+<li>Allowed swipe-down during media buffering and on loading or error details screens, and prevented hidden player controls from blocking the gesture.</li>
+</ul>
+</div>
+</section>
 <section id="release-1032000" data-version="1.32.0" data-version-code="1032000">
 <h2>WizeStream 1.32.0</h2>
 <div class="release-notes">

@@ -1,0 +1,5 @@
+- Added bulk unsubscribe with channel selection and confirmation.
+- Restored authorized SoundCloud playback and supported AAC streams.
+- Fixed Android TV fullscreen button access and focus escaping into video details.
+- Fixed blank playback queue artwork.
+- Improved swipe-down while videos load, buffer, or show errors.
