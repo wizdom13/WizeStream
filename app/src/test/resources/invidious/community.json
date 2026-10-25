@@ -1,0 +1,191 @@
+{
+  "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+  "comments": [
+    {
+      "commentId": "Ugkx0",
+      "author": "Channel",
+      "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.ggpht.com/avatar",
+          "height": 88,
+          "width": 88
+        }
+      ],
+      "content": "Hello #community",
+      "published": 1720000000,
+      "publishedText": "2 days ago",
+      "isEdited": true,
+      "likeCount": 12,
+      "replyCount": 3,
+      "attachment": {
+        "type": "multiImage",
+        "images": [
+          [
+            {
+              "url": "https://yt3.ggpht.com/one-small",
+              "height": 100,
+              "width": 100
+            },
+            {
+              "url": "https://yt3.ggpht.com/one",
+              "height": 640,
+              "width": 640
+            }
+          ],
+          [
+            {
+              "url": "https://yt3.ggpht.com/two",
+              "height": 640,
+              "width": 640
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "commentId": "Ugkx1",
+      "author": "Channel",
+      "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.ggpht.com/avatar",
+          "height": 88,
+          "width": 88
+        }
+      ],
+      "content": "Hello #community",
+      "published": 1720000000,
+      "publishedText": "2 days ago",
+      "isEdited": true,
+      "likeCount": 12,
+      "replyCount": 3,
+      "attachment": {
+        "type": "video",
+        "videoId": "BaW_jenozKc",
+        "title": "Attached video",
+        "videoThumbnails": [
+          {
+            "url": "https://i.ytimg.com/vi/BaW_jenozKc/hqdefault.jpg"
+          }
+        ]
+      }
+    },
+    {
+      "commentId": "Ugkx2",
+      "author": "Channel",
+      "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.ggpht.com/avatar",
+          "height": 88,
+          "width": 88
+        }
+      ],
+      "content": "Hello #community",
+      "published": 1720000000,
+      "publishedText": "2 days ago",
+      "isEdited": true,
+      "likeCount": 12,
+      "replyCount": 3,
+      "attachment": {
+        "type": "playlist",
+        "playlistId": "PLtest",
+        "title": "Playlist",
+        "playlistThumbnail": "https://i.ytimg.com/vi/BaW_jenozKc/default.jpg"
+      }
+    },
+    {
+      "commentId": "Ugkx3",
+      "author": "Channel",
+      "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.ggpht.com/avatar",
+          "height": 88,
+          "width": 88
+        }
+      ],
+      "content": "Hello #community",
+      "published": 1720000000,
+      "publishedText": "2 days ago",
+      "isEdited": true,
+      "likeCount": 12,
+      "replyCount": 3,
+      "attachment": {
+        "type": "poll",
+        "totalVotes": 23,
+        "choices": [
+          {
+            "text": "First",
+            "image": [
+              {
+                "url": "https://yt3.ggpht.com/choice",
+                "height": 640,
+                "width": 640
+              }
+            ]
+          },
+          {
+            "text": "Second"
+          }
+        ]
+      }
+    },
+    {
+      "commentId": "Ugkx4",
+      "author": "Channel",
+      "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.ggpht.com/avatar",
+          "height": 88,
+          "width": 88
+        }
+      ],
+      "content": "Hello #community",
+      "published": 1720000000,
+      "publishedText": "2 days ago",
+      "isEdited": true,
+      "likeCount": 12,
+      "replyCount": 3,
+      "attachment": {
+        "type": "unknown",
+        "error": "Unsupported attachment"
+      }
+    },
+    {
+      "commentId": "Ugkx5",
+      "author": "Channel",
+      "authorId": "UCAAAAAAAAAAAAAAAAAAAAAA",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.ggpht.com/avatar",
+          "height": 88,
+          "width": 88
+        }
+      ],
+      "content": "Hello #community",
+      "published": 1720000000,
+      "publishedText": "2 days ago",
+      "isEdited": true,
+      "likeCount": 12,
+      "replyCount": 3,
+      "attachment": {
+        "type": "image",
+        "imageThumbnails": [
+          {
+            "url": "https://yt3.ggpht.com/single",
+            "height": 640,
+            "width": 640
+          },
+          {
+            "url": "https://untrusted.example/photo",
+            "height": 2048
+          }
+        ]
+      }
+    }
+  ],
+  "continuation": "next & token"
+}

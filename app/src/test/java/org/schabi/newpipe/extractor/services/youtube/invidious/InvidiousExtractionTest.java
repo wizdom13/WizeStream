@@ -15,6 +15,7 @@ import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.extractor.localization.ContentCountry;
 import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.extractor.search.filter.FilterItem;
+import org.schabi.newpipe.extractor.post.PostInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 
 import java.util.ArrayList;
@@ -237,6 +238,79 @@ public class InvidiousExtractionTest {
     }
 
     @Test
+    public void loadsCommunityPostsWithAttachmentsAndProxiedImages() throws Exception {
+        responseBody = "{\"authorId\":\"" + CHANNEL + "\",\"tabs\":[\"community\"]}";
+        final var channel = ServiceList.YouTube
+                .getChannelExtractor("https://www.youtube.com/channel/" + CHANNEL);
+        channel.fetchPage();
+        assertEquals(1, channel.getTabs().size());
+        final var tab = ServiceList.YouTube.getChannelTabExtractor(channel.getTabs().get(0));
+        assertEquals(ChannelTabs.POSTS, tab.getTab());
+        responseBody = fixture("/invidious/community.json");
+        tab.fetchPage();
+        final var first = tab.getInitialPage();
+        assertTrue(first.getErrors().toString(), first.getErrors().isEmpty());
+        assertEquals(6, first.getItems().size());
+        final var post = (PostInfoItem) first.getItems().get(0);
+        assertEquals("Ugkx0", post.getPostId());
+        assertEquals("https://www.youtube.com/post/Ugkx0", post.getUrl());
+        assertEquals("Hello #community", post.getContent());
+        assertEquals("Channel", post.getUploaderName());
+        assertEquals("https://www.youtube.com/channel/" + CHANNEL, post.getUploaderUrl());
+        assertEquals("https://example.org/ggpht/avatar", post.getUploaderAvatars().get(0).getUrl());
+        assertEquals(12, post.getLikeCount());
+        assertEquals(3, post.getCommentCount());
+        assertEquals("2 days ago", post.getTextualUploadDate());
+        assertEquals(1720000000L, post.getUploadDate().offsetDateTime().toEpochSecond());
+        assertTrue(post.isEdited());
+        assertEquals(2, post.getImages().size());
+        assertEquals("https://example.org/ggpht/one", post.getImages().get(0).getUrl());
+        assertEquals("https://example.org/ggpht/two", post.getImages().get(1).getUrl());
+        final var video = ((PostInfoItem) first.getItems().get(1)).getAttachment();
+        assertEquals(PostInfoItem.AttachmentType.VIDEO, video.getType());
+        assertEquals("https://www.youtube.com/watch?v=" + VIDEO, video.getUrl());
+        assertTrue(video.getThumbnails().get(0).getUrl().startsWith("https://example.org/"));
+        final var playlist = ((PostInfoItem) first.getItems().get(2)).getAttachment();
+        assertEquals(PostInfoItem.AttachmentType.PLAYLIST, playlist.getType());
+        assertEquals("https://www.youtube.com/playlist?list=PLtest", playlist.getUrl());
+        assertTrue(playlist.getThumbnails().get(0).getUrl().startsWith("https://example.org/"));
+        final var poll = ((PostInfoItem) first.getItems().get(3)).getPoll();
+        assertEquals("23", poll.getTotalVotes());
+        assertEquals(2, poll.getChoices().size());
+        assertEquals("First", poll.getChoices().get(0).getText());
+        assertEquals("", poll.getChoices().get(0).getVotePercentage());
+        assertEquals("https://example.org/ggpht/choice",
+                poll.getChoices().get(0).getImages().get(0).getUrl());
+        assertNull(((PostInfoItem) first.getItems().get(4)).getAttachment());
+        final var singleImage = ((PostInfoItem) first.getItems().get(5)).getImages();
+        assertEquals(1, singleImage.size());
+        assertEquals("https://example.org/ggpht/single", singleImage.get(0).getUrl());
+        assertEquals("https://example.org/api/v1/channels/" + CHANNEL + "/community",
+                requests.get(1));
+        responseBody = "{\"comments\":[]}";
+        final var next = tab.getPage(first.getNextPage());
+        assertTrue(next.getItems().isEmpty());
+        assertNull(next.getNextPage());
+        assertEquals("https://example.org/api/v1/channels/" + CHANNEL
+                + "/community?continuation=next+%26+token", requests.get(2));
+        InvidiousBackend.configure(true, "https://changed.example.org");
+        assertThrows(ExtractionException.class, () -> tab.getPage(first.getNextPage()));
+        assertEquals(3, requests.size());
+    }
+
+    @Test
+    public void communityFailuresDoNotFallBackToYoutube() throws Exception {
+        responseBody = "{\"error\":\"Community posts unavailable\"}";
+        final var handler = ServiceList.YouTube.getChannelTabLHFactory().fromQuery(
+                "channel/" + CHANNEL,
+                Collections.singletonList(new FilterItem(-1, ChannelTabs.POSTS)), null);
+        final var tab = ServiceList.YouTube.getChannelTabExtractor(handler);
+        assertThrows(ExtractionException.class, tab::fetchPage);
+        assertEquals(Collections.singletonList("https://example.org/api/v1/channels/"
+                + CHANNEL + "/community"), requests);
+    }
+
+    @Test
     public void fullFeedCanLoadVideosShortsLiveStreamsAndVideoContinuations() throws Exception {
         responseForUrl = url -> {
             if (url.endsWith("/" + CHANNEL)) {
@@ -313,7 +387,7 @@ public class InvidiousExtractionTest {
     public void unsupportedTabsAndKiosksDoNotContactYoutube() throws Exception {
         final ListLinkHandler handler = ServiceList.YouTube.getChannelTabLHFactory()
                 .fromQuery("channel/" + CHANNEL,
-                Collections.singletonList(new FilterItem(-1, ChannelTabs.POSTS)), null);
+                Collections.singletonList(new FilterItem(-1, ChannelTabs.PODCASTS)), null);
         assertThrows(ExtractionException.class, () -> ServiceList.YouTube
                 .getChannelTabExtractor(handler).fetchPage());
         assertThrows(ExtractionException.class, () -> ServiceList.YouTube.getKioskList()

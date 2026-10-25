@@ -35,6 +35,14 @@ import java.util.List;
 public final class InvidiousExtractors {
     private InvidiousExtractors() { }
 
+    private static String apiTab(final String tab) {
+        return switch (tab) {
+            case ChannelTabs.LIVESTREAMS -> "streams";
+            case ChannelTabs.POSTS -> "community";
+            default -> tab;
+        };
+    }
+
     private static Page continuation(final InvidiousApi api, final String path,
                                      final JsonObject response) {
         final String token = response.getString("continuation", "");
@@ -208,8 +216,9 @@ public final class InvidiousExtractors {
             final List<ListLinkHandler> tabs = new ArrayList<>();
             final JsonArray available = channel.getArray("tabs", new JsonArray());
             for (final String tab : Arrays.asList(ChannelTabs.VIDEOS, ChannelTabs.SHORTS,
-                    ChannelTabs.LIVESTREAMS, ChannelTabs.PLAYLISTS, ChannelTabs.CHANNELS)) {
-                if (available.contains(ChannelTabs.LIVESTREAMS.equals(tab) ? "streams" : tab)) {
+                    ChannelTabs.LIVESTREAMS, ChannelTabs.PLAYLISTS, ChannelTabs.CHANNELS,
+                    ChannelTabs.POSTS)) {
+                if (available.contains(apiTab(tab)) || available.contains(tab)) {
                     tabs.add(YoutubeChannelTabLinkHandlerFactory.getInstance().fromQuery(getId(),
                             Collections
                                     .singletonList(new FilterItem(Filter.ITEM_IDENTIFIER_UNKNOWN,
@@ -230,14 +239,14 @@ public final class InvidiousExtractors {
         @Override
         public void onFetchPage(final Downloader downloader) throws IOException,
                 ExtractionException {
-            final String tab = ChannelTabs.LIVESTREAMS.equals(getTab()) ? "streams" : getTab();
-            if (!Arrays.asList("videos", "shorts", "streams", "playlists", "channels")
+            final String tab = apiTab(getTab());
+            if (!Arrays.asList("videos", "shorts", "streams", "playlists", "channels", "community")
                     .contains(tab)) {
                 throw new ExtractionException("This channel tab is unavailable through Invidious");
             }
             path = "channels/" + InvidiousApi.encode(api.channelId(getUrl())) + "/" + tab;
             final List<FilterItem> sorts = getLinkHandler().getSortFilter();
-            if (sorts != null && !sorts.isEmpty()) {
+            if (sorts != null && !sorts.isEmpty() && !"community".equals(tab)) {
                 final String sort = sorts.get(0).getName();
                 if (("playlists".equals(tab) || "channels".equals(tab))
                         && !"latest".equals(sort)) {
@@ -250,7 +259,8 @@ public final class InvidiousExtractors {
         }
         private InfoItemsPage<InfoItem> result(final JsonObject response) {
             final JsonArray items = response.getArray("videos", response.getArray("playlists",
-                    response.getArray("relatedChannels", new JsonArray())));
+                    response.getArray("relatedChannels",
+                            response.getArray("comments", new JsonArray()))));
             return new InfoItemsPage<>(InvidiousItems.mixed(items, getServiceId(), api),
                     continuation(api, path, response));
         }

@@ -262,16 +262,30 @@ public final class PostInfoItem extends InfoItem {
         private final String text;
         @Nonnull
         private final String votePercentage;
+        @Nonnull
+        private final List<Image> images;
 
         public PollChoice(@Nonnull final String text,
                           @Nonnull final String votePercentage) {
+            this(text, votePercentage, Collections.emptyList());
+        }
+
+        public PollChoice(@Nonnull final String text,
+                          @Nonnull final String votePercentage,
+                          @Nonnull final List<Image> images) {
             this.text = text;
             this.votePercentage = votePercentage;
+            this.images = Collections.unmodifiableList(new ArrayList<>(images));
         }
 
         @Nonnull
         public String getText() {
             return text;
+        }
+
+        @Nonnull
+        public List<Image> getImages() {
+            return images;
         }
 
         @Nonnull

@@ -103,7 +103,9 @@ final class InvidiousItems {
                 continue;
             }
             final JsonObject json = (JsonObject) value;
-            if (json.has("videoId")) {
+            if (json.has("commentId")) {
+                collector.commit(new InvidiousPostInfoItemExtractor(json, api));
+            } else if (json.has("videoId")) {
                 collector.commit(video(json, api));
             } else if (json.has("playlistId")) {
                 collector.commit(new PlaylistInfoItemExtractor() {

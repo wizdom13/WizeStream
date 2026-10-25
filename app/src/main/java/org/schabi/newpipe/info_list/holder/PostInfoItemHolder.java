@@ -173,6 +173,15 @@ public final class PostInfoItemHolder extends InfoItemHolder {
         }
         pollContainer.setVisibility(View.VISIBLE);
         for (final PostInfoItem.PollChoice choice : poll.getChoices()) {
+            if (!choice.getImages().isEmpty() && ImageStrategy.shouldLoadImages()) {
+                final ImageView image = new ImageView(itemBuilder.getContext());
+                image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                image.setContentDescription(choice.getText());
+                pollContainer.addView(image, new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        DeviceUtils.dpToPx(170, itemBuilder.getContext())));
+                CoilHelper.INSTANCE.loadThumbnail(image, choice.getImages());
+            }
             final TextView choiceView = new TextView(itemBuilder.getContext());
             choiceView.setGravity(Gravity.CENTER_VERTICAL);
             choiceView.setMinHeight(DeviceUtils.dpToPx(48, itemBuilder.getContext()));
