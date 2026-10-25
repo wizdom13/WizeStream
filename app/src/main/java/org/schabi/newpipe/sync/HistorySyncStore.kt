@@ -498,13 +498,21 @@ internal class RoomHistorySyncStore internal constructor(
                     }
                 }
 
-                materializeAllWatchProfiles.forEach { profileId ->
-                    affectedStreams += getAllWatchStreamIdentities(profileId).map { identity ->
-                        ProfiledHistoryStreamIdentity(profileId, identity)
+                val watchProfiles = affectedStreams.mapTo(linkedSetOf()) { it.profileId }
+                watchProfiles += materializeAllWatchProfiles
+                watchProfiles.forEach { profileId ->
+                    // All changes are stored before taking one decoded snapshot per profile.
+                    // A global tombstone reuses the same index when rematerializing every stream.
+                    val snapshot = loadWatchHistorySnapshot(profileId)
+                    val identities = affectedStreams.asSequence()
+                        .filter { it.profileId == profileId }
+                        .mapTo(linkedSetOf()) { it.identity }
+                    if (profileId in materializeAllWatchProfiles) {
+                        identities += snapshot.recordsByStream.keys
                     }
-                }
-                affectedStreams.forEach { affected ->
-                    materializeWatchStream(affected.profileId, affected.identity)
+                    identities.forEach { identity ->
+                        materializeWatchStream(profileId, identity, snapshot)
+                    }
                 }
                 materializeSearchProfiles.forEach(::materializeSearchHistory)
                 affectedLearningNotes.forEach(::materializeLearningNote)
@@ -687,7 +695,8 @@ internal class RoomHistorySyncStore internal constructor(
 
     private fun materializeWatchStream(
         profileId: String,
-        identity: HistoryStreamIdentity
+        identity: HistoryStreamIdentity,
+        snapshot: WatchHistorySnapshot
     ) {
         if (!canMaterializeProfile(profileId)) {
             val existing = streamDao.getStreamDirect(identity.serviceId, identity.url)
@@ -698,31 +707,22 @@ internal class RoomHistorySyncStore internal constructor(
             return
         }
 
-        val records = syncDao.getRecords(HistorySyncCategory.WATCH.name)
-            .filter { it.profileId == profileId }
-        val streamRecords = records.filter { record ->
-            decodeRecord(record)?.streamIdentity == identity
-        }
+        val streamRecords = snapshot.recordsByStream[identity].orEmpty()
         val stream = streamRecords
-            .maxByOrNull { it.versionStamp }
-            ?.let(::decodeRecord)
-            ?.stream
+            .maxByOrNull { it.entity.versionStamp }
+            ?.record?.stream
         val existingStream = streamDao.getStreamDirect(identity.serviceId, identity.url)
         val streamId = stream?.let { streamDao.upsert(it.toEntity()) } ?: existingStream?.uid
 
         val watchCutoff = listOfNotNull(
-            records.firstOrNull {
-                it.recordId == HistoryRecordId.watchAllTombstone(profileId)
-            }?.versionStamp,
-            records.firstOrNull {
-                it.recordId == HistoryRecordId.watchStreamTombstone(profileId, identity)
-            }?.versionStamp
+            snapshot.recordsById[HistoryRecordId.watchAllTombstone(profileId)]?.entity?.versionStamp,
+            snapshot.recordsById[HistoryRecordId.watchStreamTombstone(profileId, identity)]?.entity?.versionStamp
         ).maxOrNull()
         val events = streamRecords
-            .filter { it.parsedRecordType == HistoryRecordType.WATCH_EVENT }
-            .filterNot(HistorySyncRecordEntity::isDeleted)
-            .filter { watchCutoff == null || it.versionStamp > watchCutoff }
-            .mapNotNull { decodeRecord(it)?.watchEvent }
+            .filter { it.entity.parsedRecordType == HistoryRecordType.WATCH_EVENT }
+            .filterNot { it.entity.isDeleted }
+            .filter { watchCutoff == null || it.entity.versionStamp > watchCutoff }
+            .mapNotNull { it.record?.watchEvent }
         if (streamId != null) {
             streamHistoryDao.deleteStreamHistoryForProfile(
                 profileId,
@@ -744,17 +744,13 @@ internal class RoomHistorySyncStore internal constructor(
             }
         }
 
-        val progressRecord = records.firstOrNull {
-            it.recordId == HistoryRecordId.progress(profileId, identity)
-        }
-        val progressClear = records.firstOrNull {
-            it.recordId == HistoryRecordId.playbackAllTombstone(profileId)
-        }
+        val progressRecord = snapshot.recordsById[HistoryRecordId.progress(profileId, identity)]
+        val progressClear = snapshot.recordsById[HistoryRecordId.playbackAllTombstone(profileId)]
         val progressIsCleared = progressRecord == null ||
-            progressRecord.isDeleted ||
+            progressRecord.entity.isDeleted ||
             (
                 progressClear != null &&
-                    progressClear.versionStamp >= progressRecord.versionStamp
+                    progressClear.entity.versionStamp >= progressRecord.entity.versionStamp
                 )
         if (streamId != null) {
             if (progressIsCleared) {
@@ -763,7 +759,7 @@ internal class RoomHistorySyncStore internal constructor(
                     streamId
                 )
             } else {
-                val progress = decodeRecord(requireNotNull(progressRecord))?.playbackProgress
+                val progress = requireNotNull(progressRecord).record?.playbackProgress
                     ?: throw HistorySyncException("Stored playback progress is invalid")
                 streamStateDao.upsert(
                     StreamStateEntity(
@@ -859,13 +855,14 @@ internal class RoomHistorySyncStore internal constructor(
         )
     }
 
-    private fun getAllWatchStreamIdentities(
-        profileId: String
-    ): Set<HistoryStreamIdentity> {
-        return syncDao.getRecords(HistorySyncCategory.WATCH.name)
-            .filter { it.profileId == profileId }
-            .mapNotNull { decodeRecord(it)?.streamIdentity }
-            .toSet()
+    private fun loadWatchHistorySnapshot(profileId: String): WatchHistorySnapshot {
+        val records = syncDao.getRecordsForProfile(HistorySyncCategory.WATCH.name, profileId)
+            .map { DecodedWatchRecord(it, decodeRecord(it)) }
+        return WatchHistorySnapshot(
+            recordsById = records.associateBy { it.entity.recordId },
+            recordsByStream = records.filter { it.record?.streamIdentity != null }
+                .groupBy { requireNotNull(it.record?.streamIdentity) }
+        )
     }
 
     private fun requireStream(streamId: Long): StreamEntity {
@@ -997,6 +994,16 @@ internal class RoomHistorySyncStore internal constructor(
     private data class ProfiledHistoryStreamIdentity(
         val profileId: String,
         val identity: HistoryStreamIdentity
+    )
+
+    private data class DecodedWatchRecord(
+        val entity: HistorySyncRecordEntity,
+        val record: SyncedHistoryRecord?
+    )
+
+    private data class WatchHistorySnapshot(
+        val recordsById: Map<String, DecodedWatchRecord>,
+        val recordsByStream: Map<HistoryStreamIdentity, List<DecodedWatchRecord>>
     )
 
     private val SyncedHistoryRecord.stream: SyncedHistoryStream?

@@ -1,0 +1,191 @@
+package org.schabi.newpipe.sync
+
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.libp2p.core.crypto.KeyType
+import io.libp2p.core.crypto.generateKeyPair
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executor
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.profiles.ProfileManager
+
+@RunWith(AndroidJUnit4::class)
+class WatchHistoryMaterializationTest {
+    private lateinit var database: AppDatabase
+    private lateinit var store: RoomHistorySyncStore
+    private lateinit var peerId: String
+    private var revision = 0L
+    private val scans = CopyOnWriteArrayList<List<Any?>>()
+    private val profiles = listOf(ProfileManager.DEFAULT_PROFILE_ID, "11111111-1111-4111-8111-111111111111")
+
+    @Before
+    fun setUp() {
+        database = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        ).allowMainThreadQueries()
+            .setQueryCallback(
+                object : RoomDatabase.QueryCallback {
+                    override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
+                        if (sqlQuery.startsWith("SELECT * FROM history_sync_records WHERE category =") && !sqlQuery.contains("record_id")) {
+                            scans.add(bindArgs.toList())
+                        }
+                    }
+                },
+                Executor { it.run() }
+            )
+            .build()
+        peerId = DeviceIdentity(generateKeyPair(KeyType.ED25519).first).peerId.toBase58()
+        store = RoomHistorySyncStore(database, peerId)
+    }
+
+    @After
+    fun tearDown() = database.close()
+
+    @Test
+    fun multiStreamBatchScansEachProfileOnceAndDuplicateBatchDoesNotScan() {
+        apply(profiles.flatMap { profile -> (0 until 64).map { watch(profile, it) } })
+        val batch = profiles.flatMap { profile -> (0 until 4).map { watch(profile, it) } }
+        scans.clear()
+
+        assertEquals(8, store.applyChanges(HistorySyncCategory.WATCH, batch).affectedRecords)
+
+        assertEquals(profiles.map { listOf(HistorySyncCategory.WATCH.name, it) }, scans.toList())
+        profiles.forEach { profile ->
+            val history = database.streamHistoryDAO().getAllDirectForProfile(profile)
+            assertEquals(64, history.size)
+            assertEquals(4, history.count { it.repeatCount == 2L })
+            assertEquals(60, history.count { it.repeatCount == 1L })
+        }
+        scans.clear()
+        assertEquals(0, store.applyChanges(HistorySyncCategory.WATCH, batch).acceptedChanges)
+        assertTrue(scans.isEmpty())
+        store.applyChanges(HistorySyncCategory.WATCH, emptyList())
+        assertTrue(scans.isEmpty())
+    }
+
+    @Test
+    fun globalClearsShareOneScanPreserveOtherProfilesAndRejectLateOldEvents() {
+        apply(profiles.flatMap { profile -> (0 until 16).flatMap { listOf(watch(profile, it), progress(profile, it)) } })
+        val first = profiles.first()
+        val other = profiles.last()
+        scans.clear()
+        apply(
+            listOf(
+                change(first, HistoryRecordType.WATCH_ALL_TOMBSTONE, HistoryRecordId.watchAllTombstone(first)),
+                change(first, HistoryRecordType.PLAYBACK_ALL_TOMBSTONE, HistoryRecordId.playbackAllTombstone(first))
+            )
+        )
+
+        assertEquals(listOf(listOf(HistorySyncCategory.WATCH.name, first)), scans.toList())
+        assertTrue(database.streamHistoryDAO().getAllDirectForProfile(first).isEmpty())
+        assertTrue(database.streamStateDAO().getAllDirectForProfile(first).isEmpty())
+        assertEquals(16, database.streamHistoryDAO().getAllDirectForProfile(other).size)
+        assertEquals(16, database.streamStateDAO().getAllDirectForProfile(other).size)
+
+        apply(listOf(watch(first, 0).copy(lamportVersion = 1), progress(first, 0).copy(lamportVersion = 1)))
+        assertTrue(database.streamHistoryDAO().getAllDirectForProfile(first).isEmpty())
+        assertTrue(database.streamStateDAO().getAllDirectForProfile(first).isEmpty())
+
+        apply(
+            listOf(
+                change(first, HistoryRecordType.WATCH_ALL_TOMBSTONE, HistoryRecordId.watchAllTombstone(first)),
+                watch(first, 0),
+                change(first, HistoryRecordType.PLAYBACK_ALL_TOMBSTONE, HistoryRecordId.playbackAllTombstone(first)),
+                progress(first, 0, 12_000)
+            )
+        )
+        assertEquals(1L, database.streamHistoryDAO().getAllDirectForProfile(first).single().repeatCount)
+        assertEquals(12_000L, database.streamStateDAO().getAllDirectForProfile(first).single().progressMillis)
+        assertEquals(16, database.streamHistoryDAO().getAllDirectForProfile(other).size)
+    }
+
+    @Test
+    fun streamDeleteKeepsProgressAndUnavailableProfileDoesNotReappear() {
+        val profile = profiles.first()
+        apply(listOf(watch(profile, 0), watch(profile, 1), progress(profile, 0)))
+        val stream = stream(0)
+        apply(
+            listOf(
+                change(
+                    profile,
+                    HistoryRecordType.WATCH_STREAM_TOMBSTONE,
+                    HistoryRecordId.watchStreamTombstone(profile, stream.identity),
+                    SyncedHistoryRecord(watchStreamTombstone = SyncedWatchStreamTombstone(stream))
+                )
+            )
+        )
+        assertEquals(1, database.streamHistoryDAO().getAllDirectForProfile(profile).size)
+        assertEquals(90_000L, database.streamStateDAO().getAllDirectForProfile(profile).single().progressMillis)
+
+        store = RoomHistorySyncStore(database, peerId) { false }
+        apply(
+            listOf(
+                change(profile, HistoryRecordType.WATCH_ALL_TOMBSTONE, HistoryRecordId.watchAllTombstone(profile)),
+                watch(profile, 0)
+            )
+        )
+        assertTrue(database.streamHistoryDAO().getAllDirectForProfile(profile).isEmpty())
+        assertTrue(database.streamStateDAO().getAllDirectForProfile(profile).isEmpty())
+    }
+
+    private fun apply(changes: List<HistoryChange>) {
+        changes.chunked(MAX_HISTORY_CHANGES_PER_BATCH).forEach {
+            store.applyChanges(HistorySyncCategory.WATCH, it)
+        }
+    }
+
+    private fun watch(profile: String, index: Int) = change(
+        profile,
+        HistoryRecordType.WATCH_EVENT,
+        HistoryRecordId.watchEvent(),
+        SyncedHistoryRecord(watchEvent = SyncedWatchEvent(stream(index), 1000 + revision, 1))
+    )
+
+    private fun progress(profile: String, index: Int, position: Long = 90_000): HistoryChange {
+        val stream = stream(index)
+        return change(
+            profile,
+            HistoryRecordType.PLAYBACK_PROGRESS,
+            HistoryRecordId.progress(profile, stream.identity),
+            SyncedHistoryRecord(playbackProgress = SyncedPlaybackProgress(stream, position, 1000 + revision))
+        )
+    }
+
+    private fun change(
+        profile: String,
+        type: HistoryRecordType,
+        id: String,
+        record: SyncedHistoryRecord? = null
+    ): HistoryChange {
+        revision += 1
+        return HistoryChange(
+            category = HistorySyncCategory.WATCH,
+            originPeerId = peerId,
+            originRevision = revision,
+            lamportVersion = revision,
+            recordId = id,
+            profileId = profile,
+            recordType = type,
+            type = HistoryChangeType.UPSERT,
+            record = record
+        )
+    }
+
+    private fun stream(index: Int) = SyncedHistoryStream(
+        serviceId = 0,
+        url = "https://example.com/watch/$index",
+        title = "History $index",
+        streamType = "VIDEO_STREAM",
+        duration = 180,
+        uploader = "Uploader"
+    )
+}
