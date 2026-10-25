@@ -46,6 +46,7 @@ import com.google.android.material.chip.ChipGroup;
 
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.KidsMode;
 import org.schabi.newpipe.database.feed.model.SavedSearchFeedEntity;
 import org.schabi.newpipe.databinding.FragmentSearchBinding;
 import org.schabi.newpipe.error.ErrorInfo;
@@ -444,6 +445,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
             Log.d(TAG, "onResume() called");
         }
         super.onResume();
+        if (showKidsModeRestriction()) {
+            return;
+        }
         if (activity instanceof MainActivity) {
             ((MainActivity) activity).showMainNavigationForSearch();
         }
@@ -639,6 +643,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     @Override
     public void onCreateOptionsMenu(@NonNull final Menu menu,
                                     @NonNull final MenuInflater inflater) {
+        if (!KidsMode.isSearchAllowed(requireContext(), serviceId)) {
+            return;
+        }
         super.onCreateOptionsMenu(menu, inflater);
 
         menu.add(Menu.NONE, MENU_CLEAR_SEARCH_HISTORY, Menu.NONE,
@@ -1113,6 +1120,26 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                                 throwable, UserAction.GET_SUGGESTIONS, searchString, serviceId)));
     }
 
+    private boolean showKidsModeRestriction() {
+        if (KidsMode.isSearchAllowed(requireContext(), serviceId)) {
+            return false;
+        }
+        if (searchDisposable != null) {
+            searchDisposable.dispose();
+        }
+        if (suggestionDisposable != null) {
+            suggestionDisposable.dispose();
+        }
+        stopDeepSearch();
+        hideKeyboardSearch();
+        hideSuggestionsPanel();
+        searchToolbarContainer.setVisibility(View.GONE);
+        infoListAdapter.clearStreamItemList();
+        showEmptyState();
+        setEmptyStateMessage(R.string.kids_mode_search_disabled);
+        return true;
+    }
+
     @Override
     protected void doInitialLoadLogic() {
         // no-op
@@ -1133,7 +1160,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (DEBUG) {
             Log.d(TAG, "search() called with: query = [" + theSearchString + "]");
         }
-        if (theSearchString.isEmpty()) {
+        if (showKidsModeRestriction() || theSearchString.isEmpty()) {
             return;
         }
 
@@ -1198,6 +1225,9 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
     @Override
     public void startLoading(final boolean forceLoad) {
+        if (showKidsModeRestriction()) {
+            return;
+        }
         stopDeepSearch();
         collectionLimitReached = false;
         monthlySearchResults = false;

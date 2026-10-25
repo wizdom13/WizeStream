@@ -5,6 +5,7 @@ import io.reactivex.rxjava3.core.Single
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.profiles.KidsMode
 import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.profiles.ProfileRecord
 import org.schabi.newpipe.util.image.ExtractorImageCompat
@@ -51,6 +52,7 @@ object ChannelSubscriptionActions {
             description = item.description
         )
         return Single.fromCallable {
+            check(KidsMode.isSubscriptionAllowed(context, item.serviceId))
             SubscriptionManager(context.applicationContext, profile.id)
                 .insertSubscriptionAndReturn(entity)
         }

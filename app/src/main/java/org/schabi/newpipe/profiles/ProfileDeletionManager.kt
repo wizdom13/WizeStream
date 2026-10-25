@@ -21,7 +21,7 @@ object ProfileDeletionManager {
 
         val appContext = context.applicationContext
         return Completable.fromAction {
-            check(ProfileManager.canDeleteProfile(appContext, profileId))
+            val finishDeletion = checkNotNull(ProfileManager.prepareProfileDeletion(appContext, profileId))
 
             runCatching {
                 val historySyncRecorder = HistorySyncRecorder.get(appContext)
@@ -46,7 +46,7 @@ object ProfileDeletionManager {
                 .remove(PlaylistCategories.preferenceKey(profileId))
                 .apply()
             database.streamDAO().deleteOrphans()
-            check(ProfileManager.deleteProfile(appContext, profileId)) {
+            check(finishDeletion()) {
                 "Profile metadata no longer exists"
             }
             LearningReminders.cancelNotification(appContext, profileId)

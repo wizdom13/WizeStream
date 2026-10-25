@@ -51,6 +51,7 @@ import com.google.android.material.tabs.TabLayout;
 import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.KidsMode;
 import org.schabi.newpipe.databinding.FragmentMainBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
@@ -339,7 +340,13 @@ public class MainFragment extends BaseFragment
 
         final MenuItem searchItem = menu.findItem(R.id.action_search);
         if (searchItem != null) {
+            final boolean localSearch = shouldUseContextualSearch(prefersGlobalSearch(),
+                    getCurrentContextualSearchable() != null);
             searchItem.setVisible(!contextualSearchOpen);
+            if (!localSearch && !KidsMode.isSearchAllowed(requireContext(),
+                    ServiceHelper.getSelectedServiceId(requireContext()))) {
+                searchItem.setVisible(false);
+            }
         }
 
         updateContextualSearchToolbar(false);
@@ -645,7 +652,9 @@ public class MainFragment extends BaseFragment
 
         contextualSearchContainer.setVisibility(contextualSearchOpen ? View.VISIBLE : View.GONE);
         binding.contextualGlobalSearchFab.setVisibility(
-                contextualSearchOpen ? View.VISIBLE : View.GONE);
+                contextualSearchOpen && KidsMode.isSearchAllowed(requireContext(),
+                        ServiceHelper.getSelectedServiceId(requireContext()))
+                        ? View.VISIBLE : View.GONE);
         final ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayShowTitleEnabled(!contextualSearchOpen);

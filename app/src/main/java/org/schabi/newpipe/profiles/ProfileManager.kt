@@ -36,7 +36,7 @@ object ProfileManager {
     fun setDefaultProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
-        if (profileId !in profileIds(prefs)) return false
+        if (KidsMode.requiresParentAccess(context) || profileId !in profileIds(prefs)) return false
         prefs.edit().putString(DEFAULT_SELECTION_KEY, profileId).apply()
         true
     }
@@ -45,7 +45,8 @@ object ProfileManager {
     fun canDeleteProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
-        profileIds(prefs).size > 1 && profileId in profileIds(prefs) && profileId != fallbackId(prefs)
+        !KidsMode.requiresParentAccess(context) &&
+            profileIds(prefs).size > 1 && profileId in profileIds(prefs) && profileId != fallbackId(prefs)
     }
 
     private fun fallbackId(prefs: SharedPreferences): String {
@@ -112,7 +113,9 @@ object ProfileManager {
     fun setActiveProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
-        if (!profileIds(prefs).contains(profileId)) {
+        if (!profileIds(prefs).contains(profileId) ||
+            (profileId != getActiveProfileId(context) && KidsMode.requiresParentAccess(context))
+        ) {
             return false
         }
         prefs.edit().putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, profileId).apply()
@@ -126,6 +129,7 @@ object ProfileManager {
         description: String = "",
         iconKey: String = ProfileIcon.PERSON.key
     ): ProfileRecord? = synchronized(lock) {
+        if (KidsMode.requiresParentAccess(context)) return null
         val normalizedName = ProfilePolicy.normalizeName(name)
         if (!ProfilePolicy.isUsableName(normalizedName)) {
             return null
@@ -195,13 +199,20 @@ object ProfileManager {
     }
 
     @JvmStatic
-    fun deleteProfile(context: Context, profileId: String): Boolean = synchronized(lock) {
-        if (!canDeleteProfile(context, profileId)) return false
+    fun deleteProfile(context: Context, profileId: String): Boolean = prepareProfileDeletion(context, profileId)?.invoke() ?: false
 
+    // Capture authorization before deleting Room rows, so relocking cannot interrupt final cleanup.
+    internal fun prepareProfileDeletion(context: Context, profileId: String): (() -> Boolean)? = synchronized(lock) {
+        if (!canDeleteProfile(context, profileId)) return null
+        val appContext = context.applicationContext
+        return@synchronized { synchronized(lock) { deleteProfileMetadata(appContext, profileId) } }
+    }
+
+    private fun deleteProfileMetadata(context: Context, profileId: String): Boolean {
         val prefs = preferences(context)
         ensureInitialized(context, prefs)
         val ids = profileIds(prefs).toMutableSet()
-        if (!ids.remove(profileId)) {
+        if (ids.size <= 1 || profileId == fallbackId(prefs) || !ids.remove(profileId)) {
             return false
         }
 
@@ -218,7 +229,8 @@ object ProfileManager {
             editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, fallbackId(prefs))
         }
         editor.apply()
-        true
+        KidsMode.forgetProfile(context, profileId)
+        return true
     }
 
     @JvmStatic

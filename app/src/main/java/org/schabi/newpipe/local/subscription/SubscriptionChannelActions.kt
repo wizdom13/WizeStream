@@ -16,6 +16,7 @@ import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.profiles.KidsMode
 import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.profiles.ProfileRecord
 import org.schabi.newpipe.util.external_communication.ShareUtils
@@ -44,7 +45,9 @@ internal class SubscriptionChannelActions(
                 ShareUtils.openUrlInBrowser(fragment.requireContext(), selectedItem.url)
             }
         )
-        if (ProfileManager.getProfiles(fragment.requireContext()).size > 1) {
+        if (KidsMode.isSubscriptionAllowed(fragment.requireContext(), selectedItem.serviceId) &&
+            ProfileManager.getProfiles(fragment.requireContext()).size > 1
+        ) {
             commands += fragment.getString(R.string.channel_subscribe_to_profile) to {
                 showSubscribeToProfileDialog(selectedItem)
             }

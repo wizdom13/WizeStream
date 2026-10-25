@@ -94,6 +94,8 @@ import org.schabi.newpipe.player.event.OnKeyDownListener;
 import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.pip.NativePipController;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
+import org.schabi.newpipe.profiles.KidsMode;
+import org.schabi.newpipe.profiles.KidsModeDialogs;
 import org.schabi.newpipe.profiles.ProfileManager;
 import org.schabi.newpipe.profiles.ProfileRecord;
 import org.schabi.newpipe.settings.UpdateSettingsFragment;
@@ -177,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
     private String activeProfileId;
+    private boolean activeKidsMode;
     private NativePipController nativePipController;
     private ChangelogPromptController changelogPromptController;
     private GitHubStarPromptController githubStarPromptController;
@@ -235,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPrefEditor = sharedPreferences.edit();
         activeProfileId = ProfileManager.getActiveProfileId(this);
+        activeKidsMode = KidsMode.isEnabled(this);
 
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         drawerLayoutBinding = mainBinding.drawerLayout;
@@ -621,16 +625,22 @@ public class MainActivity extends AppCompatActivity {
                 .setSingleChoiceItems(names, selectedIndex, (dialog, which) -> {
                     dialog.dismiss();
                     final ProfileRecord profile = profiles.get(which);
-                    if (profile.getId().equals(ProfileManager.getActiveProfileId(this))
-                            || !ProfileManager.setActiveProfile(this, profile.getId())) {
-                        return;
-                    }
-                    Toast.makeText(this, getString(R.string.profile_switched,
-                            ProfileManager.getDisplayName(this, profile)), Toast.LENGTH_SHORT)
-                            .show();
-                    activeProfileId = profile.getId();
-                    mainBinding.getRoot().closeDrawer(GravityCompat.START, false);
-                    ActivityCompat.recreate(this);
+                    KidsModeDialogs.requestAccess(this, () -> {
+                        try {
+                            if (profile.getId().equals(ProfileManager.getActiveProfileId(this))
+                                    || !ProfileManager.setActiveProfile(this, profile.getId())) {
+                                return;
+                            }
+                            Toast.makeText(this, getString(R.string.profile_switched,
+                                    ProfileManager.getDisplayName(this, profile)),
+                                    Toast.LENGTH_SHORT).show();
+                            activeProfileId = profile.getId();
+                            mainBinding.getRoot().closeDrawer(GravityCompat.START, false);
+                            ActivityCompat.recreate(this);
+                        } finally {
+                            KidsMode.lock();
+                        }
+                    }, () -> { });
                 })
                 .setNeutralButton(R.string.profile_manage_title, (dialog, which) -> {
                     nativePipController.prepareForInternalActivityNavigation();
@@ -770,7 +780,8 @@ public class MainActivity extends AppCompatActivity {
         LearningReminders.initialize(this);
 
         final String currentProfileId = ProfileManager.getActiveProfileId(this);
-        if (!Objects.equals(activeProfileId, currentProfileId)) {
+        if (!Objects.equals(activeProfileId, currentProfileId)
+                || activeKidsMode != KidsMode.isEnabled(this)) {
             activeProfileId = currentProfileId;
             if (DEBUG) {
                 Log.d(TAG, "Active profile changed, recreating activity...");

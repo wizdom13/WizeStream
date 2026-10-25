@@ -14,6 +14,7 @@ import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.profiles.KidsMode
 import org.schabi.newpipe.profiles.ProfileManager
 
 object StreamSubscriptionActions {
@@ -21,6 +22,7 @@ object StreamSubscriptionActions {
     fun show(fragment: Fragment, serviceId: Int, channelUrl: String, chooseGroups: Boolean) {
         if (!fragment.isAdded || fragment.view == null || channelUrl.isBlank()) return
         val context = fragment.requireContext()
+        if (!KidsMode.isSubscriptionAllowed(context, serviceId)) return
         val profile = ProfileManager.getActiveProfileId(context)
         val manager = SubscriptionManager(context.applicationContext, profile)
         val feed = FeedDatabaseManager(context.applicationContext, profile)

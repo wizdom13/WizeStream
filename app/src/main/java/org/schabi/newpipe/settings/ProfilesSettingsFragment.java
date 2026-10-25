@@ -15,6 +15,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.learning.LearningMode;
+import org.schabi.newpipe.profiles.KidsMode;
+import org.schabi.newpipe.profiles.KidsModeDialogs;
 import org.schabi.newpipe.profiles.ProfileDeletionManager;
 import org.schabi.newpipe.profiles.ProfileIcon;
 import org.schabi.newpipe.profiles.ProfileManager;
@@ -61,6 +63,15 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
                             ProfileManager.getActiveProfileId(requireContext()), (Boolean) value);
                     return true;
                 });
+        final SwitchPreferenceCompat kidsMode = findPreference("profile_kids_mode");
+        kidsMode.setOnPreferenceChangeListener((preference, value) -> {
+            KidsModeDialogs.configure(requireContext(), (Boolean) value, this::refreshPreferences);
+            return false;
+        });
+        findPreference("profile_parent_pin").setOnPreferenceClickListener(preference -> {
+            KidsModeDialogs.changePin(requireContext());
+            return true;
+        });
         bindListeners(createPreference);
         refreshPreferences();
     }
@@ -288,6 +299,8 @@ public final class ProfilesSettingsFragment extends BasePreferenceFragment {
         }
 
         final ProfileRecord active = ProfileManager.getActiveProfile(requireContext());
+        final SwitchPreferenceCompat kidsMode = findPreference("profile_kids_mode");
+        kidsMode.setChecked(KidsMode.isEnabled(requireContext(), active.getId()));
         activePreference.setEntries(entries);
         final SwitchPreferenceCompat learning = requirePreference(
                 R.string.learning_profile_included_key);

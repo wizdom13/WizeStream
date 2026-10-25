@@ -36,6 +36,18 @@
             android:title="@string/learning_profile_included_title"
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
+        <SwitchPreferenceCompat
+            android:key="profile_kids_mode"
+            android:persistent="false"
+            android:title="@string/kids_mode_title"
+            android:summary="@string/kids_mode_summary"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <Preference
+            android:key="profile_parent_pin"
+            android:title="@string/kids_mode_change_pin"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <Preference

@@ -11,6 +11,7 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -20,6 +21,8 @@ import androidx.preference.PreferenceFragmentCompat;
 import com.jakewharton.rxbinding4.widget.RxTextView;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.KidsMode;
+import org.schabi.newpipe.profiles.KidsModeDialogs;
 import org.schabi.newpipe.databinding.SettingsLayoutBinding;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchFragment;
 import org.schabi.newpipe.settings.preferencesearch.PreferenceSearchItem;
@@ -68,6 +71,8 @@ public class SettingsActivity extends AppCompatActivity implements
     private static final String SEARCH_TEXT = "settings_search_text";
     private static final String TWO_PANE = "settings_two_pane";
     private boolean twoPane;
+    private View settingsRoot;
+    private AlertDialog parentPinDialog;
 
     private final CompositeDisposable disposables = new CompositeDisposable();
     private View searchContainer;
@@ -97,7 +102,8 @@ public class SettingsActivity extends AppCompatActivity implements
         EdgeToEdgeHelper.enable(this);
 
         final SettingsLayoutBinding binding = SettingsLayoutBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        settingsRoot = binding.getRoot();
+        setContentView(settingsRoot);
         twoPane = getResources().getBoolean(R.bool.use_two_pane_settings);
         binding.settingsNavigationHolder.setVisibility(twoPane ? View.VISIBLE : View.GONE);
         EdgeToEdgeHelper.applySystemBarPadding(binding.getRoot());
@@ -144,6 +150,31 @@ public class SettingsActivity extends AppCompatActivity implements
         if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(this);
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (KidsMode.requiresParentAccess(this)) {
+            settingsRoot.setVisibility(View.INVISIBLE);
+            parentPinDialog = KidsModeDialogs.requestAccess(this,
+                    () -> settingsRoot.setVisibility(View.VISIBLE), this::finish);
+        } else {
+            settingsRoot.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        if (parentPinDialog != null) {
+            parentPinDialog.dismiss();
+            parentPinDialog = null;
+        }
+        KidsMode.lock();
+        if (KidsMode.isEnabled(this)) {
+            settingsRoot.setVisibility(View.INVISIBLE);
+        }
+        super.onStop();
     }
 
     @Override

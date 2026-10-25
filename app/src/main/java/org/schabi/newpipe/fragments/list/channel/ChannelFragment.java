@@ -32,6 +32,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.jakewharton.rxbinding4.view.RxView;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.KidsMode;
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity;
 import org.schabi.newpipe.database.subscription.NotificationMode;
 import org.schabi.newpipe.database.subscription.SubscriptionEntity;
@@ -510,6 +511,10 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     }
 
     private void updateSubscribeButton(final boolean isSubscribed) {
+        if (!KidsMode.isSubscriptionAllowed(requireContext(), serviceId)) {
+            binding.channelSubscriptionActions.setVisibility(View.GONE);
+            return;
+        }
         if (DEBUG) {
             Log.d(TAG, "updateSubscribeButton() called with: "
                     + "isSubscribed = [" + isSubscribed + "]");
@@ -524,6 +529,9 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     }
 
     private void showChannelGroupsDialog() {
+        if (!KidsMode.isSubscriptionAllowed(requireContext(), serviceId)) {
+            return;
+        }
         final ChannelInfo info = currentInfo;
         if (info == null) {
             return;
@@ -669,6 +677,9 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     }
 
     private void showSubscribeToProfileDialog() {
+        if (!KidsMode.isSubscriptionAllowed(requireContext(), serviceId)) {
+            return;
+        }
         final ChannelInfo info = currentInfo;
         if (info == null) {
             return;
@@ -768,6 +779,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
         menuSubscribeProfileButton.setVisible(
                 currentInfo != null
+                        && KidsMode.isSubscriptionAllowed(requireContext(), serviceId)
                         && ProfileManager.getProfiles(requireContext()).size() > 1);
     }
 
@@ -869,7 +881,9 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
             for (final ListLinkHandler linkHandler : currentInfo.getTabs()) {
                 final String tab = ChannelTabHelper.getTabName(linkHandler);
-                if (tab != null && ChannelTabHelper.showChannelTab(context, preferences, tab)) {
+                if (tab != null && ChannelTabHelper.showChannelTab(context, preferences, tab)
+                        && (!org.schabi.newpipe.extractor.linkhandler.ChannelTabs.SEARCH.equals(tab)
+                        || KidsMode.isSearchAllowed(context, serviceId))) {
                     final ChannelTabFragment channelTabFragment =
                             ChannelTabFragment.getInstance(
                                     serviceId,

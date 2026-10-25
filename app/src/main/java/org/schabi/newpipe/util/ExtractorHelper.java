@@ -45,6 +45,7 @@ import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo;
+import org.schabi.newpipe.extractor.linkhandler.ChannelTabs;
 import org.schabi.newpipe.extractor.comments.CommentsInfo;
 import org.schabi.newpipe.extractor.comments.CommentSortOrder;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
@@ -54,6 +55,8 @@ import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandlerFactory;
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo;
 import org.schabi.newpipe.extractor.search.SearchInfo;
+import org.schabi.newpipe.App;
+import org.schabi.newpipe.profiles.KidsMode;
 import org.schabi.newpipe.extractor.search.filter.Filter;
 import org.schabi.newpipe.extractor.search.filter.FilterGroup;
 import org.schabi.newpipe.extractor.search.filter.FilterItem;
@@ -98,6 +101,10 @@ public final class ExtractorHelper {
                                                       final List<Integer> sortFilterIds) {
         checkServiceId(serviceId);
         return Single.fromCallable(() -> {
+            if (!KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+                throw new IllegalStateException(App.getInstance()
+                        .getString(R.string.kids_mode_search_disabled));
+            }
             final SearchQueryHandlerFactory factory = NewPipe.getService(serviceId)
                     .getSearchQHFactory();
             return SearchInfo.getInfo(NewPipe.getService(serviceId), factory.fromQuery(
@@ -112,6 +119,10 @@ public final class ExtractorHelper {
                                                final String sortFilter) {
         checkServiceId(serviceId);
         return Single.fromCallable(() -> {
+            if (!KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+                throw new IllegalStateException(App.getInstance()
+                        .getString(R.string.kids_mode_search_disabled));
+            }
             final SearchQueryHandlerFactory factory = NewPipe.getService(serviceId)
                     .getSearchQHFactory();
             return SearchInfo.getInfo(NewPipe.getService(serviceId), factory.fromQuery(
@@ -129,6 +140,10 @@ public final class ExtractorHelper {
             final Page page) {
         checkServiceId(serviceId);
         return Single.fromCallable(() -> {
+            if (!KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+                throw new IllegalStateException(App.getInstance()
+                        .getString(R.string.kids_mode_search_disabled));
+            }
             final SearchQueryHandlerFactory factory = NewPipe.getService(serviceId)
                     .getSearchQHFactory();
             return SearchInfo.getMoreItems(NewPipe.getService(serviceId), factory.fromQuery(
@@ -220,6 +235,10 @@ public final class ExtractorHelper {
     public static Single<List<String>> suggestionsFor(final int serviceId, final String query) {
         checkServiceId(serviceId);
         return Single.fromCallable(() -> {
+            if (!KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+                throw new IllegalStateException(App.getInstance()
+                        .getString(R.string.kids_mode_search_disabled));
+            }
             final SuggestionExtractor extractor = NewPipe.getService(serviceId)
                     .getSuggestionExtractor();
             return extractor != null
@@ -372,6 +391,12 @@ public final class ExtractorHelper {
                                                        final ListLinkHandler listLinkHandler,
                                                        final boolean forceLoad) {
         checkServiceId(serviceId);
+        if (listLinkHandler.getContentFilters().stream()
+                .anyMatch(filter -> ChannelTabs.SEARCH.equals(filter.getName()))
+                && !KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+            return Single.error(new IllegalStateException(App.getInstance()
+                    .getString(R.string.kids_mode_search_disabled)));
+        }
         return checkCache(forceLoad, serviceId,
                 listLinkHandler.getUrl(), InfoCache.Type.CHANNEL_TAB,
                 Single.fromCallable(() ->
@@ -383,6 +408,12 @@ public final class ExtractorHelper {
             final ListLinkHandler listLinkHandler,
             final Page nextPage) {
         checkServiceId(serviceId);
+        if (listLinkHandler.getContentFilters().stream()
+                .anyMatch(filter -> ChannelTabs.SEARCH.equals(filter.getName()))
+                && !KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+            return Single.error(new IllegalStateException(App.getInstance()
+                    .getString(R.string.kids_mode_search_disabled)));
+        }
         return Single.fromCallable(() ->
                 ChannelTabInfo.getMoreItems(NewPipe.getService(serviceId),
                         listLinkHandler, nextPage));

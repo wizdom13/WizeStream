@@ -22,6 +22,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.KidsMode;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
@@ -386,7 +387,8 @@ public final class InfoItemDialog {
             );
             addPlayWithKodiEntryIfNeeded();
             addLearningContentEntryIfNeeded();
-            if (infoItem.getServiceId() >= 0) {
+            if (infoItem.getServiceId() >= 0
+                    && KidsMode.isSubscriptionAllowed(context, infoItem.getServiceId())) {
                 addEntry(StreamDialogDefaultEntry.SUBSCRIBE_CHANNEL);
                 addEntry(StreamDialogDefaultEntry.CHANNEL_GROUPS);
             }

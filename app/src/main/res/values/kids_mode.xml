@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kids_mode_title">Kids Mode</string>
+    <string name="kids_mode_summary">Disable YouTube search and hide subscription actions in this profile. A parent PIN protects settings and switching profiles. This does not filter video content.</string>
+    <string name="kids_mode_search_disabled">YouTube search is disabled in Kids Mode.</string>
+    <string name="kids_mode_pin">Parent PIN</string>
+    <string name="kids_mode_pin_confirm">Confirm PIN</string>
+    <string name="kids_mode_set_pin">Set parent PIN</string>
+    <string name="kids_mode_change_pin">Change parent PIN</string>
+    <string name="kids_mode_enter_pin">Enter parent PIN</string>
+    <string name="kids_mode_pin_setup_help">Choose 4–8 digits. This PIN is stored on this device and protects all Kids Mode profiles. Keep it somewhere safe; there is no in-app PIN recovery.</string>
+    <string name="kids_mode_pin_help">Enter the parent PIN to continue.</string>
+    <string name="kids_mode_pin_invalid">Use 4–8 digits.</string>
+    <string name="kids_mode_pin_mismatch">The PINs do not match.</string>
+    <string name="kids_mode_pin_wrong">Incorrect PIN.</string>
+    <string name="kids_mode_pin_wait">Too many attempts. Try again in 30 seconds.</string>
+    <string name="kids_mode_pin_error">Could not verify or save the PIN. Please try again.</string>
+</resources>

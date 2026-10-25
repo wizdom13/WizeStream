@@ -28,6 +28,8 @@ import com.jakewharton.processphoenix.ProcessPhoenix;
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.NewPipeDatabase;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.profiles.KidsMode;
+import org.schabi.newpipe.App;
 import org.schabi.newpipe.RouterActivity;
 import org.schabi.newpipe.about.AboutActivity;
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity;
@@ -425,6 +427,12 @@ public final class NavigationHelper {
 
     public static void openSearchFragment(final FragmentManager fragmentManager,
                                           final int serviceId, final String searchString) {
+        if (!KidsMode.isSearchAllowed(App.getInstance(), serviceId)) {
+            android.widget.Toast.makeText(App.getInstance().getApplicationContext(),
+                    R.string.kids_mode_search_disabled,
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, SearchFragment.getInstance(serviceId, searchString))
                 .addToBackStack(SEARCH_FRAGMENT_TAG)
@@ -434,6 +442,12 @@ public final class NavigationHelper {
     public static void openSavedSearchFeed(
             final FragmentManager fragmentManager,
             @NonNull final SavedSearchFeedEntity savedSearchFeed) {
+        if (!KidsMode.isSearchAllowed(App.getInstance(), savedSearchFeed.getServiceId())) {
+            android.widget.Toast.makeText(App.getInstance().getApplicationContext(),
+                    R.string.kids_mode_search_disabled,
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder,
                         SearchFragment.getSavedFeedInstance(savedSearchFeed))
@@ -721,6 +735,11 @@ public final class NavigationHelper {
 
     public static void openSearch(final Context context, final int serviceId,
                                   final String searchString) {
+        if (!KidsMode.isSearchAllowed(context, serviceId)) {
+            android.widget.Toast.makeText(context, R.string.kids_mode_search_disabled,
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
         final Intent mIntent = new Intent(context, MainActivity.class);
         mIntent.putExtra(Constants.KEY_SERVICE_ID, serviceId);
         mIntent.putExtra(Constants.KEY_SEARCH_STRING, searchString);
