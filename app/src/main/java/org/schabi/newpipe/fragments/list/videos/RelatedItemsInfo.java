@@ -7,8 +7,11 @@ import org.schabi.newpipe.extractor.stream.StreamInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public final class RelatedItemsInfo extends ListInfo<InfoItem> {
+    private final List<String> topics;
+
     /**
      * This class is used to wrap the related items of a StreamInfo into a ListInfo object.
      *
@@ -18,5 +21,9 @@ public final class RelatedItemsInfo extends ListInfo<InfoItem> {
         super(info.getServiceId(), new ListLinkHandler(info.getOriginalUrl(), info.getUrl(),
                 info.getId(), Collections.emptyList(), null), info.getName());
         setRelatedItems(new ArrayList<>(info.getRelatedItems()));
+        topics = RelatedItemTopics.from(info);
+    }
+    public List<String> getTopics() {
+        return Collections.unmodifiableList(topics);
     }
 }

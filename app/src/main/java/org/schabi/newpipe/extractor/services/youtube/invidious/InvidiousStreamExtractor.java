@@ -84,6 +84,16 @@ public final class InvidiousStreamExtractor extends StreamExtractor {
         return new Description(video.getString("description", ""), Description.PLAIN_TEXT);
     }
     @Override
+    public List<String> getTags() {
+        final List<String> tags = new ArrayList<>();
+        for (final Object keyword : video.getArray("keywords", new JsonArray())) {
+            if (keyword instanceof String) {
+                tags.add((String) keyword);
+            }
+        }
+        return tags;
+    }
+    @Override
     public long getLength() {
         return video.getLong("lengthSeconds", 0);
     }

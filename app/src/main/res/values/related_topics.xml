@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="related_topic_empty">No loaded recommendations match this topic. Choose All to see the full list.</string>
+    <string name="related_topic_filter_description">Filter related videos: %1$s</string>
+</resources>

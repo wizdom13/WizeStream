@@ -84,6 +84,7 @@ public class InvidiousExtractionTest {
         final StreamInfo info = StreamInfo.getInfo(ServiceList.YouTube,
                 "https://www.youtube.com/watch?v=" + VIDEO);
         assertEquals("Video", info.getName());
+        assertEquals(java.util.Arrays.asList("Science", "Space"), info.getTags());
         assertEquals(120, info.getDuration());
         assertEquals("https://example.org/videoplayback?itag=18", info.getVideoStreams().get(0)
                 .getContent());

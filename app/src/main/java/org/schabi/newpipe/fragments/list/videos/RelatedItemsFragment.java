@@ -29,7 +29,11 @@ import org.schabi.newpipe.info_list.dialog.InfoItemDialog;
 import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 
+import com.google.android.material.chip.Chip;
+
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import io.reactivex.rxjava3.core.Single;
@@ -40,6 +44,8 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
     private static final String WIDE_DETAIL_LAYOUT_KEY = "wide_detail_layout_key";
 
     private RelatedItemsInfo relatedItemsInfo;
+    private static final String TOPIC_KEY = "related_topic";
+    private String selectedTopic = "";
 
     /*//////////////////////////////////////////////////////////////////////////
     // Views
@@ -140,7 +146,63 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
                         .putBoolean(getString(R.string.auto_queue_key), b).apply());
 
         observeLearningPlaylist();
+        bindTopicFilters();
         return headerBinding::getRoot;
+    }
+
+    private void bindTopicFilters() {
+        if (headerBinding == null || relatedItemsInfo == null) {
+            return;
+        }
+        final var group = headerBinding.topicChipGroup;
+        group.setOnCheckedStateChangeListener(null);
+        group.removeAllViews();
+        final List<String> topics = relatedItemsInfo.getTopics();
+        headerBinding.topicFilters.setVisibility(topics.isEmpty() ? View.GONE : View.VISIBLE);
+        if (!topics.contains(selectedTopic)) {
+            selectedTopic = "";
+        }
+        final List<String> choices = new ArrayList<>();
+        choices.add("");
+        choices.addAll(topics);
+        for (final String topic : choices) {
+            final Chip chip = (Chip) getLayoutInflater().inflate(
+                    R.layout.item_search_music_filter_chip, group, false);
+            chip.setId(View.generateViewId());
+            chip.setTag(topic);
+            chip.setText(topic.isEmpty() ? getString(R.string.all) : topic);
+            chip.setContentDescription(getString(R.string.related_topic_filter_description,
+                    chip.getText()));
+            group.addView(chip);
+            if (topic.equals(selectedTopic)) {
+                group.check(chip.getId());
+            }
+        }
+        group.setOnCheckedStateChangeListener((chips, ids) -> {
+            if (ids.isEmpty()) {
+                return;
+            }
+            final Chip chip = chips.findViewById(ids.get(0));
+            selectedTopic = (String) chip.getTag();
+            infoListAdapter.clearStreamItemList();
+            infoListAdapter.addInfoItemList(getDisplayItems(relatedItemsInfo.getRelatedItems()));
+            hideLoading();
+            showListFooter(false);
+            updateTopicEmptyMessage();
+            itemsList.scrollToPosition(0);
+        });
+    }
+
+    @Override
+    protected List<InfoItem> getDisplayItems(final List<InfoItem> items) {
+        return RelatedItemTopics.filter(items, selectedTopic);
+    }
+
+    private void updateTopicEmptyMessage() {
+        if (headerBinding != null) {
+            headerBinding.topicEmptyMessage.setVisibility(!selectedTopic.isEmpty()
+                    && infoListAdapter.getItemsList().isEmpty() ? View.VISIBLE : View.GONE);
+        }
     }
 
     @Override
@@ -167,9 +229,9 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
 
     @Override
     public void showEmptyState() {
-        if (getParentFragment()
+        if (!selectedTopic.isEmpty() || (getParentFragment()
                 instanceof VideoDetailFragment detail
-                && detail.hasLearningPlaylist(serviceId, url)) {
+                && detail.hasLearningPlaylist(serviceId, url))) {
             hideLoading();
             showListFooter(false);
         } else {
@@ -179,7 +241,10 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
 
     @Override
     public void handleResult(@NonNull final RelatedItemsInfo result) {
+        relatedItemsInfo = result;
+        bindTopicFilters();
         super.handleResult(result);
+        updateTopicEmptyMessage();
 
         if (headerBinding != null) {
             headerBinding.getRoot().setVisibility(View.VISIBLE);
@@ -214,11 +279,13 @@ public class RelatedItemsFragment extends BaseListInfoFragment<InfoItem, Related
     public void onSaveInstanceState(@NonNull final Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable(INFO_KEY, relatedItemsInfo);
+        outState.putString(TOPIC_KEY, selectedTopic);
     }
 
     @Override
     protected void onRestoreInstanceState(@NonNull final Bundle savedState) {
         super.onRestoreInstanceState(savedState);
+        selectedTopic = savedState.getString(TOPIC_KEY, "");
         final Serializable serializable = savedState.getSerializable(INFO_KEY);
         if (serializable instanceof RelatedItemsInfo) {
             this.relatedItemsInfo = (RelatedItemsInfo) serializable;
