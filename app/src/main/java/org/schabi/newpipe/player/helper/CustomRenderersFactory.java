@@ -76,14 +76,16 @@ public final class CustomRenderersFactory extends DefaultRenderersFactory {
                                        final VideoRendererEventListener eventListener,
                                        final long allowedVideoJoiningTimeMs,
                                        final ArrayList<Renderer> out) {
+        final MediaCodecSelector videoSelector =
+                VideoCodecPolicy.decoderSelector(context, mediaCodecSelector);
         if (!useCustomVideoRenderer) {
-            super.buildVideoRenderers(context, extensionRendererMode, mediaCodecSelector,
+            super.buildVideoRenderers(context, extensionRendererMode, videoSelector,
                     enableDecoderFallback, eventHandler, eventListener,
                     allowedVideoJoiningTimeMs, out);
             return;
         }
         out.add(new CustomMediaCodecVideoRenderer(context, getCodecAdapterFactory(),
-                mediaCodecSelector, allowedVideoJoiningTimeMs, enableDecoderFallback, eventHandler,
+                videoSelector, allowedVideoJoiningTimeMs, enableDecoderFallback, eventHandler,
                 eventListener, MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY));
     }
 

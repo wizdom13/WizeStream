@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" translatable="false">
+    <string name="allow_av1_key">allow_av1</string>
     <!-- App versioning -->
     <string name="last_used_preferences_version">last_used_preferences_version</string>
 

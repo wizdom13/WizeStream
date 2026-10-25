@@ -48,7 +48,7 @@ public final class ListHelper {
     private static final List<MediaFormat> AUDIO_FORMAT_EFFICIENCY_RANKING =
             List.of(MediaFormat.MP3, MediaFormat.M4A, MediaFormat.WEBMA);
     // Use a Set for better performance
-    private static final Set<String> HIGH_RESOLUTION_LIST = Set.of("1440p", "2160p");
+    private static final Set<String> HIGH_RESOLUTION_LIST = Set.of("1440p", "2160p", "4320p");
     private static final Pattern RESOLUTION_PATTERN =
             Pattern.compile("^(\\d+)(?:p(\\d+))?.*");
 
@@ -498,9 +498,8 @@ public final class ListHelper {
                 .flatMap(List::stream)
                 // Filter out higher resolutions (or not if high resolutions should always be shown)
                 .filter(stream -> showHigherResolutions
-                        || !HIGH_RESOLUTION_LIST.contains(stream.getResolution()
-                        // Replace any frame rate with nothing
-                        .replaceAll("p\\d+$", "p")))
+                        || !HIGH_RESOLUTION_LIST.contains(
+                        resolutionWithoutRefreshOrVariantMetadata(stream.getResolution())))
                 .collect(Collectors.toList());
 
         final HashMap<String, VideoStream> hashMap = new HashMap<>();

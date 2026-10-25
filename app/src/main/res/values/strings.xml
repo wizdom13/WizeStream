@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="allow_av1_title">Allow AV1 video</string>
+    <string name="allow_av1_summary">Turn off if AV1 video stutters or shows a black screen. Other 60fps formats remain available. Reopen the player after changing this.</string>
     <string name="history_portability_title">Import and export history</string>
     <string name="history_portability_summary">Watch history uses the profile selected when you open the file picker. Search history is shared across profiles. JSON imports merge without deleting existing entries or adding duplicates. CSV is for reading in a spreadsheet. Local media files and their access permissions are not transferred.</string>
     <string name="history_export_json">Export history as JSON</string>

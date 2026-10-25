@@ -89,23 +89,23 @@ public class ItagItem implements Serializable {
             new ItagItem(315, VIDEO_ONLY, WEBM, "2160p60", 60),
 
             // Add new AV1 format video-only streams
-            new ItagItem(394, VIDEO_ONLY, MPEG_4, "144p"),
-            new ItagItem(395, VIDEO_ONLY, MPEG_4, "240p"),
-            new ItagItem(396, VIDEO_ONLY, MPEG_4, "360p"),
-            new ItagItem(397, VIDEO_ONLY, MPEG_4, "480p"),
-            new ItagItem(398, VIDEO_ONLY, MPEG_4, "720p HFR"),
-            new ItagItem(399, VIDEO_ONLY, MPEG_4, "1080p HFR"),
-            new ItagItem(400, VIDEO_ONLY, MPEG_4, "1440p HFR"),
-            new ItagItem(401, VIDEO_ONLY, MPEG_4, "2160p HFR"),
-            new ItagItem(402, VIDEO_ONLY, MPEG_4, "4320p HFR"),
+            new ItagItem(394, VIDEO_ONLY, MPEG_4, "144p AV1"),
+            new ItagItem(395, VIDEO_ONLY, MPEG_4, "240p AV1"),
+            new ItagItem(396, VIDEO_ONLY, MPEG_4, "360p AV1"),
+            new ItagItem(397, VIDEO_ONLY, MPEG_4, "480p AV1"),
+            new ItagItem(398, VIDEO_ONLY, MPEG_4, "720p AV1"),
+            new ItagItem(399, VIDEO_ONLY, MPEG_4, "1080p AV1"),
+            new ItagItem(400, VIDEO_ONLY, MPEG_4, "1440p AV1"),
+            new ItagItem(401, VIDEO_ONLY, MPEG_4, "2160p AV1"),
+            new ItagItem(402, VIDEO_ONLY, MPEG_4, "4320p AV1"),
 
 
             // Add new hbr AV1 streams
-            new ItagItem(698, VIDEO_ONLY, MPEG_4, "720p HFR High"),
-            new ItagItem(699, VIDEO_ONLY, MPEG_4, "1080p HFR High"),
-            new ItagItem(700, VIDEO_ONLY, MPEG_4, "1440p HFR High"),
-            new ItagItem(701, VIDEO_ONLY, MPEG_4, "2160p HFR High"),
-            new ItagItem(571, VIDEO_ONLY, MPEG_4, "4320p HFR High"),
+            new ItagItem(698, VIDEO_ONLY, MPEG_4, "720p AV1 High"),
+            new ItagItem(699, VIDEO_ONLY, MPEG_4, "1080p AV1 High"),
+            new ItagItem(700, VIDEO_ONLY, MPEG_4, "1440p AV1 High"),
+            new ItagItem(701, VIDEO_ONLY, MPEG_4, "2160p AV1 High"),
+            new ItagItem(571, VIDEO_ONLY, MPEG_4, "4320p AV1 High"),
     };
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -372,7 +372,14 @@ public class ItagItem implements Serializable {
      */
     @Nullable
     public String getResolutionString() {
+        if (isAv1() && resolutionString != null && fps > 30) {
+            return resolutionString.replace("p AV1", "p" + fps + " AV1");
+        }
         return resolutionString;
+    }
+
+    public boolean isAv1() {
+        return id >= 394 && id <= 402 || id >= 694 && id <= 701 || id == 571;
     }
 
     public String getCodec() {

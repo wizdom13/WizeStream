@@ -16,6 +16,7 @@ import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.SubtitlesStream;
 import org.schabi.newpipe.extractor.stream.VideoStream;
+import org.schabi.newpipe.player.helper.VideoCodecPolicy;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
@@ -104,12 +105,15 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         final String rejectedCodecFamily = getRejectedCodecFamily(info.getUrl());
         final List<VideoStream> playableVideoStreams = withoutRejectedCodecFamily(
                 withoutRejectedItag(
-                        getPlayableStreams(info.getVideoStreams(), info.getServiceId()),
+                        VideoCodecPolicy.allowedStreams(context,
+                                getPlayableStreams(info.getVideoStreams(), info.getServiceId())),
                         rejectedItag),
                 rejectedCodecFamily);
         final List<VideoStream> playableVideoOnlyStreams = withoutRejectedCodecFamily(
                 withoutRejectedItag(
-                        getPlayableStreams(info.getVideoOnlyStreams(), info.getServiceId()),
+                        VideoCodecPolicy.allowedStreams(context,
+                                getPlayableStreams(info.getVideoOnlyStreams(),
+                                        info.getServiceId())),
                         rejectedItag),
                 rejectedCodecFamily);
         final List<VideoStream> videoStreamsList = ListHelper.getSortedStreamVideosList(context,

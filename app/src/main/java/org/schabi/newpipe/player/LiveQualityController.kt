@@ -17,6 +17,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.player.helper.VideoCodecPolicy
 
 /**
  * Owns manual quality selection for adaptive live manifests.
@@ -202,7 +203,10 @@ class LiveQualityController(private val player: Player) {
                 continue
             }
             for (index in 0 until group.length) {
-                optionFromFormat(group.getTrackFormat(index))?.let(seen::add)
+                val format = group.getTrackFormat(index)
+                if (VideoCodecPolicy.allowsFormat(player.context, format)) {
+                    optionFromFormat(format)?.let(seen::add)
+                }
             }
         }
 
@@ -228,7 +232,7 @@ class LiveQualityController(private val player: Player) {
             }
             for (index in 0 until group.length) {
                 val format = group.getTrackFormat(index)
-                if (optionFromFormat(format) != option) {
+                if (!VideoCodecPolicy.allowsFormat(player.context, format) || optionFromFormat(format) != option) {
                     continue
                 }
                 val bitrate = when {

@@ -21,6 +21,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class ListHelperTest {
+    @Test
+    public void av1LabelsRespectHigherResolutionPreference() {
+        final var streams = List.of(
+                generateVideoStream("av1-1080", MediaFormat.MPEG_4, "1080p60 AV1", true),
+                generateVideoStream("av1-1440", MediaFormat.MPEG_4, "1440p60 AV1", true),
+                generateVideoStream("av1-2160", MediaFormat.MPEG_4, "2160p AV1 High", true),
+                generateVideoStream("av1-4320", MediaFormat.MPEG_4, "4320p60 AV1", true));
+        assertEquals(List.of(streams.get(0)), ListHelper.getSortedStreamVideosList(
+                MediaFormat.MPEG_4, false, List.of(), streams, false, true));
+        assertEquals(List.of(streams.get(3), streams.get(2), streams.get(1), streams.get(0)),
+                ListHelper.getSortedStreamVideosList(
+                        MediaFormat.MPEG_4, true, List.of(), streams, false, true));
+    }
+
     private static final String BEST_RESOLUTION_KEY = "best_resolution";
     private static final List<AudioStream> AUDIO_STREAMS_TEST_LIST = List.of(
             generateAudioStream("m4a-128-1", MediaFormat.M4A, 128),
