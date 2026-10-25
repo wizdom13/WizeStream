@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.core.view.doOnNextLayout
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.evernote.android.state.State
@@ -81,6 +82,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private var contextualSearchQuery = ""
     private var sortingEnabled = false
     private var sortController: SubscriptionSortController? = null
+    private var pendingBrowseAnchor: SubscriptionScrollAnchor? = null
     private var countDisposable: io.reactivex.rxjava3.disposables.Disposable? = null
 
     @State
@@ -126,6 +128,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         groupActions.close()
         sortController?.close()
         sortController = null
+        pendingBrowseAnchor = null
         countDisposable?.dispose()
         countDisposable = null
         super.onDestroyView()
@@ -352,10 +355,36 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     }
 
     private fun toggleSorting() {
+        val anchor = if (sortingEnabled) sortController?.scrollAnchor() else browseScrollAnchor()
         sortingEnabled = !sortingEnabled
         sortController?.setEnabled(sortingEnabled)
         updateSortingVisibility()
+        if (sortingEnabled) sortController?.scrollTo(anchor) else restoreBrowseScroll(anchor)
         activity.invalidateOptionsMenu()
+    }
+
+    private fun browseItemKey(position: Int): String? {
+        if (position !in 0 until groupAdapter.itemCount) return null
+        return when (val item = groupAdapter.getItem(position)) {
+            is ChannelItem -> item.layoutKey
+            is org.schabi.newpipe.local.subscription.item.SubscriptionSeparatorItem -> item.entry.key
+            else -> null
+        }
+    }
+
+    private fun browseScrollAnchor(): SubscriptionScrollAnchor? = pendingBrowseAnchor ?: SubscriptionScrollAnchor.capture(binding.itemsList, ::browseItemKey)
+
+    private fun restoreBrowseScroll(anchor: SubscriptionScrollAnchor?) {
+        if (anchor == null) return
+        val position = (0 until groupAdapter.itemCount).firstOrNull { browseItemKey(it) == anchor.key } ?: return
+        // A database emission can arrive before the pending scroll has been laid out.
+        // Retain the requested channel rather than recapturing the old visible children.
+        pendingBrowseAnchor = anchor
+        binding.itemsList.doOnNextLayout {
+            if (pendingBrowseAnchor === anchor) pendingBrowseAnchor = null
+        }
+        (binding.itemsList.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)
+            ?.scrollToPositionWithOffset(position, anchor.offset)
     }
 
     private fun updateSortingVisibility() {
@@ -507,12 +536,15 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                     }
                 }
 
+                val anchor = if (sortingEnabled) null else browseScrollAnchor()
                 subscriptionsSection.update(result.subscriptions)
                 subscriptionsSection.setHideWhenEmpty(false)
 
                 if (itemsListState != null) {
                     binding.itemsList.layoutManager?.onRestoreInstanceState(itemsListState)
                     itemsListState = null
+                } else {
+                    restoreBrowseScroll(anchor)
                 }
             }
 

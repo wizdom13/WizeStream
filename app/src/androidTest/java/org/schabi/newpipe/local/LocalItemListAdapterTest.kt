@@ -43,6 +43,41 @@ class LocalItemListAdapterTest {
     }
 
     @Test
+    fun inlineSelectionKeepsThumbnailsAndInterceptsClicksUntilFinished() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            val context = ContextThemeWrapper(instrumentation.targetContext, R.style.LightTheme)
+            val adapter = LocalItemListAdapter(context)
+            val first = playlistEntry(0)
+            val duplicate = playlistEntry(1)
+            adapter.addItems(listOf(first, duplicate))
+            var played: LocalItem? = null
+            var selected: LocalItem? = null
+            adapter.setSelectedListener { played = it }
+            for (mode in listOf(ItemViewMode.LIST, ItemViewMode.CARD, ItemViewMode.GRID)) {
+                adapter.setItemViewMode(mode)
+                val holder = adapter.createViewHolder(FrameLayout(context), adapter.getItemViewType(1))
+                adapter.setSelectionToggle { selected = it }
+                adapter.bindViewHolder(holder, 1)
+                val thumbnail = holder.itemView.findViewById<View>(R.id.itemThumbnailContainer)
+                assertEquals(View.VISIBLE, thumbnail.visibility)
+                assertEquals(View.GONE, holder.itemView.findViewById<View>(R.id.itemHandle).visibility)
+                played = null
+                holder.itemView.performClick()
+                assertSame(duplicate, selected)
+                assertEquals(null, played)
+                selected = null
+                holder.itemView.performLongClick()
+                assertSame(duplicate, selected)
+                adapter.setSelectionToggle(null)
+                adapter.bindViewHolder(holder, 1)
+                holder.itemView.performClick()
+                assertSame(duplicate, played)
+            }
+        }
+    }
+
+    @Test
     fun exactPositionRemovalAndUndoPreserveDuplicateEntries() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.runOnMainSync {

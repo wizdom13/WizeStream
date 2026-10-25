@@ -18,6 +18,8 @@ class ChannelItem(
     var itemVersion: ItemVersion = ItemVersion.NORMAL,
     var gesturesListener: OnClickGesture<ChannelInfoItem>? = null
 ) : Item<GroupieViewHolder>() {
+    val layoutKey: String get() = "channel:${infoItem.serviceId}:${infoItem.url}"
+
     override fun getId(): Long = if (subscriptionId == -1L) super.getId() else subscriptionId
 
     enum class ItemVersion { NORMAL, MINI, GRID }

@@ -42,6 +42,7 @@ internal class SubscriptionSortController(
     private var scope = FeedScope(FeedScope.ALL_SERVICES, 0)
     private var query = ""
     private var rows = emptyList<SubscriptionLayout.Entry>()
+    private var pendingAnchor: SubscriptionScrollAnchor? = null
     private var loaded = false
     private var dragging = false
     private var dragChanged = false
@@ -137,6 +138,28 @@ internal class SubscriptionSortController(
         if (changed) refresh()
     }
 
+    fun scrollTo(anchor: SubscriptionScrollAnchor?) {
+        pendingAnchor = anchor
+        if (anchor == null) {
+            (binding.subscriptionSortList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(0, 0)
+        }
+        applyPendingAnchor()
+    }
+
+    fun scrollAnchor(): SubscriptionScrollAnchor? = SubscriptionScrollAnchor.capture(binding.subscriptionSortList) { position ->
+        rows.getOrNull(position)?.key
+    }
+
+    private fun applyPendingAnchor() {
+        val anchor = pendingAnchor ?: return
+        if (!loaded) return
+        val position = rows.indexOfFirst { it.key == anchor.key }
+        if (position >= 0) {
+            (binding.subscriptionSortList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, anchor.offset)
+        }
+        pendingAnchor = null
+    }
+
     fun setQuery(value: String) {
         query = ContextualSearchHelper.normalizeQuery(value)
         refresh()
@@ -171,6 +194,7 @@ internal class SubscriptionSortController(
     private fun refresh() {
         rebuildRows()
         adapter.notifyDataSetChanged()
+        applyPendingAnchor()
         binding.subscriptionSortCount.text = context.getString(R.string.subscription_sort_selected, model.selected.size)
         binding.subscriptionSortSelect.isEnabled = loaded && rows.any { it.separator == null }
         binding.subscriptionSortMove.isEnabled = loaded && model.selected.isNotEmpty()

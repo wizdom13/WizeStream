@@ -32,6 +32,15 @@ public class LocalItemBuilder {
 
     private OnClickGesture<LocalItem> onSelectedListener;
     private Consumer<LocalItem> onUploaderSelectedListener;
+    private Consumer<LocalItem> onSelectionToggle;
+
+    public void setSelectionToggle(final Consumer<LocalItem> listener) {
+        onSelectionToggle = listener;
+    }
+
+    public boolean isSelecting() {
+        return onSelectionToggle != null;
+    }
 
     public LocalItemBuilder(final Context context) {
         this.context = context;
@@ -42,6 +51,19 @@ public class LocalItemBuilder {
     }
 
     public OnClickGesture<LocalItem> getOnItemSelectedListener() {
+        if (onSelectionToggle != null) {
+            return new OnClickGesture<>() {
+                @Override
+                public void selected(final LocalItem item) {
+                    onSelectionToggle.accept(item);
+                }
+
+                @Override
+                public void held(final LocalItem item) {
+                    onSelectionToggle.accept(item);
+                }
+            };
+        }
         return onSelectedListener;
     }
 
@@ -50,7 +72,7 @@ public class LocalItemBuilder {
     }
 
     public Consumer<LocalItem> getOnUploaderSelectedListener() {
-        return onUploaderSelectedListener;
+        return onSelectionToggle != null ? onSelectionToggle : onUploaderSelectedListener;
     }
 
     public void setOnUploaderSelectedListener(final Consumer<LocalItem> listener) {

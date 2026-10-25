@@ -189,7 +189,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
                 selectionController.close();
             }
             selectionController = new org.schabi.newpipe.local.CollectionSelectionController(
-                    requireContext(), itemListAdapter, separators, () -> {
+                    (androidx.appcompat.app.AppCompatActivity) requireActivity(),
+                    itemsList, itemListAdapter, separators, () -> {
                         completePlaylists = itemListAdapter.getItemsList().stream()
                                 .filter(PlaylistLocalItem.class::isInstance)
                                 .map(PlaylistLocalItem.class::cast)
@@ -638,6 +639,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     }
 
     private void updateEditMode() {
+        if (!editMode && selectionController != null) {
+            selectionController.close();
+        }
         final View root = getView();
         if (root != null) {
             root.findViewById(R.id.collection_select_move)
@@ -658,7 +662,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
             @Override
             public int getDragDirs(@NonNull final RecyclerView recyclerView,
                                    @NonNull final RecyclerView.ViewHolder viewHolder) {
-                if (!editMode || isPlaylistListFiltered()) {
+                if (!editMode || isPlaylistListFiltered() || itemListAdapter.isSelecting()) {
                     return 0;
                 }
                 final int directions = ItemTouchHelper.UP | ItemTouchHelper.DOWN;

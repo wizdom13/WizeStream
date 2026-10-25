@@ -117,6 +117,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
     protected boolean standaloneSearchExpanded;
 
     private LocalPlaylistHeaderBinding headerBinding;
+    private android.widget.TextView editToggle;
+    private View selectMove;
     private PlaylistControlBinding playlistControlBinding;
 
     private ItemTouchHelper itemTouchHelper;
@@ -220,8 +222,11 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             }
         });
 
+        requireView().findViewById(R.id.local_playlist_edit_controls).setVisibility(View.VISIBLE);
+        editToggle = requireView().findViewById(R.id.playlist_edit_toggle);
+        selectMove = requireView().findViewById(R.id.collection_select_move);
         headerBinding.playlistTitleView.setOnClickListener(view -> createRenameDialog());
-        headerBinding.collectionSelectMove.setOnClickListener(view -> {
+        selectMove.setOnClickListener(view -> {
             if (!editMode || ContextualSearchHelper.isActive(contextualSearchQuery)
                     || separators == null) {
                 return;
@@ -230,7 +235,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                 selectionController.close();
             }
             selectionController = new org.schabi.newpipe.local.CollectionSelectionController(
-                    requireContext(), itemListAdapter, separators, () -> {
+                    (androidx.appcompat.app.AppCompatActivity) requireActivity(),
+                    itemsList, itemListAdapter, separators, () -> {
                         captureUnfilteredItemsFromAdapter();
                         if (debounceSaver != null) {
                             debounceSaver.setHasChangesToSave();
@@ -238,7 +244,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                     });
             selectionController.show();
         });
-        headerBinding.playlistEditToggle.setOnClickListener(view -> {
+        editToggle.setOnClickListener(view -> {
             editMode = !editMode;
             updateEditMode();
         });
@@ -410,6 +416,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         super.onDestroyView();
 
         headerBinding = null;
+        editToggle = null;
+        selectMove = null;
         playlistControlBinding = null;
 
 
@@ -769,8 +777,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         itemListAdapter.addItems(displayedItems);
 
         final boolean searchActive = ContextualSearchHelper.isActive(contextualSearchQuery);
-        if (headerBinding != null) {
-            headerBinding.collectionSelectMove.setEnabled(!searchActive);
+        if (selectMove != null) {
+            selectMove.setEnabled(!searchActive);
         }
         if (itemTouchHelper != null) {
             itemTouchHelper.attachToRecyclerView(searchActive ? null : itemsList);
@@ -1034,11 +1042,14 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
 
 
     private void updateEditMode() {
-        if (headerBinding != null) {
-            headerBinding.collectionSelectMove.setVisibility(editMode ? View.VISIBLE : View.GONE);
-            headerBinding.collectionSelectMove
+        if (!editMode && selectionController != null) {
+            selectionController.close();
+        }
+        if (selectMove != null) {
+            selectMove.setVisibility(editMode ? View.VISIBLE : View.GONE);
+            selectMove
                     .setEnabled(!ContextualSearchHelper.isActive(contextualSearchQuery));
-            headerBinding.playlistEditToggle.setText(
+            editToggle.setText(
                     editMode ? R.string.playlist_edit_done : R.string.playlist_edit_mode);
         }
         if (itemListAdapter != null) {
@@ -1066,7 +1077,8 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             @Override
             public int getDragDirs(@NonNull final RecyclerView recyclerView,
                                    @NonNull final RecyclerView.ViewHolder viewHolder) {
-                return editMode && !ContextualSearchHelper.isActive(contextualSearchQuery)
+                return editMode && !itemListAdapter.isSelecting()
+                        && !ContextualSearchHelper.isActive(contextualSearchQuery)
                         ? super.getDragDirs(recyclerView, viewHolder) : 0;
             }
 
@@ -1121,7 +1133,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
             public int getSwipeDirs(@NonNull final RecyclerView recyclerView,
                                     @NonNull final RecyclerView.ViewHolder viewHolder) {
                 if (!isSwipeRemovalEnabled()
-                        || itemListAdapter == null) {
+                        || itemListAdapter == null || itemListAdapter.isSelecting()) {
                     return ItemTouchHelper.ACTION_STATE_IDLE;
                 }
 

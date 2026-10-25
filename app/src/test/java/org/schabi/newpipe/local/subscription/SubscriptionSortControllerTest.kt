@@ -68,6 +68,24 @@ class SubscriptionSortControllerTest {
     }
 
     @Test
+    fun incomingScrollAnchorWaitsForChannelsAndPreservesItsPixelOffset() {
+        controller.close()
+        controller = SubscriptionSortController(activity, profile, binding, null)
+        val many = (0 until 50).map { index ->
+            SubscriptionEntity(uid = index.toLong(), serviceId = 0, url = "https://example.org/$index", name = "Channel $index")
+        }
+        val anchor = SubscriptionScrollAnchor(SubscriptionLayout.key(many[25]), -17)
+        controller.scrollTo(anchor)
+        controller.update(many, many.map { Entry(SubscriptionLayout.key(it)) }, scope)
+        row(25)
+        assertEquals(anchor, controller.scrollAnchor())
+        controller.update(many, many.reversed().map { Entry(SubscriptionLayout.key(it)) }, scope)
+        controller.scrollTo(anchor)
+        row(24)
+        assertEquals(anchor, controller.scrollAnchor())
+    }
+
+    @Test
     fun selectionSurvivesSearchAndBulkMovePersistsHiddenChannels() {
         controller.setQuery("Cars")
         row(0).root.performLongClick()

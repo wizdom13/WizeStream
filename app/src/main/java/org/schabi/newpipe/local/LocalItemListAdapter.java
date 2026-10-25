@@ -164,6 +164,15 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
         localItemBuilder.setOnItemSelectedListener(listener);
     }
 
+    public void setSelectionToggle(@Nullable final Consumer<LocalItem> listener) {
+        localItemBuilder.setSelectionToggle(listener);
+        notifyDataSetChanged();
+    }
+
+    public boolean isSelecting() {
+        return localItemBuilder.isSelecting();
+    }
+
     public void unsetSelectedListener() {
         localItemBuilder.setOnItemSelectedListener(null);
     }
@@ -577,15 +586,17 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
                     || holder instanceof RemoteBookmarkPlaylistItemHolder
                     || holder instanceof LocalPlaylistStreamItemHolder) {
                 final View handle = holder.itemView.findViewById(R.id.itemHandle);
-                handle.setEnabled(itemHandleEnabled);
-                handle.setVisibility(itemHandleEnabled ? View.VISIBLE : View.GONE);
+                handle.setEnabled(itemHandleEnabled && !isSelecting());
+                handle.setVisibility(itemHandleEnabled && !isSelecting()
+                        ? View.VISIBLE : View.GONE);
             }
         } else if (getItemViewType(position) == SEPARATOR_TYPE) {
             final int row = position - (hasHeader() ? 1 : 0);
             final TextView label = holder.itemView.findViewById(R.id.separator_label);
             label.setText(separators.get(-rows.get(row) - 1));
             final View handle = holder.itemView.findViewById(R.id.separator_handle);
-            handle.setVisibility(itemHandleEnabled ? View.VISIBLE : View.GONE);
+            handle.setVisibility(itemHandleEnabled && !isSelecting()
+                        ? View.VISIBLE : View.GONE);
             handle.setOnTouchListener((view, event) -> {
                 if (event.getActionMasked() == android.view.MotionEvent.ACTION_DOWN
                         && itemHandleEnabled && separatorDrag != null) {
@@ -646,6 +657,7 @@ public class LocalItemListAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     @Override
     public void onViewRecycled(@NonNull final RecyclerView.ViewHolder holder) {
+        holder.itemView.setSelected(false);
         noteBadges.clear(holder.itemView);
         super.onViewRecycled(holder);
     }
