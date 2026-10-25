@@ -137,6 +137,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.touchUnlockButton.setOnClickListener(view -> {
             setTouchLocked(false);
             showControlsThenHide();
+            binding.touchLockButton.requestFocus();
         });
     }
 
@@ -1192,6 +1193,21 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     public boolean isTouchLocked() {
         return touchLocked;
+    }
+
+    /**
+     * Called before activity shortcuts and focused views can handle a remote key.
+     * @param event the remote key press or release
+     * @return whether the lock consumed this event
+     */
+    public boolean dispatchTouchLockedKeyEvent(final KeyEvent event) {
+        if (!touchLocked) {
+            return false;
+        }
+        binding.touchUnlockButton.requestFocus();
+        // Preserve the dimming layout's first-press wake behavior before reaching Unlock.
+        return binding.getRoot().dispatchKeyEvent(event)
+                || binding.touchLockOverlay.dispatchKeyEvent(event);
     }
 
     private void setTouchLocked(final boolean locked) {

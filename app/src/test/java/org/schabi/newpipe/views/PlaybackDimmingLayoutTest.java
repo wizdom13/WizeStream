@@ -3,12 +3,15 @@ package org.schabi.newpipe.views;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
 
 import android.app.Activity;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 
 import org.junit.After;
 import org.junit.Before;
@@ -20,8 +23,13 @@ import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.databinding.PlayerBinding;
+import org.schabi.newpipe.player.ui.MainPlayerUi;
+import org.schabi.newpipe.player.ui.VideoPlayerUi;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 28)
@@ -91,6 +99,46 @@ public class PlaybackDimmingLayoutTest {
         assertFalse(layout.isDimmed());
         assertTrue(layout.dispatchKeyEvent(
                 new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER)));
+    }
+
+    @Test
+    public void lockedPlayerWakesBeforeTheRemoteCanUnlockIt() throws Exception {
+        final PlayerBinding binding = PlayerBinding.bind(layout);
+        binding.touchLockOverlay.setVisibility(View.VISIBLE);
+        binding.touchUnlockButton.setFocusableInTouchMode(true);
+        assertTrue(binding.touchUnlockButton.requestFocus());
+        final AtomicInteger unlocks = new AtomicInteger();
+        binding.touchUnlockButton.setOnClickListener(view -> unlocks.incrementAndGet());
+        final MainPlayerUi ui = mock(MainPlayerUi.class, CALLS_REAL_METHODS);
+        final Field bindingField = VideoPlayerUi.class.getDeclaredField("binding");
+        bindingField.setAccessible(true);
+        bindingField.set(ui, binding);
+        final Field lockField = MainPlayerUi.class.getDeclaredField("touchLocked");
+        lockField.setAccessible(true);
+        lockField.setBoolean(ui, true);
+
+        layout.configure(true, 60_000);
+        idle(60);
+        assertTrue(layout.isDimmed());
+        assertTrue(ui.dispatchTouchLockedKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)));
+        assertTrue(ui.dispatchTouchLockedKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER)));
+        assertFalse(layout.isDimmed());
+        assertEquals(0, unlocks.get());
+        assertTrue(binding.touchUnlockButton.hasFocus());
+
+        assertTrue(ui.dispatchTouchLockedKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT)));
+        assertTrue(ui.dispatchTouchLockedKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_RIGHT)));
+        assertTrue(binding.touchUnlockButton.hasFocus());
+        assertEquals(0, unlocks.get());
+        assertTrue(ui.dispatchTouchLockedKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)));
+        assertTrue(ui.dispatchTouchLockedKeyEvent(
+                new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER)));
+        assertEquals(1, unlocks.get());
     }
 
     @Test

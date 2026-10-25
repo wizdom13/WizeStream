@@ -23,7 +23,17 @@ class TvRemoteKeyDispatcher @JvmOverloads constructor(
     private val keys by lazy { TvRemoteKeys(PreferenceManager.getDefaultSharedPreferences(activity)) }
     private val press = TvRemoteKeyPress()
 
-    fun dispatch(event: KeyEvent): Boolean = press.dispatch(
+    fun dispatch(event: KeyEvent): Boolean {
+        val lockedUi = playerProvider.get()?.UIs()?.get(MainPlayerUi::class.java)?.orElse(null)
+            ?.takeIf { it.isTouchLocked && it.parentActivity.orElse(null) === activity }
+        if (lockedUi != null) {
+            press.clear()
+            return lockedUi.dispatchTouchLockedKeyEvent(event)
+        }
+        return dispatchShortcut(event)
+    }
+
+    private fun dispatchShortcut(event: KeyEvent): Boolean = press.dispatch(
         event.keyCode,
         event.deviceId,
         event.action,

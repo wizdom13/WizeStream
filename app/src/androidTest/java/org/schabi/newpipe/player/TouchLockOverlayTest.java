@@ -1,27 +1,88 @@
 package org.schabi.newpipe.player;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.schabi.newpipe.about.AboutActivity;
 import org.schabi.newpipe.views.TouchLockOverlay;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RunWith(AndroidJUnit4.class)
 public class TouchLockOverlayTest {
+    @Test
+    public void blocksRemoteNavigationAndPlaybackButAllowsUnlockAndVolume() {
+        try (ActivityScenario<AboutActivity> scenario =
+                     ActivityScenario.launch(AboutActivity.class)) {
+            scenario.onActivity(activity -> {
+                final TouchLockOverlay overlay = new TouchLockOverlay(activity, null);
+                final Button unlock = new Button(activity);
+                unlock.setText("Unlock");
+                unlock.setFocusableInTouchMode(true);
+                final AtomicInteger clicks = new AtomicInteger();
+                unlock.setOnClickListener(view -> clicks.incrementAndGet());
+                overlay.addView(unlock);
+                activity.setContentView(overlay);
+                final int exact = View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY);
+                overlay.measure(exact, exact);
+                overlay.layout(0, 0, 400, 400);
+                assertTrue(unlock.requestFocus());
+
+                final int[] blockedKeys = {KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
+                        KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+                        KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_TAB,
+                        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+                        KeyEvent.KEYCODE_PROG_RED};
+                for (final int code : blockedKeys) {
+                    assertTrue(overlay.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, code)));
+                    assertTrue(overlay.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, code)));
+                    assertTrue(unlock.hasFocus());
+                    assertEquals(0, clicks.get());
+                }
+                assertFalse(overlay.dispatchKeyEvent(
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_UP)));
+                assertFalse(overlay.dispatchKeyEvent(
+                        new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_VOLUME_UP)));
+
+                final int[] confirmKeys = {KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+                        KeyEvent.KEYCODE_NUMPAD_ENTER};
+                for (int i = 0; i < confirmKeys.length; i++) {
+                    assertTrue(overlay.dispatchKeyEvent(
+                            new KeyEvent(KeyEvent.ACTION_DOWN, confirmKeys[i])));
+                    assertTrue("Pressed for " + KeyEvent.keyCodeToString(confirmKeys[i]),
+                            unlock.isPressed());
+                    assertEquals(i, clicks.get());
+                    assertTrue(overlay.dispatchKeyEvent(
+                            new KeyEvent(KeyEvent.ACTION_UP, confirmKeys[i])));
+                    assertEquals(i + 1, clicks.get());
+                }
+                assertTrue(overlay.dispatchKeyEvent(
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER)));
+                assertTrue(overlay.dispatchKeyEvent(KeyEvent.changeFlags(
+                        new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER),
+                        KeyEvent.FLAG_CANCELED)));
+                assertFalse(unlock.isPressed());
+                assertEquals(confirmKeys.length, clicks.get());
+            });
+        }
+    }
+
     @Test
     public void blocksPlaybackTouchesButKeepsUnlockReachable() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
