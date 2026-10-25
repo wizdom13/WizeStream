@@ -4,6 +4,24 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.33.0 (`1033000`)
+
+### Improvements
+
+- Added per-profile Kids Mode under Settings → Profiles, with a device-local parent PIN protecting settings and profile changes. Kids Mode disables YouTube search and subscription actions; it does not filter video content.
+- Added Invidious community posts with text, photos, video and playlist attachments, read-only polls, and pagination. Post images use the selected Invidious instance without silently falling back to direct YouTube requests.
+- Added topic chips to related videos using the current video's tags and description hashtags. Topics filter loaded recommendations locally, and All restores the original list without changing autoplay recommendations.
+- Added an Allow AV1 video setting for devices where AV1 playback stutters or shows a black screen, while keeping other 60fps formats available.
+- Added inline thumbnail-row selection in bookmarks and local playlists, kept editing controls visible while scrolling, and preserved subscription scroll position when changing edit mode or sorting.
+- Replaced the feed header refresh control with a compact icon.
+- Improved watch-history synchronization by reusing history snapshots within each sync batch.
+
+### Fixes
+
+- Kept Android TV remote controls inside the player lock and prevented locked remote actions from changing playback or escaping into underlying content.
+- Restored swipe-down while video details are still loading when no scrolling child is available.
+- Corrected video quality labels to reflect the selected format's actual frame rate.
+
 ## WizeStream 1.32.1 (`1032001`)
 
 ### Improvements

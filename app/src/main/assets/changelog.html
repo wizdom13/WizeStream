@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1033000">WizeStream 1.33.0</a></li>
 <li><a href="#release-1032001">WizeStream 1.32.1</a></li>
 <li><a href="#release-1032000">WizeStream 1.32.0</a></li>
 <li><a href="#release-1031009">WizeStream 1.31.9</a></li>
@@ -99,6 +100,27 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1033000" data-version="1.33.0" data-version-code="1033000">
+<h2>WizeStream 1.33.0</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added per-profile Kids Mode under Settings → Profiles, with a device-local parent PIN protecting settings and profile changes. Kids Mode disables YouTube search and subscription actions; it does not filter video content.</li>
+<li>Added Invidious community posts with text, photos, video and playlist attachments, read-only polls, and pagination. Post images use the selected Invidious instance without silently falling back to direct YouTube requests.</li>
+<li>Added topic chips to related videos using the current video&#x27;s tags and description hashtags. Topics filter loaded recommendations locally, and All restores the original list without changing autoplay recommendations.</li>
+<li>Added an Allow AV1 video setting for devices where AV1 playback stutters or shows a black screen, while keeping other 60fps formats available.</li>
+<li>Added inline thumbnail-row selection in bookmarks and local playlists, kept editing controls visible while scrolling, and preserved subscription scroll position when changing edit mode or sorting.</li>
+<li>Replaced the feed header refresh control with a compact icon.</li>
+<li>Improved watch-history synchronization by reusing history snapshots within each sync batch.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Kept Android TV remote controls inside the player lock and prevented locked remote actions from changing playback or escaping into underlying content.</li>
+<li>Restored swipe-down while video details are still loading when no scrolling child is available.</li>
+<li>Corrected video quality labels to reflect the selected format&#x27;s actual frame rate.</li>
+</ul>
+</div>
+</section>
 <section id="release-1032001" data-version="1.32.1" data-version-code="1032001">
 <h2>WizeStream 1.32.1</h2>
 <div class="release-notes">

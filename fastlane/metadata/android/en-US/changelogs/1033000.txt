@@ -1,0 +1,6 @@
+- Added profile Kids Mode with parent PIN (not a content filter).
+- Added Invidious community posts and local related-video topic filters.
+- Added an AV1 playback option and accurate frame-rate labels.
+- Improved collection selection, editing controls, and subscription scroll preservation.
+- Added a compact feed refresh icon and faster history sync.
+- Fixed TV remote actions while the player is locked and swipe-down while video details load.
