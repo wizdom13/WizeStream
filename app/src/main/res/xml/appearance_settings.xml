@@ -3,6 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_appearance_title">
 
+    <Preference
+        android:key="theme_packs"
+        android:title="@string/theme_packs_title"
+        android:summary="@string/theme_packs_summary"
+        android:fragment="org.schabi.newpipe.settings.ThemePackSettingsFragment"
+        app:iconSpaceReserved="false" />
+
     <ListPreference
         android:defaultValue="@string/default_theme_value"
         android:entries="@array/theme_description_list"

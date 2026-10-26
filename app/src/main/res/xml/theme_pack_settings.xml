@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/theme_packs_title">
+    <Preference android:key="theme_pack_status" android:title="@string/theme_pack_active"
+        android:selectable="false" app:iconSpaceReserved="false" />
+    <Preference android:key="theme_pack_presets" android:title="@string/theme_pack_presets"
+        app:iconSpaceReserved="false" />
+    <Preference android:key="theme_pack_import" android:title="@string/theme_pack_import"
+        android:summary="@string/theme_packs_summary" app:iconSpaceReserved="false" />
+    <Preference android:key="theme_pack_export" android:title="@string/theme_pack_export"
+        app:iconSpaceReserved="false" />
+    <Preference android:key="theme_pack_restore" android:title="@string/theme_pack_restore"
+        android:summary="@string/theme_pack_restore_message" app:iconSpaceReserved="false" />
+</PreferenceScreen>

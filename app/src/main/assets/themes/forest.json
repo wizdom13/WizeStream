@@ -1,0 +1,10 @@
+{
+  "format": "wizestream-theme",
+  "version": 1,
+  "name": "Forest",
+  "author": "WizeStream",
+  "mode": "system",
+  "night": "dark",
+  "lightAccent": "green",
+  "darkAccent": "green"
+}

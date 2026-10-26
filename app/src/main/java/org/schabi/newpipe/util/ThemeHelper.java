@@ -25,6 +25,7 @@ import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.info_list.ItemViewMode;
+import org.schabi.newpipe.themes.ThemePacks;
 
 import java.util.Locale;
 
@@ -54,13 +55,18 @@ public final class ThemeHelper {
     }
 
     public static String getThemeColorPreference(final Context context) {
+        final String packValue = ThemePacks.accent(context);
+        if (packValue != null) {
+            return packValue;
+        }
         return PreferenceManager.getDefaultSharedPreferences(context).getString(
                 context.getString(R.string.theme_color_key),
                 context.getString(R.string.default_theme_color_value));
     }
 
     public static boolean isFollowSystemThemeColor(final Context context) {
-        return isThemeColor(context, R.string.theme_color_follow_system_value, "follow_system");
+        return !isEyeComfortSelected(context)
+                && isThemeColor(context, R.string.theme_color_follow_system_value, "follow_system");
     }
 
     public static boolean shouldApplyDynamicColors(final Context context) {
@@ -79,34 +85,33 @@ public final class ThemeHelper {
             context.getTheme().applyStyle(R.style.EyeComfortTheme, true);
             return;
         }
-        final int overlay = getThemeColorOverlay(context);
+        final int overlay = getThemeColorOverlay(getThemeColorPreference(context));
         if (overlay != 0) {
             context.getTheme().applyStyle(overlay, true);
         }
     }
 
     @StyleRes
-    private static int getThemeColorOverlay(final Context context) {
-        if (isThemeColor(context, R.string.theme_color_wizestream_value,
-                "wizestream")) {
+    public static int getThemeColorOverlay(final String accent) {
+        if ("wizestream".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_wizestream;
-        } else if (isThemeColor(context, R.string.theme_color_neutral_value, "neutral")) {
+        } else if ("neutral".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Neutral;
-        } else if (isThemeColor(context, R.string.theme_color_green_value, "green")) {
+        } else if ("green".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Green;
-        } else if (isThemeColor(context, R.string.theme_color_blue_value, "blue")) {
+        } else if ("blue".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Blue;
-        } else if (isThemeColor(context, R.string.theme_color_cyan_value, "cyan")) {
+        } else if ("cyan".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Cyan;
-        } else if (isThemeColor(context, R.string.theme_color_purple_value, "purple")) {
+        } else if ("purple".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Purple;
-        } else if (isThemeColor(context, R.string.theme_color_yellow_value, "yellow")) {
+        } else if ("yellow".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Yellow;
-        } else if (isThemeColor(context, R.string.theme_color_orange_value, "orange")) {
+        } else if ("orange".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Orange;
-        } else if (isThemeColor(context, R.string.theme_color_pink_value, "pink")) {
+        } else if ("pink".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Pink;
-        } else if (isThemeColor(context, R.string.theme_color_red_value, "red")) {
+        } else if ("red".equals(normalizeThemeColorValue(accent))) {
             return R.style.ThemeOverlay_wizestream_ThemeColor_Red;
         }
         return 0;
@@ -262,6 +267,10 @@ public final class ThemeHelper {
     }
 
     private static String getSelectedThemeKey(final Context context) {
+        final String packValue = ThemePacks.themeKey(context);
+        if (packValue != null) {
+            return packValue;
+        }
         final String themeKey = context.getString(R.string.theme_key);
         final String defaultTheme = context.getString(R.string.default_theme_value);
         return PreferenceManager.getDefaultSharedPreferences(context)
@@ -269,6 +278,10 @@ public final class ThemeHelper {
     }
 
     private static String getSelectedNightThemeKey(final Context context) {
+        final String packValue = ThemePacks.nightKey(context);
+        if (packValue != null) {
+            return packValue;
+        }
         final String nightThemeKey = context.getString(R.string.night_theme_key);
         final String defaultNightTheme = context.getResources()
                 .getString(R.string.default_night_theme_value);
