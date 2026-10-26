@@ -184,8 +184,7 @@ public class SoundcloudStreamExtractor extends StreamExtractor {
             final JsonArray transcodings = track.getObject("media").getArray("transcodings");
             if (!isNullOrEmpty(transcodings)) {
                 // Get information about what stream formats are available
-                extractAudioStreams(transcodings, checkMp3ProgressivePresence(transcodings),
-                        audioStreams);
+                extractAudioStreams(transcodings, audioStreams);
             }
 
             extractDownloadableFileIfAvailable(audioStreams);
@@ -194,15 +193,6 @@ public class SoundcloudStreamExtractor extends StreamExtractor {
         }
 
         return audioStreams;
-    }
-
-    private static boolean checkMp3ProgressivePresence(@Nonnull final JsonArray transcodings) {
-        return transcodings.stream()
-                .filter(JsonObject.class::isInstance)
-                .map(JsonObject.class::cast)
-                .anyMatch(transcodingJsonObject -> transcodingJsonObject.getString("preset")
-                        .contains("mp3") && transcodingJsonObject.getObject("format")
-                        .getString("protocol").equals("progressive"));
     }
 
     @Nonnull
@@ -261,7 +251,6 @@ public class SoundcloudStreamExtractor extends StreamExtractor {
     }
 
     private void extractAudioStreams(@Nonnull final JsonArray transcodings,
-                                     final boolean mp3ProgressiveInStreams,
                                      final List<AudioStream> audioStreams) {
         transcodings.stream()
                 .filter(JsonObject.class::isInstance)
@@ -291,12 +280,6 @@ public class SoundcloudStreamExtractor extends StreamExtractor {
                         builder.setContent(getTranscodingUrl(url), true);
 
                         if (preset.contains("mp3")) {
-                            // Don't add the MP3 HLS stream if there is a progressive stream
-                            // present because both have the same bitrate
-                            if (mp3ProgressiveInStreams && isHls) {
-                                return;
-                            }
-
                             builder.setMediaFormat(MediaFormat.MP3);
                             builder.setAverageBitrate(128);
 
