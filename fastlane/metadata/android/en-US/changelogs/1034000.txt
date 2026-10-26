@@ -1,0 +1,5 @@
+- Added optional per-profile local recommendations, a For you tab, and personalized Shorts/autoplay with pause, reset, exclusions, and Incognito support.
+- Added theme-pack import/export, previews, three presets, and a creator guide.
+- Fixed permission crashes when opening or sharing downloads.
+- Applied default resolution and mobile-data limits to live playback.
+- Preserved SoundCloud HLS fallback and Eye Comfort player colours.

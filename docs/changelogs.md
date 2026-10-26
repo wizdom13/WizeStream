@@ -4,6 +4,21 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.34.0 (`1034000`)
+
+### Improvements
+
+- Added optional on-device recommendations with a For you home tab, personalized Shorts and autoplay, and separate learning for each profile. Learning uses new activity after enabling the feature, respects history settings and Incognito, and includes pause, reset, and video/topic exclusions. Recommendation data is not uploaded or included in device sync or Android backups.
+- Added community theme-pack import/export, day/night previews, and restoration of previous appearance settings under Settings → Appearance → Theme packs. Version 1 combines existing light, dark, AMOLED, Eye Comfort, and accent palettes.
+- Added Forest, Ocean, and Midnight theme packs, plus a detailed creator guide, JSON Schema, and example files for sharing compatible packs.
+
+### Fixes
+
+- Fixed permission-related crashes when opening or sharing downloaded files, and handled unavailable file access without crashing.
+- Applied default resolution and metered-network limits to live playback, preserved valid quality choices across manifest updates, and excluded unsupported tracks.
+- Kept SoundCloud HLS streams available as a playback fallback when progressive streams are also listed.
+- Kept Eye Comfort colours in player controls when system-colour accents are selected.
+
 ## WizeStream 1.33.0 (`1033000`)
 
 ### Improvements
