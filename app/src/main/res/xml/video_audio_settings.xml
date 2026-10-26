@@ -71,6 +71,26 @@
         app:iconSpaceReserved="false"
         app:useSimpleSummaryProvider="true" />
 
+    <ListPreference
+        android:defaultValue="auto"
+        android:entries="@array/audio_quality_entries"
+        android:entryValues="@array/audio_quality_values"
+        android:key="@string/audio_quality_key"
+        android:title="@string/audio_quality_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
+    <ListPreference
+        android:defaultValue="inherit"
+        android:entries="@array/metered_audio_quality_entries"
+        android:entryValues="@array/metered_audio_quality_values"
+        android:key="@string/metered_audio_quality_key"
+        android:title="@string/metered_audio_quality_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false"
+        app:useSimpleSummaryProvider="true" />
+
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="@string/allow_av1_key"

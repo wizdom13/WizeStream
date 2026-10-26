@@ -839,7 +839,26 @@ public final class ListHelper {
             final @NonNull Context context) {
         final MediaFormat defaultFormat = getDefaultFormat(context,
                 R.string.default_audio_format_key, R.string.default_audio_format_value);
-        return getAudioFormatComparator(defaultFormat, isLimitingDataUsage(context));
+        final SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(context);
+        return getAudioFormatComparator(defaultFormat, shouldLimitAudioQuality(
+                preferences.getString(context.getString(R.string.audio_quality_key), "auto"),
+                preferences.getString(context.getString(R.string.metered_audio_quality_key),
+                        "inherit"),
+                isMeteredNetwork(context), isLimitingDataUsage(context)));
+    }
+
+    static boolean shouldLimitAudioQuality(final String quality, final String meteredQuality,
+                                            final boolean metered, final boolean legacyLimit) {
+        final String effective = metered && ("high".equals(meteredQuality)
+                || "low".equals(meteredQuality)) ? meteredQuality : quality;
+        if ("low".equals(effective)) {
+            return true;
+        }
+        if ("high".equals(effective)) {
+            return false;
+        }
+        return legacyLimit;
     }
 
     /**

@@ -22,6 +22,19 @@ import androidx.annotation.Nullable;
 
 public class ListHelperTest {
     @Test
+    public void audioQualityPolicyPreservesDefaultsAndRespectsMeteredOverride() {
+        assertFalse(ListHelper.shouldLimitAudioQuality("auto", "inherit", false, false));
+        assertTrue(ListHelper.shouldLimitAudioQuality("auto", "inherit", true, true));
+        assertFalse(ListHelper.shouldLimitAudioQuality("high", "inherit", true, true));
+        assertTrue(ListHelper.shouldLimitAudioQuality("low", "inherit", false, false));
+        assertTrue(ListHelper.shouldLimitAudioQuality("high", "low", true, false));
+        assertFalse(ListHelper.shouldLimitAudioQuality("high", "low", false, false));
+        assertFalse(ListHelper.shouldLimitAudioQuality("low", "high", true, true));
+        assertTrue(ListHelper.shouldLimitAudioQuality("low", "invalid", true, false));
+        assertTrue(ListHelper.shouldLimitAudioQuality("invalid", "inherit", true, true));
+    }
+
+    @Test
     public void av1LabelsRespectHigherResolutionPreference() {
         final var streams = List.of(
                 generateVideoStream("av1-1080", MediaFormat.MPEG_4, "1080p60 AV1", true),
