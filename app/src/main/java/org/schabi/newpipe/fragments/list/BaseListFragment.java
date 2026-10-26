@@ -1,5 +1,7 @@
 package org.schabi.newpipe.fragments.list;
 
+import org.schabi.newpipe.recommendations.LocalRecommendations;
+
 import static org.schabi.newpipe.ktx.ViewUtils.animate;
 import static org.schabi.newpipe.ktx.ViewUtils.animateHideRecyclerViewAllowingScrolling;
 
@@ -577,8 +579,16 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
 
     protected void showInfoItemDialog(final StreamInfoItem item) {
         try {
-            new InfoItemDialog.Builder(getActivity(), getContext(), this, item)
-                    .addEntry(new StreamDialogEntry(R.string.stream_select,
+            final InfoItemDialog.Builder builder = new InfoItemDialog.Builder(
+                    getActivity(), getContext(), this, item);
+            if (LocalRecommendations.enabled(requireContext())) {
+                builder.addEntry(new StreamDialogEntry(R.string.local_recommendations_exclude,
+                        (fragment, selected) -> {
+                            LocalRecommendations.exclude(requireContext(), selected);
+                            reloadContent();
+                        }));
+            }
+            builder.addEntry(new StreamDialogEntry(R.string.stream_select,
                             (fragment, selected) -> streamSelection.start(selected)))
                     .create().show();
         } catch (final IllegalArgumentException e) {

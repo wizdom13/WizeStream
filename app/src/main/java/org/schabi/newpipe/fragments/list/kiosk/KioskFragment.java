@@ -5,7 +5,11 @@
 
 package org.schabi.newpipe.fragments.list.kiosk;
 
+import org.schabi.newpipe.recommendations.LocalRecommendations;
+
 import android.os.Bundle;
+import android.content.SharedPreferences;
+import org.schabi.newpipe.local.history.IncognitoMode;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -49,6 +53,7 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     ContentCountry contentCountry;
 
     private DiscoveryPersonalization personalization;
+    private String localRecommendationSettings;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Views
@@ -97,6 +102,14 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
     @Override
     public void onResume() {
         super.onResume();
+        if ("youtube_shorts".equals(kioskId)) {
+            final String settings = LocalRecommendations.configurationToken(requireContext());
+            if (localRecommendationSettings != null
+                    && !localRecommendationSettings.equals(settings) && !isLoading.get()) {
+                reloadContent();
+            }
+            localRecommendationSettings = settings;
+        }
         if (!Localization.getPreferredContentCountry(requireContext()).equals(contentCountry)
                 || (currentInfo != null && personalization == null && !isLoading.get())) {
             reloadContent();
@@ -107,6 +120,16 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
             } catch (final Exception e) {
                 showSnackBarError(new ErrorInfo(e, UserAction.UI_ERROR, "Setting kiosk title"));
             }
+        }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(final SharedPreferences preferences, final String key) {
+        super.onSharedPreferenceChanged(preferences, key);
+        if (getView() != null && "youtube_shorts".equals(kioskId)
+                && IncognitoMode.KEY.equals(key)
+                && LocalRecommendations.setting(requireContext(), "shorts")) {
+            reloadContent();
         }
     }
 
@@ -162,7 +185,12 @@ public class KioskFragment extends BaseListInfoFragment<StreamInfoItem, KioskInf
 
     @Override
     protected List<StreamInfoItem> getDisplayItems(final List<StreamInfoItem> items) {
-        return personalization == null ? items : personalization.apply(items);
+        super.getDisplayItems(items);
+        final List<StreamInfoItem> filtered = personalization == null
+                ? items : personalization.apply(items);
+        return "youtube_shorts".equals(kioskId)
+                ? LocalRecommendations.shorts(requireContext(), filtered)
+                : filtered;
     }
 
     @Override

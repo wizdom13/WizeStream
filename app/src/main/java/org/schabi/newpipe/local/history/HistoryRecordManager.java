@@ -18,6 +18,8 @@ package org.schabi.newpipe.local.history;
  * along with NewPipe.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import org.schabi.newpipe.recommendations.LocalRecommendations;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -72,11 +74,14 @@ public class HistoryRecordManager {
     private final String searchHistoryKey;
     private final String streamHistoryKey;
 
+    private final Context recommendationContext;
+
     public HistoryRecordManager(final Context context) {
         this(context, ProfileManager.getActiveProfileId(context));
     }
 
     public HistoryRecordManager(final Context context, @NonNull final String profileId) {
+        recommendationContext = context.getApplicationContext();
         database = NewPipeDatabase.getInstance(context);
         streamTable = database.streamDAO();
         streamHistoryTable = database.streamHistoryDAO();
@@ -319,6 +324,8 @@ public class HistoryRecordManager {
             return Maybe.empty();
         }
         final OffsetDateTime currentTime = OffsetDateTime.now(ZoneOffset.UTC);
+        LocalRecommendations.searched(
+                recommendationContext, serviceId, canonicalSearch, profileId);
         final SearchHistoryEntry newEntry = new SearchHistoryEntry(
                 currentTime,
                 serviceId,

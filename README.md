@@ -191,6 +191,9 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Watch videos, live streams, and audio without signing in to a platform account
 - Browse all [supported services](#supported-services), with dedicated YouTube Music and YouTube
   Shorts destinations
+- Optionally learn recommendations on-device for each profile, with a **For you** home tab,
+  personalized Shorts and autoplay, pause/reset controls, and video/topic exclusions. Learning
+  starts after opt-in, respects history switches, and is disabled in Incognito; the model is not synced
 - Search with service-provided content, date, duration, feature, and sorting filters
 - Save search-filter presets by profile and service, including YouTube Music mode
 - Use custom or relative YouTube upload-date ranges, duration limits, shortest/longest ordering,

@@ -1,5 +1,7 @@
 package org.schabi.newpipe.settings.tabs;
 
+import org.schabi.newpipe.recommendations.RecommendationsFragment;
+
 import org.schabi.newpipe.learning.LearningDashboardFragment;
 import android.content.Context;
 
@@ -171,7 +173,8 @@ public abstract class Tab {
         FEEDGROUP(new FeedGroupTab()),
         DOWNLOADS(new DownloadsTab()),
         LOCAL_MEDIA(new LocalMediaTab()),
-        LEARNING(new LearningTab());
+        LEARNING(new LearningTab()),
+        RECOMMENDATIONS(new RecommendationsTab());
 
         private final Tab tab;
 
@@ -185,6 +188,30 @@ public abstract class Tab {
 
         public Tab getTab() {
             return tab;
+        }
+    }
+
+    public static class RecommendationsTab extends Tab {
+        public static final int ID = 13;
+
+        @Override
+        public int getTabId() {
+            return ID;
+        }
+
+        @Override
+        public String getTabName(final Context context) {
+            return context.getString(R.string.local_recommendations_feed);
+        }
+
+        @Override
+        public int getTabIconRes(final Context context) {
+            return R.drawable.ic_whatshot;
+        }
+
+        @Override
+        public Fragment getFragment(final Context context) {
+            return new RecommendationsFragment();
         }
     }
 

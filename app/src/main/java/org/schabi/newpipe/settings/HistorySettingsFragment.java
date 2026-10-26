@@ -1,5 +1,7 @@
 package org.schabi.newpipe.settings;
 
+import org.schabi.newpipe.recommendations.RecommendationControls;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -63,7 +65,9 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
 
     @Override
     public boolean onPreferenceTreeClick(final Preference preference) {
-        if (preference.getKey().equals(cacheWipeKey)) {
+        if ("local_recommendations".equals(preference.getKey())) {
+            RecommendationControls.show(requireContext(), () -> { });
+        } else if (preference.getKey().equals(cacheWipeKey)) {
             InfoCache.getInstance().clearCache();
             disposables.add(maintenanceManager.clearPersistentCaches()
                     .observeOn(AndroidSchedulers.mainThread())

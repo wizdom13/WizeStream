@@ -47,6 +47,8 @@
     <application
         android:name=".App"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/local_recommendation_backup_rules"
+        android:dataExtractionRules="@xml/local_recommendation_extraction_rules"
         android:banner="@mipmap/wizestream_tv_banner"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"

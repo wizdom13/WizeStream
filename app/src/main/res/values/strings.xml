@@ -1842,4 +1842,18 @@
     <string name="feed_floating_refresh_title">Floating feed refresh button</string>
     <string name="feed_floating_refresh_summary">Show a floating Refresh/Cancel button instead of pull-to-refresh and the upper refresh controls.</string>
     <string name="mark_watched_not_started">This video has not started yet. Try marking it as watched after it becomes available.</string>
+    <string name="local_recommendations_title">Local recommendations</string>
+    <string name="local_recommendations_feed">For you</string>
+    <string name="local_recommendations_enable">Enable for this profile</string>
+    <string name="local_recommendations_pause">Pause learning</string>
+    <string name="local_recommendations_shorts">Personalize Shorts</string>
+    <string name="local_recommendations_autoplay">Personalize autoplay</string>
+    <string name="local_recommendations_topics">Excluded topics or channel names (comma separated)</string>
+    <string name="local_recommendations_exclude">Exclude from local recommendations</string>
+    <string name="local_recommendations_summary">Optional recommendations learned on this device, separately for each profile</string>
+    <string name="local_recommendations_help">Learn from new searches, watched videos, and time spent playing. History switches are respected and Incognito never learns or personalizes. Pause keeps existing recommendations without learning more. Videos come from results you have already browsed and related videos; your interests are not sent to a recommendation server.
+
+Add the For you tab under Settings → Content → Customize home and move it first to use it as your home page. Long-press a video to exclude it.</string>
+    <string name="local_recommendations_empty">Enable Local recommendations in the menu, then browse and watch videos to build your feed. It is hidden during Incognito.</string>
+    <string name="local_recommendations_reset_help">Clear this profile’s learned interests, recommendation pool, and exclusions? Your watch and search history will not be deleted.</string>
 </resources>

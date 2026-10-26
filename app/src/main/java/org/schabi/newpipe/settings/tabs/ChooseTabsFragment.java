@@ -235,6 +235,7 @@ public class ChooseTabsFragment extends Fragment {
 
         final ArrayList<ChooseTabListItem> localSections = new ArrayList<>();
         addSingletonTabIfAvailable(context, localSections, Tab.Type.FEED);
+        addSingletonTabIfAvailable(context, localSections, Tab.Type.RECOMMENDATIONS);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.SUBSCRIPTIONS);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.BOOKMARKS);
         addSingletonTabIfAvailable(context, localSections, Tab.Type.DOWNLOADS);

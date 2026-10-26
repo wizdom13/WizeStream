@@ -21,6 +21,7 @@ import org.schabi.newpipe.extractor.stream.VideoStream
 import org.schabi.newpipe.player.helper.PlayerHelper
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
 import org.schabi.newpipe.player.mediaitem.MediaItemTag
+import org.schabi.newpipe.recommendations.LocalRecommendations
 import org.schabi.newpipe.util.image.ExtractorImageCompat
 
 /** Owns current media metadata and the work triggered when it changes. */
@@ -104,6 +105,7 @@ internal class PlayerMetadataController(
         sponsorBlockController.updateSegments(info)
         maybeAutoQueueNextStream(info)
         thumbnailController.load(ExtractorImageCompat.thumbnailImages(info))
+        LocalRecommendations.observe(context, info.relatedItems.orEmpty())
         historyController.registerViewed()
 
         player.notifyMetadataUpdateToListeners()
@@ -190,6 +192,21 @@ internal class PlayerMetadataController(
         val currentQueueItem = playQueue.item
         val preferShortFormContent =
             info.isShortFormContent || currentQueueItem?.isShortFormContent == true
+        if (LocalRecommendations.enabled(context) &&
+            LocalRecommendations.setting(context, "autoplay")
+        ) {
+            val candidate = LocalRecommendations.autoplay(
+                context,
+                info.relatedItems.orEmpty(),
+                info.serviceId,
+                preferShortFormContent,
+                playQueue.streams.map { it.url }.toSet()
+            ) ?: return
+            val queue = org.schabi.newpipe.player.playqueue.SinglePlayQueue(candidate)
+            queue.item?.isAutoQueued = true
+            playQueue.append(queue.streams)
+            return
+        }
         PlayerHelper.autoQueueOf(info, playQueue.streams, preferShortFormContent)
             ?.let { playQueue.append(it.streams) }
     }

@@ -88,7 +88,9 @@ internal class HomeTabSyncAdapter(
             preferences.edit()
                 .putString(
                     context.getString(R.string.saved_tabs_key),
-                    TabsJsonHelper.getJsonToSave(tabs)
+                    TabsJsonHelper.getJsonToSave(
+                        org.schabi.newpipe.recommendations.RecommendationHomeTabs.preserve(currentTabs(), tabs)
+                    )
                 )
                 .commit()
         }
