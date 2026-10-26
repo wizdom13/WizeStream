@@ -13,11 +13,13 @@ import androidx.media3.common.Format
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
+import androidx.preference.PreferenceManager
 import java.util.Locale
 import kotlin.math.roundToInt
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.helper.VideoCodecPolicy
+import org.schabi.newpipe.util.ListHelper
 
 /**
  * Owns manual quality selection for adaptive live manifests.
@@ -55,6 +57,9 @@ class LiveQualityController(private val player: Player) {
 
     private var selected: Option? = null
     private var appliedOverride: Pair<TrackGroup, Int>? = null
+    private var defaultApplied = false
+    private var previousMaxHeight: Int? = null
+    private var previousExceedConstraints: Boolean? = null
     private var itemReady = false
     private var streamKey: String? = null
 
@@ -91,6 +96,7 @@ class LiveQualityController(private val player: Player) {
         options = emptyList()
         selected = null
         appliedOverride = null
+        defaultApplied = false
         itemReady = false
         streamKey = null
     }
@@ -106,6 +112,7 @@ class LiveQualityController(private val player: Player) {
         if (newStreamKey != streamKey) {
             clearLiveOverrideIfApplied()
             selected = null
+            defaultApplied = false
             appliedOverride = null
             streamKey = newStreamKey
         }
@@ -117,7 +124,7 @@ class LiveQualityController(private val player: Player) {
         }
 
         options = extractOptions(player.exoPlayer.currentTracks)
-        appliedOverride = null
+        applyDefaultSelection()
         applySelectedTrack()
     }
 
@@ -131,8 +138,8 @@ class LiveQualityController(private val player: Player) {
         }
 
         options = extractOptions(tracks)
-        // Manifest refreshes recreate TrackGroups, invalidating an override bound to the old group.
-        appliedOverride = null
+        // Rebind only when a refreshed manifest actually replaces the selected track group.
+        applyDefaultSelection()
         applySelectedTrack()
     }
 
@@ -151,6 +158,7 @@ class LiveQualityController(private val player: Player) {
         } else {
             options.getOrNull(index - 1) ?: return null
         }
+        defaultApplied = true
         selected = newSelection
         applySelectedTrack()
         return currentLabel
@@ -161,6 +169,11 @@ class LiveQualityController(private val player: Player) {
             return
         }
 
+        applyResolutionLimit()
+        val limit = resolutionHeight(ListHelper.getResolutionLimitForPlayback(player.context))
+        if (limit != null && selected?.let { it.height > limit } == true) {
+            selected = options.firstOrNull { it.height <= limit }
+        }
         val desired = selected
         if (desired == null) {
             if (appliedOverride != null) {
@@ -170,7 +183,13 @@ class LiveQualityController(private val player: Player) {
             return
         }
 
-        val match = findTrack(player.exoPlayer.currentTracks, desired) ?: return
+        val match = findTrack(player.exoPlayer.currentTracks, desired)
+        if (match == null) {
+            // Do not retain an override for a representation removed by a manifest refresh.
+            appliedOverride = null
+            clearOverride()
+            return
+        }
         if (appliedOverride?.first === match.first && appliedOverride?.second == match.second) {
             return
         }
@@ -184,6 +203,47 @@ class LiveQualityController(private val player: Player) {
     private fun clearLiveOverrideIfApplied() {
         if (appliedOverride != null || selected != null) {
             clearOverride()
+        }
+        val oldHeight = previousMaxHeight
+        if (oldHeight != null && !player.exoPlayerIsNull()) {
+            player.trackSelector.setParameters(
+                player.trackSelector.buildUponParameters()
+                    .setMaxVideoSize(player.trackSelector.parameters.maxVideoWidth, oldHeight)
+                    .setExceedVideoConstraintsIfNecessary(previousExceedConstraints ?: true)
+            )
+        }
+        previousMaxHeight = null
+        previousExceedConstraints = null
+    }
+
+    private fun applyDefaultSelection() {
+        if (defaultApplied || options.isEmpty()) return
+        val context = player.context
+        val popup = !player.videoPlayerSelected()
+        val key = if (popup) R.string.default_popup_resolution_key else R.string.default_resolution_key
+        val fallback = if (popup) R.string.default_popup_resolution_value else R.string.default_resolution_value
+        val preference = PreferenceManager.getDefaultSharedPreferences(context).getString(context.getString(key), context.getString(fallback))
+        if (preference != context.getString(R.string.auto_resolution_key)) {
+            selected = chooseDefault(options, preference, ListHelper.getResolutionLimitForPlayback(context))
+        }
+        defaultApplied = true
+    }
+
+    private fun applyResolutionLimit() {
+        val limit = resolutionHeight(ListHelper.getResolutionLimitForPlayback(player.context))
+        val current = player.trackSelector.parameters
+        if (previousMaxHeight == null) {
+            previousMaxHeight = current.maxVideoHeight
+            previousExceedConstraints = current.exceedVideoConstraintsIfNecessary
+        }
+        val height = minOf(previousMaxHeight ?: Int.MAX_VALUE, limit ?: Int.MAX_VALUE)
+        val exceed = if (limit == null) previousExceedConstraints ?: true else false
+        if (current.maxVideoHeight != height || current.exceedVideoConstraintsIfNecessary != exceed) {
+            player.trackSelector.setParameters(
+                player.trackSelector.buildUponParameters()
+                    .setMaxVideoSize(current.maxVideoWidth, height)
+                    .setExceedVideoConstraintsIfNecessary(exceed)
+            )
         }
     }
 
@@ -204,13 +264,14 @@ class LiveQualityController(private val player: Player) {
             }
             for (index in 0 until group.length) {
                 val format = group.getTrackFormat(index)
-                if (VideoCodecPolicy.allowsFormat(player.context, format)) {
+                if (group.isTrackSupported(index) && VideoCodecPolicy.allowsFormat(player.context, format)) {
                     optionFromFormat(format)?.let(seen::add)
                 }
             }
         }
 
-        return seen.sortedWith(
+        val limit = resolutionHeight(ListHelper.getResolutionLimitForPlayback(player.context))
+        return seen.filter { limit == null || it.height <= limit }.sortedWith(
             compareByDescending<Option> { it.height }
                 .thenByDescending { it.frameRate }
                 .thenByDescending { it.hdr }
@@ -232,7 +293,7 @@ class LiveQualityController(private val player: Player) {
             }
             for (index in 0 until group.length) {
                 val format = group.getTrackFormat(index)
-                if (!VideoCodecPolicy.allowsFormat(player.context, format) || optionFromFormat(format) != option) {
+                if (!group.isTrackSupported(index) || !VideoCodecPolicy.allowsFormat(player.context, format) || optionFromFormat(format) != option) {
                     continue
                 }
                 val bitrate = when {
@@ -251,6 +312,15 @@ class LiveQualityController(private val player: Player) {
     }
 
     companion object {
+        internal fun resolutionHeight(resolution: String?): Int? = resolution?.substringBefore('p')?.toIntOrNull()?.takeIf { it > 0 }
+
+        internal fun chooseDefault(options: List<Option>, preference: String?, limit: String?): Option? {
+            val maximum = resolutionHeight(limit) ?: Int.MAX_VALUE
+            val eligible = options.filter { it.height <= maximum }
+            val ceiling = minOf(resolutionHeight(preference) ?: Int.MAX_VALUE, maximum)
+            return eligible.firstOrNull { it.height <= ceiling } ?: eligible.minByOrNull { it.height }
+        }
+
         @JvmStatic
         fun resolutionFromFormat(format: Format?): String? {
             if (format == null || format.height <= 0) return null
