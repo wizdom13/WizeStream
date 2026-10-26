@@ -8,6 +8,7 @@ import org.schabi.newpipe.R;
 final class VideoDetailNavigationMapper {
     static final int NO_NAVIGATION_ITEM_ID = 0;
 
+    static final String LIVE_CHAT_TAB_TAG = "LIVE CHAT";
     static final String COMMENTS_TAB_TAG = "COMMENTS";
     static final String RELATED_TAB_TAG = "NEXT VIDEO";
     static final String DESCRIPTION_TAB_TAG = "DESCRIPTION TAB";
@@ -17,7 +18,9 @@ final class VideoDetailNavigationMapper {
 
     @IdRes
     static int getNavigationItemId(@Nullable final String tabTag) {
-        if (COMMENTS_TAB_TAG.equals(tabTag)) {
+        if (LIVE_CHAT_TAB_TAG.equals(tabTag)) {
+            return R.id.video_detail_navigation_live_chat;
+        } else if (COMMENTS_TAB_TAG.equals(tabTag)) {
             return R.id.video_detail_navigation_comments;
         } else if (RELATED_TAB_TAG.equals(tabTag)) {
             return R.id.video_detail_navigation_related;
@@ -31,7 +34,9 @@ final class VideoDetailNavigationMapper {
 
     @Nullable
     static String getTabTag(@IdRes final int navigationItemId) {
-        if (navigationItemId == R.id.video_detail_navigation_comments) {
+        if (navigationItemId == R.id.video_detail_navigation_live_chat) {
+            return LIVE_CHAT_TAB_TAG;
+        } else if (navigationItemId == R.id.video_detail_navigation_comments) {
             return COMMENTS_TAB_TAG;
         } else if (navigationItemId == R.id.video_detail_navigation_related) {
             return RELATED_TAB_TAG;

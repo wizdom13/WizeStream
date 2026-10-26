@@ -1,0 +1,9 @@
+<resources>
+    <string name="live_chat_title">Live chat</string>
+    <string name="live_chat_waiting">Waiting for live messages…</string>
+    <string name="live_chat_unavailable">Live chat is unavailable or disconnected. Try again.</string>
+    <string name="live_chat_read_only">Read-only live chat · Latest 200 messages</string>
+    <string name="live_chat_retry">Use live chat / Retry</string>
+    <string name="live_chat_use_danmaku">Use danmaku instead</string>
+    <string name="live_chat_overlay_active">Danmaku selected. Choose Use live chat to return to the chat list.</string>
+</resources>

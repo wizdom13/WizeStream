@@ -16,6 +16,15 @@ object FullscreenCommentsSidebar {
     }
 
     @JvmStatic
+    fun showLiveChat(activity: FragmentActivity, serviceId: Int, url: String, title: String) {
+        val manager = activity.supportFragmentManager
+        if (manager.isStateSaved || manager.isDestroyed) return
+        val current = manager.findFragmentByTag(TAG) as? FullscreenCommentsDialog
+        if (current?.dialog?.isShowing == true) return
+        FullscreenCommentsDialog.newInstance(serviceId, url, title, true).show(manager, TAG)
+    }
+
+    @JvmStatic
     fun hide(activity: FragmentActivity): Boolean {
         val sidebar = activity.supportFragmentManager.findFragmentByTag(TAG) as? FullscreenCommentsDialog ?: return false
         sidebar.dismissAllowingStateLoss()

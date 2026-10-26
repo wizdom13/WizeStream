@@ -104,7 +104,7 @@ public class VideoDetailNavigationResourcesTest {
         final Document document = parse("menu/video_detail_navigation.xml");
         final var items = document.getElementsByTagName("item");
 
-        assertEquals(4, items.getLength());
+        assertEquals(5, items.getLength());
         assertMenuItem((Element) items.item(0),
                 "@+id/video_detail_navigation_comments",
                 "@string/comments_tab_description");

@@ -102,6 +102,8 @@ import org.schabi.newpipe.fragments.BaseStateFragment;
 import org.schabi.newpipe.fragments.EmptyFragment;
 import org.schabi.newpipe.fragments.MainFragment;
 import org.schabi.newpipe.fragments.list.comments.CommentsFragment;
+import org.schabi.newpipe.fragments.list.chat.LiveChatFragment;
+import org.schabi.newpipe.player.LiveChatRepository;
 import org.schabi.newpipe.fragments.list.videos.RelatedItemsFragment;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
@@ -1633,6 +1635,8 @@ public final class VideoDetailFragment
 
     private void updateDetailNavigationItems() {
         setDetailNavigationItemVisible(R.id.video_detail_navigation_comments, COMMENTS_TAB_TAG);
+        setDetailNavigationItemVisible(R.id.video_detail_navigation_live_chat,
+                VideoDetailNavigationMapper.LIVE_CHAT_TAB_TAG);
         setDetailNavigationItemVisible(R.id.video_detail_navigation_related, RELATED_TAB_TAG);
         setDetailNavigationItemVisible(
                 R.id.video_detail_navigation_description, DESCRIPTION_TAB_TAG);
@@ -1656,6 +1660,20 @@ public final class VideoDetailFragment
     }
 
     private void updateTabs(@NonNull final StreamInfo info) {
+        if (LiveChatRepository.supports(info)
+                && pageAdapter.getItemPositionByTitle(
+                        VideoDetailNavigationMapper.LIVE_CHAT_TAB_TAG) < 0) {
+            pageAdapter.removeItemByTitle(EMPTY_TAB_TAG);
+            pageAdapter.addFragment(
+                    LiveChatFragment.newInstance(info.getServiceId(), info.getUrl()),
+                    VideoDetailNavigationMapper.LIVE_CHAT_TAB_TAG);
+        } else if (!LiveChatRepository.supports(info)) {
+            pageAdapter.removeItemByTitle(VideoDetailNavigationMapper.LIVE_CHAT_TAB_TAG);
+            if (pageAdapter.getCount() == 0) {
+                pageAdapter.addFragment(EmptyFragment.newInstance(true), EMPTY_TAB_TAG);
+            }
+        }
+        updateDetailNavigationItems();
         if (showRelatedItems) {
             if (binding.relatedItemsLayout == null) { // phone
                 pageAdapter.updateItem(RELATED_TAB_TAG, RelatedItemsFragment.getInstance(info));

@@ -20,6 +20,11 @@ public class YoutubeBulletCommentsInfoItemExtractor implements BulletCommentsInf
     }
 
     @Override
+    public String getName() throws ParsingException {
+        return data.getObject("authorName").getString("simpleText", "");
+    }
+
+    @Override
     public String getCommentText() throws ParsingException {
         JsonArray array = data.getObject("message").getArray("runs");
         StringBuilder result = new StringBuilder();

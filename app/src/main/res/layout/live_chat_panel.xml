@@ -1,0 +1,16 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="?attr/colorSurface">
+    <TextView android:id="@+id/liveChatStatus"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="12dp" android:text="@string/live_chat_waiting"
+        android:textColor="?attr/colorOnSurface" />
+    <Button android:id="@+id/liveChatRetry" android:layout_width="wrap_content"
+        android:layout_height="48dp" android:text="@string/live_chat_retry" />
+    <Button android:id="@+id/liveChatDanmaku" android:layout_width="wrap_content"
+        android:layout_height="48dp" android:text="@string/live_chat_use_danmaku" />
+    <ListView android:id="@+id/liveChatMessages"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:transcriptMode="disabled"
+        android:contentDescription="@string/live_chat_title" />
+</LinearLayout>

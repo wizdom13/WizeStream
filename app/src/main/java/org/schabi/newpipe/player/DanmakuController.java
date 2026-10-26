@@ -7,6 +7,7 @@
 package org.schabi.newpipe.player;
 
 import android.util.Log;
+import android.content.SharedPreferences;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -45,6 +46,7 @@ public final class DanmakuController {
 
     private final Player player;
     private final PlayerBinding binding;
+    private final SharedPreferences.OnSharedPreferenceChangeListener modeListener;
 
     @Nullable
     private Disposable loadDisposable;
@@ -57,6 +59,7 @@ public final class DanmakuController {
     @NonNull
     private List<BulletCommentsInfoItem> comments = Collections.emptyList();
 
+    private boolean destroyed;
     private boolean supported;
     private boolean loaded;
     private long lastPositionMillis;
@@ -68,6 +71,12 @@ public final class DanmakuController {
                              @NonNull final PlayerBinding binding) {
         this.player = player;
         this.binding = binding;
+        modeListener = (preferences, key) -> {
+            if (player.getContext().getString(R.string.danmaku_enabled_key).equals(key)) {
+                binding.getRoot().post(this::applyEnabledState);
+            }
+        };
+        player.getPrefs().registerOnSharedPreferenceChangeListener(modeListener);
         binding.danmakuToggle.setVisibility(View.GONE);
         binding.danmakuOverlay.setVisibility(View.GONE);
     }
@@ -102,9 +111,14 @@ public final class DanmakuController {
         player.getPrefs().edit()
                 .putBoolean(player.getContext().getString(R.string.danmaku_enabled_key), enabled)
                 .apply();
-        updateToggleIcon();
+    }
 
-        if (enabled) {
+    private void applyEnabledState() {
+        if (destroyed) {
+            return;
+        }
+        updateToggleIcon();
+        if (supported && isEnabled()) {
             binding.danmakuOverlay.setVisibility(View.VISIBLE);
             ensureLoaded();
             if (player.isPlaying()) {
@@ -168,6 +182,8 @@ public final class DanmakuController {
     }
 
     public void destroy() {
+        player.getPrefs().unregisterOnSharedPreferenceChangeListener(modeListener);
+        destroyed = true;
         reset();
     }
 
