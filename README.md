@@ -210,6 +210,20 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   videos remain hidden
 - Browse video details, related content, comments, playlists, and channel tabs where supported
 - Open a YouTube Music track's album when album metadata is available
+- Block YouTube channels by stable ID when a canonical channel URL is available, preserving ID
+  case through backups and sync. Existing URL and name-only rules remain supported; known different
+  channel URLs no longer match solely because their display names are identical. Handle-only URLs
+  are not automatically resolved, and name fallback remains for items without uploader URLs.
+- Add optional RE2 regular-expression filters under **Blocked content > Advanced regex filters**;
+  one expression per line, without slash delimiters, matched case-insensitively. Plain-text rules
+  keep their existing meaning. Regex rules support enabled content targets, including comments,
+  and optional uploader matching, but not lookaround or backreferences. Up to 32 expressions of
+  512 characters each are accepted; invalid imported regex lists are ignored. Regex rules are
+  included in settings backups and remain local during device sync.
+- Filter comments and replies by text, exact author display names, or a minimum like count under
+  **Settings > Content > Blocked content**. Comment-only rules start empty, respect the Comments
+  target and blocking switch, and preserve comments with unknown like counts. They are app-wide,
+  included in settings backups, and remain local during device sync.
 - Choose **Top** or **Newest** YouTube comments using the service's ordering, including pagination
 - Translate comments on demand with Android's on-device translation service when the required
   language pair is already available locally, with no cloud translation fallback

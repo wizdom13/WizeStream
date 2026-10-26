@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="comment_filter_title">Comment filters</string>
+    <string name="comment_filter_keywords_key" translatable="false">comment_filter_keywords</string>
+    <string name="comment_filter_authors_key" translatable="false">comment_filter_authors</string>
+    <string name="comment_filter_min_likes_key" translatable="false">comment_filter_min_likes</string>
+    <string name="comment_filter_keywords_title">Hide comments containing</string>
+    <string name="comment_filter_keywords_summary">One word or phrase per line; case-insensitive. Only comments and replies are affected.</string>
+    <string name="comment_filter_authors_title">Hide comment authors</string>
+    <string name="comment_filter_authors_summary">One exact display name per line; case-insensitive. Authors sharing the same name will all be hidden.</string>
+    <string name="comment_filter_min_likes_title">Minimum comment likes</string>
+    <string name="comment_filter_min_likes_summary">Zero disables this filter. Comments with unknown like counts remain visible. Requires content blocking to be enabled for Comments.</string>
+    <string name="content_regex_rules_key" translatable="false">content_regex_rules</string>
+    <string name="content_regex_rules_title">Advanced regex filters</string>
+    <string name="content_regex_rules_summary">One RE2 expression per line, without slash delimiters. Case-insensitive; applies to enabled blocking targets. Existing plain-text keywords are unchanged.</string>
+    <string name="content_regex_rules_invalid">Invalid or unsupported regex. Use at most 32 expressions, 512 characters each, and 16,384 characters total. Lookaround and backreferences are unsupported.</string>
+</resources>

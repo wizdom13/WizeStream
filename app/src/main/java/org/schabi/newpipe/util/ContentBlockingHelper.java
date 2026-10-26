@@ -10,6 +10,7 @@ import androidx.preference.PreferenceManager;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
+import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem;
 import org.schabi.newpipe.extractor.post.PostInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
@@ -41,7 +42,7 @@ public final class ContentBlockingHelper {
         final Set<String> aiBlockedChannels = enabled
                 ? AiSListContentHelper.hiddenChannelEntries(context)
                 : Collections.emptySet();
-        return Rules.create(
+        final Rules rules = Rules.create(
                 enabled,
                 copySet(preferences, context.getString(R.string.blocked_videos_key)),
                 copySet(preferences, context.getString(R.string.blocked_channels_key)),
@@ -51,6 +52,13 @@ public final class ContentBlockingHelper {
                         R.string.blocked_keywords_channel_names_key), false),
                 aiBlockedChannels,
                 copySet(preferences, context.getString(R.string.allowed_channels_key)));
+        rules.regexFilters = RegexFilterRules.fromStored(preferences.getString(
+                context.getString(R.string.content_regex_rules_key), ""));
+        rules.commentFilters = new CommentFilterRules(
+                preferences.getString(context.getString(R.string.comment_filter_keywords_key), ""),
+                preferences.getString(context.getString(R.string.comment_filter_authors_key), ""),
+                preferences.getInt(context.getString(R.string.comment_filter_min_likes_key), 0));
+        return rules;
     }
 
     public static void blockVideo(@NonNull final Context context,
@@ -62,7 +70,9 @@ public final class ContentBlockingHelper {
     public static void blockChannel(@NonNull final Context context,
                                     @Nullable final String channelUrl,
                                     @Nullable final String channelName) {
-        final String key = !isBlank(channelUrl) ? channelUrl : channelName;
+        final String stableKey = ChannelIdentity.stableKey(channelUrl);
+        final String key = !stableKey.isEmpty() ? stableKey
+                : !isBlank(channelUrl) ? channelUrl : channelName;
         if (isBlank(key)) {
             return;
         }
@@ -114,6 +124,10 @@ public final class ContentBlockingHelper {
                 .remove(context.getString(R.string.blocked_videos_key))
                 .remove(context.getString(R.string.blocked_channels_key))
                 .remove(context.getString(R.string.blocked_keywords_key))
+                .remove(context.getString(R.string.content_regex_rules_key))
+                .remove(context.getString(R.string.comment_filter_keywords_key))
+                .remove(context.getString(R.string.comment_filter_authors_key))
+                .remove(context.getString(R.string.comment_filter_min_likes_key))
                 .apply();
     }
 
@@ -159,7 +173,11 @@ public final class ContentBlockingHelper {
                 || context.getString(R.string.blocked_channels_key).equals(key)) {
             return RuleChange.CHANNELS;
         }
-        if (context.getString(R.string.blocked_keywords_key).equals(key)) {
+        if (context.getString(R.string.content_regex_rules_key).equals(key)
+                || context.getString(R.string.blocked_keywords_key).equals(key)
+                || context.getString(R.string.comment_filter_keywords_key).equals(key)
+                || context.getString(R.string.comment_filter_authors_key).equals(key)
+                || context.getString(R.string.comment_filter_min_likes_key).equals(key)) {
             return RuleChange.KEYWORDS;
         }
         if (context.getString(R.string.blocked_keywords_channel_names_key).equals(key)) {
@@ -360,12 +378,15 @@ public final class ContentBlockingHelper {
         private final Set<String> blockedChannelKeys;
         @NonNull
         private final Set<String> blockedChannelNames;
+        private Set<String> nameOnlyChannelRules = Collections.emptySet();
         @NonNull
         private final List<String> blockedKeywords;
         private final boolean matchKeywordsInChannelNames;
         @NonNull
         private final Set<String> aiBlockedChannels;
         private Set<String> allowedChannelKeys = Collections.emptySet();
+        private RegexFilterRules regexFilters = RegexFilterRules.fromStored("");
+        private CommentFilterRules commentFilters = new CommentFilterRules("", "", 0);
 
         private Rules(final boolean enabled,
                       @NonNull final Set<String> blockedVideoUrls,
@@ -428,10 +449,15 @@ public final class ContentBlockingHelper {
 
             final Set<String> channels = new HashSet<>();
             final Set<String> channelNames = new HashSet<>();
+            final Set<String> nameOnlyChannels = new HashSet<>();
             for (final String value : channelEntries) {
                 final Entry entry = decodeEntry(value);
                 channels.add(entry.key);
                 channelNames.add(normalize(entry.label));
+                if (!entry.key.contains("://")
+                        && !entry.key.startsWith("youtube-channel-id:")) {
+                    nameOnlyChannels.add(normalize(entry.label));
+                }
             }
 
             final List<String> keywordList = new ArrayList<>();
@@ -454,12 +480,18 @@ public final class ContentBlockingHelper {
                 allowed.add(decodeEntry(value).key);
             }
             rules.allowedChannelKeys = allowed;
+            rules.nameOnlyChannelRules = nameOnlyChannels;
             return rules;
         }
 
         public boolean isBlocked(@Nullable final InfoItem item) {
             if (!enabled || item == null) {
                 return false;
+            }
+            if (item instanceof CommentsInfoItem) {
+                final CommentsInfoItem comment = (CommentsInfoItem) item;
+                return commentFilters.isBlocked(comment)
+                        || containsKeyword(comment.getName(), comment.getCommentText());
             }
             if (item instanceof StreamInfoItem) {
                 final StreamInfoItem stream = (StreamInfoItem) item;
@@ -513,13 +545,18 @@ public final class ContentBlockingHelper {
         private boolean isBlockedChannel(final int serviceId,
                                          @Nullable final String url,
                                          @Nullable final String name) {
-            return blockedChannelKeys.contains(normalize(url))
-                    || blockedChannelNames.contains(normalize(name))
+            return blockedChannelKeys.contains(ChannelIdentity.stableKey(url))
+                    || blockedChannelKeys.contains(normalize(url))
+                    || nameOnlyChannelRules.contains(normalize(name))
+                    || isBlank(url) && blockedChannelNames.contains(normalize(name))
                     || AiSListRepository.isListed(serviceId, aiBlockedChannels, url, name);
         }
 
         private boolean containsKeyword(@Nullable final String... values) {
             for (final String value : values) {
+                if (regexFilters.matches(value)) {
+                    return true;
+                }
                 final String normalized = normalize(value);
                 for (final String keyword : blockedKeywords) {
                     if (normalized.contains(keyword)) {

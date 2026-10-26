@@ -114,4 +114,33 @@
         android:summary="@string/allowed_channels_summary"
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
+    <EditTextPreference
+        android:key="@string/content_regex_rules_key"
+        android:title="@string/content_regex_rules_title"
+        android:summary="@string/content_regex_rules_summary"
+        android:defaultValue=""
+        app:iconSpaceReserved="false" app:singleLineTitle="false" />
+
+    <PreferenceCategory android:title="@string/comment_filter_title" app:iconSpaceReserved="false">
+        <EditTextPreference
+            android:key="@string/comment_filter_keywords_key"
+            android:title="@string/comment_filter_keywords_title"
+            android:summary="@string/comment_filter_keywords_summary"
+            android:defaultValue=""
+            app:iconSpaceReserved="false" app:singleLineTitle="false" />
+        <EditTextPreference
+            android:key="@string/comment_filter_authors_key"
+            android:title="@string/comment_filter_authors_title"
+            android:summary="@string/comment_filter_authors_summary"
+            android:defaultValue=""
+            app:iconSpaceReserved="false" app:singleLineTitle="false" />
+        <androidx.preference.SeekBarPreference
+            android:key="@string/comment_filter_min_likes_key"
+            android:title="@string/comment_filter_min_likes_title"
+            android:summary="@string/comment_filter_min_likes_summary"
+            android:defaultValue="0" android:max="1000"
+            app:min="0" app:showSeekBarValue="true"
+            app:iconSpaceReserved="false" app:singleLineTitle="false" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

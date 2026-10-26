@@ -154,6 +154,7 @@ ntbl-lame = { module = "co.ntbl:lame", version.ref = "javaLame" }
 ocpsoft-prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
 pinterest-ktlint = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 puppycrawl-checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
+re2j = { module = "com.google.re2j:re2j", version = "1.8" }
 reactivex-rxandroid = { module = "io.reactivex.rxjava3:rxandroid", version.ref = "rxandroid" }
 reactivex-rxjava = { module = "io.reactivex.rxjava3:rxjava", version.ref = "rxjava" }
 russhwolf-settings-core = { module = "com.russhwolf:multiplatform-settings", version.ref = "settings" }
