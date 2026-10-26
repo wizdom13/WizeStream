@@ -8,6 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class YoutubeChannelPostsLinkHandlerFactoryTest {
     @Test
+    void createsAndParsesReleasesUrls() throws Exception {
+        final ListLinkHandler releases = YoutubeChannelTabLinkHandlerFactory.getInstance().fromUrl(
+                "https://www.youtube.com/channel/UC123/releases?view=0");
+        assertEquals(ChannelTabs.ALBUMS, releases.getContentFilters().get(0).getName());
+        assertEquals("https://www.youtube.com/channel/UC123/releases", releases.getUrl());
+    }
+
+    @Test
     void createsAndParsesPostsUrls() throws Exception {
         final YoutubeChannelTabLinkHandlerFactory factory =
                 YoutubeChannelTabLinkHandlerFactory.getInstance();

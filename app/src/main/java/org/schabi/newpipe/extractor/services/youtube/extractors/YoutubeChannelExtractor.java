@@ -649,6 +649,9 @@ public class YoutubeChannelExtractor extends ChannelExtractor {
                             addTab.accept(ChannelTabs.VIDEOS);
                             foundVideoTab = tabRenderer;
                             break;
+                        case "releases":
+                            addTab.accept(ChannelTabs.ALBUMS);
+                            break;
                         case "playlists":
                             addTab.accept(ChannelTabs.PLAYLISTS);
                             break;

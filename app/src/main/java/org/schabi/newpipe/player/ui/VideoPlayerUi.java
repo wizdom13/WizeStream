@@ -240,8 +240,10 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.shuffleButton.setOnClickListener(v -> onShuffleClicked());
 
         binding.playPauseButton.setOnClickListener(makeOnClickListener(player::playPause));
-        binding.playPreviousButton.setOnClickListener(makeOnClickListener(player::playPrevious));
-        binding.playNextButton.setOnClickListener(makeOnClickListener(player::playNext));
+        binding.playPreviousButton.setOnClickListener(
+                makeOnClickListener(() -> PlayerNavigationButtons.previous(player)));
+        binding.playNextButton.setOnClickListener(
+                makeOnClickListener(() -> PlayerNavigationButtons.next(player)));
 
         binding.moreOptionsButton.setOnClickListener(
                 makeOnClickListener(this::onMoreOptionsClicked));
@@ -837,18 +839,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     protected void showOrHideButtons() {
-        @Nullable final PlayQueue playQueue = player.getPlayQueue();
-        if (playQueue == null) {
-            return;
-        }
-
-        final boolean showPrev = playQueue.getIndex() != 0;
-        final boolean showNext = playQueue.getIndex() + 1 != playQueue.getStreams().size();
-
-        binding.playPreviousButton.setVisibility(showPrev ? View.VISIBLE : View.INVISIBLE);
-        binding.playPreviousButton.setAlpha(showPrev ? 1.0f : 0.0f);
-        binding.playNextButton.setVisibility(showNext ? View.VISIBLE : View.INVISIBLE);
-        binding.playNextButton.setAlpha(showNext ? 1.0f : 0.0f);
+        PlayerNavigationButtons.updateVisibility(player, binding);
     }
 
     protected void showSystemUIPartially() {
@@ -1057,14 +1048,15 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             return;
         }
 
-        if (!show || playQueue.getIndex() > 0) {
+        if (!show || PlayerNavigationButtons.useSeekButtons(player) || playQueue.getIndex() > 0) {
             animate(
                     binding.playPreviousButton,
                     show,
                     duration,
                     AnimationType.SCALE_AND_ALPHA);
         }
-        if (!show || playQueue.getIndex() + 1 < playQueue.getStreams().size()) {
+        if (!show || PlayerNavigationButtons.useSeekButtons(player)
+                || playQueue.getIndex() + 1 < playQueue.getStreams().size()) {
             animate(
                     binding.playNextButton,
                     show,

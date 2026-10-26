@@ -213,7 +213,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Choose **Top** or **Newest** YouTube comments using the service's ordering, including pagination
 - Translate comments on demand with Android's on-device translation service when the required
   language pair is already available locally, with no cloud translation fallback
-- Sort channel videos by latest, popular, or oldest, and use podcast tabs on supported channels
+- Sort channel videos by latest, popular, or oldest, and use podcast and album/release tabs on supported channels
 - Browse read-only YouTube channel posts with text, images, polls, links, videos, playlists, and
   pagination
 - See channel avatars directly in stream lists, open channels from their identity areas, and view
@@ -272,6 +272,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Configure the preferred action when opening a stream, start or rotate directly into fullscreen even
   when Android orientation is locked, choose the exit/minimize behavior, and remember popup size and
   position
+- Optionally replace the video player’s previous/next buttons with rewind/fast-forward using your
+  configured seek duration under **Settings > Video and audio**.
 - Set a sleep timer using presets, a custom duration, the end of the current video, or the end of the
   queue, with optional fade-out
 - Skip or mark SponsorBlock categories with per-category behavior, colors, notifications, seek-bar
