@@ -32,6 +32,7 @@ public final class SettingsResourceRegistry {
         add(MainSettingsFragment.class, R.xml.main_settings).setSearchable(false);
 
         add(AppearanceSettingsFragment.class, R.xml.appearance_settings);
+        add(ThemePackSettingsFragment.class, R.xml.theme_pack_settings);
         add(ContentSettingsFragment.class, R.xml.content_settings);
         add(ContentBlockingSettingsFragment.class, R.xml.content_blocking_settings);
         add(DebugSettingsFragment.class, R.xml.debug_settings).setSearchable(false);

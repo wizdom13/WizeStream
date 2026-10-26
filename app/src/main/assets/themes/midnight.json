@@ -1,0 +1,10 @@
+{
+  "format": "wizestream-theme",
+  "version": 1,
+  "name": "Midnight",
+  "author": "WizeStream",
+  "mode": "system",
+  "night": "black",
+  "lightAccent": "purple",
+  "darkAccent": "purple"
+}

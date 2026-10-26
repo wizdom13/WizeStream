@@ -398,6 +398,7 @@ dependencies {
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.4")
 
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.runner)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.assertj.core)

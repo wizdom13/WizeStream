@@ -129,7 +129,8 @@ public final class PlayerUiTheme implements AutoCloseable {
     }
 
     private void onThemeChanged(final SharedPreferences unused, final String key) {
-        if (key == null || key.equals(context.getString(R.string.theme_key))
+        if (key == null || key.equals(org.schabi.newpipe.themes.ThemePacks.KEY)
+                || key.equals(context.getString(R.string.theme_key))
                 || key.equals(context.getString(R.string.night_theme_key))
                 || key.equals(context.getString(R.string.theme_color_key))) {
             handler.removeCallbacksAndMessages(null);

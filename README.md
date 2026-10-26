@@ -622,6 +622,12 @@ testing, precise diagnostics, and patient guidance that helped make WizeStream r
 and reproducible across independent build environments, and for distributing WizeStream through
 [IzzyOnDroid](https://apt.izzysoft.de/packages/org.wisso.newpipematerial).
 
+### Community theme packs
+
+Combine built-in light, dark, AMOLED, and accent palettes through **Settings → Appearance → Theme packs**. Preview and import a JSON pack, export your current appearance, or restore your previous settings. The first format supports palette combinations; custom colours, glass effects, and player layouts are not part of this format.
+
+See the [theme creator guide](doc/themes/README.md) for the complete format, validation rules, examples, testing checklist, and sharing instructions.
+
 ### Integrated extractor source
 
 Extractor and timeago-parser sources are stored directly under `app/src/main/java`, with protocol

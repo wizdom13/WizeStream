@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="theme_packs_title">Theme packs</string>
+    <string name="theme_packs_summary">Import and share light, dark, and accent combinations</string>
+    <string name="theme_pack_managed">Controlled by your theme pack. Restore previous appearance in Theme packs to edit.</string>
+    <string name="theme_pack_active">Current appearance</string>
+    <string name="theme_pack_default">Using your regular appearance settings</string>
+    <string name="theme_pack_author">%1$s — by %2$s</string>
+    <string name="theme_pack_import">Import theme pack</string>
+    <string name="theme_pack_export">Export current theme</string>
+    <string name="theme_pack_exported">Theme pack exported</string>
+    <string name="theme_pack_restore">Restore previous appearance</string>
+    <string name="theme_pack_restore_message">Remove the active pack and return to your previous appearance settings.</string>
+    <string name="theme_pack_presets">Built-in theme packs</string>
+    <string name="theme_pack_preview">Preview theme pack</string>
+    <string name="theme_pack_preview_description">%1$s\nBy %2$s\n\nPreview only. Apply to change the appearance. Existing player screens may need reopening.\n</string>
+    <string name="theme_pack_day_preview">Day appearance · Sample video title</string>
+    <string name="theme_pack_night_preview">Night appearance · Sample video title</string>
+    <string name="theme_pack_accent_preview">Selected item · Accent preview</string>
+    <string name="theme_pack_apply">Apply theme</string>
+    <string name="theme_pack_failed">Unable to read or save this theme. Use a valid version 1 WizeStream theme JSON file, at most 16 KiB, and check file access.</string>
+    <string-array name="theme_pack_presets">
+        <item>Forest</item>
+        <item>Ocean</item>
+        <item>Midnight</item>
+    </string-array>
+</resources>

@@ -82,6 +82,15 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
             return false;
         });
 
+        if (org.schabi.newpipe.themes.ThemePacks.active(requireContext()) != null) {
+            for (final String key : new String[] {themeKey, nightThemeKey, themeColorKey}) {
+                final Preference preference = findPreference(key);
+                preference.setEnabled(false);
+                preference.setSummaryProvider(null);
+                preference.setSummary(R.string.theme_pack_managed);
+            }
+        }
+
         final boolean showLargeScreenPreferences = DeviceUtils.isTablet(requireContext())
                 || DeviceUtils.isTv(requireContext());
         setPreferenceVisible(R.string.tv_related_sidebar_width_key,

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WizeStream theme pack v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "name",
+    "author"
+  ],
+  "properties": {
+    "format": {
+      "const": "wizestream-theme"
+    },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^(?!\\s*$)[^\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]+$"
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^(?!\\s*$)[^\\u0000-\\u001F\\u007F-\\u009F\\u202A-\\u202E\\u2066-\\u2069]+$"
+    },
+    "mode": {
+      "enum": [
+        "system",
+        "light",
+        "dark",
+        "black",
+        "eye_comfort"
+      ],
+      "default": "system"
+    },
+    "night": {
+      "enum": [
+        "dark",
+        "black"
+      ],
+      "default": "dark"
+    },
+    "lightAccent": {
+      "enum": [
+        "wizestream",
+        "neutral",
+        "green",
+        "blue",
+        "cyan",
+        "purple",
+        "yellow",
+        "orange",
+        "pink",
+        "red",
+        "follow_system"
+      ],
+      "default": "wizestream"
+    },
+    "darkAccent": {
+      "enum": [
+        "wizestream",
+        "neutral",
+        "green",
+        "blue",
+        "cyan",
+        "purple",
+        "yellow",
+        "orange",
+        "pink",
+        "red",
+        "follow_system"
+      ],
+      "default": "wizestream"
+    }
+  }
+}
