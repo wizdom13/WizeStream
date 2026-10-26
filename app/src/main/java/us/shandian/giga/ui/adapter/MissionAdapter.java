@@ -1,7 +1,6 @@
 package us.shandian.giga.ui.adapter;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-import static android.content.Intent.FLAG_GRANT_PREFIX_URI_PERMISSION;
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 import static android.content.Intent.createChooser;
 import static us.shandian.giga.get.DownloadMission.ERROR_CONNECT_HOST;
@@ -371,17 +370,8 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         if (BuildConfig.DEBUG)
             Log.v(TAG, "Mime: " + mimeType + " package: " + BuildConfig.APPLICATION_ID + ".provider");
 
-        Intent viewIntent = new Intent(Intent.ACTION_VIEW);
-        viewIntent.setDataAndType(resolveShareableUri(mission), mimeType);
-        viewIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
-        viewIntent.addFlags(FLAG_GRANT_PREFIX_URI_PERMISSION);
-
-        Intent chooserIntent = createChooser(viewIntent, null);
-        chooserIntent.addFlags(FLAG_ACTIVITY_NEW_TASK);
-        chooserIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
-        chooserIntent.addFlags(FLAG_GRANT_PREFIX_URI_PERMISSION);
-
-        ShareUtils.openIntentInApp(mContext, chooserIntent);
+        DownloadFileIntents.open(mContext, DownloadFileIntents.viewChooser(
+                resolveShareableUri(mission), mimeType));
     }
 
     private void shareFile(Mission mission) {
@@ -401,7 +391,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
 
-        mContext.startActivity(intent);
+        DownloadFileIntents.open(mContext, intent);
     }
 
     /**
