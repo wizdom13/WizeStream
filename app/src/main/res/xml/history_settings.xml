@@ -44,6 +44,12 @@
         android:title="@string/history_portability_title"
         app:iconSpaceReserved="false" />
 
+    <Preference
+        android:key="local_recommendations"
+        android:title="@string/local_recommendations_title"
+        android:summary="@string/local_recommendations_summary"
+        app:iconSpaceReserved="false" />
+
     <PreferenceCategory
         android:layout="@layout/settings_category_header_layout"
         android:title="@string/settings_category_clear_data_title"

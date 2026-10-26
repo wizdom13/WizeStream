@@ -15,9 +15,11 @@ import org.schabi.newpipe.database.stream.model.StreamStateEntity
 import org.schabi.newpipe.learning.LearningSessionTracker
 import org.schabi.newpipe.local.history.HistoryRecordManager
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
+import org.schabi.newpipe.recommendations.RecommendationWatchTracker
 
 /** Owns playback history persistence and active learning-session accounting. */
 internal class PlayerHistoryController(private val player: Player) {
+    private val recommendations = RecommendationWatchTracker(player.context)
     private val learningSessions = LearningSessionTracker(player.context)
     private val updates = CompositeDisposable()
 
@@ -40,12 +42,14 @@ internal class PlayerHistoryController(private val player: Player) {
             registerViewed(item)
         } else {
             player.currentStreamInfo.ifPresent { info ->
+                recommendations.start(info)
                 updates.add(records().onViewed(info).onErrorComplete().subscribe())
             }
         }
     }
 
     fun registerViewed(item: PlayQueueItem) {
+        recommendations.stop()
         updates.add(records().onViewed(item).onErrorComplete().subscribe())
     }
 
@@ -87,6 +91,7 @@ internal class PlayerHistoryController(private val player: Player) {
     }
 
     fun updateLearningSession() {
+        recommendations.update(player.currentState == Player.STATE_PLAYING)
         learningSessions.update(
             player.currentItem,
             player.currentState == Player.STATE_PLAYING,
@@ -95,10 +100,12 @@ internal class PlayerHistoryController(private val player: Player) {
     }
 
     fun stopLearningSession() {
+        recommendations.stop()
         learningSessions.stop()
     }
 
     fun clear() {
+        recommendations.close()
         learningSessions.close()
         updates.clear()
     }

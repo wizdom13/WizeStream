@@ -1,0 +1,206 @@
+package org.schabi.newpipe.recommendations
+
+import android.app.Application
+import android.content.Context
+import android.os.SystemClock
+import androidx.preference.PreferenceManager
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.stream.StreamInfo
+import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.local.history.IncognitoMode
+import org.schabi.newpipe.profiles.ProfileManager
+import org.schabi.newpipe.settings.tabs.Tab
+import org.schabi.newpipe.util.ContentBlockingHelper
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = Application::class)
+class LocalRecommendationsTest {
+    private val context: Context get() = RuntimeEnvironment.getApplication()
+    private val prefs get() = context.getSharedPreferences(LocalRecommendations.PREFERENCES, Context.MODE_PRIVATE)
+    private val profile get() = ProfileManager.getActiveProfileId(context)
+
+    @Before
+    fun setup() {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
+        prefs.edit().clear().commit()
+    }
+
+    private fun item(name: String, service: Int = 0, short: Boolean = false) = StreamInfoItem(service, "https://example.org/$name", name, StreamType.VIDEO_STREAM).apply {
+        uploaderName = "Channel"
+        isShortFormContent = short
+        duration = 120
+    }
+    private fun enable(vararg settings: Pair<String, Boolean>) = LocalRecommendations.configure(context, mapOf("enabled" to true, *settings), "")
+    private fun search(text: String, service: Int = 0) = LocalRecommendations.searched(context, service, text, profile)
+    private fun model() = JSONObject(prefs.getString("$profile:model", "{}").orEmpty())
+
+    @Test
+    fun disabledByDefaultAndIncognitoNeitherLearnsNorPersonalizes() {
+        val items = listOf(item("cooking"), item("astronomy"))
+        LocalRecommendations.observe(context, items)
+        assertTrue(prefs.all.isEmpty())
+        enable()
+        search("astronomy")
+        LocalRecommendations.observe(context, items)
+        assertEquals("astronomy", LocalRecommendations.rank(context, items).first().name)
+        IncognitoMode.setEnabled(context, true)
+        val before = prefs.all.toMap()
+        search("cooking")
+        LocalRecommendations.observe(context, listOf(item("private")))
+        LocalRecommendations.watched(context, info("private"), 30)
+        assertEquals(before, prefs.all)
+        assertEquals(items, LocalRecommendations.rank(context, items))
+        assertTrue(LocalRecommendations.feed(context, 0).isEmpty())
+    }
+
+    @Test
+    fun pauseFreezesLearningAndResetDoesNotDeleteHistoryPreferences() {
+        enable()
+        search("astronomy")
+        LocalRecommendations.observe(context, listOf(item("astronomy")))
+        enable("paused" to true)
+        val before = model().toString()
+        search("cooking")
+        LocalRecommendations.observe(context, listOf(item("cooking")))
+        assertEquals(before, model().toString())
+        assertEquals(1, LocalRecommendations.feed(context, 0).size)
+        LocalRecommendations.reset(context)
+        assertTrue(LocalRecommendations.feed(context, 0).isEmpty())
+        assertTrue(LocalRecommendations.setting(context, "enabled"))
+        assertTrue(LocalRecommendations.setting(context, "paused"))
+    }
+
+    @Test
+    fun profilesAndServicesDoNotShareInterestsOrCandidates() {
+        enable()
+        val original = profile
+        search("astronomy")
+        LocalRecommendations.observe(context, listOf(item("astronomy"), item("foreign", 1)))
+        assertEquals(listOf("astronomy"), LocalRecommendations.feed(context, 0).map { it.name })
+        assertEquals(0.0, LocalRecommendations.score(mapOf("0:astronomy" to 2.0), 1, "astronomy"), 0.0)
+        val other = ProfileManager.createProfile(context, "Other")!!
+        assertTrue(ProfileManager.setActiveProfile(context, other.id))
+        assertFalse(LocalRecommendations.enabled(context))
+        enable()
+        LocalRecommendations.searched(context, 0, "late original profile query", original)
+        assertTrue(LocalRecommendations.feed(context, 0).isEmpty())
+        assertFalse(prefs.contains("$profile:model"))
+        assertTrue(ProfileManager.setActiveProfile(context, original))
+        assertEquals(1, LocalRecommendations.feed(context, 0).size)
+        assertTrue(ProfileManager.deleteProfile(context, other.id))
+        assertFalse(prefs.all.keys.any { it.startsWith("${other.id}:") })
+    }
+
+    @Test
+    fun excludesBlockedWatchedAndQueuedVideosWithoutAutoplayFallback() {
+        enable("autoplay" to true, "shorts" to true)
+        val excluded = item("astronomy")
+        val blocked = item("blocked")
+        val watched = item("watched")
+        val next = item("next", short = true)
+        val items = listOf(excluded, blocked, watched, next)
+        LocalRecommendations.observe(context, items)
+        LocalRecommendations.exclude(context, excluded)
+        ContentBlockingHelper.blockVideo(context, blocked)
+        LocalRecommendations.watched(context, info("watched"), 0)
+        assertEquals(listOf(next.url), LocalRecommendations.rank(context, items).map { it.url })
+        assertEquals(next, LocalRecommendations.autoplay(context, items, 0, true, emptySet()))
+        assertNull(LocalRecommendations.autoplay(context, items, 0, true, setOf(next.url)))
+        assertEquals(listOf(next), LocalRecommendations.shorts(context, items))
+    }
+
+    @Test
+    fun topicExclusionsAndDisabledHistoryAreRespected() {
+        enable()
+        val defaults = PreferenceManager.getDefaultSharedPreferences(context)
+        defaults.edit().putBoolean(context.getString(R.string.enable_search_history_key), false)
+            .putBoolean(context.getString(R.string.enable_watch_history_key), false).commit()
+        search("astronomy")
+        LocalRecommendations.watched(context, info("astronomy"), 60)
+        assertFalse(prefs.contains("$profile:model"))
+        LocalRecommendations.configure(context, mapOf("enabled" to true), "astronomy")
+        assertEquals(listOf("cooking"), LocalRecommendations.rank(context, listOf(item("astronomy"), item("cooking"))).map { it.name })
+    }
+
+    @Test
+    fun storageIsBoundedAndCorruptModelRecovers() {
+        enable()
+        repeat(4) { batch -> LocalRecommendations.observe(context, (0 until 100).map { item("video${batch * 100 + it}") }) }
+        assertEquals(200, model().getJSONArray("candidates").length())
+        repeat(12) { search((0..30).joinToString(" ") { index -> "term${it}word$index" }) }
+        assertTrue(model().getJSONObject("weights").length() <= 200)
+        prefs.edit().putString("$profile:model", "broken").commit()
+        LocalRecommendations.observe(context, listOf(item("recovered")))
+        assertEquals("recovered", LocalRecommendations.feed(context, 0).single().name)
+    }
+
+    @Test
+    fun actualPlayingTimeAddsWeightButPauseAndProfileSwitchDoNot() {
+        enable()
+        val tracker = RecommendationWatchTracker(context)
+        try {
+            tracker.start(info("astronomy"))
+            val initial = model().getJSONObject("weights").getDouble("0:astronomy")
+            tracker.update(true)
+            repeat(40) {
+                SystemClock.sleep(500)
+                tracker.update(true)
+            }
+            val played = model().getJSONObject("weights").getDouble("0:astronomy")
+            assertTrue(played > initial)
+            tracker.update(false)
+            repeat(10) {
+                SystemClock.sleep(1000)
+                tracker.update(false)
+            }
+            assertEquals(played, model().getJSONObject("weights").getDouble("0:astronomy"), 0.0)
+            val other = ProfileManager.createProfile(context, "Other")!!
+            ProfileManager.setActiveProfile(context, other.id)
+            enable()
+            repeat(20) {
+                SystemClock.sleep(1000)
+                tracker.update(true)
+            }
+            assertFalse(prefs.contains("$profile:model"))
+        } finally {
+            tracker.close()
+        }
+    }
+
+    @Test
+    fun syncingHomeTabsPreservesLocalForYouPosition() {
+        val local = listOf(Tab.Type.RECOMMENDATIONS.tab, Tab.Type.FEED.tab)
+        val synced = listOf(Tab.Type.SUBSCRIPTIONS.tab, Tab.Type.HISTORY.tab)
+        assertEquals(listOf(Tab.RecommendationsTab.ID, Tab.SubscriptionsTab.ID, Tab.HistoryTab.ID), RecommendationHomeTabs.preserve(local, synced).map { it.tabId })
+        assertEquals(synced, RecommendationHomeTabs.preserve(emptyList(), synced))
+    }
+
+    @Test
+    fun forYouTabRoundTripsAndOpensTheLocalFeed() {
+        val tab = Tab.from(Tab.RecommendationsTab.ID)!!
+        assertTrue(tab.getFragment(context) is RecommendationsFragment)
+        assertEquals(Tab.RecommendationsTab.ID, tab.tabId)
+    }
+
+    private fun info(name: String): StreamInfo = mock(StreamInfo::class.java).also {
+        `when`(it.serviceId).thenReturn(0)
+        `when`(it.url).thenReturn("https://example.org/$name")
+        `when`(it.name).thenReturn(name)
+        `when`(it.uploaderName).thenReturn("Channel")
+        `when`(it.streamType).thenReturn(StreamType.VIDEO_STREAM)
+    }
+}

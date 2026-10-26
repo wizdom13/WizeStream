@@ -230,6 +230,10 @@ object ProfileManager {
         }
         editor.apply()
         KidsMode.forgetProfile(context, profileId)
+        val localRecommendations = context.getSharedPreferences("local_recommendations", Context.MODE_PRIVATE)
+        val localEditor = localRecommendations.edit()
+        localRecommendations.all.keys.filter { it.startsWith("$profileId:") }.forEach(localEditor::remove)
+        localEditor.apply()
         return true
     }
 
