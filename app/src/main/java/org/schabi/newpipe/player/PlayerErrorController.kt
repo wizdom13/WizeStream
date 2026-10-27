@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW
 import androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
@@ -50,6 +51,7 @@ internal class PlayerErrorController(
     private val rejectedFormatRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val surfaceRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val audioDecoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
@@ -70,6 +72,7 @@ internal class PlayerErrorController(
 
         player.saveStreamProgressState()
         if (tryRecoverFromVideoSurfaceFailure(error) ||
+            tryRecoverFromAudioDecoderOutputFailure(error) ||
             tryRecoverFromAudioTrackInitFailure(error)
         ) {
             return
@@ -248,6 +251,7 @@ internal class PlayerErrorController(
         rejectedFormatRecoveryGuard.reset()
         videoResolver.clearRejectedVideoStream()
         decoderRecoveryGuard.reset()
+        audioDecoderRecoveryGuard.reset()
         audioTrackRecoveryGuard.reset()
         surfaceRecoveryGuard.reset()
         liveStallRecoveryGuard.reset()
@@ -304,6 +308,36 @@ internal class PlayerErrorController(
         cancelPendingMediaUrlRecovery()
         player.onBuffering()
         player.restartForSurfaceRecovery()
+        return true
+    }
+
+    internal fun tryRecoverFromAudioDecoderOutputFailure(error: PlaybackException): Boolean {
+        val rendererType = (error as? ExoPlaybackException)?.rendererType
+            ?: if (error.message?.contains("MediaCodecAudioRenderer") == true) {
+                C.TRACK_TYPE_AUDIO
+            } else {
+                C.TRACK_TYPE_UNKNOWN
+            }
+        if (!PlayerHttpErrorRecovery.isRecoverableAudioDecoderOutputFailure(
+                error.errorCode,
+                rendererType,
+                error
+            ) || player.exoPlayerIsNull()
+        ) {
+            return false
+        }
+
+        val item = player.playQueue?.item ?: return false
+        val recoveryKey = "${item.serviceId}:${item.url}"
+        if (!audioDecoderRecoveryGuard.acquire(recoveryKey)) {
+            return false
+        }
+
+        Log.w(Player.TAG, "Recreating playback engine after audio decoder output failure")
+        player.setRecovery()
+        player.onBuffering()
+        cancelPendingMediaUrlRecovery()
+        player.restartForAudioTrackRecovery()
         return true
     }
 
