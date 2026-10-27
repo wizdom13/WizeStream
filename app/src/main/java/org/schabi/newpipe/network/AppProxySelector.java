@@ -61,8 +61,8 @@ public final class AppProxySelector extends ProxySelector {
             protected PasswordAuthentication getPasswordAuthentication() {
                 final ProxyConfiguration current = configuration;
                 if (!shouldAuthenticateProxy(getRequestorType(), getRequestingHost(),
-                        getRequestingPort(), current.host, current.port,
-                        current.username, current.password)) {
+                        getRequestingPort(), getRequestingProtocol(),
+                        current.host, current.port, current.username, current.password)) {
                     return null;
                 }
                 return new PasswordAuthentication(current.username,
@@ -213,11 +213,19 @@ public final class AppProxySelector extends ProxySelector {
     static boolean shouldAuthenticateProxy(@Nullable final Authenticator.RequestorType requestType,
                                            @Nullable final String requestHost,
                                            final int requestPort,
+                                           @Nullable final String requestProtocol,
                                            @NonNull final String configuredHost,
                                            final int configuredPort,
                                            @NonNull final String username,
                                            @Nullable final String password) {
-        return requestType == Authenticator.RequestorType.PROXY
+        // Android's SocksSocketImpl uses the legacy Authenticator overload, which labels
+        // SOCKS5 credential requests as SERVER rather than PROXY. Accept that one
+        // protocol-specific form while still scoping credentials to the configured endpoint.
+        final boolean proxyRequest = requestType == Authenticator.RequestorType.PROXY;
+        final boolean androidSocksRequest = requestType == Authenticator.RequestorType.SERVER
+                && requestProtocol != null
+                && requestProtocol.toLowerCase(Locale.ROOT).startsWith("socks");
+        return (proxyRequest || androidSocksRequest)
                 && requestHost != null && requestHost.equalsIgnoreCase(configuredHost)
                 && requestPort == configuredPort
                 && !username.isBlank() && password != null;
