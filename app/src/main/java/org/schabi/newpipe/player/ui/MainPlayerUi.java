@@ -1270,11 +1270,13 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
         player.getCurrentStreamInfo().ifPresent(info ->
                 getParentActivity().ifPresent(activity -> {
-                    FullscreenCommentsSidebar.show(
-                            activity,
-                            info.getServiceId(),
-                            info.getUrl(),
-                            info.getName());
+                    if (org.schabi.newpipe.player.LiveChatRepository.supports(info)) {
+                        FullscreenCommentsSidebar.showLiveChat(activity, info.getServiceId(),
+                                info.getUrl(), info.getName());
+                    } else {
+                        FullscreenCommentsSidebar.show(activity, info.getServiceId(),
+                                info.getUrl(), info.getName());
+                    }
                     hideControls(0, 0);
                 }));
     }

@@ -82,8 +82,9 @@ public class YoutubeBulletCommentsExtractor extends BulletCommentsExtractor {
                     .getObject("twoColumnWatchNextResults").getObject("conversationBar")
                     .getObject("liveChatRenderer").getArray("continuations").getObject(0)
                     .getObject("reloadContinuationData").getString("continuation");
+            disabled = lastContinuation == null || lastContinuation.isEmpty();
         } catch (Exception e) {
-            e.printStackTrace();
+            disabled = true;
         }
     }
 
@@ -92,7 +93,7 @@ public class YoutubeBulletCommentsExtractor extends BulletCommentsExtractor {
             shouldSkipFetch = false;
             return ;
         }
-        if(lastPlayPosition == currentPlayPosition){
+        if(!isLiveStream && lastPlayPosition == currentPlayPosition){
             return ; // should only happen when watching replay and user pauses
             // we do not want to fetch the same message twice
         }
@@ -140,6 +141,9 @@ public class YoutubeBulletCommentsExtractor extends BulletCommentsExtractor {
             }
 
             lastPlayPosition = currentPlayPosition;
+            while (IDList.size() > 4096) {
+                IDList.remove(0);
+            }
 
             JsonArray actions = liveChatContinuation.getArray("actions");
             for(int i = 0; i < actions.size(); i++){
@@ -198,27 +202,33 @@ public class YoutubeBulletCommentsExtractor extends BulletCommentsExtractor {
     public List<BulletCommentsInfoItem> getLiveMessages() throws ParsingException {
         final BulletCommentsInfoItemsCollector collector =
                 new BulletCommentsInfoItemsCollector(getServiceId());
-        for(YoutubeBulletCommentPair item: messages){
+        final List<YoutubeBulletCommentPair> normalBatch = new ArrayList<>(messages);
+        final List<YoutubeBulletCommentPair> paidBatch = new ArrayList<>(SuperChatMessages);
+        for(YoutubeBulletCommentPair item: normalBatch){
             collector.commit(new YoutubeBulletCommentsInfoItemExtractor(item.getData(), startTime, item.getOffsetDuration()));
         }
-        for(YoutubeBulletCommentPair item: SuperChatMessages){
+        for(YoutubeBulletCommentPair item: paidBatch){
             collector.commit(new YoutubeSuperChatInfoItemExtractor(item.getData(), startTime, item.getOffsetDuration()));
         }
-        messages.clear();
-        SuperChatMessages.clear();
+        messages.removeAll(normalBatch);
+        SuperChatMessages.removeAll(paidBatch);
         return collector.getItems();
     }
 
     @Override
-    public void disconnect() {
+    public synchronized void disconnect() {
         if(future != null && !future.isCancelled()){
             future.cancel(true);
+        }
+        if (executor != null) {
+            executor.shutdownNow();
         }
     }
 
     @Override
-    public void reconnect() {
-        if(!isDisabled() && future != null && future.isCancelled()){
+    public synchronized void reconnect() {
+        if (!isDisabled() && future != null && future.isCancelled()) {
+            executor = Executors.newSingleThreadScheduledExecutor();
             future = executor.scheduleAtFixedRate(this::fetchMessage, 1000, 1000, TimeUnit.MILLISECONDS);
         }
     }

@@ -259,6 +259,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
 - Browse chapters in adaptive side or bottom panels while keeping part of the video visible
 - Read fullscreen comments and replies beside the video, and enable danmaku bullet comments where supported
+- Read YouTube livestream chat in a dedicated **Live chat** tab or the fullscreen comments side panel.
+  Switch between the chat list and danmaku; chat is read-only, retains the latest 200 messages,
+  and disconnects when no chat surface is visible or the app is backgrounded. Chat replay and
+  sending messages are not supported by this panel.
 - Choose Normal or Full live playback; Full live offers rewind through the history supplied by the stream
 - Control autoplay and automatic queue continuation, enqueue items next or last, reorder the play
   queue, and automatically prefer Shorts recommendations while watching Shorts

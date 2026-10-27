@@ -45,6 +45,14 @@ public class TabAdapter extends FragmentPagerAdapter {
         mFragmentTitleList.clear();
     }
 
+    public void removeItemByTitle(final String title) {
+        final int index = mFragmentTitleList.indexOf(title);
+        if (index >= 0) {
+            mFragmentList.remove(index);
+            mFragmentTitleList.remove(index);
+        }
+    }
+
     public void removeItem(final int position) {
         mFragmentList.remove(position == 0 ? 0 : position - 1);
         mFragmentTitleList.remove(position == 0 ? 0 : position - 1);

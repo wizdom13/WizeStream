@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
+import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,6 +19,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem
+import org.schabi.newpipe.fragments.list.chat.LiveChatFragment
 import org.schabi.newpipe.fragments.list.comments.CommentRepliesFragment
 import org.schabi.newpipe.fragments.list.comments.CommentsFragment
 import org.schabi.newpipe.util.DeviceUtils
@@ -40,6 +42,9 @@ class FullscreenCommentsDialog : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<View>(R.id.fullscreenCommentsClose).setOnClickListener { dismiss() }
+        if (requireArguments().getBoolean(CHAT)) {
+            view.findViewById<TextView>(R.id.fullscreenCommentsTitle).setText(R.string.live_chat_title)
+        }
         val back = view.findViewById<View>(R.id.fullscreenCommentsBack)
         back.setOnClickListener { childFragmentManager.popBackStack() }
         backStackListener = FragmentManager.OnBackStackChangedListener {
@@ -52,7 +57,11 @@ class FullscreenCommentsDialog : DialogFragment() {
             val args = requireArguments()
             childFragmentManager.beginTransaction().replace(
                 R.id.fullscreenCommentsContent,
-                CommentsFragment.getInstance(args.getInt(SERVICE), args.getString(URL).orEmpty(), args.getString(TITLE).orEmpty())
+                if (args.getBoolean(CHAT)) {
+                    LiveChatFragment.newInstance(args.getInt(SERVICE), args.getString(URL).orEmpty())
+                } else {
+                    CommentsFragment.getInstance(args.getInt(SERVICE), args.getString(URL).orEmpty(), args.getString(TITLE).orEmpty())
+                }
             ).commitNow()
         }
         ViewCompat.setOnApplyWindowInsetsListener(view) { panel, insets ->
@@ -140,12 +149,14 @@ class FullscreenCommentsDialog : DialogFragment() {
     }
 
     companion object {
+        private const val CHAT = "live_chat"
         private const val SERVICE = "service"
         private const val URL = "url"
         private const val TITLE = "title"
 
-        fun newInstance(serviceId: Int, url: String, title: String) = FullscreenCommentsDialog().apply {
+        fun newInstance(serviceId: Int, url: String, title: String, liveChat: Boolean = false) = FullscreenCommentsDialog().apply {
             arguments = Bundle().apply {
+                putBoolean(CHAT, liveChat)
                 putInt(SERVICE, serviceId)
                 putString(URL, url)
                 putString(TITLE, title)

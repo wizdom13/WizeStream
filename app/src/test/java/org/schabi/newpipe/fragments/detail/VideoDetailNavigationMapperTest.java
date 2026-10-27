@@ -34,6 +34,15 @@ public class VideoDetailNavigationMapperTest {
     }
 
     @Test
+    public void liveChatHasItsOwnNavigationDestination() {
+        assertEquals(R.id.video_detail_navigation_live_chat,
+                VideoDetailNavigationMapper.getNavigationItemId(
+                        VideoDetailNavigationMapper.LIVE_CHAT_TAB_TAG));
+        assertEquals(VideoDetailNavigationMapper.LIVE_CHAT_TAB_TAG,
+                VideoDetailNavigationMapper.getTabTag(R.id.video_detail_navigation_live_chat));
+    }
+
+    @Test
     public void unknownDestinationsFailClosed() {
         assertEquals(VideoDetailNavigationMapper.NO_NAVIGATION_ITEM_ID,
                 VideoDetailNavigationMapper.getNavigationItemId("UNKNOWN"));
