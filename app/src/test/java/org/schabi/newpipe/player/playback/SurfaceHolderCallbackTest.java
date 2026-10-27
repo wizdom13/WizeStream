@@ -61,7 +61,7 @@ public class SurfaceHolderCallbackTest {
     @Test
     public void expandableSurfaceFollowsAttachmentLifecycleOnAndroid14Plus() throws Exception {
         final String source = Files.readString(sourceDirectory.resolve(
-                "org/schabi/newpipe/views/ExpandableSurfaceView.java"));
+                "org/schabi/newpipe/views/ExpandableSurfaceView.kt"));
 
         assertTrue(source.contains("SURFACE_LIFECYCLE_FOLLOWS_ATTACHMENT"));
         assertFalse(source.contains("requestSurfaceRecreation"));
