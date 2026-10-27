@@ -43,22 +43,28 @@ public class AppProxySelectorTest {
     @Test
     public void proxyAuthenticationIsScopedToConfiguredEndpoint() {
         assertTrue(AppProxySelector.shouldAuthenticateProxy(
-                Authenticator.RequestorType.PROXY, "proxy.example.com", 1080,
+                Authenticator.RequestorType.PROXY, "proxy.example.com", 1080, null,
+                "proxy.example.com", 1080, "user", "password"));
+        assertTrue(AppProxySelector.shouldAuthenticateProxy(
+                Authenticator.RequestorType.SERVER, "proxy.example.com", 1080, "SOCKS5",
                 "proxy.example.com", 1080, "user", "password"));
         assertFalse(AppProxySelector.shouldAuthenticateProxy(
-                Authenticator.RequestorType.SERVER, "proxy.example.com", 1080,
+                Authenticator.RequestorType.SERVER, "proxy.example.com", 1080, "http",
                 "proxy.example.com", 1080, "user", "password"));
         assertFalse(AppProxySelector.shouldAuthenticateProxy(
-                Authenticator.RequestorType.PROXY, "other.example.com", 1080,
+                Authenticator.RequestorType.SERVER, "other.example.com", 1080, "SOCKS5",
                 "proxy.example.com", 1080, "user", "password"));
         assertFalse(AppProxySelector.shouldAuthenticateProxy(
-                Authenticator.RequestorType.PROXY, "proxy.example.com", 8080,
+                Authenticator.RequestorType.PROXY, "other.example.com", 1080, null,
                 "proxy.example.com", 1080, "user", "password"));
         assertFalse(AppProxySelector.shouldAuthenticateProxy(
-                Authenticator.RequestorType.PROXY, "proxy.example.com", 1080,
+                Authenticator.RequestorType.PROXY, "proxy.example.com", 8080, null,
+                "proxy.example.com", 1080, "user", "password"));
+        assertFalse(AppProxySelector.shouldAuthenticateProxy(
+                Authenticator.RequestorType.PROXY, "proxy.example.com", 1080, null,
                 "proxy.example.com", 1080, "", "password"));
         assertFalse(AppProxySelector.shouldAuthenticateProxy(
-                Authenticator.RequestorType.PROXY, "proxy.example.com", 1080,
+                Authenticator.RequestorType.PROXY, "proxy.example.com", 1080, null,
                 "proxy.example.com", 1080, "user", null));
     }
 
