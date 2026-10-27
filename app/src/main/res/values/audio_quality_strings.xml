@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="audio_quality_key" translatable="false">audio_quality</string>
+    <string name="metered_audio_quality_key" translatable="false">metered_audio_quality</string>
+    <string name="audio_quality_title">Preferred audio quality</string>
+    <string name="metered_audio_quality_title">Audio quality on metered networks</string>
+    <string name="audio_quality_auto">Automatic (follow video data limit)</string>
+    <string name="audio_quality_high">Higher quality</string>
+    <string name="audio_quality_low">Data saving</string>
+    <string name="audio_quality_inherit">Use preferred audio quality</string>
+    <string-array name="audio_quality_entries">
+        <item>@string/audio_quality_auto</item>
+        <item>@string/audio_quality_high</item>
+        <item>@string/audio_quality_low</item>
+    </string-array>
+    <string-array name="audio_quality_values" translatable="false">
+        <item>auto</item><item>high</item><item>low</item>
+    </string-array>
+    <string-array name="metered_audio_quality_entries">
+        <item>@string/audio_quality_inherit</item>
+        <item>@string/audio_quality_high</item>
+        <item>@string/audio_quality_low</item>
+    </string-array>
+    <string-array name="metered_audio_quality_values" translatable="false">
+        <item>inherit</item><item>high</item><item>low</item>
+    </string-array>
+</resources>
