@@ -10,6 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import androidx.media3.common.C
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW
 import androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
@@ -312,7 +313,10 @@ internal class PlayerErrorController(
     }
 
     internal fun tryRecoverFromAudioDecoderOutputFailure(error: PlaybackException): Boolean {
-        val rendererType = (error as? ExoPlaybackException)?.rendererType
+        val rendererType = (error as? ExoPlaybackException)
+            ?.rendererFormat
+            ?.sampleMimeType
+            ?.let { MimeTypes.getTrackType(it) }
             ?: if (error.message?.contains("MediaCodecAudioRenderer") == true) {
                 C.TRACK_TYPE_AUDIO
             } else {
