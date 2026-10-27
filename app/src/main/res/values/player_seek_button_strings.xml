@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_seek_buttons_key" translatable="false">player_seek_buttons</string>
+    <string name="player_seek_buttons_title">Use rewind and fast-forward buttons</string>
+    <string name="player_seek_buttons_summary">Replace previous/next buttons beside play/pause in the video player. Uses your configured seek duration; queue navigation remains available in the queue.</string>
+    <string name="player_seek_back">Rewind</string>
+    <string name="player_seek_forward">Fast-forward</string>
+</resources>

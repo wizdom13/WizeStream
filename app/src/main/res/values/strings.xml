@@ -1436,7 +1436,7 @@
     <string name="filter_unwatched">Unwatched</string>
     <string name="channel_tab_channels">Channels</string>
     <string name="channel_tab_playlists">Playlists</string>
-    <string name="channel_tab_albums">Albums</string>
+    <string name="channel_tab_albums">Albums / releases</string>
     <string name="channel_tab_podcasts">Podcasts</string>
     <string name="channel_tab_posts">Posts</string>
     <string name="post_author_avatar_content_description">Post author avatar</string>

@@ -502,4 +502,10 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false"
         app:useSimpleSummaryProvider="true" />
+    <SwitchPreferenceCompat
+        android:key="@string/player_seek_buttons_key"
+        android:title="@string/player_seek_buttons_title"
+        android:summary="@string/player_seek_buttons_summary"
+        android:defaultValue="false"
+        app:iconSpaceReserved="false" app:singleLineTitle="false" />
 </PreferenceScreen>

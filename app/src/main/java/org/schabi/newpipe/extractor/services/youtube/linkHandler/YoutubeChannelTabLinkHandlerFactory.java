@@ -56,6 +56,8 @@ public final class YoutubeChannelTabLinkHandlerFactory extends ListLinkHandlerFa
         switch (tab) {
             case ChannelTabs.VIDEOS:
                 return "/videos";
+            case ChannelTabs.ALBUMS:
+                return "/releases";
             case ChannelTabs.PLAYLISTS:
                 return "/playlists";
             case ChannelTabs.PODCASTS:
@@ -183,6 +185,8 @@ public final class YoutubeChannelTabLinkHandlerFactory extends ListLinkHandlerFa
                 switch (pathSegments[i]) {
                     case "videos":
                         return ChannelTabs.VIDEOS;
+                    case "releases":
+                        return ChannelTabs.ALBUMS;
                     case "playlists":
                         return ChannelTabs.PLAYLISTS;
                     case "podcasts":
