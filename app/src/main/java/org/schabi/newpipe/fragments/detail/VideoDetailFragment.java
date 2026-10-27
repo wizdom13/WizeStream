@@ -124,6 +124,7 @@ import org.schabi.newpipe.player.playqueue.LocalMediaPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.player.playqueue.TimestampedPlayQueue;
 import org.schabi.newpipe.player.ui.FullscreenCommentsSidebar;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
@@ -1544,7 +1545,7 @@ public final class VideoDetailFragment
                         showContent();
                         if (addToBackStack) {
                             if (playQueue == null) {
-                                playQueue = new SinglePlayQueue(result);
+                                playQueue = TimestampedPlayQueue.create(result, url);
                             }
                             if (stack.isEmpty() || !stack.peek().getPlayQueue()
                                     .equalStreams(playQueue)) {
@@ -2005,7 +2006,7 @@ public final class VideoDetailFragment
         // Size can be 0 because queue removes bad stream automatically when error occurs
         if (queue == null || queue.isEmpty()) {
             queue = currentLocalItem == null
-                    ? new SinglePlayQueue(currentInfo)
+                    ? TimestampedPlayQueue.create(currentInfo, url)
                     : new LocalMediaPlayQueue(List.of(currentLocalItem), 0);
         }
 

@@ -179,6 +179,15 @@ internal class PlayerLifecycleController(
     fun setRecovery() {
         val queue = player.playQueue ?: return
         if (player.exoPlayerIsNull()) return
+        // The queue synchronizer consumes explicit timestamps/resume positions once the media
+        // source is ready. UI attachment must not replace that pending seek with the engine's 0.
+        val item = queue.item ?: return
+        if (item !== player.currentItem &&
+            item.recoveryPosition != org.schabi.newpipe.player.playqueue.PlayQueueItem.RECOVERY_UNSET
+        ) {
+            return
+        }
+        if (player.exoPlayer.currentTimeline.isEmpty) return
         val position = MathUtils.clamp(
             player.exoPlayer.currentPosition,
             0,

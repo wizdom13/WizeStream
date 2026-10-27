@@ -69,7 +69,7 @@ import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.playqueue.ChannelTabPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlaylistPlayQueue;
-import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
+import org.schabi.newpipe.player.playqueue.TimestampedPlayQueue;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
@@ -1015,7 +1015,7 @@ public class RouterActivity extends AppCompatActivity {
                         NavigationHelper.playOnExternalVideoPlayer(this, (StreamInfo) info);
                         return;
                     }
-                    playQueue = new SinglePlayQueue((StreamInfo) info);
+                    playQueue = TimestampedPlayQueue.create((StreamInfo) info, choice.url);
                 } else if (info instanceof ChannelInfo) {
                     final Optional<ListLinkHandler> playableTab = ((ChannelInfo) info).getTabs()
                             .stream()
