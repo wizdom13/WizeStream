@@ -14,6 +14,27 @@ import java.util.Set;
 
 class ContentBlockingHelperTest {
     @Test
+    void stableChannelRulesSurviveRenamesWithoutBlockingNamesakes() {
+        final String original = "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv";
+        final var rules = ContentBlockingHelper.Rules.create(true, Set.of(),
+                Set.of(ChannelIdentity.stableKey(original) + "\tOld name"), "");
+        assertTrue(rules.isBlocked(stream("video", "Title", "New name",
+                original + "/videos?view=0")));
+        assertFalse(rules.isBlocked(stream("video", "Title", "Old name",
+                "https://www.youtube.com/channel/UCAbcdefghijklmnopqrstuv")));
+    }
+
+    @Test
+    void legacyUrlRulesDoNotBlockKnownDifferentChannelWithSameName() {
+        final var rules = ContentBlockingHelper.Rules.create(true, Set.of(),
+                Set.of("https://example.com/one\tSame name"), "");
+        assertFalse(rules.isBlocked(stream("video", "Title", "Same name",
+                "https://example.com/two")));
+        assertTrue(rules.isBlocked(stream("video", "Title", "Renamed",
+                "https://example.com/one")));
+    }
+
+    @Test
     void allowedChannelOverridesKeywordAndChannelRulesButNotExplicitVideoBlocks() {
         final var rules = ContentBlockingHelper.Rules.create(true,
                 Set.of("blocked-video"), Set.of("https://example.com/channel\tChannel"),

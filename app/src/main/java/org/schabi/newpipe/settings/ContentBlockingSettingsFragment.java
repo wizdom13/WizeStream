@@ -3,11 +3,14 @@ package org.schabi.newpipe.settings;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
+import android.text.InputFilter;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
+import androidx.preference.EditTextPreference;
 import androidx.preference.SwitchPreferenceCompat;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
@@ -20,6 +23,7 @@ import org.schabi.newpipe.util.AiSListSyncWorker;
 import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.ContentBlockingHelper.Entry;
 import org.schabi.newpipe.util.ServiceHelper;
+import org.schabi.newpipe.util.RegexFilterRules;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -99,6 +103,32 @@ public final class ContentBlockingSettingsFragment extends BasePreferenceFragmen
             showAllowedChannels();
             return true;
         });
+        final EditTextPreference regexPreference =
+                requirePreference(R.string.content_regex_rules_key);
+        regexPreference.setOnBindEditTextListener(input -> {
+            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            input.setMinLines(4);
+            input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(16384)});
+        });
+        regexPreference.setOnPreferenceChangeListener((preference, value) -> {
+            try {
+                RegexFilterRules.parse((String) value);
+                return true;
+            } catch (final IllegalArgumentException error) {
+                Toast.makeText(requireContext(), R.string.content_regex_rules_invalid,
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
+        });
+        for (final int key : new int[]{R.string.comment_filter_keywords_key,
+                R.string.comment_filter_authors_key}) {
+            final EditTextPreference preference = requirePreference(key);
+            preference.setOnBindEditTextListener(input -> {
+                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                input.setMinLines(4);
+                input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8192)});
+            });
+        }
         updateSummaries();
     }
 

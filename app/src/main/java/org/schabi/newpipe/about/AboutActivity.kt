@@ -130,6 +130,14 @@ class AboutActivity : AppCompatActivity() {
          */
         private val SOFTWARE_COMPONENTS = arrayListOf(
             SoftwareComponent(
+                "RE2/J",
+                "2009",
+                "The Go Authors and RE2/J contributors",
+                "https://github.com/google/re2j",
+                License("RE2/J BSD license", "BSD", "re2j-license.html"),
+                "1.8"
+            ),
+            SoftwareComponent(
                 "ACRA",
                 "2013",
                 "Kevin Gaudin",
