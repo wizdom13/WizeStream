@@ -1247,17 +1247,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     }
 
     public void setStreamType() {
-        if (playerResponse.getObject("playabilityStatus").has("liveStreamability")) {
-            if (StringUtils.isBlank(ServiceList.YouTube.getTokens()) && !playerResponse.getObject(STREAMING_DATA).has("hlsManifestUrl")) {
-                streamType = StreamType.VIDEO_STREAM;
-            } else {
-                streamType = StreamType.LIVE_STREAM;
-            }
-        } else if (playerResponse.getObject("videoDetails").getBoolean("isPostLiveDvr", false)) {
-            streamType = StreamType.POST_LIVE_STREAM;
-        } else {
-            streamType = StreamType.VIDEO_STREAM;
-        }
+        streamType = YoutubeStreamKind.resolve(playerResponse,
+                !StringUtils.isBlank(ServiceList.YouTube.getTokens()));
         watchDataCache.streamType = streamType;
     }
 

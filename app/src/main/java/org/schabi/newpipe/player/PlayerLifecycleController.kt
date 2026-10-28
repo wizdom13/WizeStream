@@ -229,6 +229,7 @@ internal class PlayerLifecycleController(
             .setTrackSelector(trackSelector)
             .setBandwidthMeter(player.getBandwidthMeterForLifecycle())
             .setLoadControl(loadController)
+            .setLivePlaybackSpeedControl(LiveBufferHeadroom.create())
             .setUsePlatformDiagnostics(false)
             .build()
         player.setTrackSelectorForLifecycle(trackSelector)

@@ -71,7 +71,7 @@ class LiveQualitySelectionTest {
     }
 
     @Test
-    fun defaultSelectionSurvivesManifestRefreshAndAutoClearsOverride() {
+    fun archiveManifestSelectionSurvivesRefreshAndAutoClearsOverride() {
         val context = RuntimeEnvironment.getApplication()
         PreferenceManager.getDefaultSharedPreferences(context).edit()
             .putString(context.getString(R.string.default_resolution_key), "720p").commit()
@@ -84,7 +84,9 @@ class LiveQualitySelectionTest {
         `when`(player.exoPlayer).thenReturn(engine)
         `when`(player.trackSelector).thenReturn(selector)
         `when`(player.currentStreamInfo).thenReturn(Optional.of(info))
-        `when`(info.streamType).thenReturn(StreamType.LIVE_STREAM)
+        `when`(info.streamType).thenReturn(StreamType.POST_LIVE_STREAM)
+        `when`(info.serviceId).thenReturn(0)
+        `when`(info.hlsUrl).thenReturn("https://example.com/archive.m3u8")
         `when`(info.url).thenReturn("https://example.com/live")
         fun tracks(id: String): Tracks {
             val group = TrackGroup(

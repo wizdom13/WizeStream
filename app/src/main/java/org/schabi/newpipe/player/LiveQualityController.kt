@@ -70,7 +70,10 @@ class LiveQualityController(private val player: Player) {
             }
             val info = player.currentStreamInfo.orElse(null) ?: return false
             val metadata = player.currentMetadata
-            return info.streamType == StreamType.LIVE_STREAM &&
+            return (
+                info.streamType == StreamType.LIVE_STREAM ||
+                    org.schabi.newpipe.player.resolver.PlaybackResolver.isManifestOnlyYoutubeLive(info)
+                ) &&
                 (metadata == null || metadata.maybeQuality.isEmpty)
         }
 
