@@ -15,23 +15,45 @@ data class ThemePack(
     val mode: String = "system",
     val night: String = "dark",
     val lightAccent: String = "wizestream",
-    val darkAccent: String = "wizestream"
+    val darkAccent: String = "wizestream",
+    val version: Int = 1,
+    val glass: ThemeGlass? = null,
+    val player: ThemePlayer = ThemePlayer(),
+    val skin: String? = null,
+    val icons: Map<String, String> = emptyMap(),
+    val assets: Map<String, ThemeAsset> = emptyMap()
 ) {
     fun encode(): String = JSONObject().apply {
+        require(version == 2 || (glass == null && player == ThemePlayer() && skin == null && icons.isEmpty() && assets.isEmpty())) {
+            "Extensions require version 2"
+        }
         put("format", "wizestream-theme")
-        put("version", 1)
+        put("version", version)
         put("name", name)
         put("author", author)
         put("mode", mode)
         put("night", night)
         put("lightAccent", lightAccent)
         put("darkAccent", darkAccent)
+        if (version == 2) {
+            glass?.let { put("glass", JSONObject().put("blur", it.blur).put("tint", it.tint).put("radius", it.radius)) }
+            put(
+                "player",
+                JSONObject().put("layout", player.layout).apply {
+                    player.background?.let { put("background", it) }
+                    player.artwork?.let { put("artwork", it) }
+                }
+            )
+            skin?.let { put("skin", it) }
+            put("icons", JSONObject(icons))
+            put("assets", JSONObject(assets.mapValues { it.value.base64 }))
+        }
     }.toString(2)
 
     companion object {
-        const val MAX_BYTES = 16 * 1024
+        const val MAX_BYTES = 512 * 1024
         val accents = setOf("wizestream", "neutral", "green", "blue", "cyan", "purple", "yellow", "orange", "pink", "red", "follow_system")
-        private val fields = setOf("format", "version", "name", "author", "mode", "night", "lightAccent", "darkAccent")
+        private val fields = setOf("format", "version", "name", "author", "mode", "night", "lightAccent", "darkAccent", "glass", "player", "skin", "icons", "assets")
 
         fun read(input: InputStream): ThemePack {
             val buffer = ByteArray(MAX_BYTES + 1)
@@ -47,33 +69,27 @@ data class ThemePack(
                     size += count
                 }
             }
-            require(size <= MAX_BYTES) { "Theme pack exceeds 16 KiB" }
+            require(size <= MAX_BYTES) { "Theme pack exceeds 512 KiB" }
             val decoder = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
             return parse(decoder.decode(ByteBuffer.wrap(buffer, 0, size)).toString())
         }
 
         fun parse(text: String): ThemePack {
             require(text.toByteArray(Charsets.UTF_8).size <= MAX_BYTES)
-            val json = JSONObject()
-            JsonReader(StringReader(text)).use { reader ->
+            val json = JsonReader(StringReader(text)).use { reader ->
                 reader.isLenient = false
-                reader.beginObject()
-                while (reader.hasNext()) {
-                    val key = reader.nextName()
-                    require(key in fields && !json.has(key)) { "Unknown or duplicate field" }
-                    if (key == "version") {
-                        require(reader.peek() == JsonToken.NUMBER && reader.nextString() == "1") { "Unsupported version" }
-                        json.put(key, 1)
-                    } else {
-                        require(reader.peek() == JsonToken.STRING) { "Expected text: $key" }
-                        json.put(key, reader.nextString())
-                    }
-                }
-                reader.endObject()
+                val result = readObject(reader, 0)
                 require(reader.peek() == JsonToken.END_DOCUMENT) { "Unexpected trailing content" }
+                result
             }
+            require(json.keys().asSequence().all { it in fields }) { "Unknown field" }
             require(json.get("format") == "wizestream-theme") { "Unsupported format" }
-            require(json.get("version") == 1) { "Unsupported version" }
+            val version = json.get("version")
+            require(version == 1 || version == 2) { "Unsupported version" }
+            if (version == 1) {
+                require(text.toByteArray(Charsets.UTF_8).size <= 16 * 1024)
+                require(listOf("glass", "player", "skin", "icons", "assets").none(json::has))
+            }
             fun string(key: String, fallback: String? = null): String {
                 if (!json.has(key) && fallback != null) return fallback
                 return json.get(key) as? String ?: error("Expected text: $key")
@@ -87,7 +103,35 @@ data class ThemePack(
             val night = string("night", "dark").also { require(it in setOf("dark", "black")) }
             val light = string("lightAccent", "wizestream").also { require(it in accents) }
             val dark = string("darkAccent", "wizestream").also { require(it in accents) }
-            return ThemePack(label("name"), label("author"), mode, night, light, dark)
+            val extensions = ThemeExtensions.parse(json)
+            return ThemePack(
+                label("name"), label("author"), mode, night, light, dark, version as Int,
+                extensions.glass, extensions.player, extensions.skin, extensions.icons, extensions.assets
+            ).also { require(it.encode().toByteArray(Charsets.UTF_8).size <= if (version == 1) 16 * 1024 else MAX_BYTES) }
+        }
+        private fun readObject(reader: JsonReader, depth: Int): JSONObject {
+            require(depth <= 2) { "Theme nesting is too deep" }
+            val result = JSONObject()
+            reader.beginObject()
+            while (reader.hasNext()) {
+                val key = reader.nextName()
+                require(!result.has(key)) { "Duplicate field: $key" }
+                val value: Any = when (reader.peek()) {
+                    JsonToken.STRING -> reader.nextString()
+
+                    JsonToken.NUMBER -> reader.nextString().let {
+                        require(it.matches(Regex("0|[1-9][0-9]{0,3}"))) { "Expected bounded integer" }
+                        it.toInt()
+                    }
+
+                    JsonToken.BEGIN_OBJECT -> readObject(reader, depth + 1)
+
+                    else -> error("Unsupported value: $key")
+                }
+                result.put(key, value)
+            }
+            reader.endObject()
+            return result
         }
     }
 }

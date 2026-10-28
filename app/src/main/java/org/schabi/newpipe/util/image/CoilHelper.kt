@@ -278,11 +278,13 @@ object CoilHelper {
         // for URLs stored in the database)
         val takenUrl = url?.takeIf { it.isNotEmpty() && ImageStrategy.shouldLoadImages() }
 
+        val softwareBackdrop = org.schabi.newpipe.themes.ThemeChrome.requiresSoftwareImages(context)
         return ImageRequest
             .Builder(context)
+            .allowHardware(!softwareBackdrop)
             .data(takenUrl)
             .error(placeholderResId)
-            .memoryCacheKey(takenUrl)
+            .memoryCacheKey(takenUrl?.let { if (softwareBackdrop) "wizestream-software-backdrop:$it" else it })
             .diskCacheKey(takenUrl)
             .apply {
                 if (takenUrl != null || showPlaceholderWhileLoading) {

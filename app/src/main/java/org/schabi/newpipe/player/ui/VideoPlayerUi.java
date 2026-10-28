@@ -182,6 +182,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         initViews();
         initListeners();
         PlayerTooltips.disable(binding.getRoot());
+        org.schabi.newpipe.themes.ThemeIcons.apply(binding.playPreviousButton, "previous");
+        org.schabi.newpipe.themes.ThemeIcons.apply(binding.playNextButton, "next");
+        org.schabi.newpipe.themes.ThemeIcons.apply(binding.shuffleButton, "shuffle");
         setupPlayerSeekOverlay();
     }
 
@@ -473,6 +476,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     protected void setupElementsVisibility() {
+        binding.themePlayer.setVisibility(View.GONE);
         setMuteButton(player.isMuted());
         animateRotation(binding.moreOptionsButton, DEFAULT_CONTROLS_DURATION, 0);
     }
@@ -871,14 +875,17 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             case PLAY:
                 button.setContentDescription(context.getString(R.string.play));
                 button.setImageResource(R.drawable.ic_play_arrow);
+                org.schabi.newpipe.themes.ThemeIcons.apply(button, "play");
                 break;
             case PAUSE:
                 button.setContentDescription(context.getString(R.string.pause));
                 button.setImageResource(R.drawable.ic_pause);
+                org.schabi.newpipe.themes.ThemeIcons.apply(button, "pause");
                 break;
             case REPLAY:
                 button.setContentDescription(context.getString(R.string.replay));
                 button.setImageResource(R.drawable.ic_replay);
+                org.schabi.newpipe.themes.ThemeIcons.apply(button, "replay");
                 break;
         }
     }
@@ -1088,16 +1095,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onRepeatModeChanged(@RepeatMode final int repeatMode) {
         super.onRepeatModeChanged(repeatMode);
 
-        if (repeatMode == REPEAT_MODE_ALL) {
-            binding.repeatButton.setImageResource(
-                    androidx.media3.ui.R.drawable.exo_legacy_controls_repeat_all);
-        } else if (repeatMode == REPEAT_MODE_ONE) {
-            binding.repeatButton.setImageResource(
-                    androidx.media3.ui.R.drawable.exo_legacy_controls_repeat_one);
-        } else /* repeatMode == REPEAT_MODE_OFF */ {
-            binding.repeatButton.setImageResource(
-                    androidx.media3.ui.R.drawable.exo_legacy_controls_repeat_off);
-        }
+        setRepeatButton(repeatMode);
     }
 
     @Override
@@ -1130,6 +1128,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             default -> androidx.media3.ui.R.drawable.exo_legacy_controls_repeat_off;
         };
         binding.repeatButton.setImageResource(resId);
+        org.schabi.newpipe.themes.ThemeIcons.apply(binding.repeatButton,
+                repeatMode == REPEAT_MODE_ALL ? "repeatAll"
+                        : repeatMode == REPEAT_MODE_ONE ? "repeatOne" : "repeatOff");
     }
     //endregion
     /*//////////////////////////////////////////////////////////////////////////

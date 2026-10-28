@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.schabi.newpipe.R
 import org.schabi.newpipe.player.ui.PlayerUiTheme
 import org.schabi.newpipe.util.ThemeHelper
@@ -44,7 +45,7 @@ class ThemePackTest {
     @Test
     fun rejectsUnsupportedUnsafeAndMalformedInput() {
         listOf(
-            minimal.replace("\"version\":1", "\"version\":2"),
+            minimal.replace("\"version\":1", "\"version\":3"),
             minimal.replace("\"version\":1", "\"version\":\"1\""),
             minimal.replace("\"version\":1", "\"version\":1.0"),
             minimal.replace("\"Test\"", "null"),
@@ -115,8 +116,10 @@ class ThemePackTest {
     }
 
     @Test
+    @Config(sdk = [28, 35])
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun bundledPacksUsePublicFormat() {
-        for (file in listOf("forest.json", "ocean.json", "midnight.json")) {
+        for (file in listOf("forest.json", "ocean.json", "midnight.json", "glass-record.json")) {
             val pack = context.assets.open("themes/$file").use(ThemePack::read)
             ThemePacks.apply(context, pack)
             assertEquals(pack, ThemePacks.export(context))

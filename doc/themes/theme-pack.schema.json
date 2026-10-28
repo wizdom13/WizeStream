@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "WizeStream theme pack v1",
+  "title": "WizeStream theme packs v1 and v2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,10 @@
     },
     "version": {
       "type": "integer",
-      "const": 1
+      "enum": [
+        1,
+        2
+      ]
     },
     "name": {
       "type": "string",
@@ -77,6 +80,157 @@
         "follow_system"
       ],
       "default": "wizestream"
+    },
+    "skin": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+    },
+    "glass": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "blur": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 8
+        },
+        "tint": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 95,
+          "default": 80
+        },
+        "radius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32,
+          "default": 16
+        }
+      }
+    },
+    "player": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layout": {
+          "enum": [
+            "standard",
+            "vinyl",
+            "pocket",
+            "cassette"
+          ],
+          "default": "standard"
+        },
+        "background": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "artwork": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        }
+      }
+    },
+    "icons": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "play": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "pause": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "replay": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "previous": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "next": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "shuffle": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "repeatOff": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "repeatOne": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "repeatAll": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "maxProperties": 6,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 131072,
+        "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+        "contentEncoding": "base64",
+        "contentMediaType": "image/png"
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "version": {
+            "const": 1
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "skin"
+              ]
+            },
+            {
+              "required": [
+                "glass"
+              ]
+            },
+            {
+              "required": [
+                "player"
+              ]
+            },
+            {
+              "required": [
+                "icons"
+              ]
+            },
+            {
+              "required": [
+                "assets"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "$comment": "App additionally enforces literal integers, duplicate-key rejection, UTF-8 byte limits, label UTF-16 length, PNG decoding/dimensions/pixel budgets and existing asset references."
 }

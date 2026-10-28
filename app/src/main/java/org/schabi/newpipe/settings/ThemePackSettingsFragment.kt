@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.R
+import org.schabi.newpipe.themes.ThemeDraftStore
 import org.schabi.newpipe.themes.ThemePack
 import org.schabi.newpipe.themes.ThemePacks
 import org.schabi.newpipe.util.ThemeHelper
@@ -24,6 +25,8 @@ import org.schabi.newpipe.util.ThemeHelper
 class ThemePackSettingsFragment : BasePreferenceFragment() {
     private var pending: ThemePack? = null
     private var exportText: String? = null
+    private var pendingId: String? = null
+    private var exportId: String? = null
     private var previewDialog: androidx.appcompat.app.AlertDialog? = null
     private val importFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -45,6 +48,8 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
     private val exportFile = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val text = exportText
         exportText = null
+        ThemeDraftStore.remove(requireContext(), exportId)
+        exportId = null
         if (uri != null && text != null) {
             val resolver = requireContext().contentResolver
             lifecycleScope.launch {
@@ -65,8 +70,10 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResourceRegistry()
-        pending = savedInstanceState?.getString("pending")?.let(ThemePack::parse)
-        exportText = savedInstanceState?.getString("export")
+        pendingId = savedInstanceState?.getString("pendingId")
+        exportId = savedInstanceState?.getString("exportId")
+        pending = ThemeDraftStore.read(requireContext(), pendingId)
+        exportText = ThemeDraftStore.read(requireContext(), exportId)?.encode()
         findPreference<Preference>("theme_pack_status")!!.summary = ThemePacks.active(requireContext())?.let {
             getString(R.string.theme_pack_author, it.name, it.author)
         } ?: getString(R.string.theme_pack_default)
@@ -98,7 +105,7 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
             true
         }
         findPreference<Preference>("theme_pack_presets")!!.setOnPreferenceClickListener {
-            val files = listOf("forest.json", "ocean.json", "midnight.json")
+            val files = listOf("forest.json", "ocean.json", "midnight.json", "glass-record.json")
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.theme_pack_presets)
                 .setItems(R.array.theme_pack_presets) { _, which ->
@@ -119,8 +126,14 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString("pending", pending?.encode())
-        outState.putString("export", exportText)
+        try {
+            pendingId = ThemeDraftStore.save(requireContext(), pendingId, pending?.encode())
+            exportId = ThemeDraftStore.save(requireContext(), exportId, exportText)
+            outState.putString("pendingId", pendingId)
+            outState.putString("exportId", exportId)
+        } catch (_: java.io.IOException) {
+            // Losing a preview on cache eviction/storage failure must not crash settings.
+        }
     }
 
     override fun onDestroyView() {
@@ -187,6 +200,34 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
                     setBackgroundColor(ThemeHelper.resolveColorFromAttr(palette, com.google.android.material.R.attr.colorPrimaryContainer))
                 }
             )
+            if (pack.version == 2) {
+                val sample = org.schabi.newpipe.themes.ThemePlayerView(palette).apply { this.pack = pack }
+                val frame = android.widget.FrameLayout(palette)
+                frame.addView(sample, android.widget.FrameLayout.LayoutParams(-1, (220 * resources.displayMetrics.density).toInt()))
+                val caption = TextView(palette).apply {
+                    text = getString(R.string.theme_pack_style_preview, pack.player.layout, pack.assets.size)
+                    setTextColor(ThemeHelper.resolveColorFromAttr(palette, com.google.android.material.R.attr.colorOnSurface))
+                    setPadding(16, 16, 16, 16)
+                    background = org.schabi.newpipe.themes.GlassBackdrop(this, sample, pack)
+                }
+                frame.addView(caption, android.widget.FrameLayout.LayoutParams(-1, -2, android.view.Gravity.BOTTOM))
+                card.addView(frame)
+                if (pack.icons.isNotEmpty()) {
+                    val row = LinearLayout(palette)
+                    for ((_, assetId) in pack.icons) {
+                        row.addView(
+                            android.widget.ImageView(palette).apply {
+                                setImageBitmap(pack.assets.getValue(assetId).bitmap)
+                                imageTintList = android.content.res.ColorStateList.valueOf(ThemeHelper.resolveColorFromAttr(palette, com.google.android.material.R.attr.colorOnSurface))
+                                importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                            },
+                            LinearLayout.LayoutParams(0, (40 * resources.displayMetrics.density).toInt(), 1f)
+                        )
+                    }
+                    card.addView(row)
+                }
+                if (pack.glass != null) card.addView(TextView(palette).apply { setText(R.string.theme_pack_glass_scope) })
+            }
             content.addView(card)
         }
         previewDialog = MaterialAlertDialogBuilder(context)
@@ -195,6 +236,7 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
             .setPositiveButton(R.string.theme_pack_apply) { _, _ ->
                 ThemePacks.apply(context, pack)
                 pending = null
+                ThemeDraftStore.remove(context, pendingId)
                 refreshTheme()
             }.setNegativeButton(android.R.string.cancel) { _, _ -> pending = null }
             .setOnCancelListener { pending = null }

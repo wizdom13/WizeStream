@@ -649,7 +649,7 @@ and reproducible across independent build environments, and for distributing Wiz
 
 ### Community theme packs
 
-Combine built-in light, dark, AMOLED, and accent palettes through **Settings → Appearance → Theme packs**. Preview and import a JSON pack, export your current appearance, or restore your previous settings. The first format supports palette combinations; custom colours, glass effects, and player layouts are not part of this format.
+Combine built-in light, dark, AMOLED, and accent palettes through **Settings → Appearance → Theme packs**. Preview and import a JSON pack, export your current appearance, or restore your previous settings. Version 2 adds bounded glass surfaces on main navigation, native vinyl/pocket/cassette listening styles, and embedded PNG skins and player icons in the same file. Existing version 1 palette packs remain compatible.
 
 See the [theme creator guide](doc/themes/README.md) for the complete format, validation rules, examples, testing checklist, and sharing instructions.
 

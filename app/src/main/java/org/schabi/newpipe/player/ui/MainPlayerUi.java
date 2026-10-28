@@ -446,7 +446,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     private void updateListenModeUi(@NonNull final PlaybackPresentationMode mode) {
         final boolean listening = mode == PlaybackPresentationMode.LISTEN_VISUALIZER;
         binding.listenModeButton.setActivated(listening);
-        binding.audioVisualizer.setVisibility(listening ? View.VISIBLE : View.GONE);
+        org.schabi.newpipe.themes.ThemePlayerView.updatePresentation(binding, listening);
         if (listening) {
             binding.endScreen.setVisibility(View.GONE);
         }
