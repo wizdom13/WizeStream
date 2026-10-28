@@ -299,7 +299,9 @@ private fun imageCandidateUrls(images: List<Image?>?): List<String> {
         return emptyList()
     }
 
-    val validImages = images.filterNotNull()
+    val validImages = images
+        .filterNotNull()
+        .filter { image -> normalizedImageUrl(image) != null }
     if (validImages.isEmpty()) {
         return emptyList()
     }
@@ -307,10 +309,13 @@ private fun imageCandidateUrls(images: List<Image?>?): List<String> {
     val preferred = ImageStrategy.choosePreferredImage(validImages)
     return buildList {
         preferred?.trim()?.takeIf(String::isNotEmpty)?.let(::add)
-        validImages.forEach { image ->
-            image.url.trim().takeIf(String::isNotEmpty)?.let(::add)
-        }
+        validImages.mapNotNull(::normalizedImageUrl).forEach(::add)
     }.distinct()
+}
+
+private fun normalizedImageUrl(image: Image): String? {
+    val url: String? = image.url
+    return url?.trim()?.takeIf(String::isNotEmpty)
 }
 
 internal fun normalizeCommentAvatarUrl(url: String?): String? {
