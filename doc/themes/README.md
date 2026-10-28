@@ -3,8 +3,8 @@
 Theme packs are portable, **data-only JSON files**. Version 1 provides palette recipes.
 Version 2 adds glass surfaces, native listening-player templates and embedded PNG
 skins/artwork/icons. Both versions can be imported; older v1-only apps reject v2.
-Use a build containing the v2 foundation before distributing a v2 pack. No release
-version is promised until that build ships.
+Version 2 packs require WizeStream 1.35.0 or later. Use version 1 palette recipes
+when sharing packs with older app versions.
 
 Themes never execute HTML, CSS, JavaScript, native code or plugins. They cannot add
 network requests, replace playback logic, change permissions, or hide required controls.
