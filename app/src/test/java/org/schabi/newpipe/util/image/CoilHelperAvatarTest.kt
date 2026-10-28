@@ -54,6 +54,22 @@ class CoilHelperAvatarTest {
     }
 
     @Test
+    fun avatarCandidatesIgnoreImagesWithNullUrls() {
+        val image = Image(
+            "https://example.com/avatar.jpg",
+            250,
+            250,
+            ResolutionLevel.MEDIUM
+        )
+        Image::class.java.getDeclaredField("url").apply {
+            isAccessible = true
+            set(image, null)
+        }
+
+        assertEquals(emptyList<String>(), avatarCandidateUrls(listOf(image)))
+    }
+
+    @Test
     fun avatarCandidatesAreEmptyWhenImagesAreDisabled() {
         ImageStrategy.setPreferredImageQuality(PreferredImageQuality.NONE)
 
