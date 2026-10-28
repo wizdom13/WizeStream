@@ -53,6 +53,8 @@ public class InvidiousInstancePreferencesTest {
         choices.setPersistent(false);
         bind(fragment, screen, active, R.string.invidious_instance_key, context);
         bind(fragment, screen, saved, R.string.invidious_instances_key, context);
+        bind(fragment, screen, new EditTextPreference(context),
+                R.string.invidious_media_origins_key, context);
         bind(fragment, screen, choices, R.string.invidious_switch_instance_key, context);
         bind(fragment, screen, new Preference(context), R.string.invidious_enabled_key, context);
         final Method setup = ContentSettingsFragment.class
