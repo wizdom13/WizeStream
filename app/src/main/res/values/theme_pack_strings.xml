@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="theme_packs_title">Theme packs</string>
-    <string name="theme_packs_summary">Import and share light, dark, and accent combinations</string>
+    <string name="theme_packs_summary">Import palettes, glass styles, player skins and icons</string>
     <string name="theme_pack_managed">Controlled by your theme pack. Restore previous appearance in Theme packs to edit.</string>
     <string name="theme_pack_active">Current appearance</string>
     <string name="theme_pack_default">Using your regular appearance settings</string>
@@ -18,10 +18,13 @@
     <string name="theme_pack_night_preview">Night appearance · Sample video title</string>
     <string name="theme_pack_accent_preview">Selected item · Accent preview</string>
     <string name="theme_pack_apply">Apply theme</string>
-    <string name="theme_pack_failed">Unable to read or save this theme. Use a valid version 1 WizeStream theme JSON file, at most 16 KiB, and check file access.</string>
+    <string name="theme_pack_failed">Unable to read or save this theme. Use a valid WizeStream theme JSON file (v1: 16 KiB; v2: 512 KiB) and check file access.</string>
     <string-array name="theme_pack_presets">
         <item>Forest</item>
         <item>Ocean</item>
         <item>Midnight</item>
+        <item>Glass Record</item>
     </string-array>
+    <string name="theme_pack_style_preview">Listening style: %1$s · %2$d embedded images</string>
+    <string name="theme_pack_glass_scope">Glass styles the main toolbar, navigation and drawer. Low-memory devices and active video overlays use opaque surfaces. Listening skins keep standard playback controls.</string>
 </resources>

@@ -67,6 +67,12 @@
             tools:ignore="ContentDescription"
             tools:visibility="visible" />
 
+        <org.schabi.newpipe.themes.ThemePlayerView
+            android:id="@+id/themePlayer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
         <org.schabi.newpipe.views.AudioVisualizerView
             android:id="@+id/audioVisualizer"
             android:layout_width="match_parent"

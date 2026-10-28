@@ -1,239 +1,258 @@
 # Creating WizeStream theme packs
 
-This guide describes **theme format version 1**, introduced by the theme-pack
-foundation. It requires a build containing that feature; releases predating it
-cannot import packs. The format version is independent of the app version.
+Theme packs are portable, **data-only JSON files**. Version 1 provides palette recipes.
+Version 2 adds glass surfaces, native listening-player templates and embedded PNG
+skins/artwork/icons. Both versions can be imported; older v1-only apps reject v2.
+Use a build containing the v2 foundation before distributing a v2 pack. No release
+version is promised until that build ships.
 
-## What version 1 can do
+Themes never execute HTML, CSS, JavaScript, native code or plugins. They cannot add
+network requests, replace playback logic, change permissions, or hide required controls.
+The native renderer owns accessibility, touch targets, focus, navigation and player state.
+This is the extension foundation for #1105 and #1130, not an arbitrary layout engine.
 
-A pack is a small UTF-8 JSON file combining WizeStream's existing, app-maintained
-appearance options. It can choose a fixed light, dark, AMOLED black, or Eye
-Comfort appearance, or follow the system, and select different accent palettes
-for day and night. Built-in Forest, Ocean, and Midnight packs use exactly this
-format and the same parser as third-party packs.
+## Import, preview, export and recovery
 
-This is a **palette-recipe format**, not an arbitrary skinning engine. Version 1
-does **not** accept custom hex/RGB colours, fonts, corner radii, images, icon packs,
-animation, transparency/blur, HTML, CSS, scripts, URLs, executable code, resource
-paths, or custom layouts. Supported palette tokens select complete built-in
-colour roles rather than replacing one isolated colour. Existing accessibility,
-focus, layout, and player behaviour remain controlled by the app.
+1. Open **Settings → Appearance → Theme packs**.
+2. Choose **Import theme pack**, then select a `.json` file with Android's file picker.
+3. Inspect the day/night palette cards, listening-style sample and custom icon row.
+   Glass previews sample the native player illustration. The main app samples its page
+   content or the pack's `skin` image instead.
+4. Choose **Apply theme**. Cancel/Back leaves the active appearance unchanged.
+5. Reopen existing player screens after applying or restoring a theme. Appearance
+   changes use the existing activity refresh flow; an already-created player may
+   retain its previous pack until recreated.
 
-Glass effects and vinyl/iPod/Walkman player layouts need separately implemented
-app features. Adding fields for them to a version 1 pack will cause rejection;
-this guide does not promise their availability or a delivery date.
+**Export current theme** includes all embedded assets and overrides. Without an active
+pack it exports a v1 recipe for the regular appearance settings. **Restore previous
+appearance** removes the active pack and restores those settings; applying a pack
+never overwrites them. A malformed restored pack falls back to regular appearance.
 
-## Quick start
+Packs are stored locally as part of app preferences and included in settings backups.
+They are not part of device-sync profile settings. Import preview/export payloads are
+kept outside Android's saved-state Bundle; only small cache identifiers survive screen
+recreation. If Android clears that cache or a pending draft is over a day old, reimport
+or restart the export. The active applied pack is not stored in that cache.
 
-1. Copy [Ocean](../../app/src/main/assets/themes/ocean.json),
-   [Forest](../../app/src/main/assets/themes/forest.json), or
-   [Midnight](../../app/src/main/assets/themes/midnight.json).
-2. Change `name` and `author`, then choose the supported options below.
-3. Save as, for example, `my-ocean-theme.json`, in UTF-8 without a byte-order mark.
-   Do not ZIP the file or rename an APK as JSON.
-4. In WizeStream open **Settings → Appearance → Theme packs → Import theme pack**.
-5. Choose the file in Android's document picker. Inspect the preview and choose
-   **Apply theme**. Cancel or Back leaves the current theme unchanged.
-6. Test both day and night modes and the screens in the checklist below.
-7. Share the JSON file with the theme name, author, format version, and screenshots.
+The bundled **Glass Record** preset is a complete v2 example, including original
+geometric artwork and icons, in
+[`app/src/main/assets/themes/glass-record.json`](../../app/src/main/assets/themes/glass-record.json).
+The Forest, Ocean and Midnight presets remain v1 examples.
 
-You can also choose **Built-in theme packs**, or use **Export current theme** as a
-starting point. Exporting regular appearance settings uses the placeholder name
-`My WizeStream theme` and author `Theme creator`; replace these before sharing.
-Exporting an active pack retains its metadata. Exports contain only the theme
-recipe, not history, accounts, subscriptions, device information, or other settings.
+## Minimal v2 example
 
-## Complete example
+Save this exact UTF-8 text as `record.json`. It needs no external assets:
 
 ```json
 {
   "format": "wizestream-theme",
-  "version": 1,
-  "name": "Ocean",
-  "author": "Your display name",
+  "version": 2,
+  "name": "Quiet Record",
+  "author": "Your name",
   "mode": "system",
   "night": "dark",
   "lightAccent": "blue",
-  "darkAccent": "cyan"
+  "darkAccent": "cyan",
+  "glass": { "blur": 8, "tint": 80, "radius": 16 },
+  "player": { "layout": "vinyl" }
 }
 ```
 
-All field names and enum values are **case-sensitive**. Use exactly the spellings
-shown here, regardless of the app's display language. Field ordering and whitespace
-do not matter. Strings must use JSON double quotes.
+Omit `glass` for normal opaque navigation. Omit `player` for the existing visualizer.
+For a v1-compatible palette-only pack, remove every v2 extension and set `version` to 1.
+Do not simply change the version while keeping extension fields: it will be rejected.
 
-## Field reference
+## Root fields
 
-| Field | Required | Type | Default when omitted | Meaning |
-| --- | --- | --- | --- | --- |
-| `format` | Yes | String | None | Must be `wizestream-theme`. |
-| `version` | Yes | Integer | None | Must be the JSON number `1`, not `"1"` or `1.0`. |
-| `name` | Yes | String | None | Display name: 1–80 UTF-16 code units, not whitespace-only. |
-| `author` | Yes | String | None | Creator attribution: same limits as `name`. This is a label, not verified identity. |
-| `mode` | No | String | `system` | `system`, `light`, `dark`, `black`, or `eye_comfort`. |
-| `night` | No | String | `dark` | `dark` or `black`; used only when `mode` is `system` and the device is in dark mode. |
-| `lightAccent` | No | String | `wizestream` | Accent palette used in light mode. |
-| `darkAccent` | No | String | `wizestream` | Accent palette used in dark/black mode. Ignored by Eye Comfort. |
+Unknown and duplicate keys are rejected at every nesting level. Fields marked optional
+can be omitted, but cannot be `null`. JSON comments, trailing commas and trailing data
+are not supported. Numbers must be integer literals: `2`, not `2.0`, `2e0` or `"2"`.
+Arrays and booleans are not part of this format. Key spelling is case-sensitive.
 
-Optional means **omitted**, not `null`, an empty string, or an unknown value.
-Name and author reject control characters (including escaped newlines/tabs) and
-bidirectional embedding/override/isolate controls. Emoji can count as more than
-one UTF-16 code unit. Ordinary Unicode names are supported; plain text is displayed
-without interpreting markup. Keep attribution short and recognizable.
+| Field | Required | Value / default |
+| --- | --- | --- |
+| `format` | Yes | Exact string `wizestream-theme` |
+| `version` | Yes | Integer `1` or `2` |
+| `name` | Yes | Nonblank display name, 1–80 UTF-16 code units |
+| `author` | Yes | Nonblank creator name, 1–80 UTF-16 code units |
+| `mode` | No | `system` (default), `light`, `dark`, `black`, `eye_comfort` |
+| `night` | No | `dark` (default) or `black`; used by `system` at night |
+| `lightAccent` | No | Palette name; default `wizestream` |
+| `darkAccent` | No | Palette name; default `wizestream` |
+| `glass` | v2 only, optional | Object described below |
+| `skin` | v2 only, optional | Asset ID used behind main navigation surfaces |
+| `player` | v2 only, optional | Native listening template and asset references |
+| `icons` | v2 only, optional | Supported player icon slots → asset IDs |
+| `assets` | v2 only, optional | Asset IDs → canonical base64 PNG strings |
 
-### Accent tokens
+Names/authors cannot contain control characters or Unicode bidirectional embedding,
+override or isolate controls (U+202A–U+202E, U+2066–U+2069). Emoji count as UTF-16
+code units, so some occupy two. Keep attribution/license information on your download
+page; there is no arbitrary metadata field in the file.
 
-Both accent fields accept these same tokens:
+Accent names: `wizestream`, `neutral`, `green`, `blue`, `cyan`, `purple`, `yellow`,
+`orange`, `pink`, `red`, `follow_system`. Hex colors are not supported. Semantic colors
+come from tested native palettes. `follow_system` uses Material dynamic colors on
+supported devices; otherwise native fallback colors apply. Eye Comfort retains its
+warm palette rather than applying accent overrides. Black mode retains black surfaces.
+`night` has no effect when `mode` is fixed to another appearance.
 
-| Token | Palette |
-| --- | --- |
-| `wizestream` | WizeStream's branded green palette |
-| `neutral` | Neutral palette |
-| `green` | Green |
-| `blue` | Blue |
-| `cyan` | Cyan |
-| `purple` | Purple |
-| `yellow` | Yellow |
-| `orange` | Orange |
-| `pink` | Pink |
-| `red` | Red |
-| `follow_system` | Material dynamic colours where supported; existing app fallback elsewhere |
+## Glass surfaces
 
-Tokens select the existing theme's primary, secondary, container, and corresponding
-foreground roles. They are not promises of one exact RGB value across modes or
-future app updates. Surface colours come from the chosen base mode. For reproducible
-screenshots, choose a named palette instead of `follow_system`: dynamic colours
-depend on Android/device support and the user's system configuration. Do not assume
-that a phone's dynamic palette will also appear on a TV or older Android device.
+| `glass` field | Default | Allowed values |
+| --- | --- | --- |
+| `blur` | 8 | Integer 0–16; radius in the downsampled backdrop, 0 disables blur |
+| `tint` | 80 | Integer 60–95; surface-color overlay opacity in percent |
+| `radius` | 16 | Integer 0–32; corner radius in density-independent pixels |
 
-### Mode examples
+Glass applies to the **main toolbar container, bottom navigation, navigation rail and
+navigation drawer**. Each uses its current palette's surface tint and a subtle native
+border. Text/icons remain sharp; the renderer blurs a separate backdrop, never the
+foreground view. Individual opaque children (such as a drawer header or search field)
+may retain their own surface. Settings pages, dialogs, popup windows, list cards and
+video overlays are not glass targets in this revision.
 
-**Always light:** `"mode": "light"` uses `lightAccent`; `night` and `darkAccent`
-are retained in export but have no effect while that mode is active.
+Without `skin`, the drawer samples the underlying page at its screen position. Bars
+sample the nearest page edge. Existing content insets are preserved: this revision
+does **not** move scrolling content underneath bars. A full immersive underlapping
+layout is a separate native UI change. With `skin`, the embedded image is stretched
+behind each target instead of sampling page content; use abstract textures, not text.
+A `skin` without `glass` still gets an 80% surface tint, with no blur or rounded border.
 
-**Always dark:** `"mode": "dark"` uses `darkAccent`, independently of device mode.
+Rendering is bounded to at most 96 pixels on the longest backdrop side, no more than
+once per 125 ms during view redraws, with no perpetual animation timer. The renderer
+uses a small separable CPU blur, available on supported Android versions; it does not
+need Android 12 RenderEffect. It releases snapshots when detached. Low-RAM devices
+use opaque surfaces. Main navigation also becomes opaque while a player overlay is
+visible, because SurfaceView video cannot be accurately captured with this renderer.
+For live page backdrops, thumbnail requests use software-compatible bitmaps in the
+existing bounded image cache. A separate memory-cache key prevents reusing a hardware
+bitmap loaded before the theme changed. A native view that cannot be sampled also
+falls back to opaque. No video frames, screenshots or images leave the device. There
+is no blur permission.
 
-**Always AMOLED black:** `"mode": "black"` uses black surfaces and `darkAccent`.
+## Listening player templates
 
-**Follow system with AMOLED at night:** `"mode": "system", "night": "black"`
-uses the light appearance in device light mode and black surfaces in dark mode.
+| `player` field | Default | Meaning |
+| --- | --- | --- |
+| `layout` | `standard` | `standard`, `vinyl`, `pocket`, `cassette` |
+| `background` | None | Asset stretched across the listening canvas with a dark readability scrim |
+| `artwork` | None | Asset cropped to a circular record label, pocket display, or cassette reels |
 
-**Eye Comfort:** `"mode": "eye_comfort"` uses the app's complete Eye Comfort
-palette. Both accent fields and `night` are ignored visually, but still must contain
-valid values if supplied. Omitting them is simplest.
+Enter the existing **Listen mode** from the main player to see the template. Leaving
+Listen mode restores video. A custom layout (or `background`) replaces the visualizer
+canvas in that mode; it does not change the stream, queue, audio effects or playback
+controls. The ordinary standard layout without a background keeps the visualizer.
+`artwork` alone has no visible effect in `standard` mode.
 
-### Minimal pack
+The vinyl disc, pocket-player body and cassette reels are native, static decorative
+compositions scaled to fit portrait, landscape and small player bounds. They take
+colors from the current palette. Backgrounds/artwork are bundled images, not automatic
+album artwork. These are **not** animated turntables, draggable knobs or an iPod click
+wheel. Play/pause, seek, repeat and other actions continue through the standard native
+controls, preserving accessibility and TV focus. Background notification controls,
+popup-player layouts and the separate background-player queue screen keep their existing
+layout. Arbitrary positioning, CSS/HTML and new interactive control layouts are not
+supported. New templates must be implemented and reviewed in native app code.
+
+## Third-party icons
+
+`icons` maps a semantic slot to an asset ID, for example:
 
 ```json
-{
-  "format": "wizestream-theme",
-  "version": 1,
-  "name": "My theme",
-  "author": "My name"
-}
+"icons": { "play": "triangle", "pause": "bars", "next": "forward" }
 ```
 
-This follows system mode, uses dark surfaces at night, and selects the branded
-WizeStream accent in both modes. It does not automatically inherit the user's
-previous accent choice.
+Supported slots: `play`, `pause`, `replay`, `previous`, `next`, `shuffle`, `repeatOff`,
+`repeatOne`, `repeatAll`. These affect native video-player controls, including their
+listening presentation. Missing slots retain native artwork. Play/pause/replay and
+repeat variants update with playback state. Shuffle retains its native enabled/disabled
+alpha. Supply every state you want to customize; never use the same indistinguishable
+picture for repeat-off/one/all in a published pack.
 
-## Validation and failure behaviour
+Use transparent square PNGs with an opaque white silhouette and enough internal padding.
+Native tint and state treatment remain in effect; full-color artwork is better suited
+to `player.artwork`. The app retains each button's content description, click action,
+focus and minimum touch area. Launcher, notification, toolbar, service and menu icons
+are outside this slot registry. Theme icons do not change the app's identity.
 
-The importer reads at most **16 KiB (16,384 bytes)** of UTF-8 theme data plus one
-byte to detect overflow. The limit includes whitespace and metadata. It rejects:
+## Embedded assets and limits
 
-- Invalid UTF-8, malformed JSON, comments, trailing commas, trailing content,
-  arrays instead of the root object, or nested objects/arrays as values.
-- Duplicate keys, unknown fields, wrong types, missing required fields, unsupported
-  format/version, unsupported mode/palette values, and invalid metadata.
-- Files above the byte limit and inaccessible or unreadable documents.
+A theme is a single JSON file, **not ZIP**. Each `assets` value is a raw, standard
+base64 string containing one PNG. There is no `data:` prefix and no whitespace or line
+wrapping inside the string. Do not embed SVG, WebP, GIF, fonts, paths or URLs. Export a
+static PNG from your editor; animation metadata has no supported meaning.
 
-There is no downloading of referenced assets and no evaluation of imported code.
-Future fields are rejected rather than silently ignored. Invalid packs do not
-replace the current theme. If invalid theme data is restored from an app backup,
-the app falls back to regular appearance settings so Appearance remains accessible.
+| Limit | Value |
+| --- | --- |
+| v1 complete UTF-8 file | 16 KiB (16,384 bytes) |
+| v2 complete UTF-8 file | 512 KiB (524,288 bytes), including JSON and base64 |
+| Asset count | At most 6 distinct IDs |
+| Individual decoded PNG file | At most 96 KiB (98,304 bytes) |
+| Asset dimensions | Each side 1–1024 pixels |
+| Total decoded pixel budget | At most 1,048,576 pixels across all assets |
+| Icon dimensions | Each side at most 256 pixels |
+| Asset ID | `[a-z][a-z0-9_-]{0,31}` |
 
-A machine-readable [JSON Schema](theme-pack.schema.json) is provided for editor
-assistance. The app's runtime validation is authoritative: generic JSON Schema
-validators may accept numeric `1.0`, cannot catch duplicate keys after parsing, and
-do not enforce the encoded-file byte limit. Keep the literal integer `1`, unique
-keys, and the size limit even if your editor reports no errors.
+All references must point to existing assets, even if a particular template does not
+use them. Reusing one asset for several slots counts once against the pixel budget.
+Unused assets still count, so remove them. PNG signature, decoder dimensions and full
+decoding are checked before a pack is accepted. Limits apply to canonical export too.
+Reduce image size, optimize PNG compression or remove assets when a pack exceeds them.
+A huge compressed image cannot bypass the decoded-pixel budget.
 
-## Preview, application, and restoration
+Use [`embed_asset.py`](embed_asset.py) to add an existing PNG to a recipe:
 
-The preview shows sample surface/text and accent-container colours for the pack's
-applicable modes. System-mode packs show both day and night; fixed-mode packs show
-one sample. It is a colour sample, **not a screenshot of every app screen**. The
-preview dialog's surrounding controls use the current theme so Cancel stays familiar.
+```sh
+python3 doc/themes/embed_asset.py record.json label artwork.png
+```
 
-Applying persists a single active pack and recreates the settings screen. Main
-navigation picks up the theme on returning; previously open player screens may
-need reopening to update every control. System-mode packs follow normal system
-night-mode changes. Theme-aware player colours use the selected pack too.
+Then set `"artwork": "label"` inside `player`. The helper embeds bytes and checks basic
+size/signature limits; import remains the authoritative validator for decoding,
+dimensions, references and the total pixel budget. The built-in Glass Record preset
+shows a working skin, circular artwork and play/pause icons together in one file.
 
-While a pack is active, the regular Theme, Night theme, and Theme colour selectors
-are disabled with an explanation. Other appearance options remain independent.
-Applying another pack replaces the active pack; there is no installed-pack library
-in version 1. Keep the JSON files you want to switch between.
+## Validation and testing before sharing
 
-**Restore previous appearance** removes the pack and reveals the underlying regular
-appearance settings, which applying a pack does not overwrite. This is not a factory
-reset and does not erase other preferences or user data. If those underlying settings
-were changed by backup restore or device sync while a pack was active, their current
-values will be used. The same action works when stored pack data is invalid.
+The [JSON Schema](theme-pack.schema.json) supports editor autocomplete and structural
+validation for v1/v2. It cannot enforce PNG decoding, existing references, duplicate
+keys, literal-number spelling, UTF-16 counting or complete-file byte size. Always test
+an actual import. Never add `$schema` to a pack itself; unknown root keys are rejected.
 
-Packs are app-wide, not per-profile. The active recipe is stored with app preferences
-and can be included in app settings backups. It is not added to the device-sync
-allowlist in this version; share the exported JSON and import it on another device.
+- Test import, Cancel, Apply, export/reimport and Restore previous appearance.
+- Rotate during preview and while choosing an export destination. Reopen the player.
+- Check light, dark, black, Eye Comfort and system-following appearances as applicable.
+- Check long titles, large font sizes, TalkBack, TV focus and portrait/landscape bounds.
+- For glass, scroll a page and open the drawer; verify text remains readable and no
+  stale video appears. Expect opaque fallback on low-RAM devices/active player overlays.
+- For skins, enter/exit Listen mode and verify play, pause, replay, seek, queue, shuffle
+  and all repeat states still work. Test missing icon slots and transparent PNG edges.
+- Check older Android devices and a current version. Glass does not require Android 12.
+- Keep download metadata outside the JSON: screenshots, required v2-capable build,
+  author, version history, license and credits for every third-party asset.
 
-## Creator testing checklist
-
-Before publishing a pack:
-
-- Import the actual shared file, check its name/author, and confirm that Cancel/Back
-  does not change the current appearance.
-- Apply it and check the home feed, subscriptions, search, video details, settings,
-  dialogs, selected navigation items, mini-player, and player seek bar.
-- For system mode, switch device light/dark settings and verify both variants.
-- Check text and selected/focused controls against their backgrounds. Test larger
-  text settings and Android TV D-pad focus if you can access a TV device.
-- If using `follow_system`, test a supported dynamic-colour device and a device
-  without dynamic colours. Accept the documented fallback or choose a fixed palette.
-- Reopen existing player screens, restart the app, and verify persistence.
-- Export the applied pack, import that export, and verify equivalent appearance.
-- Restore previous appearance and confirm the earlier settings return.
-- Test on the oldest Android version you claim to support. Do not claim device
-  coverage based only on the preview.
-
-Do not try to work around focus or text readability with unsupported fields. Report
-an app palette problem with the JSON file, app version, Android version, screenshot,
-and exact affected screen. The app maintains the palettes; a pack cannot repair an
-underlying component that ignores its theme.
-
-## Sharing and compatibility policy
-
-Share a plain `.json` attachment or a GitHub file/release download, accompanied by
-screenshots of each applicable mode. Users import files manually; version 1 has no
-gallery, subscription, automatic update, remote asset loader, or theme marketplace.
-Only claim authorship of your own work and use a display name you are comfortable
-sharing. Attribution is unverified and must not imply official endorsement.
-
-State that the recipient needs **WizeStream with theme-pack format v1 support**.
-Older apps do not gain support just because a file uses `version: 1`. Do not guess a
-minimum app release number before the feature is released. Format extensions will
-be documented and versioned; do not increment `version` yourself to enable features.
+Share the final `.json` file or a download link. Use artwork you own or have permission
+to redistribute, including permission to bundle third-party icon sets. A theme file is
+not a trusted executable extension; the app never downloads referenced images or code.
 
 ## Troubleshooting
 
-| Symptom | Check |
-| --- | --- |
-| File cannot be selected | Save with `.json`; use a document provider that exposes JSON, plain text, or binary documents. |
-| Import fails | Check strict JSON syntax, field names/types, supported values, UTF-8 encoding, 16 KiB limit, and file access. |
-| Hex colour rejected | Version 1 supports palette tokens only. |
-| Night accent seems unused | Use `system` with device dark mode, `dark`, or `black`; light mode uses `lightAccent`. |
-| Eye Comfort ignores accent | Intentional: Eye Comfort uses its complete built-in palette. |
-| Dynamic colour differs on another device | Expected; use a named palette for more consistent results. |
-| Existing player has old colours | Close and reopen that player screen; restart the app if necessary. |
-| Theme selectors are disabled | Restore previous appearance in Theme packs before editing regular selectors. |
-| Export fails | Select a writable document provider/location and retry; a failed provider write can leave a partial file. |
-| Want blur, custom images, shapes, or a vinyl layout | Not supported by v1; these require future app features. |
+**Import fails:** confirm UTF-8, exact `format`/`version`, supported fields, correct
+value types, no duplicate keys/comments, valid references and all size limits. Test the
+minimal example, then add one extension at a time. Export PNGs again if decoding fails.
+
+**An older build rejects my pack:** v1-only builds intentionally reject v2. Provide a
+separate v1 palette fallback; do not silently remove extensions while keeping the same
+advertised capabilities.
+
+**Glass looks opaque:** check low-RAM fallback, visible player overlays, opaque child
+surfaces and tint strength. Bars sample adjacent content; they do not enable underlap.
+
+**Skin is not visible:** enter Listen mode in a recreated main player, choose a nonstandard
+layout or supply a background, and verify asset IDs. `standard` alone keeps the visualizer.
+
+**Icons look recolored:** native tint is intentional for contrast and state visibility.
+Use silhouette PNGs. Theme packs cannot turn an action icon into a different action.
+
+**Export/recreation loses a pending preview:** Android may have evicted the draft cache.
+Reimport the source file. The applied pack and regular appearance settings remain intact.

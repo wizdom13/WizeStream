@@ -251,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
         defaultNavigationRailWidth = mainBinding.mainNavigationRail.getLayoutParams().width;
         applyLargeScreenChrome();
         setContentView(mainBinding.getRoot());
+        org.schabi.newpipe.themes.ThemeChrome.apply(mainBinding);
         EdgeToEdgeHelper.applyMainActivitySystemBarInsets(
                 mainBinding.getRoot(),
                 mainBinding.mainSafeContent,
