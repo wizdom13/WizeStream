@@ -40,6 +40,9 @@ internal class PlayerMedia3ListenerController(
 
     fun onTimelineChanged(timeline: Timeline, reason: Int) {
         playbackParametersController.refreshSkipSilence()
+        player.UIs().call { ui ->
+            if (ui is org.schabi.newpipe.player.ui.VideoPlayerUi) ui.onPlaybackTimelineChanged()
+        }
         val item = player.currentItem
         if (item != null && player.isLive) {
             playbackParametersController.applySpeedProfile(item)

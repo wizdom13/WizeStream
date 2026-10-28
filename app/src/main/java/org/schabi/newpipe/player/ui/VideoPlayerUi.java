@@ -1197,6 +1197,10 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), Collections.emptyList());
     }
 
+    public void onPlaybackTimelineChanged() {
+        ArchivePresentation.onTimelineChanged(player, binding);
+    }
+
     protected void updateStreamRelatedViews() {
         if (!player.getPlaybackPresentationMode().rendersVideo()) {
             binding.qualityTextView.setVisibility(View.GONE);
@@ -1236,11 +1240,19 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     binding.surfaceView.setVisibility(View.VISIBLE);
                     binding.endScreen.setVisibility(View.GONE);
                     binding.playbackLiveSync.setVisibility(View.VISIBLE);
+                    if (ArchivePresentation.isEnded(player.getExoPlayer())) {
+                        ArchivePresentation.show(binding);
+                    }
                     updateQualityLabel(null);
                     break;
 
                 case VIDEO_STREAM:
                 case POST_LIVE_STREAM:
+                    ArchivePresentation.show(binding);
+                    if (player.isLiveQualityPlayback()) {
+                        updateQualityLabel(null);
+                        break;
+                    }
                     if (player.getCurrentMetadata() != null
                             && player.getCurrentMetadata().getMaybeQuality().isEmpty()
                             || (info.getVideoStreams().isEmpty()
