@@ -708,11 +708,9 @@ YoutubeParsingHelper {
         // Always extract the latest client version, by trying first to extract it from the
         // JavaScript service worker, then from HTML search results page as a fallback, to prevent
         // fingerprinting based on the client version used
-        try {
-            extractClientVersionFromSwJs();
-        } catch (final Exception e) {
-            extractClientVersionFromHtmlSearchResultsPage();
-        }
+        tryClientVersionExtractors(
+                YoutubeParsingHelper::extractClientVersionFromSwJs,
+                YoutubeParsingHelper::extractClientVersionFromHtmlSearchResultsPage);
 
         if (clientVersionExtracted) {
             return clientVersion;
@@ -725,6 +723,27 @@ YoutubeParsingHelper {
         }
 
         throw new ExtractionException("Could not get YouTube WEB client version");
+    }
+
+    @FunctionalInterface
+    interface ClientVersionExtractor {
+        void extract() throws Exception;
+    }
+
+    static boolean tryClientVersionExtractors(
+            @Nonnull final ClientVersionExtractor primaryExtractor,
+            @Nonnull final ClientVersionExtractor fallbackExtractor) {
+        try {
+            primaryExtractor.extract();
+            return true;
+        } catch (final Exception primaryFailure) {
+            try {
+                fallbackExtractor.extract();
+                return true;
+            } catch (final Exception fallbackFailure) {
+                return false;
+            }
+        }
     }
 
     /**
