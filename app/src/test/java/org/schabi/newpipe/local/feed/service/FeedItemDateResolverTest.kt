@@ -28,7 +28,7 @@ class FeedItemDateResolverTest {
     }
 
     @Test
-    fun `existing dates and undated regular videos are unchanged`() {
+    fun `existing dates are preserved and undated regular uploads receive retention dates`() {
         val originalDate = DateWrapper(fetchedAt.minusDays(1))
         val datedShort = stream("https://youtube.com/shorts/dated", isShort = true).apply {
             uploadDate = originalDate
@@ -39,7 +39,9 @@ class FeedItemDateResolverTest {
 
         assertEquals(originalDate, datedShort.uploadDate)
         assertFalse(datedShort.uploadDate!!.isApproximation)
-        assertNull(regularVideo.uploadDate)
+        assertEquals(fetchedAt, regularVideo.uploadDate!!.offsetDateTime())
+        assertTrue(regularVideo.uploadDate!!.isApproximation)
+        assertNull(regularVideo.textualUploadDate)
     }
 
     @Test
@@ -64,6 +66,15 @@ class FeedItemDateResolverTest {
         assertTrue(firstShort.uploadDate!!.isApproximation)
         assertNull(firstShort.textualUploadDate)
         assertEquals(fetchedAt.minusDays(1), newestVideo.uploadDate!!.offsetDateTime())
+    }
+
+    @Test
+    fun `other services and live streams keep their existing date semantics`() {
+        val otherService = StreamInfoItem(1, "https://example.com/audio", "Audio", StreamType.AUDIO_STREAM)
+        val live = StreamInfoItem(0, "https://youtube.com/watch?v=live", "Live", StreamType.LIVE_STREAM)
+        FeedItemDateResolver.applyApproximateDates(listOf(otherService, live), fetchedAt)
+        assertNull(otherService.uploadDate)
+        assertNull(live.uploadDate)
     }
 
     private fun stream(url: String, isShort: Boolean) = StreamInfoItem(
