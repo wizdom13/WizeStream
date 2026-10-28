@@ -98,6 +98,8 @@ public class DescriptionFragment extends BaseDescriptionFragment {
             return;
         }
 
+        ContentDisclosureView.addTo(layout, streamInfo.getMetaInfo());
+
         addMetadataItem(inflater, layout, false, R.string.metadata_category,
                 streamInfo.getCategory());
 
