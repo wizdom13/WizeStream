@@ -249,6 +249,7 @@ public class SettingsActivity extends AppCompatActivity implements
         } else {
             destination = twoPane ? new VideoAudioSettingsFragment() : null;
         }
+        SettingsDialogLifecycle.dismissBeforeNavigationRebuild(manager);
         manager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         final Fragment navigation = manager.findFragmentById(R.id.settings_navigation_holder);
         if (navigation != null) {
