@@ -136,6 +136,9 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
     private void refreshInvidiousChoices() {
         final var preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
         final String active = preferences.getString(getString(R.string.invidious_instance_key), "");
+        InvidiousMediaPreferences.bind(requireActivity(),
+                (EditTextPreference) requirePreference(R.string.invidious_media_origins_key),
+                active);
         final var instances = InvidiousInstances.choices(preferences.getString(
                 getString(R.string.invidious_instances_key), ""), active);
         final ListPreference switchPref = (ListPreference) requirePreference(

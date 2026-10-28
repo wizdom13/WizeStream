@@ -487,7 +487,7 @@ public class InvidiousExtractionTest {
         assertTrue(error instanceof StreamInfo.StreamExtractException);
         final var report = new java.io.StringWriter();
         error.printStackTrace(new java.io.PrintWriter(report));
-        assertTrue(report.toString().contains("must proxy media locally"));
+        assertTrue(report.toString().contains("media host is not trusted"));
         assertFalse(report.toString().contains("token=private"));
         assertEquals(1, requests.size());
     }

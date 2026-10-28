@@ -98,6 +98,14 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <EditTextPreference
+        android:key="@string/invidious_media_origins_key"
+        android:title="@string/invidious_media_origins_title"
+        android:summary="@string/invidious_media_origins_summary"
+        android:persistent="false"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <ListPreference
         android:key="@string/invidious_switch_instance_key"
         android:title="@string/invidious_switch_instance_title"

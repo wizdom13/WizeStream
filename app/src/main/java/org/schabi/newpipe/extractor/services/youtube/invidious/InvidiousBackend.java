@@ -12,6 +12,7 @@ public final class InvidiousBackend {
     private InvidiousBackend() { }
 
     public static void configure(final boolean useInvidious, final String instanceUrl) {
+        InvidiousMediaOrigins.clear();
         instance = instanceUrl == null ? "" : instanceUrl;
         enabled = useInvidious;
     }
@@ -65,15 +66,15 @@ public final class InvidiousBackend {
 
     public static void checkRedirect(final URI source, final URI target) throws IOException {
         checkRequest(target);
-        if (enabled && isInstanceOrigin(source)
-                && !sameOrigin(source, target)) {
-            throw new IOException("Invidious redirected outside the configured instance");
+        if (enabled && (isInstanceOrigin(source) || InvidiousMediaOrigins.allows(source))
+                && !isInstanceOrigin(target) && !InvidiousMediaOrigins.allows(target)) {
+            throw new IOException(InvidiousMediaOrigins.blockedMessage(target));
         }
     }
 
     public static void checkInstanceRequest(final URI uri) throws IOException {
-        if (!enabled || !isInstanceOrigin(uri)) {
-            throw new IOException("Invidious media must stay on the configured instance");
+        if (!enabled || (!isInstanceOrigin(uri) && !InvidiousMediaOrigins.allows(uri))) {
+            throw new IOException(InvidiousMediaOrigins.blockedMessage(uri));
         }
     }
 

@@ -120,6 +120,8 @@ open class App :
             backendPreferences.getString(getString(R.string.invidious_instance_key), "")
         )
 
+        org.schabi.newpipe.settings.InvidiousMediaPreferences.configure(this)
+
         NewPipe.init(
             getDownloader(),
             Localization.getPreferredLocalization(this),

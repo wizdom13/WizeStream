@@ -703,6 +703,8 @@ public final class YoutubeHttpDataSource extends BaseDataSource implements HttpD
         }
         requestHeaders.putAll(requestProperties.getSnapshot());
         requestHeaders.putAll(requestParameters);
+        org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousMediaOrigins
+                .stripInstanceCredentials(java.net.URI.create(requestUrl), requestHeaders);
 
         for (final Map.Entry<String, String> property : requestHeaders.entrySet()) {
             httpURLConnection.setRequestProperty(property.getKey(), property.getValue());

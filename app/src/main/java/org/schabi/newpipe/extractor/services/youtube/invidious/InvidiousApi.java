@@ -121,8 +121,9 @@ final class InvidiousApi {
         } catch (final IllegalArgumentException e) {
             throw new ExtractionException("Invalid Invidious media URL", e);
         }
-        if (!InvidiousBackend.sameOrigin(URI.create(base), uri)) {
-            throw new ExtractionException("The Invidious instance must proxy media locally");
+        if (!InvidiousBackend.sameOrigin(URI.create(base), uri)
+                && !InvidiousMediaOrigins.allows(uri)) {
+            throw new ExtractionException(InvidiousMediaOrigins.blockedMessage(uri));
         }
         return uri.toString();
     }
