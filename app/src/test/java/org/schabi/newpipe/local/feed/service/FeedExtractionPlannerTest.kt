@@ -81,10 +81,10 @@ class FeedExtractionPlannerTest {
     }
 
     @Test
-    fun `feed backfill stops after reaching retention boundary`() {
+    fun `one older pinned item does not stop feed backfill`() {
         val cutoff = OffsetDateTime.parse("2026-07-01T00:00:00Z")
 
-        assertFalse(
+        assertTrue(
             FeedExtractionPlanner.shouldLoadFeedContinuation(
                 pageItemCount = 30,
                 sourceUploadDates = listOf(
@@ -94,6 +94,20 @@ class FeedExtractionPlannerTest {
                 hasNextPage = true,
                 continuationPagesLoaded = 2,
                 oldestAllowedDate = cutoff
+            )
+        )
+    }
+
+    @Test
+    fun `feed backfill stops when the entire dated page is older than retention`() {
+        val cutoff = OffsetDateTime.parse("2026-07-01T00:00:00Z")
+        assertFalse(
+            FeedExtractionPlanner.shouldLoadFeedContinuation(
+                30,
+                listOf(cutoff.minusDays(1), cutoff.minusDays(5)),
+                true,
+                2,
+                cutoff
             )
         )
     }

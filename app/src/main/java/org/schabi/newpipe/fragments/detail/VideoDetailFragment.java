@@ -1093,6 +1093,7 @@ public final class VideoDetailFragment
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
         applyTitleDisplayPolicy(false);
+        org.schabi.newpipe.views.DetailTextRendering.apply(binding.detailContentRootLayout);
 
         detailNavigation = rootView.findViewById(R.id.detail_navigation);
         detailNavigationBaseBottomMargin = ((ViewGroup.MarginLayoutParams)

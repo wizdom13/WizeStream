@@ -50,8 +50,9 @@ internal object FeedExtractionPlanner {
         // Undated pages (notably Shorts) cannot prove where they sit in publication order, so do
         // not crawl them repeatedly. Dated channel tabs can safely continue until the retention
         // boundary is reached.
-        val oldestSourceDate = sourceUploadDates.minOrNull() ?: return false
-        return oldestSourceDate.isAfter(oldestAllowedDate)
+        // A pinned old upload does not prove that the remaining page is older than retention.
+        val newestSourceDate = sourceUploadDates.maxOrNull() ?: return false
+        return !newestSourceDate.isBefore(oldestAllowedDate)
     }
 
     /**
