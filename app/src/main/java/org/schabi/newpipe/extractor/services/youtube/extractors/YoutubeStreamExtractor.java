@@ -2752,11 +2752,11 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     @Nonnull
     @Override
     public List<MetaInfo> getMetaInfo() throws ParsingException {
-        return YoutubeParsingHelper.getMetaInfo(nextResponse
+        return YoutubeContentDisclosure.appendTo(YoutubeParsingHelper.getMetaInfo(nextResponse
                 .getObject("contents")
                 .getObject("twoColumnWatchNextResults")
                 .getObject("results")
                 .getObject("results")
-                .getArray("contents"));
+                .getArray("contents")), nextResponse);
     }
 }

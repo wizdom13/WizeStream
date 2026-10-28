@@ -2731,7 +2731,9 @@ public final class VideoDetailFragment
                                 ExtractorImageCompat.thumbnailImages(info));
                     }
                 }, throwable -> Log.w(TAG, "Unable to load DeArrow branding", throwable)));
-        showMetaInfoInTextView(info.getMetaInfo(), binding.detailMetaInfoTextView,
+        showMetaInfoInTextView(org.schabi.newpipe.extractor.services.youtube.extractors
+                        .YoutubeContentDisclosure.otherMetadata(info.getMetaInfo()),
+                binding.detailMetaInfoTextView,
                 binding.detailMetaInfoSeparator, disposables);
 
         if (!isPlayerAvailable() || player.isStopped()) {
