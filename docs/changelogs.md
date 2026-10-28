@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.35.0 (`1035000`)
+
+### Improvements
+
+- Expanded theme packs with version 2 glass surfaces, native listening-player styles, and embedded PNG skins, artwork, and icons. Added the Glass Record preset and updated creator documentation. Packs customize supported native templates; arbitrary layouts and effects are not supported.
+- Added read-only YouTube live chat in a video-details tab and fullscreen panel.
+- Added preferred audio quality with a separate override for metered networks.
+- Added comment filters, bounded regular-expression rules, and more reliable channel blocking.
+- Added YouTube channel Releases browsing and optional player seek buttons.
+- Displayed YouTube content-origin disclosures below video descriptions when supplied by YouTube.
+- Added explicitly trusted HTTPS Companion media servers per Invidious instance, with setup documentation and protection against forwarding instance credentials. Direct YouTube requests remain blocked while using Invidious.
+
+### Fixes
+
+- Corrected post-live DVR classification, shortened live/post-live metadata caching, and preserved duration and available quality controls for manifest-backed archives.
+- Increased live buffer headroom after rebuffering to help reduce recurring pauses on unstable connections. Playback may move farther behind live after a stall; results still depend on the connection and stream.
+- Fixed authenticated SOCKS5 proxy connections on Android.
+- Added recovery for AAC decoder output failures.
+- Prevented orphaned settings dialogs after screen rotation.
+- Constrained video surfaces to the current window bounds and preserved explicit link timestamps during playback startup.
+- Fixed Android 10 detail-text rendering and retained undated YouTube feed uploads during feed extraction.
+- Added a validated YouTube client-version fallback and handled missing avatar URLs safely.
+
 ## WizeStream 1.34.0 (`1034000`)
 
 ### Improvements

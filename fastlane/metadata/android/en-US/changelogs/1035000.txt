@@ -1,0 +1,5 @@
+- Added live chat, audio-quality preferences, comment filters, channel Releases, and seek buttons.
+- Expanded theme packs with glass surfaces, native player styles, and embedded PNG assets.
+- Added trusted Invidious Companion servers and YouTube content disclosures.
+- Improved post-live controls and buffer headroom after live stalls.
+- Fixed SOCKS5 authentication, AAC recovery, settings rotation, video sizing, link timestamps, Android 10 text, and feed omissions.
