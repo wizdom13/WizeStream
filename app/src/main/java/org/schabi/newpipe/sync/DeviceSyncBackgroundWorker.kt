@@ -70,16 +70,19 @@ object DeviceSyncBackgroundScheduler {
         setEnabled(context, enabled, hasTrustedPeers)
     }
 
-    fun setEnabled(context: Context, enabled: Boolean, hasTrustedPeers: Boolean) {
+    fun setEnabled(
+        context: Context,
+        enabled: Boolean,
+        hasTrustedPeers: Boolean,
+        onlyWhileCharging: Boolean = PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean(context.getString(R.string.device_sync_charging_key), false)
+    ) {
         if (!DeviceSyncBackgroundPolicy.shouldSchedule(enabled, hasTrustedPeers)) {
             cancel(context)
             return
         }
 
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(true)
-            .build()
+        val constraints = DeviceSyncBackgroundPolicy.constraints(onlyWhileCharging)
         val request = PeriodicWorkRequest.Builder(
             DeviceSyncBackgroundWorker::class.java,
             DeviceSyncBackgroundPolicy.REPEAT_INTERVAL_HOURS,
@@ -106,6 +109,12 @@ object DeviceSyncBackgroundScheduler {
 
 internal object DeviceSyncBackgroundPolicy {
     const val REPEAT_INTERVAL_HOURS = 1L
+
+    fun constraints(onlyWhileCharging: Boolean): Constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .setRequiresBatteryNotLow(true)
+        .setRequiresCharging(onlyWhileCharging)
+        .build()
 
     fun shouldSchedule(enabled: Boolean, hasTrustedPeers: Boolean): Boolean {
         return enabled && hasTrustedPeers

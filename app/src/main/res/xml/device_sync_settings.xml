@@ -39,6 +39,15 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:dependency="@string/device_sync_background_key"
+        android:key="@string/device_sync_charging_key"
+        android:summary="@string/device_sync_charging_summary"
+        android:title="@string/device_sync_charging_title"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <PreferenceCategory
         android:layout="@layout/settings_category_header_layout"
         android:title="@string/device_sync_categories_title">
