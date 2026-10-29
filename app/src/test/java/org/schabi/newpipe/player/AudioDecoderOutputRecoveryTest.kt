@@ -43,13 +43,20 @@ class AudioDecoderOutputRecoveryTest {
     }
 
     @Test
-    fun classificationRequiresAudioDecodingCodeAndMediaCodecReleaseFrame() {
+    fun classificationRequiresAudioDecodingCodeAndMediaCodecOutputFrame() {
         val error = Fixture().error()
         assertTrue(
             PlayerHttpErrorRecovery.isRecoverableAudioDecoderOutputFailure(
                 PlaybackException.ERROR_CODE_DECODING_FAILED,
                 C.TRACK_TYPE_AUDIO,
                 error
+            )
+        )
+        assertTrue(
+            PlayerHttpErrorRecovery.isRecoverableAudioDecoderOutputFailure(
+                PlaybackException.ERROR_CODE_DECODING_FAILED,
+                C.TRACK_TYPE_AUDIO,
+                Fixture().error("getOutputBuffer")
             )
         )
         assertFalse(
@@ -115,12 +122,12 @@ class AudioDecoderOutputRecoveryTest {
             `when`(item.serviceId).thenReturn(0)
         }
 
-        fun error(): PlaybackException {
+        fun error(codecMethod: String = "releaseOutputBuffer"): PlaybackException {
             val codecState = IllegalStateException("codec output state").apply {
                 stackTrace = arrayOf(
                     StackTraceElement(
                         "android.media.MediaCodec",
-                        "releaseOutputBuffer",
+                        codecMethod,
                         "MediaCodec.java",
                         -2
                     )
