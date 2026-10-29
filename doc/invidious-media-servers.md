@@ -19,8 +19,10 @@ permits no additional servers.
 These servers can see your media requests and IP address. Direct YouTube connections
 remain blocked, and WizeStream does not automatically trust an arbitrary redirect or
 fall back to direct playback. Media, manifest, segment and download requests must stay
-on the selected instance or one of its explicitly trusted servers. Thumbnail routing
-and API selection continue to use the selected instance.
+on the selected instance or one of its explicitly trusted servers. YouTube thumbnail URLs are routed through the selected instance. Images explicitly
+served from a trusted media origin are also accepted; API selection stays on the
+selected instance. WebP thumbnails use the instance’s JPEG proxy, and maximum-size
+thumbnails use its available-resolution fallback.
 
 Errors report only the blocked origin, without signed media paths or query parameters.
 If the instance itself is unavailable, adding servers will not repair that outage.

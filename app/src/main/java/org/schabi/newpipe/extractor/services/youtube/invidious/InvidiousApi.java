@@ -129,13 +129,7 @@ final class InvidiousApi {
     }
 
     String image(final String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        final String routed = InvidiousBackend.routeImage(value, base);
-        final URI uri = URI.create(base + "/").resolve(routed);
-        // Do not load arbitrary external images supplied by an instance.
-        return InvidiousBackend.sameOrigin(URI.create(base), uri) ? uri.toString() : "";
+        return InvidiousImageUrls.resolve(value, base);
     }
 
     List<Image> images(final JsonArray array) {
