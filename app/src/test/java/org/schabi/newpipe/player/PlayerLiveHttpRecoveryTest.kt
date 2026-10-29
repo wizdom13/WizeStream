@@ -409,6 +409,28 @@ class PlayerLiveHttpRecoveryTest {
         fixture.controller.resetRecovery()
     }
 
+    @Test
+    fun progressingBufferDoesNotReloadOrDiscardRewindUntilProgressStops() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        for (step in 1..4) {
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(4))
+            `when`(fixture.engine.bufferedPosition).thenReturn(step * 1_000L)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        }
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(9))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        verify(fixture.player).reloadPlayQueueManager()
+        verify(fixture.player).setRecovery()
+        verify(fixture.queue, never()).unsetRecovery(0)
+        fixture.controller.resetRecovery()
+    }
+
     private class Fixture {
         val player = mock(Player::class.java)
         val engine = mock(ExoPlayer::class.java)

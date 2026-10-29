@@ -1,7 +1,6 @@
 package org.schabi.newpipe.player.ui;
 
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,8 +19,7 @@ import java.util.List;
 final class PlayerQualityFeedback {
     private final Player player;
     private final AutoQualityFeedback feedback = new AutoQualityFeedback();
-    @Nullable
-    private Toast toast;
+    private final PlayerQualityOverlay overlay = new PlayerQualityOverlay();
 
     PlayerQualityFeedback(final Player player) {
         this.player = player;
@@ -34,10 +32,7 @@ final class PlayerQualityFeedback {
         final AutoQualityFeedback.Change change = feedback.update(streamKey,
                 player.isLiveQualityPlayback() && player.isAutoLiveQualitySelected(), resolution);
         if (change != null && anchor.isAttachedToWindow() && anchor.isShown()) {
-            if (toast != null) {
-                toast.cancel();
-            }
-            toast = PlayerQualityToast.show(anchor.getContext(),
+            overlay.show(anchor,
                     anchor.getContext().getString(R.string.live_auto_quality_changed,
                             change.from(), change.to()));
         }
@@ -75,9 +70,6 @@ final class PlayerQualityFeedback {
     }
     void reset() {
         feedback.reset();
-        if (toast != null) {
-            toast.cancel();
-            toast = null;
-        }
+        overlay.clear();
     }
 }
