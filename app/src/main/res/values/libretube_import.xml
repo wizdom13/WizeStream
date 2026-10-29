@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="libretube_import_key" translatable="false">libretube_import</string>
+    <string name="libretube_import_title">Import from LibreTube</string>
+    <string name="libretube_import_summary">Preview and merge a LibreTube JSON backup into the current profile</string>
+    <string name="libretube_import_help">Export a JSON backup from LibreTube with the categories you want, then select it here (up to 16 MiB and 50,000 entries). Existing WizeStream data is kept.\n\nLibreTube does not store watch timestamps: new history entries use the import time. Existing playback positions take priority. Local playlists receive a LibreTube suffix; identical lists are not imported twice.\n\nSettings, accounts, downloads and search history are not imported. This does not export data back to LibreTube.</string>
+    <string name="libretube_import_choose">Choose LibreTube backup</string>
+    <string name="libretube_import_apply">Import selected categories</string>
+    <string name="libretube_import_preview">Destination profile: %1$s\nSelect categories below. Invalid entries skipped during preview: %2$d</string>
+    <string name="libretube_import_subscriptions">Subscriptions (%1$d) and channel groups (%2$d)</string>
+    <string name="libretube_import_history">Watch history (%1$d)</string>
+    <string name="libretube_import_positions">Playback positions (%1$d)</string>
+    <string name="libretube_import_playlists">Local playlists (%1$d), containing %2$d videos</string>
+    <string name="libretube_import_bookmarks">Playlist bookmarks (%1$d)</string>
+    <string name="libretube_import_invalid">Could not read this backup. Select a supported LibreTube JSON export under 16 MiB with at most 50,000 entries. ZIP files and raw databases are not supported.</string>
+    <string name="libretube_import_failed">Import failed. No partial changes were saved. The destination profile may have been removed, or storage may be unavailable.</string>
+    <string name="libretube_import_complete">Import complete. Added %1$d entries; skipped %2$d existing or invalid entries. Playlist video order and repeated videos are preserved.</string>
+    <string name="libretube_import_picker_missing">No document picker is available on this device.</string>
+</resources>
