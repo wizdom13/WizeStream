@@ -137,7 +137,8 @@ final class PlayerHttpErrorRecovery {
             if (current instanceof IllegalStateException) {
                 for (final StackTraceElement frame : current.getStackTrace()) {
                     if ("android.media.MediaCodec".equals(frame.getClassName())
-                            && "releaseOutputBuffer".equals(frame.getMethodName())) {
+                            && ("getOutputBuffer".equals(frame.getMethodName())
+                            || "releaseOutputBuffer".equals(frame.getMethodName()))) {
                         return true;
                     }
                 }
