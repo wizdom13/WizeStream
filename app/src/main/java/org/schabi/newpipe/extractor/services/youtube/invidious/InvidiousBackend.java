@@ -121,7 +121,7 @@ public final class InvidiousBackend {
         final String path = uri.getRawPath();
         final String query = uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery();
         if (host != null && (host.equals("ytimg.com") || host.endsWith(".ytimg.com"))) {
-            return base + path + query;
+            return base + InvidiousImageUrls.thumbnailPath(path) + query;
         }
         if (host != null && (host.equals("ggpht.com") || host.endsWith(".ggpht.com")
                 || host.equals("googleusercontent.com")
