@@ -101,6 +101,16 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
             )
             true
         }
+        requirePreference<SwitchPreferenceCompat>(R.string.device_sync_charging_key)
+            .setOnPreferenceChangeListener { _, newValue ->
+                DeviceSyncBackgroundScheduler.setEnabled(
+                    requireContext(),
+                    enabled = backgroundSyncPreference.isChecked,
+                    hasTrustedPeers = syncManager.trustedPeers.isNotEmpty(),
+                    onlyWhileCharging = newValue as Boolean
+                )
+                true
+            }
         showPairingCodePreference.setOnPreferenceClickListener {
             createPairingCode()
             true

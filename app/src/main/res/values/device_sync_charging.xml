@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="device_sync_charging_key" translatable="false">device_sync_charging</string>
+    <string name="device_sync_charging_title">Automatic sync only while charging</string>
+    <string name="device_sync_charging_summary">Start scheduled sync attempts only while connected to power. Manual sync and requests from paired devices remain available. This does not set a nighttime schedule.</string>
+</resources>
