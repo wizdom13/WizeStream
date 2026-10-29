@@ -194,44 +194,66 @@ internal class PlayerErrorController(
                     return
                 }
 
-                val recovery = Runnable {
-                    pendingLiveStallRecovery = null
-                    val queue = player.playQueue ?: return@Runnable
-                    val currentItem = queue.item ?: return@Runnable
-                    val currentKey = "${currentItem.serviceId}:${currentItem.url}"
-                    val info = player.currentStreamInfo.orElse(null) ?: return@Runnable
-                    if (currentKey != key || !player.playWhenReady || player.exoPlayerIsNull() ||
-                        player.exoPlayer.playbackState != Media3Player.STATE_BUFFERING ||
-                        !isRecoverableLiveManifest(currentItem)
-                    ) {
-                        return@Runnable
-                    }
-
-                    if (canFallBackToLiveHls(currentItem)) {
-                        if (!player.isNormalLive() && liveDashRefreshGuard.acquire(key)) {
-                            Log.w(Player.TAG, "Full live DASH stalled; refreshing URLs before HLS fallback")
-                            player.setRecovery()
-                            invalidateYouTubeMediaCaches(currentItem)
-                        } else {
-                            if (!liveStallRecoveryGuard.acquire(key)) return@Runnable
-                            Log.w(Player.TAG, "Live DASH stalled after recovery; retrying with HLS")
-                            videoResolver.preferHlsForLiveStream(info.url)
-                            queue.unsetRecovery(queue.index)
+                var lastBufferedPosition = player.exoPlayer.bufferedPosition
+                var lastPlaybackPosition = player.exoPlayer.currentPosition
+                var lastProgressAt = SystemClock.elapsedRealtime()
+                val recovery = object : Runnable {
+                    override fun run() {
+                        pendingLiveStallRecovery = null
+                        val queue = player.playQueue ?: return
+                        val currentItem = queue.item ?: return
+                        val currentKey = "${currentItem.serviceId}:${currentItem.url}"
+                        val info = player.currentStreamInfo.orElse(null) ?: return
+                        if (currentKey != key || !player.playWhenReady || player.exoPlayerIsNull() ||
+                            player.exoPlayer.playbackState != Media3Player.STATE_BUFFERING ||
+                            !isRecoverableLiveManifest(currentItem)
+                        ) {
+                            return
                         }
-                    } else {
-                        if (!liveHlsRefreshGuard.acquire(key)) return@Runnable
-                        Log.w(Player.TAG, "Live HLS stalled while buffering; refreshing stream URLs once")
-                        player.setRecovery()
-                        videoResolver.preferHlsForLiveStream(info.url)
-                        invalidateYouTubeMediaCaches(currentItem)
+
+                        // Buffering alone is not a deadlock: slow downloads can still fill the
+                        // buffer. Restart only after a full interval without playback/buffer progress.
+                        val engine = player.exoPlayer
+                        val now = SystemClock.elapsedRealtime()
+                        if (engine.bufferedPosition > lastBufferedPosition ||
+                            engine.currentPosition > lastPlaybackPosition
+                        ) {
+                            lastProgressAt = now
+                        }
+                        lastBufferedPosition = engine.bufferedPosition
+                        lastPlaybackPosition = engine.currentPosition
+                        if (now - lastProgressAt < LIVE_STALL_TIMEOUT_MILLIS) {
+                            pendingLiveStallRecovery = this
+                            recoveryHandler.postDelayed(this, LIVE_STALL_POLL_MILLIS)
+                            return
+                        }
+
+                        if (canFallBackToLiveHls(currentItem)) {
+                            if (!player.isNormalLive() && liveDashRefreshGuard.acquire(key)) {
+                                Log.w(Player.TAG, "Full live DASH stalled; refreshing URLs before HLS fallback")
+                                player.setRecovery()
+                                invalidateYouTubeMediaCaches(currentItem)
+                            } else {
+                                if (!liveStallRecoveryGuard.acquire(key)) return
+                                Log.w(Player.TAG, "Live DASH stalled after recovery; retrying with HLS")
+                                videoResolver.preferHlsForLiveStream(info.url)
+                                queue.unsetRecovery(queue.index)
+                            }
+                        } else {
+                            if (!liveHlsRefreshGuard.acquire(key)) return
+                            Log.w(Player.TAG, "Live HLS stalled while buffering; refreshing stream URLs once")
+                            player.setRecovery()
+                            videoResolver.preferHlsForLiveStream(info.url)
+                            invalidateYouTubeMediaCaches(currentItem)
+                        }
+                        // Reloading may emit IDLE then BUFFERING without ever reaching READY.
+                        // Keep this key so a stalled HLS fallback can still be recovered.
+                        recoveringLiveKey = key
+                        player.reloadPlayQueueManager()
                     }
-                    // Reloading may emit IDLE then BUFFERING without ever reaching READY.
-                    // Keep this key so a stalled HLS fallback can still be recovered.
-                    recoveringLiveKey = key
-                    player.reloadPlayQueueManager()
                 }
                 pendingLiveStallRecovery = recovery
-                recoveryHandler.postDelayed(recovery, LIVE_STALL_TIMEOUT_MILLIS)
+                recoveryHandler.postDelayed(recovery, LIVE_STALL_POLL_MILLIS)
             }
 
             else -> {
@@ -581,6 +603,7 @@ internal class PlayerErrorController(
     }
 
     private companion object {
+        const val LIVE_STALL_POLL_MILLIS = 1_000L
         const val LIVE_STALL_TIMEOUT_MILLIS = 10_000L
         const val LIVE_RECOVERY_STABLE_MILLIS = 30_000L
     }
