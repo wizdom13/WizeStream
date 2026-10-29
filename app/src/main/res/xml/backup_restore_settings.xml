@@ -37,6 +37,14 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <Preference
+        android:key="@string/libretube_import_key"
+        android:title="@string/libretube_import_title"
+        android:summary="@string/libretube_import_summary"
+        android:fragment="org.schabi.newpipe.settings.export.LibreTubeImportFragment"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false" />
+
     <PreferenceCategory
         android:title="@string/automatic_backup_title"
         app:iconSpaceReserved="false">
