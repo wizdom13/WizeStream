@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transcript_title">Transcript</string>
+    <string name="transcript_language">Caption language</string>
+    <string name="transcript_search">Search transcript</string>
+    <string name="transcript_loading">Loading captions…</string>
+    <string name="transcript_unavailable">No supported captions are available for this video.</string>
+    <string name="transcript_error">Could not load captions. Close the transcript and try again.</string>
+    <string name="transcript_no_matches">No matching caption lines.</string>
+    <string name="transcript_help">Tap a line to play from that time. Long-press to copy or save a note.</string>
+    <string name="transcript_copy_results">Copy results</string>
+    <string name="transcript_copy">Copy passage</string>
+    <string name="transcript_save_note">Save as video note</string>
+    <string name="transcript_note_saved">Video note saved</string>
+    <string name="transcript_private_note">Leave Incognito before saving a video note.</string>
+    <string name="transcript_automatic">\u0020(automatic)</string>
+</resources>

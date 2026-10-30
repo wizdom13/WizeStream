@@ -347,6 +347,12 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   retain the latest seven automatic backups and see the last backup status. Android determines the
   exact run time based on battery and storage conditions
 
+### Transcripts
+
+- Open **Transcript** in a video's Description panel to read available TTML, WebVTT, or SRT captions
+- Choose a caption language, search text, tap a line to seek, and copy matching passages
+- Long-press a passage to save it as an editable timestamped video note; captions are loaded only on request and are not stored on disk
+
 ### Video notes
 
 - Add and edit timestamped notes during playback, including from saved-playlist menus, without enabling Learning Mode

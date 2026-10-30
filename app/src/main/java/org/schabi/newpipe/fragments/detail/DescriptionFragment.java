@@ -98,6 +98,7 @@ public class DescriptionFragment extends BaseDescriptionFragment {
             return;
         }
 
+        org.schabi.newpipe.transcript.TranscriptDialog.addButton(layout, this, streamInfo);
         ContentDisclosureView.addTo(layout, streamInfo.getMetaInfo());
 
         addMetadataItem(inflater, layout, false, R.string.metadata_category,
