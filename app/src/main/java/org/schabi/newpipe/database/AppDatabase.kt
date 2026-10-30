@@ -117,6 +117,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistRemoteDAO(): PlaylistRemoteDAO
     abstract fun playlistStreamDAO(): PlaylistStreamDAO
     abstract fun searchHistoryDAO(): SearchHistoryDAO
+    abstract fun smartPlaylistDAO(): org.schabi.newpipe.local.playlist.smart.SmartPlaylistDAO
     abstract fun streamDAO(): StreamDAO
     abstract fun streamHistoryDAO(): StreamHistoryDAO
     abstract fun streamStateDAO(): StreamStateDAO

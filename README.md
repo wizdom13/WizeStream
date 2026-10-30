@@ -304,6 +304,14 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Save available SponsorBlock segments with newly completed full downloads for offline skipping
   in WizeStream without modifying the media file
 
+### Smart playlists
+
+- Open **Smart playlists** from the Bookmarks menu, then create a named set of rules
+- Combine watched state, maximum duration, title keywords, selected subscribed channels, and Learning content
+- Results update from the active profile's locally indexed feeds, playlists, and history; refresh feeds to discover new uploads
+- Play all matches or start at a selected item; long-press a smart playlist to edit or delete its rules
+- Keep up to 50 rule sets per profile, included in complete settings backups; each preview shows up to 1,000 newest matches
+
 ### Library, subscriptions, and downloads
 
 - Subscribe to channels without a platform account and organize subscriptions into channel groups
