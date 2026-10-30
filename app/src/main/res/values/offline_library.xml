@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_library_title">Offline library management</string>
+    <string name="offline_library_help">Manage automatic channel downloads for this profile. Only new automatic downloads completed after opting in are tracked. Manual downloads and imported files are excluded. Cleanup runs during automatic download checks and pauses while the player service is open. Save rule changes before previewing cleanup.</string>
+    <string name="offline_library_enabled">Allow automatic cleanup</string>
+    <string name="offline_library_latest">Keep latest per channel (0 = all)</string>
+    <string name="offline_library_budget">Managed storage limit in GB (0 = unlimited)</string>
+    <string name="offline_library_watched">Delete after watching (requires watch history)</string>
+    <string name="offline_library_protect">Keep permanently</string>
+    <string name="offline_library_preview">Preview cleanup</string>
+    <string name="offline_library_empty">No tracked automatic downloads for this profile yet.</string>
+    <string name="offline_library_invalid">Use 0–1,000 items and 0–1,024 GB.</string>
+    <string name="offline_library_saved">Offline library rules saved</string>
+    <string name="offline_library_confirm_enable">These rules can permanently delete eligible tracked downloads during automatic checks. Files marked Keep permanently are always protected and can exceed the storage limit.</string>
+    <string name="offline_library_no_cleanup">No eligible files under the saved rules.</string>
+    <string name="offline_library_delete_count">Permanently delete %1$d files?</string>
+    <string name="offline_library_deleted">Deleted %1$d files. Protected, changed, or playing files are kept.</string>
+</resources>

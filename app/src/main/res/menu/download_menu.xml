@@ -3,6 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <item android:id="@+id/offline_library_manage"
+        android:title="@string/offline_library_title" app:showAsAction="never" />
+
     <item
         android:id="@+id/search_downloads"
         android:icon="@drawable/ic_search"

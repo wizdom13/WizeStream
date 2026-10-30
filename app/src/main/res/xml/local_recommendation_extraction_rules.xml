@@ -2,8 +2,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="local_recommendations.xml" />
+        <exclude domain="sharedpref" path="offline_library_ownership.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="local_recommendations.xml" />
+        <exclude domain="sharedpref" path="offline_library_ownership.xml" />
     </device-transfer>
 </data-extraction-rules>

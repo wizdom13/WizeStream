@@ -361,7 +361,16 @@ public class MissionsFragment extends Fragment {
 
     private boolean handleMenuItemSelected(final MenuItem item) {
         int itemId = item.getItemId();
-        if (itemId == R.id.switch_mode) {
+        if (itemId == R.id.offline_library_manage) {
+            if (mBinder != null) {
+                org.schabi.newpipe.download.offline.OfflineLibraryDialog.show(
+                        (androidx.appcompat.app.AppCompatActivity) requireActivity(),
+                        mBinder.getDownloadManager(), () -> {
+                            if (mAdapter != null) mAdapter.refreshMissionItems();
+                        });
+            }
+            return true;
+        } else if (itemId == R.id.switch_mode) {
             mLinear = !mLinear;
             updateList();
             return true;

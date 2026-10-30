@@ -98,6 +98,7 @@ public final class PlayerService extends MediaLibraryService {
     @Override
     public void onCreate() {
         super.onCreate();
+        org.schabi.newpipe.download.offline.OfflineLibrary.playbackStarted();
 
         if (DEBUG) {
             Log.d(TAG, "onCreate() called");
@@ -244,6 +245,7 @@ public final class PlayerService extends MediaLibraryService {
         mediaSession.release();
         browserExoPlayer.release();
         mediaBrowserImpl.dispose();
+        org.schabi.newpipe.download.offline.OfflineLibrary.playbackStopped();
         super.onDestroy();
     }
 

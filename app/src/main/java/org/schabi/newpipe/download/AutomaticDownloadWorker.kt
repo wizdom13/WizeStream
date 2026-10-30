@@ -60,6 +60,7 @@ class AutomaticDownloadWorker(context: Context, parameters: WorkerParameters) : 
             if (!connected.await(15, TimeUnit.SECONDS)) throw IOException("Download service timed out")
             val service = binder.get() ?: throw IOException("Download service disconnected")
             if (service.askForSavePath()) throw IOException(context.getString(R.string.bulk_download_ask_path_error))
+            org.schabi.newpipe.download.offline.OfflineLibrary.cleanup(context, service.downloadManager)
             var failed = result.any { it.isOnError }
             var totalQueued = 0
             AutomaticDownloadHistory(context).use { history ->
@@ -87,7 +88,7 @@ class AutomaticDownloadWorker(context: Context, parameters: WorkerParameters) : 
                             if (directory == null || directory.isDirect == NewPipeSettings.useStorageAccessFramework(context) || directory.isInvalidSafStorage || !directory.canWrite()) throw IOException(context.getString(R.string.bulk_download_folder_error))
                             val info = ExtractorHelper.getStreamInfo(rule.serviceId, stream.url, false).blockingGet()
                             if (StreamTypeUtil.isLiveStream(info.streamType) || isStopped) continue
-                            BulkDownloadMissionFactory.enqueue(context, directory, info, if (rule.audio) BulkDownloadMissionFactory.MediaType.AUDIO else BulkDownloadMissionFactory.MediaType.VIDEO, preferences.getInt(context.getString(R.string.default_download_threads), 3), 1, 1, false, preferences.getBoolean(AutomaticDownloads.WIFI_ONLY, true))
+                            BulkDownloadMissionFactory.enqueue(context, directory, info, if (rule.audio) BulkDownloadMissionFactory.MediaType.AUDIO else BulkDownloadMissionFactory.MediaType.VIDEO, preferences.getInt(context.getString(R.string.default_download_threads), 3), 1, 1, false, preferences.getBoolean(AutomaticDownloads.WIFI_ONLY, true), subscriptions[rule.uid]?.profileId)
                             history.add(rule.uid, stream.url)
                             queued++
                             totalQueued++

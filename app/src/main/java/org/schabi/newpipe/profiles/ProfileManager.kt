@@ -235,6 +235,7 @@ object ProfileManager {
         val localEditor = localRecommendations.edit()
         localRecommendations.all.keys.filter { it.startsWith("$profileId:") }.forEach(localEditor::remove)
         localEditor.apply()
+        org.schabi.newpipe.download.offline.OfflineLibrary.forgetProfile(context, profileId)
         return true
     }
 

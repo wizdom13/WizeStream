@@ -266,7 +266,8 @@ public class DownloadManagerService extends Service {
                         mission.sponsorBlockSegments);
                 notifyMediaScanner(mission.storage.getUri());
                 notifyFinishedDownload(mission.storage.getName());
-                mManager.setFinished(mission);
+                org.schabi.newpipe.download.offline.OfflineLibrary.completed(this,
+                        mManager.setFinished(mission));
                 handleConnectivityState(false);
                 updateForegroundState(mManager.runMissions());
                 break;
@@ -376,10 +377,20 @@ public class DownloadManagerService extends Service {
                                     String[] psArgs, long nearLength,
                                     ArrayList<MissionRecoveryInfo> recoveryInfo,
                                     Boolean automaticWifiOnly) {
+        startMission(context, urls, storage, kind, threads, streamInfo, psName, psArgs,
+                nearLength, recoveryInfo, automaticWifiOnly, null);
+    }
+
+    public static void startMission(Context context, String[] urls, StoredFileHelper storage,
+                                    char kind, int threads, StreamInfo streamInfo, String psName,
+                                    String[] psArgs, long nearLength,
+                                    ArrayList<MissionRecoveryInfo> recoveryInfo,
+                                    Boolean automaticWifiOnly, String automaticProfile) {
         final Intent intent = new Intent(context, DownloadManagerService.class)
                 .setAction(Intent.ACTION_RUN)
                 .putExtra("automatic_download", automaticWifiOnly != null)
                 .putExtra("automatic_wifi_only", Boolean.TRUE.equals(automaticWifiOnly))
+                .putExtra("automatic_profile", automaticProfile)
                 .putExtra(EXTRA_URLS, urls)
                 .putExtra(EXTRA_KIND, kind)
                 .putExtra(EXTRA_THREADS, threads)
@@ -450,6 +461,10 @@ public class DownloadManagerService extends Service {
         handleConnectivityState(true);// first check the actual network status
 
         mManager.startMission(mission);
+        if (intent.getBooleanExtra("automatic_download", false)) {
+            org.schabi.newpipe.download.offline.OfflineLibrary.trackPending(this, mission,
+                    streamInfo, intent.getStringExtra("automatic_profile"));
+        }
     }
 
     public void notifyFinishedDownload(String name) {
