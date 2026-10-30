@@ -100,6 +100,8 @@ class Player(
     private val preferences: SharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(appContext)
 
+    internal val queueRecovery = org.schabi.newpipe.player.recovery.QueueRecoveryController(this)
+
     private var activePlayQueue: PlayQueue? = null
     private var activeItem: PlayQueueItem? = null
     private var media3Player: ExoPlayer? = null
@@ -326,10 +328,14 @@ class Player(
         }
     }
 
-    fun initPlayback(queue: PlayQueue, playOnReady: Boolean) = lifecycleController.initPlayback(queue, playOnReady)
+    fun initPlayback(queue: PlayQueue, playOnReady: Boolean) {
+        queueRecovery.checkpoint(true)
+        lifecycleController.initPlayback(queue, playOnReady)
+    }
 
     fun setPlayQueueForLifecycle(queue: PlayQueue) {
         activePlayQueue = queue
+        queueRecovery.bind(queue)
     }
 
     fun setExoPlayerForLifecycle(exoPlayer: ExoPlayer) {
@@ -370,7 +376,10 @@ class Player(
         activeAudioReactor = reactor
     }
 
-    fun destroy() = lifecycleController.destroy()
+    fun destroy() {
+        queueRecovery.close()
+        lifecycleController.destroy()
+    }
 
     fun setRecovery() = lifecycleController.setRecovery()
 
@@ -587,6 +596,7 @@ class Player(
     private fun saveStreamProgressState(progressMillis: Long) = historyController.saveProgress(progressMillis)
 
     fun saveStreamProgressState() {
+        queueRecovery.checkpoint(true)
         val exoPlayer = media3Player ?: return
         val queue = activePlayQueue ?: return
         if (currentMetadata == null || queue.index != exoPlayer.currentMediaItemIndex) return

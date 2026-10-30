@@ -3,6 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_video_audio_title">
 
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="queue_recovery_enabled"
+        android:title="@string/queue_recovery_setting"
+        android:summary="@string/queue_recovery_summary"
+        app:iconSpaceReserved="false" />
+
     <ListPreference
         android:defaultValue="normal"
         android:entries="@array/live_mode_descriptions"

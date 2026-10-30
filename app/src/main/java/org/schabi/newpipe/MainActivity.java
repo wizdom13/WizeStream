@@ -1033,6 +1033,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(final Menu menu) {
         final boolean result = super.onPrepareOptionsMenu(menu);
+        org.schabi.newpipe.player.recovery.QueueRecoveryUi.prepareMenu(this, menu);
         MenuItem incognito = menu.findItem(R.id.action_incognito);
         if (incognito == null) {
             incognito = menu.add(Menu.NONE, R.id.action_incognito, Menu.NONE,
@@ -1052,6 +1053,10 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onOptionsItemSelected() called with: item = [" + item + "]");
         }
 
+        if (item.getItemId() == R.id.action_recover_queue) {
+            org.schabi.newpipe.player.recovery.QueueRecoveryUi.show(this);
+            return true;
+        }
         if (item.getItemId() == R.id.action_incognito) {
             final boolean enabled = !org.schabi.newpipe.local.history.IncognitoMode.isEnabled(this);
             org.schabi.newpipe.local.history.IncognitoMode.setEnabled(this, enabled);
