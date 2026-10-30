@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1036000">WizeStream 1.36.0</a></li>
 <li><a href="#release-1035000">WizeStream 1.35.0</a></li>
 <li><a href="#release-1034000">WizeStream 1.34.0</a></li>
 <li><a href="#release-1033000">WizeStream 1.33.0</a></li>
@@ -102,6 +103,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1036000" data-version="1.36.0" data-version-code="1036000">
+<h2>WizeStream 1.36.0</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added searchable caption transcripts with language selection, tap-to-seek, copying, and editable timestamped video notes. Captions load on request and stay in memory.</li>
+<li>Added profile-scoped smart playlists with watched-state, duration, title, subscribed-channel, and Learning-content rules. Results update from locally indexed feeds, playlists, and history.</li>
+<li>Added opt-in offline-library cleanup for newly tracked automatic channel downloads, with per-channel retention, storage limits, watched-file cleanup, permanent protection, and a manual deletion preview. Manual downloads and imports are excluded.</li>
+<li>Added explicit recovery of the current and previous playback queues per profile, including the saved position. Queues stay on-device for seven days, require watch history, and are never saved in Incognito.</li>
+<li>Added LibreTube JSON backup imports with a preview and selectable subscriptions, groups, history, playback positions, and playlists.</li>
+<li>Added text-file imports of YouTube video URLs into new or existing local playlists, with a preview, duplicate handling, and per-line results.</li>
+<li>Added Default, Blue, Green, and Purple launcher icons with matching Android TV banners under Appearance settings.</li>
+<li>Added a charging-only option for scheduled device synchronization; manual sync and incoming requests remain available.</li>
+<li>Increased explicitly trusted Invidious media servers to 16 per instance.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Preserved progressing live buffers during recovery and prevented quality feedback from resetting working playback.</li>
+<li>Improved recovery from AAC decoder output-buffer failures.</li>
+<li>Restored supported Invidious thumbnail proxy URLs without falling back to direct YouTube requests.</li>
+<li>Fixed Android 10 video-detail controls with a scoped software-rendering layer.</li>
+<li>Restored SoundCloud chart playlist pagination.</li>
+<li>Kept the Android TV mini-player reachable while browsing.</li>
+</ul>
+</div>
+</section>
 <section id="release-1035000" data-version="1.35.0" data-version-code="1035000">
 <h2>WizeStream 1.35.0</h2>
 <div class="release-notes">
