@@ -152,17 +152,17 @@ public class VideoDetailBackPressTest {
     }
 
     @Test
-    public void tvBackFromEmbeddedPlayerHidesTheSheetForCleanup() throws Exception {
+    public void tvBackFromEmbeddedPlayerAllowsCollapseWithoutStoppingPlayback() throws Exception {
         fullscreen.set(false);
         when(player.videoPlayerSelected()).thenReturn(true);
         deviceUtils.when(() -> DeviceUtils.isTv(activity)).thenReturn(true);
         final BottomSheetBehavior<?> sheet = mock(BottomSheetBehavior.class);
         setField(VideoDetailFragment.class, fragment, "bottomSheetBehavior", sheet);
 
-        assertTrue(fragment.onBackPressed());
+        assertFalse(fragment.onBackPressed());
 
-        verify(sheet).setState(BottomSheetBehavior.STATE_HIDDEN);
-        verify(fragment).setAutoPlay(false);
+        verify(sheet, never()).setState(BottomSheetBehavior.STATE_HIDDEN);
+        verify(player, never()).pause();
         verify(player, never()).getPlayQueue();
         verify(activity, never()).setRequestedOrientation(anyInt());
     }
