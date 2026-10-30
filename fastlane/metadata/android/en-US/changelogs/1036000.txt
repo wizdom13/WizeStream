@@ -1,0 +1,7 @@
+- Searchable transcripts with timestamped notes.
+- Smart playlists and opt-in offline cleanup with permanent protection.
+- Recover recent playback queues per profile.
+- Import LibreTube backups and YouTube URL text lists.
+- Launcher icon choices and matching TV banners.
+- Charging-only scheduled sync; up to 16 trusted Invidious media servers.
+- Fix live/AAC playback, Invidious thumbnails, Android 10 controls, SoundCloud charts, and TV mini-player navigation.

@@ -104,6 +104,8 @@ Project highlights:
 - Optional Learning Mode with timestamped notes, playlist progress, study statistics, and a dashboard
 - Secure peer-to-peer synchronization between trusted WizeStream devices, manually or automatically
   over Wi-Fi or Ethernet
+- Searchable transcripts, timestamped notes, smart playlists, and explicit playback-queue recovery
+- Automatic channel downloads with opt-in offline retention and permanent file protection
 - Local search across subscriptions, playlists, feeds, history, and Downloads
 - Import/export compatibility with supported NewPipe backup data and a verified in-app update flow
 
@@ -183,6 +185,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Merge or replace profile data with a preview and duplicate handling while preserving the source profile
 - Choose a different default profile and delete profiles with confirmation
 - Subscribe a channel to another profile or copy a subscription group without switching profiles
+- Enable per-profile **Kids Mode** with a device-local parent PIN protecting settings and profile
+  changes; it disables YouTube search and subscription actions but does not filter video content
 - Enable Incognito to pause recording searches, watch history, playback progress, and learning activity
   across profiles and services; it does not make network requests anonymous
 
@@ -234,6 +238,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   view or subscriber counts where the service provides them
 - Copy stream titles, share streams and playlists, open supported links directly in WizeStream, and
   open a channel's RSS feed where available
+- Read YouTube content-origin disclosures below descriptions when supplied by the service
 - View YouTube dislike counts where available
 - Optionally replace YouTube titles and thumbnails with accepted community contributions from DeArrow
 - Identify membership-restricted videos with a **Members only** badge, receive a clear explanation
@@ -266,6 +271,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Choose Normal or Full live playback; Full live offers rewind through the history supplied by the stream
 - Control autoplay and automatic queue continuation, enqueue items next or last, reorder the play
   queue, and automatically prefer Shorts recommendations while watching Shorts
+- Recover the current or previous queue through **Recover playback queue** in the app menu,
+  with confirmation before replacing playback. **Settings > Video and audio > Save queues for recovery**
+  keeps up to 1,000 loaded items per queue for seven days, separately for each profile. Watch history
+  is required; Incognito queues are excluded, and disabling recovery clears saved queues
 - Select available video resolutions and formats, including higher adaptive qualities when exposed by
   the service
 - Select multi-audio tracks with original, dubbed, descriptive, and secondary labels, with preferences
@@ -290,7 +299,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   fullscreen to restore touch interaction
 - Optionally keep visible video playback in Android's native picture-in-picture window on Android 8
   and newer
-- Keep video visible in the minimized player, with optional rounded corners
+- Keep video visible in the minimized player, with optional rounded corners; on Android TV,
+  return to its controls with the remote while browsing
 - Optionally keep the video visible while scrolling its details page
 - Configure the preferred action when opening a stream, start or rotate directly into fullscreen even
   when Android orientation is locked, choose the exit/minimize behavior, and remember popup size and
@@ -338,6 +348,9 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Store watch history, search history, and playback progress locally under user-controlled settings
 - Browse watch history by date with fast scrolling and a calendar date picker
 - Download video, audio, and captions where supported, with resumable downloads and queue controls
+- Enable automatic audio or video downloads from subscribed channels, with hourly checks, optional
+  unmetered-only networking, saved download folders, and limits of three new uploads per channel
+  and 20 total per check; existing uploads are skipped
 - Optionally hand downloads to an external downloader
 - Bulk-download complete local or remote playlists and the current play queue as video or audio,
   optionally prefixing filenames with track numbers
@@ -351,6 +364,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - NewPipe/PipePipe migrations, Google Takeout imports, and NewPipe-compatible exports target the
   profile that is active when the operation starts, including imported search history; app-wide settings
   remain shared
+- Import [LibreTube JSON backups](doc/imports/libretube.md) with a preview and category selection
+  for subscriptions, groups, history, playback positions, local playlists, and remote bookmarks;
+  imports merge into the selected profile without transferring credentials or settings
+- Import [text lists of YouTube video URLs](doc/imports/text-playlists.md) from the Bookmarks menu
+  into new or existing local playlists, with preview, optional duplicate skipping, and per-line results
 - Schedule daily or weekly backups in **Settings > Backup and restore** after choosing a folder;
   retain the latest seven automatic backups and see the last backup status. Android determines the
   exact run time based on battery and storage conditions
@@ -401,6 +419,8 @@ data migration, and synchronization details.
 - Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors where available, plus Light, Dark, Black, Follow system, and manual
   theme color options, including Cyan and Yellow, plus an Eye Comfort warm dark theme
+- Choose Default, Blue, Green, or Purple [launcher icons and matching TV banners](doc/launcher-icons.md)
+  under **Settings > Appearance > App icon**; launcher refresh timing and themed-icon overrides vary
 - A customizable home screen and configurable default main tab
 - Bottom navigation for up to five main sections and a scrollable tab layout for larger tab sets
 - Bottom-navigation labels that can be always visible, active only, or hidden
@@ -430,6 +450,10 @@ data migration, and synchronization details.
 - Use WizeStream without a platform account or Google Play Services
 - Optionally access YouTube through an Invidious instance, with saved instances and a quick selector;
   availability depends on the chosen instance
+- Configure up to 16 explicitly trusted HTTPS [Invidious Companion media servers](doc/invidious-media-servers.md)
+  per instance; direct YouTube requests remain blocked in Invidious mode
+- Browse supported YouTube community posts through Invidious, including attachments, read-only polls,
+  and pagination, with images routed through the instance
 - After an Invidious failure, explicitly confirm a switch to direct YouTube playback when desired;
   this contacts YouTube directly
 - Route remote requests through an HTTP or SOCKS5 proxy with optional username/password
@@ -441,7 +465,8 @@ data migration, and synchronization details.
 ### Sync highlights
 
 - Encrypted peer-to-peer pairing between trusted WizeStream devices using a one-time QR code
-- Manual synchronization and automatic background synchronization over Wi-Fi or Ethernet
+- Manual synchronization and automatic background synchronization over Wi-Fi or Ethernet, with
+  an optional charging-only constraint for scheduled attempts
 - Synchronization of local profile identities plus profile-scoped subscriptions, feed groups,
   local and remote playlists, watch history, playback progress, and optional search history
 - Synchronize home tabs, content-filter selections, blocked content, channel playback profiles,
@@ -486,6 +511,8 @@ and the other scans it. The pairing code expires after five minutes and can be u
 After pairing, use **Sync now** for an immediate exchange or leave **Automatic background
 synchronization** enabled. Background synchronization runs approximately once per hour when the
 device has sufficient battery and can reach a trusted device on the same Wi-Fi or Ethernet network.
+Enable **Automatic sync only while charging** to require power for scheduled attempts. Manual sync
+and requests from paired devices remain available; this option does not create a nighttime schedule.
 
 Supported synchronized data includes:
 

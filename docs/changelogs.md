@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.36.0 (`1036000`)
+
+### Improvements
+
+- Added searchable caption transcripts with language selection, tap-to-seek, copying, and editable timestamped video notes. Captions load on request and stay in memory.
+- Added profile-scoped smart playlists with watched-state, duration, title, subscribed-channel, and Learning-content rules. Results update from locally indexed feeds, playlists, and history.
+- Added opt-in offline-library cleanup for newly tracked automatic channel downloads, with per-channel retention, storage limits, watched-file cleanup, permanent protection, and a manual deletion preview. Manual downloads and imports are excluded.
+- Added explicit recovery of the current and previous playback queues per profile, including the saved position. Queues stay on-device for seven days, require watch history, and are never saved in Incognito.
+- Added LibreTube JSON backup imports with a preview and selectable subscriptions, groups, history, playback positions, and playlists.
+- Added text-file imports of YouTube video URLs into new or existing local playlists, with a preview, duplicate handling, and per-line results.
+- Added Default, Blue, Green, and Purple launcher icons with matching Android TV banners under Appearance settings.
+- Added a charging-only option for scheduled device synchronization; manual sync and incoming requests remain available.
+- Increased explicitly trusted Invidious media servers to 16 per instance.
+
+### Fixes
+
+- Preserved progressing live buffers during recovery and prevented quality feedback from resetting working playback.
+- Improved recovery from AAC decoder output-buffer failures.
+- Restored supported Invidious thumbnail proxy URLs without falling back to direct YouTube requests.
+- Fixed Android 10 video-detail controls with a scoped software-rendering layer.
+- Restored SoundCloud chart playlist pagination.
+- Kept the Android TV mini-player reachable while browsing.
+
 ## WizeStream 1.35.0 (`1035000`)
 
 ### Improvements
