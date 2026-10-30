@@ -1246,13 +1246,6 @@ public final class VideoDetailFragment
         // Back leaves the expanded video without changing the current queue item. Let
         // MainActivity collapse the sheet; previous/next remain playback-control actions.
         if (isPlayerAvailable() && player.videoPlayerSelected()) {
-            if (DeviceUtils.isTv(activity)) {
-                // Hiding the sheet runs the same cleanup as the player's close button.
-                // A TV Back press should not leave a still-playing mini player behind.
-                setAutoPlay(false);
-                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-                return true;
-            }
             return false;
         }
 
@@ -3669,7 +3662,11 @@ public final class VideoDetailFragment
         if (toMain) {
             mainFragment.setDescendantFocusability(afterDescendants);
             toolbar.setDescendantFocusability(afterDescendants);
-            ((ViewGroup) requireView()).setDescendantFocusability(blockDescendants);
+            if (DeviceUtils.isTv(activity)) {
+                updateTvMiniPlayerFocus();
+            } else {
+                ((ViewGroup) requireView()).setDescendantFocusability(blockDescendants);
+            }
             // Only focus the mainFragment if the mainFragment (e.g. search-results)
             // or the toolbar (e.g. Textfield for search) don't have focus.
             // This was done to fix problems with the keyboard input, see also #7490
@@ -3680,6 +3677,9 @@ public final class VideoDetailFragment
             mainFragment.setDescendantFocusability(blockDescendants);
             toolbar.setDescendantFocusability(blockDescendants);
             ((ViewGroup) requireView()).setDescendantFocusability(afterDescendants);
+            if (DeviceUtils.isTv(activity)) {
+                updateTvMiniPlayerFocus();
+            }
             // Only focus the player if it not already has focus
             if (!binding.getRoot().hasFocus()) {
                 binding.detailThumbnailRootLayout.requestFocus();
@@ -3819,6 +3819,9 @@ public final class VideoDetailFragment
         };
 
         bottomSheetBehavior.addBottomSheetCallback(bottomSheetCallback);
+        if (DeviceUtils.isTv(activity)) {
+            updateTvMiniPlayerFocus();
+        }
         updateMinimizedVideo();
 
         // User opened a new page and the player will hide itself
@@ -3903,6 +3906,11 @@ public final class VideoDetailFragment
         behavior.setTopAndBottomOffset(
                 (int) (-binding.detailThumbnailImageView.getHeight() * 2 * (1 - slideOffset) / 3));
         appBar.requestLayout();
+    }
+
+    private void updateTvMiniPlayerFocus() {
+        org.schabi.newpipe.player.ui.TvMiniPlayerFocus.apply(binding.getRoot(),
+                binding.detailMainContent, binding.overlayLayout, bottomSheetState);
     }
 
     private void setOverlayElementsClickable(final boolean enable) {
