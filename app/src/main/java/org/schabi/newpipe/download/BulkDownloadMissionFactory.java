@@ -44,7 +44,7 @@ final class BulkDownloadMissionFactory {
                         final int total,
                         final boolean addNumberPrefix) {
         enqueue(context, directory, info, mediaType, threads, position, total,
-                addNumberPrefix, null);
+                addNumberPrefix, null, null);
     }
 
     static void enqueue(@NonNull final Context context,
@@ -52,7 +52,8 @@ final class BulkDownloadMissionFactory {
                         @NonNull final StreamInfo info,
                         @NonNull final MediaType mediaType,
                         final int threads, final int position, final int total,
-                        final boolean addNumberPrefix, final Boolean automaticWifiOnly) {
+                        final boolean addNumberPrefix, final Boolean automaticWifiOnly,
+                        final String automaticProfile) {
         final MissionSelection selection = mediaType == MediaType.AUDIO
                 ? selectAudio(context, info) : selectVideo(context, info);
 
@@ -81,7 +82,7 @@ final class BulkDownloadMissionFactory {
 
         DownloadManagerService.startMission(context, urls, storage, selection.kind, threads,
                 info, selection.postprocessingName, selection.postprocessingArguments,
-                0, recoveryInfo, automaticWifiOnly);
+                0, recoveryInfo, automaticWifiOnly, automaticProfile);
     }
 
     @NonNull

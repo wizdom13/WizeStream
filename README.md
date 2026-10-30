@@ -416,6 +416,15 @@ data migration, and synchronization details.
 - Optional bottom player controls, configurable remote/D-pad shortcuts, direct TV seeking,
   and a fullscreen recommendations grid
 
+### Offline library management
+
+- Open **Offline library management** from the Downloads menu to opt into cleanup for newly tracked automatic channel downloads
+- Keep the newest items per channel, limit managed storage, or remove fully watched downloads using this profile's watch history
+- Protect individual tracked files with **Keep permanently**, and preview exact cleanup candidates before a manual cleanup
+- Automatic cleanup runs during automatic download checks for the active profile; it pauses while the player service is open or Incognito is active
+- Manual downloads, imported files, files with changed sizes, and files protected by the user are excluded; failed deletions retain their download records
+- Cleanup permissions and file ownership stay on this device and are excluded from backups and sync
+
 ### Privacy and network
 
 - Use WizeStream without a platform account or Google Play Services

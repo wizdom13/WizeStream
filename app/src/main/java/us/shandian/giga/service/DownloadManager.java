@@ -312,6 +312,8 @@ public class DownloadManager {
                 mMissionsPending.remove(mission);
                 ((DownloadMission) mission).cancel(alsoDeleteFile);
             } else if (mission instanceof FinishedMission) {
+                org.schabi.newpipe.download.offline.OfflineLibrary.forget(appContext,
+                        (FinishedMission) mission);
                 mMissionsFinished.remove(mission);
                 mFinishedMissionStore.deleteMission(mission);
                 if (alsoDeleteFile) {
@@ -331,6 +333,8 @@ public class DownloadManager {
             if (mission instanceof DownloadMission) {
                 mMissionsPending.remove(mission);
             } else if (mission instanceof FinishedMission) {
+                org.schabi.newpipe.download.offline.OfflineLibrary.forget(appContext,
+                        (FinishedMission) mission);
                 mMissionsFinished.remove(mission);
                 mFinishedMissionStore.deleteMission(mission);
             }
@@ -462,12 +466,13 @@ public class DownloadManager {
      *
      * @param mission the desired mission
      */
-    void setFinished(DownloadMission mission) {
+    FinishedMission setFinished(DownloadMission mission) {
         synchronized (this) {
             mMissionsPending.remove(mission);
             FinishedMission finishedMission = new FinishedMission(mission);
             mMissionsFinished.add(0, finishedMission);
             mFinishedMissionStore.addFinishedMission(finishedMission);
+            return finishedMission;
         }
     }
 
@@ -503,6 +508,10 @@ public class DownloadManager {
         }
     }
 
+    public synchronized java.util.List<FinishedMission> getFinishedMissionsSnapshot() {
+        return new ArrayList<>(mMissionsFinished);
+    }
+
     public MissionIterator getIterator() {
         mSelfMissionsControl = true;
         return new MissionIterator();
@@ -514,6 +523,7 @@ public class DownloadManager {
     public void forgetFinishedDownloads() {
         synchronized (this) {
             for (FinishedMission mission : mMissionsFinished) {
+                org.schabi.newpipe.download.offline.OfflineLibrary.forget(appContext, mission);
                 mFinishedMissionStore.deleteMission(mission);
             }
             mMissionsFinished.clear();
