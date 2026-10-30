@@ -17,7 +17,6 @@ import java.util.Locale;
 
 import static org.schabi.newpipe.extractor.ServiceList.SoundCloud;
 import static org.schabi.newpipe.extractor.services.soundcloud.SoundcloudParsingHelper.SOUNDCLOUD_API_V2_URL;
-import static org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty;
 
 public class SoundcloudChartsExtractor extends KioskExtractor<StreamInfoItem> {
     private static final String UNITED_KINGDOM = "GB";
@@ -42,15 +41,7 @@ public class SoundcloudChartsExtractor extends KioskExtractor<StreamInfoItem> {
     @Override
     public InfoItemsPage<StreamInfoItem> getPage(final Page page) throws IOException,
             ExtractionException {
-        if (page == null || isNullOrEmpty(page.getUrl())) {
-            throw new IllegalArgumentException("Page doesn't contain an URL");
-        }
-
-        final StreamInfoItemsCollector collector = new StreamInfoItemsCollector(getServiceId());
-        final String nextPageUrl = SoundcloudParsingHelper.getStreamsFromApi(collector,
-                page.getUrl(), true);
-
-        return new InfoItemsPage<>(collector, new Page(nextPageUrl));
+        return SoundcloudChartPages.load(getService(), getLinkHandler(), page);
     }
 
     @Nonnull
