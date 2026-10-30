@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="smart_playlists" />
+    <string name="smart_playlists_title">Smart playlists</string>
+    <string name="smart_playlist_create">Create smart playlist</string>
+    <string name="smart_playlist_name">Playlist name</string>
+    <string name="smart_playlist_keyword">Title contains (optional)</string>
+    <string name="smart_playlist_duration">Maximum minutes (blank for any)</string>
+    <string name="smart_playlist_watch_label">Watched state</string>
+    <string name="smart_playlist_learning">Only content marked for Learning</string>
+    <string name="smart_playlist_channels">Channels: %1$d selected (0 = all)</string>
+    <string name="smart_playlist_channels_title">Choose subscribed channels</string>
+    <string name="smart_playlist_rules">Edit rules</string>
+    <string name="smart_playlist_play">Play all</string>
+    <string name="smart_playlist_count">%1$s · %2$d matches</string>
+    <string name="smart_playlist_invalid">Enter a name, a duration from 0 to 1,440 minutes, and at most 500 channels.</string>
+    <string name="smart_playlist_limit">You can save up to 50 smart playlists per profile.</string>
+    <string-array name="smart_playlist_watch">
+        <item>Any watched state</item>
+        <item>Unwatched</item>
+        <item>Partially watched</item>
+    </string-array>
+</resources>

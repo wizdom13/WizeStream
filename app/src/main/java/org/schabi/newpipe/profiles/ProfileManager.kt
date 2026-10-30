@@ -225,6 +225,7 @@ object ProfileManager {
             .remove(profileKey(profileId, ICON_SUFFIX))
             .remove(profileKey(profileId, CREATED_AT_SUFFIX))
             .remove(profileKey(profileId, UPDATED_AT_SUFFIX))
+            .remove("smart_playlists_$profileId")
         if (prefs.getString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, DEFAULT_PROFILE_ID) == profileId) {
             editor.putString(ACTIVE_PROFILE_ID_PREFERENCE_KEY, fallbackId(prefs))
         }
