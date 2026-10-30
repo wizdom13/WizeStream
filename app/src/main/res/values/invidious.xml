@@ -20,6 +20,6 @@
     <string name="invidious_api_rejected">The selected Invidious instance rejected the request (HTTP %1$s). Check the instance address or choose another trusted instance under Settings → Content → Switch Invidious instance.</string>
     <string name="invidious_media_origins_key" translatable="false">invidious_media_origins</string>
     <string name="invidious_media_origins_title">Trusted Invidious media servers</string>
-    <string name="invidious_media_origins_summary">Optional Companion servers for the selected instance. Enter up to four HTTPS root URLs, one per line, only after verifying them with the instance operator. These operators can see media requests. Direct YouTube connections remain blocked. Changes while enabled restart the app.</string>
-    <string name="invidious_media_origins_invalid">Use up to four HTTPS root URLs without paths, credentials, queries or fragments. YouTube and Google media hosts are not allowed.</string>
+    <string name="invidious_media_origins_summary">Optional Companion servers for the selected instance. Enter up to 16 HTTPS root URLs, one per line, only after verifying them with the instance operator. These operators can see media requests. Direct YouTube connections remain blocked. Changes while enabled restart the app.</string>
+    <string name="invidious_media_origins_invalid">Use up to 16 HTTPS root URLs without paths, credentials, queries or fragments. YouTube and Google media hosts are not allowed.</string>
 </resources>
