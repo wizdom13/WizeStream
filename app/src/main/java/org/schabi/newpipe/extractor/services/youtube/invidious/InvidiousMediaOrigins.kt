@@ -4,6 +4,8 @@ import java.net.URI
 
 /** Additional media servers explicitly trusted for one configured instance. Never discovered implicitly. */
 object InvidiousMediaOrigins {
+    const val MAX_MEDIA_ORIGINS = 16
+
     private data class Policy(val instance: String, val origins: List<String>)
 
     @Volatile private var policy: Policy? = null
@@ -17,7 +19,7 @@ object InvidiousMediaOrigins {
         require(text.length <= 4096) { "Too many media server addresses" }
         val origins = text.lineSequence().map(String::trim).filter(String::isNotEmpty)
             .map(InvidiousBackend::normalizeInstance).distinct().toList()
-        require(origins.size <= 4) { "At most four media servers" }
+        require(origins.size <= MAX_MEDIA_ORIGINS) { "At most $MAX_MEDIA_ORIGINS media servers" }
         return origins
     }
 

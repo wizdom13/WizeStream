@@ -6,7 +6,7 @@ blocked redirect does not establish that the destination is safe or that it is a
 Companion: verify it with the instance operator before granting access.
 
 In **Settings → Content**, select the instance, then open **Trusted Invidious media
-servers**. Enter up to four verified HTTPS root URLs, one per line, for example
+servers**. Enter up to 16 verified HTTPS root URLs, one per line, for example
 `https://media.example.org`. Paths, credentials, queries, fragments, HTTP URLs and
 YouTube/Google video hosts are rejected. Changes while Invidious is enabled restart
 the app so active requests cannot retain the previous policy.
@@ -26,3 +26,6 @@ thumbnails use its available-resolution fallback.
 
 Errors report only the blocked origin, without signed media paths or query parameters.
 If the instance itself is unavailable, adding servers will not repair that outage.
+
+Duplicate normalized origins count once toward the 16-server limit. The complete
+input remains limited to 4,096 characters; oversized lists are rejected.

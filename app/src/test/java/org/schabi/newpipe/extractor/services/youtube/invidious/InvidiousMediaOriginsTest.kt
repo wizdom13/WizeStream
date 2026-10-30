@@ -38,6 +38,23 @@ class InvidiousMediaOriginsTest {
         }
     }
 
+    @Test fun acceptsSixAndSixteenDistinctServersButRejectsSeventeen() {
+        val servers = (1..17).map { "https://media$it.example" }
+        for (count in listOf(6, 16)) {
+            val text = servers.take(count).joinToString("\n")
+            org.junit.Assert.assertEquals(count, InvidiousMediaOrigins.parse(text).size)
+            InvidiousBackend.configure(true, "https://instance.example")
+            InvidiousMediaOrigins.configure("https://instance.example", text)
+            servers.take(count).forEach { assertTrue(InvidiousMediaOrigins.allows(URI("$it/videoplayback"))) }
+            assertFalse(InvidiousMediaOrigins.allows(URI(servers[count])))
+        }
+        org.junit.Assert.assertEquals(16, InvidiousMediaOrigins.parse((servers.take(16) + servers.first()).joinToString("\n")).size)
+        assertThrows(IllegalArgumentException::class.java) { InvidiousMediaOrigins.parse(servers.joinToString("\n")) }
+        InvidiousMediaOrigins.configure("https://instance.example", servers.joinToString("\n"))
+        assertFalse(InvidiousMediaOrigins.allows(URI(servers.first())))
+        assertThrows(IllegalArgumentException::class.java) { InvidiousMediaOrigins.parse(" ".repeat(4097)) }
+    }
+
     @Test fun diagnosticsOnlyExposeTheOriginAndMalformedRestoresFailClosed() {
         val message = InvidiousMediaOrigins.blockedMessage(URI("https://user:secret@media.example/private?token=secret#secret"))
         assertTrue(message.contains("https://media.example"))
