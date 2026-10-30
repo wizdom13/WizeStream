@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="text_playlist_import" type="id" />
+    <string name="text_playlist_title">Import URL list</string>
+    <string name="text_playlist_help">Choose a UTF-8 text file with one YouTube video URL per line (up to 1 MiB and 2,000 lines). Blank lines and lines starting with # are ignored. Watch, Shorts and live video links are supported. Playlist and channel URLs are not imported.\n\nVideo details are fetched before saving, which requires internet access for videos not already saved. Keep this dialog open until complete. Cancelling stops before saving if the import has not already committed.</string>
+    <string name="text_playlist_choose">Choose text file</string>
+    <string name="text_playlist_destination">Destination playlist</string>
+    <string name="text_playlist_new">Create a new playlist</string>
+    <string name="text_playlist_name">New playlist name</string>
+    <string name="text_playlist_name_required">Enter a playlist name</string>
+    <string name="text_playlist_skip_duplicates">Skip duplicate videos, including those already in the playlist</string>
+    <string name="text_playlist_start">Import videos</string>
+    <string name="text_playlist_preview">Valid video links: %1$d. Invalid lines: %2$d. Showing the first 50 valid links:</string>
+    <string name="text_playlist_invalid_lines">Invalid line numbers: %1$s</string>
+    <string name="text_playlist_failed_lines">Videos could not be loaded on lines: %1$s</string>
+    <string name="text_playlist_profile">Destination profile: %1$s. Review the links and choose a playlist.</string>
+    <string name="text_playlist_progress">Loading video details: %1$d of %2$d</string>
+    <string name="text_playlist_complete">Import complete. Added: %1$d. Duplicates skipped: %2$d. Invalid lines: %3$d. Videos that could not be loaded: %4$d.</string>
+    <string name="text_playlist_cancelled">Import cancelled.</string>
+    <string name="text_playlist_failed">Could not save the import. No partial changes were saved. The destination may have been removed, or storage may be unavailable.</string>
+    <string name="text_playlist_invalid">Could not read this file. Choose a UTF-8 text file no larger than 1 MiB with at most 2,000 lines.</string>
+    <string name="text_playlist_picker_missing">No document picker is available on this device.</string>
+</resources>

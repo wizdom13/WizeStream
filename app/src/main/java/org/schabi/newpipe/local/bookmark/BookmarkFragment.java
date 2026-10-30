@@ -139,6 +139,24 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         }
     }
 
+    @Override
+    public void onCreateOptionsMenu(@NonNull final android.view.Menu menu,
+                                    @NonNull final android.view.MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        menu.add(android.view.Menu.NONE, R.id.text_playlist_import,
+                android.view.Menu.NONE, R.string.text_playlist_title);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull final android.view.MenuItem item) {
+        if (item.getItemId() == R.id.text_playlist_import) {
+            org.schabi.newpipe.local.playlist.importing.TextPlaylistImportDialog
+                    .show(getChildFragmentManager());
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull final LayoutInflater inflater,
