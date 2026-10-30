@@ -1,21 +1,25 @@
 package org.schabi.newpipe.views
 
 import android.os.Build
+import android.view.SurfaceView
+import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 
-/** Android 10 can lose cached hardware text draws beside a repeatedly updating video surface. */
+/** Scoped workaround for Android 10 devices that lose the detail panel's cached draws. */
 object DetailTextRendering {
     @JvmStatic
     fun apply(root: View) {
-        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.Q) return
-        if (root is TextView) {
-            // Isolate only the small detail labels; never put the player SurfaceView or the
-            // scrolling page into a software layer. Touch, selection and accessibility stay native.
-            root.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        } else if (root is ViewGroup) {
-            for (index in 0 until root.childCount) apply(root.getChildAt(index))
-        }
+        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.Q || containsVideoSurface(root)) return
+        // The recording shows action icons disappearing together with text. Rasterize the
+        // bounded detail panel together, rather than caching each text label independently.
+        // The caller passes detailContentRootLayout: the player and scrolling pager are siblings.
+        root.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+    }
+
+    private fun containsVideoSurface(view: View): Boolean = when (view) {
+        is SurfaceView, is TextureView -> true
+        is ViewGroup -> (0 until view.childCount).any { containsVideoSurface(view.getChildAt(it)) }
+        else -> false
     }
 }
