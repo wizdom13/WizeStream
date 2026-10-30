@@ -23,6 +23,7 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
         addPreferencesFromResourceRegistry();
+        org.schabi.newpipe.settings.appearance.LauncherIcons.bind(this);
 
         final String themeKey = getString(R.string.theme_key);
         final ListPreference themes = findPreference(themeKey);

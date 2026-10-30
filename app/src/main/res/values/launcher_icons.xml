@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launcher_icon_title">App icon</string>
+    <string name="launcher_icon_changed">App icon updated. Your phone or TV launcher may take a moment to refresh. Wallpaper-themed icons may override the selected color.</string>
+    <string name="launcher_icon_failed">Could not change the app icon.</string>
+    <string name="launcher_icon_default">Default</string>
+    <string name="launcher_icon_blue">Blue</string>
+    <string name="launcher_icon_green">Green</string>
+    <string name="launcher_icon_purple">Purple</string>
+    <string-array name="launcher_icon_labels">
+        <item>@string/launcher_icon_default</item><item>@string/launcher_icon_blue</item><item>@string/launcher_icon_green</item><item>@string/launcher_icon_purple</item>
+    </string-array>
+    <string-array name="launcher_icon_values" translatable="false">
+        <item>default</item><item>blue</item><item>green</item><item>purple</item>
+    </string-array>
+    <color name="launcher_blue">#1565C0</color>
+    <color name="launcher_green">#2E7D32</color>
+    <color name="launcher_purple">#6A1B9A</color>
+</resources>

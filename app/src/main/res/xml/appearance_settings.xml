@@ -3,6 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_appearance_title">
 
+    <ListPreference
+        android:key="launcher_icon"
+        android:title="@string/launcher_icon_title"
+        android:entries="@array/launcher_icon_labels"
+        android:entryValues="@array/launcher_icon_values"
+        android:persistent="false"
+        app:useSimpleSummaryProvider="true"
+        app:iconSpaceReserved="false" />
+
     <Preference
         android:key="theme_packs"
         android:title="@string/theme_packs_title"
