@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="action_recover_queue" type="id" />
+    <string name="queue_recovery_title">Recover playback queue</string>
+    <string name="queue_recovery_setting">Save queues for recovery</string>
+    <string name="queue_recovery_summary">Keep the current and previous queue on this device for 7 days (up to 1,000 loaded items). Requires watch history. Incognito queues are never saved. Turning this off clears saved queues.</string>
+    <string name="queue_recovery_recent">Most recent queue</string>
+    <string name="queue_recovery_previous">Previous queue</string>
+    <string name="queue_recovery_empty">No saved queues for this profile.</string>
+    <string name="queue_recovery_entry">%1$s\nItem %2$d of %3$d · %4$s</string>
+    <string name="queue_recovery_confirm">Replace playback with this saved queue? Playback will start from its saved position. Unavailable items may no longer play.</string>
+    <string name="queue_recovery_restore">Restore and play</string>
+    <string name="queue_recovery_disable">Turn off and clear</string>
+</resources>

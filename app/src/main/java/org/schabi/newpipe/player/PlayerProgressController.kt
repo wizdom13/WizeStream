@@ -47,6 +47,7 @@ internal class PlayerProgressController(
             return
         }
 
+        player.queueRecovery.checkpoint()
         historyController.updateLearningSession()
         sponsorBlockController.onProgress()
         player.channelSkipController.onProgress()

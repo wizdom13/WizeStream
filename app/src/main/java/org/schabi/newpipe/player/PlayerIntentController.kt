@@ -122,7 +122,9 @@ internal class PlayerIntentController(
         val samePlayQueue =
             currentQueue != null && currentQueue.equalStreamsAndIndex(newQueue)
 
-        if (!player.exoPlayerIsNull() &&
+        if (intent.getBooleanExtra(org.schabi.newpipe.player.recovery.QueueRecovery.RESTORE_EXTRA, false)) {
+            player.initPlayback(newQueue, playWhenReady)
+        } else if (!player.exoPlayerIsNull() &&
             newQueue.size() == 1 &&
             newQueue.item != null &&
             currentQueue != null &&

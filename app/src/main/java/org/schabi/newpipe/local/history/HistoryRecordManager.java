@@ -284,6 +284,9 @@ public class HistoryRecordManager {
             recordWatchAllDelete();
             return streamHistoryTable.deleteAllForProfile(profileId);
         }))
+                .doOnSuccess(deleted ->
+                        org.schabi.newpipe.player.recovery.QueueRecovery.clear(
+                                recommendationContext, profileId))
                 .subscribeOn(Schedulers.io());
     }
 
@@ -292,6 +295,9 @@ public class HistoryRecordManager {
             recordProgressAllDelete();
             return streamStateTable.deleteAllForProfile(profileId);
         }))
+                .doOnSuccess(deleted ->
+                        org.schabi.newpipe.player.recovery.QueueRecovery.clear(
+                                recommendationContext, profileId))
                 .subscribeOn(Schedulers.io());
     }
 

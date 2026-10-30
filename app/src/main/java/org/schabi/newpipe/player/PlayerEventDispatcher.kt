@@ -54,6 +54,7 @@ internal class PlayerEventDispatcher(private val player: Player) {
     }
 
     fun notifyQueueUpdate() {
+        player.queueRecovery.checkpoint(true)
         val queue = player.playQueue ?: return
         fragmentListener?.onQueueUpdate(queue)
         activityListener?.onQueueUpdate(queue)
