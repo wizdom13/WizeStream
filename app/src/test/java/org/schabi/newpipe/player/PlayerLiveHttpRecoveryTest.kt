@@ -431,6 +431,51 @@ class PlayerLiveHttpRecoveryTest {
         fixture.controller.resetRecovery()
     }
 
+    @Test
+    fun initialFullLiveStallRefreshesDashAfterThirtySeconds() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(29))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        verify(fixture.player).reloadPlayQueueManager()
+        verify(fixture.player).setRecovery()
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        verify(fixture.queue, never()).unsetRecovery(0)
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun initialBufferProgressExtendsStartupGracePeriod() {
+        val fixture = Fixture()
+        fixture.state(Media3Player.STATE_BUFFERING)
+        repeat(4) { step ->
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(19))
+            `when`(fixture.engine.bufferedPosition).thenReturn((step + 1) * 1_000L)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        }
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun initialStallWaitsForMatchingMetadataAndStopsWhenPaused() {
+        val fixture = Fixture()
+        `when`(fixture.item.url).thenReturn("https://www.youtube.com/watch?v=anotherLive")
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(40))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        `when`(fixture.item.url).thenReturn(fixture.info.url)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20))
+        `when`(fixture.player.playWhenReady).thenReturn(false)
+        fixture.controller.onPlayWhenReadyChanged(false)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(40))
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        fixture.controller.resetRecovery()
+    }
+
     private class Fixture {
         val player = mock(Player::class.java)
         val engine = mock(ExoPlayer::class.java)

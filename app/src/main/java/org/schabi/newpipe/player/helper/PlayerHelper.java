@@ -24,8 +24,6 @@ import androidx.preference.PreferenceManager;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
-import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection;
-import androidx.media3.exoplayer.trackselection.ExoTrackSelection;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.AspectRatioFrameLayout.ResizeMode;
 import androidx.media3.ui.CaptionStyleCompat;
@@ -341,15 +339,6 @@ public final class PlayerHelper {
 
     public static long getPreferredFileSize() {
         return 2 * 1024 * 1024L; // ExoPlayer CacheDataSink.MIN_RECOMMENDED_FRAGMENT_SIZE
-    }
-
-    @NonNull
-    public static ExoTrackSelection.Factory getQualitySelector() {
-        return new AdaptiveTrackSelection.Factory(
-                1000,
-                AdaptiveTrackSelection.DEFAULT_MAX_DURATION_FOR_QUALITY_DECREASE_MS,
-                AdaptiveTrackSelection.DEFAULT_MIN_DURATION_TO_RETAIN_AFTER_DISCARD_MS,
-                AdaptiveTrackSelection.DEFAULT_BANDWIDTH_FRACTION);
     }
 
     @NonNull

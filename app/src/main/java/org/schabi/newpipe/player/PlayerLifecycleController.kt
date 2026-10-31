@@ -219,7 +219,7 @@ internal class PlayerLifecycleController(
         if (Player.DEBUG) {
             Log.d(Player.TAG, "initPlayer() called with: playOnReady = [$playOnReady]")
         }
-        val trackSelector = DefaultTrackSelector(context, PlayerHelper.getQualitySelector()).apply {
+        val trackSelector = DefaultTrackSelector(context, org.schabi.newpipe.player.helper.PlaybackQualitySelection.create()).apply {
             if (trackSelectionParameters != null) {
                 setParameters(trackSelectionParameters)
             }

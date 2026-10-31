@@ -187,13 +187,20 @@ internal class PlayerErrorController(
                 ) {
                     liveDashRefreshGuard.reset()
                 }
-                if (key == null || (key != lastPlayingLiveKey && key != recoveringLiveKey) ||
+                if (key == null ||
                     !player.playWhenReady || item == null || !isRecoverableLiveManifest(item) ||
                     pendingLiveStallRecovery != null
                 ) {
                     return
                 }
 
+                // Initial manifest/segment loading gets more time than a playback interruption.
+                // Metadata can arrive after BUFFERING; onEvents rechecks eligibility then.
+                val timeout = if (key != lastPlayingLiveKey && key != recoveringLiveKey) {
+                    LIVE_STARTUP_TIMEOUT_MILLIS
+                } else {
+                    LIVE_STALL_TIMEOUT_MILLIS
+                }
                 var lastBufferedPosition = player.exoPlayer.bufferedPosition
                 var lastPlaybackPosition = player.exoPlayer.currentPosition
                 var lastProgressAt = SystemClock.elapsedRealtime()
@@ -222,7 +229,7 @@ internal class PlayerErrorController(
                         }
                         lastBufferedPosition = engine.bufferedPosition
                         lastPlaybackPosition = engine.currentPosition
-                        if (now - lastProgressAt < LIVE_STALL_TIMEOUT_MILLIS) {
+                        if (now - lastProgressAt < timeout) {
                             pendingLiveStallRecovery = this
                             recoveryHandler.postDelayed(this, LIVE_STALL_POLL_MILLIS)
                             return
@@ -286,7 +293,8 @@ internal class PlayerErrorController(
 
     private fun isRecoverableLiveManifest(item: PlayQueueItem): Boolean {
         val info = player.currentStreamInfo.orElse(null) ?: return false
-        return info.streamType == StreamType.LIVE_STREAM &&
+        return info.url == item.url && info.serviceId == item.serviceId &&
+            info.streamType == StreamType.LIVE_STREAM &&
             PlayerHttpErrorRecovery.isYouTubeService(item.serviceId) &&
             PlaybackResolver.isManifestOnlyYoutubeLive(info) &&
             player.videoPlayerSelected()
@@ -605,6 +613,7 @@ internal class PlayerErrorController(
     private companion object {
         const val LIVE_STALL_POLL_MILLIS = 1_000L
         const val LIVE_STALL_TIMEOUT_MILLIS = 10_000L
+        const val LIVE_STARTUP_TIMEOUT_MILLIS = 30_000L
         const val LIVE_RECOVERY_STABLE_MILLIS = 30_000L
     }
 }
