@@ -47,6 +47,7 @@ object ServiceHelper {
             6 -> R.drawable.ic_niconico
             7 -> R.drawable.ic_placeholder_bitchute
             8 -> R.drawable.ic_placeholder_rumble
+            ServiceList.Odysee.serviceId -> R.drawable.ic_placeholder_odysee
             else -> R.drawable.ic_circle
         }
     }
