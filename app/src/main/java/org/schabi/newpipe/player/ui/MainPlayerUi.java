@@ -142,10 +142,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     }
 
     /**
-     * Open fullscreen on tablets where the option to have the main player start automatically in
-     * fullscreen mode is on. Rotating the device to landscape is already done in {@link
-     * VideoDetailFragment#openVideoPlayer(boolean)} when the thumbnail is clicked, and that's
-     * enough for phones, but not for tablets since the mini player can be also shown in landscape.
+     * Preserve TV and tablet startup behavior. Phone startup requests are applied by the detail
+     * fragment after attachment, with orientation determined by the video dimensions.
      */
     private void directlyOpenFullscreenIfNeeded() {
         if (DeviceUtils.isTv(context)
@@ -169,6 +167,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
         initVideoPlayer();
         directlyOpenFullscreenIfNeeded();
+        // A reused UI must retry attachment after the intent installs the new queue, so an
+        // explicit startup fullscreen request cannot be consumed by the previous video.
+        player.getFragmentListener().ifPresent(PlayerServiceEventListener::onViewCreated);
         // Replaying the current item can reuse the engine and its retained SurfaceView.
         restoreVideoSurfaceAfterLayoutTransition();
         if (shouldRequestPlaybackButtonFocus()) {

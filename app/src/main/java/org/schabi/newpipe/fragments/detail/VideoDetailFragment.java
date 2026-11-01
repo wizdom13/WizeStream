@@ -128,6 +128,7 @@ import org.schabi.newpipe.player.playqueue.TimestampedPlayQueue;
 import org.schabi.newpipe.player.ui.FullscreenCommentsSidebar;
 import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
+import org.schabi.newpipe.player.ui.StartFullscreenRequest;
 import org.schabi.newpipe.player.ui.TvFullscreenFocusGuard;
 import org.schabi.newpipe.player.ui.VideoPlayerUi;
 import org.schabi.newpipe.util.AiSListContentHelper;
@@ -314,6 +315,7 @@ public final class VideoDetailFragment
     private int viewPagerBaseBottomMargin;
     private boolean detailLayoutRecreationPending;
     private boolean detailLayoutRecreationRequested;
+    private final StartFullscreenRequest startFullscreenRequest = new StartFullscreenRequest();
     private int pendingFullscreenOrientation = Configuration.ORIENTATION_UNDEFINED;
     private int pendingFullscreenState = FullscreenOrientationPolicy.KEEP_FULLSCREEN_STATE;
     @Nullable
@@ -1869,11 +1871,11 @@ public final class VideoDetailFragment
     }
 
     /**
-     * Opens the video player, in fullscreen if needed. In order to open fullscreen, the activity
-     * is toggled to landscape orientation (which will then cause fullscreen mode).
+     * Opens the video player, retaining an explicit fullscreen request until its view is attached.
+     * Content dimensions determine the fullscreen orientation once they are available.
      *
-     * @param directlyFullscreenIfApplicable whether to open fullscreen if we are not already
-     *                                       in landscape and screen orientation is locked
+     * @param directlyFullscreenIfApplicable whether to open fullscreen when system rotation
+     *                                       is locked
      */
     public void openVideoPlayer(final boolean directlyFullscreenIfApplicable) {
         if (showAiPlaybackWarningIfNeeded(
@@ -1881,26 +1883,11 @@ public final class VideoDetailFragment
             return;
         }
 
-        if (directlyFullscreenIfApplicable
-                && !DeviceUtils.isLandscape(requireContext())
-                && PlayerHelper.globalScreenOrientationLocked(requireContext())) {
-            // Make sure the bottom sheet turns out expanded. When this code kicks in the bottom
-            // sheet could not have fully expanded yet, and thus be in the STATE_SETTLING state.
-            // When the activity is rotated, and its state is saved and then restored, the bottom
-            // sheet would forget what it was doing, since even if STATE_SETTLING is restored, it
-            // doesn't tell which state it was settling to, and thus the bottom sheet settles to
-            // STATE_COLLAPSED. This can be solved by manually setting the state that will be
-            // restored (i.e. bottomSheetState) to STATE_EXPANDED.
-            updateBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
-            // toggle landscape in order to open directly in fullscreen
-            onScreenRotationButtonClicked(true);
-        }
-
         if (PreferenceManager.getDefaultSharedPreferences(activity)
                 .getBoolean(this.getString(R.string.use_external_video_player_key), false)) {
             showExternalVideoPlaybackDialog();
         } else {
-            replaceQueueIfUserConfirms(this::openMainPlayer);
+            replaceQueueIfUserConfirms(() -> openMainPlayer(directlyFullscreenIfApplicable));
         }
     }
 
@@ -1908,8 +1895,8 @@ public final class VideoDetailFragment
      * If the option to start directly fullscreen is enabled, or if {@code forceFullscreen} is
      * {@code true} (e.g. when switching from popup player to main player with a different video),
      * calls {@link #openVideoPlayer(boolean)} with {@code directlyFullscreenIfApplicable = true},
-     * so that if the user is not already in landscape and he has screen orientation locked the
-     * activity rotates and fullscreen starts. Otherwise, if the option to start directly fullscreen
+     * so that fullscreen starts in the video's orientation when system rotation is locked.
+     * Otherwise, if the option to start directly fullscreen
      * is disabled and {@code forceFullscreen} is {@code false}, calls
      * {@link #openVideoPlayer(boolean)} with {@code directlyFullscreenIfApplicable = false},
      * hence preventing it from going directly fullscreen.
@@ -1945,16 +1932,22 @@ public final class VideoDetailFragment
         }
     }
 
-    private void openMainPlayer() {
+    private void openMainPlayer(final boolean directlyFullscreenIfApplicable) {
+        final PlayQueue queue = currentInfo == null && currentLocalItem == null
+                ? null : setupPlayQueueForIntent(false);
+        if (queue != null && directlyFullscreenIfApplicable
+                && PlayerHelper.globalScreenOrientationLocked(requireContext())) {
+            updateBottomSheetState(BottomSheetBehavior.STATE_EXPANDED);
+            startFullscreenRequest.request(queue.getItem());
+        }
         if (!isPlayerServiceAvailable()) {
             playerHolder.startService(autoPlayEnabled, this);
             return;
         }
-        if (currentInfo == null && currentLocalItem == null) {
+        if (queue == null) {
             return;
         }
 
-        final PlayQueue queue = setupPlayQueueForIntent(false);
         tryAddVideoPlayerView();
 
         final Context context = requireContext();
@@ -2082,6 +2075,8 @@ public final class VideoDetailFragment
                     // requested fullscreen transition only after the rebuilt layout and surface
                     // are attached, so the request is not lost and the old surface dimensions
                     // are not cached.
+                    startFullscreenRequest.apply(playerUi,
+                            () -> onScreenRotationButtonClicked(true));
                     syncFullscreenWithOrientation(Optional.of(playerUi));
                 }
             });
