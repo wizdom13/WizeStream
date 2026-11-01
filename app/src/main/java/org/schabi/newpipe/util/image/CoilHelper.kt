@@ -2,6 +2,7 @@ package org.schabi.newpipe.util.image
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -267,7 +268,7 @@ object CoilHelper {
         target.context.imageLoader.enqueue(request)
     }
 
-    private fun getImageRequest(
+    internal fun getImageRequest(
         context: Context,
         url: String?,
         @DrawableRes placeholderResId: Int,
@@ -278,13 +279,17 @@ object CoilHelper {
         // for URLs stored in the database)
         val takenUrl = url?.takeIf { it.isNotEmpty() && ImageStrategy.shouldLoadImages() }
 
-        val softwareBackdrop = org.schabi.newpipe.themes.ThemeChrome.requiresSoftwareImages(context)
+        // Android 10 detail panels use a software layer to prevent text flicker. Any image
+        // loaded here can later be reused in that panel, so its cached bitmap must be drawable
+        // on a software canvas even when the current target is hardware accelerated.
+        val softwareImages = Build.VERSION.SDK_INT == Build.VERSION_CODES.Q ||
+            org.schabi.newpipe.themes.ThemeChrome.requiresSoftwareImages(context)
         return ImageRequest
             .Builder(context)
-            .allowHardware(!softwareBackdrop)
+            .allowHardware(!softwareImages)
             .data(takenUrl)
             .error(placeholderResId)
-            .memoryCacheKey(takenUrl?.let { if (softwareBackdrop) "wizestream-software-backdrop:$it" else it })
+            .memoryCacheKey(takenUrl?.let { if (softwareImages) "wizestream-software-backdrop:$it" else it })
             .diskCacheKey(takenUrl)
             .apply {
                 if (takenUrl != null || showPlaceholderWhileLoading) {
