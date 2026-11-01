@@ -36,6 +36,7 @@ import org.schabi.newpipe.player.Player
 import org.schabi.newpipe.util.ListHelper
 import org.schabi.newpipe.util.StreamTypeUtil
 import org.schabi.newpipe.util.external_communication.ShareUtils
+import org.schabi.newpipe.util.external_communication.TubeBeamUtils
 
 /** Application-scoped discovery and playback handoff for FCast-compatible TV receivers. */
 object FCastManager {
@@ -63,9 +64,13 @@ object FCastManager {
     @JvmStatic
     fun canCast(context: Context, info: StreamInfo): Boolean = isAvailable() && selectSource(context, info) != null
 
+    /** Whether TubeBeam is installed and can forward this stream to SmartTube on an Android TV. */
+    @JvmStatic
+    fun canSendToTv(context: Context, info: StreamInfo): Boolean = TubeBeamUtils.shouldShowSendToTv(context, info.serviceId)
+
     @JvmStatic
     fun showDevicePicker(context: Context, info: StreamInfo, localPlayer: Player?) {
-        if (!isAvailable()) return
+        if (!isAvailable() && !canSendToTv(context, info)) return
         val connectedDevice = activeDevice
         val connectedName = activeDeviceName
         if (connectedDevice?.isReady() == true && connectedName != null) {
@@ -76,13 +81,23 @@ object FCastManager {
     }
 
     private fun showAvailableDevices(context: Context, info: StreamInfo, localPlayer: Player?) {
-        val source = selectSource(context, info)
-        if (source == null) {
+        val source = if (isAvailable()) selectSource(context, info) else null
+        // TubeBeam rows are fixed at the top of the list; discovered receivers follow them.
+        val tubeBeamLabels = if (canSendToTv(context, info)) {
+            val appName = context.getString(R.string.tubebeam_app_name)
+            listOf(
+                "$appName · ${context.getString(R.string.send_to_tv_title)}",
+                "$appName · ${context.getString(R.string.queue_on_tv_title)}"
+            )
+        } else {
+            emptyList()
+        }
+        if (source == null && tubeBeamLabels.isEmpty()) {
             Toast.makeText(context, R.string.cast_no_compatible_stream, Toast.LENGTH_LONG).show()
             return
         }
 
-        startDiscovery(context.applicationContext)
+        if (source != null) startDiscovery(context.applicationContext)
         val availableDevices = mutableListOf<DeviceInfo>()
         val labels = mutableListOf<String>()
         val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, labels)
@@ -90,8 +105,12 @@ object FCastManager {
         val dialog = MaterialAlertDialogBuilder(context)
             .setTitle(R.string.cast_to_tv)
             .setAdapter(adapter) { _, position ->
-                availableDevices.getOrNull(position)?.let {
-                    connect(context, it, source, createPlaybackHandoff(info, localPlayer))
+                if (position < tubeBeamLabels.size) {
+                    sendToTubeBeam(context, info, localPlayer, enqueue = position == 1)
+                } else if (source != null) {
+                    availableDevices.getOrNull(position - tubeBeamLabels.size)?.let {
+                        connect(context, it, source, createPlaybackHandoff(info, localPlayer))
+                    }
                 }
             }
             .setNeutralButton(R.string.cast_receiver_help) { _, _ ->
@@ -102,12 +121,13 @@ object FCastManager {
 
         observer = { currentDevices ->
             availableDevices.clear()
-            availableDevices.addAll(currentDevices.filter(::isResolved))
+            if (source != null) availableDevices.addAll(currentDevices.filter(::isResolved))
             labels.clear()
+            labels.addAll(tubeBeamLabels)
             labels.addAll(availableDevices.map(::deviceLabel))
             adapter.notifyDataSetChanged()
             dialog.setTitle(
-                if (availableDevices.isEmpty()) {
+                if (source != null && availableDevices.isEmpty()) {
                     R.string.cast_searching
                 } else {
                     R.string.cast_to_tv
@@ -328,6 +348,17 @@ object FCastManager {
                 pendingHandoff?.cancel()
                 pendingHandoff = null
             }
+        }
+    }
+
+    /**
+     * Hands the stream to TubeBeam, which forwards it to SmartTube on the TV. When the stream is
+     * being played locally and is sent (not queued), local playback is paused like for a cast.
+     */
+    private fun sendToTubeBeam(context: Context, info: StreamInfo, localPlayer: Player?, enqueue: Boolean) {
+        TubeBeamUtils.sendToTv(context, info.url, enqueue)
+        if (!enqueue && localPlayer != null && isSameStream(localPlayer, info) && localPlayer.isPlaying) {
+            localPlayer.pause()
         }
     }
 
