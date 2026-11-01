@@ -35,6 +35,7 @@ import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
+import org.schabi.newpipe.util.external_communication.TubeBeamUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -351,6 +352,19 @@ public final class InfoItemDialog {
         }
 
         /**
+         * Adds the {@link StreamDialogDefaultEntry#SEND_TO_TV} and
+         * {@link StreamDialogDefaultEntry#QUEUE_ON_TV} entries if TubeBeam is installed.
+         * @return the current {@link Builder} instance
+         */
+        public Builder addSendToTvEntriesIfNeeded() {
+            if (TubeBeamUtils.shouldShowSendToTv(context, infoItem.getServiceId())) {
+                addEntry(StreamDialogDefaultEntry.SEND_TO_TV);
+                addEntry(StreamDialogDefaultEntry.QUEUE_ON_TV);
+            }
+            return this;
+        }
+
+        /**
          * Add the entries which are usually at the top of the action list.
          * <br/>
          * This method adds the "enqueue" (see {@link #addEnqueueEntriesIfNeeded()})
@@ -386,6 +400,7 @@ public final class InfoItemDialog {
                     StreamDialogDefaultEntry.BLOCK_CHANNEL
             );
             addPlayWithKodiEntryIfNeeded();
+            addSendToTvEntriesIfNeeded();
             addLearningContentEntryIfNeeded();
             if (infoItem.getServiceId() >= 0
                     && KidsMode.isSubscriptionAllowed(context, infoItem.getServiceId())) {
