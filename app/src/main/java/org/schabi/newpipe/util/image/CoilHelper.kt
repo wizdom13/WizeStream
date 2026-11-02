@@ -2,6 +2,7 @@ package org.schabi.newpipe.util.image
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -278,13 +279,13 @@ object CoilHelper {
         // for URLs stored in the database)
         val takenUrl = url?.takeIf { it.isNotEmpty() && ImageStrategy.shouldLoadImages() }
 
-        val softwareBackdrop = org.schabi.newpipe.themes.ThemeChrome.requiresSoftwareImages(context)
+        val requiresSoftwareBitmap = requiresSoftwareBitmap(context)
         return ImageRequest
             .Builder(context)
-            .allowHardware(!softwareBackdrop)
+            .allowHardware(!requiresSoftwareBitmap)
             .data(takenUrl)
             .error(placeholderResId)
-            .memoryCacheKey(takenUrl?.let { if (softwareBackdrop) "wizestream-software-backdrop:$it" else it })
+            .memoryCacheKey(takenUrl?.let { if (requiresSoftwareBitmap) "wizestream-software-image:$it" else it })
             .diskCacheKey(takenUrl)
             .apply {
                 if (takenUrl != null || showPlaceholderWhileLoading) {
@@ -293,6 +294,12 @@ object CoilHelper {
             }
     }
 }
+
+internal fun requiresSoftwareBitmap(context: Context): Boolean =
+    // Android 10 detail controls use a bounded software layer to avoid lost cached draws.
+    // A hardware bitmap in that subtree crashes BaseCanvas while the layer is rasterized.
+    Build.VERSION.SDK_INT == Build.VERSION_CODES.Q ||
+        org.schabi.newpipe.themes.ThemeChrome.requiresSoftwareImages(context)
 
 internal fun avatarCandidateUrls(images: List<Image?>?): List<String> = imageCandidateUrls(images)
 
