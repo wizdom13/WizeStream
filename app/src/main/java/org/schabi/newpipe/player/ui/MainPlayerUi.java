@@ -441,6 +441,8 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         if (mode.rendersVideo()) {
             setupVideoSurfaceIfNeeded();
         }
+        player.getFragmentListener().ifPresent(
+                listener -> listener.onPlaybackPresentationModeChanged(mode));
     }
 
     private void updateListenModeUi(@NonNull final PlaybackPresentationMode mode) {

@@ -10,8 +10,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.R
@@ -52,8 +54,11 @@ class MinimizedVideoSurfaceTest {
             surface.setUserTransform(2f, 0f, 0f)
             val minimized = MinimizedVideoSurface()
             repeat(3) {
-                minimized.show(surface, host)
-                minimized.show(surface, host)
+                assertTrue(minimized.show(surface, host))
+                // A second call in the same state must not reparent (and therefore must not
+                // force another decoder rebind).
+                assertFalse(minimized.show(surface, host))
+                assertTrue(minimized.isHosting())
                 assertSame(host, surface.parent)
                 assertEquals(1, host.childCount)
                 surface.measure(View.MeasureSpec.makeMeasureSpec(106, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY))
@@ -61,7 +66,9 @@ class MinimizedVideoSurfaceTest {
                 assertEquals(33, surface.measuredWidth)
                 assertEquals(60, surface.measuredHeight)
                 assertEquals(1f, surface.scaleX, 0f)
-                minimized.restore()
+                assertTrue(minimized.restore())
+                assertFalse(minimized.isHosting())
+                assertFalse(minimized.restore())
                 assertSame(original, surface.parent)
                 assertSame(originalParams, surface.layoutParams)
                 assertEquals(2f, surface.userZoomScale, 0f)
