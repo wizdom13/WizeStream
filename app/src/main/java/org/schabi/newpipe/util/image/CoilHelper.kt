@@ -295,11 +295,12 @@ object CoilHelper {
     }
 }
 
-internal fun requiresSoftwareBitmap(context: Context): Boolean =
-    // Android 10 detail controls use a bounded software layer to avoid lost cached draws.
-    // A hardware bitmap in that subtree crashes BaseCanvas while the layer is rasterized.
-    Build.VERSION.SDK_INT == Build.VERSION_CODES.Q ||
+// Android 10 detail controls use a bounded software layer to avoid lost cached draws.
+// A hardware bitmap in that subtree crashes BaseCanvas while the layer is rasterized.
+internal fun requiresSoftwareBitmap(context: Context): Boolean {
+    return Build.VERSION.SDK_INT == Build.VERSION_CODES.Q ||
         org.schabi.newpipe.themes.ThemeChrome.requiresSoftwareImages(context)
+}
 
 internal fun avatarCandidateUrls(images: List<Image?>?): List<String> = imageCandidateUrls(images)
 
