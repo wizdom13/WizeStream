@@ -151,6 +151,7 @@ open class App :
             )
         )
 
+        org.schabi.newpipe.local.cleanup.ExitCleanup.initialize(this)
         configureRxJavaErrorHandler()
         initializeDeviceSyncScheduling()
         org.schabi.newpipe.local.feed.service.BackgroundFeedRefreshWorker.initialize(this)
