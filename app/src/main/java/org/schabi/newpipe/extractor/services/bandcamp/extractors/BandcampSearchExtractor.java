@@ -30,7 +30,7 @@ public class BandcampSearchExtractor extends SearchExtractor {
     public InfoItemsPage<InfoItem> getPageInternal(final Page page)
             throws IOException, ExtractionException {
         final MultiInfoItemsCollector collector = new MultiInfoItemsCollector(getServiceId());
-        final Document d = Jsoup.parse(getDownloader().get(page.getUrl()).responseBody());
+        final Document d = Jsoup.parse(BandcampSearchRequests.fetch(getDownloader(), page.getUrl()));
 
         for (final Element searchResult : d.getElementsByClass("searchresult")) {
             final String type = searchResult.getElementsByClass("result-info").stream()
