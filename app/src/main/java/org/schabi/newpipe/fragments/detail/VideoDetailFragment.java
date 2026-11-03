@@ -110,6 +110,7 @@ import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
+import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerIntentType;
 import org.schabi.newpipe.player.PlayerService;
@@ -3129,6 +3130,15 @@ public final class VideoDetailFragment
         scrollToTop();
     }
 
+    @Override
+    public void onPlaybackPresentationModeChanged(@NonNull final PlaybackPresentationMode mode) {
+        // Switching between video/listen/background modes changes whether the mini player
+        // should host the retained surface or fall back to the thumbnail.
+        if (binding != null) {
+            updateMinimizedVideo();
+        }
+    }
+
     void refreshFullscreenLayout(final boolean fullscreen) {
         if (tvFullscreenFocusGuard == null) {
             tvFullscreenFocusGuard = new TvFullscreenFocusGuard(binding);
@@ -3839,14 +3849,35 @@ public final class VideoDetailFragment
         final Optional<MainPlayerUi> ui = player == null ? Optional.empty()
                 : player.UIs().get(MainPlayerUi.class);
         if (minimized && ui.isPresent()) {
-            binding.overlayVideo.setVisibility(View.VISIBLE);
-            binding.overlayThumbnail.setAlpha(0f);
-            binding.overlayLayout.setAlpha(1f);
-            minimizedVideoSurface.show(ui.get().getBinding().surfaceView, binding.overlayVideo);
+            final MainPlayerUi mainPlayerUi = ui.get();
+            final boolean moved = minimizedVideoSurface.show(
+                    mainPlayerUi.getBinding().surfaceView, binding.overlayVideo);
+            if (minimizedVideoSurface.isHosting()) {
+                binding.overlayVideo.setVisibility(View.VISIBLE);
+                binding.overlayThumbnail.setAlpha(0f);
+                binding.overlayLayout.setAlpha(1f);
+                if (moved) {
+                    // Detaching and reattaching a SurfaceView can destroy its surface without a
+                    // matching surfaceCreated callback, leaving the decoder output black.
+                    // Rebind explicitly once the move has reached the UI queue.
+                    mainPlayerUi.restoreVideoSurfaceAfterLayoutTransition();
+                }
+            } else {
+                // The player view has not been attached yet, so there is no surface to show.
+                // Fall back to the thumbnail instead of leaving an empty visible host.
+                minimizedVideoSurface.restore();
+                binding.overlayVideo.setVisibility(View.GONE);
+                binding.overlayThumbnail.setAlpha(1f);
+            }
         } else {
-            minimizedVideoSurface.restore();
+            final boolean restored = minimizedVideoSurface.restore();
             binding.overlayVideo.setVisibility(View.GONE);
             binding.overlayThumbnail.setAlpha(1f);
+            if (restored) {
+                // Rebind after returning the surface to the full player as well, otherwise the
+                // expanded player can stay black until the next surface callback.
+                ui.ifPresent(MainPlayerUi::restoreVideoSurfaceAfterLayoutTransition);
+            }
         }
     }
 
