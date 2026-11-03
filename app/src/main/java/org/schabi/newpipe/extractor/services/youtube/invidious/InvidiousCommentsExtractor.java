@@ -98,7 +98,7 @@ public final class InvidiousCommentsExtractor extends CommentsExtractor {
                 }
                 @Override
                 public List<Image> getUploaderAvatars() {
-                    return api.images(comment.getArray("authorThumbnails"));
+                    return InvidiousMetadata.commentAvatars(comment, api);
                 }
                 @Override
                 public DateWrapper getUploadDate() {
