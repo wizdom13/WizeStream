@@ -16,6 +16,7 @@ import androidx.media3.common.PlaybackParameters;
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.MainActivity;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.PlayerService;
 import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.PlayerType;
@@ -337,6 +338,14 @@ public final class PlayerHolder {
                 public void onFullscreenStateChanged(final boolean fullscreen) {
                     if (listener != null) {
                         listener.onFullscreenStateChanged(fullscreen);
+                    }
+                }
+
+                @Override
+                public void onPlaybackPresentationModeChanged(
+                        final PlaybackPresentationMode mode) {
+                    if (listener != null) {
+                        listener.onPlaybackPresentationModeChanged(mode);
                     }
                 }
 
