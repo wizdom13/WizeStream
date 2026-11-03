@@ -25,12 +25,23 @@ internal class PlayerMedia3ListenerController(
     private val errorController: PlayerErrorController,
     private val sleepTimerController: SleepTimerPlaybackController
 ) {
+    private var refreshVideoGeometry = false
+
     fun onAudioSessionIdChanged(audioSessionId: Int) {
         audioController.onAudioSessionChanged(audioSessionId)
     }
 
     fun onEvents(media3Player: Media3Player) {
         metadataController.onEvents(media3Player)
+        // A seamless item transition can reuse the decoder without another size or first-frame
+        // callback. Read the settled player state after the transition cleared the old geometry.
+        if (refreshVideoGeometry) {
+            val size = media3Player.videoSize
+            if (size.width > 0 && size.height > 0) {
+                refreshVideoGeometry = false
+                onVideoSizeChanged(size)
+            }
+        }
         // StreamInfo may arrive in onEvents after the BUFFERING callback. Recheck the
         // watchdog once metadata is available, including a fallback that never reaches READY.
         if (media3Player.playbackState == Media3Player.STATE_BUFFERING) {
@@ -108,6 +119,7 @@ internal class PlayerMedia3ListenerController(
         if (newIndex != oldPosition.mediaItemIndex) {
             player.liveQualityController.resetForNewItem()
             player.UIs().call(PlayerUi::onMediaItemTransition)
+            refreshVideoGeometry = true
             errorController.resetRecovery()
         }
         if (reason == Media3Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
