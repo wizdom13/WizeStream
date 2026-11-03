@@ -29,6 +29,7 @@ import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
+import org.schabi.newpipe.util.external_communication.TubeBeamUtils;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.Collections;
@@ -136,6 +137,13 @@ public enum StreamDialogDefaultEntry {
 
     PLAY_WITH_KODI(R.string.play_with_kodi_title, (fragment, item) ->
             KoreUtils.playWithKore(fragment.requireContext(), Uri.parse(item.getUrl()))),
+
+    /**
+     * Sends the stream to a TV through the TubeBeam app, see
+     * {@link TubeBeamUtils#sendToTv(android.content.Context, String)}.
+     */
+    SEND_TO_TV(R.string.send_to_tv_title, (fragment, item) ->
+            TubeBeamUtils.sendToTv(fragment.requireContext(), item.getUrl())),
 
     COPY_TITLE(R.string.copy_video_title, (fragment, item) ->
             ShareUtils.copyToClipboard(fragment.requireContext(), item.getName())),

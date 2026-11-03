@@ -36,6 +36,7 @@ import org.schabi.newpipe.player.Player
 import org.schabi.newpipe.util.ListHelper
 import org.schabi.newpipe.util.StreamTypeUtil
 import org.schabi.newpipe.util.external_communication.ShareUtils
+import org.schabi.newpipe.util.external_communication.TubeBeamUtils
 
 /** Application-scoped discovery and playback handoff for FCast-compatible TV receivers. */
 object FCastManager {
@@ -63,9 +64,13 @@ object FCastManager {
     @JvmStatic
     fun canCast(context: Context, info: StreamInfo): Boolean = isAvailable() && selectSource(context, info) != null
 
+    /** Whether TubeBeam is installed and can forward this stream to SmartTube on an Android TV. */
+    @JvmStatic
+    fun canSendToTv(context: Context, info: StreamInfo): Boolean = TubeBeamUtils.shouldShowSendToTv(context, info.serviceId)
+
     @JvmStatic
     fun showDevicePicker(context: Context, info: StreamInfo, localPlayer: Player?) {
-        if (!isAvailable()) return
+        if (!isAvailable() && !canSendToTv(context, info)) return
         val connectedDevice = activeDevice
         val connectedName = activeDeviceName
         if (connectedDevice?.isReady() == true && connectedName != null) {
@@ -76,13 +81,19 @@ object FCastManager {
     }
 
     private fun showAvailableDevices(context: Context, info: StreamInfo, localPlayer: Player?) {
-        val source = selectSource(context, info)
-        if (source == null) {
+        val source = if (isAvailable()) selectSource(context, info) else null
+        // TubeBeam rows are fixed at the top of the list; discovered receivers follow them.
+        val tubeBeamLabels = if (canSendToTv(context, info)) {
+            listOf(context.getString(R.string.send_to_tv_title))
+        } else {
+            emptyList()
+        }
+        if (source == null && tubeBeamLabels.isEmpty()) {
             Toast.makeText(context, R.string.cast_no_compatible_stream, Toast.LENGTH_LONG).show()
             return
         }
 
-        startDiscovery(context.applicationContext)
+        if (source != null) startDiscovery(context.applicationContext)
         val availableDevices = mutableListOf<DeviceInfo>()
         val labels = mutableListOf<String>()
         val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, labels)
@@ -90,24 +101,43 @@ object FCastManager {
         val dialog = MaterialAlertDialogBuilder(context)
             .setTitle(R.string.cast_to_tv)
             .setAdapter(adapter) { _, position ->
-                availableDevices.getOrNull(position)?.let {
-                    connect(context, it, source, createPlaybackHandoff(info, localPlayer))
+                if (position < tubeBeamLabels.size) {
+                    sendToTubeBeam(context, info, localPlayer)
+                } else if (source != null) {
+                    availableDevices.getOrNull(position - tubeBeamLabels.size)?.let {
+                        connect(context, it, source, createPlaybackHandoff(info, localPlayer))
+                    }
                 }
             }
             .setNeutralButton(R.string.cast_receiver_help) { _, _ ->
-                ShareUtils.openUrlInApp(context, RECEIVER_URL)
+                if (tubeBeamLabels.isEmpty()) {
+                    ShareUtils.openUrlInApp(context, RECEIVER_URL)
+                } else {
+                    MaterialAlertDialogBuilder(context)
+                        .setTitle(R.string.cast_receiver_help)
+                        .setMessage(R.string.tubebeam_setup_help)
+                        .setPositiveButton(R.string.tubebeam_app_name) { _, _ ->
+                            ShareUtils.openUrlInApp(context, "https://github.com/jagjordi/tubebeam#tv-setup-once-per-tv")
+                        }
+                        .setNeutralButton(R.string.tubebeam_fcast_help) { _, _ ->
+                            ShareUtils.openUrlInApp(context, RECEIVER_URL)
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+                }
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
 
         observer = { currentDevices ->
             availableDevices.clear()
-            availableDevices.addAll(currentDevices.filter(::isResolved))
+            if (source != null) availableDevices.addAll(currentDevices.filter(::isResolved))
             labels.clear()
+            labels.addAll(tubeBeamLabels)
             labels.addAll(availableDevices.map(::deviceLabel))
             adapter.notifyDataSetChanged()
             dialog.setTitle(
-                if (availableDevices.isEmpty()) {
+                if (source != null && availableDevices.isEmpty()) {
                     R.string.cast_searching
                 } else {
                     R.string.cast_to_tv
@@ -329,6 +359,18 @@ object FCastManager {
                 pendingHandoff = null
             }
         }
+    }
+
+    /** TubeBeam cannot confirm remote playback: cancellation and failures must leave audio alone. */
+    internal fun sendToTubeBeam(context: Context, info: StreamInfo, localPlayer: Player?): Boolean {
+        val position = if (localPlayer != null && isSameStream(localPlayer, info) &&
+            !StreamTypeUtil.isLiveStream(info.streamType) && !localPlayer.exoPlayerIsNull()
+        ) {
+            localPlayer.exoPlayer.currentPosition.coerceAtLeast(0L)
+        } else {
+            null
+        }
+        return TubeBeamUtils.sendToTv(context, info.url, position)
     }
 
     private fun createPlaybackHandoff(info: StreamInfo, player: Player?): PlaybackHandoff? {
