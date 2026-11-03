@@ -52,6 +52,38 @@
 
     <PreferenceCategory
         android:layout="@layout/settings_category_header_layout"
+        android:title="@string/exit_cleanup_title"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:key="exit_cleanup_enabled"
+            android:defaultValue="false"
+            android:title="@string/exit_cleanup_metadata_title"
+            android:summary="@string/exit_cleanup_metadata_summary"
+            app:singleLineTitle="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="exit_cleanup_cookies"
+            android:defaultValue="false"
+            android:dependency="exit_cleanup_enabled"
+            android:title="@string/exit_cleanup_cookies_title"
+            android:summary="@string/exit_cleanup_cookies_summary"
+            app:singleLineTitle="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="exit_cleanup_positions"
+            android:defaultValue="false"
+            android:dependency="exit_cleanup_enabled"
+            android:title="@string/exit_cleanup_positions_title"
+            android:summary="@string/exit_cleanup_positions_summary"
+            app:singleLineTitle="false"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:layout="@layout/settings_category_header_layout"
         android:title="@string/settings_category_clear_data_title"
         app:singleLineTitle="false"
         app:iconSpaceReserved="false">

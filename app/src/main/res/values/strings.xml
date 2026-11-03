@@ -1857,4 +1857,12 @@
 Add the For you tab under Settings → Content → Customize home and move it first to use it as your home page. Long-press a video to exclude it.</string>
     <string name="local_recommendations_empty">Enable Local recommendations in the menu, then browse and watch videos to build your feed. It is hidden during Incognito.</string>
     <string name="local_recommendations_reset_help">Clear this profile’s learned interests, recommendation pool, and exclusions? Your watch and search history will not be deleted.</string>
+    <string name="exit_cleanup_title">Clear on exit</string>
+    <string name="exit_cleanup_metadata_title">Clear cached metadata on exit</string>
+    <string name="exit_cleanup_metadata_summary">Clear in-memory video and channel metadata after the app has been in the background for at least 30 seconds and the player is closed. Keeps feed data, history, playlists and downloads. Android may delay cleanup.</string>
+    <string name="exit_cleanup_cookies_title">Also clear reCAPTCHA cookies</string>
+    <string name="exit_cleanup_cookies_summary">You may need to solve a CAPTCHA again. Other service cookies are kept.</string>
+    <string name="exit_cleanup_positions_title">Also clear playback positions</string>
+    <string name="exit_cleanup_positions_summary">Remove resume positions, watched-progress markers and saved queue recovery for the current profile. Watch history is kept. Deletions may sync to paired devices.</string>
+    <string name="exit_cleanup_positions_confirm">Automatically clear playback positions when leaving the app? This removes resume positions, watched-progress markers and saved queue recovery for the current profile. If progress sync is enabled, deletions may also reach paired devices.</string>
 </resources>

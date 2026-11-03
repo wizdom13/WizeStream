@@ -189,6 +189,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   changes; it disables YouTube search and subscription actions but does not filter video content
 - Enable Incognito to pause recording searches, watch history, playback progress, and learning activity
   across profiles and services; it does not make network requests anonymous
+- Optional **Clear on exit** in History and cache clears in-memory metadata after at least 30 seconds
+  in the background with the player closed. Separate opt-ins clear reCAPTCHA cookies or the current
+  profile’s playback positions and queue recovery; progress deletions follow device-sync settings.
+  Feed data, watch/search history, playlists, subscriptions and downloads are retained. Android may
+  delay cleanup; force-stopping the app prevents background work until it is opened again.
 
 ### Streaming and discovery
 
