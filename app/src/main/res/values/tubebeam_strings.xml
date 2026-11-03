@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tubebeam_launch_failed">Unable to open TubeBeam. Check that it is installed and enabled, then try again.</string>
+    <string name="tubebeam_fcast_help">FCast setup</string>
+    <string name="tubebeam_setup_help">TubeBeam sends YouTube links to SmartTube on an Android TV. Install and configure TubeBeam on your phone, install SmartTube on the TV, and enable network ADB debugging on a trusted home network. This is separate from Chromecast and FCast.
+
+WizeStream keeps local playback running because TubeBeam cannot confirm that the TV started playing. Pause locally after the TV starts.
+
+Queue on TV is not offered because stock SmartTube does not support it.</string>
+</resources>

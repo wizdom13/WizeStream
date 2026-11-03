@@ -32,6 +32,8 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
+        <!-- TubeBeam: "Send to TV" in the stream long-press menu -->
+        <package android:name="dev.tubebeam" />
     </queries>
 
     <uses-feature
