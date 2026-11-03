@@ -80,8 +80,7 @@ public final class InvidiousStreamExtractor extends StreamExtractor {
     }
     @Override
     public Description getDescription() {
-        // Plain text prevents inline images in description HTML from bypassing backend routing.
-        return new Description(video.getString("description", ""), Description.PLAIN_TEXT);
+        return InvidiousMetadata.description(video);
     }
     @Override
     public List<String> getTags() {
