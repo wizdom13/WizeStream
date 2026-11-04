@@ -186,7 +186,7 @@ internal class SubscriptionSortController(
     private fun rebuildRows() {
         rows = model.entries.filter { entry ->
             entry.separator != null || channels[entry.key]?.let {
-                scope.includes(it) && ContextualSearchHelper.matches(query, it.name, it.url)
+                scope.includes(it) && (SubscriptionSearch.matches(query, it) || ContextualSearchHelper.matches(query, it.url))
             } == true
         }
     }

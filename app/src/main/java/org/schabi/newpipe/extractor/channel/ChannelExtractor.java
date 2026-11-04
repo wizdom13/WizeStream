@@ -38,6 +38,11 @@ public abstract class ChannelExtractor extends ListExtractor<StreamInfoItem> {
 
     public static final long UNKNOWN_SUBSCRIBER_COUNT = -1;
 
+    @javax.annotation.Nullable
+    public String getHandle() throws ParsingException {
+        return null;
+    }
+
     public ChannelExtractor(final StreamingService service, final ListLinkHandler linkHandler) {
         super(service, linkHandler);
     }

@@ -47,6 +47,25 @@ class DatabaseMigrationTest {
     )
 
     @Test
+    fun migrate30to31PreservesSubscriptionMetadata() {
+        val old = testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_30)
+        old.execSQL("INSERT INTO subscriptions (uid, service_id, url, name, notification_mode) VALUES (42, 0, 'https://www.youtube.com/channel/UCtest', 'Travel', 0)")
+        old.close()
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_31,
+            true,
+            Migrations.MIGRATION_30_31
+        )
+        migrated.query("SELECT uid, name, handle FROM subscriptions").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(42L, cursor.getLong(0))
+            assertEquals("Travel", cursor.getString(1))
+            assertTrue(cursor.isNull(2))
+        }
+    }
+
+    @Test
     fun migrateDatabaseFrom2to3() {
         val databaseInV2 = testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_2)
 
@@ -1229,7 +1248,8 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_26_27,
                 Migrations.MIGRATION_27_28,
                 Migrations.MIGRATION_28_29,
-                Migrations.MIGRATION_29_30
+                Migrations.MIGRATION_29_30,
+                Migrations.MIGRATION_30_31
             )
             .build()
         testHelper.closeWhenFinished(database)

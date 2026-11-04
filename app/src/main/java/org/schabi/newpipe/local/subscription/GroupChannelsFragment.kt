@@ -121,7 +121,7 @@ class GroupChannelsFragment : Fragment() {
 
     private fun render(state: GroupChannelsViewModel.State) {
         val currentBinding = _binding ?: return
-        val channels = state.channels.filter { ContextualSearchHelper.matches(searchQuery, it.name) }
+        val channels = state.channels.filter { SubscriptionSearch.matches(searchQuery, it) }
         currentBinding.loadingProgressBar.isVisible = state.loading
         currentBinding.itemsList.isVisible = !state.loading && state.error == null && channels.isNotEmpty()
         currentBinding.emptyStateView.root.isVisible = !state.loading && state.error == null && channels.isEmpty()

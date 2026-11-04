@@ -352,7 +352,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   playlist, or download several items; **Select all loaded videos** affects the currently loaded list
 - Browse and play local audio and video files with search, filters, sorting, thumbnails, detailed
   metadata, folder grouping, exclusions, refresh/rescan controls, and main, background, or popup playback
-- Search channel names within a feed group from its channel-list toolbar, with instant local filtering
+- Search channel names and saved YouTube handles (with or without @, case-insensitively) in
+  Subscriptions and group-channel lists. Handles populate during full channel loads/refreshes;
+  fast feeds keep existing handles, and typing never triggers network requests.
+- Search within a feed group from its channel-list toolbar, with instant local filtering
   and support for the existing list/grid layout.
 - Search locally within subscriptions, playlists, feeds, watch history, and Downloads, then carry a
   query into the selected service's online search

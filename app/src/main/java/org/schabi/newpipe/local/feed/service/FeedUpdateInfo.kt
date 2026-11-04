@@ -27,7 +27,8 @@ data class FeedUpdateInfo(
     val description: String?,
     val subscriberCount: Long?,
     val streams: List<StreamInfoItem>,
-    val errors: List<Throwable>
+    val errors: List<Throwable>,
+    val handle: String? = null
 ) {
     constructor(
         subscription: SubscriptionEntity,
@@ -50,7 +51,8 @@ data class FeedUpdateInfo(
         description = (info as? ChannelInfo)?.description,
         subscriberCount = (info as? ChannelInfo)?.subscriberCount,
         streams = streams,
-        errors = errors
+        errors = errors,
+        handle = (info as? ChannelInfo)?.handle
     )
 
     /**

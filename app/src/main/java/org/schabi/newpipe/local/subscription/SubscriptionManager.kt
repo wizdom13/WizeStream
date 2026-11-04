@@ -109,6 +109,7 @@ class SubscriptionManager @JvmOverloads constructor(
                     requireNotNull(entity.url)
                 )
                     ?.let { existing ->
+                        entity.handle = entity.handle ?: existing.handle
                         entity.notificationMode = existing.notificationMode
                         entity.notificationKeywords = existing.notificationKeywords
                         entity.youtubeModeMask = existing.youtubeModeMask or
@@ -172,7 +173,8 @@ class SubscriptionManager @JvmOverloads constructor(
             info.name,
             ImageStrategy.imageListToDbUrl(info.avatars),
             info.description,
-            info.subscriberCount
+            info.subscriberCount,
+            info.handle
         )
     }
 
@@ -219,6 +221,7 @@ class SubscriptionManager @JvmOverloads constructor(
                 ?: return
 
         subscriptionEntity.name = info.name
+        info.handle?.let { subscriptionEntity.handle = it }
 
         // some services do not provide an avatar URL
         info.avatarUrl?.let { subscriptionEntity.avatarUrl = it }

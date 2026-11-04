@@ -489,6 +489,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     channel.setServiceId(info.getServiceId());
                     channel.setUrl(info.getUrl());
                     channel.setName(info.getName());
+                    channel.setHandle(info.getHandle());
                     channel.setAvatarUrl(ImageStrategy.imageListToDbUrl(info.getAvatars()));
                     channel.setDescription(ExtractorApiCompat.descriptionText(info));
                     channel.setSubscriberCount(info.getSubscriberCount());

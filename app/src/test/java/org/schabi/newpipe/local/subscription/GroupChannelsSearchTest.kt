@@ -31,6 +31,10 @@ class GroupChannelsSearchTest {
         assertEquals(2, itemCount(fragment))
         search.setQuery("  TRAVEL  ", false)
         assertEquals(1, itemCount(fragment))
+        search.setQuery("@HIDDENHANDLE", false)
+        assertEquals(1, itemCount(fragment))
+        search.setQuery("hiddenhandle", false)
+        assertEquals(1, itemCount(fragment))
         search.setQuery("missing", false)
         assertEquals(0, itemCount(fragment))
         assertEquals(activity.getString(R.string.search_no_results), fragment.requireView().findViewById<TextView>(R.id.empty_state_message).text)
@@ -69,7 +73,7 @@ class GroupChannelsSearchTest {
     }
 
     private fun channels() = listOf(
-        SubscriptionEntity(uid = 1, serviceId = 0, url = "https://example.org/travel", name = "Travel channel"),
+        SubscriptionEntity(uid = 1, serviceId = 0, url = "https://example.org/travel", name = "Travel channel", handle = "@HiddenHandle"),
         SubscriptionEntity(uid = 2, serviceId = 0, url = "https://example.org/music", name = "Music channel")
     )
 

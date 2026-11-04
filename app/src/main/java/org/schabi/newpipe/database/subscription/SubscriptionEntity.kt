@@ -66,7 +66,10 @@ data class SubscriptionEntity(
         name = SUBSCRIPTION_PROFILE_ID,
         defaultValue = "'00000000-0000-0000-0000-000000000000'"
     )
-    var profileId: String = DEFAULT_PROFILE_ID
+    var profileId: String = DEFAULT_PROFILE_ID,
+
+    @ColumnInfo(name = "handle")
+    var handle: String? = null
 ) {
     @Ignore
     fun toChannelInfoItem(): ChannelInfoItem {
@@ -107,6 +110,7 @@ data class SubscriptionEntity(
                 serviceId = info.serviceId,
                 url = info.url,
                 name = info.name,
+                handle = info.handle,
                 avatarUrl = ImageStrategy.imageListToDbUrl(info.avatars),
                 description = info.description,
                 subscriberCount = info.subscriberCount
