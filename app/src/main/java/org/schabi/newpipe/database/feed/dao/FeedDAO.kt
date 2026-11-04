@@ -117,7 +117,9 @@ abstract class FeedDAO {
         AND (
             :uploadDateBefore IS NULL
             OR s.upload_date IS NULL
-            OR s.upload_date < :uploadDateBefore
+            OR s.upload_date < CASE WHEN :useCurrentTime
+                THEN (julianday('now') - 2440587.5) * 86400000
+                ELSE :uploadDateBefore END
         )
 
         GROUP BY s.uid
@@ -131,7 +133,19 @@ abstract class FeedDAO {
         LIMIT 500
         """
     )
-    abstract fun getStreams(
+    abstract fun observeStreams(
+        profileId: String,
+        groupId: Long,
+        includePlayed: Boolean,
+        includePartiallyPlayed: Boolean,
+        uploadDateBefore: OffsetDateTime?,
+        serviceId: Int,
+        youtubeModeMask: Int,
+        sortByDiscovery: Boolean = false,
+        useCurrentTime: Boolean = false
+    ): Flowable<List<StreamWithState>>
+
+    fun getStreams(
         profileId: String,
         groupId: Long,
         includePlayed: Boolean,
@@ -140,7 +154,16 @@ abstract class FeedDAO {
         serviceId: Int,
         youtubeModeMask: Int,
         sortByDiscovery: Boolean = false
-    ): Maybe<List<StreamWithState>>
+    ): Maybe<List<StreamWithState>> = observeStreams(
+        profileId,
+        groupId,
+        includePlayed,
+        includePartiallyPlayed,
+        uploadDateBefore,
+        serviceId,
+        youtubeModeMask,
+        sortByDiscovery
+    ).firstElement()
 
     /**
      * Remove links to streams that are older than the given date

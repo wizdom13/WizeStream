@@ -1,0 +1,273 @@
+package org.schabi.newpipe.local.feed
+
+import android.app.Application
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelStore
+import androidx.preference.PreferenceManager
+import androidx.room.Room
+import io.reactivex.rxjava3.android.plugins.RxAndroidPlugins
+import io.reactivex.rxjava3.core.Notification
+import io.reactivex.rxjava3.plugins.RxJavaPlugins
+import io.reactivex.rxjava3.processors.PublishProcessor
+import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.schedulers.TestScheduler
+import java.time.OffsetDateTime
+import java.util.concurrent.TimeUnit
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+import org.schabi.newpipe.NewPipeDatabase
+import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.extractor.localization.DateWrapper
+import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.local.feed.service.FeedEventManager
+import org.schabi.newpipe.local.feed.service.FeedLoadManager
+import org.schabi.newpipe.local.feed.service.FeedLoadService
+import org.schabi.newpipe.local.feed.service.FeedUpdateInfo
+import org.schabi.newpipe.util.ServiceHelper
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], application = Application::class)
+class ProgressiveFeedRefreshTest {
+    private val context get() = RuntimeEnvironment.getApplication()
+    private val clock = TestScheduler()
+    private lateinit var database: AppDatabase
+    private lateinit var manager: FeedLoadManager
+    private lateinit var feed: FeedDatabaseManager
+    private val scope = FeedScope(0, SubscriptionEntity.YOUTUBE_MODE_REGULAR)
+    private val databaseField = NewPipeDatabase::class.java.getDeclaredField("databaseInstance").apply { isAccessible = true }
+    private var previousDatabase: Any? = null
+    private val subscriptions = mutableListOf<Long>()
+    private val stores = mutableListOf<ViewModelStore>()
+
+    @Before
+    fun setUp() {
+        RxJavaPlugins.setIoSchedulerHandler { Schedulers.trampoline() }
+        RxJavaPlugins.setComputationSchedulerHandler { clock }
+        RxAndroidPlugins.setMainThreadSchedulerHandler { Schedulers.trampoline() }
+        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
+        ServiceHelper.setSelectedServiceId(context, 0)
+        database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .setQueryExecutor { it.run() }
+            .setTransactionExecutor { it.run() }
+            .build()
+        previousDatabase = databaseField.get(null)
+        databaseField.set(null, database)
+        feed = FeedDatabaseManager(context, SubscriptionEntity.DEFAULT_PROFILE_ID)
+        manager = FeedLoadManager(context, SubscriptionEntity.DEFAULT_PROFILE_ID)
+        repeat(3) { index ->
+            subscriptions += database.subscriptionDAO().insert(
+                SubscriptionEntity(serviceId = 0, url = "https://example.com/channel/$index", name = "Channel $index")
+            )
+        }
+        FeedEventManager.reset(scope)
+    }
+
+    @After
+    fun tearDown() {
+        stores.forEach { it.clear() }
+        FeedEventManager.reset(scope)
+        databaseField.set(null, previousDatabase)
+        database.close()
+        RxJavaPlugins.reset()
+        RxAndroidPlugins.reset()
+    }
+
+    @Test
+    fun commitsFirstChannelBeforeCompletionAndKeepsSuccessAcrossFailuresAndDuplicates() {
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val result = manager.storeResults(source).test()
+        val first = update(0, "first", 2)
+        source.onNext(Notification.createOnNext(first))
+        result.assertNotComplete()
+        assertEquals(listOf("first"), titles())
+        assertEquals(listOf("first"), first.newStreams.map { it.name })
+
+        source.onNext(Notification.createOnError(FeedLoadService.RequestException(subscriptions[1], "failed", java.io.IOException("offline"))))
+        source.onNext(Notification.createOnNext(update(2, "newer", 1, listOf(java.io.IOException("partial tab")))))
+        source.onNext(Notification.createOnNext(first))
+        assertEquals(listOf("newer", "first"), titles())
+        assertTrue(first.newStreams.isEmpty())
+        assertEquals(2L, feed.notLoadedCount(scope = scope).blockingFirst())
+        source.onComplete()
+        result.assertComplete().assertNoErrors().assertValue { it.size == 4 }
+        assertEquals(listOf("newer", "first"), titles())
+        database.query("PRAGMA foreign_key_check", null).use { assertFalse(it.moveToFirst()) }
+    }
+
+    @Test
+    fun unsubscribingDuringFetchDoesNotAbortOtherChannelCommits() {
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val result = manager.storeResults(source).test()
+        val deleted = update(0, "deleted", 0)
+        database.subscriptionDAO().deleteSubscription(0, deleted.url)
+        source.onNext(Notification.createOnNext(deleted))
+        source.onNext(Notification.createOnNext(update(1, "kept", 1)))
+        source.onComplete()
+        result.assertComplete().assertNoErrors()
+        assertTrue(deleted.newStreams.isEmpty())
+        assertEquals(listOf("kept"), titles())
+    }
+
+    @Test
+    fun observedFutureFilterUsesQueryTimeWhileFixedCutoffQueriesStaySupported() {
+        database.runInTransaction {
+            feed.upsertAll(subscriptions[0], update(0, "published", 1).streams)
+            feed.upsertAll(subscriptions[1], update(1, "future", -1).streams)
+        }
+        val cutoff = OffsetDateTime.now().minusDays(2)
+        val dao = database.feedDAO()
+        assertTrue(dao.getStreams(SubscriptionEntity.DEFAULT_PROFILE_ID, -1, true, true, cutoff, 0, 1).blockingGet()!!.isEmpty())
+        assertEquals(
+            listOf("published"),
+            dao.observeStreams(SubscriptionEntity.DEFAULT_PROFILE_ID, -1, true, true, cutoff, 0, 1, useCurrentTime = true)
+                .blockingFirst().map { it.stream.title }
+        )
+    }
+
+    @Test
+    fun partialChannelKeepsCachedLiveStreamsAndDiscoveryTimes() {
+        val cached = StreamInfoItem(0, "https://example.com/live", "live", StreamType.LIVE_STREAM).apply {
+            uploaderName = "Channel 0"
+            uploaderUrl = "https://example.com/channel/0"
+        }
+        database.runInTransaction { feed.upsertAll(subscriptions[0], listOf(cached)) }
+        val membership = database.feedDAO().getMemberships(subscriptions[0]).single()
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val result = manager.storeResults(source).test()
+        source.onNext(Notification.createOnNext(update(0, "partial", 1, listOf(java.io.IOException("tab failed")))))
+        assertEquals(setOf("live", "partial"), titles().toSet())
+        assertEquals(membership, database.feedDAO().getMemberships(subscriptions[0]).first { it.streamId == membership.streamId })
+        result.assertNotComplete()
+        result.dispose()
+    }
+
+    @Test
+    fun cancellationKeepsCommittedChannelsAndRejectsLaterResults() {
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val result = manager.storeResults(source).test()
+        source.onNext(Notification.createOnNext(update(0, "first", 1)))
+        result.dispose()
+        assertFalse(source.hasSubscribers())
+        source.onNext(Notification.createOnNext(update(1, "too late", 0)))
+        assertEquals(listOf("first"), titles())
+    }
+
+    @Test
+    fun failedChannelTransactionRollsBackWithoutLosingEarlierCommit() {
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val result = manager.storeResults(source).test()
+        source.onNext(Notification.createOnNext(update(0, "first", 1)))
+        database.openHelper.writableDatabase.execSQL(
+            "CREATE TEMP TRIGGER reject_feed_update BEFORE INSERT ON feed_last_updated " +
+                "BEGIN SELECT RAISE(ABORT, 'fixture'); END"
+        )
+        source.onNext(Notification.createOnNext(update(1, "rolled back", 0)))
+        result.assertError { it.message.orEmpty().contains("fixture") }
+        assertEquals(listOf("first"), titles())
+        assertFalse(database.inTransaction())
+    }
+
+    @Test
+    fun modelObservesPartialContentWhileRefreshingAndReusesItemsOnProgress() {
+        feed.upsertAll(subscriptions[0], update(0, "cached", 3).streams)
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val refresh = manager.storeResults(source).test()
+        FeedEventManager.postEvent(scope, FeedEventManager.Event.ProgressEvent(0, 3))
+        val model = model()
+        tick()
+        assertEquals(listOf("cached"), state(model).items.map { it.streamWithState.stream.title })
+        assertNotNull(state(model).progress)
+
+        source.onNext(Notification.createOnNext(update(1, "new", 0)))
+        tick()
+        val items = state(model).items
+        assertEquals(listOf("new", "cached"), items.map { it.streamWithState.stream.title })
+        FeedEventManager.postEvent(scope, FeedEventManager.Event.ProgressEvent(2, 3, updateDescription = "Still fetching"))
+        tick()
+        assertSame(items, state(model).items)
+        assertEquals("Still fetching", state(model).progress!!.updateDescription)
+
+        // Disposing screen observation does not own the refresh. A newly created
+        // model reads committed content and the replayed in-flight progress.
+        stores.first().clear()
+        source.onNext(Notification.createOnNext(update(2, "away", 1)))
+        val returned = model()
+        tick()
+        assertEquals(listOf("new", "away", "cached"), state(returned).items.map { it.streamWithState.stream.title })
+        assertNotNull(state(returned).progress)
+        FeedEventManager.reset(scope)
+        tick()
+        assertEquals(null, state(returned).progress)
+        refresh.dispose()
+    }
+
+    @Test
+    fun inactiveScreenStopsRenderingWhileRefreshKeepsCommittingAndReturnObservesLatestContent() {
+        val owner = object : LifecycleOwner {
+            override val lifecycle = LifecycleRegistry(this)
+        }
+        owner.lifecycle.currentState = Lifecycle.State.STARTED
+        val model = model(owner)
+        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        val refresh = manager.storeResults(source).test()
+        tick()
+        val beforeNavigation = model.stateLiveData.value
+        owner.lifecycle.currentState = Lifecycle.State.CREATED
+        source.onNext(Notification.createOnNext(update(0, "while away", 0)))
+        tick()
+        assertTrue(source.hasSubscribers())
+        assertSame(beforeNavigation, model.stateLiveData.value)
+        assertEquals(listOf("while away"), titles())
+        owner.lifecycle.currentState = Lifecycle.State.STARTED
+        tick()
+        assertEquals(listOf("while away"), state(model).items.map { it.streamWithState.stream.title })
+        owner.lifecycle.currentState = Lifecycle.State.DESTROYED
+        refresh.dispose()
+    }
+
+    private fun model(owner: LifecycleOwner? = null): FeedViewModel = FeedViewModel(context, initialShowPlayedItems = true, initialShowPartiallyPlayedItems = true, initialShowFutureItems = true).also {
+        stores += ViewModelStore().apply { put("feed", it) }
+        if (owner == null) {
+            it.stateLiveData.observeForever(Observer { })
+        } else {
+            it.stateLiveData.observe(owner, Observer { })
+        }
+    }
+
+    private fun state(model: FeedViewModel) = model.stateLiveData.value as FeedState.LoadedState
+
+    private fun tick() {
+        clock.advanceTimeBy(1, TimeUnit.SECONDS)
+    }
+
+    private fun titles() = feed.getStreams(-1, true, true, true, scope).blockingGet()!!.map { it.stream.title }
+
+    private fun update(channel: Int, id: String, daysAgo: Long, errors: List<Throwable> = emptyList()): FeedUpdateInfo = FeedUpdateInfo(
+        subscriptions[channel], 0, "", "Channel $channel", null, "https://example.com/channel/$channel", 0,
+        SubscriptionEntity.YOUTUBE_MODE_REGULAR, null, null,
+        listOf(
+            StreamInfoItem(0, "https://example.com/$id", id, StreamType.VIDEO_STREAM).apply {
+                uploadDate = DateWrapper(OffsetDateTime.now().minusDays(daysAgo))
+                uploaderName = "Channel $channel"
+                uploaderUrl = "https://example.com/channel/$channel"
+            }
+        ),
+        errors
+    )
+}

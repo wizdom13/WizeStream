@@ -11,7 +11,9 @@ object FeedEventManager {
     private val processors = ConcurrentHashMap<FeedScope, BehaviorProcessor<Event>>()
 
     fun postEvent(scope: FeedScope, event: Event) {
-        processor(scope).onNext(event)
+        synchronized(processors) {
+            processor(scope).onNext(event)
+        }
     }
 
     fun events(scope: FeedScope): Flowable<Event> {
@@ -20,6 +22,16 @@ object FeedEventManager {
 
     fun reset(scope: FeedScope) {
         postEvent(scope, IdleEvent)
+    }
+
+    /** Do not clear a newer refresh when a delayed observer consumes an old result. */
+    fun reset(scope: FeedScope, consumedEvent: Event) {
+        synchronized(processors) {
+            val processor = processor(scope)
+            if (processor.value === consumedEvent) {
+                processor.onNext(IdleEvent)
+            }
+        }
     }
 
     private fun processor(scope: FeedScope): BehaviorProcessor<Event> {

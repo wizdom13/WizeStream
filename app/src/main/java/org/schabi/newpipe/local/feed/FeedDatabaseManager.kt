@@ -52,7 +52,25 @@ class FeedDatabaseManager @JvmOverloads constructor(
         scope: FeedScope,
         sortByDiscovery: Boolean = false
     ): Maybe<List<StreamWithState>> {
-        return feedTable.getStreams(
+        return observeStreams(
+            groupId,
+            includePlayedStreams,
+            includePartiallyPlayedStreams,
+            includeFutureStreams,
+            scope,
+            sortByDiscovery
+        ).firstElement()
+    }
+
+    fun observeStreams(
+        groupId: Long,
+        includePlayedStreams: Boolean,
+        includePartiallyPlayedStreams: Boolean,
+        includeFutureStreams: Boolean,
+        scope: FeedScope,
+        sortByDiscovery: Boolean = false
+    ): Flowable<List<StreamWithState>> {
+        return feedTable.observeStreams(
             activeProfileId,
             groupId,
             includePlayedStreams,
@@ -60,7 +78,9 @@ class FeedDatabaseManager @JvmOverloads constructor(
             if (includeFutureStreams) null else OffsetDateTime.now(),
             scope.serviceId,
             scope.youtubeModeMask,
-            sortByDiscovery
+            sortByDiscovery,
+            // A long-lived observation must include uploads published after it began.
+            useCurrentTime = !includeFutureStreams
         )
     }
 

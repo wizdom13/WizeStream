@@ -130,6 +130,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private lateinit var onSettingsChangeListener: SharedPreferences.OnSharedPreferenceChangeListener
     private var updateListViewModeOnResume = false
+    private var updateFeedItems = true
 
     private var lastHighlightedRangeEnd = 0
 
@@ -260,6 +261,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun setupListViewMode() {
+        updateFeedItems = true
         // does everything needed to setup the layouts for grid or list modes
         val gridMode = shouldUseGridLayout(context)
         val minimumItemWidth = resources.getDimensionPixelSize(
@@ -497,6 +499,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         noteBadges?.unwatch(feedBinding.itemsList)
         noteBadges = null
         feedBinding.itemsList.adapter = null
+        latestLoadedState = null
         _feedBinding = null
         super.onDestroyView()
     }
@@ -543,6 +546,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun handleError() {
         val binding = _feedBinding ?: return
+        updateFeedItems = true
         super.handleError()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(false, 0)
@@ -551,7 +555,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun handleProgressState(progressState: FeedState.ProgressState) {
-        showLoading()
+        // Content and refresh progress coexist, including after recreating the view.
+        showRefreshProgress(feedBinding)
+        feedBinding.swipeRefreshLayout.isRefreshing = false
 
         val isIndeterminate = progressState.currentProgress < 0 ||
             progressState.maxProgress < 0
@@ -700,8 +706,17 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     @SuppressLint("StringFormatMatches")
     private fun handleLoadedState(loadedState: FeedState.LoadedState) {
+        val previousState = latestLoadedState
         latestLoadedState = loadedState
-        showFilteredFeedItems(loadedState, true)
+        if (updateFeedItems || previousState?.items !== loadedState.items) {
+            updateFeedItems = false
+            showFilteredFeedItems(loadedState, true)
+        }
+        if (loadedState.progress != null) {
+            handleProgressState(loadedState.progress)
+        } else {
+            hideRefreshProgress(feedBinding)
+        }
 
         val feedsNotLoaded = loadedState.notLoadedCount > 0
         feedBinding.refreshSubtitleText.isVisible = feedsNotLoaded
@@ -717,9 +732,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             feedBinding.refreshSubtitleText.isFocusable = false
         }
 
-        if (oldestSubscriptionUpdate != loadedState.oldestUpdate ||
-            (oldestSubscriptionUpdate == null && loadedState.oldestUpdate == null)
-        ) {
+        if (loadedState.itemsErrors.isNotEmpty() && previousState?.itemsErrors != loadedState.itemsErrors) {
             // ignore errors if they have already been handled for the current update
             handleItemsErrors(loadedState.itemsErrors)
         }
