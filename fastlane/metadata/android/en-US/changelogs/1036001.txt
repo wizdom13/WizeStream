@@ -1,0 +1,1 @@
+Search subscriptions and channel groups by saved YouTube handles. Added microphone search, group-channel search, and optional exit cleanup. Improved autoplay/miniplayer video rendering and Invidious descriptions and avatars.

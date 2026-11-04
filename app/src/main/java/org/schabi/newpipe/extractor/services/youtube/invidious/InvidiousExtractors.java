@@ -172,6 +172,11 @@ public final class InvidiousExtractors {
                     .channelId(getUrl()))));
         }
         @Override
+        public String getHandle() {
+            return org.schabi.newpipe.extractor.channel.ChannelHandle.fromUrl(
+                    channel.getString("authorUrl", ""));
+        }
+        @Override
         public String getName() {
             return channel.getString("author", "");
         }

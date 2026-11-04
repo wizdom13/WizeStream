@@ -45,6 +45,7 @@ internal data class SyncedSubscription(
         serviceId = serviceId,
         url = url,
         name = name,
+        handle = existing?.handle,
         avatarUrl = avatarUrl,
         subscriberCount = subscriberCount,
         description = description,

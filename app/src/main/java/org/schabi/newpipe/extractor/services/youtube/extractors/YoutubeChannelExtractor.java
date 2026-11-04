@@ -136,6 +136,11 @@ public class YoutubeChannelExtractor extends ChannelExtractor {
     }
 
 
+    @Override
+    public String getHandle() {
+        return org.schabi.newpipe.extractor.channel.ChannelHandle.fromYoutube(jsonResponse);
+    }
+
     @Nonnull
     @Override
     public String getUrl() throws ParsingException {

@@ -4,6 +4,20 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.36.1 (`1036001`)
+
+### Improvements
+
+- Added local subscription and group-channel search by saved YouTube handles, with or without @ and regardless of letter case. Handles populate when full channel metadata is loaded or refreshed; fast feed updates preserve previously saved handles.
+- Added microphone search on phones and TVs using an installed speech-recognition provider.
+- Added search within feed-group channel lists and optional cleanup after leaving the app.
+
+### Fixes
+
+- Restored video geometry after seamless autoplay and improved miniplayer surface restoration.
+- Restored Invidious descriptions and comment avatars for additional response formats.
+
+
 ## WizeStream 1.36.0 (`1036000`)
 
 ### Improvements

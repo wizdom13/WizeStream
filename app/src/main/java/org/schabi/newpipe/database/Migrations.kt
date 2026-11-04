@@ -50,7 +50,8 @@ object Migrations {
     const val DB_VER_28 = 28
     const val DB_VER_29 = 29
     const val DB_VER_30 = 30
-    const val DB_VER_CURRENT = DB_VER_30
+    const val DB_VER_31 = 31
+    const val DB_VER_CURRENT = DB_VER_31
 
     private val TAG = Migrations::class.java.getName()
     private val isDebug = MainActivity.DEBUG
@@ -1069,5 +1070,8 @@ object Migrations {
             "CREATE INDEX IF NOT EXISTS index_search_history_profile_id_search " +
                 "ON search_history (profile_id, search)"
         )
+    }
+    val MIGRATION_30_31 = Migration(DB_VER_30, DB_VER_31) { db ->
+        db.execSQL("ALTER TABLE subscriptions ADD COLUMN handle TEXT")
     }
 }

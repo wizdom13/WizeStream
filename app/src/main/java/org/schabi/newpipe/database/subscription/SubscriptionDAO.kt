@@ -10,6 +10,7 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Maybe
 import org.schabi.newpipe.database.BasicDAO
+import org.schabi.newpipe.local.subscription.SubscriptionSearch
 
 @Dao
 abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
@@ -51,29 +52,9 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
     @Query("SELECT * FROM subscriptions WHERE profile_id = :profileId")
     abstract fun getAllDirectForProfile(profileId: String): List<SubscriptionEntity>
 
-    @Query(
-        """
-        SELECT * FROM subscriptions
-        WHERE name LIKE '%' || :filter || '%'
-        ORDER BY name COLLATE NOCASE ASC
-        """
-    )
-    abstract fun getSubscriptionsFiltered(
-        filter: String
-    ): Flowable<List<SubscriptionEntity>>
+    open fun getSubscriptionsFiltered(filter: String): Flowable<List<SubscriptionEntity>> = getAll().map { channels -> channels.filter { SubscriptionSearch.matches(filter, it) } }
 
-    @Query(
-        """
-        SELECT * FROM subscriptions
-        WHERE profile_id = :profileId
-        AND name LIKE '%' || :filter || '%'
-        ORDER BY name COLLATE NOCASE ASC
-        """
-    )
-    abstract fun getSubscriptionsFilteredForProfile(
-        profileId: String,
-        filter: String
-    ): Flowable<List<SubscriptionEntity>>
+    open fun getSubscriptionsFilteredForProfile(profileId: String, filter: String): Flowable<List<SubscriptionEntity>> = getAllForProfile(profileId).map { channels -> channels.filter { SubscriptionSearch.matches(filter, it) } }
 
     @RewriteQueriesToDropUnusedColumns
     @Query(
@@ -105,39 +86,9 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
         currentGroupId: Long
     ): Flowable<List<SubscriptionEntity>>
 
-    @RewriteQueriesToDropUnusedColumns
-    @Query(
-        """
-        SELECT * FROM subscriptions s
-        LEFT JOIN feed_group_subscription_join fgs
-        ON s.uid = fgs.subscription_id
-        WHERE (fgs.subscription_id IS NULL OR fgs.group_id = :currentGroupId)
-        AND s.name LIKE '%' || :filter || '%'
-        ORDER BY name COLLATE NOCASE ASC
-        """
-    )
-    abstract fun getSubscriptionsOnlyUngroupedFiltered(
-        currentGroupId: Long,
-        filter: String
-    ): Flowable<List<SubscriptionEntity>>
+    open fun getSubscriptionsOnlyUngroupedFiltered(currentGroupId: Long, filter: String): Flowable<List<SubscriptionEntity>> = getSubscriptionsOnlyUngrouped(currentGroupId).map { channels -> channels.filter { SubscriptionSearch.matches(filter, it) } }
 
-    @RewriteQueriesToDropUnusedColumns
-    @Query(
-        """
-        SELECT * FROM subscriptions s
-        LEFT JOIN feed_group_subscription_join fgs
-        ON s.uid = fgs.subscription_id
-        WHERE s.profile_id = :profileId
-        AND (fgs.subscription_id IS NULL OR fgs.group_id = :currentGroupId)
-        AND s.name LIKE '%' || :filter || '%'
-        ORDER BY name COLLATE NOCASE ASC
-        """
-    )
-    abstract fun getSubscriptionsOnlyUngroupedFilteredForProfile(
-        profileId: String,
-        currentGroupId: Long,
-        filter: String
-    ): Flowable<List<SubscriptionEntity>>
+    open fun getSubscriptionsOnlyUngroupedFilteredForProfile(profileId: String, currentGroupId: Long, filter: String): Flowable<List<SubscriptionEntity>> = getSubscriptionsOnlyUngroupedForProfile(profileId, currentGroupId).map { channels -> channels.filter { SubscriptionSearch.matches(filter, it) } }
 
     @Query("SELECT * FROM subscriptions WHERE url LIKE :url AND service_id = :serviceId")
     abstract fun getSubscriptionFlowable(
@@ -180,7 +131,8 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
         """
         UPDATE subscriptions
         SET name = :name, avatar_url = :avatarUrl,
-            description = :description, subscriber_count = :subscriberCount
+            description = :description, subscriber_count = :subscriberCount,
+            handle = COALESCE(:handle, handle)
         WHERE profile_id = :profileId AND service_id = :serviceId AND url = :url
         """
     )
@@ -191,7 +143,8 @@ abstract class SubscriptionDAO : BasicDAO<SubscriptionEntity> {
         name: String?,
         avatarUrl: String?,
         description: String?,
-        subscriberCount: Long
+        subscriberCount: Long,
+        handle: String? = null
     ): Completable
 
     @Query("SELECT * FROM subscriptions WHERE url = :url AND service_id = :serviceId")

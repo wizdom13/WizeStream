@@ -37,6 +37,17 @@ import java.util.List;
  */
 
 public class ChannelInfo extends ListInfo<StreamInfoItem> {
+    private String handle;
+
+    @javax.annotation.Nullable
+    public String getHandle() {
+        return handle;
+    }
+
+    public void setHandle(@javax.annotation.Nullable final String value) {
+        handle = ChannelHandle.normalize(value);
+    }
+
 
     public ChannelInfo(final int serviceId,
                        final String id,
@@ -77,6 +88,12 @@ public class ChannelInfo extends ListInfo<StreamInfoItem> {
 
         final ChannelInfo info =
                 new ChannelInfo(serviceId, id, url, originalUrl, name, extractor.getLinkHandler());
+
+        try {
+            info.setHandle(extractor.getHandle());
+        } catch (final Exception e) {
+            info.addError(e);
+        }
 
         try {
             info.setAvatarUrl(extractor.getAvatarUrl());
