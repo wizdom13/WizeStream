@@ -2,11 +2,17 @@ package org.schabi.newpipe.local.subscription
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.xwray.groupie.GroupAdapter
@@ -16,7 +22,9 @@ import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.databinding.FragmentGroupChannelsBinding
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.subscription.item.ChannelItem
+import org.schabi.newpipe.util.ExpandableSearchViewHelper
 import org.schabi.newpipe.util.GridLayoutManagerHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
@@ -27,6 +35,22 @@ class GroupChannelsFragment : Fragment() {
     private val adapter = GroupAdapter<GroupieViewHolder<FeedItemCarouselBinding>>()
     private lateinit var channelActions: SubscriptionChannelActions
     private lateinit var viewModel: GroupChannelsViewModel
+
+    private var searchQuery = ""
+    private var searchExpanded = false
+    private var gridMode = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        searchQuery = savedInstanceState?.getString(KEY_SEARCH_QUERY).orEmpty()
+        searchExpanded = savedInstanceState?.getBoolean(KEY_SEARCH_EXPANDED) ?: false
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_SEARCH_QUERY, searchQuery)
+        outState.putBoolean(KEY_SEARCH_EXPANDED, searchExpanded)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,7 +70,7 @@ class GroupChannelsFragment : Fragment() {
             groupName
         }
 
-        val gridMode = SubscriptionViewModel.shouldUseGridForSubscription(requireContext())
+        gridMode = SubscriptionViewModel.shouldUseGridForSubscription(requireContext())
         binding.itemsList.layoutManager = if (gridMode) {
             GridLayoutManagerHelper.create(
                 binding.itemsList,
@@ -69,35 +93,64 @@ class GroupChannelsFragment : Fragment() {
             isVisible = true
             setOnClickListener { viewModel.load(groupId) }
         }
-        viewModel.state.observe(viewLifecycleOwner) { state ->
-            binding.loadingProgressBar.isVisible = state.loading
-            binding.itemsList.isVisible = !state.loading && state.error == null && state.channels.isNotEmpty()
-            binding.emptyStateView.root.isVisible = !state.loading && state.error == null && state.channels.isEmpty()
-            binding.errorPanel.root.isVisible = state.error != null
-            adapter.update(
-                state.channels.map { subscription ->
-                    ChannelItem(
-                        subscription.toChannelInfoItem(),
-                        subscription.uid,
-                        if (gridMode) ChannelItem.ItemVersion.GRID else ChannelItem.ItemVersion.MINI
-                    ).apply {
-                        gesturesListener = object : OnClickGesture<ChannelInfoItem> {
-                            override fun selected(
-                                selectedItem: ChannelInfoItem
-                            ) = NavigationHelper.openChannelFragment(
-                                parentFragmentManager,
-                                selectedItem.serviceId,
-                                selectedItem.url,
-                                selectedItem.name
-                            )
+        viewModel.state.observe(viewLifecycleOwner, ::render)
+        (requireActivity() as MenuHost).addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                    menuInflater.inflate(R.menu.menu_group_channels, menu)
+                    ExpandableSearchViewHelper.configure(
+                        menu.findItem(R.id.menu_item_search_content),
+                        getString(R.string.contextual_search_hint, groupName.ifBlank { getString(R.string.channels) }),
+                        searchQuery,
+                        searchExpanded,
+                        { query ->
+                            searchQuery = ContextualSearchHelper.normalizeQuery(query)
+                            viewModel.state.value?.let(::render)
+                        },
+                        { expanded -> searchExpanded = expanded }
+                    )
+                }
 
-                            override fun held(selectedItem: ChannelInfoItem) = channelActions.show(selectedItem)
-                        }
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
+            },
+            viewLifecycleOwner,
+            Lifecycle.State.RESUMED
+        )
+        viewModel.load(groupId)
+    }
+
+    private fun render(state: GroupChannelsViewModel.State) {
+        val currentBinding = _binding ?: return
+        val channels = state.channels.filter { ContextualSearchHelper.matches(searchQuery, it.name) }
+        currentBinding.loadingProgressBar.isVisible = state.loading
+        currentBinding.itemsList.isVisible = !state.loading && state.error == null && channels.isNotEmpty()
+        currentBinding.emptyStateView.root.isVisible = !state.loading && state.error == null && channels.isEmpty()
+        currentBinding.emptyStateView.emptyStateMessage.setText(
+            if (ContextualSearchHelper.isActive(searchQuery)) R.string.search_no_results else R.string.empty_list_message
+        )
+        currentBinding.errorPanel.root.isVisible = state.error != null
+        adapter.update(
+            channels.map { subscription ->
+                ChannelItem(
+                    subscription.toChannelInfoItem(),
+                    subscription.uid,
+                    if (gridMode) ChannelItem.ItemVersion.GRID else ChannelItem.ItemVersion.MINI
+                ).apply {
+                    gesturesListener = object : OnClickGesture<ChannelInfoItem> {
+                        override fun selected(
+                            selectedItem: ChannelInfoItem
+                        ) = NavigationHelper.openChannelFragment(
+                            parentFragmentManager,
+                            selectedItem.serviceId,
+                            selectedItem.url,
+                            selectedItem.name
+                        )
+
+                        override fun held(selectedItem: ChannelInfoItem) = channelActions.show(selectedItem)
                     }
                 }
-            )
-        }
-        viewModel.load(groupId)
+            }
+        )
     }
 
     override fun onDestroyView() {
@@ -108,6 +161,8 @@ class GroupChannelsFragment : Fragment() {
     }
 
     companion object {
+        private const val KEY_SEARCH_QUERY = "search_query"
+        private const val KEY_SEARCH_EXPANDED = "search_expanded"
         private const val KEY_GROUP_ID = "group_id"
         private const val KEY_GROUP_NAME = "group_name"
 
