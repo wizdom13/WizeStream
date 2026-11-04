@@ -20,7 +20,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="center_vertical"
         android:layout_marginTop="4dp"
-        android:layout_marginRight="96dp"
+        android:layout_marginRight="144dp"
         android:layout_marginBottom="4dp"
         android:background="@null"
         android:focusable="true"
@@ -42,7 +42,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_gravity="right|center_vertical"
-        android:layout_marginRight="48dp"
+        android:layout_marginRight="96dp"
         android:contentDescription="@string/search_filters"
         android:focusable="true"
         tools:ignore="RtlHardcoded">
@@ -62,6 +62,20 @@
             android:src="@drawable/ic_filter_list"
             app:tint="?attr/colorOnSurfaceVariant" />
     </FrameLayout>
+
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/toolbar_search_voice"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="right|center_vertical"
+        android:layout_marginRight="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/voice_search"
+        android:focusable="true"
+        android:padding="12dp"
+        app:srcCompat="@drawable/ic_mic"
+        app:tint="?attr/colorOnSurfaceVariant"
+        tools:ignore="RtlHardcoded" />
 
     <FrameLayout
         android:id="@+id/toolbar_search_clear"

@@ -226,6 +226,13 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
     private View searchMusicFilters;
     private ChipGroup searchMusicFilterChipGroup;
 
+    private final VoiceSearchController voiceSearch = new VoiceSearchController(this,
+            query -> {
+                wasLoading.set(false);
+                wasSearchFocused = false;
+                search(query, new String[0], new int[0]);
+            });
+
     private boolean suggestionsPanelVisible = false;
 
     /*////////////////////////////////////////////////////////////////////////*/
@@ -340,7 +347,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         final ViewGroup.MarginLayoutParams layoutParams =
                 (ViewGroup.MarginLayoutParams) searchEditText.getLayoutParams();
         layoutParams.rightMargin = DeviceUtils.dpToPx(
-                hasFilters && !showMusicFilterChips ? 96 : 48, requireContext());
+                hasFilters && !showMusicFilterChips ? 144 : 96, requireContext());
         searchEditText.setLayoutParams(layoutParams);
         updateMusicFilterChips(showMusicFilterChips ? musicFilters : Collections.emptyList());
     }
@@ -454,6 +461,10 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
 
         if (suggestionDisposable == null || suggestionDisposable.isDisposed()) {
             initSuggestionObserver();
+        }
+
+        if (voiceSearch.submitPendingQuery()) {
+            return;
         }
 
         if (!TextUtils.isEmpty(searchString)) {
@@ -830,6 +841,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (DEBUG) {
             Log.d(TAG, "initSearchListeners() called");
         }
+        voiceSearch.bind(searchToolbarContainer);
         searchClear.setOnClickListener(v -> {
             if (DEBUG) {
                 Log.d(TAG, "onClick() called with: v = [" + v + "]");
@@ -949,6 +961,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
         if (DEBUG) {
             Log.d(TAG, "unsetSearchListeners() called");
         }
+        voiceSearch.unbind();
         searchClear.setOnClickListener(null);
         searchClear.setOnLongClickListener(null);
         searchFilter.setOnClickListener(null);
