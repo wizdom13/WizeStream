@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_search">Voice search</string>
+    <string name="voice_search_unavailable">Voice search is unavailable. Install or enable a speech-recognition app, or type your search.</string>
+</resources>

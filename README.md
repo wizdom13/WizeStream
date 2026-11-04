@@ -204,6 +204,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   personalized Shorts and autoplay, pause/reset controls, and video/topic exclusions. Learning
   starts after opt-in, respects history switches, and is disabled in Incognito; the model is not synced
 - Search with service-provided content, date, duration, feature, and sorting filters
+- Use the microphone button in search on phones and TVs with a compatible speech-recognition app.
+  Recognized speech searches the current service. WizeStream requests offline recognition, but the
+  installed provider controls availability and may use its servers; offline operation is not guaranteed.
+  No Google sign-in, bundled speech SDK, or microphone permission in WizeStream is required.
 - Save search-filter presets by profile and service, including YouTube Music mode
 - Use custom or relative YouTube upload-date ranges, duration limits, shortest/longest ordering,
   and cancellable deeper or monthly search collection with duplicate removal
