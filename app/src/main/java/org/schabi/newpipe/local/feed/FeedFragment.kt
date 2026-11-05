@@ -54,6 +54,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.lang.ref.WeakReference
 import java.time.OffsetDateTime
 import java.util.function.Consumer
 import org.schabi.newpipe.NewPipeDatabase
@@ -126,6 +127,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     var feedHeaderExpanded = true
 
     private var noteBadges: VideoNoteBadges? = null
+    private var feedPreview: org.schabi.newpipe.local.feed.preview.FeedPreviewController? = null
     private lateinit var groupAdapter: GroupieAdapter
     private var streamSelection: StreamSelectionController? = null
 
@@ -222,6 +224,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         })
 
         feedBinding.itemsList.adapter = groupAdapter
+        feedPreview = org.schabi.newpipe.local.feed.preview.FeedPreviewController(feedBinding.itemsList, { stream, queue ->
+            NavigationHelper.openVideoDetailFragment(requireContext(), fm, stream.serviceId, stream.url, stream.title, queue, false)
+        })
         noteBadges = VideoNoteBadges(requireContext(), Runnable { groupAdapter.notifyDataSetChanged() })
         noteBadges?.watch(feedBinding.itemsList)
         setupListViewMode()
@@ -233,6 +238,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onPause() {
+        feedPreview?.stop()
         super.onPause()
         listState = feedBinding.itemsList.layoutManager?.onSaveInstanceState()
     }
@@ -273,6 +279,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         activity.supportActionBar?.subtitle = name
         activity.invalidateOptionsMenu()
         if (!changed) return
+        feedPreview?.stop()
         listState = null
         latestLoadedState = null
         oldestSubscriptionUpdate = null
@@ -510,6 +517,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onDestroyView() {
+        feedPreview?.dispose()
+        feedPreview = null
         groupSelector?.dispose()
         groupSelector = null
         streamSelection?.destroy()
@@ -682,6 +691,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                     ServiceHelper.isYoutubeMusicMode(requireContext()) &&
                     stream.serviceId == SubscriptionEntity.YOUTUBE_SERVICE_ID
                 ) {
+                    feedPreview?.stop()
                     NavigationHelper.playOnBackgroundPlayer(
                         requireContext(),
                         SinglePlayQueue(stream.toStreamInfoItem()),
@@ -695,7 +705,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                     stream.serviceId,
                     stream.url,
                     stream.title,
-                    null,
+                    feedPreview?.takeQueue(stream),
                     false
                 )
             }
@@ -914,6 +924,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             item.copy(itemVersion = itemVersion).also { displayItem ->
                 displayItem.execBindEnd = item.execBindEnd
                 displayItem.noteBadges = noteBadges
+                displayItem.previewController = feedPreview?.let { WeakReference(it) }
                 displayItem.onUploaderSelected = ::openUploaderChannel
             }
         }

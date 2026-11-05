@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/feed_preview_player"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:surface_type="texture_view"
+        app:show_buffering="when_playing"
+        app:use_controller="true" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:background="#CC000000">
+        <Button android:id="@+id/feed_preview_mute"
+            android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" android:text="@string/feed_preview_unmute"
+            android:textColor="@android:color/white" android:background="?attr/selectableItemBackground" />
+        <Button android:id="@+id/feed_preview_open"
+            android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" android:text="@string/feed_preview_open"
+            android:textColor="@android:color/white" android:background="?attr/selectableItemBackground" />
+        <Button android:id="@+id/feed_preview_stop"
+            android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" android:text="@string/feed_preview_stop"
+            android:textColor="@android:color/white" android:background="?attr/selectableItemBackground" />
+    </LinearLayout>
+</FrameLayout>

@@ -258,6 +258,12 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 ### Playback
 
+- Optional **Video previews in What’s New** under **Settings > Content** adds a manual Preview
+  button to the **card layout** for regular videos. Previews start muted, offer seek and mute
+  controls, and stop off-screen or when leaving the feed. Only one preview runs, and other
+  players must be closed first. Opening the video continues from its preview position.
+  Disabled by default; previews request media only after tapping and do not write watch history.
+
 - Optional **Perceptual brightness gesture** under **Settings > Video and audio** gives finer
   low-light control using a nonlinear curve. Off by default; affects only the player window.
   Device calibration and adaptive brightness can differ from the system slider.

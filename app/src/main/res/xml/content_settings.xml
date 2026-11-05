@@ -233,6 +233,13 @@
             app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
+            android:key="@string/feed_preview_key"
+            android:title="@string/feed_preview_title"
+            android:summary="@string/feed_preview_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="@string/feed_floating_refresh_key"
             android:title="@string/feed_floating_refresh_title"

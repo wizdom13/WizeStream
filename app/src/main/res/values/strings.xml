@@ -1887,4 +1887,15 @@ Add the For you tab under Settings → Content → Customize home and move it fi
     <string name="playback_info_buffer">Buffered ahead</string>
     <string name="playback_info_seconds">%1$.1f s</string>
     <string name="playback_info_dropped">Dropped frames (decoder session)</string>
+    <string name="feed_preview_key" translatable="false">feed_card_previews</string>
+    <string name="feed_preview_title">Video previews in What’s New</string>
+    <string name="feed_preview_summary">Show a Preview button in the card layout. Starts muted, uses data only when tapped, and requires other players to be closed.</string>
+    <string name="feed_preview_start">Preview</string>
+    <string name="feed_preview_open">Open</string>
+    <string name="feed_preview_stop">Stop preview</string>
+    <string name="feed_preview_mute">Mute</string>
+    <string name="feed_preview_unmute">Unmute</string>
+    <string name="feed_preview_player_busy">Close the current player before starting a preview.</string>
+    <string name="feed_preview_failed">Preview unavailable. Open the video to retry.</string>
+    <item name="feed_preview_button" type="id" />
 </resources>
