@@ -359,6 +359,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   and support for the existing list/grid layout.
 - Search locally within subscriptions, playlists, feeds, watch history, and Downloads, then carry a
   query into the selected service's online search
+- Browse subscription feed results as channels finish refreshing, with stable new-video highlights;
+  refresh continues while navigating or playing videos
 - Store watch history, search history, and playback progress locally under user-controlled settings
 - Browse watch history by date with fast scrolling and a calendar date picker
 - Download video, audio, and captions where supported, with resumable downloads and queue controls

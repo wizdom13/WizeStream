@@ -156,19 +156,27 @@ class FeedLoadManager @JvmOverloads constructor(
                     )
                 )
             }
-            .filter { !cancelSignal.get() }
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext(NotificationConsumer())
-            .observeOn(Schedulers.io())
-            .buffer(BUFFER_COUNT_BEFORE_INSERT)
-            .doOnNext(DatabaseConsumer())
-            .subscribeOn(Schedulers.io())
-            .toList()
-            .flatMap { x -> postProcessFeed().toSingleDefault(x.flatten()) }
+            .let(::storeResults)
     }
 
+    /** Serialized persistence shared by manual and scheduled refreshes. */
+    internal fun storeResults(results: Flowable<Notification<FeedUpdateInfo>>): Single<List<Notification<FeedUpdateInfo>>> = results
+        .filter { !cancelSignal.get() }
+        .observeOn(Schedulers.io())
+        // Persist each completed channel before announcing progress. Slow or failed
+        // channels must not hold back content already retrieved from other channels.
+        .doOnNext(DatabaseConsumer())
+        .doOnNext(NotificationConsumer())
+        .subscribeOn(Schedulers.io())
+        .toList()
+        .flatMap { results -> postProcessFeed().toSingleDefault(results) }
+        .doOnError { cancel() }
+        .doOnDispose(::cancel)
+
     fun cancel() {
-        cancelSignal.set(true)
+        synchronized(cancelSignal) {
+            cancelSignal.set(true)
+        }
         cancelNotifier.onNext(true)
     }
 
@@ -348,11 +356,16 @@ class FeedLoadManager @JvmOverloads constructor(
     }.subscribeOn(Schedulers.io())
 
     private fun postEvent(event: FeedEventManager.Event) {
-        feedScope?.let { FeedEventManager.postEvent(it, event) }
+        synchronized(cancelSignal) {
+            if (!cancelSignal.get()) {
+                feedScope?.let { FeedEventManager.postEvent(it, event) }
+            }
+        }
     }
 
     private inner class NotificationConsumer : Consumer<Notification<FeedUpdateInfo>> {
         override fun accept(item: Notification<FeedUpdateInfo>) {
+            if (cancelSignal.get()) return
             currentProgress.incrementAndGet()
             currentUpdateDescription = item.value?.name.orEmpty()
             notificationUpdater.onNext(currentUpdateDescription)
@@ -361,58 +374,61 @@ class FeedLoadManager @JvmOverloads constructor(
         }
     }
 
-    private inner class DatabaseConsumer : Consumer<List<Notification<FeedUpdateInfo>>> {
+    private inner class DatabaseConsumer : Consumer<Notification<FeedUpdateInfo>> {
 
-        override fun accept(list: List<Notification<FeedUpdateInfo>>) {
+        override fun accept(notification: Notification<FeedUpdateInfo>) {
             feedDatabaseManager.database().runInTransaction {
-                for (notification in list) {
-                    when {
-                        notification.isOnNext -> {
-                            val info = notification.value!!
-                            val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
-                                ?: info.youtubeModeMask
-
-                            notification.value!!.newStreams = filterNewStreams(info.streams)
-
-                            feedDatabaseManager.upsertAll(
-                                info.uid,
-                                info.streams,
-                                updateModeMask,
-                                uploaderAvatarUrl = info.avatarUrl,
-                                isComplete = info.errors.isEmpty()
-                            )
-                            subscriptionManager.updateFromInfo(info)
-
-                            if (info.errors.isNotEmpty()) {
-                                feedResultsHolder.addErrors(
-                                    info.errors.map {
-                                        FeedLoadService.RequestException(
-                                            info.uid,
-                                            "${info.serviceId}:${info.url}",
-                                            it
-                                        )
-                                    }
-                                )
-                                feedDatabaseManager.markAsOutdated(info.uid, updateModeMask)
-                            }
+                when {
+                    notification.isOnNext -> {
+                        val info = notification.value!!
+                        // A user can unsubscribe while this channel is still fetching.
+                        if (subscriptionManager.getSubscriptionById(info.uid) == null) {
+                            info.newStreams = emptyList()
+                            return@runInTransaction
                         }
+                        val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
+                            ?: info.youtubeModeMask
 
-                        notification.isOnError -> {
-                            val error = notification.error
-                            feedResultsHolder.addError(error!!)
+                        notification.value!!.newStreams = filterNewStreams(info.streams)
 
-                            if (error is FeedLoadService.RequestException) {
-                                val subscription =
-                                    subscriptionManager.getSubscriptionById(
-                                        error.subscriptionId
-                                    ) ?: continue
-                                val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
-                                    ?: subscription.youtubeModeMask
-                                feedDatabaseManager.markAsOutdated(
-                                    error.subscriptionId,
-                                    updateModeMask
-                                )
-                            }
+                        feedDatabaseManager.upsertAll(
+                            info.uid,
+                            info.streams,
+                            updateModeMask,
+                            uploaderAvatarUrl = info.avatarUrl,
+                            isComplete = info.errors.isEmpty()
+                        )
+                        subscriptionManager.updateFromInfo(info)
+
+                        if (info.errors.isNotEmpty()) {
+                            feedResultsHolder.addErrors(
+                                info.errors.map {
+                                    FeedLoadService.RequestException(
+                                        info.uid,
+                                        "${info.serviceId}:${info.url}",
+                                        it
+                                    )
+                                }
+                            )
+                            feedDatabaseManager.markAsOutdated(info.uid, updateModeMask)
+                        }
+                    }
+
+                    notification.isOnError -> {
+                        val error = notification.error
+                        feedResultsHolder.addError(error!!)
+
+                        if (error is FeedLoadService.RequestException) {
+                            val subscription =
+                                subscriptionManager.getSubscriptionById(
+                                    error.subscriptionId
+                                ) ?: return@runInTransaction
+                            val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
+                                ?: subscription.youtubeModeMask
+                            feedDatabaseManager.markAsOutdated(
+                                error.subscriptionId,
+                                updateModeMask
+                            )
                         }
                     }
                 }
@@ -446,11 +462,6 @@ class FeedLoadManager @JvmOverloads constructor(
          * limited. Dedicated RSS feeds are not delayed.
          */
         private val DELAY_BETWEEN_BATCHES_MILLIS = (500L..1500L)
-
-        /**
-         * Number of items to buffer to mass-insert in the database.
-         */
-        private const val BUFFER_COUNT_BEFORE_INSERT = 20
     }
 }
 
