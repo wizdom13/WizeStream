@@ -112,6 +112,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private var groupId = FeedGroupEntity.GROUP_ALL_ID
     private var groupName = ""
+    private var groupSelector: FeedGroupSelector? = null
     private var oldestSubscriptionUpdate: OffsetDateTime? = null
     private var latestLoadedState: FeedState.LoadedState? = null
     private var contextualSearchQuery = ""
@@ -224,6 +225,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         noteBadges = VideoNoteBadges(requireContext(), Runnable { groupAdapter.notifyDataSetChanged() })
         noteBadges?.watch(feedBinding.itemsList)
         setupListViewMode()
+        groupSelector = FeedGroupSelector(requireContext(), feedBinding.feedGroupSelector, { groupId }, ::selectFeedGroup)
         if (selectedStreamFilter != StreamListFilter.NONE) {
             feedBinding.streamFilterChips.streamFilterChipGroup
                 .check(selectedStreamFilter.chipId)
@@ -258,6 +260,27 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 handleResult(viewModel.stateLiveData.value!!)
             }
         }
+    }
+
+    private fun selectFeedGroup(id: Long, name: String) {
+        val changed = groupId != id
+        groupId = id
+        groupName = name
+        // Preserve the selection across view and process recreation without adding screens.
+        if (arguments == null) arguments = Bundle()
+        requireArguments().putLong(KEY_GROUP_ID, id)
+        requireArguments().putString(KEY_GROUP_NAME, name)
+        activity.supportActionBar?.subtitle = name
+        activity.invalidateOptionsMenu()
+        if (!changed) return
+        listState = null
+        latestLoadedState = null
+        oldestSubscriptionUpdate = null
+        lastHighlightedRangeEnd = 0
+        hideNewItemsLoaded(false)
+        groupAdapter.clear()
+        feedBinding.itemsList.scrollToPosition(0)
+        viewModel.selectGroup(id)
     }
 
     private fun setupListViewMode() {
@@ -487,6 +510,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onDestroyView() {
+        groupSelector?.dispose()
+        groupSelector = null
         streamSelection?.destroy()
         streamSelection = null
         PreferenceManager.getDefaultSharedPreferences(requireContext())

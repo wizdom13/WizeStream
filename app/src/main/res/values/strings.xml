@@ -1274,6 +1274,8 @@
         <item quantity="other">%d days</item>
     </plurals>
     <!-- Feed -->
+    <string name="feed_group_filter_all">All channels</string>
+    <string name="feed_group_filter_description">Channel group: %1$s</string>
     <string name="fragment_feed_title">What\'s New</string>
     <string name="feed_group_page_summary">Channel group page</string>
     <string name="feed_groups_header_title">Channel groups</string>

@@ -20,6 +20,21 @@
             android:orientation="vertical"
             app:layout_scrollFlags="scroll|enterAlways">
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/feed_group_selector"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:minHeight="48dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="@string/feed_group_filter_all"
+                android:visibility="gone"
+                app:icon="@drawable/ic_arrow_drop_down"
+                app:iconGravity="textEnd" />
+
             <RelativeLayout
                 android:id="@+id/refresh_root_view"
                 android:descendantFocusability="afterDescendants"
