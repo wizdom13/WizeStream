@@ -29,6 +29,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.schabi.newpipe.NewPipeDatabase
+import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.localization.DateWrapper
@@ -274,6 +275,51 @@ class ProgressiveFeedRefreshTest {
         assertEquals(listOf("while away"), state(model).items.map { it.streamWithState.stream.title })
         owner.lifecycle.currentState = Lifecycle.State.DESTROYED
         refresh.dispose()
+    }
+
+    @Test
+    fun switchingGroupsKeepsRefreshProgressAndObservesOnlySelectedMemberships() {
+        feed.upsertAll(subscriptions[0], update(0, "first", 2).streams)
+        feed.upsertAll(subscriptions[1], update(1, "second", 1).streams)
+        val dao = database.feedGroupDAO()
+        val group = dao.insert(org.schabi.newpipe.database.feed.model.FeedGroupEntity(0, "Rare channels", org.schabi.newpipe.local.subscription.FeedGroupIcon.ALL))
+        dao.updateSubscriptionsForGroup(group, listOf(subscriptions[0]))
+        FeedEventManager.postEvent(scope, FeedEventManager.Event.ProgressEvent(1, 3))
+        val model = model()
+        tick()
+        assertEquals(2, state(model).items.size)
+        model.selectGroup(group)
+        tick()
+        assertEquals(listOf("first"), state(model).items.map { it.streamWithState.stream.title })
+        assertNotNull(state(model).progress)
+        dao.updateSubscriptionsForGroup(group, listOf(subscriptions[1]))
+        tick()
+        assertEquals(listOf("second"), state(model).items.map { it.streamWithState.stream.title })
+        model.selectGroup(-1)
+        tick()
+        assertEquals(2, state(model).items.size)
+        assertNotNull(state(model).progress)
+    }
+
+    @Test
+    fun groupSelectorTracksRenamesDeletionAndOnlyActiveProfileGroups() {
+        val dao = database.feedGroupDAO()
+        val group = org.schabi.newpipe.database.feed.model.FeedGroupEntity(0, "Rare channels", org.schabi.newpipe.local.subscription.FeedGroupIcon.ALL)
+        val id = dao.insert(group)
+        dao.insert(group.copy(uid = 0, name = "Other profile", profileId = "other"))
+        var selected = id
+        val button = com.google.android.material.button.MaterialButton(android.view.ContextThemeWrapper(context, R.style.LightTheme))
+        val selector = FeedGroupSelector(context, button, { selected }) { newId, _ -> selected = newId }
+        try {
+            assertEquals("Rare channels", button.text.toString())
+            dao.update(group.copy(uid = id, name = "Renamed"))
+            assertEquals("Renamed", button.text.toString())
+            dao.delete(id)
+            assertEquals(-1L, selected)
+            assertEquals(android.view.View.GONE, button.visibility)
+        } finally {
+            selector.dispose()
+        }
     }
 
     private fun model(owner: LifecycleOwner? = null): FeedViewModel = FeedViewModel(context, initialShowPlayedItems = true, initialShowPartiallyPlayedItems = true, initialShowFutureItems = true).also {
