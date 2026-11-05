@@ -1865,4 +1865,7 @@ Add the For you tab under Settings → Content → Customize home and move it fi
     <string name="exit_cleanup_positions_title">Also clear playback positions</string>
     <string name="exit_cleanup_positions_summary">Remove resume positions, watched-progress markers and saved queue recovery for the current profile. Watch history is kept. Deletions may sync to paired devices.</string>
     <string name="exit_cleanup_positions_confirm">Automatically clear playback positions when leaving the app? This removes resume positions, watched-progress markers and saved queue recovery for the current profile. If progress sync is enabled, deletions may also reach paired devices.</string>
+    <string name="tablet_auto_fullscreen_key" translatable="false">tablet_auto_fullscreen</string>
+    <string name="tablet_auto_fullscreen_title">Automatic fullscreen on tablets</string>
+    <string name="tablet_auto_fullscreen_summary">Automatically show landscape videos fullscreen when your tablet is in landscape. Manual fullscreen choices last until you rotate or start another video. Does not apply in split-screen or desktop mode.</string>
 </resources>

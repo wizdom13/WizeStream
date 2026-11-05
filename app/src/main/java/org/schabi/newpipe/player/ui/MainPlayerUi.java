@@ -98,6 +98,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutChangeListener {
+    private final TabletAutoFullscreen tabletAutoFullscreen = new TabletAutoFullscreen();
     private static final String TAG = MainPlayerUi.class.getSimpleName();
 
     // see the Javadoc of calculateMaxEndScreenThumbnailHeight for information
@@ -1299,6 +1300,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         }
         getParentActivity().ifPresent(FullscreenCommentsSidebar::hide);
         videoOrientationStreamKey = streamKey;
+        tabletAutoFullscreen.onNewVideo();
         videoContentOrientation = FullscreenOrientationPolicy.VideoContentOrientation.UNKNOWN;
         setupScreenRotationButton();
     }
@@ -1439,6 +1441,15 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     }
 
 
+    public boolean isAutomaticFullscreenAllowed(final Context playerContext) {
+        return tabletAutoFullscreen.isAllowed(playerContext);
+    }
+
+    public void onManualFullscreenChange(final int orientation) {
+        updateVideoContentIdentityFromCurrentItem();
+        tabletAutoFullscreen.onManualChange(orientation);
+    }
+
     public void checkLandscape() {
         updateVideoContentIdentityFromCurrentItem();
         final Context playerContext = getParentContext().orElse(player.getService());
@@ -1447,7 +1458,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                 orientation,
                 isFullscreen,
                 player.isAudioOnly(),
-                DeviceUtils.isTablet(playerContext) || DeviceUtils.isDesktopMode(playerContext)
+                !isAutomaticFullscreenAllowed(playerContext)
+                        || DeviceUtils.isTv(playerContext)
+                        || DeviceUtils.isDesktopMode(playerContext)
                         || getParentActivity().map(DeviceUtils::isInMultiWindow).orElse(false),
                 videoContentOrientation)) {
             setFullscreen(true);
