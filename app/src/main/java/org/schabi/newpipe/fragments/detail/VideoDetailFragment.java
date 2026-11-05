@@ -663,7 +663,8 @@ public final class VideoDetailFragment
     private boolean isPhoneVideoFullscreenEligible() {
         return player != null
                 && !nativePipPrepared
-                && !DeviceUtils.isTablet(activity)
+                && (!DeviceUtils.isTablet(activity) || player.UIs().get(MainPlayerUi.class)
+                .map(ui -> ui.isAutomaticFullscreenAllowed(activity)).orElse(false))
                 && !DeviceUtils.isTv(activity)
                 && !DeviceUtils.isDesktopMode(activity)
                 && !DeviceUtils.isInMultiWindow(activity)
@@ -3192,6 +3193,10 @@ public final class VideoDetailFragment
         final MainPlayerUi ui = playerUi.orElse(null);
         final int currentOrientation = getResources().getConfiguration().orientation;
         final boolean landscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE;
+
+        if (ui != null && DeviceUtils.isTablet(activity)) {
+            ui.onManualFullscreenChange(currentOrientation);
+        }
 
         // TV never rotates. Tablets keep their current orientation in the same cases as before,
         // but apply the requested fullscreen state explicitly instead of toggling blindly.
