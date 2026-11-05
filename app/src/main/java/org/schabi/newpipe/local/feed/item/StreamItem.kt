@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import com.xwray.groupie.viewbinding.BindableItem
+import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import org.schabi.newpipe.MainActivity
@@ -23,6 +24,7 @@ import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.VIDEO_STREAM
 import org.schabi.newpipe.info_list.StreamUploaderNavigation
 import org.schabi.newpipe.learning.VideoNoteBadges
+import org.schabi.newpipe.local.feed.preview.FeedPreviewController
 import org.schabi.newpipe.util.GridTitleDisplayPolicy
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ShortsThumbnailPolicy
@@ -48,6 +50,9 @@ data class StreamItem(
 
     /** Shared reactive index supplied by the feed view, independently of highlighting. */
     var noteBadges: VideoNoteBadges? = null
+
+    // Items can outlive the fragment view while an asynchronous diff is pending.
+    var previewController: WeakReference<FeedPreviewController>? = null
 
     /** Opens the uploader without changing the click behavior of the rest of the stream card. */
     var onUploaderSelected: ((ChannelInfoItem) -> Unit)? = null
@@ -138,6 +143,7 @@ data class StreamItem(
 
         noteBadges?.bindStream(viewBinding.root, stream)
         execBindEnd?.accept(viewBinding)
+        previewController?.get()?.bind(viewBinding.root, stream, itemVersion == ItemVersion.CARD)
     }
 
     private fun bindUploader(viewBinding: ListStreamItemBinding) {
