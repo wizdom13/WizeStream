@@ -232,6 +232,13 @@
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
 
+        <org.schabi.newpipe.local.feed.quickadd.QuickAddPreference
+            android:key="feed_quick_add_playlist"
+            android:title="@string/feed_quick_add_title"
+            android:summary="@string/feed_quick_add_disabled"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
         <SwitchPreferenceCompat
             android:key="@string/feed_preview_key"
             android:title="@string/feed_preview_title"

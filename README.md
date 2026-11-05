@@ -258,6 +258,11 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 ### Playback
 
+- Optional **Quick add to playlist in What’s New** under **Settings > Content** selects a local
+  playlist separately for each profile. Tap the thumbnail’s top-right button to save a video;
+  a checkmark identifies videos already saved. Duplicate adds are prevented and a snackbar
+  offers Undo. Uses only the local database; disabled by default and hidden in the mini layout.
+
 - Optional **Video previews in What’s New** under **Settings > Content** adds a manual Preview
   button to the **card layout** for regular videos. Previews start muted, offer seek and mute
   controls, and stop off-screen or when leaving the feed. Only one preview runs, and other

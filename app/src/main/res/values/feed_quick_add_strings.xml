@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feed_quick_add_title">Quick add to playlist in What’s New</string>
+    <string name="feed_quick_add_off">Off</string>
+    <string name="feed_quick_add_disabled">Off — choose a local playlist for this profile to show a Quick add button on video thumbnails.</string>
+    <string name="feed_quick_add_target">Save to %1$s with one tap</string>
+    <string name="feed_quick_add_create_first">Create a local playlist in Bookmarks first, then select it here.</string>
+    <string name="feed_quick_add_action">Add to %1$s</string>
+    <string name="feed_quick_add_saved">Already saved to %1$s</string>
+    <string name="feed_quick_add_added">Added to %1$s</string>
+    <string name="feed_quick_add_failed">Could not update the playlist. Check your Quick add selection in Content settings.</string>
+    <string name="feed_quick_add_undo_changed">The playlist has changed. Remove the video from the playlist if needed.</string>
+</resources>
