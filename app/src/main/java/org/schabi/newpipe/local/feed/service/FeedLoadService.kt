@@ -165,6 +165,24 @@ class FeedLoadService : Service() {
         stopService()
     }
 
+    override fun onDestroy() {
+        val wasLoading = loadingDisposable != null
+        if (wasLoading) {
+            feedLoadManager.cancel()
+        }
+        disposeAll()
+        if (wasLoading && ::feedScope.isInitialized) {
+            FeedEventManager.reset(feedScope)
+        }
+        super.onDestroy()
+    }
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        // Android 15 limits data-sync foreground service time while the app is
+        // in the background. Keep committed results and release outstanding work.
+        cancelLoading()
+    }
+
     private fun stopService() {
         disposeAll()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)

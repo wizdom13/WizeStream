@@ -8,8 +8,8 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.util.image.ImageStrategy
 
 /**
- * Instances of this class might stay around in memory for some time while fetching the feed,
- * because of [FeedLoadManager.BUFFER_COUNT_BEFORE_INSERT]. Therefore this class should contain
+ * Instances of this class stay around until fetching completes for notification consumers.
+ * Therefore this class should contain
  * as little data as possible to avoid out of memory errors. In particular, avoid storing whole
  * [ChannelInfo] objects, as they might contain raw JSON info in ready channel tabs link handlers.
  */

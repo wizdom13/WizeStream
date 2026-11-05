@@ -11,7 +11,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.preference.PreferenceManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Flowable
-import io.reactivex.rxjava3.functions.Function6
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.functions.Function4
+import io.reactivex.rxjava3.functions.Function5
 import io.reactivex.rxjava3.processors.BehaviorProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.time.OffsetDateTime
@@ -19,18 +21,16 @@ import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.App
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
-import org.schabi.newpipe.database.stream.StreamWithState
 import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedEventManager
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ErrorResultEvent
-import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.IdleEvent
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ProgressEvent
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.SuccessResultEvent
 import org.schabi.newpipe.util.DEFAULT_THROTTLE_TIMEOUT
 
 class FeedViewModel(
     private val application: Application,
-    groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
+    private val groupId: Long = FeedGroupEntity.GROUP_ALL_ID,
     initialShowPlayedItems: Boolean,
     initialShowPartiallyPlayedItems: Boolean,
     initialShowFutureItems: Boolean
@@ -52,120 +52,110 @@ class FeedViewModel(
         .startWithItem(initialShowFutureItems)
         .distinctUntilChanged()
 
-    private val mutableStateLiveData = MutableLiveData<FeedState>()
+    private val highlightBaselines = mutableMapOf<FeedScope, FeedHighlightBaseline>()
+    private var combineDisposable: Disposable? = null
+    private val mutableStateLiveData = object : MutableLiveData<FeedState>() {
+        override fun onActive() {
+            combineDisposable = observeFeed()
+        }
+
+        override fun onInactive() {
+            combineDisposable?.dispose()
+            combineDisposable = null
+        }
+    }
     val stateLiveData: LiveData<FeedState> = mutableStateLiveData
 
     private val sortByDiscovery = BehaviorProcessor.createDefault(getSortByDiscovery())
 
-    private var combineDisposable = Flowable.combineLatest(
+    private fun observeFeed(): Disposable = Flowable.combineLatest(
         FeedScope.feedChanges(application),
-        sortByDiscovery.distinctUntilChanged()
-    ) { scope, sort -> scope to sort }
-        .switchMap { (feedScope, discoveryOrder) ->
-            Flowable.combineLatest(
-                FeedEventManager.events(feedScope),
-                showPlayedItemsFlowable,
-                showPartiallyPlayedItemsFlowable,
-                showFutureItemsFlowable,
-                feedDatabaseManager.notLoadedCount(
-                    groupId,
-                    feedScope
-                ),
-                feedDatabaseManager.oldestSubscriptionUpdate(
-                    groupId,
-                    feedScope
-                ),
+        sortByDiscovery.distinctUntilChanged(),
+        showPlayedItemsFlowable,
+        showPartiallyPlayedItemsFlowable,
+        showFutureItemsFlowable,
+        Function5 { scope: FeedScope, discovery: Boolean, played: Boolean, partial: Boolean, future: Boolean ->
+            FeedQuery(scope, discovery, played, partial, future)
+        }
+    )
+        .switchMap { query ->
+            // Observe committed content independently of progress. A progress tick must
+            // neither query the database nor reconstruct all the StreamItems.
+            val items = feedDatabaseManager.observeStreams(
+                groupId,
+                query.played,
+                query.partial,
+                query.future,
+                query.scope,
+                query.discovery
+            )
+                .throttleLatest(FEED_SNAPSHOT_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
+                .distinctUntilChanged()
+                .observeOn(Schedulers.computation())
+                .map { streams -> streams.map(::StreamItem) }
 
-                Function6 {
-                        t1: FeedEventManager.Event,
-                        t2: Boolean,
-                        t3: Boolean,
-                        t4: Boolean,
-                        t5: Long,
-                        t6: List<OffsetDateTime?>
-                    ->
-                    return@Function6 CombineResultEventHolder(
-                        t1,
-                        t2,
-                        t3,
-                        t4,
-                        t5,
-                        t6.firstOrNull()
-                    )
+            Flowable.combineLatest(
+                FeedEventManager.events(query.scope),
+                items,
+                feedDatabaseManager.notLoadedCount(groupId, query.scope),
+                feedDatabaseManager.oldestSubscriptionUpdate(groupId, query.scope),
+                Function4 { event: FeedEventManager.Event, streamItems: List<StreamItem>, notLoadedCount: Long, oldestUpdate: List<OffsetDateTime?> ->
+                    val highlightAfter = highlightBaselines.getOrPut(query.scope) { FeedHighlightBaseline() }
+                        .update(oldestUpdate.firstOrNull(), event is ProgressEvent)
+                    val state = when (event) {
+                        is ErrorResultEvent -> FeedState.ErrorState(event.error)
+
+                        else -> FeedState.LoadedState(
+                            streamItems,
+                            oldestUpdate.firstOrNull(),
+                            notLoadedCount,
+                            (event as? SuccessResultEvent)?.itemsErrors.orEmpty(),
+                            (event as? ProgressEvent)?.let {
+                                FeedState.ProgressState(
+                                    it.currentProgress,
+                                    it.maxProgress,
+                                    it.progressMessage,
+                                    it.updateDescription
+                                )
+                            },
+                            highlightAfter
+                        )
+                    }
+                    FeedResult(query.scope, event, state)
                 }
             )
-                .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
-                .observeOn(Schedulers.io())
-                .map { (event, showPlayedItems, showPartiallyPlayedItems, showFutureItems, notLoadedCount, oldestUpdate) ->
-                    val streamItems = if (event is SuccessResultEvent || event is IdleEvent) {
-                        feedDatabaseManager
-                            .getStreams(
-                                groupId,
-                                showPlayedItems,
-                                showPartiallyPlayedItems,
-                                showFutureItems,
-                                feedScope,
-                                discoveryOrder
-                            )
-                            .blockingGet(arrayListOf())
-                    } else {
-                        arrayListOf()
-                    }
-
-                    CombineResultDataHolder(
-                        feedScope,
-                        event,
-                        streamItems,
-                        notLoadedCount,
-                        oldestUpdate
-                    )
-                }
         }
+        .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe { (feedScope, event, listFromDB, notLoadedCount, oldestUpdate) ->
-            mutableStateLiveData.postValue(
-                when (event) {
-                    is IdleEvent -> FeedState.LoadedState(listFromDB.map { e -> StreamItem(e) }, oldestUpdate, notLoadedCount, listOf())
-
-                    is ProgressEvent -> FeedState.ProgressState(
-                        event.currentProgress,
-                        event.maxProgress,
-                        event.progressMessage,
-                        event.updateDescription
-                    )
-
-                    is SuccessResultEvent -> FeedState.LoadedState(listFromDB.map { e -> StreamItem(e) }, oldestUpdate, notLoadedCount, event.itemsErrors)
-
-                    is ErrorResultEvent -> FeedState.ErrorState(event.error)
+        .subscribe(
+            { (scope, event, state) ->
+                mutableStateLiveData.value = state
+                if (event is ErrorResultEvent || event is SuccessResultEvent) {
+                    FeedEventManager.reset(scope, event)
                 }
-            )
-
-            if (event is ErrorResultEvent || event is SuccessResultEvent) {
-                FeedEventManager.reset(feedScope)
-            }
-        }
+            },
+            { error -> mutableStateLiveData.value = FeedState.ErrorState(error) }
+        )
 
     override fun onCleared() {
         super.onCleared()
-        combineDisposable.dispose()
+        combineDisposable?.dispose()
+        combineDisposable = null
     }
 
-    private data class CombineResultEventHolder(
-        val t1: FeedEventManager.Event,
-        val t2: Boolean,
-        val t3: Boolean,
-        val t4: Boolean,
-        val t5: Long,
-        val t6: OffsetDateTime?
+    private data class FeedQuery(
+        val scope: FeedScope,
+        val discovery: Boolean,
+        val played: Boolean,
+        val partial: Boolean,
+        val future: Boolean
     )
 
-    private data class CombineResultDataHolder(
+    private data class FeedResult(
         val scope: FeedScope,
-        val t1: FeedEventManager.Event,
-        val t2: List<StreamWithState>,
-        val t3: Long,
-        val t4: OffsetDateTime?
+        val event: FeedEventManager.Event,
+        val state: FeedState
     )
 
     fun getSortByDiscovery(): Boolean = PreferenceManager.getDefaultSharedPreferences(application)
@@ -206,6 +196,8 @@ class FeedViewModel(
     fun getShowFutureItemsFromPreferences() = getShowFutureItemsFromPreferences(application)
 
     companion object {
+        private const val FEED_SNAPSHOT_INTERVAL_MILLIS = 500L
+
         private fun getShowPlayedItemsFromPreferences(context: Context) = PreferenceManager.getDefaultSharedPreferences(context)
             .getBoolean(context.getString(R.string.feed_show_watched_items_key), true)
 

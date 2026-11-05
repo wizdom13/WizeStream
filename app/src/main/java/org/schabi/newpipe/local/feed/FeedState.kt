@@ -16,7 +16,9 @@ sealed class FeedState {
         val items: List<StreamItem>,
         val oldestUpdate: OffsetDateTime?,
         val notLoadedCount: Long,
-        val itemsErrors: List<Throwable>
+        val itemsErrors: List<Throwable>,
+        val progress: ProgressState? = null,
+        val highlightAfter: OffsetDateTime? = null
     ) : FeedState()
 
     data class ErrorState(
