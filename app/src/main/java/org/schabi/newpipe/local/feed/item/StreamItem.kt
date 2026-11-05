@@ -53,6 +53,7 @@ data class StreamItem(
 
     // Items can outlive the fragment view while an asynchronous diff is pending.
     var previewController: WeakReference<FeedPreviewController>? = null
+    var quickAddController: WeakReference<org.schabi.newpipe.local.feed.quickadd.FeedQuickAddController>? = null
 
     /** Opens the uploader without changing the click behavior of the rest of the stream card. */
     var onUploaderSelected: ((ChannelInfoItem) -> Unit)? = null
@@ -144,6 +145,7 @@ data class StreamItem(
         noteBadges?.bindStream(viewBinding.root, stream)
         execBindEnd?.accept(viewBinding)
         previewController?.get()?.bind(viewBinding.root, stream, itemVersion == ItemVersion.CARD)
+        quickAddController?.get()?.bind(viewBinding.root, stream, itemVersion != ItemVersion.MINI)
     }
 
     private fun bindUploader(viewBinding: ListStreamItemBinding) {

@@ -127,6 +127,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     var feedHeaderExpanded = true
 
     private var noteBadges: VideoNoteBadges? = null
+    private var feedQuickAdd: org.schabi.newpipe.local.feed.quickadd.FeedQuickAddController? = null
     private var feedPreview: org.schabi.newpipe.local.feed.preview.FeedPreviewController? = null
     private lateinit var groupAdapter: GroupieAdapter
     private var streamSelection: StreamSelectionController? = null
@@ -224,6 +225,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         })
 
         feedBinding.itemsList.adapter = groupAdapter
+        feedQuickAdd = org.schabi.newpipe.local.feed.quickadd.FeedQuickAddController(feedBinding.itemsList)
         feedPreview = org.schabi.newpipe.local.feed.preview.FeedPreviewController(feedBinding.itemsList, { stream, queue ->
             NavigationHelper.openVideoDetailFragment(requireContext(), fm, stream.serviceId, stream.url, stream.title, queue, false)
         })
@@ -517,6 +519,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onDestroyView() {
+        feedQuickAdd?.dispose()
+        feedQuickAdd = null
         feedPreview?.dispose()
         feedPreview = null
         groupSelector?.dispose()
@@ -925,6 +929,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 displayItem.execBindEnd = item.execBindEnd
                 displayItem.noteBadges = noteBadges
                 displayItem.previewController = feedPreview?.let { WeakReference(it) }
+                displayItem.quickAddController = feedQuickAdd?.let { WeakReference(it) }
                 displayItem.onUploaderSelected = ::openUploaderChannel
             }
         }

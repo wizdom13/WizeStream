@@ -19,8 +19,16 @@ import org.schabi.newpipe.database.playlist.model.PlaylistEntity.Companion.DEFAU
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 
+data class QuickAddStreamKey(val serviceId: Int, val url: String)
+
 @Dao
 interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
+
+    @Query("SELECT s.service_id AS serviceId, s.url FROM streams s INNER JOIN playlist_stream_join j ON j.stream_id = s.uid INNER JOIN playlists p ON p.uid = j.playlist_id WHERE p.profile_id = :profileId AND p.uid = :playlistId")
+    fun observeQuickAddStreams(profileId: String, playlistId: Long): Flowable<List<QuickAddStreamKey>>
+
+    @Query("SELECT * FROM playlist_stream_join WHERE playlist_id = :playlistId ORDER BY join_index")
+    fun getQuickAddEntries(playlistId: Long): List<PlaylistStreamEntity>
 
     @Query("SELECT * FROM playlist_stream_join")
     override fun getAll(): Flowable<List<PlaylistStreamEntity>>
