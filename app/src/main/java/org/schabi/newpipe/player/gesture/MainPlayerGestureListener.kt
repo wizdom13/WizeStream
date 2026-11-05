@@ -383,22 +383,10 @@ class MainPlayerGestureListener(
 
     private fun onScrollBrightness(distanceY: Float) {
         val parent: AppCompatActivity = playerUi.parentActivity.orElse(null) ?: return
-        val window = parent.window
-        val layoutParams = window.attributes
         val bar: ProgressBar = binding.brightnessProgressBar
-
-        // Update progress bar
-        val oldBrightness = layoutParams.screenBrightness
-        bar.progress = (bar.max * oldBrightness.coerceIn(0f, 1f)).toInt()
-        bar.incrementProgressBy(distanceY.toInt())
-
-        // Update brightness
-        val currentProgressPercent = bar.progress.toFloat() / bar.max
-        layoutParams.screenBrightness = currentProgressPercent
-        window.attributes = layoutParams
-
-        // Save current brightness level
-        PlayerHelper.setScreenBrightness(parent, currentProgressPercent)
+        val currentProgressPercent = BrightnessGesture.apply(parent, distanceY, bar.max) ?: return
+        // Round only for display: preserve fractional movements in the actual brightness.
+        bar.progress = round(bar.max * currentProgressPercent).toInt()
         if (DEBUG) {
             Log.d(
                 TAG,

@@ -1870,4 +1870,7 @@ Add the For you tab under Settings → Content → Customize home and move it fi
     <string name="tablet_auto_fullscreen_key" translatable="false">tablet_auto_fullscreen</string>
     <string name="tablet_auto_fullscreen_title">Automatic fullscreen on tablets</string>
     <string name="tablet_auto_fullscreen_summary">Automatically show landscape videos fullscreen when your tablet is in landscape. Manual fullscreen choices last until you rotate or start another video. Does not apply in split-screen or desktop mode.</string>
+    <string name="perceptual_brightness_key" translatable="false">perceptual_brightness_gesture</string>
+    <string name="perceptual_brightness_title">Perceptual brightness gesture</string>
+    <string name="perceptual_brightness_summary">Use a nonlinear curve for finer brightness adjustments in dark rooms. Applies only to the player; the feel may vary by device.</string>
 </resources>
