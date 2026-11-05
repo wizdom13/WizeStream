@@ -10,13 +10,15 @@
         android:layout_height="match_parent"
         app:surface_type="texture_view"
         app:show_buffering="when_playing"
+        app:animation_enabled="false"
         app:use_controller="true" />
     <LinearLayout
+        android:id="@+id/feed_preview_actions"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_gravity="top"
         android:orientation="horizontal"
-        android:background="#CC000000">
+        android:background="@color/feed_preview_panel">
         <Button android:id="@+id/feed_preview_mute"
             android:layout_width="0dp" android:layout_weight="1"
             android:layout_height="match_parent" android:text="@string/feed_preview_unmute"
