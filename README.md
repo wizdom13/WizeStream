@@ -258,6 +258,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 ### Playback
 
+- Optional **Perceptual brightness gesture** under **Settings > Video and audio** gives finer
+  low-light control using a nonlinear curve. Off by default; affects only the player window.
+  Device calibration and adaptive brightness can differ from the system slider.
+
 - Main, Listen, background, popup, external-player, and Kodi playback
 - Switch a video to audio-only Listen mode without losing the queue or playback position, and choose
   from 15 waveform, spectrum, meter, radial, and particle visualizers under **Settings > Video and
