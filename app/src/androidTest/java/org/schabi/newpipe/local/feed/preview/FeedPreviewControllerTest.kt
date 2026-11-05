@@ -96,7 +96,12 @@ class FeedPreviewControllerTest {
         file.writeBytes(Base64.decode(instrumentation.context.assets.open("video-adjustments/red-sdr.mp4.base64").use { it.readBytes() }, Base64.DEFAULT))
         try {
             withList({ Single.just(ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context)).createMediaSource(MediaItem.fromUri(file.toURI().toString()))) }) { scenario, list, controller ->
-                scenario.onActivity { list.getChildAt(0).findViewById<View>(R.id.feed_preview_button).performClick() }
+                scenario.onActivity {
+                    val row = list.getChildAt(0)
+                    row.findViewById<View>(R.id.itemDurationView).visibility = View.VISIBLE
+                    row.findViewById<View>(R.id.feed_preview_button).performClick()
+                    assertEquals(View.GONE, row.findViewById<View>(R.id.itemDurationView).visibility)
+                }
                 await {
                     var ready = false
                     scenario.onActivity { ready = list.getChildAt(0).findViewById<PlayerView>(R.id.feed_preview_player)?.player?.playbackState == Player.STATE_READY }
@@ -107,6 +112,11 @@ class FeedPreviewControllerTest {
                     val view = row.findViewById<PlayerView>(R.id.feed_preview_player)
                     val player = view.player!!
                     player.pause()
+                    val actions = row.findViewById<View>(R.id.feed_preview_actions)
+                    view.hideController()
+                    assertEquals(View.GONE, actions.visibility)
+                    view.showController()
+                    assertEquals(View.VISIBLE, actions.visibility)
                     assertEquals(0f, player.volume, 0f)
                     row.findViewById<View>(R.id.feed_preview_mute).performClick()
                     assertEquals(1f, player.volume, 0f)
@@ -115,6 +125,7 @@ class FeedPreviewControllerTest {
                     player.seekTo(1500)
                     val queue = controller.takeQueue(stream)
                     assertEquals(1500L, requireNotNull(requireNotNull(queue).item).recoveryPosition)
+                    assertEquals(View.VISIBLE, row.findViewById<View>(R.id.itemDurationView).visibility)
                     assertNull(view.player)
                     assertNull(row.findViewById<View>(R.id.feed_preview_player))
                     assertEquals(View.VISIBLE, row.findViewById<View>(R.id.feed_preview_button).visibility)

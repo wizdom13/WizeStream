@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="feed_preview_panel">#66000000</color>
+    <color name="feed_preview_scrim">#26000000</color>
+</resources>
