@@ -261,6 +261,10 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Optional **Perceptual brightness gesture** under **Settings > Video and audio** gives finer
   low-light control using a nonlinear curve. Off by default; affects only the player window.
   Device calibration and adaptive brightness can differ from the system slider.
+- **Playback information** in the expanded player controls shows playing resolution, codecs,
+  reported frame rate and bitrates, decoder names, buffered seconds and dropped frames.
+  The dismissible panel updates once per second while visible, entirely on-device. Unknown
+  values appear as unavailable; reported stream bitrate is not measured network speed.
 
 - Main, Listen, background, popup, external-player, and Kodi playback
 - Switch a video to audio-only Listen mode without losing the queue or playback position, and choose

@@ -3371,6 +3371,7 @@ public final class VideoDetailFragment
             return;
         }
         nativePipPrepared = true;
+        ui.getBinding().playbackInformationPanel.setVisibility(View.GONE);
         minimizedVideoSurface.restore();
         binding.getRoot().addOnLayoutChangeListener(nativePipLayoutListener);
         FullscreenCommentsSidebar.hide(activity);
