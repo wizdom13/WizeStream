@@ -161,15 +161,13 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @NonNull
     private final SeekbarPreviewThumbnailHolder seekbarPreviewThumbnailHolder =
             new SeekbarPreviewThumbnailHolder();
-    /*//////////////////////////////////////////////////////////////////////////
-    // Constructor, setup, destroy
-    //////////////////////////////////////////////////////////////////////////*/
-    //region Constructor, setup, destroy
-
     protected VideoPlayerUi(@NonNull final Player player,
                             @NonNull final PlayerBinding playerBinding) {
         super(player);
         binding = playerBinding;
+        binding.playbackInformationPanel.bind(player.getPlaybackInformation());
+        binding.playbackInformationButton.setOnClickListener(
+                view -> binding.playbackInformationPanel.toggle());
         bottomPlayerControls = new BottomPlayerControls(binding);
         playerUiTheme = new PlayerUiTheme(context, binding.playbackSeekBar);
         danmakuController = new DanmakuController(player, binding);
@@ -465,6 +463,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void destroy() {
         dismissPopupMenus();
+        binding.playbackInformationPanel.clear();
+        binding.playbackInformationButton.setOnClickListener(null);
         playerUiTheme.close();
         danmakuController.destroy();
         seekbarPreviewThumbnailHolder.clear();

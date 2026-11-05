@@ -1873,4 +1873,18 @@ Add the For you tab under Settings → Content → Customize home and move it fi
     <string name="perceptual_brightness_key" translatable="false">perceptual_brightness_gesture</string>
     <string name="perceptual_brightness_title">Perceptual brightness gesture</string>
     <string name="perceptual_brightness_summary">Use a nonlinear curve for finer brightness adjustments in dark rooms. Applies only to the player; the feel may vary by device.</string>
+    <string name="playback_information">Playback information</string>
+    <string name="playback_info_close">Close playback information</string>
+    <string name="playback_info_unavailable">Unavailable</string>
+    <string name="playback_info_resolution">Playing resolution</string>
+    <string name="playback_info_frame_rate">Reported frame rate</string>
+    <string name="playback_info_video_codec">Video codec</string>
+    <string name="playback_info_audio_codec">Audio codec</string>
+    <string name="playback_info_video_bitrate">Reported video bitrate</string>
+    <string name="playback_info_audio_bitrate">Reported audio bitrate</string>
+    <string name="playback_info_video_decoder">Video decoder</string>
+    <string name="playback_info_audio_decoder">Audio decoder</string>
+    <string name="playback_info_buffer">Buffered ahead</string>
+    <string name="playback_info_seconds">%1$.1f s</string>
+    <string name="playback_info_dropped">Dropped frames (decoder session)</string>
 </resources>
