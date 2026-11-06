@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1037000">WizeStream 1.37.0</a></li>
 <li><a href="#release-1036001">WizeStream 1.36.1</a></li>
 <li><a href="#release-1036000">WizeStream 1.36.0</a></li>
 <li><a href="#release-1035000">WizeStream 1.35.0</a></li>
@@ -104,6 +105,25 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1037000" data-version="1.37.0" data-version-code="1037000">
+<h2>WizeStream 1.37.0</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added optional muted video previews to What’s New cards, with seeking, mute controls, and full-player position handoff. Previews start only after a tap, stop off-screen or when leaving the feed, and do not write watch history.</li>
+<li>Added profile-specific Quick add to playlist in What’s New, with one-tap saving, saved-state checkmarks, duplicate prevention, and Undo. Uses local playlists and is disabled by default.</li>
+<li>Added a channel-group selector directly in What’s New, preserving the selected group and filters.</li>
+<li>Show subscription feed results progressively as channels finish refreshing, with stable new-video highlights. Refresh can continue while navigating or playing videos.</li>
+<li>Added optional automatic fullscreen for landscape videos on tablets while preserving manual overrides and keeping portrait videos unforced.</li>
+<li>Added an optional perceptual brightness gesture for finer low-light control.</li>
+<li>Added a playback information panel showing current playback formats, decoder details, buffering, and dropped frames.</li>
+</ul>
+<h3>Interface</h3>
+<ul>
+<li>Refined feed previews with a translucent Material 3 Preview button and lighter control panels. Preview actions hide with the playback controls, and the thumbnail duration badge is hidden during playback.</li>
+</ul>
+</div>
+</section>
 <section id="release-1036001" data-version="1.36.1" data-version-code="1036001">
 <h2>WizeStream 1.36.1</h2>
 <div class="release-notes">

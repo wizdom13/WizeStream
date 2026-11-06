@@ -1,0 +1,1 @@
+Added optional muted video previews and one-tap playlist saving in What’s New, with saved checkmarks and Undo. Added a feed group selector, progressive feed loading, and stable new-video highlights. Added optional tablet auto-fullscreen, finer low-light brightness gestures, and playback information. Refined preview controls with translucent panels.
