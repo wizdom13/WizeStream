@@ -4,6 +4,22 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.37.0 (`1037000`)
+
+### Improvements
+
+- Added optional muted video previews to What’s New cards, with seeking, mute controls, and full-player position handoff. Previews start only after a tap, stop off-screen or when leaving the feed, and do not write watch history.
+- Added profile-specific Quick add to playlist in What’s New, with one-tap saving, saved-state checkmarks, duplicate prevention, and Undo. Uses local playlists and is disabled by default.
+- Added a channel-group selector directly in What’s New, preserving the selected group and filters.
+- Show subscription feed results progressively as channels finish refreshing, with stable new-video highlights. Refresh can continue while navigating or playing videos.
+- Added optional automatic fullscreen for landscape videos on tablets while preserving manual overrides and keeping portrait videos unforced.
+- Added an optional perceptual brightness gesture for finer low-light control.
+- Added a playback information panel showing current playback formats, decoder details, buffering, and dropped frames.
+
+### Interface
+
+- Refined feed previews with a translucent Material 3 Preview button and lighter control panels. Preview actions hide with the playback controls, and the thumbnail duration badge is hidden during playback.
+
 ## WizeStream 1.36.1 (`1036001`)
 
 ### Improvements
