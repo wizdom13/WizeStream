@@ -389,6 +389,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Store watch history, search history, and playback progress locally under user-controlled settings
 - Browse watch history by date with fast scrolling and a calendar date picker
 - Download video, audio, and captions where supported, with resumable downloads and queue controls
+- Choose companion captions in the video download dialog to queue video and one caption language together in the configured video download folder (or choose a folder when none is configured). Captions are separate resumable sidecar files; this option does not apply to segment downloads.
 - Enable automatic audio or video downloads from subscribed channels, with hourly checks, optional
   unmetered-only networking, saved download folders, and limits of three new uploads per channel
   and 20 total per check; existing uploads are skipped
