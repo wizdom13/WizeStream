@@ -10,6 +10,8 @@ import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -21,6 +23,7 @@ import android.view.animation.LinearInterpolator
 import androidx.preference.PreferenceManager
 import kotlin.math.PI
 import kotlin.math.sin
+import org.schabi.newpipe.extractor.stream.StreamSegment
 import org.schabi.newpipe.util.DeviceUtils
 
 /** Changes only the track drawing; native touch, keyboard, thumb, and accessibility remain intact. */
@@ -31,6 +34,10 @@ class WavySeekBar @JvmOverloads constructor(context: Context, attrs: AttributeSe
     private val wave = WaveTrack(density)
     private var wavy = false
     private var attached = false
+    private var chapterSegments: List<StreamSegment> = emptyList()
+    private val chapterGapPaint = Paint().apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+    }
     private val animation = ValueAnimator.ofFloat(0f, (2 * PI).toFloat()).apply {
         duration = 1600
         repeatCount = ValueAnimator.INFINITE
@@ -88,6 +95,49 @@ class WavySeekBar @JvmOverloads constructor(context: Context, attrs: AttributeSe
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         updateTrackBounds()
+    }
+
+    fun setChapters(newChapters: List<StreamSegment>) {
+        chapterSegments = newChapters.toList()
+        invalidate()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        if (chapterSegments.isEmpty() || max <= 0) {
+            super.onDraw(canvas)
+            return
+        }
+
+        val layer = canvas.saveLayer(0f, 0f, width.toFloat(), height.toFloat(), null)
+        super.onDraw(canvas)
+
+        val trackLeft = paddingLeft.toFloat()
+        val trackWidth = (width - paddingLeft - paddingRight).toFloat()
+        val durationMillis = max.toLong()
+        val gapWidth = 2 * density
+        if (trackWidth > 0f) {
+            chapterSegments.forEach { chapter ->
+                val startMillis = chapter.startTimeSeconds * 1000L
+                if (startMillis > 0 && startMillis < durationMillis) {
+                    val x = trackLeft + trackWidth * startMillis / durationMillis
+                    canvas.drawRect(
+                        x - gapWidth / 2,
+                        0f,
+                        x + gapWidth / 2,
+                        height.toFloat(),
+                        chapterGapPaint
+                    )
+                }
+            }
+        }
+        canvas.restoreToCount(layer)
+        // A chapter boundary can coincide with the thumb; keep the thumb above the gaps.
+        thumb?.let {
+            val saved = canvas.save()
+            canvas.translate((paddingLeft - thumbOffset).toFloat(), paddingTop.toFloat())
+            it.draw(canvas)
+            canvas.restoreToCount(saved)
+        }
     }
 
     private fun updateTrackBounds() {

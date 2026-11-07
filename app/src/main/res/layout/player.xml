@@ -653,6 +653,23 @@
                         android:paddingBottom="12dp">
 
                         <org.schabi.newpipe.views.NewPipeTextView
+                            android:id="@+id/currentChapterTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#60000000"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:maxWidth="320dp"
+                            android:paddingStart="5dp"
+                            android:paddingEnd="5dp"
+                            android:paddingBottom="2dp"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp"
+                            android:visibility="gone"
+                            tools:text="Chapter title"
+                            tools:visibility="visible" />
+
+                        <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/currentDisplaySeek"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

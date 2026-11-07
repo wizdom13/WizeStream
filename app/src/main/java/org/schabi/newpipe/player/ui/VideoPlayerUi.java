@@ -105,7 +105,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public static final int SEEK_OVERLAY_DURATION = 450; // 450 millis
 
     private boolean tvDirectionalSeek;
-
+    private final ChapterSeekBarController chapterController = new ChapterSeekBarController();
     // other constants (TODO remove playback speeds and use normal menu for popup, too)
     private static final float[] PLAYBACK_SPEEDS = {0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f};
 
@@ -688,9 +688,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             Log.d(TAG, "onProgressChanged() called with: "
                     + "seekBar = [" + seekBar + "], progress = [" + progress + "]");
         }
-
         binding.currentDisplaySeek.setText(getTimeString(progress));
-
+        chapterController.onProgressChanged(binding, progress);
         seekbarPreviewThumbnailHolder.requestBitmapAt(progress, bitmap -> {
             SeekbarPreviewThumbnailHelper.tryResizeAndSetSeekbarPreviewThumbnail(
                     player.getContext(), bitmap, binding.currentSeekbarPreviewThumbnail,
@@ -742,8 +741,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         if (player.getCurrentState() != STATE_PAUSED_SEEK) {
             player.changeState(STATE_PAUSED_SEEK);
         }
-
         showControls(0);
+        chapterController.onStartTrackingTouch(binding, seekBar.getProgress());
         animate(binding.currentDisplaySeek, true, DEFAULT_CONTROLS_DURATION,
                 AnimationType.SCALE_AND_ALPHA);
         animate(binding.currentSeekbarPreviewThumbnail, true, DEFAULT_CONTROLS_DURATION,
@@ -755,24 +754,21 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         if (DEBUG) {
             Log.d(TAG, "onStopTrackingTouch() called with: seekBar = [" + seekBar + "]");
         }
-
         seekbarPreviewThumbnailHolder.cancelRequest();
         player.seekTo(seekBar.getProgress());
         if (player.getExoPlayer().getDuration() == seekBar.getProgress()) {
             player.getExoPlayer().play();
         }
-
         binding.playbackCurrentTime.setText(getTimeString(seekBar.getProgress()));
+        chapterController.hideTitle(binding);
         animate(binding.currentDisplaySeek, false, 200, AnimationType.SCALE_AND_ALPHA);
         animate(binding.currentSeekbarPreviewThumbnail, false, 200, AnimationType.SCALE_AND_ALPHA);
-
         if (player.getCurrentState() == STATE_PAUSED_SEEK) {
             player.changeState(STATE_BUFFERING);
         }
         if (!player.isProgressLoopRunning()) {
             player.startProgressLoop();
         }
-
         showControlsThenHide();
     }
     //endregion
@@ -928,6 +924,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onMediaItemTransition() {
         super.onMediaItemTransition();
         seekbarPreviewThumbnailHolder.cancelRequest();
+        chapterController.clear(binding);
         binding.surfaceView.clearAspectRatio();
         danmakuController.reset();
         qualityFeedback.reset();
@@ -947,6 +944,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.loadingPanel.setVisibility(View.GONE);
 
         animate(binding.currentDisplaySeek, false, 200, AnimationType.SCALE_AND_ALPHA);
+        chapterController.hideTitle(binding);
 
         animate(binding.playPauseButton, false, 80, AnimationType.SCALE_AND_ALPHA, 0,
                 () -> {
@@ -1160,6 +1158,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        chapterController.setChapters(binding, info.getStreamSegments());
         binding.surfaceView.resetUserTransform();
 
         danmakuController.onMetadataChanged(info);
@@ -1177,6 +1176,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
+        chapterController.clear(binding);
         danmakuController.reset();
         binding.surfaceView.resetUserTransform();
         binding.qualityTextView.setVisibility(View.GONE);
