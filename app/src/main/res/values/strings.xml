@@ -1441,6 +1441,7 @@
     <string name="channel_tab_playlists">Playlists</string>
     <string name="channel_tab_albums">Albums / releases</string>
     <string name="channel_tab_podcasts">Podcasts</string>
+    <string name="channel_tab_courses">Courses</string>
     <string name="channel_tab_posts">Posts</string>
     <string name="post_author_avatar_content_description">Post author avatar</string>
     <string name="post_pinned_content_description">Pinned post</string>

@@ -31,6 +31,7 @@ public final class ChannelTabHelper {
             case ChannelTabs.SHORTS:
             case ChannelTabs.LIVESTREAMS:
             case ChannelTabs.PODCASTS:
+            case ChannelTabs.COURSES:
                 return true;
             default:
                 return false;
@@ -78,6 +79,8 @@ public final class ChannelTabHelper {
                 return R.string.show_channel_tabs_albums;
             case ChannelTabs.PODCASTS:
                 return R.string.show_channel_tabs_podcasts;
+            case ChannelTabs.COURSES:
+                return R.string.show_channel_tabs_courses;
             case ChannelTabs.POSTS:
                 return R.string.show_channel_tabs_posts;
             case CHANNEL_TAB_LIKES:
@@ -100,6 +103,8 @@ public final class ChannelTabHelper {
                 return R.string.fetch_channel_tabs_livestreams;
             case ChannelTabs.PODCASTS:
                 return R.string.fetch_channel_tabs_podcasts;
+            case ChannelTabs.COURSES:
+                return R.string.fetch_channel_tabs_courses;
             case CHANNEL_TAB_LIKES:
                 return R.string.fetch_channel_tabs_likes;
             default:
@@ -126,6 +131,8 @@ public final class ChannelTabHelper {
                 return R.string.channel_tab_albums;
             case ChannelTabs.PODCASTS:
                 return R.string.channel_tab_podcasts;
+            case ChannelTabs.COURSES:
+                return R.string.channel_tab_courses;
             case ChannelTabs.POSTS:
                 return R.string.channel_tab_posts;
             case CHANNEL_TAB_LIKES:

@@ -273,6 +273,25 @@ public final class SettingMigrations {
         }
     };
 
+    private static final Migration MIGRATION_11_12 = new Migration(11, 12) {
+        @Override
+        protected void migrate(@NonNull final Context context) {
+            final String channelTabsKey = context.getString(R.string.show_channel_tabs_key);
+            final Set<String> visibleTabs = sp.getStringSet(channelTabsKey, null);
+            if (visibleTabs != null) {
+                sp.edit().putStringSet(channelTabsKey, copyAndAdd(visibleTabs,
+                        context.getString(R.string.show_channel_tabs_courses))).apply();
+            }
+
+            final String fetchTabsKey = context.getString(R.string.feed_fetch_channel_tabs_key);
+            final Set<String> fetchedTabs = sp.getStringSet(fetchTabsKey, null);
+            if (fetchedTabs != null) {
+                sp.edit().putStringSet(fetchTabsKey, copyAndAdd(fetchedTabs,
+                        context.getString(R.string.fetch_channel_tabs_courses))).apply();
+            }
+        }
+    };
+
     static Set<String> copyAndAdd(final Set<String> values, final String value) {
         final Set<String> updatedValues = new HashSet<>(values);
         updatedValues.add(value);
@@ -297,12 +316,13 @@ public final class SettingMigrations {
             MIGRATION_8_9,
             MIGRATION_9_10,
             MIGRATION_10_11,
+            MIGRATION_11_12,
     };
 
     /**
      * Version number for preferences. Must be incremented every time a migration is necessary.
      */
-    private static final int VERSION = 11;
+    private static final int VERSION = 12;
 
 
     static void runMigrationsIfNeeded(@NonNull final Context context) {

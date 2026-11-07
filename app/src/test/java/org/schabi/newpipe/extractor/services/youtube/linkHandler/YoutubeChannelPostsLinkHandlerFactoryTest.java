@@ -27,6 +27,14 @@ class YoutubeChannelPostsLinkHandlerFactoryTest {
     }
 
     @Test
+    void createsAndParsesCoursesUrls() throws Exception {
+        final ListLinkHandler courses = YoutubeChannelTabLinkHandlerFactory.getInstance().fromUrl(
+                "https://www.youtube.com/channel/UC123/courses");
+        assertEquals(ChannelTabs.COURSES, courses.getContentFilters().get(0).getName());
+        assertEquals("https://www.youtube.com/channel/UC123/courses", courses.getUrl());
+    }
+
+    @Test
     void normalizesLegacyCommunityUrlsToPosts() throws Exception {
         final ListLinkHandler posts = YoutubeChannelTabLinkHandlerFactory.getInstance().fromUrl(
                 "https://www.youtube.com/channel/UC123/community");
