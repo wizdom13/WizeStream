@@ -556,5 +556,9 @@
             android:resource="@xml/automotive_app_desc" />
         <meta-data android:name="com.google.android.gms.car.notification.SmallIcon"
             android:resource="@mipmap/ic_launcher" />
+        <receiver android:name=".player.widget.PlaybackWidget" android:exported="false" android:label="@string/playback_widget_name">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/playback_widget_info" />
+        </receiver>
     </application>
 </manifest>
