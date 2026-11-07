@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player
 
 import android.os.Looper
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.datasource.DataSpec
@@ -38,6 +39,68 @@ import org.schabi.newpipe.util.InfoCache
 @Config(manifest = Config.NONE, sdk = [35])
 @LooperMode(LooperMode.Mode.PAUSED)
 class PlayerLiveHttpRecoveryTest {
+    @Test
+    fun repeatedLiveAudioSegment403RefreshesUrlsBeforeBufferDrains() {
+        val fixture = Fixture()
+        fixture.state(Media3Player.STATE_READY)
+        val cache = mock(InfoCache::class.java)
+        mockStatic(InfoCache::class.java).use { cacheClass ->
+            cacheClass.`when`<InfoCache> { InfoCache.getInstance() }.thenReturn(cache)
+            fixture.controller.onLiveMediaSegmentRejected(
+                fixture.engine,
+                C.TRACK_TYPE_AUDIO,
+                6_216_000
+            )
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            fixture.controller.onLiveMediaSegmentRejected(
+                fixture.engine,
+                C.TRACK_TYPE_AUDIO,
+                6_216_000
+            )
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(600))
+            verify(fixture.player, never()).reloadPlayQueueManager()
+            fixture.controller.onLiveMediaSegmentRejected(
+                fixture.engine,
+                C.TRACK_TYPE_AUDIO,
+                6_216_000
+            )
+            shadowOf(Looper.getMainLooper()).idle()
+
+            verify(cache).removeInfo(fixture.item.serviceId, fixture.item.url, InfoCache.Type.STREAM)
+            verify(fixture.player).setRecovery()
+            verify(fixture.player).reloadPlayQueueManager()
+            verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+            verify(fixture.queue, never()).unsetRecovery(0)
+        }
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun earlySegmentRecoveryIgnoresPausedAndReplacedPlayback() {
+        val fixture = Fixture()
+        fixture.state(Media3Player.STATE_READY)
+        `when`(fixture.player.playWhenReady).thenReturn(false)
+        repeat(3) {
+            fixture.controller.onLiveMediaSegmentRejected(
+                fixture.engine,
+                C.TRACK_TYPE_VIDEO,
+                6_216_000
+            )
+        }
+        `when`(fixture.player.playWhenReady).thenReturn(true)
+        val oldEngine = mock(ExoPlayer::class.java)
+        repeat(3) {
+            fixture.controller.onLiveMediaSegmentRejected(
+                oldEngine,
+                C.TRACK_TYPE_VIDEO,
+                6_216_000
+            )
+        }
+        shadowOf(Looper.getMainLooper()).idle()
+        verify(fixture.player, never()).reloadPlayQueueManager()
+        fixture.controller.resetRecovery()
+    }
+
     @Test
     fun exhaustedRefreshRetriesSwitchToHlsAtLivePosition() {
         val fixture = Fixture()
@@ -501,6 +564,7 @@ class PlayerLiveHttpRecoveryTest {
 
         init {
             `when`(player.exoPlayer).thenReturn(engine)
+            `when`(player.getExoPlayer()).thenReturn(engine)
             `when`(player.playWhenReady).thenReturn(true)
             `when`(player.isNormalLive()).thenReturn(true)
             `when`(player.playQueue).thenReturn(queue)

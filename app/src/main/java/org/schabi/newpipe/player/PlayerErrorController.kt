@@ -30,6 +30,7 @@ import androidx.media3.common.PlaybackException.ERROR_CODE_TIMEOUT
 import androidx.media3.common.PlaybackException.ERROR_CODE_UNSPECIFIED
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.exoplayer.ExoPlaybackException
+import androidx.media3.exoplayer.ExoPlayer
 import org.schabi.newpipe.R
 import org.schabi.newpipe.error.ErrorInfo
 import org.schabi.newpipe.error.ErrorUtil
@@ -57,9 +58,11 @@ internal class PlayerErrorController(
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveDashRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val liveMedia403Policy = LiveMedia403RecoveryPolicy()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
     private var pendingLiveStallRecovery: Runnable? = null
+    private var pendingLiveSegmentRecovery: Runnable? = null
     private var lastPlayingLiveKey: String? = null
     private var recoveringLiveKey: String? = null
     private var liveReadySince: Long? = null
@@ -67,6 +70,8 @@ internal class PlayerErrorController(
     fun onPlayerError(error: PlaybackException) {
         liveReadySince = null
         cancelPendingLiveStallRecovery()
+        cancelPendingLiveSegmentRecovery()
+        liveMedia403Policy.clearFailureWindow()
         Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
 
         if (player.videoAdjustments.recover(error)) return
@@ -151,6 +156,8 @@ internal class PlayerErrorController(
         if (!playWhenReady) {
             liveReadySince = null
             cancelPendingLiveStallRecovery()
+            cancelPendingLiveSegmentRecovery()
+            liveMedia403Policy.clearFailureWindow()
         } else if (!player.exoPlayerIsNull()) {
             // Resuming during an existing buffering state does not emit a new state event.
             onPlaybackStateChanged(player.exoPlayer.playbackState)
@@ -274,6 +281,7 @@ internal class PlayerErrorController(
     fun resetRecovery() {
         cancelPendingMediaUrlRecovery()
         cancelPendingLiveStallRecovery()
+        cancelPendingLiveSegmentRecovery()
         lastPlayingLiveKey = null
         liveReadySince = null
         recoveringLiveKey = null
@@ -287,17 +295,83 @@ internal class PlayerErrorController(
         liveStallRecoveryGuard.reset()
         liveHlsRefreshGuard.reset()
         liveDashRefreshGuard.reset()
+        liveMedia403Policy.reset()
         videoResolver.clearRejectedVideoCodecFamily()
         videoResolver.clearLiveHlsFallback()
     }
 
     private fun isRecoverableLiveManifest(item: PlayQueueItem): Boolean {
+        return isYouTubeManifestLive(item) && player.videoPlayerSelected()
+    }
+
+    private fun isYouTubeManifestLive(item: PlayQueueItem): Boolean {
         val info = player.currentStreamInfo.orElse(null) ?: return false
         return info.url == item.url && info.serviceId == item.serviceId &&
             info.streamType == StreamType.LIVE_STREAM &&
             PlayerHttpErrorRecovery.isYouTubeService(item.serviceId) &&
-            PlaybackResolver.isManifestOnlyYoutubeLive(info) &&
-            player.videoPlayerSelected()
+            PlaybackResolver.isManifestOnlyYoutubeLive(info)
+    }
+
+    /** Refresh rejected media URLs before the existing buffer has drained. */
+    internal fun onLiveMediaSegmentRejected(engine: ExoPlayer, trackType: Int, mediaStartMs: Long) {
+        val item = player.playQueue?.item ?: return
+        if (player.getExoPlayer() !== engine || !player.playWhenReady ||
+            !isActivePlaybackState(engine) ||
+            !isYouTubeManifestLive(item) || pendingLiveSegmentRecovery != null ||
+            !liveMedia403Policy.onRejectedSegment(
+                "${item.serviceId}:${item.url}",
+                trackType,
+                mediaStartMs,
+                SystemClock.elapsedRealtime()
+            )
+        ) {
+            return
+        }
+
+        val serviceId = item.serviceId
+        val url = item.url
+        val recovery = Runnable {
+            pendingLiveSegmentRecovery = null
+            val currentItem = player.playQueue?.item ?: return@Runnable
+            if (player.getExoPlayer() !== engine || !player.playWhenReady ||
+                !isActivePlaybackState(engine) ||
+                currentItem.serviceId != serviceId || currentItem.url != url ||
+                !isYouTubeManifestLive(currentItem)
+            ) {
+                return@Runnable
+            }
+            Log.w(Player.TAG, "Repeated live media HTTP 403; refreshing stream URLs")
+            cancelPendingMediaUrlRecovery()
+            cancelPendingLiveStallRecovery()
+            player.setRecovery()
+            player.onBuffering()
+            invalidateYouTubeMediaCaches(currentItem)
+            recoveringLiveKey = "$serviceId:$url"
+            player.reloadPlayQueueManager()
+        }
+        pendingLiveSegmentRecovery = recovery
+        recoveryHandler.post(recovery)
+    }
+
+    internal fun onLiveMediaSegmentLoaded(engine: ExoPlayer, trackType: Int, mediaStartMs: Long) {
+        val item = player.playQueue?.item ?: return
+        if (player.getExoPlayer() !== engine || !player.playWhenReady ||
+            !isYouTubeManifestLive(item)
+        ) {
+            return
+        }
+        liveMedia403Policy.onLoadedSegment(
+            "${item.serviceId}:${item.url}",
+            trackType,
+            mediaStartMs,
+            SystemClock.elapsedRealtime(),
+            engine.playbackState == Media3Player.STATE_READY
+        )
+    }
+
+    private fun isActivePlaybackState(engine: ExoPlayer): Boolean {
+        return engine.playbackState == Media3Player.STATE_READY ||
+            engine.playbackState == Media3Player.STATE_BUFFERING
     }
 
     private fun canFallBackToLiveHls(item: PlayQueueItem): Boolean {
@@ -314,6 +388,11 @@ internal class PlayerErrorController(
     private fun cancelPendingLiveStallRecovery() {
         pendingLiveStallRecovery?.let(recoveryHandler::removeCallbacks)
         pendingLiveStallRecovery = null
+    }
+
+    private fun cancelPendingLiveSegmentRecovery() {
+        pendingLiveSegmentRecovery?.let(recoveryHandler::removeCallbacks)
+        pendingLiveSegmentRecovery = null
     }
 
     internal fun tryRecoverFromVideoSurfaceFailure(error: PlaybackException): Boolean {
