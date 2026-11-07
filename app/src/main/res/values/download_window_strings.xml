@@ -1,0 +1,11 @@
+<resources>
+    <string name="download_window_title">Scheduled download window</string>
+    <string name="download_window_enable">Enable for internal downloads</string>
+    <string name="download_window_explanation">Downloads wait outside this daily window. Running transfers pause within about 30 seconds; file processing can finish. Android may delay automatic starts. Uses device local time; equal start and end means all day.</string>
+    <string name="download_window_start">Start: %1$s</string>
+    <string name="download_window_end">End: %1$s</string>
+    <string name="download_window_unmetered">Unmetered network only</string>
+    <string name="download_window_charging">Only while charging</string>
+    <string name="download_window_summary">%1$s – %2$s · Local time · Automatic starts may be delayed</string>
+    <string name="download_window_disabled">Off · Downloads can start at any time</string>
+</resources>

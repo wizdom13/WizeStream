@@ -278,6 +278,11 @@ public class DownloadManager {
 
 
     public void resumeMission(DownloadMission mission) {
+        if (!mission.running && !mission.enqueued) mission.setEnqueued(true);
+        if (!org.schabi.newpipe.download.schedule.DownloadWindow.allowed(appContext)) {
+            mission.setEnqueued(true);
+            return;
+        }
         if (!mission.running && (!mission.requiresUnmeteredNetwork
                 || canDownloadInCurrentNetwork(mission))) {
             mission.start();
@@ -296,8 +301,8 @@ public class DownloadManager {
     }
 
     public void pauseMission(DownloadMission mission) {
+        mission.setEnqueued(false);
         if (mission.running) {
-            mission.setEnqueued(false);
             mission.pause();
         }
     }
@@ -438,6 +443,7 @@ public class DownloadManager {
     public void pauseAllMissions(boolean force) {
         synchronized (this) {
             for (DownloadMission mission : mMissionsPending) {
+                if (!force && !mission.isFinished()) mission.setEnqueued(false);
                 if (!mission.running || mission.isPsRunning() || mission.isFinished()) continue;
 
                 if (force) {
@@ -456,7 +462,7 @@ public class DownloadManager {
             for (DownloadMission mission : mMissionsPending) {
                 if (mission.running || mission.isCorrupt()) continue;
 
-                mission.start();
+                resumeMission(mission);
             }
         }
     }
@@ -512,6 +518,10 @@ public class DownloadManager {
         return new ArrayList<>(mMissionsFinished);
     }
 
+    public synchronized java.util.List<DownloadMission> getPendingMissionsSnapshot() {
+        return new ArrayList<>(mMissionsPending);
+    }
+
     public MissionIterator getIterator() {
         mSelfMissionsControl = true;
         return new MissionIterator();
@@ -531,6 +541,7 @@ public class DownloadManager {
     }
 
     private boolean canDownloadInCurrentNetwork() {
+        if (!org.schabi.newpipe.download.schedule.DownloadWindow.allowed(appContext)) return false;
         if (mLastNetworkStatus == NetworkState.Unavailable) return false;
         return !(mPrefMeteredDownloads && mLastNetworkStatus == NetworkState.MeteredOperating);
     }
