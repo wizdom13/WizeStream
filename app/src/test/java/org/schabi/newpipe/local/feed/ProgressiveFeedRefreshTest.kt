@@ -308,12 +308,30 @@ class ProgressiveFeedRefreshTest {
         val id = dao.insert(group)
         dao.insert(group.copy(uid = 0, name = "Other profile", profileId = "other"))
         var selected = id
-        val button = com.google.android.material.button.MaterialButton(android.view.ContextThemeWrapper(context, R.style.LightTheme))
-        val selector = FeedGroupSelector(context, button, { selected }) { newId, _ -> selected = newId }
+        val actionBar = org.mockito.Mockito.mock(androidx.appcompat.app.ActionBar::class.java)
+        var customView: android.view.View? = null
+        org.mockito.Mockito.doAnswer {
+            customView = it.getArgument(0)
+            null
+        }.`when`(actionBar).setCustomView(
+            org.mockito.ArgumentMatchers.any(android.view.View::class.java),
+            org.mockito.ArgumentMatchers.any(androidx.appcompat.app.ActionBar.LayoutParams::class.java)
+        )
+        org.mockito.Mockito.`when`(actionBar.customView).thenAnswer { customView }
+        val themedContext = android.view.ContextThemeWrapper(context, R.style.LightTheme)
+        val selector = FeedGroupSelector(themedContext, actionBar, { selected }) { newId, _ -> selected = newId }
+        selector.attach()
+        val button = requireNotNull(customView).findViewById<android.widget.TextView>(R.id.feed_group_toolbar_label)
         try {
             assertEquals("Rare channels", button.text.toString())
             dao.update(group.copy(uid = id, name = "Renamed"))
             assertEquals("Renamed", button.text.toString())
+            FeedGroupSelector.updateSearchVisibility(actionBar, true)
+            org.mockito.Mockito.verify(actionBar).setDisplayShowCustomEnabled(false)
+            selector.attach(searching = true)
+            org.mockito.Mockito.verify(actionBar, org.mockito.Mockito.times(2)).setDisplayShowCustomEnabled(false)
+            FeedGroupSelector.updateSearchVisibility(actionBar, false)
+            org.mockito.Mockito.verify(actionBar, org.mockito.Mockito.times(2)).setDisplayShowCustomEnabled(true)
             dao.delete(id)
             assertEquals(-1L, selected)
             assertEquals(android.view.View.GONE, button.visibility)
