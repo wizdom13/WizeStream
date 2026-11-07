@@ -33,6 +33,8 @@ import java.util.ArrayList;
  * </p>
  */
 public final class CustomRenderersFactory extends DefaultRenderersFactory {
+    public final org.schabi.newpipe.player.SubtitleTiming subtitleTiming =
+            new org.schabi.newpipe.player.SubtitleTiming();
     private boolean useCustomVideoRenderer;
     private final VisualizerAudioProcessor visualizerAudioProcessor;
     private final AudioDynamicsProcessor audioDynamicsProcessor;
@@ -108,6 +110,7 @@ public final class CustomRenderersFactory extends DefaultRenderersFactory {
         if (out.size() > rendererCountBefore
                 && out.get(out.size() - 1) instanceof TextRenderer) {
             ((TextRenderer) out.get(out.size() - 1)).experimentalSetLegacyDecodingEnabled(true);
+            out.set(out.size() - 1, subtitleTiming.wrap(out.get(out.size() - 1)));
         }
     }
 
