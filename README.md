@@ -457,6 +457,8 @@ data migration, and synchronization details.
 
 ### Interface and customization
 
+- Add the **WizeStream playback** home-screen widget for previous, play/pause, and next controls. With no active player it opens the app; it does not store or show listening titles and uses no background polling.
+
 - Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors where available, plus Light, Dark, Black, Follow system, and manual
   theme color options, including Cyan and Yellow, plus an Eye Comfort warm dark theme

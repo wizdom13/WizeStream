@@ -1,0 +1,26 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/playback_widget_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="12dp">
+    <TextView
+        android:id="@+id/widget_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="32dp"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/playback_widget_idle"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
+        <!-- RemoteViews inflates framework ImageButtons, so their tint must use android:tint. -->
+        <ImageButton android:id="@+id/widget_previous" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="@android:color/transparent" android:src="@drawable/ic_previous" android:tint="#FFFFFF" android:contentDescription="@string/widget_previous" tools:ignore="UseAppTint" />
+        <ImageButton android:id="@+id/widget_play" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="@android:color/transparent" android:src="@drawable/ic_play_arrow" android:tint="#FFFFFF" android:contentDescription="@string/play" tools:ignore="UseAppTint" />
+        <ImageButton android:id="@+id/widget_next" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="@android:color/transparent" android:src="@drawable/ic_next" android:tint="#FFFFFF" android:contentDescription="@string/widget_next" tools:ignore="UseAppTint" />
+    </LinearLayout>
+</LinearLayout>

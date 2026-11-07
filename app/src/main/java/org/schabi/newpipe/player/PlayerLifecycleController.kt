@@ -291,6 +291,7 @@ internal class PlayerLifecycleController(
             }
         } finally {
             player.clearExoPlayerForLifecycle()
+            org.schabi.newpipe.player.widget.PlaybackWidget.update(context, null)
             if (trackSelector != null) {
                 player.clearTrackSelectorForLifecycle(trackSelector)
             }
