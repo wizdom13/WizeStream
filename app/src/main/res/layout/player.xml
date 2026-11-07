@@ -495,6 +495,17 @@
                                 app:tint="@color/white"
                                 tools:ignore="RtlHardcoded" />
 
+                            <org.schabi.newpipe.player.ui.ABRepeatButton
+                                android:id="@+id/abRepeatButton"
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:gravity="center"
+                                android:focusable="true"
+                                android:contentDescription="@string/ab_repeat"
+                                android:text="A–B"
+                                android:textColor="@color/white" />
+
                             <androidx.appcompat.widget.AppCompatImageButton
                                 android:id="@+id/playbackInformationButton"
                                 android:layout_width="48dp"
