@@ -736,6 +736,7 @@
             android:layout_width="wrap_content"
             android:layout_height="60dp"
             android:layout_alignParentEnd="true"
+            android:focusable="false"
             android:gravity="center_vertical"
             android:theme="@style/ContrastTintTheme"
             tools:ignore="RtlHardcoded">
@@ -746,6 +747,7 @@
                 android:layout_height="match_parent"
                 android:background="?attr/selectableItemBackground"
                 android:contentDescription="@string/title_activity_play_queue"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_list"
                 tools:ignore="ContentDescription,RtlHardcoded" />
@@ -767,6 +769,7 @@
                 android:layout_height="match_parent"
                 android:background="?attr/selectableItemBackground"
                 android:contentDescription="@string/close"
+                android:focusable="true"
                 android:paddingRight="8dp"
                 android:scaleType="center"
                 android:src="@drawable/ic_close"
