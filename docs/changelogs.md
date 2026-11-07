@@ -4,6 +4,29 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.38.0 (`1038000`)
+
+### Improvements
+
+- Added session-only A–B repeat for non-live playback, with controls in the expanded player.
+- Added subtitle timing adjustment in 100 ms steps from the caption menu; the offset resets when the track changes.
+- Added a home-screen playback widget with previous, play/pause, and next controls.
+- Added an option to download a companion caption file with a video in the selected language.
+- Added daily download windows for internal transfers, with optional unmetered-network and charging requirements.
+- Added YouTube Courses channel tabs where channels provide them.
+- Added chapter boundaries to standard and Wavy seek bars, with chapter titles while seeking and haptic feedback where supported.
+- Added Brotli compression for supported service metadata responses.
+
+### Interface
+
+- Moved the What’s New channel-group selector into the toolbar.
+- Improved Android TV remote navigation: mini-player buttons can be focused individually, and moving left from home content returns focus to the selected navigation item.
+
+### Fixes
+
+- Improved recovery from transient YouTube media redirects and truncated CDN responses.
+- Refreshed live media URLs after repeated rejected segments before the player exhausts its buffer, with bounded retries.
+
 ## WizeStream 1.37.0 (`1037000`)
 
 ### Improvements

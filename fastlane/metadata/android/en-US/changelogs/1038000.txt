@@ -1,0 +1,1 @@
+Added A–B repeat, subtitle timing, a home-screen playback widget, companion caption downloads, daily download windows, YouTube Courses tabs, chapter seek markers, and Brotli support. Improved What’s New group selection and Android TV remote navigation. Reduced interruptions from transient YouTube and live-media errors.
