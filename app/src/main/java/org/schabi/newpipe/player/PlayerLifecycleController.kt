@@ -241,6 +241,7 @@ internal class PlayerLifecycleController(
         player.subtitleTiming.setOffset(0)
         exoPlayer.addListener(player.subtitleTiming)
         exoPlayer.addListener(player)
+        exoPlayer.addAnalyticsListener(LiveMediaLoadRecovery(exoPlayer, errorController))
         if (Player.DEBUG) {
             exoPlayer.addAnalyticsListener(
                 LiveLoadDiagnostics(exoPlayer) {
