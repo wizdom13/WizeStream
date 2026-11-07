@@ -72,6 +72,8 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
                 return "EglwbGF5bGlzdHPyBgQKAkIA";
             case ChannelTabs.PODCASTS:
                 return "Eghwb2RjYXN0c_IGBQoDugEA";
+            case ChannelTabs.COURSES:
+                return "Egdjb3Vyc2Vz8gYFCgPCAQA%3D";
             case ChannelTabs.POSTS:
                 return "Egljb21tdW5pdHnyBgQKAkoA";
             case ChannelTabs.SEARCH:

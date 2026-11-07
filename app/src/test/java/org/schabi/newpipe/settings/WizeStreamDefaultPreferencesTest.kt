@@ -129,6 +129,7 @@ class WizeStreamDefaultPreferencesTest {
                     "show_channel_tabs_videos",
                     "show_channel_tabs_albums",
                     "show_channel_tabs_podcasts",
+                    "show_channel_tabs_courses",
                     "show_channel_tabs_channels",
                     "show_channel_tabs_tracks",
                     "show_channel_tabs_about",
@@ -146,6 +147,7 @@ class WizeStreamDefaultPreferencesTest {
                     "fetch_channel_tabs_livestreams",
                     "fetch_channel_tabs_tracks",
                     "fetch_channel_tabs_podcasts",
+                    "fetch_channel_tabs_courses",
                     "fetch_channel_tabs_likes"
                 )
             )

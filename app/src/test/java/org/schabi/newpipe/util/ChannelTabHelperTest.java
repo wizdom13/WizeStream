@@ -52,6 +52,30 @@ public class ChannelTabHelperTest {
     }
 
     @Test
+    public void coursesAreVisibleAndCanBeFetched() {
+        final Context context = mock(Context.class);
+        final SharedPreferences preferences = mock(SharedPreferences.class);
+        when(context.getString(R.string.show_channel_tabs_key)).thenReturn("channel_tabs");
+        when(context.getString(R.string.show_channel_tabs_courses))
+                .thenReturn("show_channel_tabs_courses");
+        when(preferences.getStringSet("channel_tabs", null))
+                .thenReturn(Set.of("show_channel_tabs_courses"));
+        when(context.getString(R.string.feed_fetch_channel_tabs_key))
+                .thenReturn("feed_fetch_channel_tabs");
+        when(context.getString(R.string.fetch_channel_tabs_courses))
+                .thenReturn("fetch_channel_tabs_courses");
+        when(preferences.getStringSet("feed_fetch_channel_tabs", null))
+                .thenReturn(Set.of("fetch_channel_tabs_courses"));
+
+        assertTrue(ChannelTabHelper.isStreamsTab(ChannelTabs.COURSES));
+        assertTrue(ChannelTabHelper.showChannelTab(context, preferences, ChannelTabs.COURSES));
+        assertTrue(ChannelTabHelper.fetchFeedChannelTab(
+                context, preferences, handler(ChannelTabs.COURSES)));
+        assertEquals(R.string.channel_tab_courses,
+                ChannelTabHelper.getTranslationKey(ChannelTabs.COURSES));
+    }
+
+    @Test
     public void postsAreVisibleButExcludedFromFeedFetching() {
         final Context context = mock(Context.class);
         final SharedPreferences preferences = mock(SharedPreferences.class);
