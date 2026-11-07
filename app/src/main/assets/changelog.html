@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1038000">WizeStream 1.38.0</a></li>
 <li><a href="#release-1037000">WizeStream 1.37.0</a></li>
 <li><a href="#release-1036001">WizeStream 1.36.1</a></li>
 <li><a href="#release-1036000">WizeStream 1.36.0</a></li>
@@ -105,6 +106,32 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1038000" data-version="1.38.0" data-version-code="1038000">
+<h2>WizeStream 1.38.0</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Added session-only A–B repeat for non-live playback, with controls in the expanded player.</li>
+<li>Added subtitle timing adjustment in 100 ms steps from the caption menu; the offset resets when the track changes.</li>
+<li>Added a home-screen playback widget with previous, play/pause, and next controls.</li>
+<li>Added an option to download a companion caption file with a video in the selected language.</li>
+<li>Added daily download windows for internal transfers, with optional unmetered-network and charging requirements.</li>
+<li>Added YouTube Courses channel tabs where channels provide them.</li>
+<li>Added chapter boundaries to standard and Wavy seek bars, with chapter titles while seeking and haptic feedback where supported.</li>
+<li>Added Brotli compression for supported service metadata responses.</li>
+</ul>
+<h3>Interface</h3>
+<ul>
+<li>Moved the What’s New channel-group selector into the toolbar.</li>
+<li>Improved Android TV remote navigation: mini-player buttons can be focused individually, and moving left from home content returns focus to the selected navigation item.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Improved recovery from transient YouTube media redirects and truncated CDN responses.</li>
+<li>Refreshed live media URLs after repeated rejected segments before the player exhausts its buffer, with bounded retries.</li>
+</ul>
+</div>
+</section>
 <section id="release-1037000" data-version="1.37.0" data-version-code="1037000">
 <h2>WizeStream 1.37.0</h2>
 <div class="release-notes">
