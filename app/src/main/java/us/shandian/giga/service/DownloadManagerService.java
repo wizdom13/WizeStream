@@ -86,6 +86,7 @@ public class DownloadManagerService extends Service {
     private static final String ACTION_OPEN_DOWNLOADS_FINISHED = APPLICATION_ID + ".open_downloads_finished";
 
     private DownloadManagerBinder mBinder;
+    private DownloadWindowMonitor downloadWindowMonitor;
     private DownloadManager mManager;
     private Notification mNotification;
     private Handler mHandler;
@@ -180,6 +181,7 @@ public class DownloadManagerService extends Service {
         mConnectivityManager.registerNetworkCallback(new NetworkRequest.Builder().build(), mNetworkStateListenerL);
 
         mPrefs.registerOnSharedPreferenceChangeListener(mPrefChangeListener);
+        downloadWindowMonitor = new DownloadWindowMonitor(this, mManager);
 
         handlePreferenceChange(mPrefs, getString(R.string.downloads_cross_network));
         handlePreferenceChange(mPrefs, getString(R.string.downloads_maximum_retry));
@@ -221,6 +223,7 @@ public class DownloadManagerService extends Service {
 
     @Override
     public void onDestroy() {
+        if (downloadWindowMonitor != null) downloadWindowMonitor.close();
         super.onDestroy();
 
         if (DEBUG) {
@@ -580,6 +583,12 @@ public class DownloadManagerService extends Service {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     public class DownloadManagerBinder extends Binder {
+        public void resumeScheduledDownloads() {
+            mHandler.post(() -> {
+                handleConnectivityState(true);
+                downloadWindowMonitor.evaluate();
+            });
+        }
         public DownloadManager getDownloadManager() {
             return mManager;
         }

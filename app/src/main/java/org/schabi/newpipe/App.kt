@@ -134,6 +134,7 @@ open class App :
         StateSaver.init(this)
         initNotificationChannels()
         org.schabi.newpipe.download.AutomaticDownloads.initialize(this)
+        org.schabi.newpipe.download.schedule.DownloadWindow.schedule(this)
         AiSListSyncWorker.initialize(this)
         org.schabi.newpipe.learning.LearningReminders.initialize(this)
 
