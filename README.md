@@ -315,6 +315,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   quality selection respects the preferred audio format and available streams and takes effect when
   streams are selected for playback. These device-wide preferences are included in settings backups and remain local during device sync.
   They choose among separate audio streams; they do not cap muxed video audio or live manifests.
+- Adjust **Subtitle timing** from the caption menu in 100 ms steps, up to 30 seconds earlier or later, with Reset; timing is session-only and clears on track changes.
 - Set preferred audio and caption languages, with a Show all languages option
 - Save playback speed, quality, and caption choices in per-channel playback profiles
 - Configure per-channel intro and outro skip durations
