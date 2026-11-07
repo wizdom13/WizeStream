@@ -113,6 +113,10 @@ class DownloadDialog() :
     @JvmField
     var selectedSegments = ""
 
+    @State
+    @JvmField
+    var companionCaptionIndex = -1
+
     private var mainStorageAudio: StoredDirectoryHelper? = null
     private var mainStorageVideo: StoredDirectoryHelper? = null
     private var downloadManager: DownloadManager? = null
@@ -267,6 +271,17 @@ class DownloadDialog() :
 
         initToolbar(dialogBinding.toolbarLayout.toolbar)
         setupDownloadOptions()
+        dialogBinding.companionCaption.setOnClickListener {
+            val options = arrayOf(getString(R.string.companion_caption_off), *subtitleStreamsAdapter.getAll().map { it.displayLanguageName + " (" + it.languageTag + ")" }.toTypedArray())
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(dialogContext)
+                .setTitle(R.string.companion_caption_title)
+                .setSingleChoiceItems(options, companionCaptionIndex + 1) { choice, index ->
+                    companionCaptionIndex = index - 1
+                    updateCompanionCaption()
+                    choice.dismiss()
+                }.setNegativeButton(R.string.cancel, null).show()
+        }
+        updateCompanionCaption()
         dialogBinding.downloadSegments.setOnClickListener {
             DownloadSegmentDialog.show(dialogContext, streamInfo.duration, streamInfo.streamSegments, selectedSegments) {
                 selectedSegments = it
@@ -430,13 +445,24 @@ class DownloadDialog() :
             R.id.video_button -> setupVideoSpinner()
             R.id.subtitle_button -> setupSubtitleSpinner()
         }
+        updateCompanionCaption()
         dialogBinding.threads.isEnabled = checkedId != R.id.subtitle_button
         updateSegmentSelection()
+    }
+
+    private fun updateCompanionCaption() {
+        if (_dialogBinding == null) return
+        val supported = dialogBinding.videoAudioGroup.checkedRadioButtonId == R.id.video_button &&
+            subtitleStreamsAdapter.getAll().isNotEmpty() && selectedSegments.isEmpty()
+        dialogBinding.companionCaption.visibility = if (supported) View.VISIBLE else View.GONE
+        val selected = subtitleStreamsAdapter.getAll().getOrNull(companionCaptionIndex)
+        dialogBinding.companionCaption.text = getString(R.string.companion_caption_label, selected?.displayLanguageName ?: getString(R.string.companion_caption_off))
     }
 
     private fun updateSegmentSelection() {
         if (_dialogBinding == null) return
         val supported = streamInfo.duration > 0 && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(streamInfo.streamType) && dialogBinding.videoAudioGroup.checkedRadioButtonId != R.id.subtitle_button
+        updateCompanionCaption()
         dialogBinding.downloadSegments.isEnabled = supported
         dialogBinding.downloadSegments.text = if (selectedSegments.isEmpty()) getString(R.string.download_segments) else getString(R.string.download_segments_selected, DownloadSegments.decode(selectedSegments).size)
         dialogBinding.audioOutputFormatSpinner.isEnabled = selectedSegments.isEmpty() || !supported
@@ -682,7 +708,7 @@ class DownloadDialog() :
             checkedButton == R.id.audio_button,
             mainStorage,
             outputPlan,
-            askForSavePath
+            askForSavePath && !(checkedButton == R.id.video_button && companionCaptionIndex >= 0 && selectedSegments.isEmpty())
         )
         if (!usedConfiguredStorage) {
             return
@@ -718,16 +744,6 @@ class DownloadDialog() :
             return
         }
 
-        try {
-            if (storage.length() > 0) {
-                storage.truncate()
-            }
-        } catch (exception: IOException) {
-            Log.e(TAG, "Failed to truncate the file: ${storage.uri}", exception)
-            showFailedDialog(R.string.overwrite_failed)
-            return
-        }
-
         val threads = dialogBinding.threads.progress + 1
         val request = when (dialogBinding.videoAudioGroup.checkedRadioButtonId) {
             R.id.audio_button -> DownloadMissionRequestFactory.forAudio(
@@ -759,6 +775,29 @@ class DownloadDialog() :
             else -> return
         }
 
+        val companion = if (request.kind == 'v' && selectedSegments.isEmpty() && companionCaptionIndex >= 0) {
+            try {
+                CompanionCaption.prepare(dialogContext, storage, subtitleStreamsAdapter.getItem(companionCaptionIndex))
+            } catch (exception: Exception) {
+                Log.e(TAG, "Unable to prepare companion caption", exception)
+                showFailedDialog(R.string.companion_caption_failed)
+                return
+            }
+        } else {
+            null
+        }
+
+        try {
+            if (storage.length() > 0) {
+                storage.truncate()
+            }
+        } catch (exception: IOException) {
+            Log.e(TAG, "Failed to truncate the file: ${storage.uri}", exception)
+            companion?.first?.delete()
+            showFailedDialog(R.string.overwrite_failed)
+            return
+        }
+
         DownloadManagerService.startMission(
             dialogContext,
             request.urls,
@@ -771,6 +810,13 @@ class DownloadDialog() :
             request.nearLength,
             request.recoveryInfo
         )
+
+        companion?.let { (file, caption) ->
+            DownloadManagerService.startMission(
+                dialogContext, caption.urls, file, caption.kind, caption.threads, streamInfo,
+                caption.postprocessingName, caption.postprocessingArguments, caption.nearLength, caption.recoveryInfo
+            )
+        }
 
         Toast.makeText(dialogContext, getString(R.string.download_has_started), Toast.LENGTH_SHORT)
             .show()
