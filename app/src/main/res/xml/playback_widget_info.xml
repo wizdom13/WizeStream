@@ -1,0 +1,10 @@
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="96dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="96dp"
+    android:initialLayout="@layout/playback_widget"
+    android:previewLayout="@layout/playback_widget"
+    android:resizeMode="horizontal"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

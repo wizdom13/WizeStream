@@ -289,6 +289,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   **Continue listening** section; video and visualizers are never shown on the driving surface
 - Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
   newer, with play, pause, stop, and receiver-switching controls
+- Optional session-only **A–B repeat** in expanded video controls repeats a selected non-live range. Set A, then B at least half a second later; leaving the range or changing tracks clears it.
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
 - Browse chapters in adaptive side or bottom panels while keeping part of the video visible
 - Read fullscreen comments and replies beside the video, and enable danmaku bullet comments where supported
@@ -314,6 +315,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   quality selection respects the preferred audio format and available streams and takes effect when
   streams are selected for playback. These device-wide preferences are included in settings backups and remain local during device sync.
   They choose among separate audio streams; they do not cap muxed video audio or live manifests.
+- Adjust **Subtitle timing** from the caption menu in 100 ms steps, up to 30 seconds earlier or later, with Reset; timing is session-only and clears on track changes.
 - Set preferred audio and caption languages, with a Show all languages option
 - Save playback speed, quality, and caption choices in per-channel playback profiles
 - Configure per-channel intro and outro skip durations
@@ -387,6 +389,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Store watch history, search history, and playback progress locally under user-controlled settings
 - Browse watch history by date with fast scrolling and a calendar date picker
 - Download video, audio, and captions where supported, with resumable downloads and queue controls
+- Choose companion captions in the video download dialog to queue video and one caption language together in the configured video download folder (or choose a folder when none is configured). Captions are separate resumable sidecar files; this option does not apply to segment downloads.
 - Enable automatic audio or video downloads from subscribed channels, with hourly checks, optional
   unmetered-only networking, saved download folders, and limits of three new uploads per channel
   and 20 total per check; existing uploads are skipped
@@ -395,6 +398,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   optionally prefixing filenames with track numbers
 - Download MP3 audio with selectable quality, and embed title, uploader, genre, upload date, and source
   URL metadata in generated MP3, M4A, MP4, and Opus files
+- Optional **Scheduled download window** in Downloads settings gates internal transfers to a daily local-time window, including overnight ranges, with unmetered-network and charging requirements. Running transfers pause at the boundary (checked about every 30 seconds); post-processing can finish. WorkManager checks queued work approximately every 15 minutes, subject to Android delays. Explicitly paused downloads stay paused, and external downloaders are unaffected.
 - Choose Storage Access Framework or compatible legacy storage locations, separate audio and video
   folders, mobile-network behavior, retry limits, filename handling, and a serial download queue
 - Import or export subscriptions separately, create complete WizeStream backups that preserve all
@@ -454,6 +458,8 @@ See the [Learning Mode guide](docs/learning-mode.md) for setup, content selectio
 data migration, and synchronization details.
 
 ### Interface and customization
+
+- Add the **WizeStream playback** home-screen widget for previous, play/pause, and next controls. With no active player it opens the app; it does not store or show listening titles and uses no background polling.
 
 - Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors where available, plus Light, Dark, Black, Follow system, and manual

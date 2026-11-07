@@ -104,6 +104,7 @@ class Player(
 
     private var activePlayQueue: PlayQueue? = null
     private var activeItem: PlayQueueItem? = null
+    val abRepeat = ABRepeat()
     val playbackInformation = org.schabi.newpipe.player.info.PlaybackInformation()
     private var media3Player: ExoPlayer? = null
     private var activeAudioReactor: AudioReactor? = null
@@ -189,6 +190,8 @@ class Player(
             )
         )
     }
+
+    val subtitleTiming: SubtitleTiming get() = renderFactory.subtitleTiming
 
     private val videoResolver = VideoPlaybackResolver(appContext, dataSource, qualityResolver())
     private val audioResolver = AudioPlaybackResolver(appContext, dataSource)

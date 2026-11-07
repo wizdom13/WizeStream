@@ -1,0 +1,10 @@
+<resources>
+    <string name="ab_repeat">A–B repeat</string>
+    <string name="ab_repeat_range">A–B repeat: %1$s – %2$s</string>
+    <string name="ab_repeat_start">Set A at current position</string>
+    <string name="ab_repeat_end">Set B and start repeating</string>
+    <string name="ab_repeat_clear">Clear repeat range</string>
+    <string name="ab_repeat_updated">Repeat range updated</string>
+    <string name="ab_repeat_invalid">Set A first, then B at least half a second later</string>
+    <string name="ab_repeat_unavailable">A–B repeat requires a seekable, non-live video or audio track</string>
+</resources>

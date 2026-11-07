@@ -2,6 +2,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="@string/settings_category_downloads_title">
+    <org.schabi.newpipe.download.schedule.DownloadWindowPreference
+        android:key="download_window_settings"
+        android:title="@string/download_window_title"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false" />
+
     <SwitchPreferenceCompat
         android:key="prefer_downloaded_copies"
         android:defaultValue="true"
