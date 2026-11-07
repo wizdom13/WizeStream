@@ -240,7 +240,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 - Choose **Top** or **Newest** YouTube comments using the service's ordering, including pagination
 - Translate comments on demand with Android's on-device translation service when the required
   language pair is already available locally, with no cloud translation fallback
-- Sort channel videos by latest, popular, or oldest, and use podcast and album/release tabs on supported channels
+- Sort channel videos by latest, popular, or oldest; browse Courses and Podcasts on YouTube
+  channels that provide them, plus album/release tabs where supported
 - Browse read-only YouTube channel posts with text, images, polls, links, videos, playlists, and
   pagination
 - See channel avatars directly in stream lists, open channels from their identity areas, and view
@@ -291,6 +292,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   newer, with play, pause, stop, and receiver-switching controls
 - Optional session-only **A–B repeat** in expanded video controls repeats a selected non-live range. Set A, then B at least half a second later; leaving the range or changing tracks clears it.
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
+- See chapter boundaries on standard and Wavy seek bars, with the chapter title while seeking and
+  a haptic tick when crossing a boundary on devices that support it
 - Browse chapters in adaptive side or bottom panels while keeping part of the video visible
 - Read fullscreen comments and replies beside the video, and enable danmaku bullet comments where supported
 - Read YouTube livestream chat in a dedicated **Live chat** tab or the fullscreen comments side panel.
@@ -298,6 +301,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   and disconnects when no chat surface is visible or the app is backgrounded. Chat replay and
   sending messages are not supported by this panel.
 - Choose Normal or Full live playback; Full live offers rewind through the history supplied by the stream
+- Recover from some transient YouTube playback errors and refresh live stream URLs after repeated
+  rejected media segments, with bounded retries
 - Control autoplay and automatic queue continuation, enqueue items next or last, reorder the play
   queue, and automatically prefer Shorts recommendations while watching Shorts
 - Recover the current or previous queue through **Recover playback queue** in the app menu,
@@ -356,7 +361,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 - Subscribe to channels without a platform account and organize subscriptions into channel groups
 - Switch between All channels and your profile’s channel groups directly in What’s New using
-  a compact toolbar selector beneath What’s New; group switching uses cached feeds without starting network requests
+  its toolbar selector; group switching uses cached feeds without starting network requests
 - View subscriptions from all services in the current profile; choose current-platform or all-platform
   views for **What's New** and channel groups, with separate YouTube and YouTube Music membership
 - Arrange subscriptions with drag-and-drop ordering, named separators, multiselection, and bulk moves
@@ -480,6 +485,8 @@ data migration, and synchronization details.
   tablets
 - Optional bottom player controls, configurable remote/D-pad shortcuts, direct TV seeking,
   and a fullscreen recommendations grid
+- On Android TV, return from home content to the selected navigation item and focus the
+  mini-player's queue, play/pause, and close buttons individually with the remote
 
 ### Offline library management
 
@@ -493,6 +500,8 @@ data migration, and synchronization details.
 ### Privacy and network
 
 - Use WizeStream without a platform account or Google Play Services
+- Use Brotli compression for service metadata requests when a server supports it, reducing the
+  amount of data transferred; video and audio playback streams are unaffected
 - Optionally access YouTube through an Invidious instance, with saved instances and a quick selector;
   availability depends on the chosen instance
 - Configure up to 16 explicitly trusted HTTPS [Invidious Companion media servers](doc/invidious-media-servers.md)
