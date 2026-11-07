@@ -17,6 +17,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
 
@@ -33,6 +34,18 @@ public class PlayerCdnConnectionRecoveryTest {
     }
 
     @Test
+    public void truncatedGoogleVideoResponseUsesMediaUrlRefresh() {
+        final Throwable error = new RuntimeException("Source error", connectionFailure(
+                "https://rr1---sn-f58xn2xxq-aj5s.googlevideo.com/videoplayback",
+                new IOException("unexpected end of stream", new EOFException("line missing")),
+                HttpDataSourceException.TYPE_OPEN));
+
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(error));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableYouTubeMediaUrlFailure(
+                error, queueItem(ServiceList.YouTube.getServiceId())));
+    }
+
+    @Test
     public void unrelatedAndLookalikeHostsDoNotRefreshYouTubeUrls() {
         for (final String host : new String[] {"example.com", "notgooglevideo.com",
                 "googlevideo.com.example.com", "invidious.example.com"}) {
@@ -40,6 +53,9 @@ public class PlayerCdnConnectionRecoveryTest {
                     "https://" + host + "/segment.ts", new ConnectException(),
                     HttpDataSourceException.TYPE_OPEN)));
         }
+        assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(connectionFailure(
+                "https://example.com/segment.ts", new EOFException("line missing"),
+                HttpDataSourceException.TYPE_OPEN)));
     }
 
     @Test
