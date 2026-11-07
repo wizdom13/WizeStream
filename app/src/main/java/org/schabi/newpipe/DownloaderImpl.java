@@ -40,6 +40,7 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import okhttp3.brotli.BrotliInterceptor;
 
 public final class DownloaderImpl extends Downloader {
     public static final String USER_AGENT =
@@ -79,6 +80,7 @@ public final class DownloaderImpl extends Downloader {
                 .followSslRedirects(!InvidiousBackend.isEnabled())
                 .addInterceptor(new InvidiousInterceptor())
                 .addInterceptor(new YoutubeRequestTimingInterceptor())
+                .addInterceptor(BrotliInterceptor.INSTANCE)
                 .addInterceptor(chain -> {
                     final okhttp3.Request originalRequest = chain.request();
                     if (originalRequest.header("User-Agent") != null) {

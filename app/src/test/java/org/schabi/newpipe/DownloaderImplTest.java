@@ -13,6 +13,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,11 +37,65 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.ResponseBody;
+import okhttp3.brotli.BrotliInterceptor;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 
 public class DownloaderImplTest {
+    // A small HLS playlist compressed with Brotli.
+    private static final byte[] BROTLI_PLAYLIST = Base64.getDecoder().decode(
+            "G60AAGRgnn0lblVyhC66wYFDVuBZIpuO9rbZHmPHtkUokNPXCdUAvCE9kjh2YIj1"
+            + "kDuK0dhBBjdloIDH9/v8Tebljq5AWOQFMo4zQgjkZXp+0Bv147VqrIyg6KyqS8dI"
+            + "kCB1RdNI7S6wa185bovjOKANWx/kIFkaIXAef4J/");
+
+    @Test
+    public void brotliIsNegotiatedAndDecodedForNormalRequests() throws IOException {
+        final DownloaderImpl downloader = DownloaderImpl.init(null);
+        assertTrue(downloader.getClient().interceptors().contains(BrotliInterceptor.INSTANCE));
+
+        final Interceptor.Chain chain = mock(Interceptor.Chain.class);
+        when(chain.request()).thenReturn(new Request.Builder()
+                .url("https://example.org/playlist.m3u8").build());
+        when(chain.proceed(any(Request.class))).thenAnswer(invocation -> {
+            final Request request = invocation.getArgument(0);
+            assertTrue(request.header("Accept-Encoding").contains("br"));
+            assertTrue(request.header("Accept-Encoding").contains("gzip"));
+            return new okhttp3.Response.Builder().request(request)
+                    .protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .header("Content-Encoding", "br")
+                    .body(ResponseBody.create(BROTLI_PLAYLIST, null))
+                    .build();
+        });
+
+        try (okhttp3.Response response = BrotliInterceptor.INSTANCE.intercept(chain)) {
+            assertNull(response.header("Content-Encoding"));
+            assertTrue(response.body().string().contains("#EXTM3U"));
+        }
+    }
+
+    @Test
+    public void explicitCompressionHeadersKeepExtractorManagedDecoding() throws IOException {
+        final Request request = new Request.Builder().url("https://example.org/playlist.m3u8")
+                .header("Accept-Encoding", "gzip, deflate, br").build();
+        final Interceptor.Chain chain = mock(Interceptor.Chain.class);
+        when(chain.request()).thenReturn(request);
+        when(chain.proceed(any(Request.class))).thenAnswer(invocation -> {
+            final Request forwarded = invocation.getArgument(0);
+            assertEquals("gzip, deflate, br", forwarded.header("Accept-Encoding"));
+            return new okhttp3.Response.Builder().request(forwarded)
+                    .protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .header("Content-Encoding", "br")
+                    .body(ResponseBody.create(BROTLI_PLAYLIST, null))
+                    .build();
+        });
+
+        try (okhttp3.Response response = BrotliInterceptor.INSTANCE.intercept(chain)) {
+            assertEquals("br", response.header("Content-Encoding"));
+            assertArrayEquals(BROTLI_PLAYLIST, response.body().bytes());
+        }
+    }
+
     @Test
     public void asyncSuccessIsFinishedOnlyAfterResponseProcessing() throws Exception {
         assertAsyncCompletion(false);

@@ -339,6 +339,7 @@ dependencies {
 
     // HTTP client
     implementation(libs.squareup.okhttp)
+    implementation(libs.squareup.okhttp.brotli)
 
     // Media player
     implementation(libs.androidx.media3.common)
