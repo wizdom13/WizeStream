@@ -1,0 +1,6 @@
+<resources>
+    <string name="companion_caption_title">Download video with captions (same folder)</string>
+    <string name="companion_caption_off">Off</string>
+    <string name="companion_caption_label">Captions: %1$s · Use video download folder</string>
+    <string name="companion_caption_failed">Could not create the caption file. Choose a writable video download folder and try again.</string>
+</resources>
