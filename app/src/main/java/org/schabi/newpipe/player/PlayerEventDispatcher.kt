@@ -76,6 +76,7 @@ internal class PlayerEventDispatcher(private val player: Player) {
     }
 
     fun notifyPlaybackUpdate() {
+        org.schabi.newpipe.player.widget.PlaybackWidget.update(player.context, player)
         val queue = player.playQueue
         if (player.exoPlayerIsNull() || queue == null) {
             return

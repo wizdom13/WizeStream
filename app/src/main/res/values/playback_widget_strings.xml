@@ -1,0 +1,7 @@
+<resources>
+    <string name="playback_widget_name">WizeStream playback</string>
+    <string name="playback_widget_active">WizeStream · Playback controls</string>
+    <string name="playback_widget_idle">WizeStream · Open player</string>
+    <string name="widget_previous">Previous track</string>
+    <string name="widget_next">Next track</string>
+</resources>
