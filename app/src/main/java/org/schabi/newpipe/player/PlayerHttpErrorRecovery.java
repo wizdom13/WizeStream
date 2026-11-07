@@ -15,6 +15,7 @@ import androidx.media3.exoplayer.hls.playlist.HlsPlaylistTracker;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
+import java.io.EOFException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.Locale;
@@ -183,7 +184,9 @@ final class PlayerHttpErrorRecovery {
         if (responseCode == null) {
             return false;
         }
-        return responseCode == 403 || responseCode == 404 || responseCode == 410;
+        return responseCode == 301 || responseCode == 302 || responseCode == 303
+                || responseCode == 307 || responseCode == 308
+                || responseCode == 403 || responseCode == 404 || responseCode == 410;
     }
 
     @Nullable
@@ -212,7 +215,7 @@ final class PlayerHttpErrorRecovery {
                         || normalizedHost.endsWith(".googlevideo.com"))) {
                     Throwable cause = httpError.getCause();
                     while (cause != null) {
-                        if (cause instanceof ConnectException) {
+                        if (cause instanceof ConnectException || cause instanceof EOFException) {
                             return true;
                         }
                         cause = cause.getCause();

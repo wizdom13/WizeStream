@@ -32,6 +32,11 @@ public class PlayerHttpErrorRecoveryTest {
 
     @Test
     public void acceptsOnlyRecoverableStatusCodes() {
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(301));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(302));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(303));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(307));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(308));
         assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(403));
         assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(404));
         assertTrue(PlayerHttpErrorRecovery.isRecoverableStatusCode(410));
