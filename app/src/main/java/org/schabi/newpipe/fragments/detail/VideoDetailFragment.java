@@ -3951,7 +3951,6 @@ public final class VideoDetailFragment
         binding.overlayThumbnail.setLongClickable(enable);
         binding.overlayMetadataLayout.setClickable(enable);
         binding.overlayMetadataLayout.setLongClickable(enable);
-        binding.overlayButtonsLayout.setClickable(enable);
         binding.overlayPlayQueueButton.setClickable(enable);
         binding.overlayPlayPauseButton.setClickable(enable);
         binding.overlayCloseButton.setClickable(enable);
