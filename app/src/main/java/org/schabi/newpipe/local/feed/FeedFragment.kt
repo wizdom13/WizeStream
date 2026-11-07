@@ -232,7 +232,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         noteBadges = VideoNoteBadges(requireContext(), Runnable { groupAdapter.notifyDataSetChanged() })
         noteBadges?.watch(feedBinding.itemsList)
         setupListViewMode()
-        groupSelector = FeedGroupSelector(requireContext(), feedBinding.feedGroupSelector, { groupId }, ::selectFeedGroup)
+        activity.supportActionBar?.let {
+            groupSelector = FeedGroupSelector(requireContext(), it, { groupId }, ::selectFeedGroup)
+        }
         if (selectedStreamFilter != StreamListFilter.NONE) {
             feedBinding.streamFilterChips.streamFilterChipGroup
                 .check(selectedStreamFilter.chipId)
@@ -278,7 +280,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         if (arguments == null) arguments = Bundle()
         requireArguments().putLong(KEY_GROUP_ID, id)
         requireArguments().putString(KEY_GROUP_NAME, name)
-        activity.supportActionBar?.subtitle = name
         activity.invalidateOptionsMenu()
         if (!changed) return
         feedPreview?.stop()
@@ -372,7 +373,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         activity.supportActionBar?.setDisplayShowTitleEnabled(true)
         activity.supportActionBar?.setTitle(R.string.fragment_feed_title)
-        activity.supportActionBar?.subtitle = groupName
+        activity.supportActionBar?.subtitle = null
+        groupSelector?.attach(activity.findViewById<View>(R.id.toolbar_contextual_search_container)?.isVisible == true)
 
         inflater.inflate(R.menu.menu_feed_fragment, menu)
         menu.findItem(R.id.menu_item_feed_channels)?.isVisible =
@@ -497,6 +499,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onDestroyOptionsMenu() {
+        groupSelector?.detach()
         super.onDestroyOptionsMenu()
         if (
             (groupName != "") &&

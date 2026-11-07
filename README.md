@@ -354,7 +354,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
 
 - Subscribe to channels without a platform account and organize subscriptions into channel groups
 - Switch between All channels and your profile’s channel groups directly in What’s New using
-  a compact selector; group switching uses cached feeds without starting network requests
+  a compact toolbar selector beneath What’s New; group switching uses cached feeds without starting network requests
 - View subscriptions from all services in the current profile; choose current-platform or all-platform
   views for **What's New** and channel groups, with separate YouTube and YouTube Music membership
 - Arrange subscriptions with drag-and-drop ordering, named separators, multiselection, and bulk moves

@@ -657,7 +657,8 @@ public class MainFragment extends BaseFragment
                         ? View.VISIBLE : View.GONE);
         final ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setDisplayShowTitleEnabled(!contextualSearchOpen);
+            org.schabi.newpipe.local.feed.FeedGroupSelector
+                    .updateSearchVisibility(actionBar, contextualSearchOpen);
         }
         setActivityContextualSearchToolbarActive(contextualSearchOpen);
         if (!contextualSearchOpen || tabsList.isEmpty()) {
