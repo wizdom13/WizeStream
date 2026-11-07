@@ -289,6 +289,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   **Continue listening** section; video and visualizers are never shown on the driving surface
 - Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
   newer, with play, pause, stop, and receiver-switching controls
+- Optional session-only **A–B repeat** in expanded video controls repeats a selected non-live range. Set A, then B at least half a second later; leaving the range or changing tracks clears it.
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
 - Browse chapters in adaptive side or bottom panels while keeping part of the video visible
 - Read fullscreen comments and replies beside the video, and enable danmaku bullet comments where supported

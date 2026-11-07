@@ -1,5 +1,4 @@
 package org.schabi.newpipe.player.ui;
-
 import static androidx.media3.common.Player.REPEAT_MODE_ALL;
 import static androidx.media3.common.Player.REPEAT_MODE_ONE;
 import static org.schabi.newpipe.MainActivity.DEBUG;
@@ -15,7 +14,6 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.formatSpeed;
 import static org.schabi.newpipe.player.helper.PlayerHelper.getTimeString;
 import static org.schabi.newpipe.player.helper.PlayerHelper.nextResizeModeAndSaveToPrefs;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
-
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -165,6 +163,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                             @NonNull final PlayerBinding playerBinding) {
         super(player);
         binding = playerBinding;
+        binding.abRepeatButton.bind(player);
         binding.playbackInformationPanel.bind(player.getPlaybackInformation());
         binding.playbackInformationButton.setOnClickListener(
                 view -> binding.playbackInformationPanel.toggle());
@@ -463,6 +462,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void destroy() {
         dismissPopupMenus();
+        binding.abRepeatButton.clear();
         binding.playbackInformationPanel.clear();
         binding.playbackInformationButton.setOnClickListener(null);
         playerUiTheme.close();

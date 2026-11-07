@@ -237,6 +237,7 @@ internal class PlayerLifecycleController(
         player.setExoPlayerForLifecycle(exoPlayer)
         player.videoAdjustments.attach(exoPlayer)
         player.playbackInformation.attach(exoPlayer)
+        player.abRepeat.attach(exoPlayer)
         exoPlayer.addListener(player)
         if (Player.DEBUG) {
             exoPlayer.addAnalyticsListener(
@@ -275,6 +276,7 @@ internal class PlayerLifecycleController(
         // expected teardown failure would show an erroneous playback error to the user.
         player.videoAdjustments.detach()
         player.playbackInformation.detach()
+        player.abRepeat.detach()
         exoPlayer?.removeListener(player)
         player.UIs().call(PlayerUi::destroyPlayer)
         audioController.releaseAudioSession()

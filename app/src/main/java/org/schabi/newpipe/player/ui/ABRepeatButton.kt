@@ -1,0 +1,56 @@
+package org.schabi.newpipe.player.ui
+
+import android.content.Context
+import android.util.AttributeSet
+import android.widget.Toast
+import androidx.appcompat.widget.AppCompatTextView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import org.schabi.newpipe.R
+import org.schabi.newpipe.player.Player
+
+class ABRepeatButton @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : AppCompatTextView(context, attrs) {
+    private var player: Player? = null
+    private var dialog: androidx.appcompat.app.AlertDialog? = null
+
+    fun bind(value: Player) {
+        player = value
+        setOnClickListener {
+            val repeat = value.abRepeat
+            if (!repeat.available()) {
+                Toast.makeText(context, R.string.ab_repeat_unavailable, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val start = repeat.startMs?.let { "${it / 60000}:${(it / 1000 % 60).toString().padStart(2, '0')}" } ?: "—"
+            val end = repeat.endMs?.let { "${it / 60000}:${(it / 1000 % 60).toString().padStart(2, '0')}" } ?: "—"
+            dialog?.dismiss()
+            dialog = MaterialAlertDialogBuilder(PlayerPopupMenu.dialogContext(this))
+                .setTitle(context.getString(R.string.ab_repeat_range, start, end))
+                .setItems(arrayOf(context.getString(R.string.ab_repeat_start), context.getString(R.string.ab_repeat_end), context.getString(R.string.ab_repeat_clear))) { _, index ->
+                    val success = when (index) {
+                        0 -> repeat.markStart()
+
+                        1 -> repeat.markEnd()
+
+                        else -> {
+                            repeat.clear()
+                            true
+                        }
+                    }
+                    Toast.makeText(context, if (success) R.string.ab_repeat_updated else R.string.ab_repeat_invalid, Toast.LENGTH_SHORT).show()
+                }.setNegativeButton(R.string.cancel, null).create()
+            dialog?.let { AnchoredPlaybackDialog.show(this, it) }
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        dialog?.dismiss()
+        super.onDetachedFromWindow()
+    }
+
+    fun clear() {
+        dialog?.dismiss()
+        dialog = null
+        player = null
+        setOnClickListener(null)
+    }
+}
