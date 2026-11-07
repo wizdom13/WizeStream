@@ -398,6 +398,7 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   optionally prefixing filenames with track numbers
 - Download MP3 audio with selectable quality, and embed title, uploader, genre, upload date, and source
   URL metadata in generated MP3, M4A, MP4, and Opus files
+- Optional **Scheduled download window** in Downloads settings gates internal transfers to a daily local-time window, including overnight ranges, with unmetered-network and charging requirements. Running transfers pause at the boundary (checked about every 30 seconds); post-processing can finish. WorkManager checks queued work approximately every 15 minutes, subject to Android delays. Explicitly paused downloads stay paused, and external downloaders are unaffected.
 - Choose Storage Access Framework or compatible legacy storage locations, separate audio and video
   folders, mobile-network behavior, retry limits, filename handling, and a serial download queue
 - Import or export subscriptions separately, create complete WizeStream backups that preserve all
