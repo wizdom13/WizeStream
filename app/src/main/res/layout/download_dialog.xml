@@ -81,11 +81,21 @@
             android:text="@string/caption_setting_title" />
     </RadioGroup>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/companion_caption"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/video_audio_group"
+        android:layout_marginHorizontal="20dp"
+        android:text="@string/companion_caption_title"
+        android:visibility="gone" />
+
     <Spinner
         android:id="@+id/quality_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/video_audio_group"
+        android:layout_below="@id/companion_caption"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
         android:layout_marginBottom="12dp"
