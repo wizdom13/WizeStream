@@ -191,6 +191,8 @@ class Player(
         )
     }
 
+    val subtitleTiming: SubtitleTiming get() = renderFactory.subtitleTiming
+
     private val videoResolver = VideoPlaybackResolver(appContext, dataSource, qualityResolver())
     private val audioResolver = AudioPlaybackResolver(appContext, dataSource)
     val liveQualityController = LiveQualityController(this)

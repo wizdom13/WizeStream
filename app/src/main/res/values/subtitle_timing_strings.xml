@@ -1,0 +1,8 @@
+<resources>
+    <string name="subtitle_timing">Subtitle timing</string>
+    <string name="subtitle_timing_value">Offset: %1$d ms
+Positive values display captions later. Use Back to close. Resets when the track changes.</string>
+    <string name="subtitle_earlier">Earlier −100 ms</string>
+    <string name="subtitle_later">Later +100 ms</string>
+    <string name="subtitle_timing_reset">Reset</string>
+</resources>

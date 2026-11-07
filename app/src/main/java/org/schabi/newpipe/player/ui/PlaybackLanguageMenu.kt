@@ -24,7 +24,11 @@ object PlaybackLanguageMenu {
     }
 
     @JvmStatic
-    fun captions(context: Context, menu: Menu, group: Int, languages: List<String?>, showAll: Boolean, select: Consumer<String?>, expand: Runnable) {
+    fun captions(context: Context, menu: Menu, group: Int, languages: List<String?>, showAll: Boolean, anchor: android.view.View, player: org.schabi.newpipe.player.Player, select: Consumer<String?>, expand: Runnable) {
+        menu.add(group, -2, Menu.NONE, R.string.subtitle_timing).setOnMenuItemClickListener {
+            SubtitleTimingDialog.show(anchor, player)
+            true
+        }
         menu.add(group, 0, Menu.NONE, R.string.caption_none).setOnMenuItemClickListener {
             select.accept(null)
             true

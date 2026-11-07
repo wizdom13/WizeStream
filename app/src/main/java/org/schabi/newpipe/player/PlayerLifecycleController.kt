@@ -238,6 +238,8 @@ internal class PlayerLifecycleController(
         player.videoAdjustments.attach(exoPlayer)
         player.playbackInformation.attach(exoPlayer)
         player.abRepeat.attach(exoPlayer)
+        player.subtitleTiming.setOffset(0)
+        exoPlayer.addListener(player.subtitleTiming)
         exoPlayer.addListener(player)
         if (Player.DEBUG) {
             exoPlayer.addAnalyticsListener(
@@ -277,6 +279,8 @@ internal class PlayerLifecycleController(
         player.videoAdjustments.detach()
         player.playbackInformation.detach()
         player.abRepeat.detach()
+        exoPlayer?.removeListener(player.subtitleTiming)
+        player.subtitleTiming.setOffset(0)
         exoPlayer?.removeListener(player)
         player.UIs().call(PlayerUi::destroyPlayer)
         audioController.releaseAudioSession()

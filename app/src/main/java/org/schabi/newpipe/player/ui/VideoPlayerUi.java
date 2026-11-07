@@ -1404,9 +1404,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         captionPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_CAPTION);
 
         captionPopupMenu.setOnDismissListener(this);
-
         PlaybackLanguageMenu.captions(context, captionPopupMenu.getMenu(), POPUP_MENU_ID_CAPTION,
-                availableLanguages, showAll, player::setCaptionPreference,
+                availableLanguages, showAll, binding.captionTextView, player,
+                player::setCaptionPreference,
                 () -> binding.captionTextView.post(() -> {
                     buildCaptionMenu(availableLanguages, true);
                     showPopupMenu(captionPopupMenu, binding.captionTextView);
