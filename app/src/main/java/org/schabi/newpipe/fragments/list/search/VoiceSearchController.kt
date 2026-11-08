@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import java.util.function.Consumer
 import org.schabi.newpipe.R
+import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.KeyboardUtil
 
 /** Registers with the fragment before creation; toolbar views are held only while bound. */
@@ -49,7 +50,13 @@ class VoiceSearchController(
             setOnClickListener {
                 KeyboardUtil.hideKeyboard(fragment.activity, input)
                 try {
-                    launcher.launch(recognitionIntent(context.getString(R.string.voice_search)))
+                    launcher.launch(
+                        recognitionIntent(
+                            context.getString(R.string.voice_search),
+                            DeviceUtils.isTv(context),
+                            context.packageName
+                        )
+                    )
                 } catch (_: ActivityNotFoundException) {
                     showUnavailable()
                 } catch (_: SecurityException) {
@@ -70,17 +77,25 @@ class VoiceSearchController(
     }
 
     internal companion object {
-        fun recognitionIntent(prompt: String): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        fun recognitionIntent(prompt: String, isTv: Boolean = false, callingPackage: String? = null): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            // TV recognizers may close immediately when an unavailable offline engine is
+            // requested. Leave engine selection to the TV's installed recognition activity.
+            if (!isTv) putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            callingPackage?.let { putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, it) }
         }
 
         fun recognizedQuery(resultCode: Int, data: Intent?): String? {
             if (resultCode != Activity.RESULT_OK) return null
-            return data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                ?.firstOrNull { it.isNotBlank() }?.trim()
+            // Results are supplied by another application and can contain malformed extras.
+            return try {
+                data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                    ?.firstOrNull { !it.isNullOrBlank() }?.trim()
+            } catch (_: RuntimeException) {
+                null
+            }
         }
     }
 }

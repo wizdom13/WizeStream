@@ -140,12 +140,12 @@ public final class DeviceUtils {
             return isTV;
         }
 
-        final PackageManager pm = App.getInstance().getPackageManager();
+        final PackageManager pm = context.getPackageManager();
 
         // from doc: https://developer.android.com/training/tv/start/hardware.html#runtime-check
         boolean isTv = ContextCompat.getSystemService(context, UiModeManager.class)
                 .getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION
-                || isFireTv()
+                || pm.hasSystemFeature(AMAZON_FEATURE_FIRE_TV)
                 || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
 
         // from https://stackoverflow.com/a/58932366
