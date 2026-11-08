@@ -465,17 +465,17 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
             } else {
                 return collectItem(collector, richItem, channelIds);
             }
-        } else if (item.has("gridPlaylistRenderer")) {
+        } else if (item.has("gridPlaylistRenderer") || item.has("playlistRenderer")) {
+            // Course cards use playlistRenderer without the shareUrl/byline of mix cards.
+            final String renderer = item.has("gridPlaylistRenderer")
+                    ? "gridPlaylistRenderer" : "playlistRenderer";
             collector.commit(new YoutubePlaylistInfoItemExtractor(
-                    item.getObject("gridPlaylistRenderer")) {
+                    item.getObject(renderer)) {
                 @Override
                 public String getUploaderName() {
                     return channelIds.get(0);
                 }
             });
-        } else if (item.has("playlistRenderer")) {
-            collector.commit(new YoutubeMixOrPlaylistInfoItemExtractor(
-                    item.getObject("playlistRenderer")));
         } else if (item.has("radioRenderer")) {
             collector.commit(new YoutubeMixOrPlaylistInfoItemExtractor(
                     item.getObject("radioRenderer")));

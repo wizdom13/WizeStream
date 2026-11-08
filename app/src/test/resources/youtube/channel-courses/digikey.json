@@ -1,0 +1,84 @@
+{
+  "items": [
+    {
+      "playlistRenderer": {
+        "playlistId": "PLEBQazB0HUyT1WmMONxRZn9NmQ_9CIKhb",
+        "title": {
+          "simpleText": "Introduction to FPGA"
+        },
+        "videoCount": "12",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/lLg1AgA2Xoo/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLEBQazB0HUyTpoJoZecRK6PpDG31Y7RPB",
+        "title": {
+          "simpleText": "Introduction to Embedded Linux"
+        },
+        "videoCount": "7",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/9vsu67uMcko/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLEBQazB0HUyQ4hAPU1cJED6t3DU0h34bz",
+        "title": {
+          "simpleText": "Introduction to RTOS"
+        },
+        "videoCount": "12",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/F321087yYy4/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLEBQazB0HUyRYuzfi4clXsKUSgorErmBv",
+        "title": {
+          "simpleText": "Getting Started with STM32 and Nucleo"
+        },
+        "videoCount": "6",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/hyZS2p1tW-g/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

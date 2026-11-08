@@ -1,0 +1,164 @@
+{
+  "items": [
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd_vXwWZLI9_dgJns3nR_ZyW",
+        "title": {
+          "simpleText": "Computer Vision 101 (Neural Networks)"
+        },
+        "videoCount": "60",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/_Kf8NprzNkw/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd_NwyY_PeSYrYfsvHZnHGPU",
+        "title": {
+          "simpleText": "Deep Learning 101"
+        },
+        "videoCount": "12",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/DDSMOjlGkh8/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd-_5sGLnbgE8Poer1Xjzz4h",
+        "title": {
+          "simpleText": "The Math You Should Know"
+        },
+        "videoCount": "16",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/-eGJuwQ5A2o/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd9kS--NgVz0EPNyEmygV1Ha",
+        "title": {
+          "simpleText": "Reinforcement Learning 101"
+        },
+        "videoCount": "11",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/lfPEJPHUllg/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd97qfWC40gOSU8C0iu0m2l4",
+        "title": {
+          "simpleText": "Transformers from scratch"
+        },
+        "videoCount": "12",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/QCJQG4DuHT0/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd9bPcq0fj91Jgk_-h1H_W3V",
+        "title": {
+          "simpleText": "Probability Theory for Machine Learning"
+        },
+        "videoCount": "7",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/zrd8KujWxKw/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd92YEIM4gVRSVwtIs1EXOqm",
+        "title": {
+          "simpleText": "Logistic Regression"
+        },
+        "videoCount": "5",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/YMJtsYIp4kg/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "playlistRenderer": {
+        "playlistId": "PLTl9hO2Oobd-GaTYQWIuIs2yyNy7TYbEj",
+        "title": {
+          "simpleText": "Deep Learning 201: Mathematical Foundations"
+        },
+        "videoCount": "11",
+        "thumbnails": [
+          {
+            "thumbnails": [
+              {
+                "url": "https://i.ytimg.com/vi/fkqZyYo_ebs/hqdefault.jpg",
+                "width": 480,
+                "height": 270
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
