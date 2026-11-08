@@ -55,6 +55,7 @@ final class SearchFilterDialog {
     private ChipGroup contentFilterGroup;
     private final SearchFilterPresets presets;
     private final boolean datesSupported;
+    private final boolean musicOnly;
     private EditText afterInput;
     private EditText beforeInput;
     private TextView datePreview;
@@ -92,6 +93,7 @@ final class SearchFilterDialog {
                                @NonNull final DurationListener listener) {
         this.context = context;
         this.service = service;
+        this.musicOnly = musicOnly;
         this.advancedListener = listener;
         this.after = after;
         this.before = before;
@@ -213,6 +215,11 @@ final class SearchFilterDialog {
         contentFilterGroup.setSelectionRequired(true);
         for (final FilterItem filter : contentFilters) {
             final Chip chip = filterChip(filter);
+            if (!musicOnly && service.getServiceId() == ServiceList.YouTube.getServiceId()
+                    && filter.getName().startsWith("music_")) {
+                chip.setText(context.getString(R.string.search_filter_source_label,
+                        context.getString(R.string.youtube_music), translated(filter.getName())));
+            }
             chip.setChecked(filter == selectedContentFilter);
             contentFilterGroup.addView(chip);
         }
