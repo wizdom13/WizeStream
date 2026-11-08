@@ -33,6 +33,22 @@
 
     </com.google.android.material.appbar.MaterialToolbar>
 
+    <TextView
+        android:id="@+id/incognito_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityLiveRegion="polite"
+        android:background="?attr/colorSurfaceVariant"
+        android:focusable="false"
+        android:paddingStart="16dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp"
+        android:text="@string/incognito_active"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone" />
+
     <include
         android:id="@+id/toolbar_search_music_filters"
         layout="@layout/toolbar_search_music_filter_chips"
