@@ -43,8 +43,13 @@ public final class BandcampExtractorHelper {
                             + "&tralbum_id=" + itemId + "&tralbum_type=" + itemType.charAt(0))
                     .responseBody();
 
-            return JsonParser.object().from(jsonString)
-                    .getString("bandcamp_url").replace("http://", "https://");
+            final String bandcampUrl = JsonParser.object().from(jsonString)
+                    .getString("bandcamp_url");
+            if (bandcampUrl == null || bandcampUrl.isBlank()) {
+                throw new ParsingException(
+                        "Bandcamp response did not contain an album or track URL");
+            }
+            return bandcampUrl.replace("http://", "https://");
 
         } catch (final JsonParserException | ReCaptchaException | IOException e) {
             throw new ParsingException("Ids could not be translated to URL", e);

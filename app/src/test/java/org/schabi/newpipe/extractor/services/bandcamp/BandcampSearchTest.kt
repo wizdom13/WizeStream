@@ -4,6 +4,7 @@ import com.grack.nanojson.JsonParser
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -14,6 +15,8 @@ import org.schabi.newpipe.extractor.downloader.CancellableCall
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
+import org.schabi.newpipe.extractor.exceptions.ParsingException
+import org.schabi.newpipe.extractor.services.bandcamp.extractors.BandcampExtractorHelper
 
 class BandcampSearchTest {
     private val oldDownloader = NewPipe.getDownloader()
@@ -91,5 +94,17 @@ class BandcampSearchTest {
             response = body
             assertTrue(ServiceList.Bandcamp.suggestionExtractor.suggestionList("fixture").isEmpty())
         }
+    }
+
+    @Test
+    fun missingBandcampItemUrlIsReportedAsParsingError() {
+        response = "{}"
+
+        val error = assertThrows(ParsingException::class.java) {
+            BandcampExtractorHelper.getStreamUrlFromIds(1, 2, "a")
+        }
+
+        assertEquals("Bandcamp response did not contain an album or track URL", error.message)
+        assertTrue(requests.single().url().contains("/api/mobile/22/tralbum_details"))
     }
 }
