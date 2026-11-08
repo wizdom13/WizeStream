@@ -567,17 +567,25 @@ class Libp2pSyncNode(
                     )
                 } catch (error: Exception) {
                     throw HistorySyncException(
-                        "Could not reach ${peer.deviceName}",
+                        "Could not open ${category.name} history stream to ${peer.deviceName} (batch $rounds)",
                         error
                     )
                 }
 
                 val response = try {
                     controller.sendRequest(request)
-                    controller.response.get(SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    HistorySyncResponseWaiter.await(
+                        controller.response,
+                        peer.deviceName,
+                        category,
+                        rounds,
+                        request.changes.size
+                    )
+                } catch (error: HistorySyncException) {
+                    throw error
                 } catch (error: Exception) {
                     throw HistorySyncException(
-                        "History synchronization with ${peer.deviceName} failed",
+                        "Could not send ${category.name} history batch $rounds to ${peer.deviceName}",
                         error
                     )
                 } finally {
