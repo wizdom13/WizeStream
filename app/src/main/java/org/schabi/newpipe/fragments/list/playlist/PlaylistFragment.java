@@ -67,16 +67,17 @@ import org.schabi.newpipe.local.search.ContextualSearchable;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlaylistPlayQueue;
 import org.schabi.newpipe.util.ContentBlockingHelper;
-import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ExpandableSearchViewHelper;
+import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
-import org.schabi.newpipe.util.StreamListFilter;
+import org.schabi.newpipe.util.StreamFilterControls;
+import org.schabi.newpipe.util.StreamFilterSelection;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
-import org.schabi.newpipe.util.text.TextEllipsizer;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
+import org.schabi.newpipe.util.text.TextEllipsizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,7 +127,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     private long streamCount;
     private long playlistOverallDurationSeconds;
     @State
-    protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
+    protected String selectedStreamFilters = "";
     @State
     protected PlaylistSortOrder selectedPlaylistSort = PlaylistSortOrder.PLAYLIST_ORDER;
     @State
@@ -190,14 +191,9 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
         super.initViews(rootView, savedInstanceState);
         binding = FragmentPlaylistBinding.bind(rootView);
         historyRecordManager = new HistoryRecordManager(requireContext());
-        if (selectedStreamFilter != StreamListFilter.NONE) {
-            binding.streamFilterChips.streamFilterChipGroup
-                    .check(selectedStreamFilter.getChipId());
-        }
-        binding.streamFilterChips.streamFilterChipGroup
-                .setOnCheckedStateChangeListener((group, checkedIds) -> {
-                    selectedStreamFilter = StreamListFilter.fromChipId(
-                            checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
+        StreamFilterControls.bind(binding.streamFilterChips, selectedStreamFilters,
+                true, selection -> {
+                    selectedStreamFilters = selection;
                     refreshStreamStates();
                 });
         updatePlaylistSortButton();
@@ -635,7 +631,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     }
 
     private void refreshStreamStatesAfterPageLoad() {
-        if (selectedStreamFilter == StreamListFilter.NONE
+        if (!StreamFilterSelection.parse(selectedStreamFilters).isActive()
                 && selectedPlaylistSort == PlaylistSortOrder.PLAYLIST_ORDER) {
             if (ContextualSearchHelper.isActive(contextualSearchQuery)) {
                 applyStreamFilter();
@@ -675,8 +671,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
     }
 
     private boolean filterNeedsStreamStates() {
-        return selectedStreamFilter == StreamListFilter.UNWATCHED
-                || selectedStreamFilter == StreamListFilter.PARTIALLY_WATCHED;
+        return StreamFilterSelection.parse(selectedStreamFilters).getNeedsStreamStates();
     }
 
     private void applyStreamFilter() {
@@ -684,7 +679,7 @@ public class PlaylistFragment extends BaseListInfoFragment<StreamInfoItem, Playl
             return;
         }
         final List<StreamInfoItem> sortedItems = PlaylistSortHelper.itemsForDisplay(
-                unfilteredItems, selectedStreamFilter, streamStates, selectedPlaylistSort);
+                unfilteredItems, selectedStreamFilters, streamStates, selectedPlaylistSort);
         final List<StreamInfoItem> displayedItems = ContextualSearchHelper.filter(
                 sortedItems, contextualSearchQuery,
                 item -> new String[]{item.getName(), item.getUploaderName()});

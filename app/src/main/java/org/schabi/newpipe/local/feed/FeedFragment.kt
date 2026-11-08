@@ -94,6 +94,8 @@ import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.MembersOnlyContentHelper
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.ServiceHelper
+import org.schabi.newpipe.util.StreamFilterControls
+import org.schabi.newpipe.util.StreamFilterSelection
 import org.schabi.newpipe.util.StreamListFilter
 import org.schabi.newpipe.util.ThemeHelper.getItemViewMode
 import org.schabi.newpipe.util.ThemeHelper.resolveDrawable
@@ -120,7 +122,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     @State
     @JvmField
-    var selectedStreamFilter = StreamListFilter.NONE
+    var selectedStreamFilters = ""
 
     @State
     @JvmField
@@ -154,7 +156,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         groupName = arguments?.getString(KEY_GROUP_NAME) ?: ""
         val storedFilter = PreferenceManager.getDefaultSharedPreferences(requireContext())
             .getString(streamFilterPreferenceKey(groupId), StreamListFilter.NONE.name)
-        selectedStreamFilter = restoreStreamFilter(storedFilter)
+        selectedStreamFilters = StreamFilterSelection.parse(storedFilter).encode()
 
         onSettingsChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == getString(R.string.feed_floating_refresh_key)) {
@@ -235,10 +237,6 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         activity.supportActionBar?.let {
             groupSelector = FeedGroupSelector(requireContext(), it, { groupId }, ::selectFeedGroup)
         }
-        if (selectedStreamFilter != StreamListFilter.NONE) {
-            feedBinding.streamFilterChips.streamFilterChipGroup
-                .check(selectedStreamFilter.chipId)
-        }
     }
 
     override fun onPause() {
@@ -290,6 +288,11 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         hideNewItemsLoaded(false)
         groupAdapter.clear()
         feedBinding.itemsList.scrollToPosition(0)
+        selectedStreamFilters = StreamFilterSelection.parse(
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .getString(streamFilterPreferenceKey(id), "")
+        ).encode()
+        bindStreamFilters()
         viewModel.selectGroup(id)
     }
 
@@ -342,16 +345,19 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         feedBinding.newItemsLoadedButton.setOnClickListener {
             scrollToTop()
         }
-        feedBinding.streamFilterChips.streamFilterChipGroup
-            .setOnCheckedStateChangeListener { _, checkedIds ->
-                selectedStreamFilter = StreamListFilter.fromChipId(
-                    checkedIds.firstOrNull() ?: View.NO_ID
-                )
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
-                    putString(streamFilterPreferenceKey(groupId), selectedStreamFilter.name)
-                }
-                latestLoadedState?.let { showFilteredFeedItems(it, false) }
+        bindStreamFilters()
+    }
+
+    private fun bindStreamFilters() {
+        StreamFilterControls.bind(feedBinding.streamFilterChips, selectedStreamFilters, true) { selection ->
+            selectedStreamFilters = selection
+            PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                putString(streamFilterPreferenceKey(groupId), selectedStreamFilters)
             }
+            latestLoadedState?.let { showFilteredFeedItems(it, false) }
+        }
+        feedBinding.streamFilterChips.filterAll.setText(R.string.filter_all_visible)
+        feedBinding.streamFilterChips.filterWatchAll.setText(R.string.filter_all_visible)
     }
 
     fun scrollToTop() {
@@ -470,7 +476,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         val checkedDialogItems = checkedItems.toBooleanArray()
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.feed_hide_streams_title)
+            .setTitle(R.string.feed_default_visibility_title)
             .setMultiChoiceItems(
                 dialogItems.toTypedArray(),
                 checkedDialogItems
@@ -478,10 +484,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 checkedDialogItems[which] = isChecked
             }
             .setPositiveButton(R.string.ok) { _, _ ->
-                viewModel.setSaveShowPlayedItems(checkedDialogItems[0])
-                viewModel.setSaveShowPartiallyPlayedItems(checkedDialogItems[1])
-                viewModel.setSaveShowFutureItems(checkedDialogItems[2])
                 preferences.edit {
+                    putBoolean(getString(R.string.feed_show_watched_items_key), checkedDialogItems[0])
+                    putBoolean(getString(R.string.feed_show_partially_watched_items_key), checkedDialogItems[1])
+                    putBoolean(getString(R.string.feed_show_future_items_key), checkedDialogItems[2])
                     putBoolean(getString(R.string.feed_show_live_items_key), checkedDialogItems[3])
                     putBoolean(getString(R.string.feed_show_video_items_key), checkedDialogItems[4])
                     putBoolean(getString(R.string.feed_show_shorts_items_key), checkedDialogItems[5])
@@ -904,22 +910,28 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 add(StreamListFilter.UPCOMING)
             }
         }
+        val selection = StreamFilterSelection.parse(selectedStreamFilters)
+        val showWatched = viewModel.getShowPlayedItemsFromPreferences()
+        val showPartiallyWatched = viewModel.getShowPartiallyPlayedItemsFromPreferences()
         val streamFilteredItems = loadedState.items.filter { item ->
             val streamWithState = item.streamWithState
             if (hideMembersOnly && streamWithState.stream.requiresMembership) {
                 return@filter false
             }
             val stream = streamWithState.stream.toStreamInfoItem()
-            if (StreamListFilter.categoryOf(stream) !in shownStreamCategories) {
-                return@filter false
-            }
             if (blockingRules.isBlocked(stream)) {
                 return@filter false
             }
             val state = streamWithState.stateProgressMillis?.let {
                 StreamStateEntity(streamWithState.stream.uid, it)
             }
-            StreamListFilter.matches(selectedStreamFilter, stream, state)
+            selection.matchesVisible(
+                stream,
+                state,
+                shownStreamCategories,
+                showWatched,
+                showPartiallyWatched
+            )
         }
         val displayedItems = ContextualSearchHelper.filter(
             streamFilteredItems,
@@ -958,7 +970,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         setEmptyStateMessage(
             if (ContextualSearchHelper.isActive(contextualSearchQuery) ||
-                selectedStreamFilter != StreamListFilter.NONE
+                selectedStreamFilters.isNotEmpty()
             ) {
                 R.string.search_no_results
             } else {

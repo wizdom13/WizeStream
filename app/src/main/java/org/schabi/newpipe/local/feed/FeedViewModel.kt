@@ -221,10 +221,11 @@ class FeedViewModel(
                 FeedViewModel(
                     App.instance,
                     groupId,
-                    // Read initial value from preferences
-                    getShowPlayedItemsFromPreferences(context.applicationContext),
-                    getShowPartiallyPlayedItemsFromPreferences(context.applicationContext),
-                    getShowFutureItemsFromPreferences(context.applicationContext)
+                    // The chips apply visibility defaults after loading. Explicit selections
+                    // must be able to reveal items hidden by those defaults.
+                    true,
+                    true,
+                    true
                 )
             }
         }

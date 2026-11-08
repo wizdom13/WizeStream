@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="filter_all_visible">All visible</string>
+    <string name="feed_default_visibility_title">Default visibility (All visible)</string>
     <string name="allow_av1_title">Allow AV1 video</string>
     <string name="allow_av1_summary">Turn off if AV1 video stutters or shows a black screen. Other 60fps formats remain available. Reopen the player after changing this.</string>
     <string name="history_portability_title">Import and export history</string>

@@ -4,6 +4,7 @@ import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.util.StreamListFilter;
+import org.schabi.newpipe.util.StreamFilterSelection;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -27,13 +28,22 @@ final class PlaylistSortHelper {
             final StreamListFilter filter,
             final Map<String, StreamStateEntity> streamStates,
             final PlaylistSortOrder order) {
-        if (filter == StreamListFilter.NONE && order == PlaylistSortOrder.PLAYLIST_ORDER) {
+        return itemsForDisplay(items, filter.name(), streamStates, order);
+    }
+
+    static List<StreamInfoItem> itemsForDisplay(
+            final List<StreamInfoItem> items,
+            final String filter,
+            final Map<String, StreamStateEntity> streamStates,
+            final PlaylistSortOrder order) {
+        final StreamFilterSelection selection = StreamFilterSelection.parse(filter);
+        if (!selection.isActive() && order == PlaylistSortOrder.PLAYLIST_ORDER) {
             return items;
         }
 
         final List<StreamInfoItem> displayedItems = new ArrayList<>(items.size());
         for (final StreamInfoItem item : items) {
-            if (StreamListFilter.matches(filter, item, streamStates.get(item.getUrl()))) {
+            if (selection.matches(item, streamStates.get(item.getUrl()))) {
                 displayedItems.add(item);
             }
         }

@@ -14,7 +14,8 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
     VIDEOS(R.id.filter_videos),
     SHORTS(R.id.filter_shorts),
     UPCOMING(R.id.filter_upcoming),
-    PARTIALLY_WATCHED(R.id.filter_partially_watched);
+    PARTIALLY_WATCHED(R.id.filter_partially_watched),
+    WATCHED(R.id.filter_watched);
 
     companion object {
         @JvmStatic
@@ -30,6 +31,8 @@ enum class StreamListFilter(@IdRes val chipId: Int) {
             NONE -> true
 
             UNWATCHED -> state == null || !state.isValid(stream.duration)
+
+            WATCHED -> state?.isFinished(stream.duration) == true
 
             LIVE -> categoryOf(stream) == LIVE
 
