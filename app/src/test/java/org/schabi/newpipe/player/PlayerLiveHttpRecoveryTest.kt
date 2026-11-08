@@ -23,6 +23,7 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
@@ -406,7 +407,7 @@ class PlayerLiveHttpRecoveryTest {
     }
 
     @Test
-    fun fullLiveRefreshesDashBeforeDiscardingRewind() {
+    fun fullLiveRetriesDashWithoutDiscardingRewind() {
         val fixture = Fixture()
         `when`(fixture.player.isNormalLive()).thenReturn(false)
         fixture.state(Media3Player.STATE_READY)
@@ -420,8 +421,8 @@ class PlayerLiveHttpRecoveryTest {
 
         fixture.state(Media3Player.STATE_BUFFERING)
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
-        verify(fixture.resolver).preferHlsForLiveStream(fixture.info.url)
-        verify(fixture.queue).unsetRecovery(0)
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        verify(fixture.queue, never()).unsetRecovery(0)
         verify(fixture.player, times(2)).reloadPlayQueueManager()
         fixture.controller.resetRecovery()
     }
@@ -457,7 +458,7 @@ class PlayerLiveHttpRecoveryTest {
     }
 
     @Test
-    fun briefReadyFlickerStillFallsBackInsteadOfLoopingDashRefreshes() {
+    fun briefReadyFlickerKeepsDvrWithoutResettingTheRetryBudget() {
         val fixture = Fixture()
         `when`(fixture.player.isNormalLive()).thenReturn(false)
         fixture.state(Media3Player.STATE_READY)
@@ -467,7 +468,7 @@ class PlayerLiveHttpRecoveryTest {
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
         fixture.state(Media3Player.STATE_BUFFERING)
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
-        verify(fixture.resolver).preferHlsForLiveStream(fixture.info.url)
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
         verify(fixture.player, times(2)).reloadPlayQueueManager()
         fixture.controller.resetRecovery()
     }
@@ -537,6 +538,47 @@ class PlayerLiveHttpRecoveryTest {
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(40))
         verify(fixture.player, never()).reloadPlayQueueManager()
         fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun onlyAnEstablishedDvrWindowRestrictsFutureSourceFallback() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        fixture.state(Media3Player.STATE_READY)
+        verify(fixture.resolver, never()).requireDvrForLiveStream(anyString())
+        `when`(fixture.engine.isCurrentMediaItemSeekable).thenReturn(true)
+        `when`(fixture.engine.duration).thenReturn(14_400_000)
+        fixture.state(Media3Player.STATE_READY)
+        verify(fixture.resolver).requireDvrForLiveStream(fixture.info.url)
+        fixture.controller.resetRecovery()
+        verify(fixture.resolver).clearLiveDvrRequirement()
+    }
+
+    @Test
+    fun fullLiveStopsAfterBoundedRetriesInsteadOfDroppingRewind() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        `when`(fixture.player.context).thenReturn(RuntimeEnvironment.getApplication())
+        fixture.state(Media3Player.STATE_READY)
+        repeat(4) {
+            fixture.state(Media3Player.STATE_BUFFERING)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        }
+        verify(fixture.player, times(3)).reloadPlayQueueManager()
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        verify(fixture.queue, never()).unsetRecovery(0)
+        verify(fixture.engine).pause()
+        verify(fixture.player).changeState(Player.STATE_PAUSED)
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
+    fun fullLiveHttpFailureCannotSilentlyChooseShortHlsWindow() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        assertFalse(fixture.recover())
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        verify(fixture.queue, never()).unsetRecovery(0)
     }
 
     private class Fixture {

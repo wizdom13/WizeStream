@@ -21,12 +21,15 @@ import org.schabi.newpipe.player.Player
 /**
  * Use YouTube's refreshable DASH DVR window when available. A finite/static or broken manifest
  * falls back to HLS before publishing a timeline, so playback never starts on a frozen DVR snapshot.
- * Once playback has started, manifest updates keep the chosen source and the user's seek position.
+ * Full live callers can disallow that fallback so a refresh cannot silently discard the DVR
+ * window. Once playback starts, manifest updates keep the source and the user's seek position.
  */
-class YoutubeLiveMediaSource(
+class YoutubeLiveMediaSource @JvmOverloads constructor(
     private val dashSource: MediaSource,
-    private val hlsSource: MediaSource
+    private val hlsSource: MediaSource,
+    private val allowHlsFallback: Boolean = true
 ) : CompositeMediaSource<Int>() {
+    private var preparationError: IOException? = null
     private var usingHls = false
     private var publishedTimeline = false
     private var timelineRefreshCount = 0
@@ -37,6 +40,7 @@ class YoutubeLiveMediaSource(
 
     override fun prepareSourceInternal(mediaTransferListener: TransferListener?) {
         super.prepareSourceInternal(mediaTransferListener)
+        preparationError = null
         usingHls = false
         publishedTimeline = false
         timelineRefreshCount = 0
@@ -67,9 +71,13 @@ class YoutubeLiveMediaSource(
             val manifest = timeline.getWindow(0, Timeline.Window()).manifest as? DashManifest
             if (manifest == null || !isRefreshable(manifest)) {
                 if (Player.DEBUG) {
-                    Log.d(TAG, "DASH timeline is not refreshable; using HLS")
+                    Log.d(TAG, "DASH timeline is not refreshable; allowHlsFallback=$allowHlsFallback")
                 }
-                useHls()
+                if (allowHlsFallback) {
+                    useHls()
+                } else {
+                    preparationError = FullLiveDvrUnavailableException("The Full live DASH manifest has no refreshable DVR window")
+                }
                 return
             }
         }
@@ -78,9 +86,13 @@ class YoutubeLiveMediaSource(
     }
 
     override fun maybeThrowSourceInfoRefreshError() {
+        preparationError?.let { throw it }
         try {
             super.maybeThrowSourceInfoRefreshError()
         } catch (error: IOException) {
+            if (!allowHlsFallback && !publishedTimeline) {
+                throw FullLiveDvrUnavailableException("Full live DASH preparation failed", error)
+            }
             if (usingHls || publishedTimeline) throw error
             if (Player.DEBUG) {
                 Log.d(TAG, "DASH preparation failed; using HLS: ${error.javaClass.simpleName}")
@@ -110,3 +122,5 @@ class YoutubeLiveMediaSource(
             manifest.minUpdatePeriodMs != C.TIME_UNSET
     }
 }
+
+internal class FullLiveDvrUnavailableException(message: String, cause: IOException? = null) : IOException(message, cause)

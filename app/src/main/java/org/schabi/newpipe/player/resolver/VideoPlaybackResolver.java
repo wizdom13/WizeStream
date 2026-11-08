@@ -55,6 +55,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     private RejectedVideoCodecFamily rejectedVideoCodecFamily;
     @Nullable
     private String hlsFallbackStreamUrl;
+    @Nullable
+    private String requiredDvrStreamUrl;
 
     public enum SourceType {
         LIVE_STREAM,
@@ -255,7 +257,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     @Nullable
     private MediaSource resolveLiveSource(@NonNull final StreamInfo info) {
         return PlaybackResolver.maybeBuildLiveMediaSource(
-                dataSource, info, isHlsPreferredForLiveStream(info.getUrl()));
+                dataSource, info, isHlsPreferredForLiveStream(info.getUrl()),
+                info.getUrl().equals(requiredDvrStreamUrl));
     }
 
     public void preferHlsForLiveStream(@NonNull final String streamUrl) {
@@ -264,6 +267,14 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     public boolean isHlsPreferredForLiveStream(@NonNull final String streamUrl) {
         return streamUrl.equals(hlsFallbackStreamUrl);
+    }
+
+    public void requireDvrForLiveStream(@NonNull final String streamUrl) {
+        requiredDvrStreamUrl = streamUrl;
+    }
+
+    public void clearLiveDvrRequirement() {
+        requiredDvrStreamUrl = null;
     }
 
     public void clearLiveHlsFallback() {
