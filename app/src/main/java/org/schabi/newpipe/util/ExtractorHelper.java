@@ -285,6 +285,7 @@ public final class ExtractorHelper {
     private static void backfillYouTubeRatingsAndViewCount(final int serviceId,
                                                            final StreamInfo info) {
         if (serviceId != ServiceList.YouTube.getServiceId()
+                || !ServiceList.YouTube.isFetchDislike()
                 || (info.getLikeCount() >= 0
                 && info.getDislikeCount() >= 0
                 && info.getViewCount() >= 0)) {
