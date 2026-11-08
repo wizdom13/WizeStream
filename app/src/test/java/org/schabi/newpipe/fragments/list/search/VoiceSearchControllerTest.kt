@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,6 +76,24 @@ class VoiceSearchControllerTest {
             assertEquals("keep me", fragment.input().text.toString())
             assertTrue(fragment.queries.isEmpty())
         }
+    }
+
+    @Test
+    fun tvRequestLetsInstalledRecognizerChooseItsEngine() {
+        val request = VoiceSearchController.recognitionIntent("Search", true, "org.wisso.newpipematerial")
+        assertEquals(RecognizerIntent.ACTION_RECOGNIZE_SPEECH, request.action)
+        assertFalse(request.hasExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE))
+        assertEquals("org.wisso.newpipematerial", request.getStringExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE))
+        assertEquals(RecognizerIntent.LANGUAGE_MODEL_FREE_FORM, request.getStringExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL))
+    }
+
+    @Test
+    fun nullAndMalformedRecognizerEntriesCannotCrashSearch() {
+        val entries = arrayListOf<String?>(null, "  ", "  valid query  ")
+        val result = Intent().putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS, entries)
+        assertEquals("valid query", VoiceSearchController.recognizedQuery(Activity.RESULT_OK, result))
+        val malformed = Intent().putIntegerArrayListExtra(RecognizerIntent.EXTRA_RESULTS, arrayListOf(42))
+        assertNull(VoiceSearchController.recognizedQuery(Activity.RESULT_OK, malformed))
     }
 
     private fun withScreen(test: (TestActivity, TestFragment) -> Unit) {
