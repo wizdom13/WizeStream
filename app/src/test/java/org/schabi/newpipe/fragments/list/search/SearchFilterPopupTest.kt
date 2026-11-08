@@ -27,6 +27,50 @@ import org.schabi.newpipe.extractor.search.filter.FilterItem
 @Config(sdk = [28], application = Application::class)
 class SearchFilterPopupTest {
     @Test
+    fun combinedYoutubeDialogDistinguishesMusicVideosAndPlaylists() {
+        val context = ContextThemeWrapper(RuntimeEnvironment.getApplication(), R.style.LightTheme)
+        var applied = ""
+        SearchFilterDialog.showAdvanced(context, ServiceList.YouTube, emptyArray(), intArrayOf(), false, "", "") { selected, _, _, _ -> applied = selected }
+        shadowOf(Looper.getMainLooper()).idle()
+        val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+        val chips = descendants(dialog.window!!.decorView).filterIsInstance<Chip>()
+        for ((regular, music, label) in listOf(
+            Triple("videos", "music_videos", context.getString(R.string.videos_string)),
+            Triple("playlists", "music_playlists", context.getString(R.string.playlists))
+        )) {
+            val regularChip = chips.single { (it.tag as? FilterItem)?.name == regular }
+            val musicChip = chips.single { (it.tag as? FilterItem)?.name == music }
+            assertEquals(label, regularChip.text.toString())
+            assertEquals(context.getString(R.string.search_filter_source_label, context.getString(R.string.youtube_music), label), musicChip.text.toString())
+        }
+        chips.single { (it.tag as? FilterItem)?.name == "music_playlists" }.isChecked = true
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+        assertEquals("music_playlists", applied)
+        assertFalse(dialog.isShowing)
+    }
+
+    @Test
+    fun dedicatedMusicDialogKeepsConciseLabelsAndRestoresMusicSelection() {
+        val context = ContextThemeWrapper(RuntimeEnvironment.getApplication(), R.style.LightTheme)
+        var applied = ""
+        SearchFilterDialog.showAdvanced(context, ServiceList.YouTube, arrayOf("music_playlists"), intArrayOf(), true, "", "") { selected, _, _, _ -> applied = selected }
+        shadowOf(Looper.getMainLooper()).idle()
+        val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+        val chips = descendants(dialog.window!!.decorView).filterIsInstance<Chip>()
+        assertFalse(chips.any { (it.tag as? FilterItem)?.name in listOf("videos", "playlists") })
+        val playlists = chips.single { (it.tag as? FilterItem)?.name == "music_playlists" }
+        val videos = chips.single { (it.tag as? FilterItem)?.name == "music_videos" }
+        assertTrue(playlists.isChecked)
+        assertEquals(context.getString(R.string.playlists), playlists.text.toString())
+        assertEquals(context.getString(R.string.videos_string), videos.text.toString())
+        videos.isChecked = true
+        assertFalse(playlists.isChecked)
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+        assertEquals("music_videos", applied)
+        assertFalse(dialog.isShowing)
+    }
+
+    @Test
     fun selectingVideoChipsAppliesCurrentFilterVariant() {
         val context = ContextThemeWrapper(RuntimeEnvironment.getApplication(), R.style.LightTheme)
         var content = ""
