@@ -41,7 +41,8 @@ import org.schabi.newpipe.util.ContentBlockingHelper;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
 import org.schabi.newpipe.util.ServiceHelper;
-import org.schabi.newpipe.util.StreamListFilter;
+import org.schabi.newpipe.util.StreamFilterControls;
+import org.schabi.newpipe.util.StreamFilterSelection;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,7 +65,7 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
     @State
     protected String channelName;
     @State
-    protected StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
+    protected String selectedStreamFilters = "";
     @State
     protected String selectedChannelVideoSort;
     @State
@@ -138,14 +139,9 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
             binding.channelVideoSortButton.setOnClickListener(
                     ignored -> showChannelVideoSortDialog());
         }
-        if (selectedStreamFilter != StreamListFilter.NONE) {
-            binding.streamFilterChips.streamFilterChipGroup
-                    .check(selectedStreamFilter.getChipId());
-        }
-        binding.streamFilterChips.streamFilterChipGroup
-                .setOnCheckedStateChangeListener((group, checkedIds) -> {
-                    selectedStreamFilter = StreamListFilter.fromChipId(
-                            checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
+        StreamFilterControls.bind(binding.streamFilterChips, selectedStreamFilters,
+                false, selection -> {
+                    selectedStreamFilters = selection;
                     applyStreamFilter();
                 });
     }
@@ -356,10 +352,11 @@ public class ChannelTabFragment extends BaseListInfoFragment<InfoItem, ChannelTa
                 || currentInfo == null) {
             return;
         }
+        final StreamFilterSelection selection = StreamFilterSelection.parse(selectedStreamFilters);
         final List<InfoItem> displayedItems = unfilteredItems.stream()
-                .filter(item -> selectedStreamFilter == StreamListFilter.NONE
+                .filter(item -> !selection.isActive()
                         || item instanceof StreamInfoItem
-                        && StreamListFilter.matches(selectedStreamFilter,
+                        && selection.matches(
                                 (StreamInfoItem) item, streamStates.get(item.getUrl())))
                 .filter(item -> ContextualSearchHelper.matchesInfoItem(
                         contextualSearchQuery, item))

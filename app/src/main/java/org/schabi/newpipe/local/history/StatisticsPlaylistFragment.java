@@ -53,7 +53,8 @@ import org.schabi.newpipe.settings.HistorySettingsFragment;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.PlayButtonHelper;
-import org.schabi.newpipe.util.StreamListFilter;
+import org.schabi.newpipe.util.StreamFilterControls;
+import org.schabi.newpipe.util.StreamFilterSelection;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -91,7 +92,7 @@ public class StatisticsPlaylistFragment
     private String contextualSearchQuery = "";
     private boolean dateFastScrollEnabled;
     @State
-    StreamListFilter selectedStreamFilter = StreamListFilter.NONE;
+    String selectedStreamFilters = "";
 
     private FragmentPlaylistBinding contentBinding;
     private StatisticPlaylistControlBinding headerBinding;
@@ -108,13 +109,14 @@ public class StatisticsPlaylistFragment
     @NonNull
     private static HistoryViewData processHistory(
             @NonNull final List<StreamStatisticsEntry> completeHistory,
-            @NonNull final StreamListFilter selectedStreamFilter,
+            @NonNull final String selectedStreamFilters,
             @NonNull final String contextualSearchQuery,
             @NonNull final StatisticSortMode sortMode) {
         final String normalizedQuery = contextualSearchQuery.toLowerCase(Locale.ROOT);
         final List<StreamStatisticsEntry> filteredHistory = new ArrayList<>();
+        final StreamFilterSelection selection = StreamFilterSelection.parse(selectedStreamFilters);
         for (final StreamStatisticsEntry item : completeHistory) {
-            if (!StreamListFilter.matches(selectedStreamFilter, item)) {
+            if (!selection.matches(item)) {
                 continue;
             }
             if (!normalizedQuery.isEmpty()) {
@@ -197,14 +199,9 @@ public class StatisticsPlaylistFragment
             }
         });
 
-        if (selectedStreamFilter != StreamListFilter.NONE) {
-            contentBinding.streamFilterChips.streamFilterChipGroup
-                    .check(selectedStreamFilter.getChipId());
-        }
-        contentBinding.streamFilterChips.streamFilterChipGroup
-                .setOnCheckedStateChangeListener((group, checkedIds) -> {
-                    selectedStreamFilter = StreamListFilter.fromChipId(
-                            checkedIds.isEmpty() ? View.NO_ID : checkedIds.get(0));
+        StreamFilterControls.bind(contentBinding.streamFilterChips, selectedStreamFilters,
+                true, selection -> {
+                    selectedStreamFilters = selection;
                     showFilteredHistory();
                 });
         if (!useAsFrontPage) {
@@ -417,7 +414,7 @@ public class StatisticsPlaylistFragment
 
         final List<StreamStatisticsEntry> historySnapshot =
                 new ArrayList<>(completeHistory);
-        final StreamListFilter filterSnapshot = selectedStreamFilter;
+        final String filterSnapshot = selectedStreamFilters;
         final String querySnapshot = contextualSearchQuery;
         final StatisticSortMode sortModeSnapshot = sortMode;
 
