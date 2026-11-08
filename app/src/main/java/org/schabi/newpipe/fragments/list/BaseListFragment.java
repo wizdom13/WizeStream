@@ -115,7 +115,10 @@ public abstract class BaseListFragment<I, N> extends BaseStateFragment<I>
     public void onConfigurationChanged(@NonNull final Configuration configuration) {
         super.onConfigurationChanged(configuration);
         if (itemsList != null) {
-            GridLayoutManagerHelper.preserveScrollPosition(itemsList, this::refreshItemViewMode);
+            GridLayoutManagerHelper.preserveScrollPosition(itemsList, () -> {
+                GridLayoutManagerHelper.reinflateViewHolders(itemsList);
+                refreshItemViewMode();
+            });
         }
     }
 
