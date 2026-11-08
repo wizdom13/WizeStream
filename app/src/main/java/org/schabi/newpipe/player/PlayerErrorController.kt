@@ -38,6 +38,7 @@ import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.datasource.InvidiousMediaResponse
 import org.schabi.newpipe.player.helper.PlayerDataSource
+import org.schabi.newpipe.player.mediasource.FullLiveDvrUnavailableException
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.resolver.PlaybackResolver
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
@@ -57,7 +58,7 @@ internal class PlayerErrorController(
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
-    private val liveDashRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private val liveDashRefreshGuard = PlayerHttpErrorRecovery.RecoveryGuard()
     private val liveMedia403Policy = LiveMedia403RecoveryPolicy()
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
@@ -77,6 +78,16 @@ internal class PlayerErrorController(
         if (player.videoAdjustments.recover(error)) return
 
         player.saveStreamProgressState()
+        val item = player.playQueue?.item
+        if (item != null && !player.isNormalLive() && isYouTubeManifestLive(item) &&
+            generateSequence(error as Throwable) { it.cause }.any { it is FullLiveDvrUnavailableException }
+        ) {
+            if (prepareFullLiveDashRecovery(item, "${item.serviceId}:${item.url}")) {
+                player.onBuffering()
+                player.reloadPlayQueueManager()
+            }
+            return
+        }
         if (tryRecoverFromVideoSurfaceFailure(error) ||
             tryRecoverFromAudioDecoderOutputFailure(error) ||
             tryRecoverFromAudioTrackInitFailure(error)
@@ -170,6 +181,11 @@ internal class PlayerErrorController(
         when (playbackState) {
             Media3Player.STATE_READY -> {
                 cancelPendingLiveStallRecovery()
+                if (item != null && !player.isNormalLive() && isYouTubeManifestLive(item) &&
+                    player.exoPlayer.isCurrentMediaItemSeekable && player.exoPlayer.duration > 60_000L
+                ) {
+                    videoResolver.requireDvrForLiveStream(item.url)
+                }
                 if (key != lastPlayingLiveKey) liveReadySince = null
                 if (player.playWhenReady && liveReadySince == null) {
                     liveReadySince = SystemClock.elapsedRealtime()
@@ -243,10 +259,8 @@ internal class PlayerErrorController(
                         }
 
                         if (canFallBackToLiveHls(currentItem)) {
-                            if (!player.isNormalLive() && liveDashRefreshGuard.acquire(key)) {
-                                Log.w(Player.TAG, "Full live DASH stalled; refreshing URLs before HLS fallback")
-                                player.setRecovery()
-                                invalidateYouTubeMediaCaches(currentItem)
+                            if (!player.isNormalLive()) {
+                                if (!prepareFullLiveDashRecovery(currentItem, key)) return
                             } else {
                                 if (!liveStallRecoveryGuard.acquire(key)) return
                                 Log.w(Player.TAG, "Live DASH stalled after recovery; retrying with HLS")
@@ -298,6 +312,7 @@ internal class PlayerErrorController(
         liveMedia403Policy.reset()
         videoResolver.clearRejectedVideoCodecFamily()
         videoResolver.clearLiveHlsFallback()
+        videoResolver.clearLiveDvrRequirement()
     }
 
     private fun isRecoverableLiveManifest(item: PlayQueueItem): Boolean {
@@ -372,6 +387,29 @@ internal class PlayerErrorController(
     private fun isActivePlaybackState(engine: ExoPlayer): Boolean {
         return engine.playbackState == Media3Player.STATE_READY ||
             engine.playbackState == Media3Player.STATE_BUFFERING
+    }
+
+    private fun prepareFullLiveDashRecovery(item: PlayQueueItem, key: String): Boolean {
+        if (liveDashRefreshGuard.acquireAttempt(key) == null) {
+            // HLS can discard hours of DVR history. Stop after bounded DASH retries
+            // instead of silently changing the user's Full live selection.
+            player.setRecovery()
+            player.exoPlayer.pause()
+            player.changeState(Player.STATE_PAUSED)
+            val error = PlaybackException(
+                "Full live DVR recovery exhausted; retry playback or select Normal live",
+                null,
+                ERROR_CODE_TIMEOUT
+            )
+            createErrorNotification(error, "liveDvrRecovery=exhausted")
+            eventDispatcher.notifyPlayerError(error, true)
+            return false
+        }
+        Log.w(Player.TAG, "Full live DASH stalled; refreshing URLs while preserving rewind")
+        player.setRecovery()
+        invalidateYouTubeMediaCaches(item)
+        recoveringLiveKey = key
+        return true
     }
 
     private fun canFallBackToLiveHls(item: PlayQueueItem): Boolean {
@@ -625,7 +663,8 @@ internal class PlayerErrorController(
         error: PlaybackException,
         item: PlayQueueItem
     ): Boolean {
-        if (PlayerHttpErrorRecovery.findInvalidResponseCode(error) != 403 ||
+        if (!player.isNormalLive() ||
+            PlayerHttpErrorRecovery.findInvalidResponseCode(error) != 403 ||
             !canFallBackToLiveHls(item) ||
             !liveStallRecoveryGuard.acquire("${item.serviceId}:${item.url}")
         ) {

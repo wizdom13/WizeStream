@@ -208,6 +208,14 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
     static MediaSource maybeBuildLiveMediaSource(final PlayerDataSource dataSource,
                                                  final StreamInfo info,
                                                  final boolean preferHls) {
+        return maybeBuildLiveMediaSource(dataSource, info, preferHls, false);
+    }
+
+    @Nullable
+    static MediaSource maybeBuildLiveMediaSource(final PlayerDataSource dataSource,
+                                                 final StreamInfo info,
+                                                 final boolean preferHls,
+                                                 final boolean requireDvr) {
         final boolean isManifestOnlyYoutubeLive = isManifestOnlyYoutubeLive(info);
         if (!StreamTypeUtil.isLiveStream(info.getStreamType())
                 && !isManifestOnlyYoutubeLive) {
@@ -235,7 +243,8 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                     Log.d(TAG, "Live source: DASH with HLS fallback");
                 }
                 return new YoutubeLiveMediaSource(buildLiveMediaSource(
-                        dataSource, info.getDashMpdUrl(), C.CONTENT_TYPE_DASH, tag), hls);
+                        dataSource, info.getDashMpdUrl(), C.CONTENT_TYPE_DASH, tag), hls,
+                        /* allowHlsFallback= */ !requireDvr);
             }
             // Prefer DASH over HLS because of an exoPlayer bug that causes the background player to
             // also fetch the video stream even if it is supposed to just fetch the audio stream.
