@@ -249,6 +249,8 @@ public class MainActivity extends AppCompatActivity {
         defaultFragmentTopMargin = ((ViewGroup.MarginLayoutParams)
                 mainBinding.fragmentHolder.getLayoutParams()).topMargin;
         defaultNavigationRailWidth = mainBinding.mainNavigationRail.getLayoutParams().width;
+        org.schabi.newpipe.local.history.IncognitoToolbarUi.bindContentInset(
+                toolbarLayoutBinding, mainBinding.fragmentHolder);
         applyLargeScreenChrome();
         setContentView(mainBinding.getRoot());
         org.schabi.newpipe.themes.ThemeChrome.apply(mainBinding);
@@ -1034,16 +1036,8 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(final Menu menu) {
         final boolean result = super.onPrepareOptionsMenu(menu);
         org.schabi.newpipe.player.recovery.QueueRecoveryUi.prepareMenu(this, menu);
-        MenuItem incognito = menu.findItem(R.id.action_incognito);
-        if (incognito == null) {
-            incognito = menu.add(Menu.NONE, R.id.action_incognito, Menu.NONE,
-                    R.string.incognito_start);
-        }
-        final boolean enabled = org.schabi.newpipe.local.history.IncognitoMode.isEnabled(this);
-        incognito.setTitle(enabled ? R.string.incognito_active : R.string.incognito_start);
-        incognito.setCheckable(true).setChecked(enabled);
-        incognito.setShowAsAction(enabled ? MenuItem.SHOW_AS_ACTION_ALWAYS
-                : MenuItem.SHOW_AS_ACTION_NEVER);
+        org.schabi.newpipe.local.history.IncognitoToolbarUi.prepareMenu(
+                this, menu, toolbarLayoutBinding.incognitoStatus);
         return result;
     }
 
@@ -1409,7 +1403,10 @@ public class MainActivity extends AppCompatActivity {
 
         final ViewGroup.MarginLayoutParams fragmentParams =
                 (ViewGroup.MarginLayoutParams) mainBinding.fragmentHolder.getLayoutParams();
-        final int fragmentTopMargin = compact ? toolbarHeight : defaultFragmentTopMargin;
+        final int privacyStatusHeight = toolbarLayoutBinding.incognitoStatus.getVisibility()
+                == View.VISIBLE ? toolbarLayoutBinding.incognitoStatus.getHeight() : 0;
+        final int fragmentTopMargin = (compact ? toolbarHeight : defaultFragmentTopMargin)
+                + privacyStatusHeight;
         if (fragmentParams.topMargin != fragmentTopMargin) {
             fragmentParams.topMargin = fragmentTopMargin;
             mainBinding.fragmentHolder.setLayoutParams(fragmentParams);
