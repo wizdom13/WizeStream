@@ -576,6 +576,9 @@
         <item>@string/channel_tab_likes</item>
     </string-array>
 
+    <string name="feed_date_filter_enable_key">feed_date_filter_enable</string>
+    <string name="feed_date_filter_key">feed_date_filter</string>
+
     <string name="import_export_data_path">import_export_data_path</string>
     <string name="import_data">import_data</string>
     <string name="export_data">export_data</string>

@@ -21,6 +21,7 @@ package org.schabi.newpipe.local.feed
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Typeface
@@ -55,7 +56,11 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.ref.WeakReference
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.util.Calendar
+import java.util.Optional
 import java.util.function.Consumer
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
@@ -453,7 +458,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             getString(R.string.feed_show_upcoming),
             getString(R.string.channel_tab_livestreams),
             getString(R.string.videos_string),
-            getString(R.string.channel_tab_shorts)
+            getString(R.string.channel_tab_shorts),
+            getString(R.string.feed_date_filter)
         )
         val checkedItems = mutableListOf(
             viewModel.getShowPlayedItemsFromPreferences(),
@@ -461,7 +467,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             viewModel.getShowFutureItemsFromPreferences(),
             preferences.getBoolean(getString(R.string.feed_show_live_items_key), true),
             preferences.getBoolean(getString(R.string.feed_show_video_items_key), true),
-            preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true)
+            preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true),
+            preferences.getBoolean(getString(R.string.feed_date_filter_enable_key), false)
         )
         val membersOnlyIndex = if (membersOnlyFilteringEnabled) {
             dialogItems += getString(R.string.members_only)
@@ -482,6 +489,18 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 checkedDialogItems
             ) { _, which, isChecked ->
                 checkedDialogItems[which] = isChecked
+                if (which == 6 && isChecked) {
+                    val now = Calendar.getInstance()
+                    val startMillis = preferences.getLong(
+                        getString(R.string.feed_date_filter_key),
+                        now.timeInMillis
+                    )
+                    showDatePicker(startMillis) { millis ->
+                        preferences.edit {
+                            putLong(getString(R.string.feed_date_filter_key), millis)
+                        }
+                    }
+                }
             }
             .setPositiveButton(R.string.ok) { _, _ ->
                 preferences.edit {
@@ -491,6 +510,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                     putBoolean(getString(R.string.feed_show_live_items_key), checkedDialogItems[3])
                     putBoolean(getString(R.string.feed_show_video_items_key), checkedDialogItems[4])
                     putBoolean(getString(R.string.feed_show_shorts_items_key), checkedDialogItems[5])
+                    putBoolean(getString(R.string.feed_date_filter_enable_key), checkedDialogItems[6])
                     if (membersOnlyIndex >= 0) {
                         putBoolean(
                             getString(R.string.feed_show_members_only_items_key),
@@ -502,6 +522,24 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun showDatePicker(startMillis: Long, callback: (Long) -> Unit) {
+        val startCal = Calendar.getInstance()
+        startCal.timeInMillis = startMillis
+
+        DatePickerDialog(
+            requireContext(),
+            0,
+            { _, year, month, day ->
+                val resCal = Calendar.getInstance()
+                resCal.set(year, month, day)
+                callback(resCal.timeInMillis)
+            },
+            startCal.get(Calendar.YEAR),
+            startCal.get(Calendar.MONTH),
+            startCal.get(Calendar.DAY_OF_MONTH)
+        ).show()
     }
 
     override fun onDestroyOptionsMenu() {
@@ -896,6 +934,15 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             requireContext(),
             ContentBlockingHelper.Target.SUBSCRIPTIONS
         )
+        val thresholdTime = if (preferences.getBoolean(getString(R.string.feed_date_filter_enable_key), false)) {
+            val millis = preferences.getLong(getString(R.string.feed_date_filter_key), 0L)
+            OffsetDateTime.ofInstant(
+                Instant.ofEpochMilli(millis),
+                ZoneId.systemDefault()
+            )
+        } else {
+            null
+        }
         val shownStreamCategories = buildSet {
             if (preferences.getBoolean(getString(R.string.feed_show_live_items_key), true)) {
                 add(StreamListFilter.LIVE)
@@ -919,6 +966,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 return@filter false
             }
             val stream = streamWithState.stream.toStreamInfoItem()
+            if (thresholdTime != null && stream.uploadDate?.offsetDateTime()?.isBefore(thresholdTime) ?: false) {
+                return@filter false
+            }
             if (blockingRules.isBlocked(stream)) {
                 return@filter false
             }
