@@ -59,6 +59,6 @@ internal object FeedChannelTabLoader {
         errors.addAll(candidates.filterNot(::isUrlLessItemWarning))
     }
 
-    private fun isUrlLessItemWarning(error: Throwable): Boolean =
-        error is ParsingException && error.message == "Could not get url"
+    private fun isUrlLessItemWarning(error: Throwable): Boolean = error is ParsingException &&
+        error.message == "Could not get url"
 }
