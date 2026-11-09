@@ -5,6 +5,7 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo
+import org.schabi.newpipe.extractor.exceptions.ParsingException
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
@@ -23,7 +24,7 @@ internal object FeedChannelTabLoader {
             if (isCancelled()) break
             try {
                 val first = fetchFirst(tab)
-                errors.addAll(first.errors)
+                addActionableErrors(errors, first.errors)
                 collected.addAll(first.relatedItems)
                 var items = first.relatedItems
                 var nextPage = first.nextPage
@@ -38,7 +39,7 @@ internal object FeedChannelTabLoader {
                     )
                 ) {
                     val page = fetchMore(tab, nextPage ?: break)
-                    errors.addAll(page.errors)
+                    addActionableErrors(errors, page.errors)
                     collected.addAll(page.items)
                     items = page.items
                     nextPage = page.nextPage
@@ -50,4 +51,14 @@ internal object FeedChannelTabLoader {
         }
         return collected
     }
+
+    private fun addActionableErrors(
+        errors: MutableList<Throwable>,
+        candidates: List<Throwable>
+    ) {
+        errors.addAll(candidates.filterNot(::isUrlLessItemWarning))
+    }
+
+    private fun isUrlLessItemWarning(error: Throwable): Boolean = error is ParsingException &&
+        error.message == "Could not get url"
 }
