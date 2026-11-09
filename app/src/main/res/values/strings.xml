@@ -1900,5 +1900,8 @@ Add the For you tab under Settings → Content → Customize home and move it fi
     <string name="feed_preview_unmute">Unmute</string>
     <string name="feed_preview_player_busy">Close the current player before starting a preview.</string>
     <string name="feed_preview_failed">Preview unavailable. Open the video to retry.</string>
+    <string name="feed_date_filter">Set publication date cutoff</string>
+    <string name="feed_date_filter_selected">Published on or after %1$s</string>
+    <string name="feed_date_filter_clear">Clear publication date cutoff</string>
     <item name="feed_preview_button" type="id" />
 </resources>

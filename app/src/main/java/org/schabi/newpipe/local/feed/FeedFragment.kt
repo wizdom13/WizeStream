@@ -21,6 +21,7 @@ package org.schabi.newpipe.local.feed
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Typeface
@@ -35,6 +36,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.core.os.bundleOf
@@ -55,7 +57,11 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.ref.WeakReference
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.function.Consumer
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
@@ -443,65 +449,104 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         return super.onOptionsItemSelected(item)
     }
 
+    private data class VisibilityDialogItem(val title: Int, val key: Int, val checked: Boolean)
+
     private fun showStreamVisibilityDialog() {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val membersOnlyFilteringEnabled = MembersOnlyContentHelper.shouldHide(requireContext())
+        val context = requireContext()
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        fun preferenceItem(title: Int, key: Int, default: Boolean = true) = VisibilityDialogItem(title, key, preferences.getBoolean(getString(key), default))
 
-        val dialogItems = mutableListOf(
-            getString(R.string.feed_show_watched),
-            getString(R.string.feed_show_partially_watched),
-            getString(R.string.feed_show_upcoming),
-            getString(R.string.channel_tab_livestreams),
-            getString(R.string.videos_string),
-            getString(R.string.channel_tab_shorts)
-        )
-        val checkedItems = mutableListOf(
-            viewModel.getShowPlayedItemsFromPreferences(),
-            viewModel.getShowPartiallyPlayedItemsFromPreferences(),
-            viewModel.getShowFutureItemsFromPreferences(),
-            preferences.getBoolean(getString(R.string.feed_show_live_items_key), true),
-            preferences.getBoolean(getString(R.string.feed_show_video_items_key), true),
-            preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true)
-        )
-        val membersOnlyIndex = if (membersOnlyFilteringEnabled) {
-            dialogItems += getString(R.string.members_only)
-            checkedItems += preferences.getBoolean(
-                getString(R.string.feed_show_members_only_items_key),
-                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
+        val dialogItems = buildList {
+            add(
+                VisibilityDialogItem(
+                    R.string.feed_show_watched,
+                    R.string.feed_show_watched_items_key,
+                    viewModel.getShowPlayedItemsFromPreferences()
+                )
             )
-            dialogItems.lastIndex
-        } else {
-            -1
-        }
-        val checkedDialogItems = checkedItems.toBooleanArray()
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.feed_default_visibility_title)
-            .setMultiChoiceItems(
-                dialogItems.toTypedArray(),
-                checkedDialogItems
-            ) { _, which, isChecked ->
-                checkedDialogItems[which] = isChecked
+            add(
+                VisibilityDialogItem(
+                    R.string.feed_show_partially_watched,
+                    R.string.feed_show_partially_watched_items_key,
+                    viewModel.getShowPartiallyPlayedItemsFromPreferences()
+                )
+            )
+            add(
+                VisibilityDialogItem(
+                    R.string.feed_show_upcoming,
+                    R.string.feed_show_future_items_key,
+                    viewModel.getShowFutureItemsFromPreferences()
+                )
+            )
+            add(preferenceItem(R.string.channel_tab_livestreams, R.string.feed_show_live_items_key))
+            add(preferenceItem(R.string.videos_string, R.string.feed_show_video_items_key))
+            add(preferenceItem(R.string.channel_tab_shorts, R.string.feed_show_shorts_items_key))
+            if (MembersOnlyContentHelper.shouldHide(context)) {
+                add(preferenceItem(R.string.members_only, R.string.feed_show_members_only_items_key, DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED))
             }
+        }
+        val checkedItems = dialogItems.map { it.checked }.toBooleanArray()
+        val dateKey = getString(R.string.feed_date_filter_epoch_day_key)
+        var selectedDate = readFeedCutoffDate(preferences)
+        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        val dateButton = Button(context)
+        val clearButton = Button(context).apply { setText(R.string.feed_date_filter_clear) }
+
+        fun updateDateControls() {
+            dateButton.text = selectedDate?.let { getString(R.string.feed_date_filter_selected, it.format(formatter)) }
+                ?: getString(R.string.feed_date_filter)
+            clearButton.isVisible = selectedDate != null
+        }
+
+        dateButton.setOnClickListener {
+            val start = selectedDate ?: LocalDate.now()
+            DatePickerDialog(
+                context,
+                { _, year, month, day ->
+                    selectedDate = LocalDate.of(year, month + 1, day)
+                    updateDateControls()
+                },
+                start.year,
+                start.monthValue - 1,
+                start.dayOfMonth
+            ).show()
+        }
+        clearButton.setOnClickListener {
+            selectedDate = null
+            updateDateControls()
+        }
+        updateDateControls()
+        val dateControls = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val padding = (24 * resources.displayMetrics.density).toInt()
+            setPaddingRelative(padding, 0, padding, 0)
+            addView(dateButton)
+            addView(clearButton)
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.feed_default_visibility_title)
+            .setMultiChoiceItems(dialogItems.map { getString(it.title) }.toTypedArray(), checkedItems) { _, which, isChecked ->
+                checkedItems[which] = isChecked
+            }
+            .setView(dateControls)
             .setPositiveButton(R.string.ok) { _, _ ->
                 preferences.edit {
-                    putBoolean(getString(R.string.feed_show_watched_items_key), checkedDialogItems[0])
-                    putBoolean(getString(R.string.feed_show_partially_watched_items_key), checkedDialogItems[1])
-                    putBoolean(getString(R.string.feed_show_future_items_key), checkedDialogItems[2])
-                    putBoolean(getString(R.string.feed_show_live_items_key), checkedDialogItems[3])
-                    putBoolean(getString(R.string.feed_show_video_items_key), checkedDialogItems[4])
-                    putBoolean(getString(R.string.feed_show_shorts_items_key), checkedDialogItems[5])
-                    if (membersOnlyIndex >= 0) {
-                        putBoolean(
-                            getString(R.string.feed_show_members_only_items_key),
-                            checkedDialogItems[membersOnlyIndex]
-                        )
+                    dialogItems.forEachIndexed { index, item ->
+                        putBoolean(getString(item.key), checkedItems[index])
                     }
+                    val date = selectedDate
+                    if (date == null) remove(dateKey) else putLong(dateKey, date.toEpochDay())
                 }
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun readFeedCutoffDate(preferences: SharedPreferences): LocalDate? {
+        val key = getString(R.string.feed_date_filter_epoch_day_key)
+        return if (preferences.contains(key)) LocalDate.ofEpochDay(preferences.getLong(key, 0L)) else null
     }
 
     override fun onDestroyOptionsMenu() {
@@ -896,6 +941,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             requireContext(),
             ContentBlockingHelper.Target.SUBSCRIPTIONS
         )
+        val thresholdTime = readFeedCutoffDate(preferences)
+            ?.atStartOfDay(ZoneId.systemDefault())
+            ?.toOffsetDateTime()
         val shownStreamCategories = buildSet {
             if (preferences.getBoolean(getString(R.string.feed_show_live_items_key), true)) {
                 add(StreamListFilter.LIVE)
@@ -919,6 +967,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 return@filter false
             }
             val stream = streamWithState.stream.toStreamInfoItem()
+            if (thresholdTime != null && stream.uploadDate?.offsetDateTime()?.isBefore(thresholdTime) == true) {
+                return@filter false
+            }
             if (blockingRules.isBlocked(stream)) {
                 return@filter false
             }
