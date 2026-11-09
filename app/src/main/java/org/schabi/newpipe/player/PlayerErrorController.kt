@@ -304,6 +304,7 @@ internal class PlayerErrorController(
         videoResolver.clearRejectedVideoStream()
         decoderRecoveryGuard.reset()
         audioDecoderRecoveryGuard.reset()
+        player.clearAudioDecoderFallback()
         audioTrackRecoveryGuard.reset()
         surfaceRecoveryGuard.reset()
         liveStallRecoveryGuard.reset()
@@ -484,6 +485,9 @@ internal class PlayerErrorController(
             return false
         }
 
+        if ((error as? ExoPlaybackException)?.rendererFormat?.sampleMimeType == MimeTypes.AUDIO_AAC) {
+            player.enableAudioDecoderFallback(item)
+        }
         Log.w(Player.TAG, "Recreating playback engine after audio decoder output failure")
         player.setRecovery()
         player.onBuffering()

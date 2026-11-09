@@ -7,14 +7,20 @@ package org.schabi.newpipe.player
 
 import android.content.Context
 import androidx.media3.exoplayer.source.MediaSource
+import org.schabi.newpipe.extractor.MediaFormat
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import org.schabi.newpipe.extractor.stream.StreamInfo
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
+import org.schabi.newpipe.player.mediaitem.MediaItemTag.AudioTrack
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.resolver.AudioPlaybackResolver
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver.SourceType
+import org.schabi.newpipe.util.ListHelper
 
 /** Owns remote/local source resolution and stream-selection changes. */
 internal class PlayerStreamController(
@@ -24,27 +30,73 @@ internal class PlayerStreamController(
     private val videoResolver: VideoPlaybackResolver,
     private val dataSource: PlayerDataSource
 ) {
+    private var audioDecoderFallback: Pair<String, String?>? = null
+
+    fun enableAudioDecoderFallback(item: PlayQueueItem) {
+        val info = player.currentStreamInfo.orElse(null) ?: return
+        val audio = player.selectedAudioStream.orElse(null) ?: return
+        if (item.serviceId == ServiceList.YouTube.serviceId &&
+            info.serviceId == item.serviceId && info.url == item.url &&
+            info.streamType == StreamType.VIDEO_STREAM && audio.format == MediaFormat.M4A
+        ) {
+            audioDecoderFallback = item.url to audio.audioTrackId
+        }
+    }
+
+    fun clearAudioDecoderFallback() {
+        audioDecoderFallback = null
+    }
+
+    private fun fallbackAudioTrack(info: StreamInfo): AudioTrack? {
+        val (url, trackId) = audioDecoderFallback ?: return null
+        if (info.url != url || info.serviceId != ServiceList.YouTube.serviceId ||
+            info.streamType != StreamType.VIDEO_STREAM
+        ) {
+            return null
+        }
+
+        val streams = ListHelper.getFilteredAudioStreams(context, info.audioStreams)
+        val index = ListHelper.getAudioFormatIndex(context, streams, audioResolver.audioTrack)
+        val selected = streams.getOrNull(index) ?: return null
+        if (selected.audioTrackId != trackId || selected.format != MediaFormat.M4A) return null
+
+        val alternatives = info.audioStreams.filter {
+            it.audioTrackId == trackId && it.deliveryMethod != DeliveryMethod.HLS &&
+                (
+                    it.format == MediaFormat.WEBMA_OPUS || it.format == MediaFormat.OPUS ||
+                        (it.format == MediaFormat.WEBMA && it.codec.equals("opus", ignoreCase = true))
+                    )
+        }
+        val replacement = ListHelper.getFilteredAudioStreams(context, alternatives).firstOrNull()
+            ?: return null
+        val updated = streams.toMutableList()
+        updated[index] = replacement
+        return AudioTrack.of(updated, index)
+    }
+
     fun sourceOf(info: StreamInfo): MediaSource? {
         if (info is org.schabi.newpipe.download.DownloadedStreamInfo) {
             return downloadedSource(info)
         }
+        val audioTrack = fallbackAudioTrack(info)
         if (player.audioPlayerSelected()) {
-            return audioResolver.resolve(info)
+            return audioResolver.resolve(info, audioTrack)
         }
         if (player.isAudioOnly &&
             videoResolver.streamSourceType.orElse(
                 SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY
             ) == SourceType.VIDEO_WITH_AUDIO_OR_AUDIO_ONLY
         ) {
-            return audioResolver.resolve(info)
+            return audioResolver.resolve(info, audioTrack)
         }
         return if (ChannelPlaybackProfileManager.isAvailable(context, info)) {
             videoResolver.resolve(
                 info,
-                ChannelPlaybackProfileManager.getQuality(context, info)
+                ChannelPlaybackProfileManager.getQuality(context, info),
+                audioTrack
             )
         } else {
-            videoResolver.resolve(info)
+            videoResolver.resolve(info, videoResolver.playbackQuality, audioTrack)
         }
     }
 

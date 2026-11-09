@@ -88,6 +88,13 @@ public class VideoPlaybackResolver implements PlaybackResolver {
     @Nullable
     public MediaSource resolve(@NonNull final StreamInfo info,
                                @Nullable final String qualityOverride) {
+        return resolve(info, qualityOverride, null);
+    }
+
+    @Nullable
+    public MediaSource resolve(@NonNull final StreamInfo info,
+                               @Nullable final String qualityOverride,
+                               @Nullable final MediaItemTag.AudioTrack audioOverride) {
         final boolean autoRequested = qualityOverride == null
                 ? qualityResolver.isDefaultAutoQuality()
                 : qualityResolver.isAutoQuality(qualityOverride);
@@ -129,9 +136,11 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         }
 
         final List<AudioStream> audioStreamsList =
-                getFilteredAudioStreams(context, info.getAudioStreams());
+                audioOverride != null ? audioOverride.getAudioStreams()
+                        : getFilteredAudioStreams(context, info.getAudioStreams());
         final int audioIndex =
-                ListHelper.getAudioFormatIndex(context, audioStreamsList, audioTrack);
+                audioOverride != null ? audioOverride.getSelectedAudioStreamIndex()
+                        : ListHelper.getAudioFormatIndex(context, audioStreamsList, audioTrack);
 
         final List<VideoStream> adaptiveCandidates = autoRequested
                 && info.getServiceId() == ServiceList.YouTube.getServiceId()

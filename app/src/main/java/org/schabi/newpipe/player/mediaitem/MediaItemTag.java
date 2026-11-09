@@ -164,7 +164,7 @@ public interface MediaItemTag {
             this.selectedAudioStreamIndex = selectedAudioStreamIndex;
         }
 
-        static AudioTrack of(@NonNull final List<AudioStream> audioStreams,
+        public static AudioTrack of(@NonNull final List<AudioStream> audioStreams,
                              final int selectedAudioStreamIndex) {
             return new AudioTrack(audioStreams, selectedAudioStreamIndex);
         }

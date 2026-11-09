@@ -139,6 +139,7 @@ final class PlayerHttpErrorRecovery {
                 for (final StackTraceElement frame : current.getStackTrace()) {
                     if ("android.media.MediaCodec".equals(frame.getClassName())
                             && ("getOutputBuffer".equals(frame.getMethodName())
+                            || "dequeueOutputBuffer".equals(frame.getMethodName())
                             || "releaseOutputBuffer".equals(frame.getMethodName()))) {
                         return true;
                     }
