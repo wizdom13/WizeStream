@@ -66,6 +66,7 @@ public class FeedRefreshControlsTest {
                 progressContainer.getAttributeNS(ANDROID_NAMESPACE, "visibility"));
         assertNull(findByAndroidId(document, "@+id/refresh_loading_overlay"));
         assertNull(findByAndroidId(document, "@+id/refresh_loading_scrim"));
+        assertNull(findByAndroidId(document, "@+id/loading_progress_bar"));
         assertNotNull(findByAndroidId(document, "@+id/items_list"));
 
         final String source = readSource(
@@ -85,9 +86,9 @@ public class FeedRefreshControlsTest {
         final Element progressContainer = findByAndroidId(
                 document, "@+id/refresh_progress_container");
         final Element progress = findByAndroidId(
-                document, "@+id/loading_progress_bar");
+                document, "@+id/feed_refresh_progress_bar");
         final Element indeterminateProgress = findByAndroidId(
-                document, "@+id/loading_indeterminate_progress_bar");
+                document, "@+id/feed_refresh_indeterminate_progress_bar");
         final Element filters = findByAndroidId(
                 document, "@+id/stream_filter_chips");
         final Element cancel = findByAndroidId(

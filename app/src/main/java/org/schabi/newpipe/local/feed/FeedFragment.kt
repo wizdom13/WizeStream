@@ -608,14 +608,14 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
         val isIndeterminate = progressState.currentProgress < 0 ||
             progressState.maxProgress < 0
-        feedBinding.loadingProgressBar.isVisible = !isIndeterminate
-        feedBinding.loadingIndeterminateProgressBar.isVisible = isIndeterminate
+        feedBinding.feedRefreshProgressBar.isVisible = !isIndeterminate
+        feedBinding.feedRefreshIndeterminateProgressBar.isVisible = isIndeterminate
         feedBinding.loadingChannelText.text = progressState.updateDescription
         feedBinding.loadingChannelText.isVisible = progressState.updateDescription.isNotBlank()
         feedBinding.loadingProgressText.isVisible = !isIndeterminate
 
         if (isIndeterminate) {
-            feedBinding.loadingIndeterminateProgressBar.contentDescription =
+            feedBinding.feedRefreshIndeterminateProgressBar.contentDescription =
                 if (progressState.progressMessage > 0) {
                     getString(progressState.progressMessage)
                 } else {
@@ -625,9 +625,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             val maxProgress = progressState.maxProgress.coerceAtLeast(1)
             val currentProgress = progressState.currentProgress.coerceIn(0, maxProgress)
             feedBinding.loadingProgressText.text = "$currentProgress / $maxProgress"
-            feedBinding.loadingProgressBar.max = maxProgress
-            feedBinding.loadingProgressBar.setProgressCompat(currentProgress, true)
-            feedBinding.loadingProgressBar.contentDescription =
+            feedBinding.feedRefreshProgressBar.max = maxProgress
+            feedBinding.feedRefreshProgressBar.setProgressCompat(currentProgress, true)
+            feedBinding.feedRefreshProgressBar.contentDescription =
                 getString(R.string.feed_notification_loading) + " " +
                 currentProgress + "/" + maxProgress
         }
