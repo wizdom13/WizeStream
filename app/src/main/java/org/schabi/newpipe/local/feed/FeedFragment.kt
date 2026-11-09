@@ -76,6 +76,7 @@ import org.schabi.newpipe.extractor.exceptions.AccountTerminatedException
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
+import org.schabi.newpipe.extractor.timeago.patterns.it
 import org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty
 import org.schabi.newpipe.fragments.BaseStateFragment
 import org.schabi.newpipe.info_list.ItemViewMode
@@ -448,74 +449,113 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         return super.onOptionsItemSelected(item)
     }
 
+    private data class VisibilityDialogItem(
+        val title: String,
+        val key: String,
+        val getChecked: ((String) -> Boolean),
+        val onCheckedChange: ((Boolean) -> Unit)? = null
+    )
+
     private fun showStreamVisibilityDialog() {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val membersOnlyFilteringEnabled = MembersOnlyContentHelper.shouldHide(requireContext())
+        val context = requireContext()
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val membersOnlyFilteringEnabled = MembersOnlyContentHelper.shouldHide(context)
 
-        val dialogItems = mutableListOf(
-            getString(R.string.feed_show_watched),
-            getString(R.string.feed_show_partially_watched),
-            getString(R.string.feed_show_upcoming),
-            getString(R.string.channel_tab_livestreams),
-            getString(R.string.videos_string),
-            getString(R.string.channel_tab_shorts),
-            getString(R.string.feed_date_filter)
-        )
-        val checkedItems = mutableListOf(
-            viewModel.getShowPlayedItemsFromPreferences(),
-            viewModel.getShowPartiallyPlayedItemsFromPreferences(),
-            viewModel.getShowFutureItemsFromPreferences(),
-            preferences.getBoolean(getString(R.string.feed_show_live_items_key), true),
-            preferences.getBoolean(getString(R.string.feed_show_video_items_key), true),
-            preferences.getBoolean(getString(R.string.feed_show_shorts_items_key), true),
-            preferences.getBoolean(getString(R.string.feed_date_filter_enable_key), false)
-        )
-        val membersOnlyIndex = if (membersOnlyFilteringEnabled) {
-            dialogItems += getString(R.string.members_only)
-            checkedItems += preferences.getBoolean(
-                getString(R.string.feed_show_members_only_items_key),
-                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
+        val dialogItems = buildList {
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.feed_show_watched),
+                    key = getString(R.string.feed_show_watched_items_key),
+                    getChecked = { _ -> viewModel.getShowPlayedItemsFromPreferences() }
+                )
             )
-            dialogItems.lastIndex
-        } else {
-            -1
-        }
-        val checkedDialogItems = checkedItems.toBooleanArray()
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.feed_default_visibility_title)
-            .setMultiChoiceItems(
-                dialogItems.toTypedArray(),
-                checkedDialogItems
-            ) { _, which, isChecked ->
-                checkedDialogItems[which] = isChecked
-                if (which == 6 && isChecked) {
-                    val now = Calendar.getInstance()
-                    val startMillis = preferences.getLong(
-                        getString(R.string.feed_date_filter_key),
-                        now.timeInMillis
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.feed_show_partially_watched),
+                    key = getString(R.string.feed_show_partially_watched_items_key),
+                    getChecked = { _ -> viewModel.getShowPartiallyPlayedItemsFromPreferences() }
+                )
+            )
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.feed_show_upcoming),
+                    key = getString(R.string.feed_show_future_items_key),
+                    getChecked = { _ -> viewModel.getShowFutureItemsFromPreferences() }
+                )
+            )
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.channel_tab_livestreams),
+                    key = getString(R.string.feed_show_live_items_key),
+                    getChecked = { key -> preferences.getBoolean(key, true) }
+                )
+            )
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.videos_string),
+                    key = getString(R.string.feed_show_video_items_key),
+                    getChecked = { key -> preferences.getBoolean(key, true) }
+                )
+            )
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.channel_tab_shorts),
+                    key = getString(R.string.feed_show_shorts_items_key),
+                    getChecked = { key -> preferences.getBoolean(key, true) }
+                )
+            )
+            if (membersOnlyFilteringEnabled) {
+                add(
+                    VisibilityDialogItem(
+                        title = getString(R.string.members_only),
+                        key = getString(R.string.feed_show_members_only_items_key),
+                        getChecked = { key ->
+                            preferences.getBoolean(
+                                key,
+                                DEFAULT_SHOW_MEMBERS_ONLY_IN_FEED
+                            )
+                        }
                     )
-                    showDatePicker(startMillis) { millis ->
-                        preferences.edit {
-                            putLong(getString(R.string.feed_date_filter_key), millis)
+                )
+            }
+            add(
+                VisibilityDialogItem(
+                    title = getString(R.string.feed_date_filter),
+                    key = getString(R.string.feed_date_filter_enable_key),
+                    getChecked = { key -> preferences.getBoolean(key, false) },
+                    onCheckedChange = { isChecked ->
+                        if (isChecked) {
+                            val now = Calendar.getInstance()
+                            val startMillis = preferences.getLong(
+                                getString(R.string.feed_date_filter_key),
+                                now.timeInMillis
+                            )
+                            showDatePicker(startMillis) { millis ->
+                                preferences.edit {
+                                    putLong(getString(R.string.feed_date_filter_key), millis)
+                                }
+                            }
                         }
                     }
-                }
+                )
+            )
+        }
+
+        val checkedItems = dialogItems.map { it.getChecked(it.key) }.toBooleanArray()
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.feed_default_visibility_title)
+            .setMultiChoiceItems(
+                dialogItems.map { it.title }.toTypedArray(),
+                checkedItems
+            ) { _, which, isChecked ->
+                checkedItems[which] = isChecked
+                dialogItems[which].onCheckedChange?.invoke(isChecked)
             }
             .setPositiveButton(R.string.ok) { _, _ ->
                 preferences.edit {
-                    putBoolean(getString(R.string.feed_show_watched_items_key), checkedDialogItems[0])
-                    putBoolean(getString(R.string.feed_show_partially_watched_items_key), checkedDialogItems[1])
-                    putBoolean(getString(R.string.feed_show_future_items_key), checkedDialogItems[2])
-                    putBoolean(getString(R.string.feed_show_live_items_key), checkedDialogItems[3])
-                    putBoolean(getString(R.string.feed_show_video_items_key), checkedDialogItems[4])
-                    putBoolean(getString(R.string.feed_show_shorts_items_key), checkedDialogItems[5])
-                    putBoolean(getString(R.string.feed_date_filter_enable_key), checkedDialogItems[6])
-                    if (membersOnlyIndex >= 0) {
-                        putBoolean(
-                            getString(R.string.feed_show_members_only_items_key),
-                            checkedDialogItems[membersOnlyIndex]
-                        )
+                    dialogItems.forEachIndexed { index, item ->
+                        putBoolean(item.key, checkedItems[index])
                     }
                 }
                 latestLoadedState?.let { showFilteredFeedItems(it, false) }
