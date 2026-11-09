@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1039000">WizeStream 1.39.0</a></li>
 <li><a href="#release-1038000">WizeStream 1.38.0</a></li>
 <li><a href="#release-1037000">WizeStream 1.37.0</a></li>
 <li><a href="#release-1036001">WizeStream 1.36.1</a></li>
@@ -106,6 +107,31 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1039000" data-version="1.39.0" data-version-code="1039000">
+<h2>WizeStream 1.39.0</h2>
+<div class="release-notes">
+<h3>Improvements</h3>
+<ul>
+<li>Combine content type and watch status in stream lists, so you can filter for unwatched videos or other combinations.</li>
+<li>Improve compatibility with installed speech recognizers for voice search on Android TV.</li>
+</ul>
+<h3>Interface</h3>
+<ul>
+<li>Distinguish YouTube Music filters from regular YouTube filters in the combined search dialog.</li>
+<li>Keep playlist and album search results compact in landscape and Samsung DeX.</li>
+<li>Keep the Incognito status visible without crowding the search field.</li>
+</ul>
+<h3>Fixes</h3>
+<ul>
+<li>Keep the What’s New refresh bar visible alongside the channel count while cached results are displayed.</li>
+<li>Fix subscription feed errors from YouTube course cards and skip cards that have no usable URL.</li>
+<li>Handle missing Bandcamp item URLs.</li>
+<li>Preserve the full live DVR window during playback recovery, with bounded retries.</li>
+<li>Allow more time to process watch-history sync requests and identify which stage timed out.</li>
+<li>Respect the disabled dislike-fetching setting when falling back to other metadata sources.</li>
+</ul>
+</div>
+</section>
 <section id="release-1038000" data-version="1.38.0" data-version-code="1038000">
 <h2>WizeStream 1.38.0</h2>
 <div class="release-notes">
