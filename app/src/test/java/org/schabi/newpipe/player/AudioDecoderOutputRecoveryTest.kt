@@ -2,19 +2,33 @@ package org.schabi.newpipe.player
 
 import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
+import androidx.preference.PreferenceManager
+import java.util.Optional
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.MediaFormat
+import org.schabi.newpipe.extractor.stream.AudioStream
+import org.schabi.newpipe.extractor.stream.StreamInfo
+import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.player.helper.PlayerDataSource
+import org.schabi.newpipe.player.mediaitem.MediaItemTag.AudioTrack
 import org.schabi.newpipe.player.playqueue.PlayQueue
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
+import org.schabi.newpipe.player.resolver.AudioPlaybackResolver
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
 import org.schabi.newpipe.player.video.VideoAdjustmentController
 
@@ -74,11 +88,19 @@ class AudioDecoderOutputRecoveryTest {
             )
         )
 
+        assertTrue(
+            PlayerHttpErrorRecovery.isRecoverableAudioDecoderOutputFailure(
+                PlaybackException.ERROR_CODE_DECODING_FAILED,
+                C.TRACK_TYPE_AUDIO,
+                Fixture().error("dequeueOutputBuffer")
+            )
+        )
+
         val unrelated = IllegalStateException("codec state").apply {
             stackTrace = arrayOf(
                 StackTraceElement(
                     "android.media.MediaCodec",
-                    "dequeueOutputBuffer",
+                    "flush",
                     "MediaCodec.java",
                     -2
                 )
@@ -103,6 +125,52 @@ class AudioDecoderOutputRecoveryTest {
         assertFalse(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
         `when`(f.player.exoPlayerIsNull()).thenReturn(false)
         assertTrue(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+    }
+
+    @Test
+    fun webmRecoveryKeepsTheSelectedAudioTrackAndClearsWithPlaybackRecovery() {
+        val f = Fixture()
+        val context = RuntimeEnvironment.getApplication()
+        PreferenceManager.getDefaultSharedPreferences(context).edit()
+            .putString(context.getString(R.string.default_audio_format_key), context.getString(R.string.audio_m4a_key))
+            .apply()
+        val resolver = mock(AudioPlaybackResolver::class.java)
+        val streamController = PlayerStreamController(
+            f.player,
+            context,
+            resolver,
+            mock(VideoPlaybackResolver::class.java),
+            mock(PlayerDataSource::class.java)
+        )
+        val info = mock(StreamInfo::class.java)
+        val aac = audio(MediaFormat.M4A, "en")
+        val opus = audio(MediaFormat.WEBMA_OPUS, "en")
+        val otherLanguage = audio(MediaFormat.WEBMA_OPUS, "fr")
+        val url = f.item.url
+        `when`(f.player.audioPlayerSelected()).thenReturn(true)
+        `when`(f.player.currentStreamInfo).thenReturn(Optional.of(info))
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(aac))
+        `when`(resolver.audioTrack).thenReturn("en")
+        `when`(info.url).thenReturn(url)
+        `when`(info.streamType).thenReturn(StreamType.VIDEO_STREAM)
+        `when`(info.audioStreams).thenReturn(listOf(aac, opus, otherLanguage))
+
+        streamController.enableAudioDecoderFallback(f.item)
+        streamController.sourceOf(info)
+
+        val selection = ArgumentCaptor.forClass(AudioTrack::class.java)
+        verify(resolver).resolve(eq(info), selection.capture())
+        assertEquals(opus, selection.value.selectedAudioStream)
+        assertTrue(selection.value.audioStreams.contains(otherLanguage))
+
+        streamController.clearAudioDecoderFallback()
+        streamController.sourceOf(info)
+        verify(resolver).resolve(info, null)
+    }
+
+    private fun audio(format: MediaFormat, trackId: String): AudioStream = mock(AudioStream::class.java).also {
+        `when`(it.format).thenReturn(format)
+        `when`(it.audioTrackId).thenReturn(trackId)
     }
 
     private class Fixture {

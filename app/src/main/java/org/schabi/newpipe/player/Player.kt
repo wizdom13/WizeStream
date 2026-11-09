@@ -477,6 +477,10 @@ class Player(
 
     private fun restartForVideoAdjustments() = lifecycleController.restartForVideoAdjustments()
 
+    internal fun enableAudioDecoderFallback(item: PlayQueueItem) = streamController.enableAudioDecoderFallback(item)
+
+    internal fun clearAudioDecoderFallback() = streamController.clearAudioDecoderFallback()
+
     fun restartForAudioTrackRecovery() = lifecycleController.restartForAudioTrackRecovery()
 
     fun restartForSurfaceRecovery() {

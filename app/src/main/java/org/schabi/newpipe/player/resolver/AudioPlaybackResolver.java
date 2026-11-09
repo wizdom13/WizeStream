@@ -48,19 +48,27 @@ public class AudioPlaybackResolver implements PlaybackResolver {
     @Override
     @Nullable
     public MediaSource resolve(@NonNull final StreamInfo info) {
+        return resolve(info, null);
+    }
+
+    @Nullable
+    public MediaSource resolve(@NonNull final StreamInfo info,
+                               @Nullable final MediaItemTag.AudioTrack audioOverride) {
         final MediaSource liveSource = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info);
         if (liveSource != null) {
             return liveSource;
         }
 
         final List<AudioStream> audioStreams =
-                getFilteredAudioStreams(context, info.getAudioStreams());
+                audioOverride != null ? audioOverride.getAudioStreams()
+                        : getFilteredAudioStreams(context, info.getAudioStreams());
         final Stream stream;
         final MediaItemTag tag;
 
         if (!audioStreams.isEmpty()) {
             final int audioIndex =
-                    ListHelper.getAudioFormatIndex(context, audioStreams, audioTrack);
+                    audioOverride != null ? audioOverride.getSelectedAudioStreamIndex()
+                            : ListHelper.getAudioFormatIndex(context, audioStreams, audioTrack);
             stream = getStreamForIndex(audioIndex, audioStreams);
             tag = StreamInfoTag.of(info, audioStreams, audioIndex);
         } else {
