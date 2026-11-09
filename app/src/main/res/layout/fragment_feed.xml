@@ -145,7 +145,7 @@
                     </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/loading_progress_bar"
+                        android:id="@+id/feed_refresh_progress_bar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
@@ -159,7 +159,7 @@
                         app:trackThickness="4dp" />
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/loading_indeterminate_progress_bar"
+                        android:id="@+id/feed_refresh_indeterminate_progress_bar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
