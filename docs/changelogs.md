@@ -4,6 +4,28 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.39.0 (`1039000`)
+
+### Improvements
+
+- Combine content type and watch status in stream lists, so you can filter for unwatched videos or other combinations.
+- Improve compatibility with installed speech recognizers for voice search on Android TV.
+
+### Interface
+
+- Distinguish YouTube Music filters from regular YouTube filters in the combined search dialog.
+- Keep playlist and album search results compact in landscape and Samsung DeX.
+- Keep the Incognito status visible without crowding the search field.
+
+### Fixes
+
+- Keep the What’s New refresh bar visible alongside the channel count while cached results are displayed.
+- Fix subscription feed errors from YouTube course cards and skip cards that have no usable URL.
+- Handle missing Bandcamp item URLs.
+- Preserve the full live DVR window during playback recovery, with bounded retries.
+- Allow more time to process watch-history sync requests and identify which stage timed out.
+- Respect the disabled dislike-fetching setting when falling back to other metadata sources.
+
 ## WizeStream 1.38.0 (`1038000`)
 
 ### Improvements
