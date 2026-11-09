@@ -8,6 +8,7 @@ import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.channel.ChannelTabInfo
+import org.schabi.newpipe.extractor.exceptions.ParsingException
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler
 import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.search.filter.FilterItem
@@ -52,6 +53,28 @@ class FeedChannelTabLoaderTest {
         )
         assertEquals(listOf(upload), result)
         assertEquals(listOf(failure), errors)
+    }
+
+    @Test
+    fun urlLessItemWarningsDoNotFailOtherwiseUsableTabs() {
+        val upload = item("upload")
+        val actionable = IOException("channel metadata unavailable")
+        val errors = mutableListOf<Throwable>()
+        val result = FeedChannelTabLoader.load(
+            listOf(videos),
+            { tab ->
+                first(tab, upload).apply {
+                    addError(ParsingException("Could not get url"))
+                    addError(actionable)
+                }
+            },
+            { _, _ -> error("Unexpected continuation") },
+            { false },
+            now.minusWeeks(13),
+            errors
+        )
+        assertEquals(listOf(upload), result)
+        assertEquals(listOf(actionable), errors)
     }
 
     @Test
