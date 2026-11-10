@@ -1,0 +1,16 @@
+{
+  "format": "wizestream-theme",
+  "version": 2,
+  "name": "Glass",
+  "author": "WizeStream",
+  "mode": "system",
+  "night": "dark",
+  "lightAccent": "blue",
+  "darkAccent": "cyan",
+  "glass": {
+    "blur": 8,
+    "tint": 72,
+    "radius": 16,
+    "scrollUnderBars": true
+  }
+}

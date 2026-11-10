@@ -119,7 +119,7 @@ class ThemePackTest {
     @Config(sdk = [28, 35])
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun bundledPacksUsePublicFormat() {
-        for (file in listOf("forest.json", "ocean.json", "midnight.json", "glass-record.json")) {
+        for (file in listOf("forest.json", "ocean.json", "midnight.json", "glass-record.json", "glass.json")) {
             val pack = context.assets.open("themes/$file").use(ThemePack::read)
             ThemePacks.apply(context, pack)
             assertEquals(pack, ThemePacks.export(context))

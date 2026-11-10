@@ -20,6 +20,12 @@
             android:orientation="vertical"
             app:layout_scrollFlags="scroll|enterAlways">
 
+            <View
+                android:id="@+id/feed_glass_top_space"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:importantForAccessibility="no" />
+
             <RelativeLayout
                 android:id="@+id/refresh_root_view"
                 android:descendantFocusability="afterDescendants"

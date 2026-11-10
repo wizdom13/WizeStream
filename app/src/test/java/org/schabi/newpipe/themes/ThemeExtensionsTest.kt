@@ -33,7 +33,7 @@ class ThemeExtensionsTest {
 
     private fun recipe(): JSONObject = JSONObject()
         .put("format", "wizestream-theme").put("version", 2).put("name", "Glass record").put("author", "Creator")
-        .put("glass", JSONObject().put("blur", 8).put("tint", 80).put("radius", 16))
+        .put("glass", JSONObject().put("blur", 8).put("tint", 80).put("radius", 16).put("scrollUnderBars", true))
         .put("assets", JSONObject().put("art", png()))
         .put("skin", "art")
         .put("icons", JSONObject().put("play", "art").put("pause", "art"))
@@ -63,6 +63,7 @@ class ThemeExtensionsTest {
             recipe().put("glass", JSONObject().put("blur", 17)),
             recipe().put("glass", JSONObject().put("radius", "12")),
             recipe().put("glass", JSONObject().put("css", "anything")),
+            recipe().put("glass", JSONObject().put("scrollUnderBars", "true")),
             recipe().put("player", JSONObject().put("layout", "html")),
             recipe().put("icons", JSONObject().put("unknown", "art")),
             recipe().put("assets", JSONObject().put("../art", png())),

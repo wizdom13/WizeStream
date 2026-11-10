@@ -61,6 +61,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
@@ -77,6 +78,7 @@ import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.utils.Utils.isNullOrEmpty
 import org.schabi.newpipe.fragments.BaseStateFragment
+import org.schabi.newpipe.fragments.MainFragment
 import org.schabi.newpipe.info_list.ItemViewMode
 import org.schabi.newpipe.info_list.StreamSelectionController
 import org.schabi.newpipe.info_list.dialog.InfoItemDialog
@@ -91,6 +93,7 @@ import org.schabi.newpipe.local.search.ContextualSearchHelper
 import org.schabi.newpipe.local.search.ContextualSearchable
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue
+import org.schabi.newpipe.themes.GlassFeedLayout
 import org.schabi.newpipe.util.ContentBlockingHelper
 import org.schabi.newpipe.util.DeviceUtils
 import org.schabi.newpipe.util.GridLayoutManagerHelper
@@ -144,6 +147,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private var feedHasContent: Boolean? = null
     private var idleAnimator: RecyclerView.ItemAnimator? = null
     private var pendingListUpdate: OnAsyncUpdateListener? = null
+
+    private var glassLayout: GlassFeedLayout? = null
+    private var glassBottomInset = 0
 
     private val feedHeaderOffsetListener = AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
         feedHeaderExpanded = verticalOffset == 0
@@ -246,6 +252,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     override fun onPause() {
+        glassLayout?.detach()
+        glassLayout = null
         feedPreview?.stop()
         super.onPause()
         listState = feedBinding.itemsList.layoutManager?.onSaveInstanceState()
@@ -264,6 +272,13 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun onResume() {
         super.onResume()
+        val host = activity as? MainActivity
+        if (parentFragment is MainFragment && host != null) {
+            glassLayout = GlassFeedLayout.attach(feedBinding, host) { inset ->
+                glassBottomInset = inset
+                updateRefreshControls()
+            }
+        }
         updateRelativeTimeViews()
 
         if (updateListViewModeOnResume) {
@@ -730,7 +745,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             binding.itemsList.paddingLeft,
             binding.itemsList.paddingTop,
             binding.itemsList.paddingRight,
-            if (floating) resources.getDimensionPixelSize(R.dimen.feed_floating_refresh_bottom_padding) else 0
+            glassBottomInset + if (floating) resources.getDimensionPixelSize(R.dimen.feed_floating_refresh_bottom_padding) else 0
         )
     }
 

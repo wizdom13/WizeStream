@@ -36,7 +36,14 @@ data class ThemePack(
         put("lightAccent", lightAccent)
         put("darkAccent", darkAccent)
         if (version == 2) {
-            glass?.let { put("glass", JSONObject().put("blur", it.blur).put("tint", it.tint).put("radius", it.radius)) }
+            glass?.let {
+                put(
+                    "glass",
+                    JSONObject().put("blur", it.blur).put("tint", it.tint).put("radius", it.radius).apply {
+                        if (it.scrollUnderBars) put("scrollUnderBars", true)
+                    }
+                )
+            }
             put(
                 "player",
                 JSONObject().put("layout", player.layout).apply {
@@ -123,6 +130,8 @@ data class ThemePack(
                         require(it.matches(Regex("0|[1-9][0-9]{0,3}"))) { "Expected bounded integer" }
                         it.toInt()
                     }
+
+                    JsonToken.BOOLEAN -> reader.nextBoolean()
 
                     JsonToken.BEGIN_OBJECT -> readObject(reader, depth + 1)
 

@@ -37,6 +37,8 @@ or restart the export. The active applied pack is not stored in that cache.
 The bundled **Glass Record** preset is a complete v2 example, including original
 geometric artwork and icons, in
 [`app/src/main/assets/themes/glass-record.json`](../../app/src/main/assets/themes/glass-record.json).
+The built-in **Glass** preset keeps the standard player and enables live blur
+behind the top and bottom bars while scrolling What’s New on supported phones.
 The Forest, Ocean and Midnight presets remain v1 examples.
 
 ## Minimal v2 example
@@ -104,6 +106,7 @@ warm palette rather than applying accent overrides. Black mode retains black sur
 | `blur` | 8 | Integer 0–16; radius in the downsampled backdrop, 0 disables blur |
 | `tint` | 80 | Integer 60–95; surface-color overlay opacity in percent |
 | `radius` | 16 | Integer 0–32; corner radius in density-independent pixels |
+| `scrollUnderBars` | false | Boolean; let What’s New scroll behind the main toolbar and bottom navigation on supported phones |
 
 Glass applies to the **main toolbar container, bottom navigation, navigation rail and
 navigation drawer**. Each uses its current palette's surface tint and a subtle native
@@ -112,11 +115,13 @@ foreground view. Individual opaque children (such as a drawer header or search f
 may retain their own surface. Settings pages, dialogs, popup windows, list cards and
 video overlays are not glass targets in this revision.
 
-Without `skin`, the drawer samples the underlying page at its screen position. Bars
-sample the nearest page edge. Existing content insets are preserved: this revision
-does **not** move scrolling content underneath bars. A full immersive underlapping
-layout is a separate native UI change. With `skin`, the embedded image is stretched
-behind each target instead of sampling page content; use abstract textures, not text.
+Without `skin`, the drawer samples the underlying page at its screen position.
+Bars normally sample the nearest page edge. With `scrollUnderBars: true`, What’s
+New can scroll beneath the bars in portrait mode on phones using bottom navigation.
+The app restores the normal insets during contextual search, Incognito, and while
+the player is visible. Tablets, Android TV, and low-memory devices retain their
+normal layout. With `skin`, the embedded image supplies the backdrop.
+
 A `skin` without `glass` still gets an 80% surface tint, with no blur or rounded border.
 
 Rendering is bounded to at most 96 pixels on the longest backdrop side, no more than

@@ -13,7 +13,7 @@ data class ThemeAsset(val base64: String, val width: Int, val height: Int) {
     }
 }
 
-data class ThemeGlass(val blur: Int = 8, val tint: Int = 80, val radius: Int = 16)
+data class ThemeGlass(val blur: Int = 8, val tint: Int = 80, val radius: Int = 16, val scrollUnderBars: Boolean = false)
 data class ThemePlayer(val layout: String = "standard", val background: String? = null, val artwork: String? = null)
 
 internal data class ThemeExtensions(
@@ -83,8 +83,13 @@ internal data class ThemeExtensions(
             )
             val glass = if (json.has("glass")) {
                 objectOrEmpty("glass").let {
-                    it.keysOnly(setOf("blur", "tint", "radius"))
-                    ThemeGlass(it.number("blur", 8, 0..16), it.number("tint", 80, 60..95), it.number("radius", 16, 0..32))
+                    it.keysOnly(setOf("blur", "tint", "radius", "scrollUnderBars"))
+                    val scrollUnderBars = if (it.has("scrollUnderBars")) {
+                        it.get("scrollUnderBars") as? Boolean ?: error("Expected boolean: scrollUnderBars")
+                    } else {
+                        false
+                    }
+                    ThemeGlass(it.number("blur", 8, 0..16), it.number("tint", 80, 60..95), it.number("radius", 16, 0..32), scrollUnderBars)
                 }
             } else {
                 null
