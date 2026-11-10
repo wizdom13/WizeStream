@@ -17,6 +17,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 
 import java.io.EOFException;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -216,7 +217,8 @@ final class PlayerHttpErrorRecovery {
                         || normalizedHost.endsWith(".googlevideo.com"))) {
                     Throwable cause = httpError.getCause();
                     while (cause != null) {
-                        if (cause instanceof ConnectException || cause instanceof EOFException) {
+                        if (cause instanceof ConnectException || cause instanceof EOFException
+                                || cause instanceof SocketTimeoutException) {
                             return true;
                         }
                         cause = cause.getCause();
