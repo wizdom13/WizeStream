@@ -310,7 +310,7 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
     }
 
     private fun play(station: RadioStation) {
-        val item = PlayQueueItem.radioStation(station.name, station.url, station.details, station.hls)
+        val item = PlayQueueItem.radioStation(station.name, station.url, station.details, station.hls, station.logoUrl)
         NavigationHelper.playOnBackgroundPlayer(requireContext(), LocalMediaPlayQueue(listOf(item), 0), false)
     }
 }

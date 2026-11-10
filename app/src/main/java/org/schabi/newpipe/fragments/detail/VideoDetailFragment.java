@@ -948,8 +948,11 @@ public final class VideoDetailFragment
                     VideoDetailPlayerCrasher.onCrashThePlayer(requireContext(), player));
         }
 
-        final View.OnClickListener overlayListener = v -> bottomSheetBehavior
-                .setState(BottomSheetBehavior.STATE_EXPANDED);
+        final View.OnClickListener overlayListener = v -> {
+            if (!isRadioQueue()) {
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            }
+        };
         binding.overlayThumbnail.setOnClickListener(overlayListener);
         binding.overlayMetadataLayout.setOnClickListener(overlayListener);
         binding.overlayButtonsLayout.setOnClickListener(overlayListener);
@@ -2926,6 +2929,15 @@ public final class VideoDetailFragment
         playQueue = queue;
         learningQueueChanges.onNext(Optional.of(queue));
         final PlayQueueItem queueItem = queue.getItem();
+        final boolean radio = isRadioQueue();
+        if (binding != null && bottomSheetBehavior != null) {
+            bottomSheetBehavior.setDraggable(!radio);
+            if (radio && bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            }
+            setOverlayExpansionClickable(
+                    bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED);
+        }
         if (queueItem != null && queueItem.isLocalMedia() && binding != null
                 && (currentLocalItem == null || !currentLocalItem.isSameItem(queueItem))) {
             setInitialData(queueItem.getServiceId(), queueItem.getUrl(),
@@ -2944,6 +2956,11 @@ public final class VideoDetailFragment
             playQueue.getBroadcastReceiver().subscribe(
                     event -> updateOverlayPlayQueueButtonVisibility()
             );
+        }
+
+        if (radio) {
+            updateOverlayPlayQueueButtonVisibility();
+            return;
         }
 
         // This should be the only place where we push data to stack.
@@ -3050,6 +3067,16 @@ public final class VideoDetailFragment
             return;
         }
         final PlayQueueItem item = queue.getItem();
+        if (item != null && item.isRadio()) {
+            if (binding != null) {
+                binding.overlayTitleTextView.setText(item.getTitle());
+                binding.overlayChannelTextView.setText(isEmpty(item.getUploader())
+                        ? getString(R.string.live_radio) : item.getUploader());
+                LocalMediaThumbnailLoader.INSTANCE.clear(binding.overlayThumbnail);
+                CoilHelper.INSTANCE.loadRadioLogo(binding.overlayThumbnail, tag.getThumbnailUrl());
+            }
+            return;
+        }
         if (item == null || !item.isLocalMedia()
                 || (playQueue != null && !queue.equalStreams(playQueue))) {
             return;
@@ -3946,11 +3973,22 @@ public final class VideoDetailFragment
                 binding.detailMainContent, binding.overlayLayout, bottomSheetState);
     }
 
+    private boolean isRadioQueue() {
+        final PlayQueueItem item = playQueue == null ? null : playQueue.getItem();
+        return item != null && item.isRadio();
+    }
+
+    private void setOverlayExpansionClickable(final boolean enable) {
+        final boolean canExpand = enable && !isRadioQueue();
+        binding.overlayThumbnail.setClickable(canExpand);
+        binding.overlayThumbnail.setLongClickable(canExpand);
+        binding.overlayMetadataLayout.setClickable(canExpand);
+        binding.overlayMetadataLayout.setLongClickable(canExpand);
+        binding.overlayButtonsLayout.setClickable(canExpand);
+    }
+
     private void setOverlayElementsClickable(final boolean enable) {
-        binding.overlayThumbnail.setClickable(enable);
-        binding.overlayThumbnail.setLongClickable(enable);
-        binding.overlayMetadataLayout.setClickable(enable);
-        binding.overlayMetadataLayout.setLongClickable(enable);
+        setOverlayExpansionClickable(enable);
         binding.overlayPlayQueueButton.setClickable(enable);
         binding.overlayPlayPauseButton.setClickable(enable);
         binding.overlayCloseButton.setClickable(enable);
