@@ -90,6 +90,7 @@ jobs:
           scripts/verify-apk-abis.sh "$APK_PATH" arm64-v8a armeabi-v7a
 
       - name: Upload reproducibility result
+        if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
           name: wizestream-reproducible-release

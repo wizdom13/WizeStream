@@ -50,9 +50,13 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 build_once() {
     local destination="$1"
+    local identity_hash_mode="${2:-5}"
     local apk_paths=()
 
+    echo "Building with HotSpot identity-hash strategy $identity_hash_mode"
+    JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -XX:+UnlockExperimentalVMOptions -XX:hashCode=$identity_hash_mode" \
     ./gradlew \
+        --init-script "$ROOT_DIR/gradle/reproducible-r8.init.gradle.kts" \
         --no-daemon \
         --max-workers=1 \
         --no-build-cache \
@@ -74,7 +78,9 @@ mkdir -p "$OUTPUT_DIR"
 
 if [ "$VERIFY" = true ]; then
     build_once "$TMP_DIR/first.apk"
-    build_once "$TMP_DIR/second.apk"
+    # Sequential identity hashes exercise a different IdentityHashMap iteration order
+    # without the severe collision cost of HotSpot's constant-hash strategy (2).
+    build_once "$TMP_DIR/second.apk" 3
 
     FIRST_SHA256="$(sha256sum "$TMP_DIR/first.apk" | cut -d ' ' -f 1)"
     SECOND_SHA256="$(sha256sum "$TMP_DIR/second.apk" | cut -d ' ' -f 1)"
@@ -89,7 +95,7 @@ if [ "$VERIFY" = true ]; then
 
     cp "$TMP_DIR/second.apk" "$OUTPUT_DIR/release.apk"
     printf '%s  release.apk\n' "$SECOND_SHA256" > "$OUTPUT_DIR/SHA256SUMS"
-    printf 'Reproducible release APK: %s\n' "$SECOND_SHA256"
+    printf 'Matching release APKs with identity-hash strategies 5 and 3: %s\n' "$SECOND_SHA256"
 else
     build_once "$OUTPUT_DIR/release.apk"
     sha256sum "$OUTPUT_DIR/release.apk" | sed 's# .*/#  #' > "$OUTPUT_DIR/SHA256SUMS"

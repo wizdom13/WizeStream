@@ -46,7 +46,8 @@ Build the default ARM64/ARMv7 release APK:
 scripts/build.sh release
 ```
 
-Build it twice from clean state and require identical SHA-256 hashes:
+Build it twice from clean state with different JVM identity-hash strategies and require
+identical SHA-256 hashes:
 
 ```bash
 scripts/reproducible-build.sh --verify
@@ -64,14 +65,25 @@ both targets from the same tagged source and sign them with the same release key
 The reproducible entry point runs the complete release pipeline with one visible processor and one
 Gradle worker. `JAVA_TOOL_OPTIONS` propagates the processor limit to Gradle, D8/L8, R8, and child
 JVMs.
+It also applies `gradle/reproducible-r8.init.gradle.kts`, which fixes the unstable retarget-interface
+ordering in the R8 9.2.14 compiler embedded in AGP 9.2.1. The patch replaces the retargeter's
+identity-keyed map with a descriptor-ordered map. It changes one compiler class in Gradle's
+transformed artifact cache; downloaded dependencies remain untouched. No patched compiler binary
+is stored in this repository. A checksum guard rejects unreviewed compiler changes when AGP is
+upgraded. The equivalent source change and removal instructions are in
+[the compiler patch notes](gradle/r8-interface-order.md).
+
+With `--verify`, the first build uses HotSpot's default identity-hash strategy (5), and the second
+uses sequential identity hashes (3). This exposes the compiler ordering defect that two builds
+under the same JVM configuration can miss. Both builds must produce byte-identical APKs.
 Normal debug and test builds keep their parallelism. Build and configuration caches are disabled,
 the locale and timezone are fixed, and `SOURCE_DATE_EPOCH` comes from the checked-out commit. A
 verified APK and its `SHA256SUMS` file are written to `dist/reproducible/`.
 
 Independent rebuilders should use `scripts/reproducible-build.sh` rather than invoking
-`./gradlew assembleRelease` directly. The script applies the single-processor constraint required
-for deterministic D8/L8/R8 output without assuming a particular SDK installation directory or JDK
-distribution.
+`./gradlew assembleRelease` directly. The script applies the compiler correction and JVM settings
+used for published releases. It requires a HotSpot-based JDK 21, such as Temurin or Ubuntu OpenJDK,
+without assuming a particular SDK installation directory.
 
 Run Android instrumented tests:
 
