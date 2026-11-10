@@ -18,7 +18,8 @@ sealed class FeedState {
         val notLoadedCount: Long,
         val itemsErrors: List<Throwable>,
         val progress: ProgressState? = null,
-        val highlightAfter: OffsetDateTime? = null
+        val highlightAfter: OffsetDateTime? = null,
+        val refreshCompletion: FeedRefreshCompletion? = null
     ) : FeedState()
 
     data class ErrorState(
