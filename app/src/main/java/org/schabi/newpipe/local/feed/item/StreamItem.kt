@@ -1,6 +1,8 @@
 package org.schabi.newpipe.local.feed.item
 
 import android.content.Context
+import android.graphics.Typeface
+import android.graphics.drawable.LayerDrawable
 import android.text.TextUtils
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +11,6 @@ import androidx.preference.PreferenceManager
 import com.xwray.groupie.viewbinding.BindableItem
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.stream.StreamWithState
@@ -29,11 +30,13 @@ import org.schabi.newpipe.util.GridTitleDisplayPolicy
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ShortsThumbnailPolicy
 import org.schabi.newpipe.util.StreamTypeUtil
+import org.schabi.newpipe.util.ThemeHelper.resolveDrawable
 import org.schabi.newpipe.util.image.CoilHelper
 
 data class StreamItem(
     val streamWithState: StreamWithState,
-    var itemVersion: ItemVersion = ItemVersion.NORMAL
+    var itemVersion: ItemVersion = ItemVersion.NORMAL,
+    val isHighlighted: Boolean = false
 ) : BindableItem<ListStreamItemBinding>() {
     companion object {
         const val UPDATE_RELATIVE_TIME = 1
@@ -41,12 +44,6 @@ data class StreamItem(
 
     private val stream: StreamEntity = streamWithState.stream
     private val stateProgressTime: Long? = streamWithState.stateProgressMillis
-
-    /**
-     * Will be executed at the end of the [StreamItem.bind] (with (ListStreamItemBinding,Int)).
-     * Can be used e.g. for highlighting a item.
-     */
-    var execBindEnd: Consumer<ListStreamItemBinding>? = null
 
     /** Shared reactive index supplied by the feed view, independently of highlighting. */
     var noteBadges: VideoNoteBadges? = null
@@ -143,7 +140,14 @@ data class StreamItem(
         }
 
         noteBadges?.bindStream(viewBinding.root, stream)
-        execBindEnd?.accept(viewBinding)
+        val context = viewBinding.root.context
+        val selector = resolveDrawable(context, android.R.attr.selectableItemBackground)
+        viewBinding.itemRoot.background = if (isHighlighted) {
+            LayerDrawable(arrayOf(resolveDrawable(context, R.attr.dashed_border), selector))
+        } else {
+            selector
+        }
+        viewBinding.itemVideoTitleView.typeface = if (isHighlighted) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         previewController?.get()?.bind(viewBinding.root, stream, itemVersion == ItemVersion.CARD)
         quickAddController?.get()?.bind(viewBinding.root, stream, itemVersion != ItemVersion.MINI)
     }

@@ -18,31 +18,8 @@ class FeedHighlightRangeTest {
         )
         val unknown = known.copy(textualUploadDate = null)
         val old = known.copy(uploadDate = updatedAt.minusDays(1))
-        val positions = feedHighlightPositions(listOf(unknown, known, old, known, unknown), updatedAt)
+        val streams = listOf(unknown, known, old, known, unknown)
 
-        assertEquals(setOf(1, 3), positions)
-        // Rebind through the final highlighted item, not merely the number of highlights.
-        assertEquals(4, calculateFeedHighlightRebindCount(0, positions.maxOrNull()!! + 1, 5))
-        assertEquals(4, calculateFeedHighlightRebindCount(4, 0, 5))
-    }
-
-    @Test
-    fun emptyFeedDoesNotProduceAnInvalidRange() {
-        assertEquals(0, calculateFeedHighlightRebindCount(1, 0, 0))
-    }
-
-    @Test
-    fun rebindCountClearsStaleHighlightsAfterTheListShrinks() {
-        assertEquals(3, calculateFeedHighlightRebindCount(5, 2, 3))
-    }
-
-    @Test
-    fun rebindCountIncludesAllNewHighlights() {
-        assertEquals(5, calculateFeedHighlightRebindCount(2, 5, 8))
-    }
-
-    @Test
-    fun unchangedUnhighlightedFeedNeedsNoRebind() {
-        assertEquals(0, calculateFeedHighlightRebindCount(0, 0, 8))
+        assertEquals(listOf(1, 3), streams.indices.filter { shouldHighlightFeedStream(streams[it], updatedAt) })
     }
 }

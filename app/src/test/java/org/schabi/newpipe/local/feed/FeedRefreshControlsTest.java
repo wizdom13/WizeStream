@@ -215,8 +215,8 @@ public class FeedRefreshControlsTest {
                 "private fun showFilteredFeedItems",
                 "override fun setContextualSearchQuery");
         assertTrue(filteredItems.contains("if (_feedBinding == null)"));
-        assertTrue(filteredItems.contains("item.copy(itemVersion = itemVersion)"));
-        assertTrue(filteredItems.contains("displayItem.execBindEnd = item.execBindEnd"));
+        assertTrue(filteredItems.contains(
+                "item.copy(itemVersion = itemVersion, isHighlighted = highlighted)"));
         assertTrue(filteredItems.contains(
                 "displayItem.onUploaderSelected = ::openUploaderChannel"));
         assertFalse(filteredItems.contains("it.itemVersion = itemVersion"));
