@@ -20,6 +20,7 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 
 @RunWith(RobolectricTestRunner.class)
 public class PlayerCdnConnectionRecoveryTest {
@@ -28,6 +29,18 @@ public class PlayerCdnConnectionRecoveryTest {
         final Throwable error = new RuntimeException("Source error", connectionFailure(
                 "https://rr1---sn-f58xn2xxq-aj5s.googlevideo.com/segment.ts",
                 new ConnectException("Failed to connect"), HttpDataSourceException.TYPE_OPEN));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(error));
+        assertTrue(PlayerHttpErrorRecovery.isRecoverableYouTubeMediaUrlFailure(
+                error, queueItem(ServiceList.YouTube.getServiceId())));
+    }
+
+    @Test
+    public void timedOutGoogleVideoConnectionUsesMediaUrlRefresh() {
+        final Throwable error = new RuntimeException("Source error", connectionFailure(
+                "https://rr3---sn-u0g3jxaa-n5fk.googlevideo.com/videoplayback",
+                new SocketTimeoutException("failed to connect after 15000ms"),
+                HttpDataSourceException.TYPE_OPEN));
+
         assertTrue(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(error));
         assertTrue(PlayerHttpErrorRecovery.isRecoverableYouTubeMediaUrlFailure(
                 error, queueItem(ServiceList.YouTube.getServiceId())));
@@ -55,6 +68,9 @@ public class PlayerCdnConnectionRecoveryTest {
         }
         assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(connectionFailure(
                 "https://example.com/segment.ts", new EOFException("line missing"),
+                HttpDataSourceException.TYPE_OPEN)));
+        assertFalse(PlayerHttpErrorRecovery.isRecoverableMediaUrlFailure(connectionFailure(
+                "https://example.com/segment.ts", new SocketTimeoutException("timed out"),
                 HttpDataSourceException.TYPE_OPEN)));
     }
 
