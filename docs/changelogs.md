@@ -4,6 +4,25 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.40.0 (`1040000`)
+
+### Improvements
+
+- Discover worldwide stations in Live Radio, save favorites, and add custom HTTPS audio or HLS streams.
+- Search station names and pick country, language, and genre from searchable lists. Applied filters
+  are remembered per profile and synchronize through Device Sync when Filters is enabled.
+- Filter What’s New by publication date.
+
+### Interface
+
+- Show the station logo, name, and details in the collapsed Live Radio miniplayer.
+- Keep What’s New updates arriving during refresh while reducing unnecessary row updates and showing
+  a single completion banner when new highlighted items appear.
+
+### Fixes
+
+- Recover YouTube playback from timed-out CDN connections and AAC decoder output failures.
+
 ## WizeStream 1.39.0 (`1039000`)
 
 ### Improvements
