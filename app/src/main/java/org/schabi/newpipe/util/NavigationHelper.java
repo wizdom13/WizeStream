@@ -57,6 +57,7 @@ import org.schabi.newpipe.local.bookmark.BookmarkFragment;
 import org.schabi.newpipe.local.feed.FeedFragment;
 import org.schabi.newpipe.local.history.StatisticsPlaylistFragment;
 import org.schabi.newpipe.local.media.LocalMediaFragment;
+import org.schabi.newpipe.local.radio.RadioFragment;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.local.subscription.SubscriptionFragment;
 import org.schabi.newpipe.local.subscription.GroupChannelsFragment;
@@ -132,7 +133,7 @@ public final class NavigationHelper {
             return;
         }
         final PlayQueueItem item = playQueue.getItem();
-        if (item != null) {
+        if (item != null && !item.isRadio()) {
             openVideoDetailFragment(activity, activity.getSupportFragmentManager(),
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,
                     false);
@@ -146,7 +147,7 @@ public final class NavigationHelper {
             return;
         }
         final PlayQueueItem item = playQueue.getItem();
-        if (item != null) {
+        if (item != null && !item.isRadio()) {
             openVideoDetail(context,
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,
                     switchingPlayers);
@@ -655,6 +656,13 @@ public final class NavigationHelper {
     public static void openBookmarksFragment(final FragmentManager fragmentManager) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, new BookmarkFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public static void openRadioFragment(final FragmentManager fragmentManager) {
+        defaultTransaction(fragmentManager)
+                .replace(R.id.fragment_holder, new RadioFragment())
                 .addToBackStack(null)
                 .commit();
     }

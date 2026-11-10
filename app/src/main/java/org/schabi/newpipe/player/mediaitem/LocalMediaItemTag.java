@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-/** Metadata for a MediaStore item that can be played without invoking an online extractor. */
+/** Metadata for media played directly without an online extractor. */
 public final class LocalMediaItemTag implements MediaItemTag {
     @NonNull
     private final PlayQueueItem item;
@@ -25,8 +25,8 @@ public final class LocalMediaItemTag implements MediaItemTag {
 
     @NonNull
     public static LocalMediaItemTag of(@NonNull final PlayQueueItem item) {
-        if (!item.isLocalMedia()) {
-            throw new IllegalArgumentException("Expected a local media queue item");
+        if (!item.isLocalMedia() && !item.isRadio()) {
+            throw new IllegalArgumentException("Expected a direct media queue item");
         }
         return new LocalMediaItemTag(item, null);
     }
