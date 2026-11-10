@@ -257,6 +257,15 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   content visibility, image quality, search suggestions, global search-button behavior, and the
   preferred PeerTube instance
 
+### Live Radio
+
+- Open **Live Radio** from the navigation drawer to discover worldwide stations through Radio Browser.
+  Search by station name or choose a country, language, or genre from searchable lists.
+- Save favorite stations or add a custom HTTPS audio or HLS stream URL. The background miniplayer
+  shows the station logo, name, and details, with play/pause, queue, and close controls.
+- Applied filters are remembered per profile and can sync through **Device synchronization > Filters**.
+  Use **Clear filters** to reset country, language, and genre.
+
 ### Playback
 
 - Optional **Quick add to playlist in What’s New** under **Settings > Content** selects a local
@@ -364,6 +373,8 @@ shared upstream, but WizeStream remains responsible for defects caused by its bu
   its toolbar selector; group switching uses cached feeds without starting network requests
 - View subscriptions from all services in the current profile; choose current-platform or all-platform
   views for **What's New** and channel groups, with separate YouTube and YouTube Music membership
+- Set a publication date cutoff in What’s New to narrow the feed. During refresh, new items arrive
+  progressively and the completion banner appears once when new highlighted items are visible.
 - Arrange subscriptions with drag-and-drop ordering, named separators, multiselection, and bulk moves
 - Unsubscribe from multiple selected channels with a count confirmation, limited to the current profile
 - Refresh feeds manually or in the background, with configurable intervals, optional unmetered networking,
@@ -573,7 +584,7 @@ Supported synchronized data includes:
 - Local profile identities, subscriptions, and feed groups
 - Local and remote playlists
 - Watch history and playback progress
-- Home tabs, content-filter selections, channel playback profiles, and allowlisted settings
+- Home tabs, content-filter selections, profile-scoped Live Radio filters, channel playback profiles, and allowlisted settings
 - Profile-scoped search history when explicitly enabled on both devices
 - Blocked content, learning notes, and optional lesson difficulty ratings
 - Completed-download metadata
