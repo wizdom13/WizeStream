@@ -175,6 +175,9 @@ class LocalMediaFragment : Fragment() {
         view.findViewById<Chip>(R.id.localMediaVideoFolders).setOnClickListener {
             selectVideoCategory(LocalMediaVideoCategory.FOLDERS)
         }
+        view.findViewById<Chip>(R.id.localMediaVideoPlaylists).setOnClickListener {
+            NavigationHelper.openBookmarksFragment(parentFragmentManager)
+        }
         view.findViewById<View>(R.id.localMediaGroupBack).setOnClickListener {
             activeGroup = null
             updateList()
