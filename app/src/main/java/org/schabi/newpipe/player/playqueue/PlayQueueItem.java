@@ -105,11 +105,12 @@ public class PlayQueueItem implements Serializable {
     public static PlayQueueItem radioStation(@NonNull final String title,
                                              @NonNull final String url,
                                              @Nullable final String details,
-                                             final boolean hls) {
+                                             final boolean hls,
+                                             @Nullable final String logoUrl) {
         return new PlayQueueItem(title, url, RADIO_SERVICE_ID, -1,
                 Collections.emptyList(), details, null, StreamType.AUDIO_LIVE_STREAM,
                 false, SourceType.RADIO, hls ? "application/x-mpegURL" : null,
-                null, null, -1L, null);
+                null, null, -1L, logoUrl);
     }
 
     @SuppressWarnings("ParameterNumber")

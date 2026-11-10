@@ -15,6 +15,7 @@ import coil3.request.Disposable
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.error
+import coil3.request.fallback
 import coil3.request.placeholder
 import coil3.request.target
 import coil3.request.transformations
@@ -159,6 +160,15 @@ object CoilHelper {
         url: String?
     ) {
         loadImageDefault(target, url, R.drawable.placeholder_thumbnail_video)
+    }
+
+    fun loadRadioLogo(target: ImageView, url: String?) {
+        val context = target.context
+        val request = getImageRequest(context, url, R.drawable.ic_radio)
+            .fallback(R.drawable.ic_radio)
+            .target(target)
+            .build()
+        context.imageLoader.enqueue(request)
     }
 
     fun loadScaledDownThumbnail(

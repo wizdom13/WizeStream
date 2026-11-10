@@ -9,9 +9,6 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import coil3.imageLoader
-import coil3.request.fallback
-import coil3.request.target
 import org.schabi.newpipe.R
 import org.schabi.newpipe.util.image.CoilHelper
 
@@ -28,12 +25,7 @@ internal class RadioStationAdapter(
         holder.title.text = station.name
         holder.details.text = station.details
         holder.details.isVisible = station.details.isNotBlank()
-        val context = holder.logo.context
-        val request = CoilHelper.getImageRequest(context, station.logoUrl, R.drawable.ic_radio)
-            .fallback(R.drawable.ic_radio)
-            .target(holder.logo)
-            .build()
-        context.imageLoader.enqueue(request)
+        CoilHelper.loadRadioLogo(holder.logo, station.logoUrl)
         holder.itemView.setOnClickListener { play(station) }
         holder.itemView.setOnLongClickListener {
             showActions(station)
