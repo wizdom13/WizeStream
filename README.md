@@ -25,6 +25,7 @@
   <a href="#what-is-wizestream">About</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#supported-services">Services</a> •
+  <a href="#feature-comparison">Comparison</a> •
   <a href="#features">Features</a> •
   <a href="#android-auto">Android Auto</a> •
   <a href="#device-synchronization">Device sync</a> •
@@ -174,6 +175,113 @@ WizeStream first. Comparing a problem with official NewPipe can help determine w
 shared upstream, but WizeStream remains responsible for defects caused by its bundled changes.
 
 ---
+
+## Feature comparison
+
+Selected Android features as of November 2026. **—** means support was not verified in the
+linked project documentation, source, or release notes. **Inherited** refers to a documented
+NewPipe capability retained in BravePipe's NewPipe-based app. Service coverage and availability
+can vary by version, build, and provider.
+
+### Streaming services and discovery
+
+| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| --- | --- | --- | --- | --- |
+| YouTube streaming without signing in | Yes | Yes | Yes | Yes |
+| YouTube Music | Dedicated Music destination | Supported | YouTube music player mode | Inherited from NewPipe |
+| SoundCloud, PeerTube, Bandcamp, media.ccc.de | All four | All four | SoundCloud and PeerTube documented | Inherited from NewPipe |
+| Bilibili and Niconico | Both | — | Both, including documented live features | — |
+| BitChute and Rumble | Both | — | — | Both |
+| Odysee | Experimental | — | — | — |
+| YouTube account sign-in | No | No | Optional for restricted or premium content | — |
+| SponsorBlock | Per-category controls and offline skipping for supported downloads | [No][comparison-newpipe-sponsorblock] | YouTube and Bilibili | Yes, via NewPipe x SponsorBlock |
+| YouTube dislike counts | Optional | — | ReturnYouTubeDislike | — |
+| DeArrow titles and thumbnails | Optional | — | [Available][comparison-pipepipe-55] | — |
+| Live chat and danmaku | Read-only YouTube chat tab, fullscreen panel, and danmaku | — | [Chat tab and danmaku][comparison-pipepipe-55] | — |
+
+### Local media and Live Radio
+
+| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| --- | --- | --- | --- | --- |
+| Browse and play device audio and video | Local Media browser with search, filters, folders, exclusions, and rescans | — | — | — |
+| Local-file playback modes | Main player, background audio, and popup | — | — | — |
+| Internet radio directory | Worldwide Radio Browser stations | — | — | — |
+| Radio search and filters | Station name, country, language, and genre | — | — | — |
+| Radio favorites and custom streams | Favorites and custom HTTPS audio or HLS URLs | — | — | — |
+| Radio miniplayer | Station logo and details, queue, play/pause, and close | — | — | — |
+
+### Playback, gestures, and devices
+
+| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| --- | --- | --- | --- | --- |
+| Background audio | Yes, with Listen mode | Yes | Yes, with music player mode | Inherited from NewPipe |
+| Floating video player | Popup and optional native Android picture-in-picture | Popup | — | Inherited popup player |
+| Playback speed and captions | Both, with per-channel preferences | Both | Both | Inherited from NewPipe |
+| Subtitle timing and A–B repeat | Session-only caption offset and non-live A–B repeat | — | — | — |
+| Audio tools | 10-band equalizer, visualizers, loudness normalization, and compression | — | — | — |
+| Chapter markers in the seek bar | Markers, titles while seeking, and supported haptics | [Chapter divisions][comparison-newpipe-releases] | — | — |
+| Fullscreen volume and brightness swipes | Configurable | [Configurable sides][comparison-newpipe-gestures] | — | Inherited gestures |
+| Swipe to seek | Yes | — | [Available][comparison-pipepipe-seek] | — |
+| Swipe down to minimize | Yes, including loading and error screens | — | [Configurable][comparison-pipepipe-releases] | — |
+| Pinch to zoom and fullscreen touch lock | Both, plus two-finger panning | — | [Both][comparison-pipepipe-55] | — |
+| Android TV and remote controls | TV layout, D-pad shortcuts, direct seeking, and miniplayer focus | [Android and Google TV support][comparison-newpipe-devices] | [Optimized TV controls][comparison-pipepipe-releases] | — |
+| Samsung DeX and large screens | Compact playlist search cards in DeX and landscape, plus tablet layouts | Tablet layout choices | — | — |
+| Android Auto | Audio browsing, voice search, and resume | [Supported][comparison-newpipe-devices] | [Supported][comparison-pipepipe-auto] | — |
+| TV casting | FCast and Chromecast-compatible receivers | — | — | — |
+
+### Profiles, privacy, and networking
+
+| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| --- | --- | --- | --- | --- |
+| Local profiles | Separate subscriptions, playlists, feeds, history, and playback progress | — | — | — |
+| Kids Mode and Incognito | Per-profile PIN restrictions and a separate activity-recording pause | — | — | — |
+| Device synchronization | Encrypted peer-to-peer pairing and manual or scheduled sync | — | — | — |
+| Synchronized library and filters | Subscriptions, playlists, progress, selected settings, and Live Radio filters | — | — | — |
+| In-app proxy | HTTP or SOCKS5 with optional authentication and LAN bypass | — | — | — |
+| Invidious playback option | Saved instances and explicit trust for Companion media hosts | — | — | — |
+
+### Library, subscriptions, and downloads
+
+| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| --- | --- | --- | --- | --- |
+| Account-free subscriptions and channel groups | Yes, scoped to the active profile | Yes | Yes | Inherited from NewPipe |
+| Subscription feed | What’s New, group and service scopes, publication date cutoff, and progressive refresh | Feeds by channel group | Grouped subscription feed | Inherited from NewPipe |
+| New-upload notifications | Configurable by channel, with keyword and network controls | Yes | — | Inherited from NewPipe |
+| Local playlists and watch history | Yes, with profile separation and local search | Yes | Local playlists and history | Inherited from NewPipe |
+| Playlist organization | Categories, named separators, bulk editing, and rule-based smart playlists | Local playlists | Local playlists with sorting and multi-select | Inherited local playlists |
+| Swipe actions in playlists | Optional swipe to remove in Edit mode with Undo | — | [Configurable swipe actions][comparison-pipepipe-auto] | — |
+| Multi-select and batch actions | Select items in search, feeds, channels, and library lists | — | [Multi-select across list pages][comparison-pipepipe-55] | — |
+| Subscription import and backup | NewPipe-compatible backups and imports from Google Takeout, PipePipe, and LibreTube | [Backup export and YouTube or SoundCloud subscription import][comparison-newpipe-backup] | NewPipe backup import documented | Inherited from NewPipe |
+| Scheduled local backups | Daily or weekly, with retention of the latest seven automatic backups | — | — | — |
+| Video, audio, and caption downloads | Yes, with separate companion captions queued with video | Yes | Multi-format downloads and captions | Inherited from NewPipe |
+| Batch downloads | Local and remote playlists and the play queue | — | Channels and playlists | — |
+| Automatic subscription downloads | Hourly checks for new uploads from selected channels | — | — | — |
+| Scheduled download windows | Daily time window, with optional charging and unmetered network requirements | — | — | — |
+| Offline library cleanup | Optional retention rules for tracked automatic downloads | — | — | — |
+
+### Interface, accessibility, and releases
+
+| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| --- | --- | --- | --- | --- |
+| Appearance and navigation | Material 3, third-party themes, and configurable home navigation | List, grid, and card layouts | Configurable player UI and list sorting | — |
+| Transcripts, notes, and Learning Mode | Searchable captions, timestamped notes, and study tools | — | — | — |
+| Release channels | GitHub releases, IzzyOnDroid, and separate nightly builds | [GitHub releases, F-Droid, and official F-Droid repository][comparison-newpipe] | [GitHub stable and beta releases][comparison-pipepipe-releases] and [F-Droid][comparison-pipepipe-fdroid] | [GitHub releases][comparison-bravepipe-releases] with standard, Conscrypt, and legacy APK variants |
+| In-app update flow | Manual and background checks, changelog preview, verified APK download and install handoff | Official download and F-Droid update paths documented | [In-app update checks][comparison-pipepipe-auto] | Optional integrated APK updater |
+
+[comparison-newpipe]: https://github.com/TeamNewPipe/NewPipe
+[comparison-newpipe-sponsorblock]: https://github.com/TeamNewPipe/NewPipe/discussions/10725
+[comparison-newpipe-releases]: https://github.com/TeamNewPipe/NewPipe/releases/tag/v0.29.2
+[comparison-newpipe-gestures]: https://github.com/TeamNewPipe/NewPipe/issues/10284
+[comparison-newpipe-devices]: https://newpipe.net/FAQ/bugs/#supported-devices
+[comparison-newpipe-backup]: https://newpipe.net/FAQ/tutorials/import-export-data/
+[comparison-pipepipe]: https://pipepipe.dev/
+[comparison-pipepipe-releases]: https://github.com/InfinityLoop1308/PipePipe/releases
+[comparison-pipepipe-55]: https://github.com/InfinityLoop1308/PipePipe/discussions/3053
+[comparison-pipepipe-auto]: https://github.com/InfinityLoop1308/PipePipe/discussions/1315
+[comparison-pipepipe-seek]: https://github.com/InfinityLoop1308/PipePipe/discussions/1205
+[comparison-pipepipe-fdroid]: https://f-droid.org/packages/InfinityLoop1309.NewPipeEnhanced/
+[comparison-bravepipe]: https://github.com/bravepipeproject/BravePipe
+[comparison-bravepipe-releases]: https://github.com/bravepipeproject/BravePipe/releases
 
 ## Features
 
