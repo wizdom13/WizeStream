@@ -21,55 +21,79 @@
             android:paddingBottom="8dp"
             app:layout_scrollFlags="scroll|enterAlways">
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/radio_station_search"
-                app:endIconMode="clear_text">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <com.google.android.material.textfield.TextInputEditText
+                <org.schabi.newpipe.views.NewPipeEditText
                     android:id="@+id/radio_search_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:imeOptions="actionSearch"
-                    android:inputType="text"
-                    android:singleLine="true" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/search_toolbar_field_background"
+                    android:hint="@string/radio_station_search"
+                    android:imeOptions="actionSearch|flagNoFullscreen"
+                    android:inputType="textFilter|textNoSuggestions"
+                    android:maxLines="1"
+                    android:paddingHorizontal="16dp"
+                    android:theme="@style/ToolbarSearchInputTheme"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant" />
 
-            <com.google.android.material.chip.ChipGroup
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/radio_search"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/search"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_search"
+                    app:tint="?attr/colorOnSurface" />
+            </LinearLayout>
+
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="4dp"
+                android:scrollbars="none">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/radio_search"
-                    style="@style/Widget.Material3.Chip.Assist"
+                <com.google.android.material.chip.ChipGroup
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/search" />
+                    app:singleLine="true">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/radio_filters"
-                    style="@style/Widget.Material3.Chip.Assist"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/radio_filters" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/radio_filters"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_filters" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/radio_saved"
-                    style="@style/Widget.Material3.Chip.Assist"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/radio_saved" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/radio_clear_filters"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_clear_filters" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/radio_add"
-                    style="@style/Widget.Material3.Chip.Assist"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/radio_add_url" />
-            </com.google.android.material.chip.ChipGroup>
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/radio_saved"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_saved" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/radio_add"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_add_url" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/radio_status"

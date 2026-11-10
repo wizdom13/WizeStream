@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp">
+
+    <include
+        android:id="@+id/radio_filter_search"
+        layout="@layout/dialog_radio_input" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/radio_filter_loading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/radio_filter_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityLiveRegion="polite"
+        android:text="@string/radio_filter_options_failed"
+        android:visibility="gone" />
+
+    <ListView
+        android:id="@+id/radio_filter_choices"
+        android:layout_width="match_parent"
+        android:layout_height="280dp"
+        android:choiceMode="singleChoice" />
+</LinearLayout>

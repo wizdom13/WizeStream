@@ -69,6 +69,7 @@ internal class RoomStructuredPreferenceSyncStore internal constructor(
         ChannelProfileSyncAdapter(preferences, recordRepository),
         LessonDifficultySyncAdapter(preferences, recordRepository, canMaterializeProfile),
         FilterSyncAdapter(context, preferences, recordRepository),
+        RadioFilterSyncAdapter(context, recordRepository, canMaterializeProfile),
         ContentBlockingSyncAdapter(context, preferences, recordRepository),
         PortableSettingsSyncAdapter(context, preferences, recordRepository),
         completedDownloadAdapter

@@ -633,6 +633,9 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     private fun deviceSyncLogCategoryName(category: DeviceSyncLogCategory): String {
         return getString(
             when (category) {
+                DeviceSyncLogCategory.RADIO_FILTERS ->
+                    R.string.device_sync_category_radio_filters
+
                 DeviceSyncLogCategory.LESSON_DIFFICULTY ->
                     R.string.device_sync_category_lesson_difficulty
 
@@ -715,6 +718,9 @@ class DeviceSyncSettingsFragment : BasePreferenceFragment() {
     ): String {
         return getString(
             when (category) {
+                StructuredPreferenceCategory.RADIO_FILTERS ->
+                    R.string.device_sync_category_radio_filters
+
                 StructuredPreferenceCategory.LESSON_DIFFICULTY ->
                     R.string.device_sync_category_lesson_difficulty
 

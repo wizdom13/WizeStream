@@ -474,6 +474,8 @@ class DeviceSyncManager private constructor(context: Context) {
 
             StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
 
+            StructuredPreferenceCategory.RADIO_FILTERS -> DeviceSyncLogCategory.RADIO_FILTERS
+
             StructuredPreferenceCategory.CONTENT_BLOCKING ->
                 DeviceSyncLogCategory.CONTENT_BLOCKING
 
@@ -548,7 +550,8 @@ class DeviceSyncManager private constructor(context: Context) {
             StructuredPreferenceCategory.CHANNEL_PROFILES ->
                 R.string.device_sync_channel_profiles_key
 
-            StructuredPreferenceCategory.FILTERS -> R.string.device_sync_filters_key
+            StructuredPreferenceCategory.FILTERS,
+            StructuredPreferenceCategory.RADIO_FILTERS -> R.string.device_sync_filters_key
 
             StructuredPreferenceCategory.CONTENT_BLOCKING ->
                 R.string.device_sync_content_blocking_key

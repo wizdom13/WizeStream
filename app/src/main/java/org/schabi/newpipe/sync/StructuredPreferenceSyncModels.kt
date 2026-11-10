@@ -38,7 +38,8 @@ enum class StructuredPreferenceCategory {
     CONTENT_BLOCKING,
     SETTINGS,
     COMPLETED_DOWNLOADS,
-    LESSON_DIFFICULTY
+    LESSON_DIFFICULTY,
+    RADIO_FILTERS
 }
 
 @Serializable
@@ -54,7 +55,8 @@ internal enum class StructuredPreferenceRecordType {
     CONTENT_BLOCK_ENTRY,
     PORTABLE_SETTING,
     COMPLETED_DOWNLOAD,
-    LESSON_DIFFICULTY
+    LESSON_DIFFICULTY,
+    RADIO_FILTERS
 }
 
 @Serializable
@@ -301,6 +303,16 @@ internal data class SyncedCompletedDownload(
 internal data class SyncedLessonDifficulty(val key: String, val rating: Int)
 
 @Serializable
+internal data class SyncedRadioFilters(
+    val profileId: String,
+    val country: String,
+    val language: String,
+    val genre: String
+) {
+    fun hasSelection(): Boolean = country.isNotEmpty() || language.isNotEmpty() || genre.isNotEmpty()
+}
+
+@Serializable
 internal data class SyncedStructuredPreferenceRecord(
     val feedGroup: SyncedFeedGroup? = null,
     val feedGroupMembership: SyncedFeedGroupMembership? = null,
@@ -313,7 +325,8 @@ internal data class SyncedStructuredPreferenceRecord(
     val contentBlockEntry: SyncedContentBlockEntry? = null,
     val portableSetting: SyncedPortableSetting? = null,
     val completedDownload: SyncedCompletedDownload? = null,
-    val lessonDifficulty: SyncedLessonDifficulty? = null
+    val lessonDifficulty: SyncedLessonDifficulty? = null,
+    val radioFilters: SyncedRadioFilters? = null
 )
 
 @Serializable
@@ -495,7 +508,8 @@ internal object StructuredPreferenceSyncValidation {
             record.contentBlockEntry,
             record.portableSetting,
             record.completedDownload,
-            record.lessonDifficulty
+            record.lessonDifficulty,
+            record.radioFilters
         )
         if (populatedRecords.size != 1) {
             throw StructuredPreferenceSyncException(
@@ -670,6 +684,21 @@ internal object StructuredPreferenceSyncValidation {
                     StructuredPreferenceRecordId.portableSetting(setting.settingId)
                 ) {
                     invalidRecord("The portable setting identity is invalid")
+                }
+            }
+
+            StructuredPreferenceRecordType.RADIO_FILTERS -> {
+                requireCategory(change, StructuredPreferenceCategory.RADIO_FILTERS)
+                requireNoParent(change)
+                val filters = record.radioFilters ?: invalidRecord("Live Radio filters are missing")
+                if (!ProfileManager.isCanonicalProfileId(filters.profileId) ||
+                    !filters.hasSelection() ||
+                    listOf(filters.country, filters.language, filters.genre).any {
+                        it != it.trim() || it.length > MAX_FILTER_VALUE_LENGTH
+                    } ||
+                    change.recordId != StructuredPreferenceRecordId.radioFilters(filters.profileId)
+                ) {
+                    invalidRecord("Live Radio filters are invalid")
                 }
             }
 
@@ -1056,6 +1085,8 @@ internal object StructuredPreferenceRecordId {
     fun channelProfileField(field: SyncedChannelProfileField): String {
         return digest("channel-profile\u0000${field.profileKey}\u0000${field.field.name}")
     }
+
+    fun radioFilters(profileId: String): String = digest("radio-filters\u0000$profileId")
 
     fun filterSet(filterId: StructuredFilterId): String {
         return digest("filter-set\u0000${filterId.name}")

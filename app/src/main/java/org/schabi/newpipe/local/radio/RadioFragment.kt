@@ -16,12 +16,12 @@ import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -36,12 +36,14 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.ThemeHelper
+import org.schabi.newpipe.views.NewPipeEditText
 
 class RadioFragment : Fragment(R.layout.fragment_radio) {
     private var filters = RadioFilters()
     private var savedOnly = false
     private var searchJob: Job? = null
-    private lateinit var nameInput: TextInputEditText
+    private lateinit var nameInput: NewPipeEditText
+    private lateinit var clearFilters: View
     private lateinit var savedButton: Button
     private lateinit var status: TextView
     private lateinit var progress: ProgressBar
@@ -49,17 +51,16 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
     private lateinit var header: AppBarLayout
     private lateinit var stations: RadioStationAdapter
     private lateinit var preferences: SharedPreferences
+    private lateinit var filterPreferences: RadioFilterPreferences
     private var profileId = ""
     private var directoryResults: List<RadioStation>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        filters = RadioFilters(
-            savedInstanceState?.getString("name").orEmpty(),
-            savedInstanceState?.getString("country").orEmpty(),
-            savedInstanceState?.getString("language").orEmpty(),
-            savedInstanceState?.getString("genre").orEmpty()
-        )
+        val context = requireContext()
+        profileId = ProfileManager.getActiveProfileId(context)
+        filterPreferences = RadioFilterPreferences(context)
+        filters = filterPreferences.read(profileId).copy(name = savedInstanceState?.getString("name").orEmpty())
         savedOnly = savedInstanceState?.getBoolean("savedOnly") == true
     }
 
@@ -67,17 +68,31 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
         super.onViewCreated(view, state)
         val context = requireContext()
         preferences = context.getSharedPreferences("live_radio_stations", Context.MODE_PRIVATE)
-        profileId = ProfileManager.getActiveProfileId(context)
         header = view.findViewById(R.id.radio_header)
-        nameInput = view.findViewById<TextInputEditText>(R.id.radio_search_input).apply {
-            setText(this@RadioFragment.filters.name)
+        val search = view.findViewById<View>(R.id.radio_search)
+        nameInput = view.findViewById<NewPipeEditText>(R.id.radio_search_input).apply {
+            setText(state?.getString("nameDraft") ?: this@RadioFragment.filters.name)
+            search.isVisible = !text.isNullOrBlank()
+            doAfterTextChanged {
+                search.isVisible = !it.isNullOrBlank()
+                if (it.isNullOrBlank() && this@RadioFragment.filters.name.isNotEmpty()) {
+                    this@RadioFragment.filters = this@RadioFragment.filters.copy(name = "")
+                    if (savedOnly) directoryResults = null else loadDirectory()
+                }
+            }
             setOnEditorActionListener { _, action, _ ->
-                if (action != EditorInfo.IME_ACTION_SEARCH) return@setOnEditorActionListener false
+                if (action != EditorInfo.IME_ACTION_SEARCH || text.isNullOrBlank()) return@setOnEditorActionListener false
                 startSearch()
                 true
             }
         }
-        view.findViewById<View>(R.id.radio_search).setOnClickListener { startSearch() }
+        search.setOnClickListener { startSearch() }
+        clearFilters = view.findViewById<View>(R.id.radio_clear_filters).apply {
+            setOnClickListener {
+                applyFilters(filters.copy(country = "", language = "", genre = ""))
+            }
+        }
+        updateFilterControls()
         view.findViewById<View>(R.id.radio_filters).setOnClickListener { showFilters() }
         savedButton = view.findViewById<Button>(R.id.radio_saved).apply {
             setOnClickListener { toggleSaved() }
@@ -95,23 +110,40 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
     override fun onResume() {
         super.onResume()
         ThemeHelper.setTitleToAppCompatActivity(activity, getString(R.string.live_radio))
+        val synced = filterPreferences.read(profileId).copy(name = filters.name)
+        if (synced != filters) {
+            filters = synced
+            directoryResults = null
+            updateFilterControls()
+            if (!savedOnly) loadDirectory()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString("name", if (::nameInput.isInitialized) nameInput.text.toString() else filters.name)
-        outState.putString("country", filters.country)
-        outState.putString("language", filters.language)
-        outState.putString("genre", filters.genre)
+        outState.putString("name", filters.name)
+        outState.putString("nameDraft", if (::nameInput.isInitialized) nameInput.text.toString() else filters.name)
         outState.putBoolean("savedOnly", savedOnly)
     }
 
     private fun startSearch() {
         ViewCompat.getWindowInsetsController(nameInput)?.hide(WindowInsetsCompat.Type.ime())
         nameInput.clearFocus()
-        filters = filters.copy(name = nameInput.text.toString())
+        applyFilters(filters.copy(name = nameInput.text.toString().trim()))
+    }
+
+    private fun applyFilters(query: RadioFilters) {
+        if (query.copy(name = filters.name) != filters) {
+            filterPreferences.save(profileId, query)
+        }
+        filters = query
+        updateFilterControls()
         savedOnly = false
         loadDirectory()
+    }
+
+    private fun updateFilterControls() {
+        clearFilters.isEnabled = filters.country.isNotBlank() || filters.language.isNotBlank() || filters.genre.isNotBlank()
     }
 
     private fun loadDirectory() {
@@ -163,6 +195,9 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
 
     private fun showStations(items: List<RadioStation>, message: Int) {
         status.setText(message)
+        val canRetry = message == R.string.radio_directory_failed
+        status.setOnClickListener(if (canRetry) View.OnClickListener { loadDirectory() } else null)
+        status.isClickable = canRetry
         stations.submitList(items) { stationList.scrollToPosition(0) }
         header.setExpanded(true, false)
     }
@@ -194,21 +229,32 @@ class RadioFragment : Fragment(R.layout.fragment_radio) {
     }
 
     private fun showFilters() {
-        val country = input(R.string.radio_country, filters.country)
-        val language = input(R.string.radio_language, filters.language)
-        val genre = input(R.string.radio_genre, filters.genre)
+        var draft = filters
+        val content = layoutInflater.inflate(R.layout.dialog_radio_filters, null)
+        val picker = RadioFilterPicker(layoutInflater, viewLifecycleOwner.lifecycleScope)
+
+        fun bind(id: Int, filter: RadioFilter, value: () -> String, select: (String) -> Unit) {
+            val button = content.findViewById<Button>(id)
+            fun updateLabel() {
+                button.text = getString(R.string.radio_filter_value, getString(filter.title), picker.label(filter, value()))
+            }
+            updateLabel()
+            button.setOnClickListener {
+                picker.show(filter, value()) {
+                    select(it)
+                    updateLabel()
+                }
+            }
+        }
+
+        bind(R.id.radio_pick_country, RadioFilter.COUNTRY, { draft.country }) { draft = draft.copy(country = it) }
+        bind(R.id.radio_pick_language, RadioFilter.LANGUAGE, { draft.language }) { draft = draft.copy(language = it) }
+        bind(R.id.radio_pick_genre, RadioFilter.GENRE, { draft.genre }) { draft = draft.copy(genre = it) }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.radio_filters)
-            .setView(dialogInputs(country, language, genre))
+            .setView(content)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, _ ->
-                filters = filters.copy(
-                    country = country.editText?.text.toString(),
-                    language = language.editText?.text.toString(),
-                    genre = genre.editText?.text.toString()
-                )
-                startSearch()
-            }
+            .setPositiveButton(R.string.ok) { _, _ -> applyFilters(draft) }
             .show()
     }
 

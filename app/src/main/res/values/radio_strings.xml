@@ -3,6 +3,7 @@
     <string name="live_radio">Live Radio</string>
     <string name="radio_station_search">Search station names</string>
     <string name="radio_filters">Filters</string>
+    <string name="radio_clear_filters">Clear filters</string>
     <string name="radio_saved">Saved</string>
     <string name="radio_directory">Directory</string>
     <string name="radio_add_url">Add station URL</string>
@@ -10,15 +11,19 @@
     <string name="radio_station_name_required">Enter a station name</string>
     <string name="radio_stream_url">HTTPS stream URL</string>
     <string name="radio_https_required">Enter a valid HTTPS stream URL without credentials</string>
-    <string name="radio_country">Country or code</string>
+    <string name="radio_country">Country</string>
+    <string name="radio_filter_any">Any</string>
+    <string name="radio_filter_value">%1$s · %2$s</string>
+    <string name="radio_filter_options_failed">Couldn’t load choices. Close this list and try again.</string>
     <string name="radio_language">Language</string>
     <string name="radio_genre">Genre</string>
     <string name="radio_save_station">Save station</string>
     <string name="radio_remove_saved">Remove saved station</string>
     <string name="radio_loading">Finding stations in Radio Browser…</string>
-    <string name="radio_directory_failed">Couldn’t reach Radio Browser. Tap Search to retry.</string>
+    <string name="radio_directory_failed">Couldn’t reach Radio Browser. Tap here to retry.</string>
     <string name="radio_no_results">No matching HTTPS stations. Try changing the filters.</string>
     <string name="radio_no_saved">No saved stations yet. Touch and hold a station in the directory to save it.</string>
     <string name="radio_station_hint">Tap to listen. Touch and hold to save or remove a station.</string>
     <string name="radio_playback_failed">Couldn’t play this station. Its stream may be offline or unavailable in your region.</string>
+    <string name="device_sync_category_radio_filters">Live Radio filters</string>
 </resources>

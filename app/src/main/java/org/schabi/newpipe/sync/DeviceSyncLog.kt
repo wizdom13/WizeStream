@@ -25,7 +25,8 @@ enum class DeviceSyncLogCategory {
     CONTENT_BLOCKING,
     SETTINGS,
     COMPLETED_DOWNLOADS,
-    LESSON_DIFFICULTY
+    LESSON_DIFFICULTY,
+    RADIO_FILTERS
 }
 
 @Serializable
@@ -251,6 +252,8 @@ class DeviceSyncLogRepository(context: Context) {
                 DeviceSyncLogCategory.CHANNEL_PROFILES
 
             StructuredPreferenceCategory.FILTERS -> DeviceSyncLogCategory.FILTERS
+
+            StructuredPreferenceCategory.RADIO_FILTERS -> DeviceSyncLogCategory.RADIO_FILTERS
 
             StructuredPreferenceCategory.CONTENT_BLOCKING ->
                 DeviceSyncLogCategory.CONTENT_BLOCKING
