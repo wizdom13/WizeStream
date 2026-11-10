@@ -118,14 +118,6 @@
                     app:singleSelection="true">
 
                     <com.google.android.material.chip.Chip
-                        android:id="@+id/localMediaAudioTracks"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="@string/local_media_tracks" />
-
-                    <com.google.android.material.chip.Chip
                         android:id="@+id/localMediaAudioArtists"
                         style="@style/Widget.Material3.Chip.Filter"
                         android:layout_width="wrap_content"
@@ -138,6 +130,14 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/local_media_albums" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaAudioTracks"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/local_media_tracks" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/localMediaAudioGenres"
@@ -186,6 +186,14 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/local_media_folders" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/localMediaVideoPlaylists"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="false"
+                        android:text="@string/playlists" />
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
 
