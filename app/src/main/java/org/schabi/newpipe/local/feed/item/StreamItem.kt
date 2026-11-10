@@ -33,7 +33,8 @@ import org.schabi.newpipe.util.image.CoilHelper
 
 data class StreamItem(
     val streamWithState: StreamWithState,
-    var itemVersion: ItemVersion = ItemVersion.NORMAL
+    var itemVersion: ItemVersion = ItemVersion.NORMAL,
+    val isHighlighted: Boolean = false
 ) : BindableItem<ListStreamItemBinding>() {
     companion object {
         const val UPDATE_RELATIVE_TIME = 1

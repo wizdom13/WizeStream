@@ -58,6 +58,7 @@ class FeedViewModel(
         .distinctUntilChanged()
 
     private val highlightBaselines = mutableMapOf<Pair<FeedScope, Long>, FeedHighlightBaseline>()
+    private val refreshNotices = mutableMapOf<Pair<FeedScope, Long>, FeedRefreshNoticeTracker>()
     private var combineDisposable: Disposable? = null
     private val mutableStateLiveData = object : MutableLiveData<FeedState>() {
         override fun onActive() {
@@ -137,7 +138,13 @@ class FeedViewModel(
         .subscribe(
             { (scope, event, state, group) ->
                 if (group != selectedGroup.value) return@subscribe
-                mutableStateLiveData.value = state
+                val notice = refreshNotices.getOrPut(scope to group) { FeedRefreshNoticeTracker() }
+                    .update(event, (state as? FeedState.LoadedState)?.items)
+                mutableStateLiveData.value = if (state is FeedState.LoadedState) {
+                    state.copy(refreshNotice = notice)
+                } else {
+                    state
+                }
                 if (event is ErrorResultEvent || event is SuccessResultEvent) {
                     FeedEventManager.reset(scope, event)
                 }

@@ -1289,7 +1289,7 @@
     <string name="feed_notification_loading">Loading feed…</string>
     <string name="cancel_refresh">Cancel refresh</string>
     <string name="feed_processing_message">Processing feed…</string>
-    <string name="feed_new_items">New feed items</string>
+    <string name="feed_new_items">New feed items available</string>
     <string name="feed_group_dialog_select_subscriptions">Select subscriptions</string>
     <string name="feed_group_dialog_create_title">Create channel group</string>
     <string name="group_subscribe_to_profile">Subscribe group to profile</string>

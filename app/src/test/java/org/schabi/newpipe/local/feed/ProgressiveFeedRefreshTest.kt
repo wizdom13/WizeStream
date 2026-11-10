@@ -340,6 +340,37 @@ class ProgressiveFeedRefreshTest {
         }
     }
 
+    @Test
+    fun completionNoticeSurvivesIdleLateSnapshotsAndObserverReactivation() {
+        val owner = object : LifecycleOwner {
+            override val lifecycle = LifecycleRegistry(this)
+        }
+        owner.lifecycle.currentState = Lifecycle.State.STARTED
+        val model = model(owner)
+        tick()
+        assertEquals(null, state(model).refreshNotice)
+        FeedEventManager.postEvent(scope, FeedEventManager.Event.ProgressEvent(1, 2))
+        tick()
+        assertEquals(null, state(model).refreshNotice)
+        FeedEventManager.postEvent(scope, FeedEventManager.Event.SuccessResultEvent())
+        tick()
+        val notice = state(model).refreshNotice!!
+        assertFalse(notice.consume(false))
+        feed.upsertAll(subscriptions[0], update(0, "late", 0).streams)
+        tick()
+        assertSame(notice, state(model).refreshNotice)
+        assertTrue(notice.consume(true))
+        owner.lifecycle.currentState = Lifecycle.State.CREATED
+        owner.lifecycle.currentState = Lifecycle.State.STARTED
+        tick()
+        assertSame(notice, state(model).refreshNotice)
+        assertFalse(notice.consume(true))
+        FeedEventManager.postEvent(scope, FeedEventManager.Event.ProgressEvent(0, 2))
+        tick()
+        assertEquals(null, state(model).refreshNotice)
+        owner.lifecycle.currentState = Lifecycle.State.DESTROYED
+    }
+
     private fun model(owner: LifecycleOwner? = null): FeedViewModel = FeedViewModel(context, initialShowPlayedItems = true, initialShowPartiallyPlayedItems = true, initialShowFutureItems = true).also {
         stores += ViewModelStore().apply { put("feed", it) }
         if (owner == null) {

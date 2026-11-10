@@ -658,7 +658,7 @@
     <string name="manual_update_description">Vérifier manuellement de nouvelles versions</string>
     <string name="checking_updates_toast">Vérification des mises à jour…</string>
     <string name="check_for_updates">Vérifier les mises à jour</string>
-    <string name="feed_new_items">Nouveaux éléments du flux</string>
+    <string name="feed_new_items">De nouveaux contenus sont disponibles</string>
     <string name="crash_the_player">Faire planter le lecteur</string>
     <string name="show_crash_the_player_title">Afficher « Faire planter le lecteur »</string>
     <string name="show_crash_the_player_summary">Montrer une option de plantage lors de l\'utilisation du lecteur</string>

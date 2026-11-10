@@ -50,6 +50,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.xwray.groupie.GroupieAdapter
 import com.xwray.groupie.Item
+import com.xwray.groupie.OnAsyncUpdateListener
 import com.xwray.groupie.OnItemClickListener
 import com.xwray.groupie.OnItemLongClickListener
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -144,7 +145,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private var updateListViewModeOnResume = false
     private var updateFeedItems = true
 
-    private var lastHighlightedRangeEnd = 0
+    private var showingFeedItems: Boolean? = null
+    private var idleItemAnimator: RecyclerView.ItemAnimator? = null
+    private var pendingFeedUpdate: OnAsyncUpdateListener? = null
 
     private val feedHeaderOffsetListener = AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
         feedHeaderExpanded = verticalOffset == 0
@@ -233,6 +236,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         })
 
         feedBinding.itemsList.adapter = groupAdapter
+        idleItemAnimator = feedBinding.itemsList.itemAnimator
         feedQuickAdd = org.schabi.newpipe.local.feed.quickadd.FeedQuickAddController(feedBinding.itemsList)
         feedPreview = org.schabi.newpipe.local.feed.preview.FeedPreviewController(feedBinding.itemsList, { stream, queue ->
             NavigationHelper.openVideoDetailFragment(requireContext(), fm, stream.serviceId, stream.url, stream.title, queue, false)
@@ -290,8 +294,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         listState = null
         latestLoadedState = null
         oldestSubscriptionUpdate = null
-        lastHighlightedRangeEnd = 0
+        showingFeedItems = null
         hideNewItemsLoaded(false)
+        pendingFeedUpdate = null
         groupAdapter.clear()
         feedBinding.itemsList.scrollToPosition(0)
         selectedStreamFilters = StreamFilterSelection.parse(
@@ -591,6 +596,9 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         noteBadges?.unwatch(feedBinding.itemsList)
         noteBadges = null
         feedBinding.itemsList.adapter = null
+        idleItemAnimator = null
+        showingFeedItems = null
+        pendingFeedUpdate = null
         latestLoadedState = null
         _feedBinding = null
         super.onDestroyView()
@@ -602,6 +610,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun showLoading() {
         val binding = _feedBinding ?: return
+        showingFeedItems = null
         showRefreshProgress(binding)
         super.showLoading()
         binding.itemsList.animate(true, 0)
@@ -610,19 +619,21 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun hideLoading() {
         val binding = _feedBinding ?: return
+        showingFeedItems = true
         super.hideLoading()
         binding.itemsList.animate(true, 0)
         binding.refreshRootView.animate(true, 200)
-        hideRefreshProgress(binding)
+        if (latestLoadedState?.progress == null) hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
 
     override fun showEmptyState() {
         val binding = _feedBinding ?: return
+        showingFeedItems = false
         super.showEmptyState()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
         binding.refreshRootView.animate(true, 200)
-        hideRefreshProgress(binding)
+        if (latestLoadedState?.progress == null) hideRefreshProgress(binding)
         binding.swipeRefreshLayout.isRefreshing = false
     }
 
@@ -638,6 +649,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     override fun handleError() {
         val binding = _feedBinding ?: return
+        showingFeedItems = null
         updateFeedItems = true
         super.handleError()
         binding.itemsList.animateHideRecyclerViewAllowingScrolling()
@@ -648,7 +660,10 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
 
     private fun handleProgressState(progressState: FeedState.ProgressState) {
         // Content and refresh progress coexist, including after recreating the view.
-        showRefreshProgress(feedBinding)
+        if (!feedBinding.refreshProgressContainer.isVisible) {
+            hideNewItemsLoaded(false)
+            showRefreshProgress(feedBinding)
+        }
         feedBinding.swipeRefreshLayout.isRefreshing = false
 
         val isIndeterminate = progressState.currentProgress < 0 ||
@@ -679,6 +694,8 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun showRefreshProgress(binding: FragmentFeedBinding) {
+        // Moving existing rows while new ones arrive fights scrolling and preview playback.
+        binding.itemsList.itemAnimator = null
         binding.feedFloatingRefresh.setImageResource(R.drawable.ic_close)
         binding.feedFloatingRefresh.contentDescription = getString(R.string.cancel_refresh)
         binding.streamFilterChips.root.isVisible = false
@@ -690,6 +707,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     }
 
     private fun hideRefreshProgress(binding: FragmentFeedBinding) {
+        binding.itemsList.itemAnimator = idleItemAnimator
         binding.feedFloatingRefresh.isEnabled = true
         binding.feedFloatingRefresh.setImageResource(R.drawable.ic_refresh)
         binding.feedFloatingRefresh.contentDescription = getString(R.string.local_media_refresh)
@@ -801,14 +819,17 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
     private fun handleLoadedState(loadedState: FeedState.LoadedState) {
         val previousState = latestLoadedState
         latestLoadedState = loadedState
-        if (updateFeedItems || previousState?.items !== loadedState.items) {
-            updateFeedItems = false
-            showFilteredFeedItems(loadedState, true)
-        }
         if (loadedState.progress != null) {
             handleProgressState(loadedState.progress)
-        } else {
+        } else if (feedBinding.refreshProgressContainer.isVisible) {
             hideRefreshProgress(feedBinding)
+        }
+        if (updateFeedItems || previousState?.items !== loadedState.items ||
+            previousState?.highlightAfter != loadedState.highlightAfter ||
+            previousState?.refreshNotice !== loadedState.refreshNotice
+        ) {
+            updateFeedItems = false
+            showFilteredFeedItems(loadedState, true)
         }
 
         val feedsNotLoaded = loadedState.notLoadedCount > 0
@@ -984,6 +1005,7 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 showPartiallyWatched
             )
         }
+        val highlightAfter = loadedState.highlightAfter
         val displayedItems = ContextualSearchHelper.filter(
             streamFilteredItems,
             contextualSearchQuery
@@ -991,8 +1013,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             val stream = item.streamWithState.stream
             arrayOf(stream.title, stream.uploader)
         }.map { item ->
-            item.copy(itemVersion = itemVersion).also { displayItem ->
+            val stream = item.streamWithState.stream
+            val highlighted = highlightAfter != null && !stream.hasSyntheticUploadDate &&
+                stream.uploadDate?.isAfter(highlightAfter) != false
+            item.copy(itemVersion = itemVersion, isHighlighted = highlighted).also { displayItem ->
                 displayItem.execBindEnd = item.execBindEnd
+                applyHighlightStyle(displayItem)
                 displayItem.noteBadges = noteBadges
                 displayItem.previewController = feedPreview?.let { WeakReference(it) }
                 displayItem.quickAddController = feedQuickAdd?.let { WeakReference(it) }
@@ -1000,17 +1026,31 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
             }
         }
 
-        // This need to be saved in a variable as the update occurs async
-        val highlightAfter = loadedState.highlightAfter
-
-        groupAdapter.updateAsync(displayedItems, false) {
+        val binding = feedBinding
+        val adapter = groupAdapter
+        val notice = loadedState.refreshNotice
+        // Groupie holds completion listeners weakly. Retain only the current
+        // render until completion, and release it when the view is destroyed.
+        lateinit var updateListener: OnAsyncUpdateListener
+        updateListener = OnAsyncUpdateListener {
+            if (_feedBinding !== binding || groupAdapter !== adapter ||
+                pendingFeedUpdate !== updateListener
+            ) {
+                return@OnAsyncUpdateListener
+            }
+            pendingFeedUpdate = null
             streamSelection?.refresh()
-            if (restoreListState) {
-                highlightAfter?.run {
-                    highlightNewItemsAfter(highlightAfter)
-                }
+            // The final content snapshot can arrive after the success event. Keep
+            // the same notice until visible new items exist, and consume it once.
+            if (notice != null && latestLoadedState?.refreshNotice === notice &&
+                latestLoadedState?.progress == null &&
+                notice.consume(displayedItems.any { notice.isNewItem(it.streamWithState.stream.uid) })
+            ) {
+                showNewItemsLoaded()
             }
         }
+        pendingFeedUpdate = updateListener
+        adapter.updateAsync(displayedItems, false, updateListener)
 
         if (restoreListState) {
             listState?.run {
@@ -1028,10 +1068,12 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
                 R.string.empty_list_subtitle
             }
         )
-        if (displayedItems.isEmpty()) {
-            showEmptyState()
-        } else {
-            hideLoading()
+        if (showingFeedItems != displayedItems.isNotEmpty()) {
+            if (displayedItems.isEmpty()) {
+                showEmptyState()
+            } else {
+                hideLoading()
+            }
         }
     }
 
@@ -1142,65 +1184,19 @@ class FeedFragment : BaseStateFragment<FeedState>(), ContextualSearchable {
         )
     }
 
-    /**
-     * Highlights all items that are after the specified time
-     */
-    private fun highlightNewItemsAfter(updateTime: OffsetDateTime) {
-        val highlightedPositions = feedHighlightPositions(
-            (0 until groupAdapter.itemCount).map {
-                (groupAdapter.getItem(it) as StreamItem).streamWithState.stream
-            },
-            updateTime
-        )
-
-        for (i in 0 until groupAdapter.itemCount) {
-            val item = groupAdapter.getItem(i) as StreamItem
-
-            var typeface = Typeface.DEFAULT
-            var backgroundSupplier = { ctx: Context ->
-                resolveDrawable(ctx, android.R.attr.selectableItemBackground)
+    private fun applyHighlightStyle(item: StreamItem) {
+        val previousBind = item.execBindEnd
+        item.execBindEnd = Consumer { viewBinding ->
+            previousBind?.accept(viewBinding)
+            val context = viewBinding.itemRoot.context
+            val selector = resolveDrawable(context, android.R.attr.selectableItemBackground)
+            viewBinding.itemRoot.background = if (item.isHighlighted) {
+                LayerDrawable(arrayOf(selector, resolveDrawable(context, R.attr.dashed_border)))
+            } else {
+                selector
             }
-            if (i in highlightedPositions) {
-                typeface = Typeface.DEFAULT_BOLD
-                backgroundSupplier = { ctx: Context ->
-                    // Keep the selection effect alongside the new-item background.
-                    LayerDrawable(
-                        arrayOf(
-                            resolveDrawable(ctx, R.attr.dashed_border),
-                            resolveDrawable(ctx, android.R.attr.selectableItemBackground)
-                        )
-                    )
-                }
-            }
-
-            // The highlighter has to be always set
-            // When it's only set on items that are highlighted it will highlight all items
-            // due to the fact that itemRoot is getting recycled
-            item.execBindEnd = Consumer { viewBinding ->
-                val context = viewBinding.itemRoot.context
-                viewBinding.itemRoot.background = backgroundSupplier.invoke(context)
-                viewBinding.itemVideoTitleView.typeface = typeface
-            }
+            viewBinding.itemVideoTitleView.typeface = if (item.isHighlighted) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         }
-
-        // Rebind enough remaining items to both apply new highlights and clear stale ones.
-        // The displayed list can shrink below lastHighlightedRangeEnd after filtering or refreshing,
-        // including all the way to zero, so cap the range to the current adapter size.
-        val highlightRangeEnd = highlightedPositions.maxOrNull()?.plus(1) ?: 0
-        val rebindCount = calculateFeedHighlightRebindCount(
-            lastHighlightedRangeEnd,
-            highlightRangeEnd,
-            groupAdapter.itemCount
-        )
-        if (rebindCount > 0) {
-            groupAdapter.notifyItemRangeChanged(0, rebindCount)
-        }
-
-        if (highlightedPositions.isNotEmpty()) {
-            showNewItemsLoaded()
-        }
-
-        lastHighlightedRangeEnd = highlightRangeEnd
     }
 
     private fun showNewItemsLoaded() {
