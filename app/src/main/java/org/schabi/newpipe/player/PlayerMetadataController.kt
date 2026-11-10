@@ -78,7 +78,15 @@ internal class PlayerMetadataController(
                 }
             }
             if (tag is LocalMediaItemTag) {
-                updateMetadataForLocalMedia(tag.item)
+                if (tag.item.isRadio) {
+                    localMetadataController.cancel()
+                    sponsorBlockController.updateSegments(emptyList())
+                    thumbnailController.load(emptyList())
+                    player.notifyMetadataUpdateToListeners()
+                    player.UIs().call { ui -> ui.onMetadataChanged(tag) }
+                } else {
+                    updateMetadataForLocalMedia(tag.item)
+                }
             }
         }
     }

@@ -26,10 +26,16 @@ public class PlayQueueItemBuilder {
         if (!TextUtils.isEmpty(item.getTitle())) {
             holder.itemVideoTitleView.setText(item.getTitle());
         }
-        final String sourceName = item.isLocalMedia()
+        final String sourceName;
+        if (item.isRadio()) {
+            sourceName = holder.itemView.getContext().getString(
+                    org.schabi.newpipe.R.string.live_radio);
+        } else {
+            sourceName = item.isLocalMedia()
                 ? holder.itemView.getContext().getString(
                         org.schabi.newpipe.R.string.local_media_on_device)
-                : ServiceHelper.getNameOfServiceById(item.getServiceId());
+                    : ServiceHelper.getNameOfServiceById(item.getServiceId());
+        }
         holder.itemAdditionalDetailsView.setText(Localization.concatenateStrings(
                 item.getUploader(), sourceName));
 

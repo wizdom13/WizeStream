@@ -162,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ITEM_ID_HISTORY = -5;
     private static final int ITEM_ID_LEARNING = -6;
     private static final int ITEM_ID_LOCAL_MEDIA = -7;
+    private static final int ITEM_ID_LIVE_RADIO = -8;
     private static final int ITEM_ID_SETTINGS = 0;
     private static final int ITEM_ID_CHANGELOG = 1;
     private static final int ITEM_ID_ABOUT = 2;
@@ -424,6 +425,8 @@ public class MainActivity extends AppCompatActivity {
                 ITEM_ID_DOWNLOADS, R.string.downloads, R.drawable.ic_file_download);
         addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.LOCAL_MEDIA,
                 ITEM_ID_LOCAL_MEDIA, R.string.local_media, R.drawable.ic_music_note);
+        menu.add(R.id.menu_tabs_group, ITEM_ID_LIVE_RADIO, ORDER, R.string.live_radio)
+                .setIcon(R.drawable.ic_radio);
         addDrawerTabIfUnconfigured(homeDestinations, HomeDestinationKey.HISTORY,
                 ITEM_ID_HISTORY, R.string.action_history, R.drawable.ic_history);
         if (LearningMode.isEnabled(this)) {
@@ -557,6 +560,9 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case ITEM_ID_LOCAL_MEDIA:
                 NavigationHelper.openLocalMediaFragment(getSupportFragmentManager());
+                break;
+            case ITEM_ID_LIVE_RADIO:
+                NavigationHelper.openRadioFragment(getSupportFragmentManager());
                 break;
             case ITEM_ID_LEARNING:
                 NavigationHelper.openLearningDashboardFragment(getSupportFragmentManager());

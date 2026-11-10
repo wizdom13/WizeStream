@@ -168,8 +168,6 @@ public final class PlayQueueActivity extends AppCompatActivity
     @Override
     public boolean onPrepareOptionsMenu(final Menu m) {
         if (player != null) {
-            menu.findItem(R.id.action_switch_popup)
-                    .setVisible(!player.popupPlayerSelected());
             menu.findItem(R.id.action_switch_background)
                     .setVisible(!player.audioPlayerSelected());
             updateSleepTimerMenuItem(player.getSleepTimerMode(),
@@ -181,6 +179,10 @@ public final class PlayQueueActivity extends AppCompatActivity
                             && queueControlBinding.audioVisualizer != null);
             final PlayQueueItem currentItem = player.getPlayQueue() == null
                     ? null : player.getPlayQueue().getItem();
+            final boolean radio = currentItem != null && currentItem.isRadio();
+            menu.findItem(R.id.action_switch_main).setVisible(!radio);
+            menu.findItem(R.id.action_switch_popup)
+                    .setVisible(!radio && !player.popupPlayerSelected());
             menu.findItem(R.id.action_browse_local_media)
                     .setVisible(shouldShowLocalMediaBrowser(currentItem));
             updateVisualizerMenuItem();
@@ -269,7 +271,7 @@ public final class PlayQueueActivity extends AppCompatActivity
             return;
         }
         final List<BulkDownloadItem> items = player.getPlayQueue().getStreams().stream()
-                .filter(item -> !item.isLocalMedia())
+                .filter(item -> !item.isLocalMedia() && !item.isRadio())
                 .map(BulkDownloadItem::from)
                 .collect(Collectors.toList());
         if (items.isEmpty()) {
@@ -666,7 +668,9 @@ public final class PlayQueueActivity extends AppCompatActivity
         }
 
         if (player != null) {
-            queueControlBinding.liveSync.setClickable(!player.isLiveEdge());
+            final PlayQueueItem item = player.getCurrentItem();
+            queueControlBinding.liveSync.setClickable((item == null || !item.isRadio())
+                    && !player.isLiveEdge());
         }
 
         // this will make sure progressCurrentTime has the same width as progressEndTime
@@ -677,8 +681,26 @@ public final class PlayQueueActivity extends AppCompatActivity
     }
 
     @Override
+    public void onMetadataUpdate(final MediaItemTag tag, final PlayQueue queue) {
+        final PlayQueueItem item = queue.getItem();
+        final boolean radio = item != null && item.isRadio();
+        queueControlBinding.seekBar.setVisibility(radio ? View.GONE : View.VISIBLE);
+        queueControlBinding.currentTime.setVisibility(radio ? View.GONE : View.VISIBLE);
+        if (radio) {
+            queueControlBinding.songName.setText(tag.getTitle());
+            queueControlBinding.artistName.setText(tag.getUploaderName());
+            queueControlBinding.endTime.setVisibility(View.GONE);
+            queueControlBinding.liveSync.setVisibility(View.VISIBLE);
+            queueControlBinding.liveSync.setClickable(false);
+            scrollToSelected();
+        }
+    }
+
+    @Override
     public void onMetadataUpdate(final StreamInfo info, final PlayQueue queue) {
         if (info != null) {
+            queueControlBinding.seekBar.setVisibility(View.VISIBLE);
+            queueControlBinding.currentTime.setVisibility(View.VISIBLE);
             queueControlBinding.songName.setText(info.getName());
             queueControlBinding.artistName.setText(info.getUploaderName());
 

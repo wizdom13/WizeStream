@@ -20,11 +20,13 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class PlayQueueItem implements Serializable {
     public static final long RECOVERY_UNSET = Long.MIN_VALUE;
     public static final int LOCAL_SERVICE_ID = -1;
+    public static final int RADIO_SERVICE_ID = -2;
     private static final String EMPTY_STRING = "";
 
     public enum SourceType {
         REMOTE,
-        LOCAL
+        LOCAL,
+        RADIO
     }
 
     @NonNull
@@ -98,6 +100,16 @@ public class PlayQueueItem implements Serializable {
                 Collections.emptyList(), artist, null,
                 video ? StreamType.VIDEO_STREAM : StreamType.AUDIO_STREAM,
                 false, SourceType.LOCAL, mimeType, album, folder, localMediaId, thumbnailUri);
+    }
+
+    public static PlayQueueItem radioStation(@NonNull final String title,
+                                             @NonNull final String url,
+                                             @Nullable final String details,
+                                             final boolean hls) {
+        return new PlayQueueItem(title, url, RADIO_SERVICE_ID, -1,
+                Collections.emptyList(), details, null, StreamType.AUDIO_LIVE_STREAM,
+                false, SourceType.RADIO, hls ? "application/x-mpegURL" : null,
+                null, null, -1L, null);
     }
 
     @SuppressWarnings("ParameterNumber")
@@ -191,6 +203,10 @@ public class PlayQueueItem implements Serializable {
         return sourceType;
     }
 
+    public boolean isRadio() {
+        return sourceType == SourceType.RADIO;
+    }
+
     public boolean isLocalMedia() {
         return sourceType == SourceType.LOCAL;
     }
@@ -274,9 +290,9 @@ public class PlayQueueItem implements Serializable {
 
     @NonNull
     public Single<StreamInfo> getStream() {
-        if (isLocalMedia()) {
+        if (isLocalMedia() || isRadio()) {
             return Single.error(new IllegalStateException(
-                    "Local media must be resolved without the online extractor"));
+                    "Direct media must be resolved without the online extractor"));
         }
         return ExtractorHelper.getStreamInfo(this.serviceId, this.url, false)
                 .subscribeOn(Schedulers.io())

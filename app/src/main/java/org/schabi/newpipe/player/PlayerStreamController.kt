@@ -6,12 +6,20 @@
 package org.schabi.newpipe.player
 
 import android.content.Context
+import androidx.media3.common.MimeTypes
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import java.io.IOException
+import org.schabi.newpipe.DownloaderImpl
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.local.radio.secureRadioUrl
 import org.schabi.newpipe.player.helper.ChannelPlaybackProfileManager
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.mediaitem.LocalMediaItemTag
@@ -101,6 +109,22 @@ internal class PlayerStreamController(
     }
 
     fun sourceOfLocal(item: PlayQueueItem): MediaSource? {
+        if (item.isRadio) {
+            secureRadioUrl(item.url) ?: return null
+            val http = DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT)
+            val https = ResolvingDataSource.Factory(http) { request ->
+                if (secureRadioUrl(request.uri.toString()) == null) {
+                    throw IOException("Radio requires an HTTPS stream")
+                }
+                request
+            }
+            val mediaItem = LocalMediaItemTag.of(item).asMediaItem()
+            return if (item.mimeType == MimeTypes.APPLICATION_M3U8) {
+                HlsMediaSource.Factory(https).createMediaSource(mediaItem)
+            } else {
+                ProgressiveMediaSource.Factory(https).createMediaSource(mediaItem)
+            }
+        }
         if (!item.isLocalMedia) return null
         return dataSource.progressiveMediaSourceFactory
             .createMediaSource(LocalMediaItemTag.of(item).asMediaItem())

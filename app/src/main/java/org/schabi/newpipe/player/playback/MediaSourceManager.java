@@ -420,7 +420,7 @@ public class MediaSourceManager {
     }
 
     private Single<ManagedMediaSource> getLoadedMediaSource(@NonNull final PlayQueueItem stream) {
-        if (stream.isLocalMedia()) {
+        if (stream.isLocalMedia() || stream.isRadio()) {
             return Single.fromCallable(() -> Optional
                             .ofNullable(playbackListener.sourceOfLocal(stream))
                             .<ManagedMediaSource>flatMap(source ->
@@ -429,10 +429,10 @@ public class MediaSourceManager {
                                                     Long.MAX_VALUE)))
                             .orElseGet(() -> FailedMediaSource.of(stream,
                                     new MediaSourceResolutionException(
-                                            "Unable to resolve local media: " + stream.getUrl()))))
+                                            "Unable to resolve direct media"))))
                     .onErrorReturn(throwable -> FailedMediaSource.of(stream,
                             new MediaSourceResolutionException(
-                                    "Unable to open local media: " + throwable.getMessage())));
+                                    "Unable to open direct media: " + throwable.getMessage())));
         }
         return Single.fromCallable(() -> Optional.ofNullable(
                         playbackListener.sourceOfDownloaded(stream)))

@@ -89,6 +89,7 @@ internal data class QueueSnapshot(val session: String, val savedAt: Long, val en
             val items = queue.streams.toList()
             val index = queue.index
             if (items.isEmpty() || items.size > MAX_ITEMS || index !in items.indices) return null
+            if (items.any(PlayQueueItem::isRadio)) return null
             return QueueSnapshot(session, now, items.map(QueueEntry::from), index, position.coerceAtLeast(0))
         }
 

@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.widget.Toast
 import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
@@ -73,6 +74,11 @@ internal class PlayerErrorController(
         cancelPendingLiveStallRecovery()
         cancelPendingLiveSegmentRecovery()
         liveMedia403Policy.clearFailureWindow()
+        if (player.playQueue?.item?.isRadio == true) {
+            Toast.makeText(player.context, R.string.radio_playback_failed, Toast.LENGTH_LONG).show()
+            player.onPlaybackShutdown()
+            return
+        }
         Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
 
         if (player.videoAdjustments.recover(error)) return
