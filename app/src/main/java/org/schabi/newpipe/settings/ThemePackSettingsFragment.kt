@@ -105,7 +105,7 @@ class ThemePackSettingsFragment : BasePreferenceFragment() {
             true
         }
         findPreference<Preference>("theme_pack_presets")!!.setOnPreferenceClickListener {
-            val files = listOf("forest.json", "ocean.json", "midnight.json", "glass-record.json")
+            val files = listOf("forest.json", "ocean.json", "midnight.json", "glass-record.json", "glass.json")
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.theme_pack_presets)
                 .setItems(R.array.theme_pack_presets) { _, which ->

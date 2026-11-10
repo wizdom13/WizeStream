@@ -28,12 +28,12 @@ object ThemeChrome {
         val pack = ThemePacks.active(binding.root.context) ?: return
         if (pack.glass == null && pack.skin == null) return
         val source = binding.fragmentHolder
-        fun install(target: View) {
-            target.background = GlassBackdrop(target, source, pack, binding.fragmentPlayerHolder)
+        fun install(target: View, samplesOverlap: Boolean = false) {
+            target.background = GlassBackdrop(target, source, pack, binding.fragmentPlayerHolder, samplesOverlap)
         }
-        install(binding.toolbarLayout.root)
+        install(binding.toolbarLayout.root, pack.glass?.scrollUnderBars == true)
         binding.toolbarLayout.toolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-        install(binding.mainBottomNavigation)
+        install(binding.mainBottomNavigation, pack.glass?.scrollUnderBars == true)
         install(binding.mainNavigationRail)
         install(binding.drawerLayout.navigation)
     }
@@ -43,7 +43,8 @@ internal class GlassBackdrop(
     private val target: View,
     private val source: View,
     private val pack: ThemePack,
-    private val player: View? = null
+    private val player: View? = null,
+    private val samplesOverlap: Boolean = false
 ) : Drawable(), View.OnAttachStateChangeListener, ViewTreeObserver.OnPreDrawListener {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val surface = ThemeHelper.resolveColorFromAttr(target.context, com.google.android.material.R.attr.colorSurface)
@@ -96,10 +97,10 @@ internal class GlassBackdrop(
         } else if (source.width > 0 && source.height > 0 && source.isShown) {
             val sourceLocation = IntArray(2).also(source::getLocationInWindow)
             val targetLocation = IntArray(2).also(target::getLocationInWindow)
-            // Existing safe-area insets remain intact. Bars sample the nearest content edge;
-            // the drawer samples content at its real position without changing touch geometry.
+            val offsetY = targetLocation[1] - sourceLocation[1]
+            val overlaps = samplesOverlap && offsetY < source.height && offsetY + target.height > 0
             val x = (targetLocation[0] - sourceLocation[0]).coerceIn(0, maxOf(0, source.width - target.width))
-            val y = (targetLocation[1] - sourceLocation[1]).coerceIn(0, maxOf(0, source.height - target.height))
+            val y = if (overlaps) offsetY else offsetY.coerceIn(0, maxOf(0, source.height - target.height))
             canvas.scale(scale, scale)
             canvas.translate(-x.toFloat(), -y.toFloat())
             try {
