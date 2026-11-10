@@ -27,12 +27,22 @@ class RadioDirectoryTest {
         val url = RadioDirectory.searchUrl(mirror, RadioFilters(country = " jp ", language = " Japanese "))
 
         assertEquals("JP", url.queryParameter("countrycode"))
-        assertEquals("Japanese", url.queryParameter("language"))
+        assertEquals("japanese", url.queryParameter("language"))
         assertNull(url.queryParameter("country"))
         assertEquals(
-            "Brazil",
-            RadioDirectory.searchUrl(mirror, RadioFilters(country = "Brazil")).queryParameter("country")
+            "BR",
+            RadioDirectory.searchUrl(mirror, RadioFilters(country = "Brazil")).queryParameter("countrycode")
         )
+    }
+
+    @Test
+    fun countryNameLanguageCodeAndGenreCanFilterWithoutAStationName() {
+        val url = RadioDirectory.searchUrl(mirror, RadioFilters(country = " Lebanon ", language = "AR", genre = " Music "))
+
+        assertNull(url.queryParameter("name"))
+        assertEquals("LB", url.queryParameter("countrycode"))
+        assertEquals("arabic", url.queryParameter("language"))
+        assertEquals("music", url.queryParameter("tag"))
     }
 
     @Test

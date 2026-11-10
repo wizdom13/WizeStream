@@ -6,6 +6,7 @@
 package org.schabi.newpipe.sync
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.SharedPreferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -22,6 +23,8 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.local.radio.RadioFilterPreferences
+import org.schabi.newpipe.local.radio.RadioFilters
 import org.schabi.newpipe.local.subscription.FeedGroupIcon
 import org.schabi.newpipe.profiles.ProfileManager
 import org.schabi.newpipe.settings.tabs.Tab
@@ -107,6 +110,38 @@ class RoomStructuredPreferenceSyncStoreTest {
             phone.createRequest(peerTablet, StructuredPreferenceCategory.LESSON_DIFFICULTY)
         )
         assertTrue(!response.accepted)
+    }
+
+    @Test
+    fun radioFilterSelectionsAndClearsSynchronizeForTheSameProfile() {
+        val phoneContext = radioPreferencesContext(phonePreferences)
+        val tabletContext = radioPreferencesContext(tabletPreferences)
+        val phoneFilters = RadioFilterPreferences(phoneContext)
+        val tabletFilters = RadioFilterPreferences(tabletContext)
+        val profileId = ProfileManager.DEFAULT_PROFILE_ID
+        val otherProfile = "11111111-1111-1111-1111-111111111111"
+        val selection = RadioFilters(country = "LB", language = "arabic", genre = "news")
+        phoneFilters.save(profileId, selection)
+        tabletFilters.save(otherProfile, RadioFilters(country = "FR"))
+        val phoneStore = RoomStructuredPreferenceSyncStore(phoneContext, phoneDatabase, newPeerId(), phonePreferences)
+        val tabletStore = RoomStructuredPreferenceSyncStore(tabletContext, tabletDatabase, newPeerId(), tabletPreferences)
+        val phone = StructuredPreferenceSyncEngine(phoneStore)
+        val tablet = StructuredPreferenceSyncEngine(tabletStore)
+        val category = StructuredPreferenceCategory.RADIO_FILTERS
+
+        synchronize(category, phone, phoneStore, tablet, tabletStore)
+        assertEquals(selection, tabletFilters.read(profileId))
+        assertEquals("FR", tabletFilters.read(otherProfile).country)
+        assertEquals(RadioFilters(), phoneFilters.read(otherProfile))
+
+        tabletFilters.save(profileId, RadioFilters())
+        synchronize(category, tablet, tabletStore, phone, phoneStore)
+        assertEquals(RadioFilters(), phoneFilters.read(profileId))
+        assertEquals("FR", tabletFilters.read(otherProfile).country)
+    }
+
+    private fun radioPreferencesContext(preferences: SharedPreferences): Context = object : ContextWrapper(context) {
+        override fun getSharedPreferences(name: String, mode: Int): SharedPreferences = if (name == "live_radio_filters") preferences else super.getSharedPreferences(name, mode)
     }
 
     @Test
