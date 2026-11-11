@@ -153,7 +153,7 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
         if (ServiceList.YouTube.getFilterTypes().contains("channels")) {
             collector.applyBlocking(ServiceList.YouTube.getFilterConfig());
         }
-        return new InfoItemsPage<>(collector, nextPage);
+        return YoutubeChannelInitialPage.resolve(new InfoItemsPage<>(collector, nextPage), this);
     }
 
     @Nonnull
