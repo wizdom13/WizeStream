@@ -1,0 +1,231 @@
+{
+  "apk": "wizestream_v1.40.1.apk",
+  "sha256": "c6c5851a37395eae86fe4281b4e6ac143aa63993dbfce6cac89a59561cc41b2b",
+  "apk_bytes": 22493126,
+  "zip_payload_uncompressed_bytes": 35671933,
+  "groups": {
+    "AndroidManifest.xml": {
+      "compressed_bytes": 8830,
+      "uncompressed_bytes": 44996,
+      "entries": 1
+    },
+    "DebugProbesKt.bin": {
+      "compressed_bytes": 774,
+      "uncompressed_bytes": 1728,
+      "entries": 1
+    },
+    "META-INF": {
+      "compressed_bytes": 169744,
+      "uncompressed_bytes": 443057,
+      "entries": 128
+    },
+    "assets": {
+      "compressed_bytes": 108403,
+      "uncompressed_bytes": 329543,
+      "entries": 16
+    },
+    "autonat.proto": {
+      "compressed_bytes": 297,
+      "uncompressed_bytes": 692,
+      "entries": 1
+    },
+    "circuit.proto": {
+      "compressed_bytes": 482,
+      "uncompressed_bytes": 1150,
+      "entries": 1
+    },
+    "crypto.proto": {
+      "compressed_bytes": 163,
+      "uncompressed_bytes": 281,
+      "entries": 1
+    },
+    "dex": {
+      "compressed_bytes": 8551671,
+      "uncompressed_bytes": 20150892,
+      "entries": 4
+    },
+    "envelope.proto": {
+      "compressed_bytes": 535,
+      "uncompressed_bytes": 1171,
+      "entries": 1
+    },
+    "google": {
+      "compressed_bytes": 36237,
+      "uncompressed_bytes": 102286,
+      "entries": 11
+    },
+    "identify.proto": {
+      "compressed_bytes": 552,
+      "uncompressed_bytes": 1128,
+      "entries": 1
+    },
+    "kotlin": {
+      "compressed_bytes": 12350,
+      "uncompressed_bytes": 53396,
+      "entries": 8
+    },
+    "lib/arm64-v8a": {
+      "compressed_bytes": 2755736,
+      "uncompressed_bytes": 2755736,
+      "entries": 3
+    },
+    "lib/armeabi-v7a": {
+      "compressed_bytes": 1709464,
+      "uncompressed_bytes": 1709464,
+      "entries": 3
+    },
+    "org": {
+      "compressed_bytes": 1273262,
+      "uncompressed_bytes": 1507187,
+      "entries": 14
+    },
+    "p2pd.proto": {
+      "compressed_bytes": 822,
+      "uncompressed_bytes": 3085,
+      "entries": 1
+    },
+    "plaintext.proto": {
+      "compressed_bytes": 123,
+      "uncompressed_bytes": 156,
+      "entries": 1
+    },
+    "relay.proto": {
+      "compressed_bytes": 491,
+      "uncompressed_bytes": 1204,
+      "entries": 1
+    },
+    "res": {
+      "compressed_bytes": 747794,
+      "uncompressed_bytes": 1677045,
+      "entries": 1371
+    },
+    "resources.arsc": {
+      "compressed_bytes": 6885128,
+      "uncompressed_bytes": 6885128,
+      "entries": 1
+    },
+    "rpc.proto": {
+      "compressed_bytes": 650,
+      "uncompressed_bytes": 1917,
+      "entries": 1
+    },
+    "spipe.proto": {
+      "compressed_bytes": 202,
+      "uncompressed_bytes": 479,
+      "entries": 1
+    },
+    "version.properties": {
+      "compressed_bytes": 46,
+      "uncompressed_bytes": 44,
+      "entries": 1
+    },
+    "voucher.proto": {
+      "compressed_bytes": 122,
+      "uncompressed_bytes": 168,
+      "entries": 1
+    }
+  },
+  "largest_entries": [
+    {
+      "path": "resources.arsc",
+      "compressed_bytes": 6885128,
+      "uncompressed_bytes": 6885128
+    },
+    {
+      "path": "classes3.dex",
+      "compressed_bytes": 3869936,
+      "uncompressed_bytes": 9324564
+    },
+    {
+      "path": "classes.dex",
+      "compressed_bytes": 3794401,
+      "uncompressed_bytes": 8722712
+    },
+    {
+      "path": "lib/arm64-v8a/libfcast_sender_sdk.so",
+      "compressed_bytes": 2569120,
+      "uncompressed_bytes": 2569120
+    },
+    {
+      "path": "lib/armeabi-v7a/libfcast_sender_sdk.so",
+      "compressed_bytes": 1575716,
+      "uncompressed_bytes": 1575716
+    },
+    {
+      "path": "org/bouncycastle/pqc/legacy/picnic/lowmcL5.bin.properties",
+      "compressed_bytes": 749257,
+      "uncompressed_bytes": 752652
+    },
+    {
+      "path": "classes4.dex",
+      "compressed_bytes": 623177,
+      "uncompressed_bytes": 1443476
+    },
+    {
+      "path": "org/bouncycastle/pqc/legacy/picnic/lowmcL3.bin.properties",
+      "compressed_bytes": 348178,
+      "uncompressed_bytes": 350101
+    },
+    {
+      "path": "classes2.dex",
+      "compressed_bytes": 264157,
+      "uncompressed_bytes": 660140
+    },
+    {
+      "path": "lib/arm64-v8a/libjnidispatch.so",
+      "compressed_bytes": 176520,
+      "uncompressed_bytes": 176520
+    },
+    {
+      "path": "lib/armeabi-v7a/libjnidispatch.so",
+      "compressed_bytes": 126496,
+      "uncompressed_bytes": 126496
+    },
+    {
+      "path": "org/bouncycastle/pqc/legacy/picnic/lowmcL1.bin.properties",
+      "compressed_bytes": 117380,
+      "uncompressed_bytes": 118306
+    },
+    {
+      "path": "META-INF/CERT.SF",
+      "compressed_bytes": 65030,
+      "uncompressed_bytes": 143086
+    },
+    {
+      "path": "META-INF/MANIFEST.MF",
+      "compressed_bytes": 61636,
+      "uncompressed_bytes": 143012
+    },
+    {
+      "path": "assets/PublicSuffixDatabase.list",
+      "compressed_bytes": 42484,
+      "uncompressed_bytes": 132737
+    },
+    {
+      "path": "res/CP.png",
+      "compressed_bytes": 32230,
+      "uncompressed_bytes": 32230
+    },
+    {
+      "path": "assets/changelog.html",
+      "compressed_bytes": 28446,
+      "uncompressed_bytes": 105895
+    },
+    {
+      "path": "res/RP.png",
+      "compressed_bytes": 15357,
+      "uncompressed_bytes": 15357
+    },
+    {
+      "path": "google/protobuf/descriptor.proto",
+      "compressed_bytes": 14707,
+      "uncompressed_bytes": 49985
+    },
+    {
+      "path": "assets/gpl_3.html",
+      "compressed_bytes": 11770,
+      "uncompressed_bytes": 34479
+    }
+  ],
+  "measurement": "APK file and ZIP payload only; excludes Android installation overhead, app data, caches, RAM, and runtime performance."
+}
