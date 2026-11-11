@@ -12,6 +12,9 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Load deferred channel-tab pages before showing an empty list, including past livestreams.
+- Use Material 3 dialogs when deleting entries from watch history.
+
 - Display each community-post photo once instead of repeating its different thumbnail resolutions.
 - Clear the previous video's details when starting Live Radio and keep audio-only live streams
   from displaying the previous video surface.

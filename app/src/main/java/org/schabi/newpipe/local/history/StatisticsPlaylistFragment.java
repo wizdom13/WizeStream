@@ -15,6 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -713,7 +715,7 @@ public class StatisticsPlaylistFragment
                     getString(R.string.local_media_play_background),
                     getString(R.string.delete)
             };
-            new AlertDialog.Builder(requireContext())
+            new MaterialAlertDialogBuilder(requireContext())
                     .setTitle(item.getStreamEntity().getTitle())
                     .setItems(actions, (dialog, which) -> {
                         if (which == 0) {
@@ -751,7 +753,7 @@ public class StatisticsPlaylistFragment
 
     @VisibleForTesting
     AlertDialog confirmDeleteEntry(final StreamStatisticsEntry entry) {
-        return new AlertDialog.Builder(requireContext())
+        return new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(entry.getStreamEntity().getTitle())
                 .setMessage(R.string.delete_item_watch_history)
                 .setNegativeButton(R.string.cancel, null)
