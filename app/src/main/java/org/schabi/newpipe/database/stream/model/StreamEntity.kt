@@ -141,6 +141,9 @@ data class StreamEntity(
         localFolder = item.folder
     )
 
+    val isRadio: Boolean
+        get() = sourceType == SOURCE_TYPE_RADIO
+
     val isLocalMedia: Boolean
         get() = sourceType == SOURCE_TYPE_LOCAL
 
@@ -182,6 +185,14 @@ data class StreamEntity(
             streamType == StreamType.VIDEO_STREAM,
             thumbnailUrl
         )
+    } else if (isRadio) {
+        PlayQueueItem.radioStation(
+            uploader,
+            url.substringBefore("#"),
+            localAlbum,
+            mimeType == "application/x-mpegURL",
+            thumbnailUrl
+        )
     } else {
         PlayQueueItem(toStreamInfoItem())
     }
@@ -208,6 +219,7 @@ data class StreamEntity(
 
         const val SOURCE_TYPE_REMOTE = "REMOTE"
         const val SOURCE_TYPE_LOCAL = "LOCAL"
+        const val SOURCE_TYPE_RADIO = "RADIO"
 
         const val STREAM_VIEWS = "view_count"
         const val STREAM_TEXTUAL_UPLOAD_DATE = "textual_upload_date"

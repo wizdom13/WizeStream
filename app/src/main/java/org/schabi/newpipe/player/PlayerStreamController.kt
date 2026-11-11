@@ -112,6 +112,7 @@ internal class PlayerStreamController(
         if (item.isRadio) {
             secureRadioUrl(item.url) ?: return null
             val http = DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT)
+                .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
             val https = ResolvingDataSource.Factory(http) { request ->
                 if (secureRadioUrl(request.uri.toString()) == null) {
                     throw IOException("Radio requires an HTTPS stream")

@@ -22,6 +22,21 @@ internal class PlayerHistoryController(private val player: Player) {
     private val recommendations = RecommendationWatchTracker(player.context)
     private val learningSessions = LearningSessionTracker(player.context)
     private val updates = CompositeDisposable()
+    private val radioHistory = RadioSongHistoryController(player.context, updates)
+
+    fun onRadioMetadata(metadata: androidx.media3.common.Metadata) {
+        radioHistory.onMetadata(currentRadioItem(), metadata, player.isPlaying)
+    }
+
+    fun onPlaybackEvents() {
+        radioHistory.onPlayback(currentRadioItem(), player.isPlaying)
+    }
+
+    private fun currentRadioItem(): PlayQueueItem? {
+        if (player.exoPlayerIsNull()) return null
+        val tag = org.schabi.newpipe.player.mediaitem.MediaItemTag.from(player.exoPlayer.currentMediaItem).orElse(null)
+        return (tag as? org.schabi.newpipe.player.mediaitem.LocalMediaItemTag)?.item?.takeIf { it.isRadio }
+    }
 
     fun restoreStreamState(
         item: PlayQueueItem,

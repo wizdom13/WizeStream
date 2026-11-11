@@ -78,6 +78,8 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
                                            final DateTimeFormatter dateTimeFormatter) {
         final String sourceName = entry.getStreamEntity().isLocalMedia()
                 ? itemBuilder.getContext().getString(R.string.local_media_on_device)
+                : entry.getStreamEntity().isRadio()
+                ? itemBuilder.getContext().getString(R.string.live_radio)
                 : ServiceHelper.getNameOfServiceById(entry.getStreamEntity().getServiceId());
         return Localization.concatenateStrings(
                 // watchCount
@@ -130,8 +132,13 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
         }
 
         // Default thumbnail is shown on error, while loading and if the url is empty
-        CoilHelper.INSTANCE.loadThumbnail(itemThumbnailView,
-                item.getStreamEntity().getThumbnailUrl());
+        if (item.getStreamEntity().isRadio()) {
+            CoilHelper.INSTANCE.loadRadioLogo(itemThumbnailView,
+                    item.getStreamEntity().getThumbnailUrl());
+        } else {
+            CoilHelper.INSTANCE.loadThumbnail(itemThumbnailView,
+                    item.getStreamEntity().getThumbnailUrl());
+        }
 
         itemView.setOnClickListener(view -> {
             if (itemBuilder.getOnItemSelectedListener() != null) {

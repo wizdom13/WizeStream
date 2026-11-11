@@ -542,7 +542,12 @@ class Player(
 
     override fun onAudioSessionIdChanged(audioSessionId: Int) = media3ListenerController.onAudioSessionIdChanged(audioSessionId)
 
-    override fun onEvents(player: Media3Player, events: Media3Player.Events) = media3ListenerController.onEvents(player)
+    override fun onMetadata(metadata: androidx.media3.common.Metadata) = historyController.onRadioMetadata(metadata)
+
+    override fun onEvents(player: Media3Player, events: Media3Player.Events) {
+        media3ListenerController.onEvents(player)
+        historyController.onPlaybackEvents()
+    }
 
     override fun onTimelineChanged(timeline: Timeline, reason: Int) = media3ListenerController.onTimelineChanged(timeline, reason)
 

@@ -259,6 +259,12 @@ public class StatisticsPlaylistFragment
                 if (selectedItem instanceof StreamStatisticsEntry) {
                     final StreamEntity item =
                             ((StreamStatisticsEntry) selectedItem).getStreamEntity();
+                    if (item.isRadio()) {
+                        NavigationHelper.playOnBackgroundPlayer(requireContext(),
+                                getPlayQueueStartingAt((StreamStatisticsEntry) selectedItem),
+                                false);
+                        return;
+                    }
                     if (item.isLocalMedia()) {
                         NavigationHelper.playOnMainPlayer(requireContext(),
                                 getPlayQueueStartingAt((StreamStatisticsEntry) selectedItem),
@@ -707,7 +713,7 @@ public class StatisticsPlaylistFragment
     }
 
     private void showInfoItemDialog(final StreamStatisticsEntry item) {
-        if (item.getStreamEntity().isLocalMedia()) {
+        if (item.getStreamEntity().isLocalMedia() || item.getStreamEntity().isRadio()) {
             final String[] actions = {
                     getString(R.string.play),
                     getString(R.string.local_media_play_background),
@@ -716,7 +722,10 @@ public class StatisticsPlaylistFragment
             new AlertDialog.Builder(requireContext())
                     .setTitle(item.getStreamEntity().getTitle())
                     .setItems(actions, (dialog, which) -> {
-                        if (which == 0) {
+                        if (which == 0 && item.getStreamEntity().isRadio()) {
+                            NavigationHelper.playOnBackgroundPlayer(requireContext(),
+                                    getPlayQueueStartingAt(item), false);
+                        } else if (which == 0) {
                             NavigationHelper.playOnMainPlayer(requireContext(),
                                     getPlayQueueStartingAt(item), false);
                         } else if (which == 1) {

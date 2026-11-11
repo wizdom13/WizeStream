@@ -371,6 +371,10 @@ can vary by version, build, and provider.
   Search by station name or choose a country, language, or genre from searchable lists.
 - Save favorite stations or add a custom HTTPS audio or HLS stream URL. The background miniplayer
   shows the station logo, name, and details, with play/pause, queue, and close controls.
+- Songs reported by station ICY or HLS ID3 metadata appear in **History**, with the station name
+  beneath each title. Repeated metadata is deduplicated. Tap an entry to tune into the live station;
+  this does not replay the earlier song. Stations without track metadata cannot provide song history.
+  Uses the active profile and respects **Incognito** and the watch-history setting.
 - Applied filters are remembered per profile and can sync through **Device synchronization > Filters**.
   Use **Clear filters** to reset country, language, and genre.
 

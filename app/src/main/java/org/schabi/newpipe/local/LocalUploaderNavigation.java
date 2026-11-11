@@ -21,7 +21,8 @@ public final class LocalUploaderNavigation {
     }
 
     public static boolean canOpenChannel(@NonNull final StreamEntity stream) {
-        return canOpenChannel(stream.isLocalMedia(), stream.getUrl(), stream.getUploader());
+        return canOpenChannel(stream.isLocalMedia() || stream.isRadio(),
+                stream.getUrl(), stream.getUploader());
     }
 
     public static void openChannel(@NonNull final Fragment fragment,
