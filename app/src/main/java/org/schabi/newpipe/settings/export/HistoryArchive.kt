@@ -70,8 +70,12 @@ internal object HistoryArchiveCodec {
         archive.watches.forEach {
             require(it.url.isNotBlank() && it.url.length <= 8192 && it.title.length <= 20_000 && it.uploader.length <= 20_000)
             require(it.duration >= -1 && it.repeatCount in 1..1_000_000 && it.timestamp in 0..253402300799999)
-            require(it.sourceType in listOf("LOCAL", "REMOTE"))
-            require(it.serviceId >= 0 || it.sourceType == "LOCAL")
+            require(it.sourceType in listOf("LOCAL", "REMOTE", "RADIO"))
+            require(it.serviceId >= 0 || it.sourceType in listOf("LOCAL", "RADIO"))
+            if (it.sourceType == "RADIO") {
+                require(it.serviceId == org.schabi.newpipe.player.playqueue.PlayQueueItem.RADIO_SERVICE_ID)
+                require(org.schabi.newpipe.local.radio.secureRadioUrl(it.url.substringBefore("#")) != null)
+            }
             require(it.thumbnailUrl == null || it.thumbnailUrl.length <= 8192)
             require(it.mimeType == null || it.mimeType.length <= 256)
             require(StreamType.valueOf(it.streamType) != StreamType.NONE)

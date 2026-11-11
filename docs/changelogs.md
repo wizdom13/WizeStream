@@ -6,6 +6,9 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Improvements
 
+- Add radio song titles supplied by stations to profile history, with station names and logos,
+  duplicate suppression, and support for Incognito and disabled watch history.
+
 - Select all or clear the selection when unsubscribing from multiple channels, with confirmation
   before removing subscriptions.
 - Hold player controls to see their labels, while preserving existing long-press actions.

@@ -16,6 +16,16 @@ class HistoryArchiveTest {
     }
 
     @Test
+    fun radioSongsRoundTripAndRejectInsecureStationUrls() {
+        val song = ArchivedWatch(-2, "https://radio.example/live#wizestream-track=id", "Song", "AUDIO_LIVE_STREAM", -1, "Station", 123456789, 1, sourceType = "RADIO")
+        val archive = HistoryArchive(watches = listOf(song))
+        assertEquals(archive, HistoryArchiveCodec.decode(HistoryArchiveCodec.encode(archive).byteInputStream()))
+        assertThrows(IllegalArgumentException::class.java) {
+            HistoryArchiveCodec.encode(archive.copy(watches = listOf(song.copy(url = "http://radio.example/live"))))
+        }
+    }
+
+    @Test
     fun rejectsUnrelatedFilesFutureVersionsAndInvalidRecords() {
         listOf("{}", "{\"format\":\"wizestream-history\",\"version\":2}").forEach { text ->
             assertThrows(IllegalArgumentException::class.java) { HistoryArchiveCodec.decode(text.byteInputStream()) }
