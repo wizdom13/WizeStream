@@ -856,7 +856,9 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         binding.itemsListHeaderDuration.setVisibility(View.VISIBLE);
         binding.shuffleButton.setVisibility(View.VISIBLE);
         binding.repeatButton.setVisibility(View.VISIBLE);
-        binding.addToPlaylistButton.setVisibility(View.VISIBLE);
+        binding.addToPlaylistButton.setVisibility(
+                org.schabi.newpipe.player.playqueue.DirectMediaQueuePolicy
+                        .canSaveToLibrary(player.getPlayQueue()) ? View.VISIBLE : View.GONE);
 
         hideControls(0, 0);
         binding.itemsListPanel.requestFocus();

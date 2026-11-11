@@ -25,7 +25,7 @@ public final class LocalMediaItemTag implements MediaItemTag {
 
     @NonNull
     public static LocalMediaItemTag of(@NonNull final PlayQueueItem item) {
-        if (!item.isLocalMedia() && !item.isRadio()) {
+        if (!item.isDirectMedia()) {
             throw new IllegalArgumentException("Expected a direct media queue item");
         }
         return new LocalMediaItemTag(item, null);

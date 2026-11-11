@@ -78,7 +78,8 @@ internal class PlayerMetadataController(
                 }
             }
             if (tag is LocalMediaItemTag) {
-                if (tag.item.isRadio) {
+                if (tag.item.isRadio || tag.item.isLiveTv) {
+                    if (tag.item.isLiveTv) player.liveQualityController.onItemLoaded()
                     localMetadataController.cancel()
                     sponsorBlockController.updateSegments(emptyList())
                     thumbnailController.load(emptyList())

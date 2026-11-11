@@ -109,6 +109,7 @@ internal class PlayerStreamController(
     }
 
     fun sourceOfLocal(item: PlayQueueItem): MediaSource? {
+        if (item.isLiveTv) return org.schabi.newpipe.local.tv.LiveTvPlaybackSource.create(item)
         if (item.isRadio) {
             secureRadioUrl(item.url) ?: return null
             val http = DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT)

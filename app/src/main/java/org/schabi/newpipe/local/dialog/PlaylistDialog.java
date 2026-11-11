@@ -168,6 +168,10 @@ public abstract class PlaylistDialog extends DialogFragment implements StateSave
             final Player player,
             @NonNull final FragmentManager fragmentManager) {
 
+        if (!org.schabi.newpipe.player.playqueue.DirectMediaQueuePolicy
+                .canSaveToLibrary(player.getPlayQueue())) {
+            return Disposable.empty();
+        }
         final List<StreamEntity> streamEntities = Stream.of(player.getPlayQueue())
                 .filter(Objects::nonNull)
                 .flatMap(playQueue -> playQueue.getStreams().stream())

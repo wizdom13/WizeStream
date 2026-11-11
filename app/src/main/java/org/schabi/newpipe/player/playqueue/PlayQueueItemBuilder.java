@@ -27,7 +27,10 @@ public class PlayQueueItemBuilder {
             holder.itemVideoTitleView.setText(item.getTitle());
         }
         final String sourceName;
-        if (item.isRadio()) {
+        if (item.isLiveTv()) {
+            sourceName = holder.itemView.getContext().getString(
+                    org.schabi.newpipe.R.string.live_tv);
+        } else if (item.isRadio()) {
             sourceName = holder.itemView.getContext().getString(
                     org.schabi.newpipe.R.string.live_radio);
         } else {
@@ -45,7 +48,11 @@ public class PlayQueueItemBuilder {
             holder.itemDurationView.setVisibility(View.GONE);
         }
 
-        if (item.isLocalMedia()) {
+        if (item.isLiveTv() || item.isRadio()) {
+            LocalMediaThumbnailLoader.INSTANCE.clear(holder.itemThumbnailView);
+            CoilHelper.INSTANCE.loadThumbnail(holder.itemThumbnailView,
+                    item.getLocalThumbnailUrl());
+        } else if (item.isLocalMedia()) {
             LocalMediaThumbnailLoader.INSTANCE.load(holder.itemThumbnailView, item);
         } else {
             LocalMediaThumbnailLoader.INSTANCE.clear(holder.itemThumbnailView);

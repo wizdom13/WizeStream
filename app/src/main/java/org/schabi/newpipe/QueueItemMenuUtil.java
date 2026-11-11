@@ -40,13 +40,16 @@ public final class QueueItemMenuUtil {
                 org.schabi.newpipe.util.MusicAlbumNavigation.isAvailable(
                         item.getServiceId(), item.getAlbumUrl()));
 
-        if (hideDetails || item.isLocalMedia()) {
+        if (hideDetails || item.isDirectMedia()) {
             popupMenu.getMenu().findItem(R.id.menu_item_details).setVisible(false);
         }
-        if (item.isLocalMedia()) {
+        if (item.isDirectMedia()) {
             popupMenu.getMenu().findItem(R.id.menu_item_channel_details).setVisible(false);
             popupMenu.getMenu().findItem(R.id.menu_item_download).setVisible(false);
         }
+
+        popupMenu.getMenu().findItem(R.id.menu_item_append_playlist)
+                .setVisible(!item.isRadio() && !item.isLiveTv());
 
         popupMenu.setOnMenuItemClickListener(menuItem -> {
             final int itemId = menuItem.getItemId();
