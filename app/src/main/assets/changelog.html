@@ -19,6 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
+<li><a href="#release-1040001">WizeStream 1.40.1</a></li>
 <li><a href="#release-1040000">WizeStream 1.40.0</a></li>
 <li><a href="#release-1039000">WizeStream 1.39.0</a></li>
 <li><a href="#release-1038000">WizeStream 1.38.0</a></li>
@@ -108,6 +109,21 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
+<section id="release-1040001" data-version="1.40.1" data-version-code="1040001">
+<h2>WizeStream 1.40.1</h2>
+<div class="release-notes">
+<h3>Interface</h3>
+<ul>
+<li>Add the optional Glass theme with translucent, blurred navigation surfaces. On supported phone portrait layouts, What’s New can scroll beneath the toolbar and bottom navigation.</li>
+<li>Add a Playlists shortcut beside Folders in Local Media videos and a Tracks tab between Albums and Genres in audio.</li>
+</ul>
+<h3>Build improvements</h3>
+<ul>
+<li>Correct unstable generated-interface ordering in the release compiler that caused independent rebuilds to differ. Independent verification is still required.</li>
+<li>Compare clean release APKs under different JVM identity-hash strategies and preserve artifacts when reproducibility checks fail.</li>
+</ul>
+</div>
+</section>
 <section id="release-1040000" data-version="1.40.0" data-version-code="1040000">
 <h2>WizeStream 1.40.0</h2>
 <div class="release-notes">

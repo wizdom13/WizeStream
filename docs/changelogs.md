@@ -4,6 +4,22 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.40.1 (`1040001`)
+
+### Interface
+
+- Add the optional Glass theme with translucent, blurred navigation surfaces. On supported phone
+  portrait layouts, What’s New can scroll beneath the toolbar and bottom navigation.
+- Add a Playlists shortcut beside Folders in Local Media videos and a Tracks tab between Albums
+  and Genres in audio.
+
+### Build improvements
+
+- Correct unstable generated-interface ordering in the release compiler that caused independent
+  rebuilds to differ. Independent verification is still required.
+- Compare clean release APKs under different JVM identity-hash strategies and preserve artifacts
+  when reproducibility checks fail.
+
 ## WizeStream 1.40.0 (`1040000`)
 
 ### Improvements
