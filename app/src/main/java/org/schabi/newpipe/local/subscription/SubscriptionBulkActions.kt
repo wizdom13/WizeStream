@@ -63,8 +63,9 @@ internal class SubscriptionBulkActions(
         picker.show()
     }
 
-    private fun confirm(channels: List<SubscriptionEntity>) {
-        if (channels.isEmpty() || fragment.view == null) return
+    fun confirm(channels: List<SubscriptionEntity>) {
+        if (busy || channels.isEmpty() || fragment.view == null) return
+        dialog?.dismiss()
         dialog = MaterialAlertDialogBuilder(fragment.requireContext())
             .setTitle(R.string.subscription_bulk_unsubscribe)
             .setMessage(

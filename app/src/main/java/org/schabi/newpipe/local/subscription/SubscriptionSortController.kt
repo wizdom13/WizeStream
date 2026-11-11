@@ -33,7 +33,8 @@ internal class SubscriptionSortController(
     private val context: Context,
     private val profileId: String,
     private val binding: FragmentSubscriptionBinding,
-    savedState: Bundle?
+    savedState: Bundle?,
+    private val onSelectionChanged: () -> Unit = {}
 ) {
     private val store = SubscriptionLayout(context, profileId)
     private val disposables = CompositeDisposable()
@@ -160,6 +161,14 @@ internal class SubscriptionSortController(
         pendingAnchor = null
     }
 
+    /** Includes checked channels hidden by the current search, in layout order. */
+    fun selectedChannels(): List<SubscriptionEntity> = if (loaded) {
+        model.entries.filter { it.separator == null && it.key in model.selected }
+            .mapNotNull { channels[it.key] }
+    } else {
+        emptyList()
+    }
+
     fun setQuery(value: String) {
         query = ContextualSearchHelper.normalizeQuery(value)
         refresh()
@@ -198,6 +207,7 @@ internal class SubscriptionSortController(
         binding.subscriptionSortCount.text = context.getString(R.string.subscription_sort_selected, model.selected.size)
         binding.subscriptionSortSelect.isEnabled = loaded && rows.any { it.separator == null }
         binding.subscriptionSortMove.isEnabled = loaded && model.selected.isNotEmpty()
+        onSelectionChanged()
     }
 
     private fun persist() {
