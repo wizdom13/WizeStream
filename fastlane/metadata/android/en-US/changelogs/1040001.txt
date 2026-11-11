@@ -1,0 +1,1 @@
+Add the optional Glass theme with blurred navigation surfaces and scrolling beneath the bars in supported What's New layouts. Add Playlists beside Folders in Local Media videos and Tracks between Albums and Genres in audio. Correct unstable compiler interface ordering and strengthen release reproducibility checks. Independent rebuild verification is still pending.
