@@ -420,7 +420,7 @@ public class MediaSourceManager {
     }
 
     private Single<ManagedMediaSource> getLoadedMediaSource(@NonNull final PlayQueueItem stream) {
-        if (stream.isLocalMedia() || stream.isRadio()) {
+        if (stream.isDirectMedia()) {
             return Single.fromCallable(() -> Optional
                             .ofNullable(playbackListener.sourceOfLocal(stream))
                             .<ManagedMediaSource>flatMap(source ->

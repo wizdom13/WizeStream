@@ -11,6 +11,13 @@ import org.schabi.newpipe.util.StreamTypeUtil
 /** Direct audio livestreams have no video surface, including when metadata has no StreamInfo. */
 internal object DirectMediaPresentation {
     @JvmStatic
+    fun updateLiveControls(live: View, endTime: View, type: StreamType) {
+        val isLive = StreamTypeUtil.isLiveStream(type)
+        live.visibility = if (isLive) View.VISIBLE else View.GONE
+        endTime.visibility = if (isLive) View.GONE else View.VISIBLE
+    }
+
+    @JvmStatic
     fun update(surface: View, artwork: View, type: StreamType, mode: PlaybackPresentationMode) {
         val showVideo = !StreamTypeUtil.isAudio(type) && mode.rendersVideo()
         surface.visibility = if (showVideo) View.VISIBLE else View.GONE

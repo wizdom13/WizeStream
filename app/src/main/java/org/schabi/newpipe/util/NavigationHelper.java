@@ -660,6 +660,14 @@ public final class NavigationHelper {
                 .commit();
     }
 
+    public static void openLiveTvFragment(final FragmentManager fragmentManager) {
+        defaultTransaction(fragmentManager)
+                .replace(R.id.fragment_holder,
+                        new org.schabi.newpipe.local.tv.LiveTvFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+
     public static void openRadioFragment(final FragmentManager fragmentManager) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, new RadioFragment())

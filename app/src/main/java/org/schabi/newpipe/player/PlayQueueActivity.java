@@ -271,7 +271,7 @@ public final class PlayQueueActivity extends AppCompatActivity
             return;
         }
         final List<BulkDownloadItem> items = player.getPlayQueue().getStreams().stream()
-                .filter(item -> !item.isLocalMedia() && !item.isRadio())
+                .filter(item -> !item.isDirectMedia())
                 .map(BulkDownloadItem::from)
                 .collect(Collectors.toList());
         if (items.isEmpty()) {
@@ -683,7 +683,7 @@ public final class PlayQueueActivity extends AppCompatActivity
     @Override
     public void onMetadataUpdate(final MediaItemTag tag, final PlayQueue queue) {
         final PlayQueueItem item = queue.getItem();
-        final boolean radio = item != null && item.isRadio();
+        final boolean radio = item != null && (item.isRadio() || item.isLiveTv());
         queueControlBinding.seekBar.setVisibility(radio ? View.GONE : View.VISIBLE);
         queueControlBinding.currentTime.setVisibility(radio ? View.GONE : View.VISIBLE);
         if (radio) {
@@ -691,7 +691,8 @@ public final class PlayQueueActivity extends AppCompatActivity
             queueControlBinding.artistName.setText(tag.getUploaderName());
             queueControlBinding.endTime.setVisibility(View.GONE);
             queueControlBinding.liveSync.setVisibility(View.VISIBLE);
-            queueControlBinding.liveSync.setClickable(false);
+            queueControlBinding.liveSync.setClickable(item != null && item.isLiveTv()
+                    && player != null && !player.isLiveEdge());
             scrollToSelected();
         }
     }

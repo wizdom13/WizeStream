@@ -14,6 +14,18 @@ import org.schabi.newpipe.player.PlaybackPresentationMode
 @Config(sdk = [28])
 class DirectMediaPresentationTest {
     @Test
+    fun liveTvShowsLiveControlsAndReturningToLocalVideoRestoresDuration() {
+        val live = View(RuntimeEnvironment.getApplication())
+        val endTime = View(live.context)
+        DirectMediaPresentation.updateLiveControls(live, endTime, StreamType.LIVE_STREAM)
+        assertEquals(View.VISIBLE, live.visibility)
+        assertEquals(View.GONE, endTime.visibility)
+        DirectMediaPresentation.updateLiveControls(live, endTime, StreamType.VIDEO_STREAM)
+        assertEquals(View.GONE, live.visibility)
+        assertEquals(View.VISIBLE, endTime.visibility)
+    }
+
+    @Test
     fun switchingFromVideoToRadioHidesSurfaceAndReturningToVideoRestoresIt() {
         val surface = View(RuntimeEnvironment.getApplication())
         val artwork = View(surface.context)

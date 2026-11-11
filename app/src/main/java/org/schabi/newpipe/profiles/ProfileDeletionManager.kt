@@ -45,6 +45,7 @@ object ProfileDeletionManager {
                 .edit()
                 .remove(PlaylistCategories.preferenceKey(profileId))
                 .apply()
+            org.schabi.newpipe.local.tv.TvPlaylistStore(appContext, profileId).delete()
             database.streamDAO().deleteOrphans()
             check(finishDeletion()) {
                 "Profile metadata no longer exists"

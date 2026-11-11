@@ -21,12 +21,14 @@ public class PlayQueueItem implements Serializable {
     public static final long RECOVERY_UNSET = Long.MIN_VALUE;
     public static final int LOCAL_SERVICE_ID = -1;
     public static final int RADIO_SERVICE_ID = -2;
+    public static final int LIVE_TV_SERVICE_ID = -3;
     private static final String EMPTY_STRING = "";
 
     public enum SourceType {
         REMOTE,
         LOCAL,
-        RADIO
+        RADIO,
+        LIVE_TV
     }
 
     @NonNull
@@ -111,6 +113,16 @@ public class PlayQueueItem implements Serializable {
                 Collections.emptyList(), details, null, StreamType.AUDIO_LIVE_STREAM,
                 false, SourceType.RADIO, hls ? "application/x-mpegURL" : null,
                 null, null, -1L, logoUrl);
+    }
+
+    public static PlayQueueItem liveTv(@NonNull final String title,
+                                       @NonNull final String url,
+                                       @Nullable final String group,
+                                       @Nullable final String mimeType,
+                                       @Nullable final String logoUrl) {
+        return new PlayQueueItem(title, url, LIVE_TV_SERVICE_ID, -1,
+                Collections.emptyList(), group, null, StreamType.LIVE_STREAM,
+                false, SourceType.LIVE_TV, mimeType, null, null, -1L, logoUrl);
     }
 
     @SuppressWarnings("ParameterNumber")
@@ -208,6 +220,14 @@ public class PlayQueueItem implements Serializable {
         return sourceType == SourceType.RADIO;
     }
 
+    public boolean isLiveTv() {
+        return sourceType == SourceType.LIVE_TV;
+    }
+
+    public boolean isDirectMedia() {
+        return sourceType != SourceType.REMOTE;
+    }
+
     public boolean isLocalMedia() {
         return sourceType == SourceType.LOCAL;
     }
@@ -291,7 +311,7 @@ public class PlayQueueItem implements Serializable {
 
     @NonNull
     public Single<StreamInfo> getStream() {
-        if (isLocalMedia() || isRadio()) {
+        if (isDirectMedia()) {
             return Single.error(new IllegalStateException(
                     "Direct media must be resolved without the online extractor"));
         }

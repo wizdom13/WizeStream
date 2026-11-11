@@ -1379,6 +1379,10 @@ public final class VideoDetailFragment
 
     private void prepareAndHandleLocalMedia(@NonNull final PlayQueueItem item,
                                             final boolean scrollToTop) {
+        if (item.isLiveTv()) {
+            prepareAndHandleLiveTv(item);
+            return;
+        }
         if (item.isRadio()) {
             prepareAndHandleRadio(item);
             return;
@@ -1474,6 +1478,25 @@ public final class VideoDetailFragment
         updateLocalOverlay(item);
         hideLoading();
         showContent();
+    }
+
+    private void prepareAndHandleLiveTv(@NonNull final PlayQueueItem item) {
+        if (binding == null) {
+            return;
+        }
+        if (currentWorker != null) {
+            currentWorker.dispose();
+        }
+        setInitialData(item.getServiceId(), item.getUrl(), item.getTitle(), playQueue);
+        currentInfo = null;
+        currentLocalItem = item;
+        isLoading.set(false);
+        pageAdapter.clearAllItems();
+        pageAdapter.notifyDataSetUpdate();
+        hideLoading();
+        showContent();
+        LiveTvDetailPresentation.show(binding, item);
+        updateLocalOverlay(item);
     }
 
     private void prepareAndHandleRadio(@NonNull final PlayQueueItem item) {
@@ -2505,7 +2528,7 @@ public final class VideoDetailFragment
         }
         learningQueueChanges.onNext(Optional.ofNullable(newPlayQueue));
         final PlayQueueItem queueItem = newPlayQueue == null ? null : newPlayQueue.getItem();
-        currentLocalItem = queueItem != null && (queueItem.isLocalMedia() || queueItem.isRadio())
+        currentLocalItem = queueItem != null && queueItem.isDirectMedia()
                 ? queueItem : null;
     }
 
@@ -2970,7 +2993,7 @@ public final class VideoDetailFragment
             setOverlayExpansionClickable(
                     bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED);
         }
-        if (queueItem != null && (queueItem.isLocalMedia() || queueItem.isRadio())
+        if (queueItem != null && queueItem.isDirectMedia()
                 && binding != null
                 && (currentLocalItem == null || !currentLocalItem.isSameItem(queueItem))) {
             setInitialData(queueItem.getServiceId(), queueItem.getUrl(),
@@ -3112,7 +3135,7 @@ public final class VideoDetailFragment
             }
             return;
         }
-        if (item == null || !item.isLocalMedia()
+        if (item == null || (!item.isLocalMedia() && !item.isLiveTv())
                 || (playQueue != null && !queue.equalStreams(playQueue))) {
             return;
         }
@@ -3974,7 +3997,13 @@ public final class VideoDetailFragment
         binding.overlayTitleTextView.setText(item.getTitle());
         binding.overlayChannelTextView.setText(firstNonEmpty(item.getUploader(), item.getAlbum(),
                 item.getFolder(), getString(R.string.local_media_on_device)));
-        LocalMediaThumbnailLoader.INSTANCE.load(binding.overlayThumbnail, item);
+        if (item.isLiveTv() || item.isRadio()) {
+            LocalMediaThumbnailLoader.INSTANCE.clear(binding.overlayThumbnail);
+            CoilHelper.INSTANCE.loadThumbnail(binding.overlayThumbnail,
+                    item.getLocalThumbnailUrl());
+        } else {
+            LocalMediaThumbnailLoader.INSTANCE.load(binding.overlayThumbnail, item);
+        }
     }
 
     private void setOverlayPlayPauseImage(final boolean playerIsPlaying) {

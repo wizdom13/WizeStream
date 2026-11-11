@@ -205,6 +205,7 @@ can vary by version, build, and provider.
 | --- | --- | --- | --- | --- |
 | Browse and play device audio and video | Local Media browser with search, filters, folders, exclusions, and rescans | — | — | — |
 | Local-file playback modes | Main player, background audio, and popup | — | — | — |
+| Live TV playlists | Unreleased: local M3U files and HTTPS playlist/HLS URLs, groups, channel logos, and favorites | — | — | — |
 | Internet radio directory | Worldwide Radio Browser stations | — | — | — |
 | Radio search and filters | Station name, country, language, and genre | — | — | — |
 | Radio favorites and custom streams | Favorites and custom HTTPS audio or HLS URLs | — | — | — |
@@ -364,6 +365,20 @@ can vary by version, build, and provider.
 - Configure app and content languages, content country, YouTube Restricted Mode, age-restricted
   content visibility, image quality, search suggestions, global search-button behavior, and the
   preferred PeerTube instance
+
+### Live TV
+
+- Open **Live TV** beneath Live Radio in the navigation drawer. Import a local M3U file or
+  add an HTTPS playlist URL. An HTTPS HLS manifest URL can also be added as a single channel.
+- Imports are limited to 4 MiB each, with up to 10 playlists and 5,000 cached channels per profile.
+- Browse channel logos and groups, search channel names, save favorites, and manage or refresh
+  remote playlists. Search and action controls scroll with the channel list.
+- Play channels in the existing video player with fullscreen, miniplayer, and Android TV remote
+  controls. Playback uses HTTPS streams supported by Media3; unsupported playlist entries are
+  skipped and counted during import.
+- Playlists, cached channel lists, and favorites are stored locally per profile and remain after
+  restarting the app. Reimport a local playlist with the same name to replace its cached list.
+  Removing a profile removes its Live TV data.
 
 ### Live Radio
 

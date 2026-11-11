@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_tv">Live TV</string>
+    <string name="tv_search_hint">Search channels</string>
+    <string name="tv_groups">Groups</string>
+    <string name="tv_clear_filters">Clear filters</string>
+    <string name="tv_favorites">Favorites</string>
+    <string name="tv_all_channels">All channels</string>
+    <string name="tv_add_url">Add playlist URL</string>
+    <string name="tv_import_file">Import M3U file</string>
+    <string name="tv_playlists">Playlists</string>
+    <string name="tv_playlist_name">Playlist name</string>
+    <string name="tv_playlist_url">HTTPS playlist or HLS stream URL</string>
+    <string name="tv_empty">Import an M3U playlist to watch your channels. HTTPS streams are supported.</string>
+    <string name="tv_no_matches">No channels match these filters.</string>
+    <string name="tv_loading">Loading playlist…</string>
+    <string name="tv_imported">Imported %1$d channels; %2$d unsupported entries skipped.</string>
+    <string name="tv_limit_error">The playlist or saved library is too large. Try a smaller playlist or remove a saved playlist.</string>
+    <string name="tv_error">Could not load the playlist. Check the address, file, and connection. Only HTTPS streams are supported.</string>
+    <string name="tv_channels_hint">%1$d channels · Hold a channel to save or remove a favorite.</string>
+    <string name="tv_save_favorite">Save favorite</string>
+    <string name="tv_remove_favorite">Remove favorite</string>
+    <string name="tv_refresh">Refresh playlist</string>
+    <string name="tv_remove_playlist">Remove playlist</string>
+    <string name="tv_remove_confirm">Remove this playlist and its cached channels?</string>
+    <string name="tv_name_required">Enter a playlist name.</string>
+    <string name="tv_https_required">Enter a valid HTTPS address.</string>
+    <string name="tv_playback_failed">This channel could not be played. Check the playlist or try another channel.</string>
+</resources>
