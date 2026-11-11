@@ -1,6 +1,5 @@
 package org.schabi.newpipe.local.subscription
 
-import android.content.DialogInterface
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -49,7 +48,6 @@ internal class SubscriptionBulkActions(
             Toast.makeText(fragment.requireContext(), R.string.subscription_bulk_empty, Toast.LENGTH_SHORT).show()
             return
         }
-        val selected = BooleanArray(channels.size)
         val labels = channels.map {
             fragment.getString(
                 R.string.subscription_bulk_channel,
@@ -58,20 +56,8 @@ internal class SubscriptionBulkActions(
             )
         }.toTypedArray()
         dialog?.dismiss()
-        val picker = MaterialAlertDialogBuilder(fragment.requireContext())
-            .setTitle(R.string.subscription_bulk_unsubscribe)
-            .setMultiChoiceItems(labels, selected) { dialogInterface, index, checked ->
-                selected[index] = checked
-                (dialogInterface as AlertDialog).getButton(DialogInterface.BUTTON_POSITIVE)
-                    .isEnabled = selected.any { it }
-            }
-            .setPositiveButton(R.string.unsubscribe) { _, _ ->
-                confirm(channels.filterIndexed { index, _ -> selected[index] })
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-        picker.setOnShowListener {
-            picker.getButton(DialogInterface.BUTTON_POSITIVE).isEnabled = false
+        val picker = SubscriptionSelectionDialog.create(fragment.requireContext(), labels) { selected ->
+            confirm(channels.filterIndexed { index, _ -> selected[index] })
         }
         dialog = picker
         picker.show()

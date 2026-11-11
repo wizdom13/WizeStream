@@ -266,7 +266,8 @@ public final class YoutubePostInfoItemExtractor implements PostInfoItemExtractor
     @Nonnull
     private static List<Image> imagesFromRenderer(@Nonnull final JsonObject renderer)
             throws ParsingException {
-        return imagesFrom(renderer.getObject("image").getArray("thumbnails"));
+        return PostImageSelection.singlePhoto(
+                imagesFrom(renderer.getObject("image").getArray("thumbnails")));
     }
 
     @Nonnull

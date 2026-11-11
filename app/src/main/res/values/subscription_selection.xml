@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subscription_select_all">Select all</string>
+    <string name="subscription_clear_selection">Clear selection</string>
+</resources>

@@ -4,6 +4,18 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Improvements
+
+- Select all or clear the selection when unsubscribing from multiple channels, with confirmation
+  before removing subscriptions.
+- Hold player controls to see their labels, while preserving existing long-press actions.
+
+### Fixes
+
+- Display each community-post photo once instead of repeating its different thumbnail resolutions.
+- Clear the previous video's details when starting Live Radio and keep audio-only live streams
+  from displaying the previous video surface.
+
 ## WizeStream 1.40.1 (`1040001`)
 
 ### Interface
