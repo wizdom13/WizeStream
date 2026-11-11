@@ -5,9 +5,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <LinearLayout
+        android:id="@+id/comments_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/comment_sort"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
         app:singleSelection="true"
@@ -26,9 +37,47 @@
             android:text="@string/comments_sort_newest" />
     </com.google.android.material.chip.ChipGroup>
 
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/comments_search_toggle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/comments_search"
+                app:srcCompat="@drawable/ic_search"
+                app:tint="?attr/colorOnSurface" />
+        </LinearLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/comments_search_field"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:hint="@string/comments_search"
+            android:visibility="gone"
+            app:endIconMode="clear_text"
+            app:helperText="@string/comments_search_scope">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/comments_search_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textFilter|textNoSuggestions"
+                android:imeOptions="actionSearch|flagNoFullscreen"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/comments_load_more"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginHorizontal="16dp"
+            android:visibility="gone"
+            android:text="@string/comments_search_load_more" />
+    </LinearLayout>
+
     <org.schabi.newpipe.views.NewPipeRecyclerView
         android:id="@+id/items_list"
-        android:layout_below="@id/comment_sort"
+        android:layout_below="@id/comments_header"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="vertical"

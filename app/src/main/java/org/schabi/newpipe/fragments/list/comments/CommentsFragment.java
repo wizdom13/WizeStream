@@ -8,6 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.List;
+import java.util.Queue;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
@@ -34,6 +37,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
     private static final String SORT_PREFERENCE = "comment_sort_newest";
     private final CompositeDisposable disposables = new CompositeDisposable();
 
+    private final CommentSearchController commentSearch = new CommentSearchController();
     private TextView emptyStateDesc;
     private CommentSortOrder sortOrder = CommentSortOrder.TOP;
 
@@ -59,6 +63,11 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
         super.initViews(rootView, savedInstanceState);
 
         emptyStateDesc = rootView.findViewById(R.id.empty_state_desc);
+        if (savedInstanceState != null) {
+            commentSearch.setQuery(savedInstanceState.getString("comment_query", ""));
+            commentSearch.setExpanded(savedInstanceState.getBoolean("comment_search_expanded"));
+        }
+        commentSearch.bind(rootView, this::applyCommentSearch, this::loadMoreItems);
         final boolean supportsSorting = serviceId == ServiceList.YouTube.getServiceId();
         final boolean newest = savedInstanceState != null
                 ? savedInstanceState.getBoolean("comments_newest", false)
@@ -97,6 +106,70 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
     }
 
     @Override
+    public void onDestroyView() {
+        commentSearch.unbind();
+        super.onDestroyView();
+    }
+
+    @Override
+    public void writeTo(final Queue<Object> objectsToSave) {
+        super.writeTo(objectsToSave);
+        objectsToSave.add(commentSearch.snapshot());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void readFrom(@NonNull final Queue<Object> savedObjects) throws Exception {
+        super.readFrom(savedObjects);
+        final Object comments = savedObjects.poll();
+        if (comments instanceof List) {
+            commentSearch.restore((List<CommentsInfoItem>) comments);
+        }
+    }
+
+    @Override
+    public void startLoading(final boolean forceLoad) {
+        commentSearch.clearItems();
+        commentSearch.updatePagination(false, true);
+        super.startLoading(forceLoad);
+    }
+
+    @Override
+    protected void loadMoreItems() {
+        if (isLoading.get() || currentInfo == null || !hasMoreItems()) {
+            return;
+        }
+        commentSearch.updatePagination(hasMoreItems(), true);
+        super.loadMoreItems();
+    }
+
+    @Override
+    public void handleNextItems(final ListExtractor.InfoItemsPage<CommentsInfoItem> result) {
+        commentSearch.append(result.getItems());
+        super.handleNextItems(result);
+        applyCommentSearch();
+    }
+
+    private void applyCommentSearch() {
+        if (infoListAdapter == null || currentInfo == null || getView() == null) {
+            return;
+        }
+        infoListAdapter.clearStreamItemList();
+        infoListAdapter.addInfoItemList(commentSearch.matches());
+        showListFooter(hasMoreItems() && commentSearch.getQuery().trim().isEmpty());
+        commentSearch.updatePagination(hasMoreItems(), isLoading.get());
+        if (infoListAdapter.getItemsList().isEmpty()) {
+            showEmptyState();
+            emptyStateDesc.setText(currentInfo.isCommentsDisabled()
+                    ? R.string.comments_are_disabled
+                    : commentSearch.getQuery().trim().isEmpty()
+                    ? R.string.no_comments : R.string.comments_search_no_matches);
+        } else {
+            hideLoading();
+        }
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         disposables.clear();
@@ -106,6 +179,8 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
     public void onSaveInstanceState(@NonNull final Bundle state) {
         super.onSaveInstanceState(state);
         state.putBoolean("comments_newest", sortOrder == CommentSortOrder.NEWEST);
+        state.putString("comment_query", commentSearch.getQuery());
+        state.putBoolean("comment_search_expanded", commentSearch.getExpanded());
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -114,7 +189,8 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
 
     @Override
     protected Single<ListExtractor.InfoItemsPage<CommentsInfoItem>> loadMoreItemsLogic() {
-        return ExtractorHelper.getMoreCommentItems(serviceId, currentInfo, currentNextPage);
+        return ExtractorHelper.getMoreCommentItems(serviceId, currentInfo, currentNextPage)
+                .doFinally(() -> commentSearch.paginationFinished(hasMoreItems()));
     }
 
     @Override
@@ -128,6 +204,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
 
     @Override
     public void handleResult(@NonNull final CommentsInfo result) {
+        commentSearch.initial(result.getRelatedItems());
         super.handleResult(result);
 
         emptyStateDesc.setText(
@@ -135,6 +212,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfoItem, Com
                         ? R.string.comments_are_disabled
                         : R.string.no_comments);
 
+        applyCommentSearch();
         ViewUtils.slideUp(requireView(), 120, 150, 0.06f);
         disposables.clear();
     }
