@@ -931,3 +931,9 @@ Please report issues carefully:
 WizeStream is free software based on NewPipe and is distributed under the GNU General Public License version 3 or later.
 
 See the repository license files and in-app license screen for full license and third-party notice details.
+
+### Size and performance measurements
+
+See the [optimization audit](docs/performance/optimization-audit.md) for the measured release
+APK baseline, the APK analyzer, and a repeatable device measurement procedure. APK size,
+installed app size, private data, cache, RAM, and runtime performance are separate measurements.
