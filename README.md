@@ -378,6 +378,12 @@ can vary by version, build, and provider.
 - Applied filters are remembered per profile and can sync through **Device synchronization > Filters**.
   Use **Clear filters** to reset country, language, and genre.
 
+### Comment search
+
+- Use the search button beside comment sorting to filter loaded comments by text or author.
+  Clear the field to restore all loaded comments. **Load more comments** searches another page
+  when available; unopened replies and comments that have not been loaded are outside the search.
+
 ### Playback
 
 - Optional **Quick add to playlist in What’s New** under **Settings > Content** selects a local

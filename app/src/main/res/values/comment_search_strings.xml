@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="comments_search">Search comments</string>
+    <string name="comments_search_scope">Search loaded comments and author names. Unopened replies are not searched.</string>
+    <string name="comments_search_load_more">Load more comments</string>
+    <string name="comments_search_no_matches">No matching loaded comments</string>
+</resources>
