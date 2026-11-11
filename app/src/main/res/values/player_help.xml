@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="player_control_hint" type="id" />
+    <string name="player_quality_help">Video quality</string>
+    <string name="player_resize_help">Video size and fit</string>
+    <string name="player_speed_help">Playback speed</string>
+</resources>

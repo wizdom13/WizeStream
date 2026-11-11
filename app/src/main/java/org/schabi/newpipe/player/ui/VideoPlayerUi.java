@@ -63,7 +63,6 @@ import org.schabi.newpipe.databinding.PlayerBinding;
 import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
-import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.ktx.AnimationType;
@@ -179,6 +178,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         initViews();
         initListeners();
         PlayerTooltips.disable(binding.getRoot());
+        PlayerControlHints.install(binding.getRoot());
         org.schabi.newpipe.themes.ThemeIcons.apply(binding.playPreviousButton, "previous");
         org.schabi.newpipe.themes.ThemeIcons.apply(binding.playNextButton, "next");
         org.schabi.newpipe.themes.ThemeIcons.apply(binding.shuffleButton, "shuffle");
@@ -1183,10 +1183,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.audioTrackTextView.setVisibility(View.GONE);
         binding.playbackLiveSync.setVisibility(View.GONE);
         binding.playbackEndTime.setVisibility(View.VISIBLE);
-        binding.endScreen.setVisibility(tag.getStreamType() == StreamType.AUDIO_STREAM
-                ? View.VISIBLE : View.GONE);
-        binding.surfaceView.setVisibility(tag.getStreamType() == StreamType.AUDIO_STREAM
-                ? View.GONE : View.VISIBLE);
+        DirectMediaPresentation.update(binding.surfaceView, binding.endScreen,
+                tag.getStreamType(), player.getPlaybackPresentationMode());
+        updateEndScreenThumbnail(player.getThumbnail());
         buildPlaybackSpeedMenu();
         binding.playbackSpeed.setVisibility(View.VISIBLE);
         binding.titleTextView.setText(tag.getTitle());

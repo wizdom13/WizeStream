@@ -750,7 +750,7 @@ public final class VideoDetailFragment
         updateDetailNavigationVisibility();
 
         if (binding.relatedItemsLayout != null) {
-            if (showRelatedItems) {
+            if (showRelatedItems && !isRadioQueue()) {
                 binding.relatedItemsLayout.setVisibility(
                         fullscreen ? View.GONE : View.VISIBLE);
             } else {
@@ -1348,7 +1348,8 @@ public final class VideoDetailFragment
                                                         final boolean scrollToTop,
                                                         final long delay) {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (activity == null) {
+            if (activity == null || binding == null || currentLocalItem != null
+                    || currentInfo != info) {
                 return;
             }
             // Data can already be drawn, don't spend time twice
@@ -1378,6 +1379,10 @@ public final class VideoDetailFragment
 
     private void prepareAndHandleLocalMedia(@NonNull final PlayQueueItem item,
                                             final boolean scrollToTop) {
+        if (item.isRadio()) {
+            prepareAndHandleRadio(item);
+            return;
+        }
         if (binding == null) {
             return;
         }
@@ -1469,6 +1474,32 @@ public final class VideoDetailFragment
         updateLocalOverlay(item);
         hideLoading();
         showContent();
+    }
+
+    private void prepareAndHandleRadio(@NonNull final PlayQueueItem item) {
+        if (binding == null) {
+            return;
+        }
+        if (currentWorker != null) {
+            currentWorker.dispose();
+        }
+        setInitialData(item.getServiceId(), item.getUrl(), item.getTitle(), playQueue);
+        currentInfo = null;
+        currentLocalItem = item;
+        isLoading.set(false);
+        pageAdapter.clearAllItems();
+        pageAdapter.notifyDataSetUpdate();
+        hideLoading();
+        showContent();
+        RadioDetailPresentation.show(binding, item);
+        updateLocalOverlay(item);
+        if (bottomSheetBehavior != null) {
+            bottomSheetBehavior.setDraggable(false);
+            if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            }
+            setOverlayExpansionClickable(false);
+        }
     }
 
     @NonNull
@@ -1676,7 +1707,7 @@ public final class VideoDetailFragment
             }
         }
         updateDetailNavigationItems();
-        if (showRelatedItems) {
+        if (showRelatedItems && !isRadioQueue()) {
             if (binding.relatedItemsLayout == null) { // phone
                 pageAdapter.updateItem(RELATED_TAB_TAG, RelatedItemsFragment.getInstance(info));
             } else { // tablet + TV
@@ -2474,7 +2505,8 @@ public final class VideoDetailFragment
         }
         learningQueueChanges.onNext(Optional.ofNullable(newPlayQueue));
         final PlayQueueItem queueItem = newPlayQueue == null ? null : newPlayQueue.getItem();
-        currentLocalItem = queueItem != null && queueItem.isLocalMedia() ? queueItem : null;
+        currentLocalItem = queueItem != null && (queueItem.isLocalMedia() || queueItem.isRadio())
+                ? queueItem : null;
     }
 
     private void setErrorImage(final int imageResource) {
@@ -2591,7 +2623,7 @@ public final class VideoDetailFragment
         binding.detailSecondaryControlPanel.setVisibility(View.GONE);
 
         if (binding.relatedItemsLayout != null) {
-            if (showRelatedItems) {
+            if (showRelatedItems && !isRadioQueue()) {
                 binding.relatedItemsLayout.setVisibility(
                         isFullscreen() ? View.GONE : View.INVISIBLE);
             } else {
@@ -2938,7 +2970,8 @@ public final class VideoDetailFragment
             setOverlayExpansionClickable(
                     bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED);
         }
-        if (queueItem != null && queueItem.isLocalMedia() && binding != null
+        if (queueItem != null && (queueItem.isLocalMedia() || queueItem.isRadio())
+                && binding != null
                 && (currentLocalItem == null || !currentLocalItem.isSameItem(queueItem))) {
             setInitialData(queueItem.getServiceId(), queueItem.getUrl(),
                     queueItem.getTitle(), queue);
@@ -3068,6 +3101,8 @@ public final class VideoDetailFragment
         }
         final PlayQueueItem item = queue.getItem();
         if (item != null && item.isRadio()) {
+            playQueue = queue;
+            prepareAndHandleRadio(item);
             if (binding != null) {
                 binding.overlayTitleTextView.setText(item.getTitle());
                 binding.overlayChannelTextView.setText(isEmpty(item.getUploader())
@@ -3193,7 +3228,7 @@ public final class VideoDetailFragment
         }
 
         if (binding.relatedItemsLayout != null) {
-            if (showRelatedItems) {
+            if (showRelatedItems && !isRadioQueue()) {
                 binding.relatedItemsLayout.setVisibility(fullscreen ? View.GONE : View.VISIBLE);
             } else {
                 binding.relatedItemsLayout.setVisibility(View.GONE);
