@@ -235,6 +235,7 @@ can vary by version, build, and provider.
 | Samsung DeX and large screens | Compact playlist search cards in DeX and landscape, plus tablet layouts | Tablet layout choices | — | — |
 | Android Auto | Audio browsing, voice search, and resume | [Supported][comparison-newpipe-devices] | [Supported][comparison-pipepipe-auto] | — |
 | TV casting | FCast and Chromecast-compatible receivers | — | — | — |
+| Home audio handoff | Unreleased: optional HTTPS yt-fifo server with Snapcast; play now or queue a stream link | — | — | — |
 
 ### Profiles, privacy, and networking
 
@@ -291,6 +292,15 @@ can vary by version, build, and provider.
 [comparison-bravepipe-releases]: https://github.com/bravepipeproject/BravePipe/releases
 
 ## Features
+
+### Home audio handoff
+
+- Optionally send a stream link to your own yt-fifo and Snapcast home audio setup, to play now or
+  append to the queue. Configure **Home audio server (yt-fifo)** in Video and audio settings.
+- Requires an HTTPS endpoint with a certificate trusted by Android. Plain HTTP yt-fifo deployments
+  need an HTTPS reverse proxy. See [setup and playback details](doc/yt-fifo.md).
+- Available in stream long-press menus and the Cast picker. Local playback continues; pause it
+  separately when the home audio starts. The feature is hidden until a valid server is configured.
 
 ### Profiles and local privacy
 

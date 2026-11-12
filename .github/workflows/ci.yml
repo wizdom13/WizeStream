@@ -87,7 +87,7 @@ jobs:
           '-Dorg.gradle.jvmargs=-Xmx4096M --add-opens jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED'
 
       - name: Commit generated Room schema
-        if: always() && github.event_name == 'pull_request'
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           BRANCH: ${{ github.head_ref }}
         run: |

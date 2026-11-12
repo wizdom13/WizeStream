@@ -43,6 +43,8 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
         updateSeekOptions();
         updateResolutionOptions();
         setupEqualizerPreference();
+        org.schabi.newpipe.util.external_communication.YtFifoUtils.configurePreference(
+                requirePreference(R.string.yt_fifo_url_key));
         setupCaptionTranslationPreferences();
         setupPreferredPlaybackLanguages();
         requirePreference(R.string.native_pip_key)

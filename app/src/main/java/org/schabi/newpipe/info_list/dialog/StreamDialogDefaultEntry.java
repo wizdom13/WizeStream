@@ -30,6 +30,7 @@ import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.external_communication.TubeBeamUtils;
+import org.schabi.newpipe.util.external_communication.YtFifoUtils;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.Collections;
@@ -144,6 +145,16 @@ public enum StreamDialogDefaultEntry {
      */
     SEND_TO_TV(R.string.send_to_tv_title, (fragment, item) ->
             TubeBeamUtils.sendToTv(fragment.requireContext(), item.getUrl())),
+
+    /**
+     * Plays the stream's audio on the home audio system through a yt-fifo server, see
+     * {@link YtFifoUtils#sendToHomeAudio(android.content.Context, String, boolean)}.
+     */
+    PLAY_ON_HOME_AUDIO(R.string.play_on_home_audio_title, (fragment, item) ->
+            YtFifoUtils.sendToHomeAudio(fragment.requireContext(), item.getUrl(), true)),
+
+    QUEUE_ON_HOME_AUDIO(R.string.queue_on_home_audio_title, (fragment, item) ->
+            YtFifoUtils.sendToHomeAudio(fragment.requireContext(), item.getUrl(), false)),
 
     COPY_TITLE(R.string.copy_video_title, (fragment, item) ->
             ShareUtils.copyToClipboard(fragment.requireContext(), item.getName())),
