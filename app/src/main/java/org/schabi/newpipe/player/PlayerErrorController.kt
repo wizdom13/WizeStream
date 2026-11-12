@@ -266,15 +266,15 @@ internal class PlayerErrorController(
                             return
                         }
 
-                        if (canFallBackToLiveHls(currentItem)) {
-                            if (!player.isNormalLive()) {
-                                if (!prepareFullLiveDashRecovery(currentItem, key)) return
-                            } else {
-                                if (!liveStallRecoveryGuard.acquire(key)) return
-                                Log.w(Player.TAG, "Live DASH stalled after recovery; retrying with HLS")
-                                videoResolver.preferHlsForLiveStream(info.url)
-                                queue.unsetRecovery(queue.index)
-                            }
+                        if (!player.isNormalLive() &&
+                            (videoResolver.isDvrRequiredForLiveStream(info.url) || canFallBackToLiveHls(currentItem))
+                        ) {
+                            if (!prepareFullLiveDashRecovery(currentItem, key)) return
+                        } else if (canFallBackToLiveHls(currentItem)) {
+                            if (!liveStallRecoveryGuard.acquire(key)) return
+                            Log.w(Player.TAG, "Live DASH stalled after recovery; retrying with HLS")
+                            videoResolver.preferHlsForLiveStream(info.url)
+                            queue.unsetRecovery(queue.index)
                         } else {
                             if (!liveHlsRefreshGuard.acquire(key)) return
                             Log.w(Player.TAG, "Live HLS stalled while buffering; refreshing stream URLs once")
