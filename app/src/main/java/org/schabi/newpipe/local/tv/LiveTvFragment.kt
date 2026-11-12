@@ -2,8 +2,11 @@ package org.schabi.newpipe.local.tv
 
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -81,11 +84,25 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
         channels = TvChannelAdapter({ play(it) }, ::channelActions)
         view.findViewById<RecyclerView>(R.id.tv_stations).adapter = channels
         val input = view.findViewById<NewPipeEditText>(R.id.tv_search_input)
+        val search = view.findViewById<View>(R.id.tv_search)
         input.setText(query)
+        search.isVisible = !input.text.isNullOrBlank()
         input.doAfterTextChanged {
+            search.isVisible = !it.isNullOrBlank()
             query = it?.toString().orEmpty()
             render()
         }
+        fun submitSearch() {
+            ViewCompat.getWindowInsetsController(input)?.hide(WindowInsetsCompat.Type.ime())
+            input.clearFocus()
+            render()
+        }
+        input.setOnEditorActionListener { _, action, _ ->
+            if (action != EditorInfo.IME_ACTION_SEARCH || input.text.isNullOrBlank()) return@setOnEditorActionListener false
+            submitSearch()
+            true
+        }
+        search.setOnClickListener { submitSearch() }
         view.findViewById<View>(R.id.tv_groups).setOnClickListener { chooseGroup() }
         view.findViewById<View>(R.id.tv_clear_filters).setOnClickListener {
             group = ""

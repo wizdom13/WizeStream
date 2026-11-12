@@ -42,6 +42,17 @@
                     android:textColor="?attr/colorOnSurface"
                     android:textColorHint="?attr/colorOnSurfaceVariant" />
 
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/tv_search"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/search"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_search"
+                    app:tint="?attr/colorOnSurface" />
+
             </LinearLayout>
 
             <HorizontalScrollView
