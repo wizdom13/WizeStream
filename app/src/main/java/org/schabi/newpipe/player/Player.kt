@@ -67,6 +67,8 @@ class Player(
     mediaSession: MediaLibrarySession,
     browserPlayer: Media3Player
 ) : PlaybackListener, Media3Player.Listener {
+    val sphericalPlayback = org.schabi.newpipe.player.video.SphericalPlaybackState()
+
     companion object {
         @JvmField
         val DEBUG: Boolean = MainActivity.DEBUG

@@ -246,6 +246,11 @@ public class StreamInfo extends Info {
         // so the frontend can afterwards check where errors happened.
 
         try {
+            streamInfo.setSpherical(extractor.isSpherical());
+        } catch (final Exception e) {
+            streamInfo.addError(e);
+        }
+        try {
             streamInfo.setThumbnailUrl(extractor.getThumbnailUrl());
         } catch (final Exception e) {
             streamInfo.addError(e);
@@ -490,6 +495,7 @@ public class StreamInfo extends Info {
     @Nonnull
     private List<Image> subChannelAvatars = Collections.emptyList();
 
+    private boolean spherical;
     private List<VideoStream> videoStreams = new ArrayList<>();
     private List<AudioStream> audioStreams = new ArrayList<>();
     private List<VideoStream> videoOnlyStreams = new ArrayList<>();
@@ -740,6 +746,14 @@ public class StreamInfo extends Info {
 
     public void setSubChannelAvatars(@Nonnull final List<Image> subChannelAvatars) {
         this.subChannelAvatars = subChannelAvatars;
+    }
+
+    public boolean isSpherical() {
+        return spherical;
+    }
+
+    public void setSpherical(final boolean value) {
+        spherical = value;
     }
 
     public List<VideoStream> getVideoStreams() {

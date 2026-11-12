@@ -1,13 +1,15 @@
 package org.schabi.newpipe.player.ui
 
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import org.schabi.newpipe.views.ExpandableSurfaceView
+import org.schabi.newpipe.views.VideoSurfaceContainer
 
 /** Moves the existing decoder surface; the player, queue and playback position stay intact. */
 class MinimizedVideoSurface {
-    private var surface: ExpandableSurfaceView? = null
+    private var surface: View? = null
     private var parent: ViewGroup? = null
     private var params: ViewGroup.LayoutParams? = null
     private var index = 0
@@ -19,13 +21,14 @@ class MinimizedVideoSurface {
      *         or had no parent to detach. Callers can use the result to rebind the decoder output
      *         only after an actual move, instead of on every refresh.
      */
-    fun show(view: ExpandableSurfaceView, host: FrameLayout): Boolean {
+    fun show(view: View, host: FrameLayout): Boolean {
         if (surface === view && view.parent === host) return false
         restore()
 
         val previousParent = view.parent as? ViewGroup ?: return false
         val previousParams = view.layoutParams
         val previousIndex = previousParent.indexOfChild(view)
+        (view as? VideoSurfaceContainer)?.prepareForReparent()
         previousParent.removeView(view)
 
         // A surface callback can synchronously reattach the view while removeView() is running.
@@ -33,7 +36,7 @@ class MinimizedVideoSurface {
         val parentAfterRemoval = view.parent
         if (parentAfterRemoval != null && parentAfterRemoval !== host) return false
 
-        view.setMiniPlayerMode(true)
+        setMiniPlayerMode(view, true)
         if (view.parent == null) {
             host.addView(
                 view,
@@ -66,9 +69,10 @@ class MinimizedVideoSurface {
         val originalParent = parent
 
         if (view.parent !== originalParent) {
+            (view as? VideoSurfaceContainer)?.prepareForReparent()
             (view.parent as? ViewGroup)?.removeView(view)
         }
-        view.setMiniPlayerMode(false)
+        setMiniPlayerMode(view, false)
 
         // removeView() may synchronously restore SurfaceView ownership. Only add the view when it
         // is still detached, and never add it again when it already reached the original parent.
@@ -81,5 +85,11 @@ class MinimizedVideoSurface {
         parent = null
         params = null
         return restored
+    }
+    private fun setMiniPlayerMode(view: View, enabled: Boolean) {
+        when (view) {
+            is VideoSurfaceContainer -> view.setMiniPlayerMode(enabled)
+            is ExpandableSurfaceView -> view.setMiniPlayerMode(enabled)
+        }
     }
 }

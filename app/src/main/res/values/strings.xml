@@ -1906,4 +1906,11 @@ Add the For you tab under Settings → Content → Customize home and move it fi
     <string name="feed_date_filter_selected">Published on or after %1$s</string>
     <string name="feed_date_filter_clear">Clear publication date cutoff</string>
     <item name="feed_preview_button" type="id" />
+    <string name="player_projection">Video projection</string>
+    <string name="player_projection_auto">Automatic</string>
+    <string name="player_projection_flat">Flat video</string>
+    <string name="player_projection_360">360°</string>
+    <string name="player_projection_reset">Recenter</string>
+    <string name="player_projection_motion_on">Enable motion</string>
+    <string name="player_projection_motion_off">Disable motion</string>
 </resources>

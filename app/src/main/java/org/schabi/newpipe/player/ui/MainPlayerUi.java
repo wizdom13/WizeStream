@@ -338,6 +338,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         // view was added to fragment
         final ViewParent parent = binding.getRoot().getParent();
         if (parent instanceof ViewGroup) {
+            binding.videoSurfaceContainer.prepareForReparent();
             ((ViewGroup) parent).removeView(binding.getRoot());
         }
     }
@@ -438,6 +439,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
     @Override
     public void onPlaybackPresentationModeChanged(
             @NonNull final PlaybackPresentationMode mode) {
+        super.onPlaybackPresentationModeChanged(mode);
         updateListenModeUi(mode);
         updateStreamRelatedViews();
         if (mode.rendersVideo()) {
@@ -1251,6 +1253,10 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
 
     /** @return the decoder's display ratio, falling back to the last measured surface ratio */
     public float getVideoAspectRatio() {
+        if (isSphericalVideo() && binding.videoSurfaceContainer.getHeight() > 0) {
+            return (float) binding.videoSurfaceContainer.getWidth()
+                    / binding.videoSurfaceContainer.getHeight();
+        }
         if (player.getExoPlayer() != null) {
             final VideoSize size = player.getExoPlayer().getVideoSize();
             final float ratio = calculateDisplayAspectRatio(size.width, size.height,

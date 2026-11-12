@@ -29,6 +29,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -69,11 +70,11 @@ import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.player.DanmakuController;
 import org.schabi.newpipe.player.LiveQualityController;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.PlaybackPresentationMode;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.DisplayPortion;
 import org.schabi.newpipe.player.helper.PlayerHelper;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
-import org.schabi.newpipe.player.playback.SurfaceHolderCallback;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHelper;
@@ -122,11 +123,9 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private final Handler controlsVisibilityHandler = new Handler(Looper.getMainLooper());
     private long lastTvBackPressedAt;
     private final PlayerQualityFeedback qualityFeedback;
-    @Nullable
-    private SurfaceHolderCallback surfaceHolderCallback;
+    private final org.schabi.newpipe.player.video.PlayerVideoSurface videoSurface;
     @Nullable
     private Bitmap scaledEndScreenThumbnail;
-    boolean surfaceIsSetup = false;
 
     private static final int POPUP_MENU_ID_QUALITY = 69;
     private static final int AUTO_QUALITY_MENU_ITEM_ID = Integer.MAX_VALUE;
@@ -162,6 +161,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                             @NonNull final PlayerBinding playerBinding) {
         super(player);
         binding = playerBinding;
+        videoSurface = org.schabi.newpipe.player.video.PlayerVideoSurface.forUi(this);
         binding.abRepeatButton.bind(player);
         binding.playbackInformationPanel.bind(player.getPlaybackInformation());
         binding.playbackInformationButton.setOnClickListener(
@@ -473,6 +473,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         deinitPlayerSeekOverlay();
         deinitListeners();
         bottomPlayerControls.restore();
+        videoSurface.close();
     }
 
     protected void setupElementsVisibility() {
@@ -538,6 +539,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBroadcastReceived(final Intent intent) {
         super.onBroadcastReceived(intent);
+        videoSurface.onBroadcast(intent);
         if (Intent.ACTION_CONFIGURATION_CHANGED.equals(intent.getAction())) {
             // When the orientation changes, the screen height might be smaller. If the end screen
             // thumbnail is not re-scaled, it can be larger than the current screen height and thus
@@ -923,6 +925,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMediaItemTransition() {
         super.onMediaItemTransition();
+        videoSurface.onMediaItemTransition();
         seekbarPreviewThumbnailHolder.cancelRequest();
         chapterController.clear(binding);
         binding.surfaceView.clearAspectRatio();
@@ -1158,6 +1161,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final StreamInfo info) {
         super.onMetadataChanged(info);
+        videoSurface.selectItem(info.getServiceId() + ":" + info.getUrl(), info.isSpherical());
         chapterController.setChapters(binding, info.getStreamSegments());
         binding.surfaceView.resetUserTransform();
 
@@ -1171,11 +1175,13 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 ExtractorImageCompat.uploaderAvatarImages(info));
 
         this.seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), info.getPreviewFrames());
+        videoSurface.presentationChanged();
     }
 
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
+        videoSurface.selectItem(tag.getServiceId() + ":" + tag.getStreamUrl(), false);
         chapterController.clear(binding);
         danmakuController.reset();
         binding.surfaceView.resetUserTransform();
@@ -1194,6 +1200,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         CoilHelper.INSTANCE.clearAvatar(binding.channelAvatarView);
         binding.channelAvatarView.setImageResource(R.drawable.placeholder_person);
         seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), Collections.emptyList());
+        videoSurface.presentationChanged();
     }
 
     public void onPlaybackTimelineChanged() {
@@ -1755,6 +1762,10 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         if (DeviceUtils.isTv(context) && !isFullscreen() && !player.popupPlayerSelected()) {
             return false;
         }
+        if (videoSurface.handleKey(keyCode,
+                isControlsVisible() || isAnyListViewOpen() || isSomePopupMenuVisible)) {
+            return true;
+        }
         if (DeviceUtils.isTv(context) && TvPlayerKeyPolicy.shouldSeek(
                 keyCode, isControlsVisible() && !tvDirectionalSeek,
                 isAnyListViewOpen() || isSomePopupMenuVisible) && player.getCurrentState()
@@ -1922,65 +1933,43 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
      * be called many times and even while the UI is in unready states.
      */
     public void setupVideoSurfaceIfNeeded() {
-        if (!surfaceIsSetup && player.getExoPlayer() != null
-                && binding.getRoot().getParent() != null) {
-            // make sure there is nothing left over from previous calls
-            clearVideoSurface();
-
-            surfaceHolderCallback = new SurfaceHolderCallback(context, player.getExoPlayer());
-            binding.surfaceView.getHolder().addCallback(surfaceHolderCallback);
-
-            // Use the same owner for initial binding and later surface callbacks.
-            surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder());
-
-            surfaceIsSetup = true;
-        }
+        videoSurface.setup();
     }
 
-    /**
-     * Recovers a retained video view after the display wakes. Some devices neither recreate the
-     * surface nor resend an unchanged video size, so explicitly restore both pieces of state once
-     * the resumed view has reached the UI queue.
-     */
     protected final void restoreVideoSurfaceAfterResume() {
         restoreVideoSurfaceAfterLayoutTransition();
     }
 
-    /**
-     * Restores the active video surface after a layout transition such as wake/resume or native
-     * picture-in-picture entry. SurfaceView geometry can change without a fresh surface callback,
-     * especially for portrait video, so explicitly restore the last known aspect ratio and rebind
-     * the decoder output once the view queue reaches the new layout.
-     */
     public final void restoreVideoSurfaceAfterLayoutTransition() {
         if (!player.getPlaybackPresentationMode().rendersVideo()) {
             return;
         }
         setupVideoSurfaceIfNeeded();
-        binding.surfaceView.post(() -> rebindVideoSurfaceAfterLayoutTransition(2));
-    }
-
-    private void rebindVideoSurfaceAfterLayoutTransition(final int retriesRemaining) {
-        if (binding.getRoot().getParent() == null || surfaceHolderCallback == null) {
-            return;
-        }
-        restoreVideoAspectRatioFromPlayer();
-        if (!surfaceHolderCallback.rebindVideoSurfaceIfValid(binding.surfaceView.getHolder())
-                && retriesRemaining > 0) {
-            binding.surfaceView.postOnAnimation(
-                    () -> rebindVideoSurfaceAfterLayoutTransition(retriesRemaining - 1));
-        }
+        binding.videoSurfaceContainer.post(() -> {
+            restoreVideoAspectRatioFromPlayer();
+            videoSurface.restore();
+        });
     }
 
     private void clearVideoSurface() {
-        if (surfaceHolderCallback != null) {
-            binding.surfaceView.getHolder().removeCallback(surfaceHolderCallback);
-            surfaceHolderCallback.release();
-            surfaceHolderCallback = null;
-        } else {
-            Optional.ofNullable(player.getExoPlayer()).ifPresent(ExoPlayer::clearVideoSurface);
-        }
-        surfaceIsSetup = false;
+        videoSurface.clear();
+    }
+
+    public View getRenderedVideoSurface() {
+        return videoSurface.activeVideoView();
+    }
+
+    public boolean isSphericalVideo() {
+        return videoSurface.isSpherical();
+    }
+
+    public boolean handleSphericalTouch(final View source, final MotionEvent event) {
+        return videoSurface.handleTouch(source, event);
+    }
+
+    @Override
+    public void onPlaybackPresentationModeChanged(@NonNull final PlaybackPresentationMode mode) {
+        videoSurface.presentationChanged();
     }
     //endregion
     /*//////////////////////////////////////////////////////////////////////////

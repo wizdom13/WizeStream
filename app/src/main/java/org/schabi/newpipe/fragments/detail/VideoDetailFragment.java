@@ -3442,7 +3442,7 @@ public final class VideoDetailFragment
         final Rect sourceRect = new Rect();
         if (player != null) {
             player.UIs().get(MainPlayerUi.class)
-                    .ifPresent(ui -> ui.getBinding().surfaceView.getGlobalVisibleRect(sourceRect));
+                    .ifPresent(ui -> ui.getRenderedVideoSurface().getGlobalVisibleRect(sourceRect));
         }
         return sourceRect;
     }
@@ -3942,7 +3942,7 @@ public final class VideoDetailFragment
         if (minimized && ui.isPresent()) {
             final MainPlayerUi mainPlayerUi = ui.get();
             final boolean moved = minimizedVideoSurface.show(
-                    mainPlayerUi.getBinding().surfaceView, binding.overlayVideo);
+                    mainPlayerUi.getBinding().videoSurfaceContainer, binding.overlayVideo);
             if (minimizedVideoSurface.isHosting()) {
                 binding.overlayVideo.setVisibility(View.VISIBLE);
                 binding.overlayThumbnail.setAlpha(0f);
