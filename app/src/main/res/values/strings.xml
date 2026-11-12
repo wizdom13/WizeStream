@@ -1066,6 +1066,8 @@
     <!-- Notifications settings -->
     <string name="enable_streams_notifications_title">New streams notifications</string>
     <string name="enable_streams_notifications_summary">Notify about new streams from subscriptions</string>
+    <string name="streams_notifications_thumbnails_title">Show video thumbnails in notifications</string>
+    <string name="streams_notifications_thumbnails_summary">Include thumbnail previews in new-stream notifications when image loading is enabled</string>
     <string name="edit_notification_filter">Edit notification filter</string>
     <string name="notification_keywords_title">Notification keywords</string>
     <string name="notification_mode_disabled">Notifications disabled</string>

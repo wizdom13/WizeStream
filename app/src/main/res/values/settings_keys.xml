@@ -1712,6 +1712,7 @@
     <string name="recaptcha_cookies_key">recaptcha_cookies_key</string>
 
     <string name="enable_streams_notifications">enable_streams_notifications</string>
+    <string name="streams_notifications_thumbnails_key">streams_notifications_thumbnails</string>
     <string name="streams_notifications_interval_key">streams_notifications_interval</string>
     <string name="streams_notifications_interval_default">14400</string>
     <!-- Values will be localized in runtime -->
