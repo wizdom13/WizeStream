@@ -199,13 +199,18 @@ can vary by version, build, and provider.
 | DeArrow titles and thumbnails | Optional | — | [Available][comparison-pipepipe-55] | — |
 | Live chat and danmaku | Read-only YouTube chat tab, fullscreen panel, and danmaku | — | [Chat tab and danmaku][comparison-pipepipe-55] | — |
 
-### Local media and Live Radio
+### Local media, Live TV, and Live Radio
 
 | Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | Browse and play device audio and video | Local Media browser with search, filters, folders, exclusions, and rescans | — | — | — |
 | Local-file playback modes | Main player, background audio, and popup | — | — | — |
-| Live TV playlists | Unreleased: worldwide IPTV-org/Free-TV country browser, cached lists with daily refresh, alternative streams, M3U/HTTPS imports, groups, logos, and favorites | — | — | — |
+| Live TV channel directory | Unreleased: worldwide country browser with IPTV-org by default and optional Free-TV | — | — | — |
+| Live TV playlist imports | Unreleased: M3U files and HTTPS playlist URLs, plus custom channel URLs | — | — | — |
+| Live TV search and organization | Unreleased: channel search with a contextual search button, group and playlist filters, logos, and favorites | — | — | — |
+| Live TV cache and refresh | Unreleased: cached country lists, refresh when lists are over a day old on opening or resuming, and manual refresh | — | — | — |
+| Live TV playback | Unreleased: existing video player with fullscreen, TV remote controls, and manual alternative-stream selection | — | — | — |
+| Live TV profiles | Unreleased: playlists and favorites stored separately per profile | — | — | — |
 | Internet radio directory | Worldwide Radio Browser stations | — | — | — |
 | Radio search and filters | Station name, country, language, and genre | — | — | — |
 | Radio favorites and custom streams | Favorites and custom HTTPS audio or HLS URLs | — | — | — |
@@ -386,7 +391,8 @@ can vary by version, build, and provider.
   URL can also be added as a single channel. Imports are limited to 4 MiB each, with up to 10
   playlists and 5,000 cached stream URLs (including alternatives) per profile.
 - Browse channel logos and groups, search channel names, save favorites, and manage or refresh
-  remote playlists. Search and action controls scroll with the channel list.
+  remote playlists. A search button appears beside nonblank search text; tap it or use the keyboard's
+  Search action to dismiss the keyboard. Search and action controls scroll with the channel list.
 - Play channels in the existing video player with fullscreen, miniplayer, and Android TV remote
   controls. Playback uses HTTPS streams supported by Media3; unsupported playlist entries are
   skipped and counted during import.

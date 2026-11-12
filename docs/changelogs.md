@@ -26,6 +26,7 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Live TV
 
+- Show a search button beside the Live TV search field while text is entered, matching Live Radio.
 - Add a Material 3 Live TV screen beneath Live Radio, with M3U file/HTTPS URL import,
   channel logos, group filters, search, favorites, and playlist management.
 - Cache playlists and favorites per profile and play channels through the existing video player
