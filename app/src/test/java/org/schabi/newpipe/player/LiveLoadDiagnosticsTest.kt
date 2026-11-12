@@ -1,9 +1,11 @@
 package org.schabi.newpipe.player
 
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.HttpDataSource
+import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime
 import androidx.media3.exoplayer.source.LoadEventInfo
@@ -89,6 +91,24 @@ class LiveLoadDiagnosticsTest {
         assertTrue(logs.contains("omitted=8"))
         assertFalse(logs.contains("private.example"))
         assertFalse(logs.contains("secret"))
+    }
+
+    @Test
+    fun recordsFatalAndRendererEvidenceWithoutExceptionOrOutputText() {
+        val failure = IOException("https://private.example?token=secret")
+        listener.onPlayerError(time, PlaybackException("secret", failure, PlaybackException.ERROR_CODE_IO_UNSPECIFIED))
+        listener.onVideoCodecError(time, failure)
+        listener.onRenderedFirstFrame(time, "secret-output", 42)
+        listener.onDroppedVideoFrames(time, 7, 500)
+        listener.onVideoDisabled(time, DecoderCounters().apply { renderedOutputBufferCount = 3 })
+        val result = logs()
+        assertTrue(result.contains("Live fatal code=2000 causes=PlaybackException<-IOException"))
+        assertTrue(result.contains("Live video codec error causes=IOException"))
+        assertTrue(result.contains("Live first frame renderTimeMs=42"))
+        assertTrue(result.contains("Live droppedFrames=7 elapsedMs=500"))
+        assertTrue(result.contains("Live video disabled rendered=3"))
+        assertFalse(result.contains("private.example"))
+        assertFalse(result.contains("secret"))
     }
 
     @Test

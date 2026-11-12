@@ -30,7 +30,6 @@ class LiveMediaLoadRecoveryTest {
 
     @Test
     fun reportsOnlyActiveRejectedMediaSegmentsAndSuccessfulLoads() {
-        listener.onLoadError(eventTime, info, audioSegment, httpError(403), true)
         listener.onLoadError(eventTime, info, audioSegment, httpError(404), false)
         listener.onLoadError(
             eventTime,
@@ -45,6 +44,12 @@ class LiveMediaLoadRecoveryTest {
         listener.onLoadCompleted(eventTime, info, audioSegment)
         verify(controller, times(1)).onLiveMediaSegmentRejected(engine, C.TRACK_TYPE_AUDIO, 1_000)
         verify(controller, times(1)).onLiveMediaSegmentLoaded(engine, C.TRACK_TYPE_AUDIO, 1_000)
+    }
+
+    @Test
+    fun exhaustedChunkRetriesStillReportTheRejectedSegment() {
+        listener.onLoadError(eventTime, info, audioSegment, httpError(403), true)
+        verify(controller).onLiveMediaSegmentRejected(engine, C.TRACK_TYPE_AUDIO, 1_000)
     }
 
     private fun media(dataType: Int, trackType: Int) = MediaLoadData(

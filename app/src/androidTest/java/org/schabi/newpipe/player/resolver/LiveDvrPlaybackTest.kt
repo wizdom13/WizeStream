@@ -1,7 +1,10 @@
 package org.schabi.newpipe.player.resolver
 
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
+import android.view.SurfaceView
 import androidx.media3.common.C
 import androidx.media3.common.Player as Media3Player
 import androidx.media3.datasource.ByteArrayDataSource
@@ -13,6 +16,7 @@ import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -24,17 +28,93 @@ import java.util.zip.ZipInputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.schabi.newpipe.about.AboutActivity
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.helper.PlayerDataSource
 import org.schabi.newpipe.player.helper.YoutubeDashLiveManifestParser
+import org.schabi.newpipe.player.mediasource.YoutubeLiveMediaSource
 
 class LiveDvrPlaybackTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
+
+    @Test
+    fun rotatingManifestUriKeepsActivelyRenderingVideoAndItsDecoder() {
+        val fixture = Fixture()
+        fixture.segmentCount.set(16)
+        ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
+            lateinit var engine: ExoPlayer
+            val states = mutableListOf<Int>()
+            scenario.onActivity { activity ->
+                val surface = SurfaceView(activity)
+                activity.setContentView(surface)
+                engine = ExoPlayer.Builder(activity).build().apply {
+                    setVideoSurfaceView(surface)
+                    setMediaSource(fixture.source())
+                    seekTo(4_000)
+                    prepare()
+                    play()
+                    addListener(object : Media3Player.Listener {
+                        override fun onPlaybackStateChanged(playbackState: Int) {
+                            states.add(playbackState)
+                        }
+                    })
+                }
+            }
+            try {
+                awaitProgress(engine) { it.currentPosition >= 5_000 && (it.videoDecoderCounters?.renderedOutputBufferCount ?: 0) >= 3 }
+                var position = 0L
+                var rendered = 0
+                val counters = arrayOfNulls<androidx.media3.exoplayer.DecoderCounters>(1)
+                instrumentation.runOnMainSync {
+                    position = engine.currentPosition
+                    counters[0] = engine.videoDecoderCounters
+                    rendered = requireNotNull(counters[0]).renderedOutputBufferCount
+                    states.clear()
+                    requireNotNull((fixture.preparedSource as YoutubeLiveMediaSource).dashForRefresh())
+                        .replaceManifestUri(Uri.parse("https://example.test/rotated.mpd"))
+                }
+                awaitProgress(engine) {
+                    fixture.rotatedLoads.get() > 0 && it.currentPosition >= position + 1_500 &&
+                        (it.videoDecoderCounters?.renderedOutputBufferCount ?: 0) >= rendered + 3
+                }
+                instrumentation.runOnMainSync {
+                    assertSame(counters[0], engine.videoDecoderCounters)
+                    assertTrue(engine.isPlaying)
+                    assertFalse(states.contains(Media3Player.STATE_IDLE))
+                    assertFalse(states.contains(Media3Player.STATE_BUFFERING))
+                }
+                assertEquals(0, fixture.hlsLoads.get())
+            } finally {
+                instrumentation.runOnMainSync { engine.release() }
+            }
+        }
+    }
+
+    private fun awaitProgress(engine: ExoPlayer, condition: (ExoPlayer) -> Boolean) {
+        val reached = CountDownLatch(1)
+        val handler = Handler(Looper.getMainLooper())
+        val poll = object : Runnable {
+            override fun run() {
+                if (condition(engine) || engine.playerError != null) reached.countDown() else handler.postDelayed(this, 50)
+            }
+        }
+        handler.post(poll)
+        try {
+            assertTrue("Rendering progress timed out", reached.await(20, TimeUnit.SECONDS))
+            instrumentation.runOnMainSync {
+                assertEquals(null, engine.playerError)
+                assertTrue(condition(engine))
+            }
+        } finally {
+            handler.removeCallbacks(poll)
+        }
+    }
 
     @Test
     fun finiteDynamicDashSnapshotRefreshesAndKeepsRewoundPosition() {
@@ -168,6 +248,8 @@ class LiveDvrPlaybackTest {
         val segmentCount = AtomicInteger(8)
         val dashLoads = AtomicInteger()
         val hlsLoads = AtomicInteger()
+        val rotatedLoads = AtomicInteger()
+        lateinit var preparedSource: MediaSource
 
         // Generated 32-second, 64x64 blue video: ffmpeg color source, libx264, 5 fps,
         // keyframes every 10 frames, DASH segments of 2 seconds. No external media or network.
@@ -222,6 +304,11 @@ class LiveDvrPlaybackTest {
                                 if (broken) "not an MPD".toByteArray() else manifest()
                             }
 
+                            "rotated.mpd" -> {
+                                rotatedLoads.incrementAndGet()
+                                manifest()
+                            }
+
                             "live.m3u8" -> {
                                 hlsLoads.incrementAndGet()
                                 buildString {
@@ -249,7 +336,8 @@ class LiveDvrPlaybackTest {
             dataSource.setNormalLive(info.url, normal)
             val source = PlaybackResolver.maybeBuildLiveMediaSource(dataSource, info)
             assertNotNull(source)
-            return requireNotNull(source)
+            preparedSource = requireNotNull(source)
+            return preparedSource
         }
     }
 

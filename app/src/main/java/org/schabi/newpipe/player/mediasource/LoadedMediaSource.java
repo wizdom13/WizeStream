@@ -13,6 +13,7 @@ public class LoadedMediaSource extends WrappingMediaSource implements ManagedMed
     private final PlayQueueItem stream;
     private final MediaItem mediaItem;
     private final long expireTimestamp;
+    private final MediaSource sourceForLiveRefresh;
 
     /**
      * Uses a {@link WrappingMediaSource} to wrap one child {@link MediaSource}s
@@ -31,6 +32,7 @@ public class LoadedMediaSource extends WrappingMediaSource implements ManagedMed
                              @NonNull final PlayQueueItem stream,
                              final long expireTimestamp) {
         super(source);
+        this.sourceForLiveRefresh = source;
         this.stream = stream;
         this.expireTimestamp = expireTimestamp;
 
@@ -39,6 +41,10 @@ public class LoadedMediaSource extends WrappingMediaSource implements ManagedMed
 
     public PlayQueueItem getStream() {
         return stream;
+    }
+
+    public MediaSource getSourceForLiveRefresh() {
+        return sourceForLiveRefresh;
     }
 
     private boolean isExpired() {

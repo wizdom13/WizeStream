@@ -6,7 +6,9 @@
 package org.schabi.newpipe.player
 
 import android.util.Log
+import androidx.media3.common.PlaybackException
 import androidx.media3.datasource.HttpDataSource
+import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime
@@ -66,6 +68,29 @@ internal class LiveLoadDiagnostics(
         if (isLiveManifest()) Log.d(TAG, "Live loading=$isLoading ${snapshot()}")
     }
 
+    override fun onPlayerError(eventTime: EventTime, error: PlaybackException) {
+        if (isLiveManifest()) Log.d(TAG, "Live fatal code=${error.errorCode} causes=${safeCauses(error)} ${snapshot()}")
+    }
+
+    override fun onVideoCodecError(eventTime: EventTime, videoCodecError: Exception) {
+        if (isLiveManifest()) Log.d(TAG, "Live video codec error causes=${safeCauses(videoCodecError)} ${snapshot()}")
+    }
+
+    override fun onRenderedFirstFrame(eventTime: EventTime, output: Any, renderTimeMs: Long) {
+        if (isLiveManifest()) Log.d(TAG, "Live first frame renderTimeMs=$renderTimeMs ${snapshot()}")
+    }
+
+    override fun onDroppedVideoFrames(eventTime: EventTime, droppedFrames: Int, elapsedMs: Long) {
+        if (isLiveManifest()) Log.d(TAG, "Live droppedFrames=$droppedFrames elapsedMs=$elapsedMs ${snapshot()}")
+    }
+
+    override fun onVideoDisabled(eventTime: EventTime, decoderCounters: DecoderCounters) {
+        if (isLiveManifest()) Log.d(TAG, "Live video disabled rendered=${decoderCounters.renderedOutputBufferCount} dropped=${decoderCounters.droppedBufferCount} ${snapshot()}")
+    }
+
+    private fun safeCauses(error: Throwable): String = generateSequence(error) { it.cause }.take(8)
+        .joinToString("<-") { it.javaClass.simpleName }
+
     private fun load(
         action: String,
         time: EventTime,
@@ -97,7 +122,9 @@ internal class LiveLoadDiagnostics(
     private fun snapshot(): String = "state=${engine.playbackState} " +
         "playWhenReady=${engine.playWhenReady} loading=${engine.isLoading} " +
         "positionMs=${engine.currentPosition} bufferedPositionMs=${engine.bufferedPosition} " +
-        "bufferedDurationMs=${engine.totalBufferedDuration}"
+        "bufferedDurationMs=${engine.totalBufferedDuration} " +
+        "videoRendered=${engine.videoDecoderCounters?.renderedOutputBufferCount} " +
+        "videoDropped=${engine.videoDecoderCounters?.droppedBufferCount}"
 
     private companion object {
         const val TAG = "LiveLoadDiagnostics"

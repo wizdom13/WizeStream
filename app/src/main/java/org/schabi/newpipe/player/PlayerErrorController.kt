@@ -61,6 +61,7 @@ internal class PlayerErrorController(
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveDashRefreshGuard = PlayerHttpErrorRecovery.RecoveryGuard()
     private val liveMedia403Policy = LiveMedia403RecoveryPolicy()
+    private val liveManifestRefresher = LiveManifestRefresher(player, videoResolver::isDvrRequiredForLiveStream)
     private val recoveryHandler = Handler(Looper.getMainLooper())
     private var pendingMediaUrlRecovery: Runnable? = null
     private var pendingLiveStallRecovery: Runnable? = null
@@ -379,11 +380,15 @@ internal class PlayerErrorController(
             Log.w(Player.TAG, "Repeated live media HTTP 403; refreshing stream URLs")
             cancelPendingMediaUrlRecovery()
             cancelPendingLiveStallRecovery()
-            player.setRecovery()
-            player.onBuffering()
-            invalidateYouTubeMediaCaches(currentItem)
-            recoveringLiveKey = "$serviceId:$url"
-            player.reloadPlayQueueManager()
+            val refreshing = liveManifestRefresher.refresh(engine, currentItem) { refreshed ->
+                if (player.getExoPlayer() !== engine || player.playQueue?.item !== currentItem || !player.playWhenReady) return@refresh
+                if (refreshed) {
+                    if (engine.playbackState == Media3Player.STATE_BUFFERING) onPlaybackStateChanged(Media3Player.STATE_BUFFERING)
+                } else {
+                    reloadRejectedLiveSource(currentItem)
+                }
+            }
+            if (!refreshing) reloadRejectedLiveSource(currentItem)
         }
         pendingLiveSegmentRecovery = recovery
         recoveryHandler.post(recovery)
@@ -450,8 +455,17 @@ internal class PlayerErrorController(
     }
 
     private fun cancelPendingLiveSegmentRecovery() {
+        liveManifestRefresher.cancel()
         pendingLiveSegmentRecovery?.let(recoveryHandler::removeCallbacks)
         pendingLiveSegmentRecovery = null
+    }
+
+    private fun reloadRejectedLiveSource(item: PlayQueueItem) {
+        player.setRecovery()
+        player.onBuffering()
+        invalidateYouTubeMediaCaches(item)
+        recoveringLiveKey = "${item.serviceId}:${item.url}"
+        player.reloadPlayQueueManager()
     }
 
     internal fun tryRecoverFromVideoSurfaceFailure(error: PlaybackException): Boolean {
