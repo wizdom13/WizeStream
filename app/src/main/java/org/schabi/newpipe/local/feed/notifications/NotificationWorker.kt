@@ -14,8 +14,8 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.rxjava3.RxWorker
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.App
 import org.schabi.newpipe.R
@@ -57,7 +57,7 @@ class NotificationWorker(
                     }
                 }
             }
-            .observeOn(AndroidSchedulers.mainThread()) // Picasso requires calls from main thread
+            .observeOn(Schedulers.io()) // Decode notification artwork away from the UI thread.
             .map { feedUpdateInfoList ->
                 // display notifications for each feedUpdateInfo (i.e. channel)
                 feedUpdateInfoList.forEach { feedUpdateInfo ->

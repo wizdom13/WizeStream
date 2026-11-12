@@ -20,12 +20,18 @@ import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.local.feed.service.FeedUpdateInfo
 import org.schabi.newpipe.util.NavigationHelper
-import org.schabi.newpipe.util.image.CoilHelper
+import org.schabi.newpipe.util.image.ExtractorImageCompat
+import org.schabi.newpipe.util.image.ImageStrategy
 
 /**
  * Helper for everything related to show notifications about new streams to the user.
  */
-class NotificationHelper(val context: Context) {
+class NotificationHelper internal constructor(
+    val context: Context,
+    private val loadImage: (String?, Int, Int) -> Bitmap?
+) {
+    constructor(context: Context) : this(context, NotificationImages(context)::load)
+
     private val manager = NotificationManagerCompat.from(context)
 
     /**
@@ -36,6 +42,7 @@ class NotificationHelper(val context: Context) {
      * individual notifications will open the corresponding video.
      */
     fun displayNewStreamsNotifications(data: FeedUpdateInfo) {
+        if (!manager.areNotificationsEnabled() || data.newStreams.isEmpty()) return
         val newStreams = data.newStreams
         val summary = context.resources.getQuantityString(
             R.plurals.new_streams,
@@ -74,16 +81,11 @@ class NotificationHelper(val context: Context) {
             PendingIntentCompat.getActivity(context, data.pseudoId, intent, 0, false)
         )
 
-        val avatarIcon =
-            CoilHelper.loadBitmapBlocking(
-                context,
-                data.avatarUrl,
-                R.drawable.ic_wizestream_triangle_white
-            )
+        val avatarIcon = if (ImageStrategy.shouldLoadImages()) loadImage(data.avatarUrl, 128, 128) else null
         summaryBuilder.setLargeIcon(avatarIcon)
 
         // Show individual stream notifications, set channel icon only if there is actually one
-        showStreamNotifications(newStreams, data.serviceId, avatarIcon)
+        showStreamNotifications(data, avatarIcon)
         // Show summary notification
         if (manager.areNotificationsEnabled()) {
             manager.notify(data.pseudoId, summaryBuilder.build())
@@ -91,14 +93,13 @@ class NotificationHelper(val context: Context) {
     }
 
     private fun showStreamNotifications(
-        newStreams: List<StreamInfoItem>,
-        serviceId: Int,
+        data: FeedUpdateInfo,
         channelIcon: Bitmap?
     ) {
         if (manager.areNotificationsEnabled()) {
-            newStreams.forEach { stream ->
+            data.newStreams.forEach { stream ->
                 val notification =
-                    createStreamNotification(stream, serviceId, channelIcon)
+                    createStreamNotification(stream, data, channelIcon)
                 manager.notify(stream.url.hashCode(), notification)
             }
         }
@@ -106,18 +107,26 @@ class NotificationHelper(val context: Context) {
 
     private fun createStreamNotification(
         item: StreamInfoItem,
-        serviceId: Int,
+        data: FeedUpdateInfo,
         channelIcon: Bitmap?
     ): Notification {
-        return NotificationCompat.Builder(
+        val showThumbnails = PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean(context.getString(R.string.streams_notifications_thumbnails_key), true)
+        val thumbnail = if (showThumbnails && ImageStrategy.shouldLoadImages()) {
+            val url = ImageStrategy.choosePreferredImage(ExtractorImageCompat.thumbnailImages(item))
+            loadImage(url, 640, 360)
+        } else {
+            null
+        }
+        val builder = NotificationCompat.Builder(
             context,
             context.getString(R.string.streams_notification_channel_id)
         )
             .setSmallIcon(R.drawable.ic_wizestream_triangle_white)
-            .setLargeIcon(channelIcon)
+            .setLargeIcon(thumbnail ?: channelIcon)
             .setContentTitle(item.name)
-            .setContentText(item.uploaderName)
-            .setGroup(item.uploaderUrl)
+            .setContentText(item.uploaderName?.takeIf { it.isNotBlank() } ?: data.name)
+            .setGroup(data.url)
             .setColor(ContextCompat.getColor(context, R.color.ic_launcher_background))
             .setColorized(true)
             .setAutoCancel(true)
@@ -127,13 +136,22 @@ class NotificationHelper(val context: Context) {
                 PendingIntentCompat.getActivity(
                     context,
                     item.url.hashCode(),
-                    NavigationHelper.getStreamIntent(context, serviceId, item.url, item.name),
+                    NavigationHelper.getStreamIntent(context, data.serviceId, item.url, item.name),
                     PendingIntent.FLAG_UPDATE_CURRENT,
                     false
                 )
             )
             .setSilent(true) // Avoid creating noise for individual stream notifications.
-            .build()
+            .setOnlyAlertOnce(true)
+        if (thumbnail != null) {
+            builder.setStyle(
+                NotificationCompat.BigPictureStyle()
+                    .bigPicture(thumbnail)
+                    .bigLargeIcon(channelIcon)
+                    .setSummaryText(item.uploaderName?.takeIf { it.isNotBlank() } ?: data.name)
+            )
+        }
+        return builder.build()
     }
 
     companion object {

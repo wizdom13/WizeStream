@@ -514,7 +514,8 @@ can vary by version, build, and provider.
 - Refresh feeds manually or in the background, with configurable intervals, optional unmetered networking,
   and refresh across profiles; use **Refresh all now** to bypass the usual refresh threshold
 - Receive configurable new-stream notifications for selected subscriptions, with checking-frequency,
-  network, and per-channel title-keyword controls
+  network, and per-channel title-keyword controls; optional video thumbnail previews respect image-loading
+  preferences and fall back to text when artwork is unavailable
 - Create, rename, search, play, shuffle, share, and bulk-manage local playlists; remove watched or
   duplicate entries, bookmark remote playlists, and sort remote playlist contents
 - Organize Bookmarks and local playlists with named separators, Edit/Done controls, and multi-item moves
