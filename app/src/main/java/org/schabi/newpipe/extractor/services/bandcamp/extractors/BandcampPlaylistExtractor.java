@@ -50,7 +50,9 @@ public class BandcampPlaylistExtractor extends PlaylistExtractor {
     @Override
     public void onFetchPage(@Nonnull final Downloader downloader)
             throws IOException, ExtractionException {
-        final String html = downloader.get(getLinkHandler().getUrl()).responseBody();
+        final String html = downloader.get(
+                getLinkHandler().getUrl(),
+                BandcampExtractorHelper.getClientVerificationHeaders()).responseBody();
         document = Jsoup.parse(html);
         albumJson = getAlbumInfoJson(html);
         trackInfo = albumJson.getArray("trackinfo");

@@ -49,7 +49,9 @@ public class BandcampStreamExtractor extends StreamExtractor {
     @Override
     public void onFetchPage(@Nonnull final Downloader downloader)
             throws IOException, ExtractionException {
-        final String html = downloader.get(getLinkHandler().getUrl()).responseBody();
+        final String html = downloader.get(
+                getLinkHandler().getUrl(),
+                BandcampExtractorHelper.getClientVerificationHeaders()).responseBody();
         document = Jsoup.parse(html);
         albumJson = getAlbumInfoJson(html);
         current = albumJson.getObject("current");

@@ -18,7 +18,11 @@ import java.io.IOException;
 import java.time.DateTimeException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 
 import javax.annotation.Nullable;
 
@@ -26,6 +30,8 @@ public final class BandcampExtractorHelper {
 
     public static final String BASE_URL = "https://bandcamp.com";
     public static final String BASE_API_URL = BASE_URL + "/api";
+
+    private static final Random NUMBER_GENERATOR = new Random();
 
     private BandcampExtractorHelper() {
     }
@@ -153,4 +159,24 @@ public final class BandcampExtractorHelper {
                 .findFirst()
                 .orElse(null);
     }
+
+    /**
+     * Builds the anonymous cookie Bandcamp requires before returning artist and album content.
+     *
+     * @return request headers containing a fresh client identifier
+     */
+    public static Map<String, List<String>> getClientVerificationHeaders() {
+        return Collections.singletonMap(
+                "Cookie",
+                Collections.singletonList("cart_client_id:\"" + getRandomHexString(64) + "\""));
+    }
+
+    private static String getRandomHexString(final int length) {
+        final StringBuilder value = new StringBuilder(length);
+        while (value.length() < length) {
+            value.append(Integer.toHexString(NUMBER_GENERATOR.nextInt(16)));
+        }
+        return value.toString();
+    }
+
 }

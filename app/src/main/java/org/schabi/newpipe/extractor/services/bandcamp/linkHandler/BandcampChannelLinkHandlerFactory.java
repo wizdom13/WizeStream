@@ -32,7 +32,9 @@ public final class BandcampChannelLinkHandlerFactory extends ListLinkHandlerFact
     @Override
     public String getId(final String url) throws ParsingException {
         try {
-            final String response = NewPipe.getDownloader().get(url).responseBody();
+            final String response = NewPipe.getDownloader()
+                    .get(url, BandcampExtractorHelper.getClientVerificationHeaders())
+                    .responseBody();
 
             // Use band data embedded in website to extract ID
             final JsonObject bandData = JsonUtils.getJsonData(response, "data-band");
