@@ -693,6 +693,7 @@
             android:layout_height="60dp"
             android:layout_toStartOf="@+id/overlay_buttons_layout"
             android:layout_toEndOf="@+id/overlay_thumbnail"
+            android:layout_marginStart="8dp"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center_vertical"
