@@ -55,7 +55,8 @@ internal class PlayerErrorController(
     private val rejectedFormatRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val decoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val surfaceRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
-    private val audioDecoderRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
+    private var audioDecoderRecoveryItem: Pair<Int, String>? = null
+    private val audioDecoderRecoveryTracks = mutableSetOf<String?>()
     private val audioTrackRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveStallRecoveryGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
     private val liveHlsRefreshGuard = PlayerHttpErrorRecovery.OneShotRecoveryGuard()
@@ -310,7 +311,8 @@ internal class PlayerErrorController(
         rejectedFormatRecoveryGuard.reset()
         videoResolver.clearRejectedVideoStream()
         decoderRecoveryGuard.reset()
-        audioDecoderRecoveryGuard.reset()
+        audioDecoderRecoveryItem = null
+        audioDecoderRecoveryTracks.clear()
         player.clearAudioDecoderFallback()
         audioTrackRecoveryGuard.reset()
         surfaceRecoveryGuard.reset()
@@ -487,10 +489,15 @@ internal class PlayerErrorController(
         }
 
         val item = player.playQueue?.item ?: return false
-        val recoveryKey = "${item.serviceId}:${item.url}"
-        if (!audioDecoderRecoveryGuard.acquire(recoveryKey)) {
-            return false
+        val recoveryItem = item.serviceId to item.url
+        if (audioDecoderRecoveryItem != recoveryItem) {
+            audioDecoderRecoveryItem = recoveryItem
+            audioDecoderRecoveryTracks.clear()
         }
+        // A language switch needs its own attempt; returning to an already failed track must
+        // not replenish the budget or cause an endless AAC/Opus recovery cycle.
+        val trackId = player.selectedAudioStream.orElse(null)?.audioTrackId
+        if (!audioDecoderRecoveryTracks.add(trackId)) return false
 
         if ((error as? ExoPlaybackException)?.rendererFormat?.sampleMimeType == MimeTypes.AUDIO_AAC) {
             player.enableAudioDecoderFallback(item)

@@ -20,6 +20,9 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Fixes
 
+- Recover AAC decoder failures separately for each audio language and remember same-track Opus
+  fallbacks while switching languages, without granting repeated retries to failed tracks.
+
 - Load deferred channel-tab pages before showing an empty list, including past livestreams.
 - Use Material 3 dialogs when deleting entries from watch history.
 
