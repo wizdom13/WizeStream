@@ -206,6 +206,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
     @Override
     public void removeViewFromParent() {
         // view was added by windowManager for popup player
+        binding.videoSurfaceContainer.prepareForReparent();
         windowManager.removeViewImmediate(binding.getRoot());
     }
 
@@ -344,6 +345,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
         isPopupClosing = true;
 
         player.saveStreamProgressState();
+        binding.videoSurfaceContainer.prepareForReparent();
         windowManager.removeView(binding.getRoot());
 
         animatePopupOverlayAndFinishService();
@@ -357,6 +359,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
         // wrap in try-catch since it could sometimes generate errors randomly
         try {
             if (popupHasParent()) {
+                binding.videoSurfaceContainer.prepareForReparent();
                 windowManager.removeView(binding.getRoot());
             }
         } catch (final IllegalArgumentException e) {

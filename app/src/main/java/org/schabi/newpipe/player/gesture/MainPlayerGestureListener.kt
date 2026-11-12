@@ -68,6 +68,7 @@ class MainPlayerGestureListener(
             v.parent?.requestDisallowInterceptTouchEvent(true)
             return true
         }
+        if (playerUi.handleSphericalTouch(v, event)) return true
         if (handleTwoFingerGesture(v, event)) {
             return true
         }
