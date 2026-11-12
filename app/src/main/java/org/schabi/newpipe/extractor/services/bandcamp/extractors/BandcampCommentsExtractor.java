@@ -29,7 +29,9 @@ public class BandcampCommentsExtractor extends CommentsExtractor {
     @Override
     public void onFetchPage(@Nonnull final Downloader downloader)
             throws IOException, ExtractionException {
-        document = Jsoup.parse(downloader.get(getLinkHandler().getUrl()).responseBody());
+        document = Jsoup.parse(downloader.get(
+                getLinkHandler().getUrl(),
+                BandcampExtractorHelper.getClientVerificationHeaders()).responseBody());
     }
 
     @Nonnull
