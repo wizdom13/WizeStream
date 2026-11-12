@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Flat player choices avoid AppCompat's cascading-menu anchor cleanup in desktop windows. */
-final class PlayerPopupMenu {
+public final class PlayerPopupMenu {
     private ListPopupWindow popup;
     private AlertDialog dialog;
 
@@ -179,7 +179,7 @@ final class PlayerPopupMenu {
         }
     }
 
-    static Context dialogContext(final View anchor) {
+    public static Context dialogContext(final View anchor) {
         final Context source = anchor.getContext();
         final WindowManager manager = (WindowManager) source.getSystemService(
                 Context.WINDOW_SERVICE);

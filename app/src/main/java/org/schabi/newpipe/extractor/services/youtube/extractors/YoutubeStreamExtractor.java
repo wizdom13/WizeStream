@@ -1169,6 +1169,13 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     }
 
     @Override
+    public boolean isSpherical() {
+        return org.schabi.newpipe.extractor.services.youtube.YoutubeProjection.isSpherical(
+                safariStreamingData, androidStreamingData, visionOsStreamingData,
+                iosStreamingData, webStreamingData, tvHtml5SimplyEmbedStreamingData);
+    }
+
+    @Override
     public List<VideoStream> getVideoStreams() throws ExtractionException {
         ensureStreamsAreCached();
         return cachedVideoStreams;

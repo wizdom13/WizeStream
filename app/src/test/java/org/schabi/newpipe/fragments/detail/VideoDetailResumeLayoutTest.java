@@ -48,6 +48,8 @@ import org.schabi.newpipe.player.ui.FullscreenOrientationPolicy;
 import org.schabi.newpipe.player.ui.MainPlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUi;
 import org.schabi.newpipe.player.ui.PlayerUiList;
+import org.schabi.newpipe.player.ui.VideoPlayerUi;
+import org.schabi.newpipe.player.video.PlayerVideoSurface;
 import org.schabi.newpipe.util.DeviceUtils;
 
 import java.lang.reflect.Constructor;
@@ -87,6 +89,7 @@ public class VideoDetailResumeLayoutTest {
         fragment = mock(VideoDetailFragment.class, CALLS_REAL_METHODS);
         player = mock(Player.class);
         playerUi = mock(MainPlayerUi.class);
+        setField(VideoPlayerUi.class, playerUi, "videoSurface", mock(PlayerVideoSurface.class));
         activity = mock(AppCompatActivity.class);
         configuration = mock(Configuration.class);
         configuration.orientation = Configuration.ORIENTATION_PORTRAIT;

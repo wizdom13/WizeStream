@@ -19,6 +19,7 @@ import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.FragmentVideoDetailBinding
 import org.schabi.newpipe.databinding.PlayerBinding
 import org.schabi.newpipe.player.PlaybackPresentationMode
@@ -29,6 +30,7 @@ import org.schabi.newpipe.player.ui.MainPlayerUi
 import org.schabi.newpipe.player.ui.MinimizedVideoSurface
 import org.schabi.newpipe.player.ui.PlayerUiList
 import org.schabi.newpipe.views.ExpandableSurfaceView
+import org.schabi.newpipe.views.VideoSurfaceContainer
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -38,7 +40,8 @@ class MiniplayerPresentationIntegrationTest {
         val original = FrameLayout(context)
         val host = FrameLayout(context)
         val thumbnail = ImageButton(context)
-        val surface = ExpandableSurfaceView(context, null)
+        val flat = ExpandableSurfaceView(context, null).apply { id = R.id.surfaceView }
+        val surface = VideoSurfaceContainer(context, null).apply { addView(flat) }
         val fragment = mock(VideoDetailFragment::class.java, CALLS_REAL_METHODS)
         val player = mock(Player::class.java)
         val ui = mock(MainPlayerUi::class.java)
@@ -52,7 +55,8 @@ class MiniplayerPresentationIntegrationTest {
             field(binding, "overlayThumbnail", thumbnail)
             field(binding, "overlayLayout", RelativeLayout(context))
             val playerBinding = mock(PlayerBinding::class.java)
-            field(playerBinding, "surfaceView", surface)
+            field(playerBinding, "surfaceView", flat)
+            field(playerBinding, "videoSurfaceContainer", surface)
             `when`(ui.getBinding()).thenReturn(playerBinding)
             `when`(player.UIs()).thenReturn(PlayerUiList(ui))
             `when`(player.videoPlayerSelected()).thenReturn(true)

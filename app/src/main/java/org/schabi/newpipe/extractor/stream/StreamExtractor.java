@@ -410,6 +410,11 @@ public abstract class StreamExtractor extends Extractor {
         return Collections.emptyList();
     }
 
+    /** Whether the source explicitly describes spherical rather than flat video. */
+    public boolean isSpherical() throws ParsingException {
+        return false;
+    }
+
     /**
      * Get the {@link StreamType}.
      *

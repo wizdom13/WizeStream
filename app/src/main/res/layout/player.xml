@@ -13,17 +13,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <org.schabi.newpipe.views.ExpandableSurfaceView
-            android:id="@+id/surfaceView"
+        <org.schabi.newpipe.views.VideoSurfaceContainer
+            android:id="@+id/videoSurfaceContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_centerInParent="true" />
+            android:layout_centerInParent="true">
+
+            <org.schabi.newpipe.views.ExpandableSurfaceView
+                android:id="@+id/surfaceView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center" />
+        </org.schabi.newpipe.views.VideoSurfaceContainer>
 
         <View
             android:id="@+id/surfaceForeground"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignBottom="@+id/surfaceView"
+            android:layout_alignParentBottom="true"
             android:background="@android:color/black" />
 
         <org.schabi.newpipe.views.DanmakuOverlayView
@@ -414,6 +421,22 @@
                                 android:textStyle="bold"
                                 tools:ignore="HardcodedText,RtlHardcoded"
                                 tools:text="FIT" />
+
+                            <org.schabi.newpipe.views.NewPipeTextView
+                                android:id="@+id/projectionButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="48dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="?attr/selectableItemBackground"
+                                android:contentDescription="@string/player_projection"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:minWidth="50dp"
+                                android:padding="@dimen/player_main_buttons_padding"
+                                android:text="@string/player_projection_360"
+                                android:textColor="@android:color/white"
+                                android:textSize="@dimen/player_main_controls_text_size"
+                                android:textStyle="bold" />
 
                             <androidx.appcompat.widget.AppCompatImageButton
                                 android:id="@+id/danmakuToggle"

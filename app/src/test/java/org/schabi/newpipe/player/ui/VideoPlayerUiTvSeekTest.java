@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.schabi.newpipe.databinding.PlayerBinding;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.video.PlayerVideoSurface;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.views.PlaybackDimmingLayout;
 
@@ -36,6 +37,7 @@ public class VideoPlayerUiTvSeekTest {
         setField(PlayerUi.class, ui, "context", context);
         setField(PlayerUi.class, ui, "player", player);
         setField(VideoPlayerUi.class, ui, "binding", binding);
+        setField(VideoPlayerUi.class, ui, "videoSurface", mock(PlayerVideoSurface.class));
         doReturn(true).when(ui).isFullscreen();
         doReturn(Player.STATE_PLAYING).when(player).getCurrentState();
         final AtomicBoolean controls = new AtomicBoolean();

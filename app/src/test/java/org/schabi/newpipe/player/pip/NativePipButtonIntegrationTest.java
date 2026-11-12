@@ -39,8 +39,7 @@ public class NativePipButtonIntegrationTest {
         assertTrue(playerUiSource.contains(
                 "public final void restoreVideoSurfaceAfterLayoutTransition()"));
         assertTrue(playerUiSource.contains("restoreVideoAspectRatioFromPlayer()"));
-        assertTrue(playerUiSource.contains("rebindVideoSurfaceIfValid"));
-        assertTrue(playerUiSource.contains("postOnAnimation"));
+        assertTrue(playerUiSource.contains("videoSurface.restore()"));
     }
 
     @Test

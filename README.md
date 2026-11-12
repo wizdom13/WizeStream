@@ -218,6 +218,7 @@ can vary by version, build, and provider.
 | Background audio | Yes, with Listen mode | Yes | Yes, with music player mode | Inherited from NewPipe |
 | Floating video player | Popup and optional native Android picture-in-picture | Popup | — | Inherited popup player |
 | Playback speed and captions | Both, with per-channel preferences | Both | Both | Inherited from NewPipe |
+| 360° video playback | Unreleased: automatic projection detection, manual equirectangular mode, drag/DPAD panning, optional motion tracking, and Recenter | — | — | — |
 | Subtitle timing and A–B repeat | Session-only caption offset and non-live A–B repeat | — | — | — |
 | Audio tools | 10-band equalizer, visualizers, loudness normalization, and compression | — | — | — |
 | Chapter markers in the seek bar | Markers, titles while seeking, and supported haptics | [Chapter divisions][comparison-newpipe-releases] | — | — |
@@ -486,6 +487,12 @@ can vary by version, build, and provider.
   configured seek duration under **Settings > Video and audio**.
 - Set a sleep timer using presets, a custom duration, the end of the current video, or the end of the
   queue, with optional fade-out
+- Play 360° videos with Media3 spherical rendering: explicit YouTube or container projection metadata
+  activates it automatically. Use **360° → Video projection** in the player’s expanded controls to
+  choose Automatic, Flat video, or manual 360° equirectangular playback for untagged videos.
+  Drag to look around; enable optional device motion or use Recenter from the same dialog.
+  With controls hidden, TV/keyboard arrows pan the view. Fullscreen and miniplayer transitions
+  retain the spherical view; popup gestures still move/resize the window.
 - Skip or mark SponsorBlock categories with per-category behavior, colors, notifications, seek-bar
   segments, and a manual skip button
 - Save available SponsorBlock segments with newly completed full downloads for offline skipping
