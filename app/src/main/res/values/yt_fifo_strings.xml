@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_fifo_url_title">Home audio server (yt-fifo)</string>
+    <string name="yt_fifo_url_summary">URL of your yt-fifo server, e.g. http://192.168.1.10:8888. When set, \"Play on home audio\" and \"Queue on home audio\" appear in the stream long-press menu and the Cast picker.</string>
+    <string name="home_audio_playing">Playing on home audio: %1$s</string>
+    <string name="home_audio_queued">Queued on home audio: %1$s</string>
+    <string name="home_audio_failed">Home audio: %1$s</string>
+</resources>

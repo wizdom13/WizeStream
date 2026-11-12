@@ -2704,6 +2704,7 @@ public final class VideoDetailFragment
                 (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         && FCastManager.canCast(requireContext(), info))
                         || FCastManager.canSendToTv(requireContext(), info)
+                        || FCastManager.canSendToHomeAudio(requireContext())
                         ? View.VISIBLE : View.GONE);
         binding.detailControlsPlayWithKodi.setVisibility(
                 KoreUtils.shouldShowPlayWithKodi(requireContext(), info.getServiceId())

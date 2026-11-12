@@ -36,6 +36,7 @@ import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.TubeBeamUtils;
+import org.schabi.newpipe.util.external_communication.YtFifoUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -363,6 +364,20 @@ public final class InfoItemDialog {
         }
 
         /**
+         * Adds the {@link StreamDialogDefaultEntry#PLAY_ON_HOME_AUDIO} and
+         * {@link StreamDialogDefaultEntry#QUEUE_ON_HOME_AUDIO} entries if a yt-fifo server is
+         * configured.
+         * @return the current {@link Builder} instance
+         */
+        public Builder addHomeAudioEntriesIfNeeded() {
+            if (YtFifoUtils.shouldShowHomeAudio(context)) {
+                addEntry(StreamDialogDefaultEntry.PLAY_ON_HOME_AUDIO);
+                addEntry(StreamDialogDefaultEntry.QUEUE_ON_HOME_AUDIO);
+            }
+            return this;
+        }
+
+        /**
          * Add the entries which are usually at the top of the action list.
          * <br/>
          * This method adds the "enqueue" (see {@link #addEnqueueEntriesIfNeeded()})
@@ -399,6 +414,7 @@ public final class InfoItemDialog {
             );
             addPlayWithKodiEntryIfNeeded();
             addSendToTvEntriesIfNeeded();
+            addHomeAudioEntriesIfNeeded();
             addLearningContentEntryIfNeeded();
             if (infoItem.getServiceId() >= 0
                     && KidsMode.isSubscriptionAllowed(context, infoItem.getServiceId())) {
