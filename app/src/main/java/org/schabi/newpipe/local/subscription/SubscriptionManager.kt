@@ -233,6 +233,7 @@ class SubscriptionManager @JvmOverloads constructor(
         subscriptionTable.update(subscriptionEntity)
     }
 
+    /** Unsubscribes from the current service mode; other YouTube/Music memberships remain. */
     fun deleteSubscription(serviceId: Int, url: String): Completable {
         return Completable.fromCallable {
             var updatedSubscription: SubscriptionEntity? = null
@@ -270,13 +271,23 @@ class SubscriptionManager @JvmOverloads constructor(
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    /** Removes a channel from the whole profile library, including all YouTube modes. */
+    fun deleteLibrarySubscription(serviceId: Int, url: String): Completable = deleteLibrarySubscriptions {
+        listOfNotNull(subscriptionTable.getSubscriptionDirectForProfile(profileId, serviceId, url))
+    }
+
     /** Removes selected library entries, including all YouTube modes, in this profile only. */
     fun deleteSubscriptions(subscriptionIds: Collection<Long>): Completable {
         val selectedIds = subscriptionIds.toSet()
+        return deleteLibrarySubscriptions {
+            selectedIds.mapNotNull { subscriptionTable.getSubscriptionForProfile(profileId, it) }
+        }
+    }
+
+    private fun deleteLibrarySubscriptions(findSubscriptions: () -> List<SubscriptionEntity>): Completable {
         return Completable.fromAction {
             val deleted = database.runInTransaction<List<SubscriptionEntity>> {
-                selectedIds.mapNotNull { subscriptionTable.getSubscriptionForProfile(profileId, it) }
-                    .also { entities -> entities.forEach(subscriptionTable::delete) }
+                findSubscriptions().also { entities -> entities.forEach(subscriptionTable::delete) }
             }
             deleted.forEach { entity ->
                 entity.url?.let { recordSubscriptionDelete(entity.serviceId, it) }

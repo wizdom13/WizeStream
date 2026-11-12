@@ -82,6 +82,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
     private var contextualSearchQuery = ""
     private var sortingEnabled = false
     private var sortController: SubscriptionSortController? = null
+    private var bulkUnsubscribeMenuItem: MenuItem? = null
     private var pendingBrowseAnchor: SubscriptionScrollAnchor? = null
     private var countDisposable: io.reactivex.rxjava3.disposables.Disposable? = null
 
@@ -128,6 +129,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         groupActions.close()
         sortController?.close()
         sortController = null
+        bulkUnsubscribeMenuItem = null
         pendingBrowseAnchor = null
         countDisposable?.dispose()
         countDisposable = null
@@ -157,9 +159,14 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         activity.supportActionBar?.setDisplayShowTitleEnabled(true)
         activity.supportActionBar?.setTitle(R.string.tab_subscriptions)
 
-        setClickListenerToMenuItem(menu.add(R.string.subscription_bulk_unsubscribe)) {
-            bulkActions.show(contextualSearchQuery)
+        bulkUnsubscribeMenuItem = setClickListenerToMenuItem(menu.add(R.string.subscription_bulk_unsubscribe)) {
+            if (sortingEnabled) {
+                bulkActions.confirm(sortController?.selectedChannels().orEmpty())
+            } else {
+                bulkActions.show(contextualSearchQuery)
+            }
         }
+        updateUnsubscribeAction()
 
         setClickListenerToMenuItem(menu.add(R.string.saved_search_feeds)) {
             showSavedSearchFeedsDialog()
@@ -332,11 +339,14 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
         }
 
         setupInitialLayout()
-        sortController = SubscriptionSortController(requireContext(), activeProfileId, binding, savedInstanceState).apply {
+        sortController = SubscriptionSortController(requireContext(), activeProfileId, binding, savedInstanceState) {
+            updateUnsubscribeAction()
+        }.apply {
             setQuery(contextualSearchQuery)
             setEnabled(sortingEnabled)
             restoreScroll(savedInstanceState)
         }
+        updateUnsubscribeAction()
         binding.subscriptionEditToggle.setOnClickListener { toggleSorting() }
         binding.subscriptionEditToggle.setText(if (sortingEnabled) R.string.playlist_edit_done else R.string.playlist_edit_mode)
         countDisposable = subscriptionManager.subscriptions()
@@ -352,6 +362,10 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                 org.schabi.newpipe.error.ErrorUtil.showSnackbar(this, ErrorInfo(error, UserAction.SOMETHING_ELSE, "Counting subscriptions"))
             })
         if (sortingEnabled) updateSortingVisibility()
+    }
+
+    private fun updateUnsubscribeAction() {
+        bulkUnsubscribeMenuItem?.isEnabled = !sortingEnabled || sortController?.selectedChannels()?.isNotEmpty() == true
     }
 
     private fun toggleSorting() {

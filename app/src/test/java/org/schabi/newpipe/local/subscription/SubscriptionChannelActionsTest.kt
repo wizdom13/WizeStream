@@ -16,6 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Robolectric
@@ -60,8 +61,8 @@ class SubscriptionChannelActionsTest {
     }
 
     @Test
-    fun singleProfileMenuUnsubscribesTheSelectedChannel() {
-        `when`(manager.deleteSubscription(channel.serviceId, channel.url)).thenReturn(Completable.complete())
+    fun singleProfileMenuRemovesTheSelectedChannelFromTheWholeLibrary() {
+        `when`(manager.deleteLibrarySubscription(channel.serviceId, channel.url)).thenReturn(Completable.complete())
         actions.show(channel)
         shadowOf(Looper.getMainLooper()).idle()
         val dialog = latestDialog()
@@ -70,7 +71,8 @@ class SubscriptionChannelActionsTest {
             labels(dialog)
         )
         dialog.listView.performItemClick(null, 2, 2)
-        verify(manager).deleteSubscription(channel.serviceId, channel.url)
+        verify(manager).deleteLibrarySubscription(channel.serviceId, channel.url)
+        verify(manager, never()).deleteSubscription(channel.serviceId, channel.url)
     }
 
     @Test

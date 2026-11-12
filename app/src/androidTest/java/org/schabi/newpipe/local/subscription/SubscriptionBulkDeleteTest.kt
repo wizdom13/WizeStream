@@ -8,13 +8,18 @@ import io.libp2p.core.crypto.KeyType
 import io.libp2p.core.crypto.generateKeyPair
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.AppDatabase
+import org.schabi.newpipe.database.feed.model.FeedEntity
+import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.sync.DeviceIdentity
 import org.schabi.newpipe.sync.RoomSubscriptionSyncStore
 
@@ -69,6 +74,53 @@ class SubscriptionBulkDeleteTest {
         assertTrue(changes.all { it.profileId == "11111111-1111-4111-8111-111111111111" && it.changeType == "DELETE" })
         manager.deleteSubscriptions(listOf(first, music)).blockingAwait()
         assertEquals(2, sync.getChangeOrigins().sumOf { sync.getChangesAfter(it, 0, 100).size })
+    }
+
+    @Test
+    fun singleLibraryUnsubscribeRemovesAllModesAndCascadesGroupsAndFeedInOnlyItsProfile() {
+        val profile = "11111111-1111-4111-8111-111111111111"
+        val otherProfile = "22222222-2222-4222-8222-222222222222"
+        val selected = insert(profile, "same_channel", SubscriptionEntity.YOUTUBE_MODE_ALL)
+        val keep = insert(profile, "sameXchannel")
+        val other = insert(otherProfile, "same_channel", SubscriptionEntity.YOUTUBE_MODE_ALL)
+        val groups = database.feedGroupDAO()
+        val group = groups.insert(FeedGroupEntity(0, "Test", FeedGroupIcon.ALL, profileId = profile))
+        groups.setGroupsForSubscriptionForProfile(profile, selected, listOf(group))
+        val stream = database.streamDAO().insert(
+            StreamEntity(serviceId = 0, url = "https://example.com/video", title = "Test", streamType = StreamType.VIDEO_STREAM, duration = 10, uploader = "Test")
+        )
+        database.feedDAO().insert(FeedEntity(stream, selected))
+
+        val manager = SubscriptionManager(context, profile)
+        manager.deleteLibrarySubscription(0, "https://example.com/same_channel").blockingAwait()
+
+        assertEquals(listOf(keep), manager.subscriptions().blockingFirst().map { it.uid })
+        assertEquals(SubscriptionEntity.YOUTUBE_MODE_ALL, database.subscriptionDAO().getSubscriptionForProfile(otherProfile, other)?.youtubeModeMask)
+        assertTrue(groups.getSubscriptionIdsForDirect(group).isEmpty())
+        database.openHelper.readableDatabase.query("SELECT COUNT(*) FROM feed WHERE subscription_id = $selected").use {
+            assertTrue(it.moveToFirst())
+            assertEquals(0, it.getInt(0))
+        }
+        val sync = database.subscriptionSyncDAO()
+        val changes = sync.getChangeOrigins().flatMap { sync.getChangesAfter(it, 0, 100) }
+        assertEquals(1, changes.size)
+        assertEquals("DELETE", changes.single().changeType)
+        assertEquals(profile, changes.single().profileId)
+        manager.deleteLibrarySubscription(0, "https://example.com/same_channel").blockingAwait()
+        assertEquals(1, sync.getChangeOrigins().sumOf { sync.getChangesAfter(it, 0, 100).size })
+        assertNull(database.subscriptionDAO().getSubscriptionForProfile(profile, selected))
+    }
+
+    @Test
+    fun removingAllGroupMembershipsKeepsTheSubscription() {
+        val profile = "11111111-1111-4111-8111-111111111111"
+        val selected = insert(profile, "keep")
+        val groups = database.feedGroupDAO()
+        val group = groups.insert(FeedGroupEntity(0, "Test", FeedGroupIcon.ALL, profileId = profile))
+        groups.setGroupsForSubscriptionForProfile(profile, selected, listOf(group))
+        groups.setGroupsForSubscriptionForProfile(profile, selected, emptyList())
+        assertEquals(listOf(selected), SubscriptionManager(context, profile).subscriptions().blockingFirst().map { it.uid })
+        assertTrue(database.subscriptionSyncDAO().getAllRecords().isEmpty())
     }
 
     @Test

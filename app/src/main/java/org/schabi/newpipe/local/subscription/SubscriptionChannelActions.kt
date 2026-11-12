@@ -140,7 +140,7 @@ internal class SubscriptionChannelActions(
 
     private fun deleteChannel(selectedItem: ChannelInfoItem) {
         disposables.add(
-            subscriptionManager.deleteSubscription(selectedItem.serviceId, selectedItem.url)
+            subscriptionManager.deleteLibrarySubscription(selectedItem.serviceId, selectedItem.url)
                 .subscribe(
                     {
                         if (fragment.view != null) {

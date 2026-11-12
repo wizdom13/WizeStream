@@ -509,7 +509,8 @@ can vary by version, build, and provider.
 - Set a publication date cutoff in What’s New to narrow the feed. During refresh, new items arrive
   progressively and the completion banner appears once when new highlighted items are visible.
 - Arrange subscriptions with drag-and-drop ordering, named separators, multiselection, and bulk moves
-- Unsubscribe from multiple selected channels with a count confirmation, limited to the current profile
+- Unsubscribe directly from checked channels in Edit mode with a count confirmation; outside Edit mode, use the searchable multi-channel picker
+- Single and bulk unsubscribe in the subscription library remove all memberships of the selected channels from the current profile; channel screens retain separate YouTube/YouTube Music membership controls
 - Refresh feeds manually or in the background, with configurable intervals, optional unmetered networking,
   and refresh across profiles; use **Refresh all now** to bypass the usual refresh threshold
 - Receive configurable new-stream notifications for selected subscriptions, with checking-frequency,
