@@ -7,6 +7,9 @@ Release history is listed newest first. The number beside each release is its An
 ### Improvements
 
 - Search loaded video comments and author names, with a clear action and explicit page loading.
+- Play or queue a stream's audio on a self-hosted [yt-fifo](https://github.com/jagjordi/yt-fifo)
+  server (Snapcast home audio) from the long-press menu and the Cast picker, once its HTTPS URL is set
+  in the video and audio settings. Validate replies and keep existing casting connections intact.
 
 - Add radio song titles supplied by stations to profile history, with station names and logos,
   duplicate suppression, and support for Incognito and disabled watch history.

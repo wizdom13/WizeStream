@@ -217,6 +217,15 @@
             app:singleLineTitle="false"
             app:iconSpaceReserved="false" />
 
+        <EditTextPreference
+            android:defaultValue=""
+            android:inputType="textUri"
+            android:key="@string/yt_fifo_url_key"
+            android:summary="@string/yt_fifo_url_summary"
+            android:title="@string/yt_fifo_url_title"
+            app:singleLineTitle="false"
+            app:iconSpaceReserved="false" />
+
         <ListPreference
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

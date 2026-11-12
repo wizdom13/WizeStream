@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="yt_fifo_url_title">Home audio server (yt-fifo)</string>
+    <string name="yt_fifo_url_summary">HTTPS URL of your yt-fifo server, e.g. https://audio.example.org. Plain HTTP servers need an HTTPS reverse proxy. When set, \"Play on home audio\" and \"Queue on home audio\" appear in the stream long-press menu and the Cast picker.</string>
+    <string name="yt_fifo_url_invalid">Enter an HTTPS server URL without credentials, query parameters or a fragment, or leave it empty to disable home audio.</string>
+    <string name="home_audio_response_error">Could not confirm the server response. Check the home audio queue before trying again.</string>
+    <string name="home_audio_playing">Playing on home audio: %1$s</string>
+    <string name="home_audio_queued">Queued on home audio: %1$s</string>
+    <string name="home_audio_failed">Home audio: %1$s</string>
+</resources>
