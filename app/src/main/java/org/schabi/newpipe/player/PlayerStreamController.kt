@@ -38,7 +38,8 @@ internal class PlayerStreamController(
     private val videoResolver: VideoPlaybackResolver,
     private val dataSource: PlayerDataSource
 ) {
-    private var audioDecoderFallback: Pair<String, String?>? = null
+    private var audioDecoderFallbackUrl: String? = null
+    private val audioDecoderFallbackTracks = mutableSetOf<String?>()
 
     fun enableAudioDecoderFallback(item: PlayQueueItem) {
         val info = player.currentStreamInfo.orElse(null) ?: return
@@ -47,16 +48,21 @@ internal class PlayerStreamController(
             info.serviceId == item.serviceId && info.url == item.url &&
             info.streamType == StreamType.VIDEO_STREAM && audio.format == MediaFormat.M4A
         ) {
-            audioDecoderFallback = item.url to audio.audioTrackId
+            if (audioDecoderFallbackUrl != item.url) {
+                audioDecoderFallbackTracks.clear()
+                audioDecoderFallbackUrl = item.url
+            }
+            audioDecoderFallbackTracks.add(audio.audioTrackId)
         }
     }
 
     fun clearAudioDecoderFallback() {
-        audioDecoderFallback = null
+        audioDecoderFallbackUrl = null
+        audioDecoderFallbackTracks.clear()
     }
 
     private fun fallbackAudioTrack(info: StreamInfo): AudioTrack? {
-        val (url, trackId) = audioDecoderFallback ?: return null
+        val url = audioDecoderFallbackUrl ?: return null
         if (info.url != url || info.serviceId != ServiceList.YouTube.serviceId ||
             info.streamType != StreamType.VIDEO_STREAM
         ) {
@@ -66,7 +72,8 @@ internal class PlayerStreamController(
         val streams = ListHelper.getFilteredAudioStreams(context, info.audioStreams)
         val index = ListHelper.getAudioFormatIndex(context, streams, audioResolver.audioTrack)
         val selected = streams.getOrNull(index) ?: return null
-        if (selected.audioTrackId != trackId || selected.format != MediaFormat.M4A) return null
+        val trackId = selected.audioTrackId
+        if (trackId !in audioDecoderFallbackTracks || selected.format != MediaFormat.M4A) return null
 
         val alternatives = info.audioStreams.filter {
             it.audioTrackId == trackId && it.deliveryMethod != DeliveryMethod.HLS &&

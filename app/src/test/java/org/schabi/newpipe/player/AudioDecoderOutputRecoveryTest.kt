@@ -168,6 +168,109 @@ class AudioDecoderOutputRecoveryTest {
         verify(resolver).resolve(info, null)
     }
 
+    @Test
+    fun audioLanguageSwitchesHaveSeparateBoundedAttempts() {
+        val f = Fixture()
+        val english = audio(MediaFormat.M4A, "en.original")
+        val french = audio(MediaFormat.M4A, "fr.dubbed")
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(english))
+        assertTrue(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+        assertFalse(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(french))
+        assertTrue(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+        assertFalse(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+
+        // Switching back does not replenish the English track's attempt, even after using Opus.
+        val englishOpus = audio(MediaFormat.WEBMA_OPUS, "en.original")
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(englishOpus))
+        assertFalse(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(english))
+        assertFalse(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+        verify(f.player, times(2)).restartForAudioTrackRecovery()
+
+        `when`(f.item.url).thenReturn("https://www.youtube.com/watch?v=next")
+        assertTrue(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+        f.controller.resetRecovery()
+        assertTrue(f.controller.tryRecoverFromAudioDecoderOutputFailure(f.error()))
+    }
+
+    @Test
+    fun switchingBackRetainsEachLanguagesOpusFallbackWithoutChangingOtherTracks() {
+        val f = StreamFixture()
+        val frenchAac = audio(MediaFormat.M4A, "fr")
+        val frenchOpus = audio(MediaFormat.WEBMA_OPUS, "fr")
+        val description = audio(MediaFormat.M4A, "en.description")
+        `when`(f.info.audioStreams).thenReturn(listOf(f.aac, f.opus, frenchAac, frenchOpus, description))
+        f.controller.enableAudioDecoderFallback(f.item)
+        f.controller.sourceOf(f.info)
+
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(frenchAac))
+        `when`(f.resolver.audioTrack).thenReturn("fr")
+        f.controller.enableAudioDecoderFallback(f.item)
+        f.controller.sourceOf(f.info)
+
+        `when`(f.resolver.audioTrack).thenReturn("en")
+        f.controller.sourceOf(f.info)
+        val selection = ArgumentCaptor.forClass(AudioTrack::class.java)
+        verify(f.resolver, times(3)).resolve(eq(f.info), selection.capture())
+        assertEquals(listOf(f.opus, frenchOpus, f.opus), selection.allValues.map { it.selectedAudioStream })
+        selection.allValues.forEach { assertTrue(it.audioStreams.contains(description)) }
+
+        f.controller.clearAudioDecoderFallback()
+        f.controller.sourceOf(f.info)
+        verify(f.resolver).resolve(f.info, null)
+    }
+
+    @Test
+    fun missingSameTrackOpusNeverFallsBackToAnotherLanguageOrAnotherVideo() {
+        val f = StreamFixture()
+        val french = audio(MediaFormat.M4A, "fr")
+        `when`(f.info.audioStreams).thenReturn(listOf(f.aac, f.opus, french))
+        f.controller.enableAudioDecoderFallback(f.item)
+        `when`(f.player.selectedAudioStream).thenReturn(Optional.of(french))
+        `when`(f.resolver.audioTrack).thenReturn("fr")
+        f.controller.enableAudioDecoderFallback(f.item)
+        f.controller.sourceOf(f.info)
+        verify(f.resolver).resolve(f.info, null)
+
+        `when`(f.resolver.audioTrack).thenReturn("en")
+        `when`(f.info.url).thenReturn("https://www.youtube.com/watch?v=other")
+        f.controller.sourceOf(f.info)
+        verify(f.resolver, times(2)).resolve(f.info, null)
+    }
+
+    private inner class StreamFixture {
+        val player = mock(Player::class.java)
+        val item = mock(PlayQueueItem::class.java)
+        val info = mock(StreamInfo::class.java)
+        val resolver = mock(AudioPlaybackResolver::class.java)
+        val context = RuntimeEnvironment.getApplication()
+        val controller = PlayerStreamController(
+            player,
+            context,
+            resolver,
+            mock(VideoPlaybackResolver::class.java),
+            mock(PlayerDataSource::class.java)
+        )
+        val aac = audio(MediaFormat.M4A, "en")
+        val opus = audio(MediaFormat.WEBMA_OPUS, "en")
+
+        init {
+            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                .putString(context.getString(R.string.default_audio_format_key), context.getString(R.string.audio_m4a_key))
+                .apply()
+            `when`(item.url).thenReturn("https://www.youtube.com/watch?v=test")
+            `when`(info.url).thenReturn("https://www.youtube.com/watch?v=test")
+            `when`(info.streamType).thenReturn(StreamType.VIDEO_STREAM)
+            `when`(info.audioStreams).thenReturn(listOf(aac, opus))
+            `when`(player.audioPlayerSelected()).thenReturn(true)
+            `when`(player.currentStreamInfo).thenReturn(Optional.of(info))
+            `when`(player.selectedAudioStream).thenReturn(Optional.of(aac))
+            `when`(resolver.audioTrack).thenReturn("en")
+        }
+    }
+
     private fun audio(format: MediaFormat, trackId: String): AudioStream = mock(AudioStream::class.java).also {
         `when`(it.format).thenReturn(format)
         `when`(it.audioTrackId).thenReturn(trackId)
