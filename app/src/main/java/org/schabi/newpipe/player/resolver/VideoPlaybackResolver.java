@@ -282,6 +282,10 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         requiredDvrStreamUrl = streamUrl;
     }
 
+    public boolean isDvrRequiredForLiveStream(@NonNull final String streamUrl) {
+        return streamUrl.equals(requiredDvrStreamUrl);
+    }
+
     public void clearLiveDvrRequirement() {
         requiredDvrStreamUrl = null;
     }

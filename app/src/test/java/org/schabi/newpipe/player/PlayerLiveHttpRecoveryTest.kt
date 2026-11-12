@@ -555,6 +555,22 @@ class PlayerLiveHttpRecoveryTest {
     }
 
     @Test
+    fun protectedDvrWithoutARefreshedDashUrlNeverArmsHlsFallback() {
+        val fixture = Fixture()
+        `when`(fixture.player.isNormalLive()).thenReturn(false)
+        `when`(fixture.resolver.isDvrRequiredForLiveStream(fixture.info.url)).thenReturn(true)
+        fixture.info.dashMpdUrl = ""
+        fixture.state(Media3Player.STATE_READY)
+        fixture.state(Media3Player.STATE_BUFFERING)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        verify(fixture.player).reloadPlayQueueManager()
+        verify(fixture.player).setRecovery()
+        verify(fixture.resolver, never()).preferHlsForLiveStream(anyString())
+        verify(fixture.queue, never()).unsetRecovery(0)
+        fixture.controller.resetRecovery()
+    }
+
+    @Test
     fun fullLiveStopsAfterBoundedRetriesInsteadOfDroppingRewind() {
         val fixture = Fixture()
         `when`(fixture.player.isNormalLive()).thenReturn(false)

@@ -41,6 +41,7 @@ import org.schabi.newpipe.player.datasource.NonUriHlsDataSourceFactory;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
+import org.schabi.newpipe.player.mediasource.UnavailableFullLiveMediaSource;
 import org.schabi.newpipe.player.mediasource.YoutubeLiveMediaSource;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.StreamTypeUtil;
@@ -227,12 +228,16 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
             if (dataSource.isNormalLive(info.getUrl()) && !info.getHlsUrl().isEmpty()) {
                 return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
             }
+            if (requireDvr && info.getServiceId() == ServiceList.YouTube.getServiceId()
+                    && info.getDashMpdUrl().isEmpty()) {
+                return new UnavailableFullLiveMediaSource(tag.asMediaItem());
+            }
             // HLS can expose only a few seconds of history. Prefer a refreshable DASH DVR window,
             // while retaining HLS recovery for finite snapshots and failed DASH preparation.
             if (isManifestOnlyYoutubeLive) {
                 final MediaSource hls = buildLiveMediaSource(
                         dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
-                if (info.getDashMpdUrl().isEmpty() || preferHls) {
+                if (info.getDashMpdUrl().isEmpty() || (preferHls && !requireDvr)) {
                     if (DEBUG) {
                         Log.d(TAG, preferHls ? "Live source: HLS after DASH stall"
                                 : "Live source: HLS only");
