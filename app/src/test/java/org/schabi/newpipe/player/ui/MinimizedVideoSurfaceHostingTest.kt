@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player.ui
 
+import android.view.View
 import android.widget.FrameLayout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,6 +43,33 @@ class MinimizedVideoSurfaceHostingTest {
         assertSame(params, surface.layoutParams)
         assertEquals(originalIndex, original.indexOfChild(surface))
         assertFalse(minimized.restore())
+    }
+
+    @Test
+    fun restoreDoesNotAddSurfaceTwiceWhenRemovalCallbackAlreadyReattachedIt() {
+        val context = RuntimeEnvironment.getApplication()
+        val original = FrameLayout(context)
+        val surface = ExpandableSurfaceView(context, null)
+        original.addView(surface)
+        val host = object : FrameLayout(context) {
+            var reattachOnRemove = false
+
+            override fun removeView(view: View?) {
+                super.removeView(view)
+                if (reattachOnRemove && view?.parent == null) {
+                    original.addView(view)
+                }
+            }
+        }
+
+        val minimized = MinimizedVideoSurface()
+        assertTrue(minimized.show(surface, host))
+        host.reattachOnRemove = true
+
+        assertTrue(minimized.restore())
+        assertSame(original, surface.parent)
+        assertEquals(1, original.childCount)
+        assertFalse(minimized.isHosting())
     }
 
     @Test

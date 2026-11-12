@@ -22,14 +22,34 @@ class MinimizedVideoSurface {
     fun show(view: ExpandableSurfaceView, host: FrameLayout): Boolean {
         if (surface === view && view.parent === host) return false
         restore()
+
         val previousParent = view.parent as? ViewGroup ?: return false
+        val previousParams = view.layoutParams
+        val previousIndex = previousParent.indexOfChild(view)
+        previousParent.removeView(view)
+
+        // A surface callback can synchronously reattach the view while removeView() is running.
+        // Respect that new parent instead of adding the same child to a second ViewGroup.
+        val parentAfterRemoval = view.parent
+        if (parentAfterRemoval != null && parentAfterRemoval !== host) return false
+
+        view.setMiniPlayerMode(true)
+        if (view.parent == null) {
+            host.addView(
+                view,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    Gravity.CENTER
+                )
+            )
+        }
+        if (view.parent !== host) return false
+
         surface = view
         parent = previousParent
-        params = view.layoutParams
-        index = previousParent.indexOfChild(view)
-        previousParent.removeView(view)
-        view.setMiniPlayerMode(true)
-        host.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER))
+        params = previousParams
+        index = previousIndex
         return true
     }
 
@@ -43,12 +63,23 @@ class MinimizedVideoSurface {
      */
     fun restore(): Boolean {
         val view = surface ?: return false
-        (view.parent as? ViewGroup)?.removeView(view)
+        val originalParent = parent
+
+        if (view.parent !== originalParent) {
+            (view.parent as? ViewGroup)?.removeView(view)
+        }
         view.setMiniPlayerMode(false)
-        parent?.let { it.addView(view, index.coerceAtMost(it.childCount), params) }
+
+        // removeView() may synchronously restore SurfaceView ownership. Only add the view when it
+        // is still detached, and never add it again when it already reached the original parent.
+        if (view.parent == null) {
+            originalParent?.addView(view, index.coerceAtMost(originalParent.childCount), params)
+        }
+        val restored = view.parent === originalParent
+
         surface = null
         parent = null
         params = null
-        return true
+        return restored
     }
 }
