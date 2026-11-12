@@ -18,6 +18,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -37,6 +38,7 @@ import org.junit.Test
 import org.schabi.newpipe.R
 import org.schabi.newpipe.about.AboutActivity
 import org.schabi.newpipe.databinding.PlayerBinding
+import org.schabi.newpipe.player.OptionalPlaybackFeatures
 import org.schabi.newpipe.player.ui.MinimizedVideoSurface
 
 class SphericalPlaybackTest {
@@ -48,6 +50,8 @@ class SphericalPlaybackTest {
         // Generated with FFmpeg, without audio or remote/network dependencies.
         val video = File(instrumentation.targetContext.cacheDir, "spherical-playback-test.mp4")
         video.writeBytes(Base64.decode(instrumentation.context.assets.open("spherical/longitude.mp4.base64").use { it.readBytes() }, Base64.DEFAULT))
+        val preferences = PreferenceManager.getDefaultSharedPreferences(instrumentation.targetContext)
+        val previousSetting = preferences.all[OptionalPlaybackFeatures.SPHERICAL_KEY] as? Boolean
         try {
             ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
                 var engine: ExoPlayer? = null
@@ -82,8 +86,15 @@ class SphericalPlaybackTest {
                             })
                             repeatMode = Player.REPEAT_MODE_ALL
                         }
+                        preferences.edit().remove(OptionalPlaybackFeatures.SPHERICAL_KEY).commit()
                         controller = PlayerVideoSurface(binding, state, { engine }, { true }, { false }, { "fixture" }, {})
                         controller!!.setup()
+                        controller!!.selectItem("fixture", true)
+                        controller!!.setMode(SphericalPlaybackState.Mode.EQUIRECTANGULAR)
+                        assertFalse(controller!!.isSpherical())
+                        assertEquals(View.GONE, binding.projectionButton.visibility)
+                        preferences.edit().putBoolean(OptionalPlaybackFeatures.SPHERICAL_KEY, true).commit()
+                        assertEquals(View.VISIBLE, binding.projectionButton.visibility)
                         controller!!.setMode(SphericalPlaybackState.Mode.EQUIRECTANGULAR)
                         sphere = controller!!.activeVideoView()
                         engine!!.setMediaItem(MediaItem.fromUri(video.toURI().toString()))
@@ -150,6 +161,16 @@ class SphericalPlaybackTest {
                         assertEquals(1_000L, engine!!.currentPosition)
                         controller!!.selectItem("tagged", true)
                         assertTrue(controller!!.isSpherical())
+                        preferences.edit().putBoolean(OptionalPlaybackFeatures.SPHERICAL_KEY, false).commit()
+                        assertFalse(controller!!.isSpherical())
+                        assertSame(binding.surfaceView, controller!!.activeVideoView())
+                        assertEquals(View.GONE, binding.projectionButton.visibility)
+                        assertFalse(state.useSensorRotation)
+                        assertEquals(1_000L, engine!!.currentPosition)
+                        controller!!.setMode(SphericalPlaybackState.Mode.EQUIRECTANGULAR)
+                        assertFalse(controller!!.isSpherical())
+                        preferences.edit().putBoolean(OptionalPlaybackFeatures.SPHERICAL_KEY, true).commit()
+                        assertTrue(controller!!.isSpherical())
                         controller!!.selectItem("ordinary-next-video", false)
                         assertFalse(controller!!.isSpherical())
                         assertEquals(SphericalPlaybackState.Mode.AUTO, state.mode)
@@ -164,6 +185,13 @@ class SphericalPlaybackTest {
                 }
             }
         } finally {
+            val edit = preferences.edit()
+            if (previousSetting == null) {
+                edit.remove(OptionalPlaybackFeatures.SPHERICAL_KEY)
+            } else {
+                edit.putBoolean(OptionalPlaybackFeatures.SPHERICAL_KEY, previousSetting)
+            }
+            edit.commit()
             video.delete()
         }
     }

@@ -1,5 +1,6 @@
 package org.schabi.newpipe.player
 
+import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import androidx.media3.common.MediaItem
@@ -7,17 +8,22 @@ import androidx.media3.common.Player as MediaPlayer
 import androidx.media3.exoplayer.ExoPlayer
 
 /** Session-only range. Manual seeks outside the range and queue transitions cancel it. */
-class ABRepeat : MediaPlayer.Listener {
+class ABRepeat(private val preferences: SharedPreferences) : MediaPlayer.Listener {
+    val enabled: Boolean get() = preferences.getBoolean(OptionalPlaybackFeatures.AB_REPEAT_KEY, false)
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if ((key == null || key == OptionalPlaybackFeatures.AB_REPEAT_KEY) && !enabled) clear()
+    }
     private var engine: ExoPlayer? = null
     private val handler = Handler(Looper.getMainLooper())
     var startMs: Long? = null
         private set
     var endMs: Long? = null
         private set
-    val active: Boolean get() = startMs != null && endMs != null
+    val active: Boolean get() = enabled && startMs != null && endMs != null
     private val tick = object : Runnable {
         override fun run() {
             val current = engine ?: return
+            if (!enabled) clear()
             if (!active) return
             if (current.isPlaying && current.currentPosition >= requireNotNull(endMs)) {
                 current.seekTo(requireNotNull(startMs))
@@ -30,15 +36,17 @@ class ABRepeat : MediaPlayer.Listener {
         detach()
         engine = player
         player.addListener(this)
+        preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
     }
 
     fun detach() {
+        preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         clear()
         engine?.removeListener(this)
         engine = null
     }
 
-    fun available(): Boolean = engine?.let {
+    fun available(): Boolean = enabled && engine?.let {
         it.isCurrentMediaItemSeekable && !it.isCurrentMediaItemLive && it.duration > 500
     } == true
 

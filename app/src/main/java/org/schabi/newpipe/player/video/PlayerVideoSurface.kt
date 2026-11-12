@@ -1,6 +1,7 @@
 package org.schabi.newpipe.player.video
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Build
@@ -20,9 +21,11 @@ import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.video.spherical.SphericalGLSurfaceView
+import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.schabi.newpipe.R
 import org.schabi.newpipe.databinding.PlayerBinding
+import org.schabi.newpipe.player.OptionalPlaybackFeatures
 import org.schabi.newpipe.player.mediaitem.MediaItemTag
 import org.schabi.newpipe.player.playback.SurfaceHolderCallback
 import org.schabi.newpipe.player.ui.AnchoredPlaybackDialog
@@ -41,6 +44,14 @@ class PlayerVideoSurface internal constructor(
     private val onTap: () -> Unit,
     private val keepRenderingPaused: () -> Boolean = { false }
 ) : AnalyticsListener, DefaultLifecycleObserver {
+    private val preferences = PreferenceManager.getDefaultSharedPreferences(binding.root.context)
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == null || key == OptionalPlaybackFeatures.SPHERICAL_KEY) {
+            dismissDialog()
+            updateOutput()
+        }
+    }
+    private val enabled: Boolean get() = preferences.getBoolean(OptionalPlaybackFeatures.SPHERICAL_KEY, false)
     private var closed = false
     private var engine: ExoPlayer? = null
     private var formatKey: String? = null
@@ -66,6 +77,8 @@ class PlayerVideoSurface internal constructor(
     }
 
     init {
+        preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
+        binding.projectionButton.visibility = View.GONE
         host.addOnAttachStateChangeListener(attachListener)
         host.onPresentationChanged = ::updateVisibility
         host.onBeforeDetach = ::pause
@@ -121,6 +134,7 @@ class PlayerVideoSurface internal constructor(
     }
 
     fun setMode(mode: SphericalPlaybackState.Mode) {
+        if (!enabled) return
         state.mode = mode
         updateOutput()
     }
@@ -132,10 +146,15 @@ class PlayerVideoSurface internal constructor(
         .map { "${it.serviceId}:${it.streamUrl}" }.orElse(itemKey())
 
     private fun updateOutput() {
+        if (closed) return
         state.setContainerHint(if (formatKey == state.currentItemKey()) formatProjection else null)
         val eligible = rendersVideo()
-        binding.projectionButton.visibility = if (eligible) View.VISIBLE else View.GONE
-        val useSphere = eligible && state.isSpherical()
+        if (!enabled) {
+            state.mode = SphericalPlaybackState.Mode.AUTO
+            state.useSensorRotation = false
+        }
+        binding.projectionButton.visibility = if (eligible && enabled) View.VISIBLE else View.GONE
+        val useSphere = eligible && enabled && state.isSpherical()
         binding.projectionButton.isActivated = useSphere
         binding.resizeTextView.isEnabled = !useSphere
         if (engine == null) return
@@ -284,6 +303,7 @@ class PlayerVideoSurface internal constructor(
     }
 
     private fun showOptions() {
+        if (!enabled) return
         dialog?.dismiss()
         val context = PlayerPopupMenu.dialogContext(binding.projectionButton)
         val labels = arrayOf(context.getString(R.string.player_projection_auto), context.getString(R.string.player_projection_flat), context.getString(R.string.player_projection_360))
@@ -340,6 +360,7 @@ class PlayerVideoSurface internal constructor(
     }
 
     fun close() {
+        preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         closed = true
         clear()
         owner?.lifecycle?.removeObserver(this)

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="enable_360_playback_title">Enable 360° playback</string>
+    <string name="enable_360_playback_summary">Show projection controls and allow automatic or manual 360° playback. Off by default.</string>
+    <string name="enable_ab_repeat_title">Enable A–B repeat</string>
+    <string name="enable_ab_repeat_summary">Show A–B controls to repeat a selected range in seekable, non-live videos and audio. Turning this off clears the active range. Off by default.</string>
+</resources>
