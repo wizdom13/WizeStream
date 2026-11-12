@@ -4,7 +4,16 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.41.0 (`1041000`)
+
+### Playback
+
+- Add 360° video playback with automatic projection detection, manual equirectangular mode,
+  touch and D-pad panning, optional motion tracking, and Recenter.
+
 ### Improvements
+
+- Add optional thumbnail previews to new-stream notifications.
 
 - Search loaded video comments and author names, with a clear action and explicit page loading.
 - Play or queue a stream's audio on a self-hosted [yt-fifo](https://github.com/jagjordi/yt-fifo)
@@ -14,11 +23,15 @@ Release history is listed newest first. The number beside each release is its An
 - Add radio song titles supplied by stations to profile history, with station names and logos,
   duplicate suppression, and support for Incognito and disabled watch history.
 
-- Select all or clear the selection when unsubscribing from multiple channels, with confirmation
-  before removing subscriptions.
+- Use Edit mode for channel selections, with select-all and clear-selection actions, and keep
+  unsubscribe behavior consistent between library groups and the subscription screen.
 - Hold player controls to see their labels, while preserving existing long-press actions.
 
 ### Fixes
+
+- Add spacing between the miniplayer preview and channel details in standard and wide landscape layouts.
+- Guard miniplayer video-surface reparenting against duplicate attachments.
+- Improve Bandcamp requests with the client verification cookie.
 
 - Recover AAC decoder failures separately for each audio language and remember same-track Opus
   fallbacks while switching languages, without granting repeated retries to failed tracks.
@@ -35,6 +48,10 @@ Release history is listed newest first. The number beside each release is its An
 - Show a search button beside the Live TV search field while text is entered, matching Live Radio.
 - Add a Material 3 Live TV screen beneath Live Radio, with M3U file/HTTPS URL import,
   channel logos, group filters, search, favorites, and playlist management.
+- Browse worldwide country lists from IPTV-org by default or Free-TV, with cached lists and
+  automatic refresh when opening or resuming after 24 hours. Retain cached channels if refresh fails.
+- Combine duplicate directory channels, preserve directory favorites across stream URL changes,
+  and allow manual selection of alternative streams.
 - Cache playlists and favorites per profile and play channels through the existing video player
   with fullscreen and TV remote controls.
 

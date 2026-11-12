@@ -185,7 +185,7 @@ can vary by version, build, and provider.
 
 ### Streaming services and discovery
 
-| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| Feature | WizeStream | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | YouTube streaming without signing in | Yes | Yes | Yes | Yes |
 | YouTube Music | Dedicated Music destination | Supported | YouTube music player mode | Inherited from NewPipe |
@@ -201,16 +201,16 @@ can vary by version, build, and provider.
 
 ### Local media, Live TV, and Live Radio
 
-| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| Feature | WizeStream | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | Browse and play device audio and video | Local Media browser with search, filters, folders, exclusions, and rescans | — | — | — |
 | Local-file playback modes | Main player, background audio, and popup | — | — | — |
-| Live TV channel directory | Unreleased: worldwide country browser with IPTV-org by default and optional Free-TV | — | — | — |
-| Live TV playlist imports | Unreleased: M3U files and HTTPS playlist URLs, plus custom channel URLs | — | — | — |
-| Live TV search and organization | Unreleased: channel search with a contextual search button, group and playlist filters, logos, and favorites | — | — | — |
-| Live TV cache and refresh | Unreleased: cached country lists, refresh when lists are over a day old on opening or resuming, and manual refresh | — | — | — |
-| Live TV playback | Unreleased: existing video player with fullscreen, TV remote controls, and manual alternative-stream selection | — | — | — |
-| Live TV profiles | Unreleased: playlists and favorites stored separately per profile | — | — | — |
+| Live TV channel directory | Worldwide country browser with IPTV-org by default and optional Free-TV | — | — | — |
+| Live TV playlist imports | M3U files and HTTPS playlist URLs, plus custom channel URLs | — | — | — |
+| Live TV search and organization | Channel search with a contextual search button, group and playlist filters, logos, and favorites | — | — | — |
+| Live TV cache and refresh | Cached country lists, refresh when lists are over a day old on opening or resuming, and manual refresh | — | — | — |
+| Live TV playback | Existing video player with fullscreen, TV remote controls, and manual alternative-stream selection | — | — | — |
+| Live TV profiles | Playlists and favorites stored separately per profile | — | — | — |
 | Internet radio directory | Worldwide Radio Browser stations | — | — | — |
 | Radio search and filters | Station name, country, language, and genre | — | — | — |
 | Radio favorites and custom streams | Favorites and custom HTTPS audio or HLS URLs | — | — | — |
@@ -218,12 +218,12 @@ can vary by version, build, and provider.
 
 ### Playback, gestures, and devices
 
-| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| Feature | WizeStream | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | Background audio | Yes, with Listen mode | Yes | Yes, with music player mode | Inherited from NewPipe |
 | Floating video player | Popup and optional native Android picture-in-picture | Popup | — | Inherited popup player |
 | Playback speed and captions | Both, with per-channel preferences | Both | Both | Inherited from NewPipe |
-| 360° video playback | Unreleased: automatic projection detection, manual equirectangular mode, drag/DPAD panning, optional motion tracking, and Recenter | — | — | — |
+| 360° video playback | Automatic projection detection, manual equirectangular mode, drag/DPAD panning, optional motion tracking, and Recenter | — | — | — |
 | Subtitle timing and A–B repeat | Session-only caption offset and non-live A–B repeat | — | — | — |
 | Audio tools | 10-band equalizer, visualizers, loudness normalization, and compression | — | — | — |
 | Chapter markers in the seek bar | Markers, titles while seeking, and supported haptics | [Chapter divisions][comparison-newpipe-releases] | — | — |
@@ -235,11 +235,11 @@ can vary by version, build, and provider.
 | Samsung DeX and large screens | Compact playlist search cards in DeX and landscape, plus tablet layouts | Tablet layout choices | — | — |
 | Android Auto | Audio browsing, voice search, and resume | [Supported][comparison-newpipe-devices] | [Supported][comparison-pipepipe-auto] | — |
 | TV casting | FCast and Chromecast-compatible receivers | — | — | — |
-| Home audio handoff | Unreleased: optional HTTPS yt-fifo server with Snapcast; play now or queue a stream link | — | — | — |
+| Home audio handoff | Optional HTTPS yt-fifo server with Snapcast; play now or queue a stream link | — | — | — |
 
 ### Profiles, privacy, and networking
 
-| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| Feature | WizeStream | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | Local profiles | Separate subscriptions, playlists, feeds, history, and playback progress | — | — | — |
 | Kids Mode and Incognito | Per-profile PIN restrictions and a separate activity-recording pause | — | — | — |
@@ -250,7 +250,7 @@ can vary by version, build, and provider.
 
 ### Library, subscriptions, and downloads
 
-| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| Feature | WizeStream | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | Account-free subscriptions and channel groups | Yes, scoped to the active profile | Yes | Yes | Inherited from NewPipe |
 | Subscription feed | What’s New, group and service scopes, publication date cutoff, and progressive refresh | Feeds by channel group | Grouped subscription feed | Inherited from NewPipe |
@@ -269,7 +269,7 @@ can vary by version, build, and provider.
 
 ### Interface, accessibility, and releases
 
-| Feature | WizeStream 1.40.0 | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
+| Feature | WizeStream | [NewPipe][comparison-newpipe] | [PipePipe][comparison-pipepipe] | [BravePipe][comparison-bravepipe] |
 | --- | --- | --- | --- | --- |
 | Appearance and navigation | Material 3, third-party themes, and configurable home navigation | List, grid, and card layouts | Configurable player UI and list sorting | — |
 | Transcripts, notes, and Learning Mode | Searchable captions, timestamped notes, and study tools | — | — | — |

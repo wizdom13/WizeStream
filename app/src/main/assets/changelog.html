@@ -19,7 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
-<li><a href="#unreleased">Unreleased</a></li>
+<li><a href="#release-1041000">WizeStream 1.41.0</a></li>
 <li><a href="#release-1040001">WizeStream 1.40.1</a></li>
 <li><a href="#release-1040000">WizeStream 1.40.0</a></li>
 <li><a href="#release-1039000">WizeStream 1.39.0</a></li>
@@ -110,10 +110,17 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
-<section id="unreleased">
-<h2>Unreleased</h2>
+<section id="release-1041000" data-version="1.41.0" data-version-code="1041000">
+<h2>WizeStream 1.41.0</h2>
 <div class="release-notes">
+<h3>Playback</h3>
+<ul>
+<li>Add 360° video playback with automatic projection detection, manual equirectangular mode, touch and D-pad panning, optional motion tracking, and Recenter.</li>
+</ul>
 <h3>Improvements</h3>
+<ul>
+<li>Add optional thumbnail previews to new-stream notifications.</li>
+</ul>
 <ul>
 <li>Search loaded video comments and author names, with a clear action and explicit page loading.</li>
 <li>Play or queue a stream&#x27;s audio on a self-hosted <a href="https://github.com/jagjordi/yt-fifo">yt-fifo</a> server (Snapcast home audio) from the long-press menu and the Cast picker, once its HTTPS URL is set in the video and audio settings. Validate replies and keep existing casting connections intact.</li>
@@ -122,10 +129,15 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li>Add radio song titles supplied by stations to profile history, with station names and logos, duplicate suppression, and support for Incognito and disabled watch history.</li>
 </ul>
 <ul>
-<li>Select all or clear the selection when unsubscribing from multiple channels, with confirmation before removing subscriptions.</li>
+<li>Use Edit mode for channel selections, with select-all and clear-selection actions, and keep unsubscribe behavior consistent between library groups and the subscription screen.</li>
 <li>Hold player controls to see their labels, while preserving existing long-press actions.</li>
 </ul>
 <h3>Fixes</h3>
+<ul>
+<li>Add spacing between the miniplayer preview and channel details in standard and wide landscape layouts.</li>
+<li>Guard miniplayer video-surface reparenting against duplicate attachments.</li>
+<li>Improve Bandcamp requests with the client verification cookie.</li>
+</ul>
 <ul>
 <li>Recover AAC decoder failures separately for each audio language and remember same-track Opus fallbacks while switching languages, without granting repeated retries to failed tracks.</li>
 </ul>
@@ -141,6 +153,8 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Show a search button beside the Live TV search field while text is entered, matching Live Radio.</li>
 <li>Add a Material 3 Live TV screen beneath Live Radio, with M3U file/HTTPS URL import, channel logos, group filters, search, favorites, and playlist management.</li>
+<li>Browse worldwide country lists from IPTV-org by default or Free-TV, with cached lists and automatic refresh when opening or resuming after 24 hours. Retain cached channels if refresh fails.</li>
+<li>Combine duplicate directory channels, preserve directory favorites across stream URL changes, and allow manual selection of alternative streams.</li>
 <li>Cache playlists and favorites per profile and play channels through the existing video player with fullscreen and TV remote controls.</li>
 </ul>
 </div>
