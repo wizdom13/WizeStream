@@ -25,7 +25,9 @@ internal class LiveMediaLoadRecovery(
         error: IOException,
         wasCanceled: Boolean
     ) {
-        if (wasCanceled || !isMediaSegment(mediaLoadData) ||
+        // Media3 also sets wasCanceled when its chunk loader stops retrying a failed
+        // request. The controller checks the actual engine, queue item and play state.
+        if (!isCurrentWindow(eventTime) || !isMediaSegment(mediaLoadData) ||
             PlayerHttpErrorRecovery.findInvalidResponseCode(error) != 403
         ) {
             return
@@ -42,7 +44,7 @@ internal class LiveMediaLoadRecovery(
         loadEventInfo: LoadEventInfo,
         mediaLoadData: MediaLoadData
     ) {
-        if (isMediaSegment(mediaLoadData)) {
+        if (isCurrentWindow(eventTime) && isMediaSegment(mediaLoadData)) {
             recovery.onLiveMediaSegmentLoaded(
                 engine,
                 mediaLoadData.trackType,
@@ -50,6 +52,8 @@ internal class LiveMediaLoadRecovery(
             )
         }
     }
+
+    private fun isCurrentWindow(time: EventTime): Boolean = time.windowIndex == engine.currentMediaItemIndex
 
     private fun isMediaSegment(data: MediaLoadData): Boolean {
         return data.dataType == C.DATA_TYPE_MEDIA &&

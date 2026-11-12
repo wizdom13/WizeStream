@@ -10,6 +10,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Timeline
 import androidx.media3.datasource.TransferListener
+import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifest
 import androidx.media3.exoplayer.source.CompositeMediaSource
 import androidx.media3.exoplayer.source.MediaPeriod
@@ -37,6 +38,8 @@ class YoutubeLiveMediaSource @JvmOverloads constructor(
         get() = if (usingHls) hlsSource else dashSource
 
     override fun getMediaItem(): MediaItem = selectedSource.mediaItem
+
+    internal fun dashForRefresh(): DashMediaSource? = if (!usingHls && publishedTimeline) dashSource as? DashMediaSource else null
 
     override fun prepareSourceInternal(mediaTransferListener: TransferListener?) {
         super.prepareSourceInternal(mediaTransferListener)

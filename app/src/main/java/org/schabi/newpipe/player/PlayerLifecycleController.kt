@@ -17,6 +17,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.helper.AudioReactor
 import org.schabi.newpipe.player.helper.LoadController
 import org.schabi.newpipe.player.helper.PlayerHelper
@@ -247,6 +248,9 @@ internal class PlayerLifecycleController(
                 LiveLoadDiagnostics(exoPlayer) {
                     player.currentStreamInfo.orElse(null)?.let {
                         PlaybackResolver.isManifestOnlyYoutubeLive(it)
+                    } == true || player.playQueue?.item?.let {
+                        PlayerHttpErrorRecovery.isYouTubeService(it.serviceId) &&
+                            it.streamType in setOf(StreamType.LIVE_STREAM, StreamType.AUDIO_LIVE_STREAM)
                     } == true
                 }
             )
