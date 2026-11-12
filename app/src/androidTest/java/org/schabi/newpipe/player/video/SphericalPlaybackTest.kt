@@ -62,6 +62,9 @@ class SphericalPlaybackTest {
                 try {
                     scenario.onActivity { activity ->
                         binding = PlayerBinding.inflate(LayoutInflater.from(activity))
+                        // This fixture owns playback directly, so no VideoPlayerUi hides loading.
+                        // An indeterminate spinner can prevent ActivityScenario from becoming idle.
+                        binding.loadingPanel.visibility = View.GONE
                         val root = FrameLayout(activity)
                         root.addView(binding.root, FrameLayout.LayoutParams(320, 180))
                         miniHost = FrameLayout(activity)
@@ -94,12 +97,21 @@ class SphericalPlaybackTest {
                         assertEquals(View.GONE, binding.surfaceView.visibility)
                         assertEquals(1_000L, engine!!.currentPosition)
                         assertFalse(engine!!.playWhenReady)
-                        val time = SystemClock.uptimeMillis()
-                        listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP).forEachIndexed { index, action ->
-                            val event = MotionEvent.obtain(time, time + index * 20L, action, if (index == 0) 100f else 2350f, 80f, 0)
+                    }
+                    // Let the gesture detector and GL renderer observe a drag across several frames.
+                    val downTime = SystemClock.uptimeMillis()
+                    repeat(21) { step ->
+                        instrumentation.runOnMainSync {
+                            val action = when (step) {
+                                0 -> MotionEvent.ACTION_DOWN
+                                20 -> MotionEvent.ACTION_UP
+                                else -> MotionEvent.ACTION_MOVE
+                            }
+                            val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, 100f + 2250f * step / 20f, 80f, 0)
                             assertTrue(controller!!.handleTouch(binding.root, event))
                             event.recycle()
                         }
+                        if (step < 20) SystemClock.sleep(16)
                     }
                     if (initialColor != null) {
                         assertTrue("Dragging should change the sampled longitude", awaitColor(sphere, initialColor) != null)
@@ -164,8 +176,10 @@ class SphericalPlaybackTest {
     private fun awaitColor(surface: SurfaceView, previous: Int? = null): Int? {
         if (Build.VERSION.SDK_INT < 26) return null // API 23 exercises decoding and lifecycle changes.
         val bitmap = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888)
+        var lastColor = Color.BLACK
+        var lastResult = PixelCopy.ERROR_SOURCE_NO_DATA
         try {
-            repeat(30) {
+            repeat(100) {
                 val copied = CountDownLatch(1)
                 var result = PixelCopy.ERROR_SOURCE_NO_DATA
                 instrumentation.runOnMainSync {
@@ -175,8 +189,10 @@ class SphericalPlaybackTest {
                     }, Handler(Looper.getMainLooper()))
                 }
                 assertTrue(copied.await(5, TimeUnit.SECONDS))
+                lastResult = result
                 if (result == PixelCopy.SUCCESS) {
                     val color = bitmap.getPixel(8, 8)
+                    lastColor = color
                     val visible = maxOf(Color.red(color), Color.green(color), Color.blue(color)) > 80
                     val changed = previous == null || abs(Color.red(color) - Color.red(previous)) +
                         abs(Color.green(color) - Color.green(previous)) + abs(Color.blue(color) - Color.blue(previous)) > 100
@@ -184,7 +200,7 @@ class SphericalPlaybackTest {
                 }
                 Thread.sleep(50)
             }
-            throw AssertionError("No visible spherical frame or camera movement")
+            throw AssertionError("No visible spherical frame or camera movement: result=$lastResult, previous=$previous, color=$lastColor, size=${surface.width}x${surface.height}")
         } finally {
             bitmap.recycle()
         }
