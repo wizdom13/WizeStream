@@ -223,8 +223,8 @@ can vary by version, build, and provider.
 | Background audio | Yes, with Listen mode | Yes | Yes, with music player mode | Inherited from NewPipe |
 | Floating video player | Popup and optional native Android picture-in-picture | Popup | — | Inherited popup player |
 | Playback speed and captions | Both, with per-channel preferences | Both | Both | Inherited from NewPipe |
-| 360° video playback | Automatic projection detection, manual equirectangular mode, drag/DPAD panning, optional motion tracking, and Recenter | — | — | — |
-| Subtitle timing and A–B repeat | Session-only caption offset and non-live A–B repeat | — | — | — |
+| 360° video playback | Opt-in (off by default): automatic projection detection, manual equirectangular mode, drag/DPAD panning, optional motion tracking, and Recenter | — | — | — |
+| Subtitle timing and A–B repeat | Session-only caption offset; opt-in non-live A–B repeat (off by default) | — | — | — |
 | Audio tools | 10-band equalizer, visualizers, loudness normalization, and compression | — | — | — |
 | Chapter markers in the seek bar | Markers, titles while seeking, and supported haptics | [Chapter divisions][comparison-newpipe-releases] | — | — |
 | Fullscreen volume and brightness swipes | Configurable | [Configurable sides][comparison-newpipe-gestures] | — | Inherited gestures |
@@ -462,7 +462,7 @@ can vary by version, build, and provider.
   **Continue listening** section; video and visualizers are never shown on the driving surface
 - Cast compatible streams to discovered FCast and Chromecast-compatible receivers on Android 8 and
   newer, with play, pause, stop, and receiver-switching controls
-- Optional session-only **A–B repeat** in expanded video controls repeats a selected non-live range. Set A, then B at least half a second later; leaving the range or changing tracks clears it.
+- Enable **A–B repeat** in **Settings → Video and audio** (off by default). The session-only control in expanded video controls repeats a selected non-live range. Set A, then B at least half a second later; leaving the range or changing tracks clears it.
 - Playback queues, repeat and shuffle controls, chapters, captions, and seek-bar thumbnail previews
 - See chapter boundaries on standard and Wavy seek bars, with the chapter title while seeking and
   a haptic tick when crossing a boundary on devices that support it
@@ -516,7 +516,7 @@ can vary by version, build, and provider.
   configured seek duration under **Settings > Video and audio**.
 - Set a sleep timer using presets, a custom duration, the end of the current video, or the end of the
   queue, with optional fade-out
-- Play 360° videos with Media3 spherical rendering: explicit YouTube or container projection metadata
+- Enable **360° playback** in **Settings → Video and audio** (off by default). With it enabled, explicit YouTube or container projection metadata
   activates it automatically. Use **360° → Video projection** in the player’s expanded controls to
   choose Automatic, Flat video, or manual 360° equirectangular playback for untagged videos.
   Drag to look around; enable optional device motion or use Recenter from the same dialog.

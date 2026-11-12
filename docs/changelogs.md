@@ -4,6 +4,12 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Playback settings
+
+- Add separate switches for 360° playback and A–B repeat in Video and audio settings, both off
+  by default. Hide their controls while disabled; disabling restores flat playback or clears the
+  active repeat range immediately.
+
 ## WizeStream 1.41.0 (`1041000`)
 
 ### Playback
