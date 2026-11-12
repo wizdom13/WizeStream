@@ -205,7 +205,7 @@ can vary by version, build, and provider.
 | --- | --- | --- | --- | --- |
 | Browse and play device audio and video | Local Media browser with search, filters, folders, exclusions, and rescans | — | — | — |
 | Local-file playback modes | Main player, background audio, and popup | — | — | — |
-| Live TV playlists | Unreleased: local M3U files and HTTPS playlist/HLS URLs, groups, channel logos, and favorites | — | — | — |
+| Live TV playlists | Unreleased: worldwide IPTV-org/Free-TV country browser, cached lists with daily refresh, alternative streams, M3U/HTTPS imports, groups, logos, and favorites | — | — | — |
 | Internet radio directory | Worldwide Radio Browser stations | — | — | — |
 | Radio search and filters | Station name, country, language, and genre | — | — | — |
 | Radio favorites and custom streams | Favorites and custom HTTPS audio or HLS URLs | — | — | — |
@@ -369,9 +369,22 @@ can vary by version, build, and provider.
 
 ### Live TV
 
-- Open **Live TV** beneath Live Radio in the navigation drawer. Import a local M3U file or
-  add an HTTPS playlist URL. An HTTPS HLS manifest URL can also be added as a single channel.
-- Imports are limited to 4 MiB each, with up to 10 playlists and 5,000 cached channels per profile.
+- Open **Live TV** beneath Live Radio in the navigation drawer. Choose **Browse channels**,
+  select **IPTV-org** (the default) or **Free-TV**, and search the country list to load channels.
+  Country choices cover the sources' available countries worldwide; no location permission is needed.
+- Built-in lists come from [IPTV-org](https://github.com/iptv-org/iptv) and
+  [Free-TV](https://github.com/Free-TV/IPTV). These community directories link to external streams;
+  availability can change or depend on region. Only supported HTTPS entries are imported.
+- Saved country lists appear immediately on reopening. When Live TV opens or resumes, lists older
+  than 24 hours refresh automatically, with cached channels retained if a request fails. Failed automatic
+  refreshes retry at most hourly in the current screen session. Use **Playlists → Refresh playlist**
+  to refresh manually. Lists remain separate for each profile.
+- Duplicate directory entries are combined by channel within each country. Hold a channel and
+  choose **Choose stream** when alternative URLs are available. Logos, category groups, search,
+  and favorites work with built-in lists; directory favorites survive stream URL changes.
+- Import a local M3U file or add an HTTPS playlist URL for personal sources. An HTTPS HLS manifest
+  URL can also be added as a single channel. Imports are limited to 4 MiB each, with up to 10
+  playlists and 5,000 cached stream URLs (including alternatives) per profile.
 - Browse channel logos and groups, search channel names, save favorites, and manage or refresh
   remote playlists. Search and action controls scroll with the channel list.
 - Play channels in the existing video player with fullscreen, miniplayer, and Android TV remote

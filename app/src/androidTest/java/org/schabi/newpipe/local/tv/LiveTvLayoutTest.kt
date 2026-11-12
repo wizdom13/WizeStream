@@ -15,6 +15,36 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem
 
 class LiveTvLayoutTest {
     @Test
+    fun builtInCountryPickerSearchesWorldwideAndDefaultsToIptvOrgWithoutNetworkRequests() {
+        ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
+            val dialogs = mutableListOf<androidx.appcompat.app.AlertDialog>()
+            var selected: TvDirectorySelection? = null
+            try {
+                scenario.onActivity { activity ->
+                    assertTrue(TvDirectory.choices(activity, TvDirectorySource.IPTV_ORG).size > 150)
+                    assertTrue(TvDirectory.choices(activity, TvDirectorySource.FREE_TV).size > 70)
+                    TvDirectoryPicker(activity.layoutInflater, { dialogs.add(it) }).show(null) { selected = it }
+                    assertEquals(0, dialogs.last().listView.checkedItemPosition)
+                    dialogs.last().getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).performClick()
+                }
+                // AlertDialog posts button callbacks; wait for that transition before searching.
+                scenario.onActivity { activity ->
+                    val country = dialogs.last()
+                    country.findViewById<android.widget.EditText>(R.id.radio_dialog_edit)!!.setText("Lebanon")
+                    val list = country.findViewById<android.widget.ListView>(R.id.radio_filter_choices)!!
+                    assertEquals(1, list.count)
+                    list.performItemClick(View(activity), 0, 0)
+                    assertEquals("LB", selected?.country?.code)
+                    assertEquals(TvDirectorySource.IPTV_ORG, selected?.source)
+                    assertEquals("https://iptv-org.github.io/iptv/countries/lb.m3u", selected?.address)
+                }
+            } finally {
+                scenario.onActivity { dialogs.forEach { dialog -> dialog.dismiss() } }
+            }
+        }
+    }
+
+    @Test
     fun materialScreenAndChannelRowsInflateWithRemoteFocusableItems() {
         ActivityScenario.launch(AboutActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
@@ -25,6 +55,7 @@ class LiveTvLayoutTest {
                 val holder = adapter.onCreateViewHolder(list, 0)
                 assertTrue(holder.itemView.isFocusable)
                 assertTrue(root.findViewById<View>(R.id.tv_add) is com.google.android.material.chip.Chip)
+                assertTrue(root.findViewById<View>(R.id.tv_browse) is com.google.android.material.chip.Chip)
                 org.junit.Assert.assertFalse(root.findViewById<View>(R.id.tv_add).isEnabled)
                 val header = root.findViewById<ViewGroup>(R.id.tv_header)
                 val flags = (header.getChildAt(0).layoutParams as com.google.android.material.appbar.AppBarLayout.LayoutParams).scrollFlags

@@ -29,10 +29,11 @@ internal class TvPlaylistStore(context: Context, profile: String) {
             val playlists = (0 until sources.length()).mapNotNull { index ->
                 val source = sources.optJSONObject(index) ?: return@mapNotNull null
                 val rows = source.optJSONArray("channels") ?: JSONArray()
+                if (rows.length() > M3uParser.MAX_CHANNELS) throw TvPlaylistLimitException()
                 val channels = (0 until rows.length()).mapNotNull { rows.optJSONObject(it)?.let(TvChannel::parse) }
-                TvPlaylist(source.getString("id"), source.getString("name"), source.optString("address").let { tvUrl(it) }, channels)
+                TvPlaylist(source.getString("id"), source.getString("name"), source.optString("address").let { tvUrl(it) }, channels, source.optLong("updatedAt"))
             }
-            if (playlists.sumOf { it.channels.size } > M3uParser.MAX_CHANNELS) throw TvPlaylistLimitException()
+            if (playlists.sumOf { it.streamCount } > M3uParser.MAX_CHANNELS) throw TvPlaylistLimitException()
             val favorites = root.optJSONArray("favorites") ?: JSONArray()
             TvLibrary(playlists, (0 until favorites.length()).mapNotNull { tvUrl(favorites.optString(it)) }.toSet())
         } catch (error: JSONException) {
@@ -41,7 +42,7 @@ internal class TvPlaylistStore(context: Context, profile: String) {
     }
 
     fun write(library: TvLibrary): Unit = synchronized(lock) {
-        if (library.playlists.size > 10 || library.playlists.sumOf { it.channels.size } > M3uParser.MAX_CHANNELS) throw TvPlaylistLimitException()
+        if (library.playlists.size > 10 || library.playlists.sumOf { it.streamCount } > M3uParser.MAX_CHANNELS) throw TvPlaylistLimitException()
         val data = JSONObject().put("playlists", JSONArray().apply { library.playlists.forEach { put(it.json()) } })
             .put("favorites", JSONArray(library.favorites.toList())).toString().toByteArray(Charsets.UTF_8)
         if (data.size > MAX_LIBRARY_BYTES) throw TvPlaylistLimitException()

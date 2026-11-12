@@ -11,7 +11,16 @@
     <string name="tv_playlists">Playlists</string>
     <string name="tv_playlist_name">Playlist name</string>
     <string name="tv_playlist_url">HTTPS playlist or HLS stream URL</string>
-    <string name="tv_empty">Import an M3U playlist to watch your channels. HTTPS streams are supported.</string>
+    <string name="tv_empty">Choose Browse channels to find TV by country, or import your own M3U playlist. HTTPS streams are supported.</string>
+    <string name="tv_browse">Browse channels</string>
+    <string name="tv_directory_source">Channel source</string>
+    <string name="tv_directory_continue">Continue</string>
+    <string name="tv_directory_country">%1$s · Choose country</string>
+    <string name="tv_directory_notice">Community channel lists. Streams may be unavailable or restricted by region. Only supported HTTPS entries are loaded.</string>
+    <string name="tv_directory_cached">Some channel lists could not be refreshed. Showing saved channels.</string>
+    <string name="tv_directory_error">Could not load channels for this country. Check your connection or try another source. Saved channels are still available.</string>
+    <string name="tv_choose_stream">Choose stream</string>
+    <string name="tv_stream_choice">Stream %1$d · %2$s</string>
     <string name="tv_no_matches">No channels match these filters.</string>
     <string name="tv_loading">Loading playlist…</string>
     <string name="tv_imported">Imported %1$d channels; %2$d unsupported entries skipped.</string>
