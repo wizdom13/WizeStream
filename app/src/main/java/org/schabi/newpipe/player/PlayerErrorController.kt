@@ -39,7 +39,6 @@ import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.player.datasource.InvidiousMediaResponse
 import org.schabi.newpipe.player.helper.PlayerDataSource
-import org.schabi.newpipe.player.mediasource.FullLiveDvrUnavailableException
 import org.schabi.newpipe.player.playqueue.PlayQueueItem
 import org.schabi.newpipe.player.resolver.PlaybackResolver
 import org.schabi.newpipe.player.resolver.VideoPlaybackResolver
@@ -69,6 +68,24 @@ internal class PlayerErrorController(
     private var lastPlayingLiveKey: String? = null
     private var recoveringLiveKey: String? = null
     private var liveReadySince: Long? = null
+    private val livePreparationRecovery = LivePreparationRecovery(
+        player,
+        onArchive = {
+            videoResolver.clearLiveDvrRequirement()
+            videoResolver.clearLiveHlsFallback()
+        },
+        onStopped = { error, reason ->
+            if (!player.exoPlayerIsNull()) player.exoPlayer.pause()
+            player.changeState(Player.STATE_PAUSED)
+            val message = when (reason) {
+                LivePreparationRecovery.StopReason.EXHAUSTED -> R.string.live_recovery_exhausted
+                LivePreparationRecovery.StopReason.ENDED -> R.string.live_recovery_ended
+                LivePreparationRecovery.StopReason.UNAVAILABLE -> R.string.live_recovery_unavailable
+            }
+            createErrorNotification(error, "livePreparation=${reason.name}", message)
+            eventDispatcher.notifyPlayerError(error, true)
+        }
+    )
 
     fun onPlayerError(error: PlaybackException) {
         liveReadySince = null
@@ -86,16 +103,7 @@ internal class PlayerErrorController(
         if (player.videoAdjustments.recover(error)) return
 
         player.saveStreamProgressState()
-        val item = player.playQueue?.item
-        if (item != null && !player.isNormalLive() && isYouTubeManifestLive(item) &&
-            generateSequence(error as Throwable) { it.cause }.any { it is FullLiveDvrUnavailableException }
-        ) {
-            if (prepareFullLiveDashRecovery(item, "${item.serviceId}:${item.url}")) {
-                player.onBuffering()
-                player.reloadPlayQueueManager()
-            }
-            return
-        }
+        if (livePreparationRecovery.recover(error)) return
         if (tryRecoverFromVideoSurfaceFailure(error) ||
             tryRecoverFromAudioDecoderOutputFailure(error) ||
             tryRecoverFromAudioTrackInitFailure(error)
@@ -172,6 +180,7 @@ internal class PlayerErrorController(
     }
 
     fun onPlayWhenReadyChanged(playWhenReady: Boolean) {
+        livePreparationRecovery.onPlayWhenReadyChanged(playWhenReady)
         if (!playWhenReady) {
             liveReadySince = null
             cancelPendingLiveStallRecovery()
@@ -184,6 +193,7 @@ internal class PlayerErrorController(
     }
 
     fun onPlaybackStateChanged(playbackState: Int) {
+        livePreparationRecovery.onPlaybackStateChanged(playbackState)
         val item = player.playQueue?.item
         val key = item?.let { "${it.serviceId}:${it.url}" }
         when (playbackState) {
@@ -301,6 +311,7 @@ internal class PlayerErrorController(
     }
 
     fun resetRecovery() {
+        livePreparationRecovery.reset()
         cancelPendingMediaUrlRecovery()
         cancelPendingLiveStallRecovery()
         cancelPendingLiveSegmentRecovery()

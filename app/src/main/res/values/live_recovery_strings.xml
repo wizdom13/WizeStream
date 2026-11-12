@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="live_recovery_exhausted" tools:ignore="MissingTranslation">Live playback could not recover. Tap Play to retry.</string>
+    <string name="live_recovery_ended" tools:ignore="MissingTranslation">This broadcast has ended. A playable archive is not available yet.</string>
+    <string name="live_recovery_unavailable" tools:ignore="MissingTranslation">This broadcast is currently unavailable. Tap Play to retry.</string>
+</resources>
