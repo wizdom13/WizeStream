@@ -16,7 +16,12 @@ import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.schabi.newpipe.R
@@ -42,6 +47,7 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
     private var libraryReady = false
     private var generation = 0
     private var stateProfile: String? = null
+    private val refreshAttempts = mutableMapOf<String, Long>()
     private val dialogs = mutableListOf<androidx.appcompat.app.AlertDialog>()
     private val importFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null || !libraryReady) return@registerForActivityResult
@@ -72,7 +78,7 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
     override fun onViewCreated(view: View, state: Bundle?) {
         status = view.findViewById(R.id.tv_status)
         progress = view.findViewById(R.id.tv_progress)
-        channels = TvChannelAdapter(::play, ::channelActions)
+        channels = TvChannelAdapter({ play(it) }, ::channelActions)
         view.findViewById<RecyclerView>(R.id.tv_stations).adapter = channels
         val input = view.findViewById<NewPipeEditText>(R.id.tv_search_input)
         input.setText(query)
@@ -95,6 +101,24 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
         view.findViewById<View>(R.id.tv_add).setOnClickListener { addUrl() }
         view.findViewById<View>(R.id.tv_import_file).setOnClickListener { importFile.launch(arrayOf("*/*")) }
         view.findViewById<View>(R.id.tv_playlists).setOnClickListener { choosePlaylist() }
+        view.findViewById<View>(R.id.tv_browse).setOnClickListener {
+            val previous = library.playlists.asReversed().firstNotNullOfOrNull { TvDirectory.selection(requireContext(), it) }
+            TvDirectoryPicker(layoutInflater, ::trackDialog).show(previous) { selection ->
+                val target = profile
+                runWork(R.string.tv_directory_error) {
+                    val loaded = withContext(Dispatchers.IO) { TvDirectory.load(selection) }
+                    addPlaylist(loaded.first, loaded.second, target)
+                    if (target == profile) {
+                        sourceId = selection.id
+                        group = ""
+                        favoritesOnly = false
+                        input.setText("")
+                        render()
+                        status?.text = getString(R.string.tv_imported, loaded.first.channels.size, loaded.second)
+                    }
+                }
+            }
+        }
         ready = true
     }
 
@@ -120,10 +144,12 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
                 library = withContext(Dispatchers.IO) { TvPlaylistStore(context, active).read() }
                 libraryReady = true
                 render()
+                refreshDirectoryCache(active)
             }
         } else {
-            setActionsEnabled(true)
+            setActionsEnabled(work?.isActive != true)
             render()
+            if (work?.isActive != true && directoryRefreshDue(active)) runWork { refreshDirectoryCache(active) }
         }
     }
 
@@ -148,7 +174,7 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
         super.onDestroyView()
     }
 
-    private fun runWork(action: suspend () -> Unit) {
+    private fun runWork(@androidx.annotation.StringRes errorMessage: Int = R.string.tv_error, action: suspend () -> Unit) {
         work?.cancel()
         val request = ++generation
         work = viewLifecycleOwner.lifecycleScope.launch {
@@ -162,7 +188,7 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
             } catch (_: TvPlaylistLimitException) {
                 if (request == generation) status?.setText(R.string.tv_limit_error)
             } catch (_: IOException) {
-                if (request == generation) status?.setText(R.string.tv_error)
+                if (request == generation) status?.setText(errorMessage)
             } catch (_: SecurityException) {
                 if (request == generation) status?.setText(R.string.tv_error)
             } finally {
@@ -175,18 +201,17 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
     }
 
     private fun setActionsEnabled(enabled: Boolean) {
-        listOf(R.id.tv_add, R.id.tv_import_file, R.id.tv_playlists, R.id.tv_groups, R.id.tv_favorites, R.id.tv_clear_filters).forEach {
+        listOf(R.id.tv_browse, R.id.tv_add, R.id.tv_import_file, R.id.tv_playlists, R.id.tv_groups, R.id.tv_favorites, R.id.tv_clear_filters).forEach {
             view?.findViewById<View>(it)?.isEnabled = enabled
         }
     }
 
     private fun render() {
         if (!ready) return
-        val visible = library.playlists.filter { sourceId == null || it.id == sourceId }.flatMap { it.channels }
-            .distinctBy { it.url }.filter {
-                (group.isEmpty() || it.group == group) && (!favoritesOnly || it.url in library.favorites) &&
-                    org.schabi.newpipe.local.search.ContextualSearchHelper.matches(query, it.name, it.group)
-            }
+        val visible = combineTvChannels(library.playlists.filter { sourceId == null || it.id == sourceId }.flatMap { it.channels }).filter {
+            (group.isEmpty() || group in it.group.split(';').map(String::trim)) && (!favoritesOnly || it.urls.any(library.favorites::contains)) &&
+                org.schabi.newpipe.local.search.ContextualSearchHelper.matches(query, it.name, it.group)
+        }
         channels?.submitList(visible)
         status?.text = when {
             library.playlists.isEmpty() -> getString(R.string.tv_empty)
@@ -207,14 +232,43 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
 
     private suspend fun addPlaylist(playlist: TvPlaylist, skipped: Int, target: String) {
         if (target != profile) return
-        val existing = library.playlists.firstOrNull {
-            if (playlist.address == null) it.address == null && it.name == playlist.name else it.address == playlist.address
+        persist(library.withPlaylist(playlist), target)
+        if (target == profile) status?.text = getString(R.string.tv_imported, playlist.channels.size, skipped)
+    }
+
+    private fun directoryRefreshDue(target: String): Boolean {
+        val now = System.currentTimeMillis()
+        val last = refreshAttempts[target]
+        if (last != null && now >= last && now - last < 60 * 60 * 1000L) return false
+        return library.playlists.any { TvDirectory.stale(it, now) && TvDirectory.selection(requireContext(), it) != null }
+    }
+
+    private suspend fun refreshDirectoryCache(target: String) {
+        if (!directoryRefreshDue(target)) return
+        val now = System.currentTimeMillis()
+        val pending = library.playlists.filter { TvDirectory.stale(it, now) }.mapNotNull { TvDirectory.selection(requireContext(), it) }
+        refreshAttempts[target] = now
+        val limit = Semaphore(2)
+        val results = coroutineScope {
+            pending.map { selection ->
+                async(Dispatchers.IO) {
+                    limit.withPermit {
+                        try {
+                            TvDirectory.load(selection).first
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: IOException) {
+                            null
+                        }
+                    }
+                }
+            }.awaitAll()
         }
-        val updated = playlist.copy(id = existing?.id ?: playlist.id)
-        val playlists = library.playlists.filterNot { it.id == updated.id } + updated
-        val urls = playlists.flatMap { it.channels }.map { it.url }.toSet()
-        persist(TvLibrary(playlists, library.favorites.intersect(urls)), target)
-        if (target == profile) status?.text = getString(R.string.tv_imported, updated.channels.size, skipped)
+        if (target != profile || ProfileManager.getActiveProfileId(requireContext()) != target) return
+        var next = library
+        results.filterNotNull().forEach { next = next.withPlaylist(it) }
+        if (next != library) persist(next, target) else render()
+        if (results.any { it == null }) status?.setText(R.string.tv_directory_cached)
     }
 
     private fun addUrl() {
@@ -253,7 +307,7 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
     }
 
     private fun chooseGroup() {
-        val options = library.playlists.filter { sourceId == null || it.id == sourceId }.flatMap { it.channels }.map { it.group }.filter { it.isNotEmpty() }.distinct().sorted()
+        val options = library.playlists.filter { sourceId == null || it.id == sourceId }.flatMap { it.channels }.flatMap { it.group.split(';') }.map(String::trim).filter { it.isNotEmpty() }.distinct().sorted()
         val labels = listOf(getString(R.string.tv_all_channels)) + options
         MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.tv_groups)
             .setSingleChoiceItems(labels.toTypedArray(), options.indexOf(group) + 1) { dialog, index ->
@@ -286,8 +340,16 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
             if (playlist.address != null && which == 0) {
                 val target = profile
                 runWork {
-                    val result = withContext(Dispatchers.IO) { TvPlaylistLoader.load(playlist.address, playlist.name) }
-                    addPlaylist(playlist.copy(address = result.first, channels = result.second.channels), result.second.skipped, target)
+                    val selection = TvDirectory.selection(requireContext(), playlist)
+                    val result = withContext(Dispatchers.IO) {
+                        if (selection != null) {
+                            TvDirectory.load(selection)
+                        } else {
+                            val loaded = TvPlaylistLoader.load(playlist.address, playlist.name)
+                            playlist.copy(address = loaded.first, channels = loaded.second.channels) to loaded.second.skipped
+                        }
+                    }
+                    addPlaylist(result.first, result.second, target)
                 }
             } else {
                 MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.tv_remove_playlist).setMessage(R.string.tv_remove_confirm)
@@ -295,7 +357,7 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
                         runWork {
                             sourceId = null
                             val remaining = library.playlists.filterNot { it.id == playlist.id }
-                            val urls = remaining.flatMap { it.channels }.map { it.url }.toSet()
+                            val urls = remaining.flatMap { it.channels }.flatMap { it.urls }.toSet()
                             persist(TvLibrary(remaining, library.favorites.intersect(urls)))
                         }
                     }.showTracked()
@@ -305,30 +367,46 @@ class LiveTvFragment : Fragment(R.layout.fragment_live_tv) {
 
     private fun channelActions(channel: TvChannel) {
         if (work?.isActive == true || !libraryReady) return
-        val saved = channel.url in library.favorites
+        val saved = channel.urls.any(library.favorites::contains)
+        val options = mutableListOf(getString(if (saved) R.string.tv_remove_favorite else R.string.tv_save_favorite))
+        if (channel.alternatives.isNotEmpty()) options.add(getString(R.string.tv_choose_stream))
         MaterialAlertDialogBuilder(requireContext()).setTitle(channel.name)
-            .setItems(arrayOf(getString(if (saved) R.string.tv_remove_favorite else R.string.tv_save_favorite))) { _, _ ->
-                runWork {
-                    persist(library.copy(favorites = if (saved) library.favorites - channel.url else library.favorites + channel.url))
+            .setItems(options.toTypedArray()) { _, which ->
+                if (which == 1) {
+                    chooseStream(channel)
+                } else {
+                    runWork {
+                        persist(library.copy(favorites = if (saved) library.favorites - channel.urls.toSet() else library.favorites + channel.urls))
+                    }
                 }
             }.setNegativeButton(R.string.cancel, null).showTracked()
     }
 
-    private fun MaterialAlertDialogBuilder.showTracked(): androidx.appcompat.app.AlertDialog = show().also { dialog ->
+    private fun chooseStream(channel: TvChannel) {
+        val labels = channel.urls.mapIndexed { index, url -> getString(R.string.tv_stream_choice, index + 1, url.toHttpUrlOrNull()?.host.orEmpty()) }
+        MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.tv_choose_stream).setItems(labels.toTypedArray()) { _, which ->
+            play(channel, channel.urls[which])
+        }.setNegativeButton(R.string.cancel, null).showTracked()
+    }
+
+    private fun trackDialog(dialog: androidx.appcompat.app.AlertDialog) {
         dialogs.add(dialog)
         dialog.setOnDismissListener { dialogs.remove(dialog) }
     }
 
-    private fun play(channel: TvChannel) {
+    private fun MaterialAlertDialogBuilder.showTracked(): androidx.appcompat.app.AlertDialog = show().also(::trackDialog)
+
+    private fun play(channel: TvChannel, stream: String = channel.url) {
         val visible = channels?.currentList ?: return
         val items = visible.map {
-            val path = it.url.toHttpUrlOrNull()?.encodedPath.orEmpty()
+            val url = if (it == channel) stream else it.url
+            val path = url.toHttpUrlOrNull()?.encodedPath.orEmpty()
             val mime = when {
                 it.hls || path.endsWith(".m3u8", true) -> "application/x-mpegURL"
                 path.endsWith(".mpd", true) -> "application/dash+xml"
                 else -> null
             }
-            PlayQueueItem.liveTv(it.name, it.url, it.group, mime, it.logo)
+            PlayQueueItem.liveTv(it.name, url, it.group, mime, it.logo)
         }
         val index = visible.indexOf(channel)
         if (index >= 0) NavigationHelper.playOnMainPlayer(requireContext(), LocalMediaPlayQueue(items, index), false)
