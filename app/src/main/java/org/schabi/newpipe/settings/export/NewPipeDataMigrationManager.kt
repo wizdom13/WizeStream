@@ -14,6 +14,7 @@ import org.schabi.newpipe.database.playlist.model.PlaylistEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.database.stream.model.StreamStateEntity
+import org.schabi.newpipe.database.subscription.NotificationMode
 import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamType
@@ -169,6 +170,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
                                 skippedItems++
                                 continue
                             }
+                            val notificationMode = cursor.notificationMode()
                             val entity = SubscriptionEntity(
                                 serviceId = serviceId,
                                 url = url,
@@ -176,6 +178,7 @@ class NewPipeDataMigrationManager(private val context: Context) {
                                 avatarUrl = cursor.string("avatar_url"),
                                 subscriberCount = cursor.long("subscriber_count"),
                                 description = cursor.string("description"),
+                                notificationMode = notificationMode ?: NotificationMode.DISABLED,
                                 profileId = targetProfileId
                             )
                             val insertedId = target.subscriptionDAO().insertIgnore(entity)
@@ -183,12 +186,24 @@ class NewPipeDataMigrationManager(private val context: Context) {
                                 subscriptions++
                                 insertedId
                             } else {
-                                skippedItems++
-                                target.subscriptionDAO().getSubscriptionDirectForProfile(
+                                val existing = target.subscriptionDAO().getSubscriptionDirectForProfile(
                                     targetProfileId,
                                     serviceId,
                                     url
-                                )?.uid
+                                )
+                                // Re-import can repair flags omitted by earlier migrations without
+                                // replacing local channel metadata or notification keywords.
+                                if (existing != null && notificationMode != null &&
+                                    existing.notificationMode != notificationMode
+                                ) {
+                                    target.subscriptionDAO().update(
+                                        existing.copy(notificationMode = notificationMode)
+                                    )
+                                    subscriptions++
+                                } else {
+                                    skippedItems++
+                                }
+                                existing?.uid
                             }
                             val sourceId = cursor.long("uid")
                             if (sourceId != null && targetId != null) subscriptionIds[sourceId] = targetId
@@ -536,6 +551,18 @@ class NewPipeDataMigrationManager(private val context: Context) {
         null
     ).use { cursor ->
         if (cursor.moveToFirst()) cursor.getInt(0) else 0
+    }
+
+    private fun Cursor.notificationMode(): Int? {
+        val index = getColumnIndex(SubscriptionEntity.SUBSCRIPTION_NOTIFICATION_MODE)
+        if (index < 0 || getType(index) != Cursor.FIELD_TYPE_INTEGER) {
+            return null
+        }
+        return when (getLong(index)) {
+            NotificationMode.DISABLED.toLong() -> NotificationMode.DISABLED
+            NotificationMode.ENABLED.toLong() -> NotificationMode.ENABLED
+            else -> null
+        }
     }
 
     private fun Cursor.string(column: String): String? {
