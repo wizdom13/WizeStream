@@ -1,0 +1,63 @@
+name: PHP community reviews
+
+on:
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/reviews.yml'
+  push:
+    branches: [pipe]
+    paths:
+      - 'web/**'
+      - '.github/workflows/reviews.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.4']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test-only-password
+          MYSQL_DATABASE: wizestream_reviews_test
+          MYSQL_USER: reviews_test
+          MYSQL_PASSWORD: test-only-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      REVIEWS_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=wizestream_reviews_test;charset=utf8mb4
+      REVIEWS_TEST_USER: reviews_test
+      REVIEWS_TEST_PASSWORD: test-only-password
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_mysql
+          coverage: none
+      - name: Lint PHP and JavaScript
+        run: |
+          find web/reviews -name '*.php' -print0 | xargs -0 -n1 php -l
+          node --check web/reviews/reviews.js
+      - name: Test PHP and MySQL across independent workers
+        run: php web/reviews/_private/tests/reviews.php
+      - name: Test PHP HTTP entry points and private configuration
+        run: python3 -I web/reviews/_private/tests/http_checks.py
+      - name: Check generated website and internal links
+        run: |
+          python3 web/build.py
+          python3 web/check.py
+          git diff --exit-code -- web

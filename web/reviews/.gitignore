@@ -1,0 +1,4 @@
+config.local.php
+reviews-config.php
+*.log
+*.sql.gz

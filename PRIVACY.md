@@ -86,6 +86,36 @@ background playback, overlay playback, network and local-receiver discovery, cam
 scanning a device-pairing QR code, and legacy file access on supported older Android versions.
 Android settings can be used to revoke optional permissions.
 
+## Optional community reviews
+
+The optional community review page is a separate PHP/MySQL website hosted with the project site,
+intended for https://wizestream.org/reviews/. The About action remains hidden until its live HTTPS
+URL has been configured and verified. Tapping it opens your external browser without appending
+app, account or device data; the app makes no background review requests.
+
+The form asks for a 1–5-star rating, written feedback and explicit publication consent, plus an
+optional nickname and manually entered app version. No account or email is required. All reviews
+wait for moderation, and only published reviews count toward public ratings and badges. These are
+community reviews, not verified installations or a guarantee of one review per person.
+
+The service stores review fields and a hash of a private management/deletion key. The raw key is
+created in the browser and appears in the private link fragment; it is sent only in a same-origin
+request header, not as a query parameter. Anyone with the key can access or delete that review.
+
+The PHP service uses no analytics, tracking cookies, third-party scripts or application request logs.
+It does not store raw IPs, user agents, email addresses or device identifiers. For abuse prevention,
+PHP workers share temporary HMAC-derived address/kind buckets in MySQL. Their identifiers change
+each UTC hour and are not attached to reviews. They expire at the next UTC hour and are removed
+on the next API request or hourly scheduled cleanup. These short-lived records are pseudonymous
+abuse data, not anonymous identities.
+
+Pending reviews expire after 30 days and are removed on the next API request or scheduled cleanup.
+Published reviews remain until author/moderator removal. Deletion removes the live row and live
+rating; GoDaddy/hosting logs, database logs, replicas, snapshots and operator-managed backups may
+retain earlier data according to their actual configuration and retention. The PHP service does
+not disable or erase provider logs or backups. Deployment instructions require the operator to
+review and disclose those hosting practices before public launch.
+
 ## Changes and contact
 
 Policy changes are published in this repository. For privacy questions, use the WizeStream repository's issue form without including sensitive personal information.

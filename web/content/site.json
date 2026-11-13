@@ -1353,5 +1353,6 @@
       "group": "Stay informed",
       "icon": "help"
     }
-  ]
+  ],
+  "baseUrl": "https://wizestream.org/"
 }
