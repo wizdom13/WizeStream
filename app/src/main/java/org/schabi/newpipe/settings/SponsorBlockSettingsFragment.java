@@ -19,6 +19,7 @@ public class SponsorBlockSettingsFragment extends BasePreferenceFragment {
     public void onCreatePreferences(@Nullable final Bundle savedInstanceState,
                                     @Nullable final String rootKey) {
         addPreferencesFromResourceRegistry();
+        org.schabi.newpipe.sponsorblock.SponsorBlockContributionSettings.bind(this);
         SponsorBlockCategoryRepository.migrateBehaviorOnce(requireContext());
 
         requirePreference(R.string.sponsor_block_home_page_key).setOnPreferenceClickListener(

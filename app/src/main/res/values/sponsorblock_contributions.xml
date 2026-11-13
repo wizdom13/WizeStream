@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="sb_contribute_title" tools:ignore="MissingTranslation">Contribute to SponsorBlock</string>
+    <string name="sb_contribute_enable" tools:ignore="MissingTranslation">Enable contribution tools</string>
+    <string name="sb_contribute_summary" tools:ignore="MissingTranslation">Show a player button for submitting segments and voting on community submissions.</string>
+    <string name="sb_contribute_privacy" tools:ignore="MissingTranslation">Submissions and votes are sent to SponsorBlock with your IP address and a persistent private ID. Contributions become part of its public community data. Review the category rules before submitting. Your private ID is stored separately on this device.</string>
+    <string name="sb_contribute_identity" tools:ignore="MissingTranslation">Private SponsorBlock ID</string>
+    <string name="sb_contribute_identity_summary" tools:ignore="MissingTranslation">Keep this ID private. You can reuse an existing SponsorBlock ID. It is excluded from WizeStream backups and Device Sync.</string>
+    <string name="sb_contribute_invalid_id" tools:ignore="MissingTranslation">Use 30–128 letters, numbers, hyphens or underscores.</string>
+    <string name="sb_contribute_create" tools:ignore="MissingTranslation">Create segment</string>
+    <string name="sb_contribute_vote" tools:ignore="MissingTranslation">Vote on a segment</string>
+    <string name="sb_contribute_start" tools:ignore="MissingTranslation">Start (seconds or h:mm:ss)</string>
+    <string name="sb_contribute_end" tools:ignore="MissingTranslation">End (seconds or h:mm:ss)</string>
+    <string name="sb_contribute_start_here" tools:ignore="MissingTranslation">Use playback position for start</string>
+    <string name="sb_contribute_end_here" tools:ignore="MissingTranslation">Use playback position for end</string>
+    <string name="sb_contribute_category" tools:ignore="MissingTranslation">Category</string>
+    <string name="sb_contribute_review" tools:ignore="MissingTranslation">Review the times and category before submitting publicly. Highlights use only the start time.</string>
+    <string name="sb_contribute_submit" tools:ignore="MissingTranslation">Submit segment</string>
+    <string name="sb_contribute_invalid_times" tools:ignore="MissingTranslation">Enter valid times within the video. The end must follow the start.</string>
+    <string name="sb_contribute_submitted" tools:ignore="MissingTranslation">SponsorBlock accepted the segment.</string>
+    <string name="sb_contribute_unconfirmed" tools:ignore="MissingTranslation">Could not confirm acceptance. Check SponsorBlock before retrying.</string>
+    <string name="sb_contribute_loading" tools:ignore="MissingTranslation">Loading community segments…</string>
+    <string name="sb_contribute_load_failed" tools:ignore="MissingTranslation">Could not load SponsorBlock segments.</string>
+    <string name="sb_contribute_no_segments" tools:ignore="MissingTranslation">There are no community segments to vote on yet.</string>
+    <string name="sb_contribute_upvote" tools:ignore="MissingTranslation">Upvote: correct segment</string>
+    <string name="sb_contribute_downvote" tools:ignore="MissingTranslation">Downvote: incorrect segment</string>
+    <string name="sb_contribute_undo" tools:ignore="MissingTranslation">Undo my vote</string>
+    <string name="sb_contribute_send_vote" tools:ignore="MissingTranslation">Submit vote</string>
+    <string name="sb_contribute_vote_sent" tools:ignore="MissingTranslation">Vote sent to SponsorBlock.</string>
+    <string-array name="sb_contribution_categories" tools:ignore="MissingTranslation">
+        <item>Paid promotion</item>
+        <item>Intermission or intro</item>
+        <item>Endcards or credits</item>
+        <item>Interaction reminder</item>
+        <item>Unpaid or self-promotion</item>
+        <item>Non-music section</item>
+        <item>Preview or recap</item>
+        <item>Filler</item>
+        <item>Highlight</item>
+    </string-array>
+</resources>

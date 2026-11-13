@@ -559,6 +559,18 @@
                                 app:tint="@color/white" />
 
                             <androidx.appcompat.widget.AppCompatImageButton
+                                android:id="@+id/sponsorBlockContributeButton"
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/sb_contribute_title"
+                                android:padding="@dimen/player_main_icon_buttons_padding"
+                                android:src="@drawable/ic_campaign"
+                                android:visibility="gone"
+                                app:tint="@color/white" />
+
+                            <androidx.appcompat.widget.AppCompatImageButton
                                 android:id="@+id/equalizerButton"
                                 android:layout_width="48dp"
                                 android:layout_height="48dp"

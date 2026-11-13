@@ -5,7 +5,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 
 internal object AnchoredPlaybackDialog {
-    fun show(anchor: View, dialog: AlertDialog) {
+    fun show(anchor: View, dialog: AlertDialog, onDismiss: () -> Unit = {}) {
         if (!anchor.isAttachedToWindow || anchor.windowToken == null) return
         val window = dialog.window ?: return
         window.attributes = window.attributes.apply {
@@ -17,7 +17,10 @@ internal object AnchoredPlaybackDialog {
             override fun onViewDetachedFromWindow(view: View) = dialog.dismiss()
         }
         anchor.addOnAttachStateChangeListener(listener)
-        dialog.setOnDismissListener { anchor.removeOnAttachStateChangeListener(listener) }
+        dialog.setOnDismissListener {
+            anchor.removeOnAttachStateChangeListener(listener)
+            onDismiss()
+        }
         try {
             dialog.show()
         } catch (_: WindowManager.BadTokenException) {
