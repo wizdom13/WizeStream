@@ -209,7 +209,7 @@ A huge compressed image cannot bypass the decoded-pixel budget.
 Use [`embed_asset.py`](embed_asset.py) to add an existing PNG to a recipe:
 
 ```sh
-python3 doc/themes/embed_asset.py record.json label artwork.png
+python3 docs/themes/embed_asset.py record.json label artwork.png
 ```
 
 Then set `"artwork": "label"` inside `player`. The helper embeds bytes and checks basic

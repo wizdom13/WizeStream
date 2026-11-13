@@ -290,16 +290,16 @@ def documentation():
         'services-discovery':['README.md#supported-services','README.md#streaming-and-discovery'],
         'playback':['README.md#playback','docs/faq.md','app/src/main/res/xml/video_audio_settings.xml'],
         'sponsorblock':['app/src/main/res/xml/sponsor_block_settings.xml','app/src/main/java/org/schabi/newpipe/sponsorblock/SponsorBlockContributions.kt'],
-        'devices':['docs/android-auto.md','doc/yt-fifo.md','docs/faq.md'],
+        'devices':['docs/android-auto.md','docs/yt-fifo.md','docs/faq.md'],
         'live-media':['README.md#live-tv','README.md#live-radio'],
-        'subscriptions':['README.md#library-subscriptions-and-downloads','doc/progressive-subscription-refresh.md'],
+        'subscriptions':['README.md#library-subscriptions-and-downloads','docs/progressive-subscription-refresh.md'],
         'downloads':['README.md#library-subscriptions-and-downloads','docs/faq.md','docs/device-synchronization.md'],
         'profiles-sync':['docs/device-synchronization.md','README.md#profiles-and-local-privacy'],
-        'backups-migration':['doc/imports/libretube.md','doc/imports/text-playlists.md','app/src/main/java/org/schabi/newpipe/settings/export/FreeTubeTransferFragment.kt'],
+        'backups-migration':['docs/imports/libretube.md','docs/imports/text-playlists.md','app/src/main/java/org/schabi/newpipe/settings/export/FreeTubeTransferFragment.kt'],
         'learning':['docs/learning-mode.md','app/src/main/java/org/schabi/newpipe/learning/LearningDifficulty.kt','app/src/main/java/org/schabi/newpipe/sync/LessonDifficultySyncAdapter.kt'],
         'customization':['README.md#interface-and-customization','docs/faq.md'],
-        'theme-packs':['doc/themes/README.md','doc/themes/theme-pack.schema.json'],
-        'privacy-network':['PRIVACY.md','doc/invidious-media-servers.md'],
+        'theme-packs':['docs/themes/README.md','docs/themes/theme-pack.schema.json'],
+        'privacy-network':['PRIVACY.md','docs/invidious-media-servers.md'],
         'troubleshooting':['docs/faq.md','docs/device-synchronization.md','docs/android-auto.md'],
     }
     sidebar=''
@@ -313,11 +313,11 @@ def documentation():
         side=sidebar
         for d in DATA['docs']:
             side=side.replace('{LINK:'+d['slug']+'}',link(p,'docs/'+d['slug']+'.html',esc(d['title']),'is-active' if d['slug']==doc['slug'] else ''))
-        sources=''.join(f'<li>{link(p,SOURCE+src,esc(src)+" ↗")}</li>' for src in doc_sources[doc['slug']])
+        sources=''.join(f'<li>{link(p,(REPO+"/blob/pipe/" if src.startswith("docs/") else SOURCE)+src,esc(src)+" ↗")}</li>' for src in doc_sources[doc['slug']])
         previous=DATA['docs'][i-1] if i else None
         following=DATA['docs'][i+1] if i+1<len(DATA['docs']) else None
         pager='<nav class="doc-pager" aria-label="Adjacent guides">'+(link(p,'docs/'+previous['slug']+'.html','<span>Previous guide</span>'+esc(previous['title'])) if previous else '<span></span>')+(link(p,'docs/'+following['slug']+'.html','<span>Next guide</span>'+esc(following['title'])) if following else link(p,'docs/index.html','<span>Keep exploring</span>All documentation'))+'</nav>'
-        body=f'<div class="container doc-layout"><aside class="docs-sidebar"><details class="docs-menu" open><summary>Browse documentation</summary><div>{link(p,"docs/index.html","Documentation home","sidebar-home")}{side}</div></details></aside><article class="doc-article"><nav class="breadcrumbs" aria-label="Breadcrumb">{link(p,"index.html","Home")}<span>/</span>{link(p,"docs/index.html","Docs")}<span>/</span><span>{esc(doc["title"])}</span></nav><header class="doc-title"><p class="eyebrow">{esc(doc["group"])}</p><h1>{esc(doc["title"])}</h1><p>{esc(doc["description"])}</p></header>{notice(p)}{toc}<div class="prose">{article}<section class="doc-sources"><h2 id="references">Project references</h2><p>Reviewed against the documented development snapshot. Source files and installed-release behavior can differ; check the release notes for availability.</p><ul>{sources}</ul></section></div>{pager}</article></div>'
+        body=f'<div class="container doc-layout"><aside class="docs-sidebar"><details class="docs-menu" open><summary>Browse documentation</summary><div>{link(p,"docs/index.html","Documentation home","sidebar-home")}{side}</div></details></aside><article class="doc-article"><nav class="breadcrumbs" aria-label="Breadcrumb">{link(p,"index.html","Home")}<span>/</span>{link(p,"docs/index.html","Docs")}<span>/</span><span>{esc(doc["title"])}</span></nav><header class="doc-title"><p class="eyebrow">{esc(doc["group"])}</p><h1>{esc(doc["title"])}</h1><p>{esc(doc["description"])}</p></header>{notice(p)}{toc}<div class="prose">{article}<section class="doc-sources"><h2 id="references">Project references</h2><p>Reviewed against the documented development snapshot. Documentation links follow the current repository paths; code links use the reviewed snapshot. Check the release notes for installed-build availability.</p><ul>{sources}</ul></section></div>{pager}</article></div>'
         emit(p,doc['title'],doc['description'],body,'docs/index.html',True,article)
 
 
