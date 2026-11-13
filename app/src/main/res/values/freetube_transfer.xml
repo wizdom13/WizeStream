@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="freetube_transfer_title" tools:ignore="MissingTranslation">FreeTube import and export</string>
+    <string name="freetube_transfer_summary" tools:ignore="MissingTranslation">Transfer YouTube subscriptions and playlists using FreeTube .db or JSON files.</string>
+    <string name="freetube_transfer_help" tools:ignore="MissingTranslation">Import a FreeTube subscriptions or playlists export after reviewing its contents. Existing data is kept. Imports go into the profile shown in the preview; FreeTube profiles become subscription groups. Exports include YouTube subscriptions or local playlists from your current WizeStream profile. Other services and local files are skipped.</string>
+    <string name="freetube_choose" tools:ignore="MissingTranslation">Choose FreeTube export</string>
+    <string name="freetube_picker_missing" tools:ignore="MissingTranslation">No document picker is available.</string>
+    <string name="freetube_import" tools:ignore="MissingTranslation">Import selected data</string>
+    <string name="freetube_subscriptions_count" tools:ignore="MissingTranslation">Subscriptions: %1$d channels, %2$d groups</string>
+    <string name="freetube_playlists_count" tools:ignore="MissingTranslation">Playlists: %1$d lists, %2$d videos</string>
+    <string name="freetube_preview" tools:ignore="MissingTranslation">Import into profile “%1$s”. Skipped unsupported records: %2$d.</string>
+    <string name="freetube_invalid" tools:ignore="MissingTranslation">Select a valid FreeTube subscriptions or playlists export, up to 16 MiB.</string>
+    <string name="freetube_import_complete" tools:ignore="MissingTranslation">Imported %1$d items. Skipped %2$d duplicate or unsupported items.</string>
+    <string name="freetube_import_failed" tools:ignore="MissingTranslation">Could not import the file. Existing data was kept.</string>
+    <string name="freetube_export_subscriptions" tools:ignore="MissingTranslation">Export FreeTube subscriptions (.db)</string>
+    <string name="freetube_export_playlists" tools:ignore="MissingTranslation">Export FreeTube playlists (.db)</string>
+    <string name="freetube_export_complete" tools:ignore="MissingTranslation">Export complete. Skipped %1$d items unsupported by FreeTube.</string>
+    <string name="freetube_export_failed" tools:ignore="MissingTranslation">Could not write the FreeTube export.</string>
+</resources>
