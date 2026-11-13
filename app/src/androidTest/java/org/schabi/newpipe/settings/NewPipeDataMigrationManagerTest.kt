@@ -183,6 +183,228 @@ class NewPipeDataMigrationManagerTest {
         val imported = subscriptions.single { it.url!!.endsWith("/imported") }
         assertEquals("Imported channel", imported.name)
         assertEquals("https://example.com/avatar.jpg", imported.avatarUrl)
+        assertEquals(NotificationMode.DISABLED, imported.notificationMode)
+    }
+
+    @Test
+    fun subscriptionNotificationFlagsAreImportedWithoutImportingGlobalSettings() {
+        addSourceNotificationModes()
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val notificationsKey = context.getString(R.string.enable_streams_notifications)
+        preferences.edit().putBoolean(notificationsKey, false).commit()
+        val manager = NewPipeDataMigrationManager(context)
+
+        val result = manager.importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(false, false, importSubscriptions = true)
+        )
+
+        val subscriptions = NewPipeDatabase.getInstance(context)
+            .subscriptionDAO().getAllDirect()
+        assertEquals(2, result.subscriptions)
+        assertEquals(0, result.skippedItems)
+        assertEquals(
+            NotificationMode.ENABLED,
+            subscriptions.single { it.url!!.endsWith("/existing") }.notificationMode
+        )
+        assertEquals(
+            NotificationMode.DISABLED,
+            subscriptions.single { it.url!!.endsWith("/imported") }.notificationMode
+        )
+        assertFalse(preferences.getBoolean(notificationsKey, true))
+    }
+
+    @Test
+    fun reimportRestoresExistingNotificationFlagsOnlyInSelectedProfile() {
+        addSourceNotificationModes()
+        val profileId = "22222222-2222-2222-2222-222222222222"
+        val dao = NewPipeDatabase.getInstance(context).subscriptionDAO()
+        val localChannels = listOf("existing", "imported").mapIndexed { index, suffix ->
+            val entity = SubscriptionEntity(
+                serviceId = SubscriptionEntity.YOUTUBE_SERVICE_ID,
+                url = "https://www.youtube.com/channel/$suffix",
+                name = "Local $suffix",
+                avatarUrl = "https://example.com/local-avatar.jpg",
+                subscriberCount = 123,
+                description = "Local description",
+                notificationMode = if (index == 0) {
+                    NotificationMode.DISABLED
+                } else {
+                    NotificationMode.ENABLED
+                },
+                notificationKeywords = "lessons",
+                youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_MUSIC,
+                profileId = profileId,
+                handle = "@local-$suffix"
+            )
+            entity.copy(uid = dao.insert(entity))
+        }
+        val otherProfileChannels = localChannels.map { channel ->
+            val entity = channel.copy(uid = 0, profileId = ProfileManager.DEFAULT_PROFILE_ID)
+            entity.copy(uid = dao.insert(entity))
+        }
+        val manager = NewPipeDataMigrationManager(context)
+        val selection = NewPipeDataMigrationManager.Selection(
+            false,
+            false,
+            importSubscriptions = true
+        )
+
+        val result = manager.importData(sourcePath, selection, targetProfileId = profileId)
+
+        assertEquals(2, result.subscriptions)
+        assertEquals(0, result.skippedItems)
+        assertEquals(
+            localChannels.mapIndexed { index, channel ->
+                channel.copy(
+                    notificationMode = if (index == 0) {
+                        NotificationMode.ENABLED
+                    } else {
+                        NotificationMode.DISABLED
+                    }
+                )
+            },
+            dao.getAllDirectForProfile(profileId).sortedBy { it.uid }
+        )
+        assertEquals(
+            otherProfileChannels,
+            dao.getAllDirectForProfile(ProfileManager.DEFAULT_PROFILE_ID).sortedBy { it.uid }
+        )
+
+        val repeated = manager.importData(sourcePath, selection, targetProfileId = profileId)
+        assertEquals(0, repeated.subscriptions)
+        assertEquals(2, repeated.skippedItems)
+        assertEquals(4, dao.getAllDirect().size)
+    }
+
+    @Test
+    fun absentNotificationFlagsPreserveExistingModesWhenReimporting() {
+        val dao = NewPipeDatabase.getInstance(context).subscriptionDAO()
+        val local = SubscriptionEntity(
+            serviceId = SubscriptionEntity.YOUTUBE_SERVICE_ID,
+            url = "https://www.youtube.com/channel/existing",
+            name = "Local channel",
+            notificationMode = NotificationMode.KEYWORDS_ONLY,
+            notificationKeywords = "lessons"
+        )
+        val localId = dao.insert(local)
+
+        NewPipeDataMigrationManager(context).importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(false, false, importSubscriptions = true)
+        )
+
+        assertEquals(local.copy(uid = localId), dao.getSubscription(localId))
+        assertEquals(
+            NotificationMode.DISABLED,
+            dao.getSubscriptionDirect(0, "https://www.youtube.com/channel/imported")!!
+                .notificationMode
+        )
+    }
+
+    @Test
+    fun unrecognizedOrNullNotificationFlagsDoNotOverwriteExistingModes() {
+        addSourceNotificationModes()
+        val dao = NewPipeDatabase.getInstance(context).subscriptionDAO()
+        val manager = NewPipeDataMigrationManager(context)
+        val invalidModes = listOf<Any?>(null, -1, 2, 99, 4_294_967_297L, 1.5, "enabled")
+        for (mode in invalidModes) {
+            dao.deleteAll()
+            val local = SubscriptionEntity(
+                serviceId = SubscriptionEntity.YOUTUBE_SERVICE_ID,
+                url = "https://www.youtube.com/channel/existing",
+                name = "Local channel",
+                notificationMode = NotificationMode.KEYWORDS_ONLY,
+                notificationKeywords = "lessons"
+            )
+            val localId = dao.insert(local)
+            SQLiteDatabase.openDatabase(
+                sourcePath.toString(),
+                null,
+                SQLiteDatabase.OPEN_READWRITE
+            ).use { source ->
+                source.execSQL(
+                    "UPDATE subscriptions SET notification_mode = ?",
+                    arrayOf(mode)
+                )
+            }
+
+            val result = manager.importData(
+                sourcePath,
+                NewPipeDataMigrationManager.Selection(false, false, importSubscriptions = true)
+            )
+
+            assertEquals(1, result.subscriptions)
+            assertEquals(1, result.skippedItems)
+            assertEquals(local.copy(uid = localId), dao.getSubscription(localId))
+            assertEquals(
+                NotificationMode.DISABLED,
+                dao.getSubscriptionDirect(0, "https://www.youtube.com/channel/imported")!!
+                    .notificationMode
+            )
+        }
+    }
+
+    @Test
+    fun deselectingSubscriptionsDoesNotRestoreNotificationFlags() {
+        addSourceNotificationModes()
+        val dao = NewPipeDatabase.getInstance(context).subscriptionDAO()
+        val localId = dao.insert(
+            SubscriptionEntity(
+                serviceId = SubscriptionEntity.YOUTUBE_SERVICE_ID,
+                url = "https://www.youtube.com/channel/existing",
+                name = "Local channel",
+                notificationMode = NotificationMode.DISABLED
+            )
+        )
+
+        val result = NewPipeDataMigrationManager(context).importData(
+            sourcePath,
+            NewPipeDataMigrationManager.Selection(true, true)
+        )
+
+        assertEquals(0, result.subscriptions)
+        assertEquals(NotificationMode.DISABLED, dao.getSubscription(localId).notificationMode)
+        assertEquals(1, dao.getAllDirect().size)
+    }
+
+    @Test
+    fun failedMigrationRollsBackRestoredNotificationFlags() {
+        addSourceNotificationModes()
+        val target = NewPipeDatabase.getInstance(context)
+        val dao = target.subscriptionDAO()
+        val localId = dao.insert(
+            SubscriptionEntity(
+                serviceId = SubscriptionEntity.YOUTUBE_SERVICE_ID,
+                url = "https://www.youtube.com/channel/existing",
+                name = "Local channel",
+                notificationMode = NotificationMode.DISABLED
+            )
+        )
+        val writable = target.openHelper.writableDatabase
+        writable.execSQL(
+            "CREATE TRIGGER fail_playlist_import BEFORE INSERT ON playlists " +
+                "BEGIN SELECT RAISE(ABORT, 'rollback imported notification modes'); END"
+        )
+
+        val result = try {
+            runCatching {
+                NewPipeDataMigrationManager(context).importData(
+                    sourcePath,
+                    NewPipeDataMigrationManager.Selection(false, true, importSubscriptions = true)
+                )
+            }
+        } finally {
+            writable.execSQL("DROP TRIGGER fail_playlist_import")
+        }
+
+        assertTrue(result.isFailure)
+        assertTrue(
+            result.exceptionOrNull()!!.message.orEmpty()
+                .contains("rollback imported notification modes")
+        )
+        assertEquals(NotificationMode.DISABLED, dao.getSubscription(localId).notificationMode)
+        assertEquals(1, dao.getAllDirect().size)
     }
 
     @Test
@@ -404,6 +626,18 @@ class NewPipeDataMigrationManagerTest {
             }
         }
         check(editor.commit())
+    }
+
+    private fun addSourceNotificationModes() {
+        SQLiteDatabase.openDatabase(
+            sourcePath.toString(),
+            null,
+            SQLiteDatabase.OPEN_READWRITE
+        ).use { source ->
+            source.execSQL("ALTER TABLE subscriptions ADD COLUMN notification_mode INTEGER")
+            source.execSQL("UPDATE subscriptions SET notification_mode = 1 WHERE uid = 1")
+            source.execSQL("UPDATE subscriptions SET notification_mode = 0 WHERE uid = 2")
+        }
     }
 
     private fun createSourceDatabase(path: Path) {
