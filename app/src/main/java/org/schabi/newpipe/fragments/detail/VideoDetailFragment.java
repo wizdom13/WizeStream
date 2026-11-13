@@ -220,6 +220,7 @@ public final class VideoDetailFragment
     @Nullable
     private PlayQueueItem currentLocalItem = null;
     private FragmentVideoDetailBinding binding;
+    private org.schabi.newpipe.sponsorblock.FullVideoLabelBadge sponsorshipBadge;
     private NavigationBarView detailNavigation;
     private MiniPlayerCorners miniPlayerCorners;
     private TvFullscreenFocusGuard tvFullscreenFocusGuard;
@@ -812,6 +813,10 @@ public final class VideoDetailFragment
 
     @Override
     public void onDestroyView() {
+        if (sponsorshipBadge != null) {
+            sponsorshipBadge.clear();
+            sponsorshipBadge = null;
+        }
         minimizedVideoSurface.restore();
         if (tvFullscreenFocusGuard != null) {
             tvFullscreenFocusGuard.update(false, false);
@@ -2621,6 +2626,10 @@ public final class VideoDetailFragment
     @Override
     public void showLoading() {
 
+        if (sponsorshipBadge != null) {
+            sponsorshipBadge.clear();
+        }
+
         super.showLoading();
 
         // If data is already cached, the transition from visible to hidden and back is unnecessary.
@@ -2638,6 +2647,7 @@ public final class VideoDetailFragment
         binding.positionView.setVisibility(View.GONE);
 
         binding.detailVideoTitleView.setText(title);
+
         applyTitleDisplayPolicy(false);
         animate(binding.detailVideoTitleView, true, 0);
 
@@ -2714,6 +2724,12 @@ public final class VideoDetailFragment
 
         animate(binding.detailThumbnailPlayButton, true, 200);
         binding.detailVideoTitleView.setText(title);
+
+        if (sponsorshipBadge == null) {
+            sponsorshipBadge = new org.schabi.newpipe.sponsorblock.FullVideoLabelBadge(
+                    binding.detailThumbnailRootLayout);
+        }
+        sponsorshipBadge.bind(info.getServiceId(), info.getUrl());
 
         binding.detailSubChannelThumbnailView.setVisibility(View.GONE);
 

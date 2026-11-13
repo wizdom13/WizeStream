@@ -48,6 +48,15 @@
             app:iconSpaceReserved="false"
             app:singleLineTitle="false" />
 
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="@string/sponsor_block_enable_key"
+            android:key="sponsor_block_full_video_labels"
+            android:summary="@string/full_video_labels_summary"
+            android:title="@string/full_video_labels_title"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
         <PreferenceScreen
             android:dependency="@string/sponsor_block_enable_key"
             android:fragment="org.schabi.newpipe.settings.SponsorBlockCategoriesSettingsFragment"

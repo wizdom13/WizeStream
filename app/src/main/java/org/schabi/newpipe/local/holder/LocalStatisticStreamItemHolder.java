@@ -54,6 +54,7 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
     @Nullable
     public final TextView itemAdditionalDetails;
     private final AnimatedProgressBar itemProgressView;
+    private final org.schabi.newpipe.sponsorblock.FullVideoLabelBadge sponsorshipBadge;
 
     public LocalStatisticStreamItemHolder(final LocalItemBuilder itemBuilder,
                                           final ViewGroup parent) {
@@ -72,6 +73,8 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
         itemDurationView = itemView.findViewById(R.id.itemDurationView);
         itemAdditionalDetails = itemView.findViewById(R.id.itemAdditionalDetails);
         itemProgressView = itemView.findViewById(R.id.itemProgressView);
+        sponsorshipBadge = new org.schabi.newpipe.sponsorblock.FullVideoLabelBadge(
+                (android.widget.FrameLayout) itemThumbnailView.getParent());
     }
 
     private String getStreamInfoDetailLine(final StreamStatisticsEntry entry,
@@ -93,10 +96,13 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
     public void updateFromItem(final LocalItem localItem,
                                final HistoryRecordManager historyRecordManager,
                                final DateTimeFormatter dateTimeFormatter) {
+        sponsorshipBadge.clear();
         if (!(localItem instanceof StreamStatisticsEntry)) {
             return;
         }
         final StreamStatisticsEntry item = (StreamStatisticsEntry) localItem;
+        sponsorshipBadge.bind(item.getStreamEntity().getServiceId(),
+                item.getStreamEntity().getUrl());
 
         itemVideoTitleView.setText(item.getStreamEntity().getTitle());
         itemUploaderView.setText(item.getStreamEntity().getUploader());

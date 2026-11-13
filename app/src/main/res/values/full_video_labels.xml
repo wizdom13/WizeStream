@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <item name="full_video_label_badge" type="id" />
+    <string name="full_video_labels_title" tools:ignore="MissingTranslation">Full-video sponsorship labels</string>
+    <string name="full_video_labels_summary" tools:ignore="MissingTranslation">Show community sponsorship disclosures on YouTube thumbnails using SponsorBlock.</string>
+    <string name="full_video_label_sponsor" tools:ignore="MissingTranslation">SponsorBlock: fully sponsored video</string>
+    <string name="full_video_label_exclusive" tools:ignore="MissingTranslation">SponsorBlock: exclusive or subsidised access</string>
+    <string name="full_video_label_self_promotion" tools:ignore="MissingTranslation">SponsorBlock: unpaid or self-promotion</string>
+</resources>
