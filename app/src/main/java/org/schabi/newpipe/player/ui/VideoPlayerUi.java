@@ -177,6 +177,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void setupFromView() {
         initViews();
         initListeners();
+        SponsorBlockContributionMenu.bind(binding.sponsorBlockContributeButton, player);
         PlayerTooltips.disable(binding.getRoot());
         PlayerControlHints.install(binding.getRoot());
         org.schabi.newpipe.themes.ThemeIcons.apply(binding.playPreviousButton, "previous");
@@ -336,6 +337,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.playNextButton.setOnClickListener(null);
 
         binding.moreOptionsButton.setOnClickListener(null);
+        binding.sponsorBlockContributeButton.setOnClickListener(null);
         binding.moreOptionsButton.setOnLongClickListener(null);
         binding.share.setOnClickListener(null);
         binding.share.setOnLongClickListener(null);
@@ -1181,6 +1183,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onMetadataChanged(@NonNull final MediaItemTag tag) {
         super.onMetadataChanged(tag);
+        binding.sponsorBlockContributeButton.setVisibility(View.GONE);
         videoSurface.selectItem(tag.getServiceId() + ":" + tag.getStreamUrl(), false);
         chapterController.clear(binding);
         danmakuController.reset();
@@ -1208,6 +1211,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     }
 
     protected void updateStreamRelatedViews() {
+        SponsorBlockContributionMenu.bind(binding.sponsorBlockContributeButton, player);
         if (!player.getPlaybackPresentationMode().rendersVideo()) {
             binding.qualityTextView.setVisibility(View.GONE);
             binding.audioTrackTextView.setVisibility(View.GONE);

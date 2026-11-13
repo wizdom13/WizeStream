@@ -59,6 +59,26 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:title="@string/sb_contribute_title"
+        app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="sponsor_block_contributions"
+            android:title="@string/sb_contribute_enable"
+            android:summary="@string/sb_contribute_summary"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+        <EditTextPreference
+            android:dependency="sponsor_block_contributions"
+            android:key="sponsor_block_contribution_id"
+            android:persistent="false"
+            android:title="@string/sb_contribute_identity"
+            android:summary="@string/sb_contribute_identity_summary"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/dearrow_settings_category_title"
         app:iconSpaceReserved="false">
 
