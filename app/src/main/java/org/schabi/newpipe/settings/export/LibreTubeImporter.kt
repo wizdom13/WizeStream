@@ -26,7 +26,7 @@ internal class LibreTubeImporter(
     private val recordSubscription: (SubscriptionEntity) -> Unit = {},
     private val checkActive: () -> Unit = {}
 ) {
-    fun import(data: LibreTubeBackup, selected: Set<LibreTubeCategory>, now: Long): LibreTubeImportResult {
+    fun import(data: LibreTubeBackup, selected: Set<LibreTubeCategory>, now: Long, sourceName: String = "LibreTube"): LibreTubeImportResult {
         var added = 0
         var skipped = data.skipped
         database.runInTransaction {
@@ -109,8 +109,8 @@ internal class LibreTubeImporter(
                 val used = mutableSetOf<Long>()
                 for (playlist in data.playlists) {
                     checkActive()
-                    val base = "${playlist.name} (LibreTube)"
-                    val pattern = Regex("${Regex.escape(playlist.name)} \\(LibreTube(?: [0-9]+)?\\)")
+                    val base = "${playlist.name} ($sourceName)"
+                    val pattern = Regex("${Regex.escape(playlist.name)} \\(${Regex.escape(sourceName)}(?: [0-9]+)?\\)")
                     val urls = playlist.videos.map { it.url }
                     val duplicate = playlists.firstOrNull { existing ->
                         existing.uid !in used && existing.name?.matches(pattern) == true &&
@@ -123,7 +123,7 @@ internal class LibreTubeImporter(
                     }
                     var name = base
                     var suffix = 2
-                    while (playlists.any { it.name == name }) name = "${playlist.name} (LibreTube ${suffix++})"
+                    while (playlists.any { it.name == name }) name = "${playlist.name} ($sourceName ${suffix++})"
                     val ids = playlist.videos.map(::stream)
                     val entity = PlaylistEntity(
                         name = name,

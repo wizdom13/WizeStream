@@ -45,6 +45,14 @@
         app:singleLineTitle="false"
         app:iconSpaceReserved="false" />
 
+    <Preference
+        android:key="freetube_transfer"
+        android:title="@string/freetube_transfer_title"
+        android:summary="@string/freetube_transfer_summary"
+        android:fragment="org.schabi.newpipe.settings.export.FreeTubeTransferFragment"
+        app:singleLineTitle="false"
+        app:iconSpaceReserved="false" />
+
     <PreferenceCategory
         android:title="@string/automatic_backup_title"
         app:iconSpaceReserved="false">
