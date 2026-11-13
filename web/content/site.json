@@ -1,0 +1,1357 @@
+{
+  "name": "WizeStream",
+  "release": "1.41.0",
+  "releaseDate": "2026-11-12",
+  "reviewed": "2026-11-13",
+  "sourceCommit": "4a6dc96af37d2b9136e9569f7c15981b26142cad",
+  "repository": "https://github.com/wizdom13/WizeStream",
+  "projects": [
+    {
+      "key": "wizestream",
+      "name": "WizeStream",
+      "version": "Current development",
+      "url": "https://github.com/wizdom13/WizeStream",
+      "status": "Active"
+    },
+    {
+      "key": "newpipe",
+      "name": "NewPipe",
+      "version": "v0.29.3",
+      "url": "https://github.com/TeamNewPipe/NewPipe/releases/tag/v0.29.3",
+      "status": "Active"
+    },
+    {
+      "key": "pipepipe",
+      "name": "PipePipe",
+      "version": "v5.5.0",
+      "url": "https://github.com/InfinityLoop1308/PipePipe/releases/tag/v5.5.0",
+      "status": "Active"
+    },
+    {
+      "key": "libretube",
+      "name": "LibreTube",
+      "version": "v32.1",
+      "url": "https://github.com/libre-tube/LibreTube/releases/tag/v32.1",
+      "status": "Active"
+    },
+    {
+      "key": "tubular",
+      "name": "Tubular",
+      "version": "v0.28.4 · archived",
+      "url": "https://github.com/polymorphicshade/Tubular",
+      "status": "Archived July 2026"
+    }
+  ],
+  "comparison": [
+    {
+      "category": "services",
+      "feature": "Account-free browsing and playback",
+      "cells": {
+        "wizestream": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Yes; cookie login optional",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes; Piped account optional",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "Streaming services",
+      "cells": {
+        "wizestream": {
+          "text": "YouTube/Music, SoundCloud, PeerTube, Bandcamp, media.ccc.de, Bilibili, Niconico, Rumble, BitChute; experimental Odysee",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "YouTube/Music, SoundCloud, PeerTube, Bandcamp, media.ccc.de",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "YouTube, SoundCloud, PeerTube, Bandcamp, media.ccc.de, Bilibili, Niconico",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "YouTube",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "NewPipe-derived service set",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "SponsorBlock skipping",
+      "cells": {
+        "wizestream": {
+          "text": "Optional, per-category controls",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not integrated",
+          "level": "no",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "YouTube and Bilibili",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "SponsorBlock submissions and voting",
+      "cells": {
+        "wizestream": {
+          "text": "Explicit opt-in contribution tools",
+          "level": "yes",
+          "next": true
+        },
+        "newpipe": {
+          "text": "Not integrated",
+          "level": "no",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Submission, voting and undo",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Submission and voting",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Submission, voting and undo",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "Full-video sponsorship labels",
+      "cells": {
+        "wizestream": {
+          "text": "Separate optional disclosures",
+          "level": "yes",
+          "next": true
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Sponsor, exclusive-access and self-promotion",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Listed as TODO",
+          "level": "no",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "DeArrow titles and thumbnails",
+      "cells": {
+        "wizestream": {
+          "text": "Optional",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Clickbait removal listed as TODO",
+          "level": "no",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "DeArrow contributions",
+      "cells": {
+        "wizestream": {
+          "text": "Not implemented in reviewed code",
+          "level": "no",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Title and thumbnail-time submissions",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "services",
+      "feature": "Dislike information",
+      "cells": {
+        "wizestream": {
+          "text": "Optional",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "ReturnYouTubeDislike",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "ReturnYouTubeDislike",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "ReturnYouTubeDislike",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "Background audio",
+      "cells": {
+        "wizestream": {
+          "text": "Listen mode and background player",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Music-player mode",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "NewPipe-derived background player",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "Floating playback",
+      "cells": {
+        "wizestream": {
+          "text": "Popup and optional native Android PiP",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Popup player",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Popup player",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Native Android PiP",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Popup player",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "Captions and chapters",
+      "cells": {
+        "wizestream": {
+          "text": "Captions, chapter markers and searchable transcripts",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Captions and chapter divisions",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Captions; chapter details not verified",
+          "level": "partial",
+          "next": false
+        },
+        "libretube": {
+          "text": "Captions and chapters",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Captions; chapter details not verified",
+          "level": "partial",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "A–B repeat",
+      "cells": {
+        "wizestream": {
+          "text": "Supported for non-live playback; optional enable switch",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "Subtitle timing adjustment",
+      "cells": {
+        "wizestream": {
+          "text": "Session-only offset",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "360° viewing",
+      "cells": {
+        "wizestream": {
+          "text": "Automatic/manual projection and panning",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "Adjustable buffer target",
+      "cells": {
+        "wizestream": {
+          "text": "Media3 defaults; no user setting verified",
+          "level": "partial",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Configurable; 50-second default",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "playback",
+      "feature": "Inline/fullscreen quality defaults",
+      "cells": {
+        "wizestream": {
+          "text": "Main/popup defaults and mobile limits; different split",
+          "level": "partial",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Separate inline/fullscreen defaults for Wi-Fi and mobile",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "devices",
+      "feature": "Android Auto",
+      "cells": {
+        "wizestream": {
+          "text": "Audio browsing, search and resume",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Officially supported",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Supported",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Manifest integration",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "devices",
+      "feature": "Android / Google TV",
+      "cells": {
+        "wizestream": {
+          "text": "TV layout and D-pad controls",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Officially supported",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "TV entry and controls",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "TV launcher entry; optimized experience not established",
+          "level": "partial",
+          "next": false
+        },
+        "tubular": {
+          "text": "Leanback launcher support",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "devices",
+      "feature": "FCast / Chromecast-compatible casting",
+      "cells": {
+        "wizestream": {
+          "text": "Both, with compatible streams and receivers",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified; external/Kodi handoff is different",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "Subscription groups",
+      "cells": {
+        "wizestream": {
+          "text": "Profile-scoped",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "NewPipe-derived groups",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "Local playlists and history",
+      "cells": {
+        "wizestream": {
+          "text": "Profile-scoped",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "NewPipe-derived library",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "privacy",
+      "feature": "Separate local profiles",
+      "cells": {
+        "wizestream": {
+          "text": "Supported library separation",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "privacy",
+      "feature": "Cross-device synchronization",
+      "cells": {
+        "wizestream": {
+          "text": "Encrypted peer-to-peer Device Sync",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Manual backup transfer; live sync not verified",
+          "level": "partial",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Manual backups; live sync not verified",
+          "level": "partial",
+          "next": false
+        },
+        "libretube": {
+          "text": "Optional Piped account synchronization",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Manual backups; live sync not verified",
+          "level": "partial",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "Video, audio and caption downloads",
+      "cells": {
+        "wizestream": {
+          "text": "Yes; separate companion captions supported",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Yes",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "NewPipe-derived downloads",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "Batch downloads",
+      "cells": {
+        "wizestream": {
+          "text": "Playlists and playback queue",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Channels and playlists",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "Automatic selected-channel downloads",
+      "cells": {
+        "wizestream": {
+          "text": "Optional, bounded new-upload checks",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "Scheduled download windows",
+      "cells": {
+        "wizestream": {
+          "text": "Time, charging and network constraints",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "library",
+      "feature": "FreeTube migration",
+      "cells": {
+        "wizestream": {
+          "text": "Subscriptions/playlists import and export",
+          "level": "yes",
+          "next": true
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Subscriptions/playlists import and export",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "tools",
+      "feature": "Learning tools",
+      "cells": {
+        "wizestream": {
+          "text": "Notes, transcripts and learning dashboard",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "devices",
+      "feature": "Device-wide local media browser",
+      "cells": {
+        "wizestream": {
+          "text": "Audio/video, folders, search and filters",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Downloaded-media playback differs from a device browser",
+          "level": "partial",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "devices",
+      "feature": "Live TV and M3U sources",
+      "cells": {
+        "wizestream": {
+          "text": "IPTV-org/Free-TV, imports and favorites",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "devices",
+      "feature": "Internet radio directory",
+      "cells": {
+        "wizestream": {
+          "text": "Radio Browser and custom streams",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "libretube": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Not verified",
+          "level": "unknown",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "tools",
+      "feature": "Appearance and navigation",
+      "cells": {
+        "wizestream": {
+          "text": "Material 3, configurable navigation and theme packs",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "List, grid and card layouts",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Configurable player and list UI",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Material 3 / Material You",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "NewPipe-derived interface",
+          "level": "yes",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "privacy",
+      "feature": "Content filtering",
+      "cells": {
+        "wizestream": {
+          "text": "Videos/channels, keywords, regex, comments and membership controls",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Age restrictions; comparable advanced set not verified",
+          "level": "partial",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Shorts, paid content, channel, keyword, regex and comment filters",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Comparable full set not verified",
+          "level": "unknown",
+          "next": false
+        },
+        "tubular": {
+          "text": "Keyword/regex filtering listed as TODO",
+          "level": "no",
+          "next": false
+        }
+      }
+    },
+    {
+      "category": "tools",
+      "feature": "Maintenance status",
+      "cells": {
+        "wizestream": {
+          "text": "Active independent project",
+          "level": "yes",
+          "next": false
+        },
+        "newpipe": {
+          "text": "Active upstream project",
+          "level": "yes",
+          "next": false
+        },
+        "pipepipe": {
+          "text": "Active independent fork",
+          "level": "yes",
+          "next": false
+        },
+        "libretube": {
+          "text": "Active YouTube-focused project",
+          "level": "yes",
+          "next": false
+        },
+        "tubular": {
+          "text": "Discontinued; archived July 2026",
+          "level": "archived",
+          "next": false
+        }
+      }
+    }
+  ],
+  "comparisonSources": [
+    {
+      "project": "NewPipe",
+      "links": [
+        [
+          "Stable README and capabilities",
+          "https://github.com/TeamNewPipe/NewPipe/blob/v0.29.3/README.md"
+        ],
+        [
+          "Stable release",
+          "https://github.com/TeamNewPipe/NewPipe/releases/tag/v0.29.3"
+        ],
+        [
+          "Supported devices / Android Auto",
+          "https://newpipe.net/FAQ/bugs/#supported-devices"
+        ],
+        [
+          "SponsorBlock policy",
+          "https://github.com/TeamNewPipe/NewPipe/discussions/10725"
+        ]
+      ]
+    },
+    {
+      "project": "PipePipe",
+      "links": [
+        [
+          "Stable README",
+          "https://github.com/InfinityLoop1308/PipePipe/blob/v5.5.0/README.md"
+        ],
+        [
+          "Stable release notes",
+          "https://github.com/InfinityLoop1308/PipePipe/releases/tag/v5.5.0"
+        ],
+        [
+          "Pinned service list",
+          "https://github.com/InfinityLoop1308/PipePipeExtractor/blob/1a09d20e68dbd0892995bc58ffa539049a656690/extractor/src/main/java/org/schabi/newpipe/extractor/ServiceList.java"
+        ],
+        [
+          "SponsorBlock submission UI",
+          "https://github.com/InfinityLoop1308/PipePipeClient/blob/b91f008fb4d25b470c4383dcf42e31ee7696d272/app/src/main/java/org/schabi/newpipe/fragments/list/sponsorblock/SponsorBlockFragment.java"
+        ],
+        [
+          "TV and Android Auto manifest",
+          "https://github.com/InfinityLoop1308/PipePipeClient/blob/b91f008fb4d25b470c4383dcf42e31ee7696d272/app/src/main/AndroidManifest.xml"
+        ]
+      ]
+    },
+    {
+      "project": "LibreTube",
+      "links": [
+        [
+          "Stable README",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/README.md"
+        ],
+        [
+          "Stable release",
+          "https://github.com/libre-tube/LibreTube/releases/tag/v32.1"
+        ],
+        [
+          "Piped and local settings",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/res/xml/instance_settings.xml"
+        ],
+        [
+          "Buffering settings",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/res/xml/player_settings.xml"
+        ],
+        [
+          "Quality defaults",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/res/xml/audio_video_settings.xml"
+        ],
+        [
+          "SponsorBlock contributions",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/java/com/github/libretube/ui/dialogs/SubmitSegmentDialog.kt"
+        ],
+        [
+          "Full-video labels",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/java/com/github/libretube/api/SponsorBlockLabelHelper.kt"
+        ],
+        [
+          "DeArrow contributions",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/java/com/github/libretube/ui/dialogs/SubmitDeArrowDialog.kt"
+        ],
+        [
+          "FreeTube migration",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/java/com/github/libretube/helpers/ImportHelper.kt"
+        ],
+        [
+          "PiP and TV manifest",
+          "https://github.com/libre-tube/LibreTube/blob/v32.1/app/src/main/AndroidManifest.xml"
+        ]
+      ]
+    },
+    {
+      "project": "Tubular · historical",
+      "links": [
+        [
+          "Discontinuation notice",
+          "https://github.com/polymorphicshade/Tubular"
+        ],
+        [
+          "Last stable README and TODOs",
+          "https://github.com/polymorphicshade/Tubular/blob/v0.28.4/README.md"
+        ],
+        [
+          "Last stable release",
+          "https://github.com/polymorphicshade/Tubular/releases/tag/v0.28.4"
+        ],
+        [
+          "SponsorBlock submissions",
+          "https://github.com/polymorphicshade/Tubular/blob/v0.28.4/app/src/main/java/org/schabi/newpipe/fragments/list/sponsorblock/SponsorBlockFragment.java"
+        ],
+        [
+          "TV and Auto manifest",
+          "https://github.com/polymorphicshade/Tubular/blob/v0.28.4/app/src/main/AndroidManifest.xml"
+        ]
+      ]
+    }
+  ],
+  "docs": [
+    {
+      "slug": "getting-started",
+      "title": "Getting started",
+      "description": "Install the right build, make a first library, and understand release channels.",
+      "group": "Start here",
+      "icon": "play"
+    },
+    {
+      "slug": "services-discovery",
+      "title": "Services & discovery",
+      "description": "Find supported sources, search effectively, and understand local recommendations.",
+      "group": "Start here",
+      "icon": "compass"
+    },
+    {
+      "slug": "playback",
+      "title": "Playback & audio",
+      "description": "Learn player modes, queues, captions, gestures, 360° viewing and A–B repeat.",
+      "group": "Watch & listen",
+      "icon": "play"
+    },
+    {
+      "slug": "sponsorblock",
+      "title": "SponsorBlock & DeArrow",
+      "description": "Choose community features deliberately and understand contributions and privacy.",
+      "group": "Watch & listen",
+      "icon": "skip"
+    },
+    {
+      "slug": "devices",
+      "title": "TV, Auto & casting",
+      "description": "Use Android TV controls, audio on Android Auto, and compatible receivers.",
+      "group": "Watch & listen",
+      "icon": "cast"
+    },
+    {
+      "slug": "live-media",
+      "title": "Radio, Live TV & local media",
+      "description": "Browse stations, import M3U sources and play files on your device.",
+      "group": "Watch & listen",
+      "icon": "radio"
+    },
+    {
+      "slug": "subscriptions",
+      "title": "Subscriptions & playlists",
+      "description": "Organize local groups, tune What’s New and manage smart playlists.",
+      "group": "Your library",
+      "icon": "library"
+    },
+    {
+      "slug": "downloads",
+      "title": "Downloads & offline",
+      "description": "Choose folders, batch media, set download windows and manage storage.",
+      "group": "Your library",
+      "icon": "download"
+    },
+    {
+      "slug": "profiles-sync",
+      "title": "Profiles & Device Sync",
+      "description": "Separate libraries and pair trusted devices without a cloud account.",
+      "group": "Your library",
+      "icon": "sync"
+    },
+    {
+      "slug": "backups-migration",
+      "title": "Backups & migration",
+      "description": "Move compatible NewPipe, LibreTube and FreeTube data without losing originals.",
+      "group": "Your library",
+      "icon": "archive"
+    },
+    {
+      "slug": "learning",
+      "title": "Learning, transcripts & notes",
+      "description": "Designate lessons, revisit timestamps and organize study progress.",
+      "group": "Make it yours",
+      "icon": "book"
+    },
+    {
+      "slug": "customization",
+      "title": "Appearance & accessibility",
+      "description": "Tune navigation, text, layouts, notifications and native controls.",
+      "group": "Make it yours",
+      "icon": "sliders"
+    },
+    {
+      "slug": "theme-packs",
+      "title": "Community theme packs",
+      "description": "Preview JSON themes, understand glass boundaries and create accessible packs.",
+      "group": "Make it yours",
+      "icon": "palette"
+    },
+    {
+      "slug": "privacy-network",
+      "title": "Privacy & networking",
+      "description": "Understand local storage, optional services, proxies and Invidious trust.",
+      "group": "Stay informed",
+      "icon": "shield"
+    },
+    {
+      "slug": "troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Resolve common setup issues and write a useful, privacy-conscious report.",
+      "group": "Stay informed",
+      "icon": "help"
+    }
+  ]
+}
