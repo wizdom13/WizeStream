@@ -68,7 +68,7 @@ class WizeStreamBrandingTest {
         }
 
         assertEquals(
-            "https://github.com/wizdom13/WizeStream",
+            "https://wizestream.org",
             strings["website_url"]
         )
         assertEquals(
@@ -76,7 +76,7 @@ class WizeStreamBrandingTest {
             strings["privacy_policy_url"]
         )
         assertEquals(
-            "https://github.com/wizdom13/WizeStream/blob/pipe/docs/faq.md",
+            "https://wizestream.org/faq.html",
             strings["faq_url"]
         )
     }
