@@ -46,6 +46,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
     private final AnimatedProgressBar itemProgressView;
     private Disposable progressLoad;
     private int progressGeneration;
+    private final org.schabi.newpipe.sponsorblock.FullVideoLabelBadge sponsorshipBadge;
 
     StreamMiniInfoItemHolder(final InfoItemBuilder infoItemBuilder, final int layoutId,
                              final ViewGroup parent) {
@@ -59,6 +60,8 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         itemUploaderRoot = itemView.findViewById(R.id.itemUploaderRoot);
         itemUploaderAvatarView = itemView.findViewById(R.id.itemUploaderAvatarView);
         itemProgressView = itemView.findViewById(R.id.itemProgressView);
+        sponsorshipBadge = new org.schabi.newpipe.sponsorblock.FullVideoLabelBadge(
+                (android.widget.FrameLayout) itemThumbnailView.getParent());
     }
 
     public StreamMiniInfoItemHolder(final InfoItemBuilder infoItemBuilder, final ViewGroup parent) {
@@ -97,6 +100,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
     @Override
     public void updateFromItem(final InfoItem infoItem,
                                final HistoryRecordManager historyRecordManager) {
+        sponsorshipBadge.clear();
         cancelProgressLoad();
         itemProgressView.setVisibility(View.GONE);
         itemProgressView.setProgress(0);
@@ -104,6 +108,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
             return;
         }
         final StreamInfoItem item = (StreamInfoItem) infoItem;
+        sponsorshipBadge.bind(item.getServiceId(), item.getUrl());
 
         itemVideoTitleView.setText(item.getName());
         itemUploaderView.setText(item.getUploaderName());
@@ -280,6 +285,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
 
     @Override
     public void recycle() {
+        sponsorshipBadge.clear();
         cancelProgressLoad();
         itemProgressView.setVisibility(View.GONE);
         itemProgressView.setProgress(0);
