@@ -25,10 +25,11 @@
     "support.html",
     "about.html",
     "releases.html",
-    "screenshots.html"
+    "screenshots.html",
+    "reviews/index.php"
   ],
   "sourceCommit": "4a6dc96af37d2b9136e9569f7c15981b26142cad",
   "reviewed": "2026-11-13",
   "release": "1.41.0",
-  "baseUrl": ""
+  "baseUrl": "https://wizestream.org/"
 }

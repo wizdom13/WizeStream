@@ -8,13 +8,13 @@ A responsive, multipage static product website and handbook. All website files l
 - Fifteen detailed guides covering installation, services, playback, SponsorBlock, subscriptions, downloads, profiles/sync, migration, learning, themes, devices, live/local media, privacy and troubleshooting.
 - A comparison of 35 features across WizeStream, NewPipe, PipePipe, LibreTube and historical Tubular, with official references and explicit unknowns.
 - Local full-text search, guide/FAQ filters, project/category/feature comparison filters, a mobile navigation menu and light/dark appearance.
-- Real project screenshots and logo served locally. No analytics, remote fonts, third-party scripts, package manager, API key or backend is needed.
+- Real project screenshots and logo served locally. No analytics, remote fonts, third-party scripts, package manager or API key is needed. The static handbook needs no backend; the optional community reviews page uses PHP and MySQL.
 
-The checked-in HTML is the deployment output. Navigation, article text, the comparison table and FAQ work without JavaScript. JavaScript enhances search, filtering, navigation and the optional saved color preference. All links are relative, so the site supports a domain root or a project subdirectory.
+The checked-in HTML and public `reviews/index.php` are the deployment output. The review backend and deployment instructions are in [reviews/README.md](reviews/README.md). Navigation, article text, the comparison table and FAQ work without JavaScript. JavaScript enhances search, filtering, navigation and the optional saved color preference. All links are relative, so the site supports a domain root or a project subdirectory.
 
 ## Build and check
 
-Python 3.10+ is sufficient for the build and structural checker; there are no Python dependencies.
+Python 3.10+ is sufficient for the build and structural checker; there are no Python dependencies. Running the optional review service additionally requires the PHP/MySQL setup described in `reviews/README.md`.
 
 ```sh
 python3 web/build.py
@@ -64,16 +64,16 @@ The comparison describes selected capabilities rather than declaring an overall 
 
 Serve the **contents of `web/`** from any ordinary static host, including your own HTTPS web server. No build has to run on the server. There is no client-side routing fallback: direct requests for `docs/playback.html`, for example, should return that file.
 
-An actual domain is deliberately not assumed. Once hosting is known, generate canonical/Open Graph URLs and a sitemap using the real HTTPS base URL, including the project path when applicable:
+The configured production address is **https://wizestream.org/**. `content/site.json` supplies that default for canonical/Open Graph URLs and the sitemap. Override it only when intentionally building for another deployment, including a project path when applicable:
 
 ```sh
-python3 web/build.py --base-url https://your-real-host.example/wizestream/
+python3 web/build.py --base-url https://wizestream.org/
 python3 web/check.py
 ```
 
-Replace the example with the actual public URL before deployment. Running the build again without `--base-url` removes canonical URLs and the generated sitemap. By default there is no sitemap with a fictitious origin.
+The default build uses the confirmed production address. To intentionally omit canonical URLs/sitemap for an offline preview, pass `--base-url ""`. A domain in configuration does not deploy the website or establish that the review backend is live.
 
-For a deployment artifact, include the generated `*.html` files, `docs/*.html`, `assets/`, `robots.txt` and `sitemap.xml` if generated. The Python/Markdown/JSON source can stay in the repository; it is public and contains no secrets. Hosting the full `web/` directory also works. This change does not activate any hosting service or publish a domain.
+For a static-only deployment artifact, include the generated `*.html` files, `docs/*.html`, `assets/`, `robots.txt` and `sitemap.xml` if generated. To enable reviews on GoDaddy, also upload the complete `reviews/` directory with its hidden `.htaccess` files, import the SQL schema, and place actual configuration outside every served document root. Follow `reviews/README.md`. The Python/Markdown/JSON source can stay in the repository; it is public and contains no production secrets. The real PHP config and database credentials must stay outside the website and repository. Hosting the full `web/` directory also works. This change does not activate any hosting service or publish a domain.
 
 Recommended host configuration: HTTPS, correct HTML/CSS/JavaScript/SVG/PNG MIME types, short cache lifetimes or revalidation for HTML and the unversioned CSS/JS, and `X-Content-Type-Options: nosniff`. Avoid permanent immutable caching of assets with unchanged filenames. If your host supports headers, a compatible policy is:
 
@@ -82,10 +82,10 @@ Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'
 Referrer-Policy: no-referrer
 ```
 
-The optional appearance preference uses `localStorage` key `wizestream-site-theme`. Search/filter input is not sent anywhere. No service worker or tracking cookie is installed. The website privacy page leaves hosting logs to the actual hosting configuration rather than promising a server policy that has not been configured.
+The optional appearance preference uses `localStorage` key `wizestream-site-theme`. Search/filter input is not sent anywhere. No service worker or tracking cookie is installed. For `/reviews/`, exclude the static `connect-src 'none'` host policy above: PHP supplies a compatible `connect-src 'self'` policy for its same-origin requests. Review responses use `no-store`. The website privacy page leaves hosting logs to the actual hosting configuration rather than promising a server policy that has not been configured.
 
 ## Graphics and attribution
 
 `logo.svg` is copied from `assets/wizestream_logo_round.svg`, contributed to WizeStream by Fabián PS (@FabianOvrWrt). The four PNGs are copied from the English Fastlane phone screenshots (`08`, `05`, `06`, `07`). They are real repository assets, not newly invented screens. Their captions explicitly explain that theme, version and device can change the appearance. Preserve the repository's GPLv3 licensing and attribution; see the site About page and root license/component notices.
 
-Keep the site free of invented download totals, testimonials, ratings or live review claims. A separate review service is not assumed to be deployed or embedded here.
+Keep the site free of invented download totals, testimonials, ratings or live review claims. The PHP review implementation is included, with its actual deployment and credentials configured separately. Do not claim it is live or enable the app action before verifying it on the host.

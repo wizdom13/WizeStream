@@ -64,13 +64,18 @@ def check():
     data = json.loads((ROOT / 'content/site.json').read_text())
     expected = set(manifest['pages'])
     actual = {str(path.relative_to(ROOT)) for path in ROOT.rglob('*.html')}
+    if (ROOT / 'reviews/index.php').exists():
+        actual.add('reviews/index.php')
     if expected != actual:
         errors.append(f'Page manifest mismatch: missing={expected-actual}, extra={actual-expected}')
     pages = {}
     for name in sorted(actual):
         path = ROOT / name
         parser = Page(path)
-        parser.feed(path.read_text(encoding='utf8'))
+        markup = path.read_text(encoding='utf8')
+        if path.suffix == '.php':
+            markup = re.sub(r'<\?php.*?\?>', '', markup, flags=re.S)
+        parser.feed(markup)
         parser.close()
         pages[path] = parser
         errors.extend(f'{name}: {error}' for error in parser.errors)
@@ -118,6 +123,8 @@ def check():
             if parsed.path.startswith('/'):
                 errors.append(f'{name}: Root-absolute link breaks project-path hosting: {value}')
             target = (path.parent / unquote(parsed.path)).resolve() if parsed.path else path
+            if target.is_dir():
+                target = target / 'index.php'
             if not target.is_relative_to(ROOT) or not target.is_file():
                 errors.append(f'{name}: Missing/unsafe target {value}')
             elif parsed.fragment and target in pages and unquote(parsed.fragment) not in pages[target].ids:

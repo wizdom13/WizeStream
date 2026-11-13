@@ -1,0 +1,229 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+const $ = (id) => document.getElementById(id);
+const node = (tag, text, className) => {
+  const element = document.createElement(tag);
+  if (text !== undefined) element.textContent = text;
+  if (className) element.className = className;
+  return element;
+};
+
+async function api(path, { method = 'GET', data, authorization } = {}) {
+  const headers = { Accept: 'application/json' };
+  if (data !== undefined) headers['Content-Type'] = 'application/json';
+  if (authorization?.startsWith('Bearer ')) headers['X-Moderator-Key'] = authorization.slice(7);
+  else if (authorization) headers['X-Review-Authorization'] = authorization;
+  const requested = new URL(path, location.origin);
+  const endpoint = new URL('api.php', location.href);
+  endpoint.search = requested.search;
+  endpoint.searchParams.set('action', requested.pathname.split('/').pop());
+  if (method === 'DELETE') { method = 'POST'; data = { ...data, operation: 'delete' }; }
+  const response = await fetch(endpoint, {
+    method, headers, body: data === undefined ? undefined : JSON.stringify(data),
+    credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+  });
+  let result;
+  try { result = await response.json(); } catch { throw new Error('The service did not respond. Please try again.'); }
+  if (!response.ok) {
+    const error = new Error(result.error || 'The request could not be completed.');
+    error.status = response.status;
+    throw error;
+  }
+  return result;
+}
+
+function reviewCard(review) {
+  const article = node('article', undefined, 'review');
+  const stars = node('div', '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating), 'review-stars');
+  stars.setAttribute('aria-label', `${review.rating} out of 5 stars`);
+  article.append(stars, node('p', review.content, 'review-content'));
+  const meta = node('div', undefined, 'review-meta');
+  meta.append(node('span', review.nickname || 'Anonymous', 'review-author'));
+  const date = new Date(`${review.date}T00:00:00Z`);
+  meta.append(node('span', date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })));
+  article.append(meta);
+  if (review.appVersion) article.append(node('p', `App version: ${review.appVersion}`, 'quiet'));
+  return article;
+}
+
+function showSummary(data) {
+  $('average').replaceChildren(document.createTextNode(data.count ? data.average.toFixed(1) : '—'), node('small', '/ 5'));
+  $('rating-count').textContent = data.count ? `Based on ${data.count.toLocaleString()} published ${data.count === 1 ? 'review' : 'reviews'}` : 'No reviews yet. Be the first to share.';
+  $('review-total').textContent = data.count ? `${data.count.toLocaleString()} published` : 'All ratings welcome';
+  const rows = [];
+  for (let rating = 5; rating >= 1; rating--) {
+    const count = data.distribution[rating - 1];
+    const row = node('div', undefined, 'distribution-row');
+    row.append(node('span', `${rating} ★`));
+    const bar = node('progress');
+    bar.max = Math.max(data.count, 1); bar.value = count;
+    bar.setAttribute('aria-label', `${count} published ${rating}-star reviews`);
+    row.append(bar, node('span', String(count))); rows.push(row);
+  }
+  $('distribution').replaceChildren(...rows);
+}
+
+let currentPage = 1;
+async function loadReviews(page = currentPage) {
+  $('previous').disabled = true; $('next').disabled = true;
+  try {
+    const result = await api(`/api/reviews?page=${page}`);
+    currentPage = page; showSummary(result);
+    $('reviews').replaceChildren(...result.reviews.map(reviewCard));
+    if (!result.reviews.length) $('reviews').append(node('p', result.count ? 'No reviews on this page.' : 'A fresh start. Your review can help the next person discover WizeStream.', 'empty'));
+    $('list-status').textContent = '';
+    $('page-label').textContent = result.count ? `Page ${page} of ${Math.ceil(result.count / result.pageSize)}` : '';
+    $('previous').disabled = page <= 1;
+    $('next').disabled = page * result.pageSize >= result.count;
+  } catch (error) {
+    $('list-status').textContent = error.message;
+    $('rating-count').textContent = 'Rating unavailable. Please reload to try again.';
+  }
+}
+
+let challengePromise;
+function getChallenge() {
+  if (!challengePromise) {
+    challengePromise = api('/api/challenge').then(data => ({ ...data, receivedAt: Date.now() }))
+      .catch(error => { challengePromise = null; throw error; });
+  }
+  return challengePromise;
+}
+let receipt;
+function createReceipt() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return { id: crypto.randomUUID(), token };
+}
+function showReceipt(uncertain = false) {
+  const link = `${new URL('?view=manage', location.href)}#${receipt.id}:${receipt.token}`;
+  $('receipt-link').value = link; $('open-receipt').href = link;
+  $('receipt-title').textContent = uncertain ? 'Keep this link while checking your submission.' : 'Thank you. Save your deletion link.';
+  $('receipt-message').textContent = uncertain
+    ? 'The connection ended before receipt could be confirmed. Use this private link to check whether your review arrived before trying again. Anyone with the link can access or remove it.'
+    : 'Your review is awaiting moderation. Use this private link to check or remove it, without an account. Anyone with the link can access or remove it.';
+  $('receipt').hidden = false;
+}
+function setupPublic() {
+  loadReviews();
+  $('previous').onclick = () => loadReviews(currentPage - 1);
+  $('next').onclick = () => loadReviews(currentPage + 1);
+  $('review-form').addEventListener('focusin', () => { getChallenge().catch(error => { $('submit-status').textContent = error.message; }); }, { once: true });
+  $('review-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!$('review-form').reportValidity()) return;
+    const button = $('submit-review'); button.disabled = true;
+    $('submit-status').textContent = 'Preparing your submission…';
+    let attempted = false;
+    try {
+      const challenge = await getChallenge();
+      const remaining = challenge.minimumWaitMs - (Date.now() - challenge.receivedAt);
+      if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining + 50));
+      receipt ||= createReceipt();
+      const fields = new FormData($('review-form'));
+      attempted = true;
+      const result = await api('/api/reviews', { method: 'POST', data: {
+        id: receipt.id, deletionToken: receipt.token, challenge: challenge.challenge,
+        rating: Number(fields.get('rating')), content: fields.get('content'),
+        nickname: fields.get('nickname'), appVersion: fields.get('appVersion'),
+        website: fields.get('website'), consent: fields.get('consent') === 'on',
+      } });
+      showReceipt();
+      $('submit-status').textContent = result.alreadyReceived ? 'This review was already received. Use your private link to manage it.' : 'Received. Your rating and review will appear after moderation.';
+      $('receipt').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      button.textContent = 'Review received';
+      $('review-form').querySelectorAll('input, textarea').forEach(field => { field.disabled = true; });
+    } catch (error) {
+      $('submit-status').textContent = error.message;
+      if (attempted && (!error.status || error.status >= 500)) showReceipt(true);
+      challengePromise = null;
+      button.disabled = false;
+    }
+  });
+  $('copy-receipt').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($('receipt-link').value);
+      $('copy-receipt').textContent = 'Copied';
+    } catch {
+      $('receipt-link').focus(); $('receipt-link').select();
+      $('copy-receipt').textContent = 'Select and copy the link';
+    }
+  };
+}
+
+async function setupManage() {
+  const match = /^#([0-9a-f-]{36}):([A-Za-z0-9_-]{43})$/.exec(location.hash);
+  if (!match) { $('manage-status').textContent = 'Open the complete private management link saved when you submitted your review.'; return; }
+  const authorization = `Review ${match[1]}:${match[2]}`;
+  try {
+    const review = await api('/api/manage', { method: 'POST', data: {}, authorization });
+    $('managed-review').replaceChildren(reviewCard(review));
+    $('manage-status').textContent = review.state === 'published' ? 'Your review is published.' : 'Your review is awaiting moderation. Pending reviews expire after 30 days.';
+    $('delete-review').hidden = false;
+    $('delete-review').onclick = async () => {
+      if (!confirm('Permanently delete your review and its rating from the live service?')) return;
+      $('delete-review').disabled = true;
+      try {
+        await api('/api/manage', { method: 'DELETE', data: {}, authorization });
+        $('managed-review').replaceChildren(); $('delete-review').hidden = true;
+        $('manage-status').textContent = 'Your review and rating have been deleted.';
+        history.replaceState(null, '', new URL('?view=manage', location.href));
+      } catch (error) { $('manage-status').textContent = error.message; $('delete-review').disabled = false; }
+    };
+  } catch (error) { $('manage-status').textContent = error.message; }
+}
+
+let moderatorKey = ''; let moderationEpoch = 0; let queueRequest = 0; let moderationState = 'pending'; let moderationPage = 1;
+async function loadQueue(page = moderationPage) {
+  const epoch = moderationEpoch;
+  const requestId = ++queueRequest;
+  try {
+    const result = await api(`/api/moderation?state=${moderationState}&page=${page}`, { authorization: `Bearer ${moderatorKey}` });
+    if (epoch !== moderationEpoch || requestId !== queueRequest || !moderatorKey) return;
+    moderationPage = page;
+    $('moderator-status').textContent = `${result.count} ${moderationState} ${result.count === 1 ? 'review' : 'reviews'}.`;
+    const cards = result.reviews.map(review => {
+      const card = reviewCard(review); const actions = node('div', undefined, 'actions');
+      for (const action of review.state === 'pending' ? ['publish', 'remove'] : ['remove']) {
+        const button = node('button', action === 'publish' ? 'Publish' : 'Remove');
+        button.type = 'button'; button.onclick = async () => {
+          if (action === 'remove' && !confirm('Permanently remove this review? Use this only for a published moderation-policy reason.')) return;
+          button.disabled = true;
+          try {
+            await api('/api/moderation', { method: 'POST', authorization: `Bearer ${moderatorKey}`, data: { id: review.id, action } });
+            await loadQueue(1);
+          } catch (error) { $('moderator-status').textContent = error.message; button.disabled = false; }
+        }; actions.append(button);
+      }
+      card.append(actions); return card;
+    });
+    $('moderator-reviews').replaceChildren(...cards);
+    $('moderator-pagination').hidden = false;
+    $('mod-page').textContent = `Page ${page} of ${Math.max(1, Math.ceil(result.count / result.pageSize))}`;
+    $('mod-previous').disabled = page <= 1; $('mod-next').disabled = page * result.pageSize >= result.count;
+    $('moderator-controls').hidden = false; $('moderator-login').hidden = true;
+  } catch (error) { if (epoch === moderationEpoch && requestId === queueRequest) $('moderator-status').textContent = error.message; }
+}
+function lockModeration() {
+  moderationEpoch++; queueRequest++; moderatorKey = '';
+  $('moderator-key').value = ''; $('moderator-reviews').replaceChildren();
+  $('moderator-controls').hidden = true; $('moderator-pagination').hidden = true;
+  $('moderator-login').hidden = false; $('moderator-status').textContent = 'Locked.';
+}
+window.addEventListener('pagehide', lockModeration);
+
+function setupModeration() {
+  $('moderator-login').onsubmit = (event) => {
+    event.preventDefault(); moderationEpoch++; moderatorKey = $('moderator-key').value.trim(); $('moderator-key').value = ''; loadQueue(1);
+  };
+  for (const button of document.querySelectorAll('[data-state]')) button.onclick = () => { moderationState = button.dataset.state; loadQueue(1); };
+  $('moderator-logout').onclick = lockModeration;
+  $('mod-previous').onclick = () => loadQueue(moderationPage - 1);
+  $('mod-next').onclick = () => loadQueue(moderationPage + 1);
+}
+
+const view = new URL(location.href).searchParams.get('view');
+if (view === 'manage' || view === 'moderate') {
+  $('public-page').hidden = true;
+  if (view === 'manage') { $('manage-page').hidden = false; setupManage(); }
+  else { $('moderate-page').hidden = false; setupModeration(); }
+} else setupPublic();

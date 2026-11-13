@@ -1,0 +1,6 @@
+# No rewrite rules or daemon are needed: use index.php, api.php and badge.php directly.
+DirectoryIndex index.php
+Options -Indexes
+<FilesMatch "(?i)\.(sql|md|log|bak|ini|env)$">
+    Require all denied
+</FilesMatch>
