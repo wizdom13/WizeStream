@@ -12,7 +12,15 @@ on:
       - pipe
     paths-ignore:
       - 'README.md'
-      - 'doc/**'
+      # Keep the changelog and other existing docs covered by CI.
+      - 'docs/android10-detail-rendering.md'
+      - 'docs/imports/**'
+      - 'docs/invidious-media-servers.md'
+      - 'docs/launcher-icons.md'
+      - 'docs/progressive-subscription-refresh.md'
+      - 'docs/themes/**'
+      - 'docs/tubebeam.md'
+      - 'docs/yt-fifo.md'
       - 'fastlane/**'
       - 'assets/**'
       - '.github/**/*.md'
@@ -26,7 +34,15 @@ on:
       - pipe
     paths-ignore:
       - 'README.md'
-      - 'doc/**'
+      # Keep the changelog and other existing docs covered by CI.
+      - 'docs/android10-detail-rendering.md'
+      - 'docs/imports/**'
+      - 'docs/invidious-media-servers.md'
+      - 'docs/launcher-icons.md'
+      - 'docs/progressive-subscription-refresh.md'
+      - 'docs/themes/**'
+      - 'docs/tubebeam.md'
+      - 'docs/yt-fifo.md'
       - 'fastlane/**'
       - 'assets/**'
       - '.github/**/*.md'

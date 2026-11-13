@@ -54,6 +54,7 @@ with, sponsored by, or endorsed by** the official NewPipe project, TeamNewPipe, 
 
 WizeStream preserves the NewPipe libre software license, upstream credits, and third-party license notices.
 
+- [Documentation index](docs/README.md)
 - [Frequently asked questions](docs/faq.md)
 - [Privacy policy](PRIVACY.md)
 
@@ -298,7 +299,7 @@ can vary by version, build, and provider.
 - Optionally send a stream link to your own yt-fifo and Snapcast home audio setup, to play now or
   append to the queue. Configure **Home audio server (yt-fifo)** in Video and audio settings.
 - Requires an HTTPS endpoint with a certificate trusted by Android. Plain HTTP yt-fifo deployments
-  need an HTTPS reverse proxy. See [setup and playback details](doc/yt-fifo.md).
+  need an HTTPS reverse proxy. See [setup and playback details](docs/yt-fifo.md).
 - Available in stream long-press menus and the Cast picker. Local playback continues; pause it
   separately when the home audio starts. The feature is hidden until a valid server is configured.
 
@@ -594,10 +595,10 @@ can vary by version, build, and provider.
 - NewPipe/PipePipe migrations, Google Takeout imports, and NewPipe-compatible exports target the
   profile that is active when the operation starts, including imported search history; app-wide settings
   remain shared
-- Import [LibreTube JSON backups](doc/imports/libretube.md) with a preview and category selection
+- Import [LibreTube JSON backups](docs/imports/libretube.md) with a preview and category selection
   for subscriptions, groups, history, playback positions, local playlists, and remote bookmarks;
   imports merge into the selected profile without transferring credentials or settings
-- Import [text lists of YouTube video URLs](doc/imports/text-playlists.md) from the Bookmarks menu
+- Import [text lists of YouTube video URLs](docs/imports/text-playlists.md) from the Bookmarks menu
   into new or existing local playlists, with preview, optional duplicate skipping, and per-line results
 - Schedule daily or weekly backups in **Settings > Backup and restore** after choosing a folder;
   retain the latest seven automatic backups and see the last backup status. Android determines the
@@ -651,7 +652,7 @@ data migration, and synchronization details.
 - Material 3-inspired app surfaces, dialogs, settings, tabs, and navigation
 - Dynamic Material You colors where available, plus Light, Dark, Black, Follow system, and manual
   theme color options, including Cyan and Yellow, plus an Eye Comfort warm dark theme
-- Choose Default, Blue, Green, or Purple [launcher icons and matching TV banners](doc/launcher-icons.md)
+- Choose Default, Blue, Green, or Purple [launcher icons and matching TV banners](docs/launcher-icons.md)
   under **Settings > Appearance > App icon**; launcher refresh timing and themed-icon overrides vary
 - A customizable home screen and configurable default main tab
 - Bottom navigation for up to five main sections and a scrollable tab layout for larger tab sets
@@ -686,7 +687,7 @@ data migration, and synchronization details.
   amount of data transferred; video and audio playback streams are unaffected
 - Optionally access YouTube through an Invidious instance, with saved instances and a quick selector;
   availability depends on the chosen instance
-- Configure up to 16 explicitly trusted HTTPS [Invidious Companion media servers](doc/invidious-media-servers.md)
+- Configure up to 16 explicitly trusted HTTPS [Invidious Companion media servers](docs/invidious-media-servers.md)
   per instance; direct YouTube requests remain blocked in Invidious mode
 - Browse supported YouTube community posts through Invidious, including attachments, read-only polls,
   and pagination, with images routed through the instance
@@ -937,7 +938,7 @@ and reproducible across independent build environments, and for distributing Wiz
 
 Combine built-in light, dark, AMOLED, and accent palettes through **Settings → Appearance → Theme packs**. Preview and import a JSON pack, export your current appearance, or restore your previous settings. Version 2 adds bounded glass surfaces on main navigation, native vinyl/pocket/cassette listening styles, and embedded PNG skins and player icons in the same file. Existing version 1 palette packs remain compatible.
 
-See the [theme creator guide](doc/themes/README.md) for the complete format, validation rules, examples, testing checklist, and sharing instructions.
+See the [theme creator guide](docs/themes/README.md) for the complete format, validation rules, examples, testing checklist, and sharing instructions.
 
 ### Integrated extractor source
 
