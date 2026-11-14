@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.App
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.ktx.throttleLatestDropOverflow
 import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.feed.service.FeedEventManager
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ErrorResultEvent
@@ -96,7 +97,7 @@ class FeedViewModel(
                 query.scope,
                 query.discovery
             )
-                .throttleLatest(FEED_SNAPSHOT_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
+                .throttleLatestDropOverflow(FEED_SNAPSHOT_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
                 .distinctUntilChanged()
                 .observeOn(Schedulers.computation())
                 .map { streams -> streams.map(::StreamItem) }
@@ -132,7 +133,7 @@ class FeedViewModel(
                 }
             )
         }
-        .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
+        .throttleLatestDropOverflow(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(
