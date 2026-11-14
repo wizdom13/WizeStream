@@ -14,6 +14,7 @@ import io.reactivex.rxjava3.processors.BehaviorProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.info_list.ItemViewMode
+import org.schabi.newpipe.ktx.throttleLatestDropOverflow
 import org.schabi.newpipe.local.feed.FeedDatabaseManager
 import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.search.ContextualSearchHelper
@@ -70,7 +71,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         ) { groups, listView, query ->
             Triple(groups, listView, query)
         }
-        .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
+        .throttleLatestDropOverflow(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
         .map { (feedGroups, listViewMode, query) ->
             val filteredGroups = if (ContextualSearchHelper.isActive(query)) {
                 feedGroups.filter { group ->
@@ -104,7 +105,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     filterQuery = query
                 )
                     .subscribeOn(Schedulers.io())
-                    .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
+                    .throttleLatestDropOverflow(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
             }
         return Flowable.combineLatest(
             subscriptions,

@@ -41,6 +41,7 @@ import org.schabi.newpipe.App
 import org.schabi.newpipe.MainActivity.DEBUG
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.ktx.throttleLatestDropOverflow
 import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.local.feed.service.FeedEventManager.Event.ErrorResultEvent
 
@@ -224,7 +225,12 @@ class FeedLoadService : Service() {
         notificationBuilder = createNotification()
 
         val throttleAfterFirstEmission = Function { flow: Flowable<FeedLoadState> ->
-            flow.take(1).concatWith(flow.skip(1).throttleLatest(NOTIFICATION_SAMPLING_PERIOD.toLong(), TimeUnit.MILLISECONDS))
+            flow.take(1).concatWith(
+                flow.skip(1).throttleLatestDropOverflow(
+                    NOTIFICATION_SAMPLING_PERIOD.toLong(),
+                    TimeUnit.MILLISECONDS
+                )
+            )
         }
 
         notificationDisposable = feedLoadManager.notification
