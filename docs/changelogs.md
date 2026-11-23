@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Customize Home
+
+- Keep the final Home section's Remove and Reorder controls clear of the Add button, including compact layouts and large text.
+- Let the full Customize Home instructions scroll with the list so large text does not crowd out the section controls.
+
 ### Fullscreen comments and chat
 
 - Keep portrait fullscreen comments readable in a full-width panel below the video, with resizable space for playback and complete scrollable filter labels.
