@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Subscription names
+
+- Add an optional Scroll long subscription names setting in Appearance so names that do not fit can scroll within subscription lists and groups.
+- Keep the option off by default and preserve channel selection, long-press actions and full accessibility labels.
+
 ### Remaining playback time
 
 - Tap the player's total duration to switch to estimated remaining playback time, accounting for playback speed and enabled automatic SponsorBlock skips without counting overlaps twice.
