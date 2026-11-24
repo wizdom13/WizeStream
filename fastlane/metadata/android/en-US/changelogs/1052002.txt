@@ -1,0 +1,1 @@
+Fix subscription editing above the mini-player, including short landscape windows. Editing controls now scroll with the channels so complete avatars, long names and drag handles stay reachable. Preserve selection, reordering and scroll position when switching between browsing and editing.
