@@ -4,6 +4,13 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.52.0 (`1052000`)
+
+### Floating navigation
+
+- Add optional floating bottom navigation with adjustable spacing and a reset in Appearance settings; Classic remains the default.
+- Offer an independent floating New group and Search layout for Subscriptions, using the configured search action and hiding the buttons while the keyboard is open.
+
 ### Service plugins
 
 - Use the WizeStream Plugins catalog by default instead of the former PipePipe built-in catalog, while preserving installed plugins and added repositories.
@@ -11,6 +18,24 @@ Release history is listed newest first. The number beside each release is its An
 - Verify signed packages and updates, reject duplicate built-in providers, and keep existing service IDs and saved data intact.
 - Keep plugin preferences and optional login cookies separate for each profile, with restart-based installation and profile changes.
 - Add a WizeStream plugin SDK and signed-package template for independent plugin authors. Plugins require Android 7 or newer; the app continues to support Android 6.
+
+### Local recommendations
+
+- Refresh local recommendations on demand from the recommendations screen.
+
+### YouTube Live tabs
+
+- Add sorting to YouTube channel Live tabs and keep Live and Videos sort choices separate when switching tabs.
+
+### Interface controls
+
+- Improve right-to-left layouts and compact playlist and subscription controls, including long labels and larger text.
+- Add Appearance options for toolbar title alignment, voice search button visibility, and the subscription Import shortcut.
+
+### Playback information
+
+- Keep the playback information panel within the available space after player size or orientation changes.
+- Let the panel scroll without dragging the player sheet or app bar.
 
 ## WizeStream 1.51.0 (`1051000`)
 
